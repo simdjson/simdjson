@@ -7,6 +7,10 @@
 #include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#ifdef __cpp_concepts
+#include <array>
+#endif
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {

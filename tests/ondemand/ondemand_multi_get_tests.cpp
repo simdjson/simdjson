@@ -8,7 +8,7 @@ namespace multi_get_tests {
 struct Car {
   std::string_view make;
   std::string_view model;
-  std::uint64_t year = 0;
+  std::int64_t year = 0;
 
   static simdjson_result<Car> create(auto& value) {
     simdjson::ondemand::object obj;
@@ -66,7 +66,7 @@ bool get_3() {
   ondemand::document doc = parser.iterate(json);
   ondemand::object obj = doc.get_object();
   auto [one, two, three] = obj.find_all("one", "two", "three");
-  int long one_value, two_value, three_value;
+  std::int64_t one_value, two_value, three_value;
   ASSERT_SUCCESS(one.get_int64().get(one_value));
   ASSERT_SUCCESS(two.get_int64().get(two_value));
   ASSERT_SUCCESS(three.get_int64().get(three_value));
@@ -82,7 +82,7 @@ bool one_key_not_found() {
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   auto [one, two, three] = doc.get_object().find_all("one", "two", "three");
-  int long one_value, three_value;
+  std::int64_t one_value, three_value;
   ASSERT_SUCCESS(one.get_int64().get(one_value));
   ASSERT_EQUAL(two.get_int64().error(), UNINITIALIZED);
   ASSERT_SUCCESS(three.get_int64().get(three_value));
