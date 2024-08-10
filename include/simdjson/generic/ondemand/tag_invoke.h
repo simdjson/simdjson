@@ -40,7 +40,7 @@ simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val)
 
 template <typename T>
   requires std::signed_integral<T>
-simdjson_result<T> tag_invoke(simdjson::deserialize_tag, std::type_identity<T>, auto &val) noexcept {
+simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
   int64_t x;
   SIMDJSON_TRY(val.get_int64().get(x));
   if(x > std::numeric_limits<T>::max() || x < std::numeric_limits<T>::min()) {

@@ -3,8 +3,8 @@
 #endif
 
 // Stuff other things depend on
-#include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/deserialize.h"
+#include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/logger.h"

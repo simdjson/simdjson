@@ -1,8 +1,7 @@
 #ifndef SIMDJSON_ONDEMAND_DESERIALIZE_H
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_ONDEMAND_DESERIALIZE_H
-
-#include "simdjson/error.h"
-
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
@@ -71,7 +70,6 @@ class document;
 /// Deserialize Tag
 inline constexpr struct deserialize_tag {
   using value_type = SIMDJSON_IMPLEMENTATION::ondemand::value;
-  using result_value_type = typename simdjson::simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>;
   using document_type = SIMDJSON_IMPLEMENTATION::ondemand::document;
 
   // Customization Point for value
@@ -80,15 +78,6 @@ inline constexpr struct deserialize_tag {
   [[nodiscard]] constexpr simdjson_result<T>
   operator()(std::type_identity<T>, value_type &object) const
       noexcept(nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, value_type&>) {
-    return tag_invoke(*this, std::type_identity<T>{}, object);
-  }
-
-  // Customization Point for result value
-  template <typename T>
-    requires tag_invocable<deserialize_tag, std::type_identity<T>, result_value_type&>
-  [[nodiscard]] constexpr simdjson_result<T>
-  operator()(std::type_identity<T>, result_value_type &object) const
-      noexcept(nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, result_value_type&>) {
     return tag_invoke(*this, std::type_identity<T>{}, object);
   }
 
@@ -104,18 +93,6 @@ inline constexpr struct deserialize_tag {
   // default implementations can also be done here
 } deserialize{};
 
-
-
-
-
-
-namespace concepts {
-template <typename C> struct is_vector : std::false_type {};
-template <typename T> struct is_vector<std::vector<T>> : std::true_type {};
-template <typename C>
-concept std_vector = is_vector<C>::value;
-
-} // namespace simdjson::concepts
 
 #endif
 
