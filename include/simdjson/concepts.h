@@ -8,6 +8,7 @@
 
 #ifdef __cpp_concepts
 #include <utility>
+#include <vector>
 
 namespace simdjson {
 namespace concepts {
