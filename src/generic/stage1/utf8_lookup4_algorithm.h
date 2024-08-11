@@ -4,6 +4,7 @@
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 #include <generic/stage1/base.h>
 #include <generic/dom_parser_implementation.h>
+#include <generic/stage1/simd_reducer.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -13,43 +14,13 @@ namespace utf8_validation {
 
   using namespace simd;
 
-  /** Incrementally performs a reduce OR operation to accumulate an error. */
-  template <int N>
-  struct simd_error_accumulator;
-
-  template<> struct simd_error_accumulator<4> {
-    simd8<uint8_t> error0123;
-    operator simd8<uint8_t>() && { return error0123; }
-  };
-  template<> struct simd_error_accumulator<3> {
-    simd8<uint8_t> error01;
-    simd8<uint8_t> error2;
-    simd_error_accumulator<4> next(simd8<uint8_t> error3) && { return { error01 | error2 | error3 }; }
-    operator simd8<uint8_t>() && { return error01 | error2; }
-  };
-  template<> struct simd_error_accumulator<2> {
-    simd8<uint8_t> error01;
-    simd_error_accumulator<3> next(simd8<uint8_t> error2) && { return { error01, error2 }; }
-    operator simd8<uint8_t>() && { return error01; }
-  };
-  template<> struct simd_error_accumulator<1> {
-    simd8<uint8_t> error0;
-    simd_error_accumulator<2> next(simd8<uint8_t> error1) && { return { error0 | error1 }; }
-    operator simd8<uint8_t>() && { return error0; }
-  };
-  template<> struct simd_error_accumulator<0> {
-    simd8<uint8_t> prev_error{};
-    simd_error_accumulator<1> next(simd8<uint8_t> error0) && { return { prev_error | error0 }; }
-    operator simd8<uint8_t>() && { return prev_error; }
-  };
-
   // At its height, this will keep 5 registers around.
   template <int N>
   struct simd_utf8_checker {
     /**
      * The current error.
      */
-    simd_error_accumulator<N> error;
+    simd_or_reducer<N> error;
     /**
      * Whether the previous input had incomplete UTF-8 characters at the end.
      */

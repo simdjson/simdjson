@@ -1,6 +1,7 @@
 // Stuff other things depend on
 #include <generic/stage1/base.h>
 #include <generic/stage1/buf_block_reader.h>
+#include <generic/stage1/simd_reducer.h>
 #include <generic/stage1/json_escape_scanner.h>
 #include <generic/stage1/json_string_scanner.h>
 #include <generic/stage1/utf8_lookup4_algorithm.h>
