@@ -49,10 +49,10 @@ simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val)
   return static_cast<T>(x);
 }
 
-
-template <>
-simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std::string>, auto &val) noexcept{
-  std::string s;
+template <typename T>
+  requires std::same_as<T, std::string>
+simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept{
+  T s;
   SIMDJSON_TRY(val.get_string(s));
   return s;
 }
