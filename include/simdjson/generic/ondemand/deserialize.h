@@ -92,6 +92,8 @@ inline constexpr struct deserialize_tag {
 
   // default implementations can also be done here
 } deserialize{};
+
+
 #endif
 
 } // namespace simdjson

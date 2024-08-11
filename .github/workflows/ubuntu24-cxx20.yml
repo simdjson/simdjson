@@ -1,0 +1,22 @@
+name: Ubuntu 24.04 CI (CXX 20)
+
+on: [push, pull_request]
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        cxx: [g++-13, clang++-16]
+    steps:
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - name: Prepare
+        run: cmake -DSIMDJSON_CXX_STANDARD=20 -DSIMDJSON_DEVELOPER_MODE=ON  -B build
+        env:
+          CXX: ${{matrix.cxx}}
+      - name: Build
+        run: cmake --build build -j=2
+      - name: Test
+        run: ctest --output-on-failure --test-dir build

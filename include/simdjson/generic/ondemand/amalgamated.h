@@ -41,3 +41,5 @@
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #include "simdjson/generic/ondemand/value-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
+
+#include "simdjson/generic/ondemand/tag_invoke.h"

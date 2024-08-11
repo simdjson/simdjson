@@ -4,8 +4,9 @@
 #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
-#include "simdjson/deserialize.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
+
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
