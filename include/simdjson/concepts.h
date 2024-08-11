@@ -7,7 +7,8 @@
 #endif
 
 #ifdef __cpp_concepts
-
+// Deliberately empy. In the future, if the library needs to define concepts, it
+// can be done here.
 namespace simdjson {
 namespace concepts {
 } // namespace concepts

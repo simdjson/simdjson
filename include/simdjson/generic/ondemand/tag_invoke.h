@@ -35,7 +35,7 @@ simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val)
 
 template <typename T>
   requires std::floating_point<T>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept{
+simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
   double x;
   SIMDJSON_TRY(val.get_double().get(x));
   return static_cast<T>(x);
@@ -54,21 +54,29 @@ simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val)
 
 template <typename T>
   requires std::same_as<T, std::string>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept{
+simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
   T s;
   SIMDJSON_TRY(val.get_string(s));
   return s;
 }
 
 template <class jsonval>
-simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std::string>, jsonval &val) noexcept{
+simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std::string>, jsonval &val) noexcept {
   std::string s;
   SIMDJSON_TRY(val.get_string(s));
   return s;
 }
 
+/**
+ * STL containers have several constructors including one that takes a single
+ * size argument. Thus some compilers (Visual Studio) will not be able to
+ * disambiguate between the size and container constructor. Users should
+ * explicitly specify the type of the container as needed: e.g.,
+ * doc.get<std::vector<int>>().
+ */
+
 template <typename T, class jsonval>
-simdjson_result<std::vector<T>> tag_invoke(deserialize_tag, std::type_identity<std::vector<T>>, jsonval &val) noexcept{
+simdjson_result<std::vector<T>> tag_invoke(deserialize_tag, std::type_identity<std::vector<T>>, jsonval &val) noexcept {
   std::vector<T> vec;
   array array;
   SIMDJSON_TRY(val.get_array().get(array));
@@ -81,7 +89,7 @@ simdjson_result<std::vector<T>> tag_invoke(deserialize_tag, std::type_identity<s
 }
 
 template <typename T, class jsonval>
-simdjson_result<std::list<T>> tag_invoke(deserialize_tag, std::type_identity<std::list<T>>, jsonval &val) noexcept{
+simdjson_result<std::list<T>> tag_invoke(deserialize_tag, std::type_identity<std::list<T>>, jsonval &val) noexcept {
   std::list<T> vec;
   array array;
   SIMDJSON_TRY(val.get_array().get(array));

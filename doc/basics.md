@@ -1232,6 +1232,8 @@ You can also use the custom `Car` type as part of a template such as `std::vecto
   std::vector<Car> cars(doc);
   // visual studio users need an explicit call:
   //   std::vector<Car> cars = doc.get<std::vector<Car>>();
+  // because the compiler does not know whether to convert
+  // doc to an unsigned int or to a vector.
   for(Car& c : cars) {
     std::cout << c.year << std::endl;
   }
