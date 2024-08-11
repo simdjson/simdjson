@@ -239,7 +239,7 @@ simdjson_inline void json_structural_indexer::step<64>(const uint8_t *block, buf
 simdjson_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx) {
   uint64_t unescaped = in.lteq(0x1F);
 #if SIMDJSON_UTF8VALIDATION
-  checker.check_next_input(in);
+  checker.next(in);
 #endif
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
@@ -343,8 +343,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
         return EMPTY;
     }
   }
-  checker.check_eof();
-  return checker.errors();
+  return std::move(checker).eof();
 }
 
 } // namespace stage1
