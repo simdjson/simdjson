@@ -1229,7 +1229,7 @@ You can also use the custom `Car` type as part of a template such as `std::vecto
 ```cpp
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc = parser.iterate(json);
-  std::vector<Car> cars(doc);
+  std::vector<Car> cars = doc.get<std::vector<Car>>();
   for(Car& c : cars) {
     std::cout << c.year << std::endl;
   }

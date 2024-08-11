@@ -109,6 +109,23 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "format": "cpp",
+        "xlocmes": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp",
+        "xutility": "cpp",
+        "coroutine": "cpp",
+        "xfacet": "cpp",
+        "xhash": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocinfo": "cpp",
+        "xmemory": "cpp",
+        "xstring": "cpp",
+        "xtr1common": "cpp",
+        "xtree": "cpp"
     }
 }

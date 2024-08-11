@@ -14,25 +14,6 @@ auto tag_invoke(deserialize_tag, std::type_identity<std::unique_ptr<T>>, auto &v
   return simdjson_result{std::make_unique<T>(val.template get<T>())};
 }
 
-// vector<T>
-template <typename T, typename AllocT = std::allocator<T>>
-  requires (std::is_default_constructible_v<T>)
-simdjson_result<std::vector<T, AllocT>> tag_invoke(deserialize_tag, std::type_identity<std::vector<T, AllocT>>, auto &value) {
-  ondemand::array array;
-  if (auto error = value.get_array().get(array)) {
-    return error;
-  }
-  std::vector<T, AllocT> vec;
-  for (auto v : array) {
-    T val;
-    if (auto error = v.template get<T>().get(val)) {
-      return error;
-    }
-    vec.push_back(val);
-  }
-  return vec;
-}
-
 } // namespace simdjson
 
 #endif // __cpp_concepts
@@ -169,7 +150,7 @@ bool custom_test_crazier() {
 
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc = parser.iterate(json);
-  std::vector<Car> cars(doc);
+  std::vector<Car> cars = doc.get<std::vector<Car>>();
   for(Car& c : cars) {
     std::cout << c.year << std::endl;
     if (c.make != "Toyota" && c.make != "Kia") {
