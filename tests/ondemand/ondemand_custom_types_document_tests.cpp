@@ -150,7 +150,11 @@ bool custom_test_crazier() {
 
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc = parser.iterate(json);
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
   std::vector<Car> cars = doc.get<std::vector<Car>>();
+#else
+  std::vector<Car> cars(doc);
+#endif
   for(Car& c : cars) {
     std::cout << c.year << std::endl;
     if (c.make != "Toyota" && c.make != "Kia") {

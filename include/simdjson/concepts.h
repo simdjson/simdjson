@@ -7,15 +7,9 @@
 #endif
 
 #ifdef __cpp_concepts
-#include <utility>
-#include <vector>
 
 namespace simdjson {
 namespace concepts {
-template <typename C> struct is_vector : std::false_type {};
-template <typename T> struct is_vector<std::vector<T>> : std::true_type {};
-template <typename C>
-concept std_vector = is_vector<C>::value;
 } // namespace concepts
 } // namespace simdjson
 #endif

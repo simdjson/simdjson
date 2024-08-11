@@ -193,40 +193,6 @@ bool custom_test_crazy() {
   TEST_SUCCEED();
 }
 
-
-bool custom_test_crazier() {
-  TEST_START();
-  simdjson::padded_string json =
-      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-       "tire_pressure": [ 40.1, 39.9 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012,
-       "tire_pressure": [ 30.1, 31.0 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999,
-       "tire_pressure": [ 29.8, 30.0 ] }
-])"_padded;
-
-  simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
-  std::vector<Car> cars = doc.get<std::vector<Car>>();
-  for(Car& c : cars) {
-    std::cout << c.year << std::endl;
-    if (c.make != "Toyota" && c.make != "Kia") {
-      return false;
-    }
-    if (c.model != "Camry" && c.model != "Soul" && c.model != "Tercel") {
-      return false;
-    }
-    if (c.year != 2018 && c.year != 2012 && c.year != 1999) {
-      return false;
-    }
-    if (c.tire_pressure.size() != 2) {
-      return false;
-    }
-  }
-  TEST_SUCCEED();
-}
-
-
 bool custom_no_except() {
   TEST_START();
   simdjson::padded_string json =
@@ -255,7 +221,6 @@ bool run() {
       custom_test() &&
       custom_uniqueptr_test() &&
       custom_no_except() &&
-      custom_test_crazier() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }

@@ -12,6 +12,9 @@
 
 #ifdef __cpp_concepts
 #include <utility>
+#include <vector>
+#include <list>
+
 /**
  * Provides convenience functions for deserialization of common types.
  */
@@ -57,15 +60,34 @@ simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val)
   return s;
 }
 
-template <typename T>
-  requires concepts::std_vector<T>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) {
-  T vec;
+template <class jsonval>
+simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std::string>, jsonval &val) noexcept{
+  std::string s;
+  SIMDJSON_TRY(val.get_string(s));
+  return s;
+}
+
+template <typename T, class jsonval>
+simdjson_result<std::vector<T>> tag_invoke(deserialize_tag, std::type_identity<std::vector<T>>, jsonval &val) noexcept{
+  std::vector<T> vec;
   array array;
   SIMDJSON_TRY(val.get_array().get(array));
   for (auto v : array) {
-    typename T::value_type value;
-    SIMDJSON_TRY(v.get<typename T::value_type>().get(value));
+    T value;
+    SIMDJSON_TRY(v.get<T>().get(value));
+    vec.push_back(value);
+  }
+  return vec;
+}
+
+template <typename T, class jsonval>
+simdjson_result<std::list<T>> tag_invoke(deserialize_tag, std::type_identity<std::list<T>>, jsonval &val) noexcept{
+  std::list<T> vec;
+  array array;
+  SIMDJSON_TRY(val.get_array().get(array));
+  for (auto v : array) {
+    T value;
+    SIMDJSON_TRY(v.get<T>().get(value));
     vec.push_back(value);
   }
   return vec;
