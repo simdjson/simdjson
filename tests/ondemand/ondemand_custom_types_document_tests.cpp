@@ -40,10 +40,10 @@ simdjson_result<std::vector<T, AllocT>> tag_invoke(deserialize_tag, std::type_id
 namespace doc_custom_types_tests {
 #if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
 struct Car {
-  std::string make;
-  std::string model;
-  int64_t year = 0;
-  std::vector<double> tire_pressure;
+  std::string make{};
+  std::string model{};
+  int64_t year{};
+  std::vector<double> tire_pressure{};
 
   friend simdjson_result<Car> tag_invoke(simdjson::deserialize_tag,
                                          std::type_identity<Car>, auto &val) {
