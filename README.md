@@ -201,8 +201,8 @@ For the video inclined, <br />
 Funding
 -------
 
-The work is supported by the Natural Sciences and Engineering Research Council of Canada under grant
-number RGPIN-2017-03910.
+The work is supported by the Natural Sciences and Engineering Research Council of Canada under grants
+RGPIN-2017-03910 and RGPIN-2024-03787.
 
 [license]: LICENSE
 [license img]: https://img.shields.io/badge/License-Apache%202-blue.svg
