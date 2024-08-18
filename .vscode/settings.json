@@ -114,5 +114,6 @@
     "cmake.configureSettings": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
         "SIMDJSON_DEVELOPER_MODE": "ON",
+        "SIMDJSON_SINGLEHEADER": "OFF"
     }
 }
