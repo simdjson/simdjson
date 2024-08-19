@@ -7,14 +7,8 @@ var namespacesimdjson =
     [ "icelake", "namespacesimdjson_1_1icelake.html", null ],
     [ "lasx", "namespacesimdjson_1_1lasx.html", null ],
     [ "lsx", "namespacesimdjson_1_1lsx.html", null ],
-    [ "ondemand", null, [
-      [ "json_path_to_pointer_conversion", "json__path__to__pointer__conversion-inl_8h.html#a39425f9221b5a826d35c92337472b23f", null ]
-    ] ],
     [ "ppc64", "namespacesimdjson_1_1ppc64.html", null ],
     [ "SIMDJSON_IMPLEMENTATION", null, [
-      [ "internal", null, [
-        [ "json_path_to_pointer_conversion", "json__path__to__pointer__conversion_8h.html#a61b6ae0646529c9ad9888658eb7e3f86", null ]
-      ] ],
       [ "numberparsing", null, [
         [ "parse_number", "numberparsing_8h.html#abfab4a11a66cf3429d4b584165a0d47e", null ],
         [ "write_float", "numberparsing_8h.html#a4c645a86ea19178e55e6ceaa96ad29ae", null ]

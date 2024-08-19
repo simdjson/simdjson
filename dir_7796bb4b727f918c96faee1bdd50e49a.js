@@ -15,8 +15,6 @@ var dir_7796bb4b727f918c96faee1bdd50e49a =
     [ "field.h", "field_8h_source.html", null ],
     [ "json_iterator-inl.h", "json__iterator-inl_8h_source.html", null ],
     [ "json_iterator.h", "json__iterator_8h_source.html", null ],
-    [ "json_path_to_pointer_conversion-inl.h", "json__path__to__pointer__conversion-inl_8h_source.html", null ],
-    [ "json_path_to_pointer_conversion.h", "json__path__to__pointer__conversion_8h_source.html", null ],
     [ "json_type-inl.h", "json__type-inl_8h_source.html", null ],
     [ "json_type.h", "json__type_8h_source.html", null ],
     [ "logger-inl.h", "logger-inl_8h_source.html", null ],

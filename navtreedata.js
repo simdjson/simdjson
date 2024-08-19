@@ -194,13 +194,13 @@ var NAVTREE =
 
 var NAVTREEINDEX =
 [
-"",
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a248d65ae4cf327f277a5a48ba7480386",
-"classsimdjson_1_1dom_1_1element.html#ab4c2e35dc44664eb04038ad35efc64f9",
-"haswell_2begin_8h_source.html",
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4005fbda56edc47e077e5cfd4e68cda9",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a61c56912d76a1a730e4cf9b5aea5d69f",
-"structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#ae7aaa4b623ae007a33b0faa37374cc33"
+"amalgamated_8h_source.html",
+"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html#a7d565f0d79dec8bf19c307e464452650",
+"classsimdjson_1_1dom_1_1element.html#ae5ce6ad2e6036b4bb7a78261858bb337",
+"haswell_2ondemand_8h_source.html",
+"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html#a9a751f7a061bc6e8d3159556466edbf0",
+"westmere_2begin_8h_source.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
