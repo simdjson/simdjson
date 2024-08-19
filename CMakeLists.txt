@@ -51,6 +51,7 @@ endif()
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
+  option(SIMDJSON_SINGLEHEADER "Disable singleheader generation" ON)
 endif()
 
 include(cmake/handle-deprecations.cmake)
@@ -155,11 +156,13 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-install(
-    FILES singleheader/simdjson.h
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT simdjson_Development
-)
+if(SIMDJSON_SINGLEHEADER)
+  install(
+      FILES singleheader/simdjson.h
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+      COMPONENT simdjson_Development
+  )
+endif()
 
 install(
     TARGETS simdjson
@@ -286,8 +289,9 @@ add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 # most of the data has been moved to https://github.com/simdjson/simdjson-data
 add_subdirectory(jsonexamples)
 
-
+if(SIMDJSON_SINGLEHEADER)
 add_subdirectory(singleheader)
+endif()
 
 
 
