@@ -206,6 +206,7 @@ if(SIMDJSON_BUILD_STATIC_LIB)
       TARGETS simdjson_static
       EXPORT simdjson_staticTargets
       ARCHIVE COMPONENT simdjson_Development
+      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
   install(
       EXPORT simdjson_staticTargets
