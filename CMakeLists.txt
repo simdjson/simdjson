@@ -23,7 +23,11 @@ string(
 set(SIMDJSON_LIB_VERSION "23.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "23" CACHE STRING "simdjson library soversion")
 
-option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson" OFF)
+option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
+if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
+  message(WARNING "SIMDJSON_BUILD_STATIC_LIB only makes sense if BUILD_SHARED_LIBS is set to ON")
+  message(STATUS "You might be building and installing a two identical static libraries.")
+endif()
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
