@@ -127,27 +127,27 @@ namespace simd {
     simdjson_inline void compress(uint32_t mask, L * output) const {
 #define HAS_FAST_PDEP_AND_PEXT 1
 #if HAS_FAST_PDEP_AND_PEXT == 1
-  const uint64_t nibble_msk = 0x1111111111111111;
-  const uint64_t iota = 0xFEDCBA9876543210;
+      const uint64_t nibble_msk = 0x1111111111111111;
+      const uint64_t iota = 0xFEDCBA9876543210;
 
-  // duplicate each bit into a nibble of the same value
-  uint64_t expanded_mask1 = _pdep_u64(~mask, nibble_msk) * 0xF;
-  uint64_t expanded_mask2 = _pdep_u64((~mask) >> 16, nibble_msk) * 0xF;
+      // duplicate each bit into a nibble of the same value
+      uint64_t expanded_mask1 = _pdep_u64(~mask, nibble_msk) * 0xF;
+      uint64_t expanded_mask2 = _pdep_u64((~mask) >> 16, nibble_msk) * 0xF;
 
-  // Simulate a 16-wide compaction via `pext`, producing up to 16 nibbles
-  uint64_t wanted_indices1 = _pext_u64(iota, expanded_mask1);
-  uint64_t wanted_indices2 = _pext_u64(iota, expanded_mask2);
+      // Simulate a 16-wide compaction via `pext`, producing up to 16 nibbles
+      uint64_t wanted_indices1 = _pext_u64(iota, expanded_mask1);
+      uint64_t wanted_indices2 = _pext_u64(iota, expanded_mask2);
 
-  // Move to a vector
-  __m128i nibble_vec1 = _mm_cvtsi64_si128(wanted_indices1);
-  __m128i nibble_vec2 = _mm_cvtsi64_si128(wanted_indices2);
+      // Move to a vector
+      __m128i nibble_vec1 = _mm_cvtsi64_si128(wanted_indices1);
+      __m128i nibble_vec2 = _mm_cvtsi64_si128(wanted_indices2);
 
-  // Spread each nibble to a byte
-  __m128i byte_vec1 = _mm_and_si128(_mm_unpacklo_epi8(nibble_vec1, _mm_srli_epi16(nibble_vec1, 4)), _mm_set1_epi32(0x0F0F0F0F));
-  __m128i byte_vec2 = _mm_and_si128(_mm_unpacklo_epi8(nibble_vec2, _mm_srli_epi16(nibble_vec2, 4)), _mm_set1_epi32(0x0F0F0F0F));
+      // Spread each nibble to a byte
+      __m128i byte_vec1 = _mm_and_si128(_mm_unpacklo_epi8(nibble_vec1, _mm_srli_epi16(nibble_vec1, 4)), _mm_set1_epi32(0x0F0F0F0F));
+      __m128i byte_vec2 = _mm_and_si128(_mm_unpacklo_epi8(nibble_vec2, _mm_srli_epi16(nibble_vec2, 4)), _mm_set1_epi32(0x0F0F0F0F));
 
-  _mm_storeu_si128( reinterpret_cast<__m128i *>(output), _mm_shuffle_epi8(_mm256_extracti128_si256(*this, 0), byte_vec1));
-  _mm_storeu_si128( reinterpret_cast<__m128i *>(output + count_ones(~mask & 0xFFFF)), _mm_shuffle_epi8(_mm256_extracti128_si256(*this, 1), byte_vec2));
+      _mm_storeu_si128( reinterpret_cast<__m128i *>(output), _mm_shuffle_epi8(_mm256_extracti128_si256(*this, 0), byte_vec1));
+      _mm_storeu_si128( reinterpret_cast<__m128i *>(output + count_ones(~mask & 0xFFFF)), _mm_shuffle_epi8(_mm256_extracti128_si256(*this, 1), byte_vec2));
 #else // !HAS_FAST_PDEP_AND_PEXT
       using internal::thintable_epi8;
       using internal::BitsSetTable256mul2;
