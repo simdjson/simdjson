@@ -4,7 +4,7 @@
 #include "simdjson/haswell/intrinsics.h"
 
 #if !SIMDJSON_CAN_ALWAYS_RUN_HASWELL
-SIMDJSON_TARGET_REGION("avx2,bmi,pclmul,lzcnt,popcnt")
+SIMDJSON_TARGET_REGION("avx2,bmi,bmi2,pclmul,lzcnt,popcnt")
 #endif
 
 #include "simdjson/haswell/bitmanipulation.h"
