@@ -11,6 +11,75 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+#if defined(__cpp_concepts) && defined(__cpp_consteval)
+#define SIMDJSON_SUPPORTS_EXTRACT 1
+
+class object;
+
+
+template <typename T>
+struct to {
+private:
+  T* pointer;
+  std::string_view key;
+ public:
+
+ constexpr explicit(false) to(std::string_view const inp_key, T& obj_ref) noexcept :
+  pointer{std::addressof(obj_ref)}, key{inp_key} {}
+
+private:
+ friend class object;
+
+ bool set_value(simdjson_result<field> field) noexcept {
+   raw_json_string field_key;
+   if (field.key().get(field_key)) {
+     return false;
+   }
+   if (key == field_key) {
+    *pointer = field.value();
+    return true;
+   }
+   return false;
+ }
+};
+
+template <typename Func>
+  requires (std::is_invocable_v<Func, simdjson_result<value>>)
+struct to<Func> {
+private:
+  Func func;
+  std::string_view key;
+ public:
+
+ constexpr explicit(false) to(std::string_view const inp_key, Func&& inp_func) noexcept :
+  func{std::forward<Func>(inp_func)}, key{inp_key} {}
+
+private:
+ friend class object;
+
+ bool set_value(simdjson_result<field> field) noexcept {
+   raw_json_string field_key;
+   if (field.key().get(field_key)) {
+     return false;
+   }
+   if (key == field_key) {
+    func(field.value());
+    return true;
+   }
+   return false;
+ }
+};
+
+
+template <typename Func>
+  requires (std::is_invocable_v<Func, simdjson_result<value>>)
+to(std::string_view, Func&&) -> to<Func>;
+
+template <typename T>
+to(std::string_view, T&) -> to<T>;
+
+#endif
+
 /**
  * A forward-only JSON object field iterator.
  */
@@ -64,6 +133,17 @@ public:
   simdjson_inline simdjson_result<value> find_field(std::string_view key) & noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field(std::string_view key) & noexcept; */
   simdjson_inline simdjson_result<value> find_field(std::string_view key) && noexcept;
+
+#ifdef SIMDJSON_SUPPORTS_EXTRACT
+ /**
+  * Extract all the fields in one go
+  */
+ template <typename ...T>
+ simdjson_inline void extract(to<T>... endpoints) & noexcept;
+
+#endif
+
+
 
   /**
    * Look up a field by name on an object, without regard to key order.

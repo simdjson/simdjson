@@ -58,6 +58,17 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
   return value(iter.child());
 }
 
+
+#ifdef SIMDJSON_SUPPORTS_EXTRACT
+template <typename ...T>
+simdjson_inline void object::extract(to<T>... endpoints) & noexcept {
+  for(auto value : *this) {
+    (endpoints.set_value(value) || ...);
+  }
+}
+#endif
+
+
 simdjson_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
   SIMDJSON_TRY( iter.start_object().error() );
   return object(iter);
