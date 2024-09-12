@@ -30,8 +30,8 @@ private:
 private:
  friend class object;
 
- void set_value(simdjson_result<value> field) noexcept {
-    *pointer = field.value();
+ void set_value(simdjson_result<value> val) noexcept {
+    *pointer = val;
  }
 };
 
@@ -49,8 +49,8 @@ private:
 private:
  friend class object;
 
- void set_value(simdjson_result<value> field) noexcept {
-    func(field.value());
+ void set_value(simdjson_result<value> val) noexcept {
+    func(val);
  }
 };
 
