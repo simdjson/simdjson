@@ -62,8 +62,13 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
 template <typename ...T>
 simdjson_inline void object::extract(to<T>... endpoints) & noexcept {
-  for(auto value : *this) {
-    (endpoints.set_value(value) || ...);
+  raw_json_string field_key;
+  for(auto pair : *this) {
+    if (pair.key().get(field_key)) {
+      break;
+    }
+    auto value = pair.value();
+    ((field_key.unsafe_is_equal(endpoints.key) && (endpoints.set_value(value), true)), ...);
   }
 }
 #endif

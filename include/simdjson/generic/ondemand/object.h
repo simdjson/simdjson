@@ -30,16 +30,8 @@ private:
 private:
  friend class object;
 
- bool set_value(simdjson_result<field> field) noexcept {
-   raw_json_string field_key;
-   if (field.key().get(field_key)) {
-     return false;
-   }
-   if (key == field_key) {
+ void set_value(simdjson_result<value> field) noexcept {
     *pointer = field.value();
-    return true;
-   }
-   return false;
  }
 };
 
@@ -57,16 +49,8 @@ private:
 private:
  friend class object;
 
- bool set_value(simdjson_result<field> field) noexcept {
-   raw_json_string field_key;
-   if (field.key().get(field_key)) {
-     return false;
-   }
-   if (key == field_key) {
+ void set_value(simdjson_result<value> field) noexcept {
     func(field.value());
-    return true;
-   }
-   return false;
  }
 };
 
