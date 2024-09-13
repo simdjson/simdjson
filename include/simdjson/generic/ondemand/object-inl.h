@@ -16,6 +16,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 
+#ifdef SIMDJSON_SUPPORTS_EXTRACT
 template <endpoint ...Tos>
 constexpr void sub<Tos...>::operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...)) {
   object obj;
@@ -26,6 +27,7 @@ constexpr void sub<Tos...>::operator()(simdjson_result<value> val) noexcept((not
    obj.extract(std::forward<T>(app_tos)...);
   }, tos);
 }
+#endif
 
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
