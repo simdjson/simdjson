@@ -17,17 +17,100 @@ namespace ondemand {
 
 
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
-template <endpoint ...Tos>
-constexpr void sub<Tos...>::operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...)) {
-  object obj;
-  if (val.get_object().get(obj)) {
-    return;
+
+template <typename T> struct to {
+private:
+  T *pointer;
+  std::string_view m_key;
+
+public:
+  constexpr explicit(false)
+      to(std::string_view const inp_key, T &obj_ref) noexcept
+      : pointer{std::addressof(obj_ref)}, m_key{inp_key} {}
+
+  constexpr to(to const &) = default;
+  constexpr to(to &&) noexcept = default;
+  constexpr to &operator=(to const &) = default;
+  constexpr to &operator=(to &&) noexcept = default;
+  constexpr ~to() = default;
+
+  [[nodiscard]] constexpr std::string_view key() const noexcept {
+    return m_key;
   }
-  std::apply([&obj] <typename ...T> (T&&... app_tos) {
-   obj.extract(std::forward<T>(app_tos)...);
-  }, tos);
-}
+
+  constexpr void operator()(simdjson_result<value> val) noexcept(
+      std::is_nothrow_assignable_v<T, simdjson_result<value>>) {
+    *pointer = val;
+  }
+};
+
+template <typename Func>
+  requires(std::is_invocable_v<Func, simdjson_result<value>>)
+struct to<Func> {
+private:
+  Func func;
+  std::string_view m_key;
+
+public:
+  constexpr explicit(false)
+      to(std::string_view const inp_key,
+         Func &&inp_func) noexcept(std::is_nothrow_copy_assignable_v<Func>)
+      : func{std::forward<Func>(inp_func)}, m_key{inp_key} {}
+
+  constexpr to(to const &) = default;
+  constexpr to(to &&) noexcept = default;
+  constexpr to &operator=(to const &) = default;
+  constexpr to &operator=(to &&) noexcept = default;
+  constexpr ~to() = default;
+
+  [[nodiscard]] constexpr std::string_view key() const noexcept {
+    return m_key;
+  }
+
+  constexpr void operator()(simdjson_result<value> val) noexcept(
+      std::is_nothrow_invocable_v<Func, simdjson_result<value>>) {
+    func(val);
+  }
+};
+
+template <typename Func>
+  requires(std::is_invocable_v<Func, simdjson_result<value>>)
+to(std::string_view, Func &&) -> to<Func>;
+
+template <typename T> to(std::string_view, T &) -> to<T>;
+
+template <endpoint... Tos> struct sub {
+private:
+  using tuple_type = std::tuple<Tos...>;
+  tuple_type tos;
+
+public:
+  explicit constexpr sub(Tos &&...inp_tos) noexcept(
+      std::is_nothrow_constructible_v<tuple_type, Tos...>)
+      : tos{std::forward<Tos>(inp_tos)...} {}
+
+  constexpr sub(sub const &) = default;
+  constexpr sub(sub &&) noexcept = default;
+  constexpr sub &operator=(sub const &) = default;
+  constexpr sub &operator=(sub &&) = default;
+  constexpr ~sub() = default;
+
+  constexpr void operator()(simdjson_result<value> val) noexcept(
+      (nothrow_endpoint<Tos> && ...)) {
+    object obj;
+    if (val.get_object().get(obj)) {
+      return;
+    }
+    std::apply(
+        [&obj]<typename... T>(T &&...app_tos) {
+          obj.extract(std::forward<T>(app_tos)...);
+        },
+        tos);
+  }
+};
+
 #endif
+
 
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
@@ -71,21 +154,6 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
   }
   return value(iter.child());
 }
-
-
-#ifdef SIMDJSON_SUPPORTS_EXTRACT
-template <endpoint ...Funcs>
-simdjson_inline void object::extract(Funcs&&... endpoints) noexcept((nothrow_endpoint<Funcs> && ...)) {
-  raw_json_string field_key;
-  for(auto pair : *this) {
-    if (pair.key().get(field_key)) {
-      break;
-    }
-    ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(pair.value()), true)), ...);
-  }
-}
-#endif
-
 
 simdjson_inline simdjson_result<object> object::start(value_iterator &iter) noexcept {
   SIMDJSON_TRY( iter.start_object().error() );
