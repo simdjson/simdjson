@@ -14,23 +14,31 @@ namespace ondemand {
 #if defined(__cpp_concepts) && defined(__cpp_consteval)
 #define SIMDJSON_SUPPORTS_EXTRACT 1
 
-class object;
+template <typename T>
+concept endpoint = std::is_invocable_v<T, simdjson_result<value>> && requires (T to) {
+ {to.key()} noexcept -> std::convertible_to<std::string_view>;
+};
 
+template <typename T>
+concept nothrow_endpoint = std::is_nothrow_invocable_v<T, simdjson_result<value>> && requires (T to) {
+ {to.key()} noexcept -> std::convertible_to<std::string_view>;
+};
 
 template <typename T>
 struct to {
-private:
+ private:
   T* pointer;
-  std::string_view key;
+  std::string_view m_key;
  public:
 
  constexpr explicit(false) to(std::string_view const inp_key, T& obj_ref) noexcept :
-  pointer{std::addressof(obj_ref)}, key{inp_key} {}
+  pointer{std::addressof(obj_ref)}, m_key{inp_key} {}
 
-private:
- friend class object;
+ [[nodiscard]] constexpr std::string_view key() const noexcept {
+  return m_key;
+ }
 
- void set_value(simdjson_result<value> val) noexcept {
+ constexpr void operator()(simdjson_result<value> val) noexcept(std::is_nothrow_assignable_v<T, simdjson_result<value>>) {
     *pointer = val;
  }
 };
@@ -38,18 +46,19 @@ private:
 template <typename Func>
   requires (std::is_invocable_v<Func, simdjson_result<value>>)
 struct to<Func> {
-private:
+ private:
   Func func;
-  std::string_view key;
+  std::string_view m_key;
  public:
 
- constexpr explicit(false) to(std::string_view const inp_key, Func&& inp_func) noexcept :
-  func{std::forward<Func>(inp_func)}, key{inp_key} {}
+ constexpr explicit(false) to(std::string_view const inp_key, Func&& inp_func) noexcept(std::is_nothrow_copy_assignable_v<Func>) :
+  func{std::forward<Func>(inp_func)}, m_key{inp_key} {}
 
-private:
- friend class object;
+ [[nodiscard]] constexpr std::string_view key() const noexcept {
+  return m_key;
+ }
 
- void set_value(simdjson_result<value> val) noexcept {
+ constexpr void operator()(simdjson_result<value> val) noexcept(std::is_nothrow_invocable_v<Func, simdjson_result<value>>) {
     func(val);
  }
 };
@@ -119,11 +128,12 @@ public:
   simdjson_inline simdjson_result<value> find_field(std::string_view key) && noexcept;
 
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
- /**
-  * Extract all the fields in one go
-  */
- template <typename ...T>
- simdjson_inline void extract(to<T>... endpoints) & noexcept;
+  /**
+   * Extract all the fields in one go
+   * Funcs are invocables that take a simdjson_result<value> as input.
+   */
+  template <endpoint ...Funcs>
+  simdjson_inline void extract(Funcs&&... endpoints) noexcept((nothrow_endpoint<Funcs> && ...));
 
 #endif
 
