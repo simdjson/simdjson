@@ -15,16 +15,13 @@ namespace ondemand {
 #define SIMDJSON_SUPPORTS_EXTRACT 1
 
 template <typename T>
-concept endpoint = std::is_invocable_v<T, simdjson_result<value>> &&
+concept endpoint = std::is_invocable_r_v<error_code, T, simdjson_result<value>> &&
                    std::is_copy_constructible_v<T> && requires(T to) {
-                     {
-                       to.key()
-                     } noexcept -> std::convertible_to<std::string_view>;
+                     { to.key() } noexcept -> std::convertible_to<std::string_view>;
                    };
 
 template <typename T>
-concept nothrow_endpoint =
-    endpoint<T> && std::is_nothrow_invocable_v<T, simdjson_result<value>>;
+concept nothrow_endpoint = endpoint<T> && std::is_nothrow_invocable_r_v<error_code, T, simdjson_result<value>>;
 
 #endif
 
@@ -88,7 +85,7 @@ public:
    * Funcs are invocables that take a simdjson_result<value> as input.
    */
   template <endpoint ...Funcs>
-  simdjson_inline void extract(Funcs&&... endpoints)
+  simdjson_inline error_code extract(Funcs&&... endpoints)
 #ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
  noexcept((nothrow_endpoint<Funcs> && ...))
 #endif

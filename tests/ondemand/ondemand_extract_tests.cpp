@@ -49,7 +49,7 @@ struct Car {
     //     }
     //
     // we can do this now:
-    obj.extract(
+    error = obj.extract(
       to{"wheels", sub{
         to{"front", car.wheels.front},
         to{"back", car.wheels.back},
@@ -59,6 +59,9 @@ struct Car {
       to{"year", [&car](auto val) {
         car.year = val;
       }});
+    if (error) {
+      return error;
+    }
     return car;
   }
 };

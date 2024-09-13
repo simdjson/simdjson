@@ -19,21 +19,27 @@ namespace ondemand {
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
 
 template <endpoint ...Funcs>
-simdjson_inline void object::extract(Funcs&&... endpoints)
+simdjson_inline error_code object::extract(Funcs&&... endpoints)
 #ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
  noexcept((nothrow_endpoint<Funcs> && ...))
 #endif
 {
   raw_json_string field_key;
+  error_code error = SUCCESS;
   for(auto pair : *this) {
-    if (pair.key().get(field_key)) {
+    if (error = pair.key().get(field_key); error) {
       break;
     }
-    ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(pair.value()), true)), ...);
+    ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(pair.value())) == SUCCESS : true) && ...);
+    if (error) {
+      break;
+    }
   }
+  return error;
 }
 
-template <typename T> struct to {
+template <typename T>
+struct to {
 private:
   T *pointer;
   std::string_view m_key;
@@ -53,9 +59,9 @@ public:
     return m_key;
   }
 
-  constexpr void operator()(simdjson_result<value> val) noexcept(
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept(
       std::is_nothrow_assignable_v<T, simdjson_result<value>>) {
-    *pointer = val;
+    return val.get<T>(*pointer);
   }
 };
 
@@ -74,17 +80,22 @@ public:
 
   constexpr to(to const &) = default;
   constexpr to(to &&) noexcept = default;
-  constexpr to &operator=(to const &) = default;
-  constexpr to &operator=(to &&) noexcept = default;
+  constexpr to& operator=(to const &) = default;
+  constexpr to& operator=(to &&) noexcept = default;
   constexpr ~to() = default;
 
   [[nodiscard]] constexpr std::string_view key() const noexcept {
     return m_key;
   }
 
-  constexpr void operator()(simdjson_result<value> val) noexcept(
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept(
       std::is_nothrow_invocable_v<Func, simdjson_result<value>>) {
-    func(val);
+    if constexpr (std::is_invocable_r_v<error_code, Func, simdjson_result<value>>) {
+      return func(val);
+    } else {
+      static_cast<void>(func(val));
+      return SUCCESS;
+    }
   }
 };
 
@@ -92,17 +103,22 @@ template <typename Func>
   requires(std::is_invocable_v<Func, simdjson_result<value>>)
 to(std::string_view, Func &&) -> to<Func>;
 
-template <typename T> to(std::string_view, T &) -> to<T>;
+template <typename T>
+to(std::string_view, T&) -> to<T>;
 
-template <endpoint... Tos> struct sub {
+template <endpoint... Tos>
+struct sub {
 private:
   using tuple_type = std::tuple<Tos...>;
   tuple_type tos;
 
 public:
-  explicit constexpr sub(Tos &&...inp_tos) noexcept(
-      std::is_nothrow_constructible_v<tuple_type, Tos...>)
-      : tos{std::forward<Tos>(inp_tos)...} {}
+
+  // double templating to make perfect forwarding work
+  template <typename ...T>
+    requires ((std::same_as<T, Tos> && ...))
+  explicit constexpr sub(T&&...inp_tos) noexcept(std::is_nothrow_constructible_v<tuple_type, T...>)
+      : tos{std::forward<T>(inp_tos)...} {}
 
   constexpr sub(sub const &) = default;
   constexpr sub(sub &&) noexcept = default;
@@ -110,19 +126,19 @@ public:
   constexpr sub &operator=(sub &&) = default;
   constexpr ~sub() = default;
 
-  constexpr void operator()(simdjson_result<value> val) noexcept(
-      (nothrow_endpoint<Tos> && ...)) {
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...)) {
     object obj;
-    if (val.get_object().get(obj)) {
-      return;
+    if (auto const err = val.get_object().get(obj); err) {
+      return err;
     }
-    std::apply(
-        [&obj]<typename... T>(T &&...app_tos) {
-          obj.extract(std::forward<T>(app_tos)...);
-        },
-        tos);
+    return std::apply([&obj]<typename... T>(T &&...app_tos) {
+      return obj.extract(std::forward<T>(app_tos)...);
+    }, tos);
   }
 };
+
+template <endpoint... Tos>
+sub(Tos&&...) -> sub<Tos...>;
 
 #endif
 
