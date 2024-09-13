@@ -15,6 +15,18 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+
+template <endpoint ...Tos>
+constexpr void sub<Tos...>::operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...)) {
+  object obj;
+  if (val.get_object().get(obj)) {
+    return;
+  }
+  std::apply([&obj] <typename ...T> (T&&... app_tos) {
+   obj.extract(std::forward<T>(app_tos)...);
+  }, tos);
+}
+
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );
@@ -67,8 +79,7 @@ simdjson_inline void object::extract(Funcs&&... endpoints) noexcept((nothrow_end
     if (pair.key().get(field_key)) {
       break;
     }
-    auto value = pair.value();
-    ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(value), true)), ...);
+    ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(pair.value()), true)), ...);
   }
 }
 #endif

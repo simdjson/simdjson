@@ -15,14 +15,12 @@ namespace ondemand {
 #define SIMDJSON_SUPPORTS_EXTRACT 1
 
 template <typename T>
-concept endpoint = std::is_invocable_v<T, simdjson_result<value>> && requires (T to) {
+concept endpoint = std::is_invocable_v<T, simdjson_result<value>> && std::is_copy_constructible_v<T> && requires (T to) {
  {to.key()} noexcept -> std::convertible_to<std::string_view>;
 };
 
 template <typename T>
-concept nothrow_endpoint = std::is_nothrow_invocable_v<T, simdjson_result<value>> && requires (T to) {
- {to.key()} noexcept -> std::convertible_to<std::string_view>;
-};
+concept nothrow_endpoint = endpoint<T> && std::is_nothrow_invocable_v<T, simdjson_result<value>>;
 
 template <typename T>
 struct to {
@@ -33,6 +31,12 @@ struct to {
 
  constexpr explicit(false) to(std::string_view const inp_key, T& obj_ref) noexcept :
   pointer{std::addressof(obj_ref)}, m_key{inp_key} {}
+
+ constexpr to(to const&) = default;
+ constexpr to(to&&) noexcept = default;
+ constexpr to& operator=(to const&) = default;
+ constexpr to& operator=(to&&) noexcept = default;
+ constexpr ~to() = default;
 
  [[nodiscard]] constexpr std::string_view key() const noexcept {
   return m_key;
@@ -54,6 +58,12 @@ struct to<Func> {
  constexpr explicit(false) to(std::string_view const inp_key, Func&& inp_func) noexcept(std::is_nothrow_copy_assignable_v<Func>) :
   func{std::forward<Func>(inp_func)}, m_key{inp_key} {}
 
+ constexpr to(to const&) = default;
+ constexpr to(to&&) noexcept = default;
+ constexpr to& operator=(to const&) = default;
+ constexpr to& operator=(to&&) noexcept = default;
+ constexpr ~to() = default;
+
  [[nodiscard]] constexpr std::string_view key() const noexcept {
   return m_key;
  }
@@ -70,6 +80,26 @@ to(std::string_view, Func&&) -> to<Func>;
 
 template <typename T>
 to(std::string_view, T&) -> to<T>;
+
+
+template <endpoint ...Tos>
+struct sub {
+private:
+ using tuple_type = std::tuple<Tos...>;
+ tuple_type tos;
+public:
+
+ explicit constexpr sub(Tos&&... inp_tos) noexcept(std::is_nothrow_constructible_v<tuple_type, Tos...>) :
+   tos {std::forward<Tos>(inp_tos)...} {}
+
+ constexpr sub(sub const&) = default;
+ constexpr sub(sub&&) noexcept = default;
+ constexpr sub& operator=(sub const&) = default;
+ constexpr sub& operator=(sub&&) = default;
+ constexpr ~sub() = default;
+
+ constexpr void operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...));
+};
 
 #endif
 

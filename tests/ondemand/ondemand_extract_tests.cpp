@@ -9,8 +9,15 @@ struct Car {
   std::string_view make;
   std::string_view model;
   std::int64_t year = 0;
+  struct wheel_size_type {
+    std::int64_t front = 0;
+    std::int64_t back = 0;
+  } wheels;
 
   static simdjson_result<Car> create(auto& value) {
+    using ondemand::to;
+    using ondemand::sub;
+
     simdjson::ondemand::object obj;
     auto error = value.get_object().get(obj);
     if (error) {
@@ -43,9 +50,13 @@ struct Car {
     //
     // we can do this now:
     obj.extract(
-      ondemand::to{"make", car.make},
-      ondemand::to{"model", car.model},
-      ondemand::to{"year", [&car](auto val) {
+      to{"wheels", sub{
+        to{"front", car.wheels.front},
+        to{"back", car.wheels.back},
+      }},
+      to{"make", car.make},
+      to{"model", car.model},
+      to{"year", [&car](auto val) {
         car.year = val;
       }});
     return car;
@@ -56,11 +67,11 @@ bool car_example() {
   TEST_START();
   simdjson::padded_string json =
       R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-       "tire_pressure": [ 40.1, 39.9 ] },
+       "tire_pressure": [ 40.1, 39.9 ], "wheels": { "front": 10, "back": 10 } },
   { "make": "Kia",    "model": "Soul",   "year": 2012,
-       "tire_pressure": [ 30.1, 31.0 ] },
+       "tire_pressure": [ 30.1, 31.0 ], "wheels": { "front": 10, "back": 10 } },
   { "make": "Toyota", "model": "Tercel", "year": 1999,
-       "tire_pressure": [ 29.8, 30.0 ] }
+       "tire_pressure": [ 29.8, 30.0 ], "wheels": { "front": 10, "back": 10 } }
 ])"_padded;
 
   simdjson::ondemand::parser parser;
@@ -76,6 +87,9 @@ bool car_example() {
       return false;
     }
     if (c.year != 2018 && c.year != 2012 && c.year != 1999) {
+      return false;
+    }
+    if (c.wheels.front != 10 || c.wheels.back != 10) {
       return false;
     }
   }
