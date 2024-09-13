@@ -18,6 +18,21 @@ namespace ondemand {
 
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
 
+template <endpoint ...Funcs>
+simdjson_inline void object::extract(Funcs&&... endpoints)
+#ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
+ noexcept((nothrow_endpoint<Funcs> && ...))
+#endif
+{
+  raw_json_string field_key;
+  for(auto pair : *this) {
+    if (pair.key().get(field_key)) {
+      break;
+    }
+    ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(pair.value()), true)), ...);
+  }
+}
+
 template <typename T> struct to {
 private:
   T *pointer;

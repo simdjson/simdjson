@@ -88,15 +88,11 @@ public:
    * Funcs are invocables that take a simdjson_result<value> as input.
    */
   template <endpoint ...Funcs>
-  simdjson_inline void extract(Funcs&&... endpoints) noexcept((nothrow_endpoint<Funcs> && ...)) {
-    raw_json_string field_key;
-    for(auto pair : *this) {
-      if (pair.key().get(field_key)) {
-        break;
-      }
-      ((field_key.unsafe_is_equal(endpoints.key()) && (endpoints(pair.value()), true)), ...);
-    }
-  }
+  simdjson_inline void extract(Funcs&&... endpoints)
+#ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
+ noexcept((nothrow_endpoint<Funcs> && ...))
+#endif
+ ;
 #endif
 
 
