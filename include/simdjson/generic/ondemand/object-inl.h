@@ -30,7 +30,7 @@ simdjson_inline error_code object::extract(Funcs&&... endpoints)
     if (error = pair.key().get(field_key); error) {
       break;
     }
-    ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(pair.value())) == SUCCESS : true) && ...);
+    std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(pair.value())) == SUCCESS : true) && ...);
     if (error) {
       break;
     }
