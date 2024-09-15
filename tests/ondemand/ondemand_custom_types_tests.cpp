@@ -27,9 +27,10 @@ namespace simdjson {
 // This tag_invoke MUST be inside simdjson namespace
 template <typename T>
   requires is_unique_ptr_v<T>
-auto tag_invoke(deserialize_tag, std::type_identity<T>, ondemand::value &val) {
+auto tag_invoke(deserialize_tag, ondemand::value &val, T& out) {
   using type = typename T::element_type;
-  return simdjson_result{std::make_unique<type>(val.template get<type>())};
+  out = std::make_unique<type>(val.template get<type>());
+  return SUCCESS;
 }
 
 } // namespace simdjson
@@ -46,14 +47,12 @@ struct Car {
   int year{};
   std::vector<double> tire_pressure{};
 
-  friend simdjson_result<Car>
-  tag_invoke(simdjson::deserialize_tag, std::type_identity<Car>, auto &val) {
+  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, Car& car) {
     simdjson::ondemand::object obj;
     auto error = val.get_object().get(obj);
     if (error) {
       return error;
     }
-    Car car{};
     // Instead of repeatedly obj["something"], we iterate through the object
     // which we expect to be faster.
     for (auto field : obj) {
@@ -84,13 +83,11 @@ struct Car {
         }
       }
     }
-    return car;
+    return simdjson::SUCCESS;
   }
 };
 
-static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
-                            std::type_identity<std::unique_ptr<Car>>, simdjson::ondemand::value &>,
-              "It should be invocable");
+static_assert(simdjson::deserializable<std::unique_ptr<Car>>, "It should be deserializable");
 
 bool custom_uniqueptr_test() {
   TEST_START();

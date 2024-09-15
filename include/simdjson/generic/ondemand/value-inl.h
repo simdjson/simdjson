@@ -91,9 +91,16 @@ template<> simdjson_inline simdjson_result<uint64_t> value::get() noexcept { ret
 template<> simdjson_inline simdjson_result<int64_t> value::get() noexcept { return get_int64(); }
 template<> simdjson_inline simdjson_result<bool> value::get() noexcept { return get_bool(); }
 
-template<typename T> simdjson_inline error_code value::get(T &out) noexcept {
-  return get<T>().get(out);
-}
+
+template<> simdjson_inline error_code value::get(array& out) noexcept { return get_array().get(out); }
+template<> simdjson_inline error_code value::get(object& out) noexcept { return get_object().get(out); }
+template<> simdjson_inline error_code value::get(raw_json_string& out) noexcept { return get_raw_json_string().get(out); }
+template<> simdjson_inline error_code value::get(std::string_view& out) noexcept { return get_string(false).get(out); }
+template<> simdjson_inline error_code value::get(number& out) noexcept { return get_number().get(out); }
+template<> simdjson_inline error_code value::get(double& out) noexcept { return get_double().get(out); }
+template<> simdjson_inline error_code value::get(uint64_t& out) noexcept { return get_uint64().get(out); }
+template<> simdjson_inline error_code value::get(int64_t& out) noexcept { return get_int64().get(out); }
+template<> simdjson_inline error_code value::get(bool& out) noexcept { return get_bool().get(out); }
 
 #if SIMDJSON_EXCEPTIONS
 template <class T>
@@ -417,6 +424,12 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return first.is_null();
 }
 
+template<> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get<SIMDJSON_IMPLEMENTATION::ondemand::value>(SIMDJSON_IMPLEMENTATION::ondemand::value &out) noexcept {
+  if (error()) { return error(); }
+  out = first;
+  return SUCCESS;
+}
+
 template<typename T> simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get() noexcept {
   if (error()) { return error(); }
   return first.get<T>();
@@ -429,11 +442,6 @@ template<typename T> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEME
 template<> simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get<SIMDJSON_IMPLEMENTATION::ondemand::value>() noexcept  {
   if (error()) { return error(); }
   return std::move(first);
-}
-template<> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get<SIMDJSON_IMPLEMENTATION::ondemand::value>(SIMDJSON_IMPLEMENTATION::ondemand::value &out) noexcept {
-  if (error()) { return error(); }
-  out = first;
-  return SUCCESS;
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::type() noexcept {

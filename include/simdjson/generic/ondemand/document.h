@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/deserialize.h"
+#include "simdjson/generic/ondemand/value.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 
@@ -180,28 +181,18 @@ public:
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
-  template<typename T> simdjson_inline simdjson_result<T> get() &
+  template <typename T>
+  simdjson_inline simdjson_result<T> get() &
 #ifdef __cpp_concepts
-    noexcept(tag_invocable<deserialize_tag, std::type_identity<T>, document&> ? nothrow_tag_invocable<deserialize_tag, std::type_identity<T>, document&> : true)
+    noexcept(deserializable<T, document> ? nothrow_deserializable<T, document> : true)
 #else
     noexcept
 #endif
   {
-#ifdef __cpp_concepts
-    if constexpr (tag_invocable<deserialize_tag, std::type_identity<T>, document&>) {
-      return deserialize(std::type_identity<T>{}, *this);
-    } else {
-#endif // __cpp_concepts
-    // Unless the simdjson library or the user provides an inline implementation, calling this method should
-    // immediately fail.
-    static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
-      "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
-      " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
-      " You may also add support for custom types, see our documentation.");
-#ifdef __cpp_concepts
-      }
-#endif
+    static_assert(std::is_default_constructible<T>::value, "Cannot initialize the specified type.");
+    T out{};
+    SIMDJSON_TRY(get<T>(out));
+    return out;
   }
   /**
    * @overload template<typename T> simdjson_result<T> get() & noexcept
@@ -214,10 +205,13 @@ public:
    * is provided.
    */
   template<typename T>
+  simdjson_inline simdjson_result<T> get() &&
 #ifdef __cpp_concepts
-    requires (!tag_invocable<deserialize_tag, std::type_identity<T>, document&>)
+    noexcept(deserializable<T, document> ? nothrow_deserializable<T, document> : true)
+#else
+    noexcept
 #endif
-  simdjson_inline simdjson_result<T> get() && noexcept {
+  {
       static_assert(!std::is_same<T, array>::value && !std::is_same<T, object>::value, "You should never hold either an ondemand::array or ondemand::object without a corresponding ondemand::document being alive; that would be Undefined Behaviour.");
       return static_cast<document&>(*this).get<T>();
   }
@@ -233,7 +227,32 @@ public:
    * @returns INCORRECT_TYPE If the JSON value is not an object.
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
    */
-  template<typename T> simdjson_inline error_code get(T &out) & noexcept;
+  template<typename T>
+  simdjson_inline error_code get(T &out) &
+#ifdef __cpp_concepts
+    noexcept(deserializable<T, document> ? nothrow_deserializable<T, document> : true)
+#else
+    noexcept
+#endif
+  {
+#ifdef __cpp_concepts
+    if constexpr (deserializable<T, document>) {
+        return deserialize(*this, out);
+    } else {
+#endif // __cpp_concepts
+      // Unless the simdjson library or the user provides an inline implementation, calling this method should
+      // immediately fail.
+      static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
+        "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
+        "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
+        " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
+        " You may also add support for custom types, see our documentation.");
+      static_cast<void>(out); // to get rid of unused errors
+      return UNINITIALIZED;
+#ifdef __cpp_concepts
+    }
+#endif
+  }
   /** @overload template<typename T> error_code get(T &out) & noexcept */
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 

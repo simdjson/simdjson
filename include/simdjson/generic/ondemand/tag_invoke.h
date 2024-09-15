@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_TAG_INVOKE_H
 #include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #ifdef __has_include
 #if __has_include(<version>)
@@ -22,49 +23,39 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-template <typename T>
-  requires std::unsigned_integral<T>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
+template <std::unsigned_integral T>
+error_code tag_invoke(deserialize_tag, auto &val, T& out) noexcept {
   uint64_t x;
   SIMDJSON_TRY(val.get_uint64().get(x));
   if(x > (std::numeric_limits<T>::max)() || x < (std::numeric_limits<T>::min)()) {
     return NUMBER_OUT_OF_RANGE;
   }
-  return static_cast<T>(x);
+  out = static_cast<T>(x);
+  return SUCCESS;
 }
 
-template <typename T>
-  requires std::floating_point<T>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
+template <std::floating_point T>
+error_code tag_invoke(deserialize_tag, auto &val, T& out) noexcept {
   double x;
   SIMDJSON_TRY(val.get_double().get(x));
-  return static_cast<T>(x);
+  out = static_cast<T>(x);
+  return SUCCESS;
 }
 
-template <typename T>
-  requires std::signed_integral<T>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
+template <std::signed_integral T>
+error_code tag_invoke(deserialize_tag, auto &val, T& out) noexcept {
   int64_t x;
   SIMDJSON_TRY(val.get_int64().get(x));
   if(x > (std::numeric_limits<T>::max)() || x < (std::numeric_limits<T>::min)()) {
     return NUMBER_OUT_OF_RANGE;
   }
-  return static_cast<T>(x);
+  out = static_cast<T>(x);
+  return SUCCESS;
 }
 
-template <typename T>
-  requires std::same_as<T, std::string>
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>, auto &val) noexcept {
-  T s;
-  SIMDJSON_TRY(val.get_string(s));
-  return s;
-}
-
-template <class jsonval>
-simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std::string>, jsonval &val) noexcept {
-  std::string s;
-  SIMDJSON_TRY(val.get_string(s));
-  return s;
+error_code tag_invoke(deserialize_tag, auto &val, std::string& out) noexcept {
+  SIMDJSON_TRY(val.get_string(out));
+  return SUCCESS;
 }
 
 /**
@@ -75,30 +66,28 @@ simdjson_result<std::string> tag_invoke(deserialize_tag, std::type_identity<std:
  * doc.get<std::vector<int>>().
  */
 
-template <typename T, class jsonval>
-simdjson_result<std::vector<T>> tag_invoke(deserialize_tag, std::type_identity<std::vector<T>>, jsonval &val) noexcept {
-  std::vector<T> vec;
+template <typename T, typename AllocT = std::allocator<T>>
+error_code tag_invoke(deserialize_tag, auto &val, std::vector<T, AllocT>& out) noexcept {
   array array;
   SIMDJSON_TRY(val.get_array().get(array));
   for (auto v : array) {
     T value;
     SIMDJSON_TRY(v.get<T>().get(value));
-    vec.push_back(value);
+    out.push_back(value);
   }
-  return vec;
+  return SUCCESS;
 }
 
-template <typename T, class jsonval>
-simdjson_result<std::list<T>> tag_invoke(deserialize_tag, std::type_identity<std::list<T>>, jsonval &val) noexcept {
-  std::list<T> vec;
+template <typename T, typename AllocT = std::allocator<T>>
+error_code tag_invoke(deserialize_tag, auto &val, std::list<T, AllocT>& out) noexcept {
   array array;
   SIMDJSON_TRY(val.get_array().get(array));
   for (auto v : array) {
     T value;
     SIMDJSON_TRY(v.get<T>().get(value));
-    vec.push_back(value);
+    out.push_back(value);
   }
-  return vec;
+  return SUCCESS;
 }
 }
 }
