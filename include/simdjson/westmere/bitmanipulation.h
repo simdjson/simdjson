@@ -46,7 +46,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
   else
     return 64;
 #else
-  return __builtin_clzll(input_num);
+  return input_num ? __builtin_clzll(input_num) : 64;
 #endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 

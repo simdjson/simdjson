@@ -30,7 +30,7 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
-  return __builtin_clzll(input_num);
+  return input_num ? __builtin_clzll(input_num) : 64;
 }
 
 /* result might be undefined when input_num is zero */
