@@ -35,6 +35,12 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num-1);
 }
 
+// We sometimes call leading_zeroes on inputs that are zero,
+// but the algorithms do not end up using the returned value.
+// Sadly, sanitizers are not smart enough to figure it out.
+// Applies only when SIMDJSON_PREFER_REVERSE_BITS is defined and true.
+// (See below.)
+SIMDJSON_NO_SANITIZE_UNDEFINED
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
