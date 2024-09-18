@@ -574,7 +574,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //

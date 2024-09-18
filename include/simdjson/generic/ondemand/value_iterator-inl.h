@@ -6,9 +6,9 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/generic/numberparsing.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/json_type-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
-#include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {

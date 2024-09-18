@@ -24,6 +24,6 @@ jobs:
             apt-get update -q -y
             apt-get install -y cmake make g++
           run: |
-            cmake -DCMAKE_BUILD_TYPE=Release -B build
+            cmake -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF  -B build
             cmake --build build -j=2
             ctest --output-on-failure --test-dir build
