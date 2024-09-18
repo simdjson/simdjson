@@ -1,4 +1,4 @@
-/* auto-generated on 2024-08-26 09:37:03 -0400. Do not edit! */
+/* auto-generated on 2024-09-17 15:48:50 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -284,6 +284,45 @@ using std::size_t;
 
 #endif
 
+
+
+#if defined __BYTE_ORDER__ && defined __ORDER_BIG_ENDIAN__
+#define SIMDJSON_IS_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#elif defined _WIN32
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#else
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <machine/endian.h>
+#elif defined(sun) || defined(__sun)
+#include <sys/byteorder.h>
+#elif defined(__MVS__)
+#include <sys/endian.h>
+#else
+#ifdef __has_include
+#if __has_include(<endian.h>)
+#include <endian.h>
+#endif //__has_include(<endian.h>)
+#endif //__has_include
+#endif
+#
+#ifndef __BYTE_ORDER__
+// safe choice
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#endif
+#
+#ifndef __ORDER_LITTLE_ENDIAN__
+// safe choice
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#endif
+#
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#else
+#define SIMDJSON_IS_BIG_ENDIAN 1
+#endif
+#endif
+
+
 #endif // SIMDJSON_PORTABILITY_H
 /* end file simdjson/portability.h */
 
@@ -549,7 +588,6 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#pragma once
 
 #ifndef NONSTD_SV_LITE_H_INCLUDED
 #define NONSTD_SV_LITE_H_INCLUDED
@@ -7639,6 +7677,12 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num-1);
 }
 
+// We sometimes call leading_zeroes on inputs that are zero,
+// but the algorithms do not end up using the returned value.
+// Sadly, sanitizers are not smart enough to figure it out.
+// Applies only when SIMDJSON_PREFER_REVERSE_BITS is defined and true.
+// (See below.)
+SIMDJSON_NO_SANITIZE_UNDEFINED
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
@@ -7811,7 +7855,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace arm64
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 /* end file simdjson/arm64/numberparsing_defs.h */
@@ -9428,7 +9478,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -10395,6 +10444,12 @@ simdjson_inline uint64_t clear_lowest_bit(uint64_t input_num) {
   return input_num & (input_num-1);
 }
 
+// We sometimes call leading_zeroes on inputs that are zero,
+// but the algorithms do not end up using the returned value.
+// Sadly, sanitizers are not smart enough to figure it out.
+// Applies only when SIMDJSON_PREFER_REVERSE_BITS is defined and true.
+// (See below.)
+SIMDJSON_NO_SANITIZE_UNDEFINED
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
 #ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
@@ -10567,7 +10622,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace arm64
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_ARM64_NUMBERPARSING_DEFS_H
 /* end file simdjson/arm64/numberparsing_defs.h */
@@ -15770,7 +15831,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -21984,7 +22044,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -26750,7 +26809,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace ppc64
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 /* end file simdjson/ppc64/numberparsing_defs.h */
@@ -28354,7 +28419,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -29494,7 +29558,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace ppc64
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_PPC64_NUMBERPARSING_DEFS_H
 /* end file simdjson/ppc64/numberparsing_defs.h */
@@ -35090,7 +35160,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -40176,7 +40245,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace lsx
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_LSX_NUMBERPARSING_DEFS_H
 /* end file simdjson/lsx/numberparsing_defs.h */
@@ -41650,7 +41725,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -42705,7 +42779,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace lsx
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_LSX_NUMBERPARSING_DEFS_H
 /* end file simdjson/lsx/numberparsing_defs.h */
@@ -46159,7 +46239,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace lasx
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_LASX_NUMBERPARSING_DEFS_H
 /* end file simdjson/lasx/numberparsing_defs.h */
@@ -47649,7 +47735,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -48704,7 +48789,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace lasx
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_LASX_NUMBERPARSING_DEFS_H
 /* end file simdjson/lasx/numberparsing_defs.h */
@@ -52188,7 +52279,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace fallback
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file simdjson/fallback/numberparsing_defs.h */
@@ -53247,7 +53344,6 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
 simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
-
   //
   // Check for minus sign
   //
@@ -54322,7 +54418,13 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace fallback
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_DEFS_H
 /* end file simdjson/fallback/numberparsing_defs.h */

@@ -36,6 +36,12 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 } // namespace lasx
 } // namespace simdjson
 
+#ifndef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_IS_BIG_ENDIAN
+#define SIMDJSON_SWAR_NUMBER_PARSING 0
+#else
 #define SIMDJSON_SWAR_NUMBER_PARSING 1
+#endif
+#endif
 
 #endif // SIMDJSON_LASX_NUMBERPARSING_DEFS_H
