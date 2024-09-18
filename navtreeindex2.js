@@ -1,9 +1,5 @@
 var NAVTREEINDEX2 =
 {
-"classsimdjson_1_1dom_1_1element.html#aca693f57d73a5ce95d1f7bedf67289b7":[11,0,0,0,3,48],
-"classsimdjson_1_1dom_1_1element.html#adadf66ec37675d5f3fac9816a8aacba2":[11,0,0,0,3,31],
-"classsimdjson_1_1dom_1_1element.html#ae38f84f4272ae3c32b32dd6d5007ffb9":[11,0,0,0,3,32],
-"classsimdjson_1_1dom_1_1element.html#ae3c0226046e29cfb0e868c5251a87e53":[11,0,0,0,3,44],
 "classsimdjson_1_1dom_1_1element.html#ae5ce6ad2e6036b4bb7a78261858bb337":[11,0,0,0,3,12],
 "classsimdjson_1_1dom_1_1element.html#ae83652b5016ce4d4ff71f8f9bc05913e":[11,0,0,0,3,24],
 "classsimdjson_1_1dom_1_1element.html#aeb155c47ef7bebcad79e1b7449734030":[11,0,0,0,3,2],
@@ -249,5 +245,9 @@ var NAVTREEINDEX2 =
 "haswell_2base_8h_source.html":[12,0,0,0,5,0],
 "haswell_2begin_8h_source.html":[12,0,0,0,5,1],
 "haswell_2bitmanipulation_8h_source.html":[12,0,0,0,5,2],
-"haswell_2bitmask_8h_source.html":[12,0,0,0,5,3]
+"haswell_2bitmask_8h_source.html":[12,0,0,0,5,3],
+"haswell_2end_8h_source.html":[12,0,0,0,5,4],
+"haswell_2implementation_8h_source.html":[12,0,0,0,5,5],
+"haswell_2intrinsics_8h_source.html":[12,0,0,0,5,6],
+"haswell_2numberparsing__defs_8h_source.html":[12,0,0,0,5,7]
 };
