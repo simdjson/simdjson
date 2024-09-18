@@ -10,8 +10,9 @@ namespace simdjson {
 
 // unique_ptr<T>
 template <typename T>
-auto tag_invoke(deserialize_tag, std::type_identity<std::unique_ptr<T>>, auto &val) {
-  return simdjson_result{std::make_unique<T>(val.template get<T>())};
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
+  out = std::make_unique<T>(val.template get<T>());
+  return SUCCESS;
 }
 
 } // namespace simdjson
@@ -26,13 +27,12 @@ struct Car {
   int64_t year{};
   std::vector<double> tire_pressure{};
 
-  friend simdjson_result<Car> tag_invoke(simdjson::deserialize_tag,
-                                         std::type_identity<Car>, auto &val) {
+  friend error_code tag_invoke(simdjson::deserialize_tag,
+                                         auto &val, Car& car) {
     simdjson::ondemand::object obj;
     if (auto const error = val.get_object().get(obj)) {
       return error;
     }
-    Car car{};
     // Instead of repeatedly obj["something"], we iterate through the object
     // which we expect to be faster.
     for (auto field : obj) {
@@ -59,29 +59,14 @@ struct Car {
         }
       }
     }
-    return car;
+    return error_code::SUCCESS;
   }
 };
 
-static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
-                                      std::type_identity<std::unique_ptr<Car>>,
-                                      simdjson::ondemand::value &>,
-              "It should be invocable");
-
-static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
-                                      std::type_identity<std::unique_ptr<Car>>,
-                                      simdjson::ondemand::document &>,
-              "Tag_invoke should work with document as well.");
-
-static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
-                                      std::type_identity<std::vector<Car>>,
-                                      simdjson::ondemand::value &>,
-              "It should be invocable");
-
-static_assert(simdjson::tag_invocable<simdjson::deserialize_tag,
-                                      std::type_identity<std::vector<Car>>,
-                                      simdjson::ondemand::document &>,
-              "Tag_invoke should work with document as well.");
+static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
+static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
 
 bool custom_test() {
   TEST_START();
