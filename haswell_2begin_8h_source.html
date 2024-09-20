@@ -97,14 +97,20 @@ $(document).ready(function(){initNavTree('haswell_2begin_8h_source.html',''); in
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/intrinsics.h&quot;</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#if !SIMDJSON_CAN_ALWAYS_RUN_HASWELL</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;SIMDJSON_TARGET_REGION(<span class="stringliteral">&quot;avx2,bmi,pclmul,lzcnt,popcnt&quot;</span>)</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/bitmanipulation.h&quot;</span></div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/bitmask.h&quot;</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/numberparsing_defs.h&quot;</span></div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/simd.h&quot;</span></div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/stringparsing_defs.h&quot;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment">// We enable bmi2 only if LLVM/clang is used, because GCC may not</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment">// make good use of it. See https://github.com/simdjson/simdjson/pull/2243</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="preprocessor">#if defined(__clang__)</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;SIMDJSON_TARGET_REGION(<span class="stringliteral">&quot;avx2,bmi,bmi2,pclmul,lzcnt,popcnt&quot;</span>)</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;SIMDJSON_TARGET_REGION(<span class="stringliteral">&quot;avx2,bmi,pclmul,lzcnt,popcnt&quot;</span>)</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/bitmanipulation.h&quot;</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/bitmask.h&quot;</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/numberparsing_defs.h&quot;</span></div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/simd.h&quot;</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &quot;simdjson/haswell/stringparsing_defs.h&quot;</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
