@@ -287,6 +287,7 @@ enable_testing()
 add_custom_target(all_tests)
 
 add_subdirectory(windows)
+include(cmake/CPM.cmake)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 
