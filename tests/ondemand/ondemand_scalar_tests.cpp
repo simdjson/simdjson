@@ -369,9 +369,7 @@ namespace scalar_tests {
     ondemand::parser parser;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
-    bool x;
-    ASSERT_SUCCESS(doc.is_null().get(x));
-    ASSERT_TRUE(!x);
+    ASSERT_ERROR(doc.is_null(), INCORRECT_TYPE);
     TEST_SUCCEED();
   }
 
