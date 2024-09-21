@@ -1998,6 +1998,7 @@ Performance tips</h1>
 <div class="line">  std::string_view year = data[&quot;year&quot;];</div>
 <div class="line">  std::string_view rating = data[&quot;rating&quot;];</div>
 </div><!-- fragment --></li>
+<li>You will get better performance if you seek the keys in the order in which they appear in the document. So if processing <code>{"a":1, "b":2, "c":3}</code>, do <code>value1 = data["a"]; value2 = data["b"]; value3 data["c"];</code> and not <code>value2 = data["b"]; value1 = data["a"]; value3 data["c"];</code>. Of course, it is not always possible to know for sure in which order the keys appear.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md35"></a>
 Further reading</h1>
