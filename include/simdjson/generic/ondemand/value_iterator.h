@@ -198,6 +198,13 @@ public:
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
 
+
+  /**
+   * Runs Func on each key found.
+   */
+  template <typename Func>
+  simdjson_warn_unused simdjson_inline error_code on_field_raw(Func&& func) noexcept;
+
   /**
    * Find the field with the given key without regard to order, and *without* unescaping.
    *
