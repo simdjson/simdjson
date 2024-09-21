@@ -13,8 +13,7 @@ function(add_dual_compile_test TEST_NAME)
   target_compile_definitions(${TEST_NAME}_should_not_compile PRIVATE COMPILATION_TEST_USE_FAILING_CODE=1)
 endfunction(add_dual_compile_test)
 
-add_dual_compile_test(iterate_object)
-add_dual_compile_test(iterate_array)
+
 add_dual_compile_test(iterate_char_star)
 add_dual_compile_test(iterate_string_view)
 add_dual_compile_test(iterate_temporary_buffer)

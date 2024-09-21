@@ -24,7 +24,7 @@ jobs:
              echo "no trailing whitespace found, good!"
           fi
       - name: Archive whitespace patch
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         if: always()
         with:
           name: whitespace-patch

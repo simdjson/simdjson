@@ -59,22 +59,6 @@ void compilation_test_3() {
     }
   }
 }
-
-// Do not run this, it is only meant to compile
-void compilation_test_4() {
-  const padded_string bogus = ""_padded;
-  ondemand::parser parser;
-  int64_t x1 = (int64_t)parser.iterate(bogus);
-  double x2 = (double)parser.iterate(bogus);
-  std::string_view x = (std::string_view)parser.iterate(bogus);
-  uint64_t x3 = (uint64_t)parser.iterate(bogus);
-  bool x4 = (bool)parser.iterate(bogus);
-  (void) x1;
-  (void) x2;
-  (void) x3;
-  (void) x4;
-  (void) x;
-}
 #endif // SIMDJSON_EXCEPTIONS
 
 int main(void) {

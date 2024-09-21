@@ -3,15 +3,17 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_DOCUMENT_INL_H
 #include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/array-inl.h"
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/document.h"
+#include "simdjson/generic/ondemand/json_iterator-inl.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion-inl.h"
 #include "simdjson/generic/ondemand/json_type.h"
+#include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/value-inl.h"
-#include "simdjson/generic/ondemand/array-inl.h"
-#include "simdjson/generic/ondemand/json_iterator-inl.h"
-#include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 #include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -180,9 +182,7 @@ template<> simdjson_inline error_code document::get(value& out) & noexcept { ret
 
 #if SIMDJSON_EXCEPTIONS
 template <class T>
-simdjson_deprecated simdjson_inline document::operator T() && noexcept(false) { return get<T>(); }
-template <class T>
-simdjson_inline document::operator T() & noexcept(false) { return get<T>(); }
+simdjson_inline document::operator T() noexcept(false) { return get<T>(); }
 simdjson_inline document::operator array() & noexcept(false) { return get_array(); }
 simdjson_inline document::operator object() & noexcept(false) { return get_object(); }
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
@@ -469,7 +469,7 @@ simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::onde
   return first.get<T>();
 }
 template<typename T>
-simdjson_deprecated simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() && noexcept {
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() && noexcept {
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>();
 }
@@ -485,7 +485,7 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::do
 }
 
 template<> simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() & noexcept = delete;
-template<> simdjson_deprecated simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() && noexcept {
+template<> simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get<SIMDJSON_IMPLEMENTATION::ondemand::document>() && noexcept {
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first);
 }

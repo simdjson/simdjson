@@ -6,6 +6,8 @@
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion.h"
+#include "simdjson/generic/ondemand/json_path_to_pointer_conversion-inl.h"
 #include "simdjson/generic/ondemand/json_type.h"
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"

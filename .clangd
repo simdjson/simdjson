@@ -25,7 +25,6 @@ CompileFlags:
 Diagnostics:
     Suppress:
         - pp_including_mainfile_in_preamble
-        - unused-includes
 ---
 # Amalgamated files that require or partly define an implementation
 If:

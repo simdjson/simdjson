@@ -323,10 +323,6 @@ class Amalgamator:
             for line in fid2:
                 line = line.rstrip('\n')
 
-                # Ignore #pragma once, it causes warnings if it ends up in a .cpp file
-                if re.search(r'^#pragma once$', line):
-                    continue
-
                 # Ignore lines inside #ifndef SIMDJSON_CONDITIONAL_INCLUDE
                 if re.search(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
                     assert file.is_conditional_include, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE but is not an amalgamated file!"
