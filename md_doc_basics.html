@@ -240,7 +240,7 @@ Parser, document and JSON scope</h2>
 <p>For code safety, you should keep (1) the <code>parser</code> instance, (2) the input string and (3) the document instance alive throughout your parsing. Additionally, you should follow the following rules:</p>
 <ul>
 <li>A <code>parser</code> may have at most one document open at a time, since it holds allocated memory used for the parsing.</li>
-<li>By design, you should only have one <code>document</code> instance per JSON document. Thus, if you must pass a document instance to a function, you should avoid passing it by value: choose to pass it by reference instance to avoid the copy. (We also provide a <code>document_reference</code> class if you need to pass by value.)</li>
+<li>By design, you should only have one <code>document</code> instance per JSON document. Thus, if you must pass a document instance to a function, you should avoid passing it by value: choose to pass it by reference instance to avoid the copy. In any case, the <code>document</code> class does not have a copy constructor.</li>
 </ul>
 <p>During the <code>iterate</code> call, the original JSON text is never modified&ndash;only read. After you are done with the document, the source (whether file or string) can be safely discarded.</p>
 <p>For best performance, a <code>parser</code> instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. <a class="el" href="md_doc_performance.html">See our performance notes for details</a>.</p>
