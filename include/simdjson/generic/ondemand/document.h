@@ -691,6 +691,11 @@ protected:
 
 /**
  * A document_reference is a thin wrapper around a document reference instance.
+ * The document_reference instances are used primarily/solely for streams of JSON
+ * documents. They differ from document instances when parsing a scalar value
+ * (a document that is not an array or an object). In the case of a document,
+ * we expect the document to be fully consumed. In the case of a document_reference,
+ * we allow trailing content.
  */
 class document_reference {
 public:
