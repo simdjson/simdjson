@@ -73,7 +73,7 @@ struct simdjson_ondemand_extract {
         }},
         to{"retweet_count", t.retweet_count},
         to{"favorite_count", t.favorite_count});
-        if(error) { throw simdjson_error(error); }
+        if(error) { return false; }
         result.push_back(t);
     }
     return true;
