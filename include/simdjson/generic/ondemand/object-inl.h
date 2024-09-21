@@ -18,12 +18,23 @@ namespace ondemand {
 
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
 
+
+#ifdef _MSC_VER
 template <endpoint ...Funcs>
-simdjson_inline error_code object::extract(Funcs&&... endpoints)
-#ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
- noexcept((nothrow_endpoint<Funcs> && ...))
-#endif
-{
+simdjson_inline error_code object::extract(Funcs&&... endpoints) {
+  return iter.on_field_raw([&, eps = std::make_tuple(std::forward<Funcs>(endpoints)...)](auto field_key, error_code& error) mutable {
+    std::apply([&](auto &...endpoints) {
+       std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(value(iter.child()))) == SUCCESS : true) && ...);
+    }, eps);
+    if (error) {
+      return true;
+    }
+    return false;
+  });
+}
+#else
+template <endpoint ...Funcs>
+simdjson_inline error_code object::extract(Funcs&&... endpoints) noexcept((nothrow_endpoint<Funcs> && ...)) {
   return iter.on_field_raw([&](auto field_key, error_code& error) noexcept((nothrow_endpoint<Funcs> && ...)) {
     std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(value(iter.child()))) == SUCCESS : true) && ...);
     if (error) {
@@ -32,6 +43,7 @@ simdjson_inline error_code object::extract(Funcs&&... endpoints)
     return false;
   });
 }
+#endif
 
 template <typename T>
 struct to {
