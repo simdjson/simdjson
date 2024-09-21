@@ -9,7 +9,7 @@ namespace simdjson {
 namespace fallback {
 namespace {
 
-#if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
+#if SIMDJSON_REGULAR_VISUAL_STUDIO && !defined(_M_ARM64) && !defined(_M_X64)
 static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
   unsigned long x0 = (unsigned long)x, top, bottom;
   _BitScanForward(&top, (unsigned long)(x >> 32));
@@ -28,7 +28,7 @@ static unsigned char _BitScanReverse64(unsigned long* ret, uint64_t x) {
 
 /* result might be undefined when input_num is zero */
 simdjson_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
@@ -38,7 +38,7 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 } // unnamed namespace

@@ -86,7 +86,7 @@ public:
    */
   template <endpoint ...Funcs>
   simdjson_inline error_code extract(Funcs&&... endpoints)
-#ifndef _MSC_VER // msvc thinks noexcept is not the same in definition
+#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO // msvc thinks noexcept is not the same in definition
  noexcept((nothrow_endpoint<Funcs> && ...))
 #endif
  ;

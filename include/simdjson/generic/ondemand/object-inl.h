@@ -19,7 +19,7 @@ namespace ondemand {
 #ifdef SIMDJSON_SUPPORTS_EXTRACT
 
 
-#ifdef _MSC_VER
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
 template <endpoint ...Funcs>
 simdjson_inline error_code object::extract(Funcs&&... endpoints) {
   return iter.on_field_raw([&, eps = std::make_tuple(std::forward<Funcs>(endpoints)...)](auto field_key, error_code& error) mutable {
