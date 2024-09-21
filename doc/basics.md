@@ -2673,6 +2673,7 @@ Performance tips
 	std::string_view year = data["year"];
 	std::string_view rating = data["rating"];
   ```
+- You will get better performance if you seek the keys in the order in which they appear in the document. So if processing `{"a":1, "b":2, "c":3}`, do `value1 = data["a"]; value2 = data["b"]; value3 data["c"];` and not `value2 = data["b"]; value1 = data["a"]; value3 data["c"];`. Of course, it is not always possible to know for sure in which order the keys appear.
 
 
 
