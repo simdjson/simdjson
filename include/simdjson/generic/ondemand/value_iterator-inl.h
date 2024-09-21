@@ -111,8 +111,16 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
 }
 
 template <typename Func>
-simdjson_warn_unused simdjson_inline error_code value_iterator::on_field_raw(Func&& func) noexcept {
-  static_assert(std::is_nothrow_invocable_r<bool, Func, raw_json_string, error_code&>::value, "Invalid function provided.");
+simdjson_warn_unused simdjson_inline error_code value_iterator::on_field_raw(Func&& func)
+#ifdef __cpp_lib_is_invocable
+  noexcept(std::is_nothrow_invocable_r_v<bool, Func, raw_json_string, error_code&>)
+#else
+  noexcept(false)
+#endif
+{
+#ifdef __cpp_lib_is_invocable
+  static_assert(std::is_invocable_r_v<bool, Func, raw_json_string, error_code&>, "Invalid function provided.");
+#endif
 
   error_code error = SUCCESS;
   bool has_value;

@@ -24,7 +24,7 @@ simdjson_inline error_code object::extract(Funcs&&... endpoints)
  noexcept((nothrow_endpoint<Funcs> && ...))
 #endif
 {
-  return iter.on_field_raw([&](auto field_key, error_code& error) noexcept {
+  return iter.on_field_raw([&](auto field_key, error_code& error) noexcept((nothrow_endpoint<Funcs> && ...)) {
     std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(value(iter.child()))) == SUCCESS : true) && ...);
     if (error) {
       return true;
