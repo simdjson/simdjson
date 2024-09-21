@@ -884,291 +884,293 @@ $(document).ready(function(){initNavTree('value__iterator-inl_8h_source.html',''
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;  <span class="keywordflow">if</span>(result) { <span class="comment">// we have something that looks like a null.</span></div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;    <span class="keywordflow">if</span> (check_trailing &amp;&amp; !_json_iter-&gt;is_single_token()) { <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ab70f5a6f0ac798d482e95a0fcc528676">TRAILING_CONTENT</a>; }</div>
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;    advance_root_scalar(<span class="stringliteral">&quot;null&quot;</span>);</div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;  }</div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;  <span class="keywordflow">return</span> result;</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;}</div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160; </div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::skip_child() noexcept {</div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth &gt;= _depth );</div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160; </div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;skip_child(depth());</div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;}</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160; </div>
-<div class="line"><a name="l00813"></a><span class="lineno"><a class="line" href="group__array.html#gaba7c4e5787c7295da3a0d73b0db1c890">  813</a></span>&#160;simdjson_inline value_iterator value_iterator::child() const noexcept {</div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;  assert_at_child();</div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;  <span class="keywordflow">return</span> { _json_iter, depth()+1, _json_iter-&gt;token.position() };</div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;}</div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160; </div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;<span class="comment">// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller</span></div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;<span class="comment">// relating depth and iterator depth, which is a desired effect. It does not happen if is_open is</span></div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;<span class="comment">// marked non-inline.</span></div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;SIMDJSON_PUSH_DISABLE_WARNINGS</div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_open() const noexcept {</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;depth() &gt;= depth();</div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;}</div>
-<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;SIMDJSON_POP_DISABLE_WARNINGS</div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160; </div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_end() const noexcept {</div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;at_end();</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;}</div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160; </div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_start() const noexcept {</div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;token.position() == start_position();</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;}</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160; </div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_first_field() const noexcept {</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;token.position() == start_position() + 1;</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;}</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160; </div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::abandon() noexcept {</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;  _json_iter-&gt;abandon();</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;}</div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160; </div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">depth_t</a> value_iterator::depth() const noexcept {</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;  <span class="keywordflow">return</span> _depth;</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;}</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::error() const noexcept {</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;error;</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;}</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;simdjson_warn_unused simdjson_inline uint8_t *&amp;value_iterator::string_buf_loc() noexcept {</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;string_buf_loc();</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;}</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;simdjson_warn_unused simdjson_inline <span class="keyword">const</span> json_iterator &amp;value_iterator::json_iter() const noexcept {</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;  <span class="keywordflow">return</span> *_json_iter;</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;}</div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;simdjson_warn_unused simdjson_inline json_iterator &amp;value_iterator::json_iter() noexcept {</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;  <span class="keywordflow">return</span> *_json_iter;</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;}</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160; </div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_start() const noexcept {</div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek(start_position());</div>
-<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;}</div>
-<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;simdjson_inline uint32_t value_iterator::peek_start_length() const noexcept {</div>
-<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek_length(start_position());</div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;}</div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;simdjson_inline uint32_t value_iterator::peek_root_length() const noexcept {</div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek_root_length(start_position());</div>
-<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;}</div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160; </div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
-<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
-<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160; </div>
-<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;  <span class="comment">// Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.</span></div>
-<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;  assert_at_start();</div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
-<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;}</div>
-<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160; </div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
-<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160; </div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;  <span class="comment">// Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.</span></div>
-<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;  assert_at_start();</div>
-<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
-<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;}</div>
-<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160; </div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::start_container(uint8_t start_char, <span class="keyword">const</span> <span class="keywordtype">char</span> *incorrect_type_message, <span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;  logger::log_start_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
-<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;  <span class="keyword">const</span> uint8_t *json;</div>
-<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) {</div>
-<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;<span class="preprocessor">#if SIMDJSON_DEVELOPMENT_CHECKS</span></div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;    <span class="keywordflow">if</span> (!is_at_iterator_start()) { <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a351bcafefbbc80a6dadc1ea6c27a35e6">OUT_OF_ORDER_ITERATION</a>; }</div>
-<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;    json = peek_start();</div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;    <span class="keywordflow">if</span> (*json != start_char) { <span class="keywordflow">return</span> incorrect_type_error(incorrect_type_message); }</div>
-<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;    assert_at_start();</div>
-<div class="line"><a name="l00909"></a><span class="lineno">  909</span>&#160;    json = _json_iter-&gt;peek();</div>
-<div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;    <span class="keywordflow">if</span> (*json != start_char) { <span class="keywordflow">return</span> incorrect_type_error(incorrect_type_message); }</div>
-<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;    _json_iter-&gt;return_current_and_advance();</div>
-<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;  }</div>
-<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160; </div>
-<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160; </div>
-<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a>;</div>
-<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;}</div>
-<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160; </div>
-<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160; </div>
-<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
-<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160; </div>
-<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;  assert_at_root();</div>
-<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
-<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;}</div>
-<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_non_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
-<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160; </div>
-<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;  assert_at_non_root_start();</div>
-<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;}</div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160; </div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160; </div>
-<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;  assert_at_root();</div>
-<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
-<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
-<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;}</div>
-<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_non_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
-<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
-<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
-<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160; </div>
-<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;  assert_at_non_root_start();</div>
-<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
-<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
-<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;}</div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160; </div>
-<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::incorrect_type_error(<span class="keyword">const</span> <span class="keywordtype">char</span> *message) <span class="keyword">const</span> noexcept {</div>
-<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;  logger::log_error(*_json_iter, start_position(), depth(), message);</div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a1de02af1d67e8350f612eee0dcf634b4">INCORRECT_TYPE</a>;</div>
-<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;}</div>
-<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160; </div>
-<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_start() const noexcept {</div>
-<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;  <span class="keywordflow">return</span> position() == start_position();</div>
-<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;}</div>
-<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160; </div>
-<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_key() const noexcept {</div>
-<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;  <span class="comment">// Keys are at the same depth as the object.</span></div>
-<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;  <span class="comment">// Note here that we could be safer and check that we are within an object,</span></div>
-<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;  <span class="comment">// but we do not.</span></div>
-<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;  <span class="keywordflow">return</span> _depth == _json_iter-&gt;_depth &amp;&amp; *_json_iter-&gt;peek() == <span class="charliteral">&#39;&quot;&#39;</span>;</div>
-<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;}</div>
-<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160; </div>
-<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_iterator_start() const noexcept {</div>
-<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;  <span class="comment">// We can legitimately be either at the first value ([1]), or after the array if it&#39;s empty ([]).</span></div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;  <span class="keyword">auto</span> delta = position() - start_position();</div>
-<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;  <span class="keywordflow">return</span> delta == 1 || delta == 2;</div>
-<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;}</div>
-<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160; </div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_start() const noexcept {</div>
-<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position == _start_position );</div>
-<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
-<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
-<div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;}</div>
-<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160; </div>
-<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_container_start() const noexcept {</div>
-<div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position == _start_position + 1 );</div>
-<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
-<div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
-<div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;}</div>
-<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160; </div>
-<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_next() const noexcept {</div>
-<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
-<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
-<div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
-<div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;}</div>
-<div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160; </div>
-<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::move_at_start() noexcept {</div>
-<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160;  _json_iter-&gt;_depth = _depth;</div>
-<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;  _json_iter-&gt;token.set_position(_start_position);</div>
-<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;}</div>
-<div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160; </div>
-<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::move_at_container_start() noexcept {</div>
-<div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160;  _json_iter-&gt;_depth = _depth;</div>
-<div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;  _json_iter-&gt;token.set_position(_start_position + 1);</div>
-<div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;}</div>
-<div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160; </div>
-<div class="line"><a name="l01001"></a><span class="lineno"> 1001</span>&#160;simdjson_inline simdjson_result&lt;bool&gt; value_iterator::reset_array() noexcept {</div>
-<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160;  <span class="keywordflow">if</span>(error()) { <span class="keywordflow">return</span> error(); }</div>
-<div class="line"><a name="l01003"></a><span class="lineno"> 1003</span>&#160;  move_at_container_start();</div>
-<div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160;  <span class="keywordflow">return</span> started_array();</div>
-<div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;}</div>
-<div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160; </div>
-<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;simdjson_inline simdjson_result&lt;bool&gt; value_iterator::reset_object() noexcept {</div>
-<div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160;  <span class="keywordflow">if</span>(error()) { <span class="keywordflow">return</span> error(); }</div>
-<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;  move_at_container_start();</div>
-<div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;  <span class="keywordflow">return</span> started_object();</div>
-<div class="line"><a name="l01011"></a><span class="lineno"> 1011</span>&#160;}</div>
-<div class="line"><a name="l01012"></a><span class="lineno"> 1012</span>&#160; </div>
-<div class="line"><a name="l01013"></a><span class="lineno"> 1013</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_child() const noexcept {</div>
-<div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
-<div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth + 1 );</div>
-<div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
-<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;}</div>
-<div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160; </div>
-<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_root() const noexcept {</div>
-<div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;  assert_at_start();</div>
-<div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160;  SIMDJSON_ASSUME( _depth == 1 );</div>
-<div class="line"><a name="l01022"></a><span class="lineno"> 1022</span>&#160;}</div>
-<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160; </div>
-<div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_non_root_start() const noexcept {</div>
-<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;  assert_at_start();</div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 1 );</div>
-<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;}</div>
-<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160; </div>
-<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_is_valid() const noexcept {</div>
-<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;  SIMDJSON_ASSUME( _json_iter != <span class="keyword">nullptr</span> );</div>
-<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;}</div>
-<div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160; </div>
-<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_valid() const noexcept {</div>
-<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;  <span class="keywordflow">return</span> _json_iter != <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;}</div>
-<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160; </div>
-<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;simdjson_inline simdjson_result&lt;json_type&gt; value_iterator::type() const noexcept {</div>
-<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;  <span class="keywordflow">switch</span> (*peek_start()) {</div>
-<div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>:</div>
-<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330aa8cfde6331bd59eb2ac96f8911c4b666">json_type::object</a>;</div>
-<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:</div>
-<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330af1f713c9e000f5d3f280adbd124df4f5">json_type::array</a>;</div>
-<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;&quot;&#39;</span>:</div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab45cffe084dd3d20d928bee85e7b0f21">json_type::string</a>;</div>
-<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;n&#39;</span>:</div>
-<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd">json_type::null</a>;</div>
-<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;t&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;f&#39;</span>:</div>
-<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a84e2c64f38f78ba3ea5c905ab5a2da27">json_type::boolean</a>;</div>
-<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;-&#39;</span>:</div>
-<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;0&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;1&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;2&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;3&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;4&#39;</span>:</div>
-<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;5&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;6&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;7&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;8&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;9&#39;</span>:</div>
-<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">json_type::number</a>;</div>
-<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;    <span class="keywordflow">default</span>:</div>
-<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4005fbda56edc47e077e5cfd4e68cda9">TAPE_ERROR</a>;</div>
-<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;  }</div>
-<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;}</div>
-<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160; </div>
-<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;simdjson_inline token_position value_iterator::start_position() const noexcept {</div>
-<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;  <span class="keywordflow">return</span> _start_position;</div>
-<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;}</div>
-<div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160; </div>
-<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;simdjson_inline token_position value_iterator::position() const noexcept {</div>
-<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;position();</div>
-<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;}</div>
-<div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160; </div>
-<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;simdjson_inline token_position value_iterator::end_position() const noexcept {</div>
-<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;end_position();</div>
-<div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;}</div>
-<div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160; </div>
-<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;simdjson_inline token_position value_iterator::last_position() const noexcept {</div>
-<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;last_position();</div>
-<div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;}</div>
-<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160; </div>
-<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::report_error(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error, <span class="keyword">const</span> <span class="keywordtype">char</span> *message) noexcept {</div>
-<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;report_error(error, message);</div>
-<div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;}</div>
-<div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160; </div>
-<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;} <span class="comment">// namespace ondemand</span></div>
-<div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160; </div>
-<div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (json[0] == <span class="charliteral">&#39;n&#39;</span>) {</div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;    <span class="keywordflow">return</span> incorrect_type_error(<span class="stringliteral">&quot;Not a null but starts with n&quot;</span>);</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;  }</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;  <span class="keywordflow">return</span> result;</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;}</div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160; </div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::skip_child() noexcept {</div>
+<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth &gt;= _depth );</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160; </div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;skip_child(depth());</div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;}</div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160; </div>
+<div class="line"><a name="l00815"></a><span class="lineno"><a class="line" href="group__array.html#gaba7c4e5787c7295da3a0d73b0db1c890">  815</a></span>&#160;simdjson_inline value_iterator value_iterator::child() const noexcept {</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;  assert_at_child();</div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;  <span class="keywordflow">return</span> { _json_iter, depth()+1, _json_iter-&gt;token.position() };</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;}</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160; </div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;<span class="comment">// GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller</span></div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;<span class="comment">// relating depth and iterator depth, which is a desired effect. It does not happen if is_open is</span></div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;<span class="comment">// marked non-inline.</span></div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;SIMDJSON_PUSH_DISABLE_WARNINGS</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING</div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_open() const noexcept {</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;depth() &gt;= depth();</div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;}</div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;SIMDJSON_POP_DISABLE_WARNINGS</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160; </div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_end() const noexcept {</div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;at_end();</div>
+<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;}</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160; </div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_start() const noexcept {</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;token.position() == start_position();</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;}</div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160; </div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::at_first_field() const noexcept {</div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;token.position() == start_position() + 1;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;}</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160; </div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::abandon() noexcept {</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;  _json_iter-&gt;abandon();</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;}</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160; </div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#af941be7ff0cfaeb30d15d2fb52e76dd1">depth_t</a> value_iterator::depth() const noexcept {</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;  <span class="keywordflow">return</span> _depth;</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;}</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;simdjson_warn_unused simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::error() const noexcept {</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;error;</div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;}</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;simdjson_warn_unused simdjson_inline uint8_t *&amp;value_iterator::string_buf_loc() noexcept {</div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;string_buf_loc();</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;}</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;simdjson_warn_unused simdjson_inline <span class="keyword">const</span> json_iterator &amp;value_iterator::json_iter() const noexcept {</div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;  <span class="keywordflow">return</span> *_json_iter;</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;}</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;simdjson_warn_unused simdjson_inline json_iterator &amp;value_iterator::json_iter() noexcept {</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;  <span class="keywordflow">return</span> *_json_iter;</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;}</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160; </div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_start() const noexcept {</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek(start_position());</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;}</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;simdjson_inline uint32_t value_iterator::peek_start_length() const noexcept {</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek_length(start_position());</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;}</div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;simdjson_inline uint32_t value_iterator::peek_root_length() const noexcept {</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek_root_length(start_position());</div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;}</div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160; </div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160; </div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;  <span class="comment">// Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.</span></div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;  assert_at_start();</div>
+<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
+<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;}</div>
+<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160; </div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
+<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160; </div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;  <span class="comment">// Get the JSON and advance the cursor, decreasing depth to signify that we have retrieved the value.</span></div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;  assert_at_start();</div>
+<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
+<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;}</div>
+<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160; </div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::start_container(uint8_t start_char, <span class="keyword">const</span> <span class="keywordtype">char</span> *incorrect_type_message, <span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;  logger::log_start_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;  <span class="comment">// If we&#39;re not at the position anymore, we don&#39;t want to advance the cursor.</span></div>
+<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;  <span class="keyword">const</span> uint8_t *json;</div>
+<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) {</div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;<span class="preprocessor">#if SIMDJSON_DEVELOPMENT_CHECKS</span></div>
+<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;    <span class="keywordflow">if</span> (!is_at_iterator_start()) { <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a351bcafefbbc80a6dadc1ea6c27a35e6">OUT_OF_ORDER_ITERATION</a>; }</div>
+<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;    json = peek_start();</div>
+<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;    <span class="keywordflow">if</span> (*json != start_char) { <span class="keywordflow">return</span> incorrect_type_error(incorrect_type_message); }</div>
+<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;  } <span class="keywordflow">else</span> {</div>
+<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;    assert_at_start();</div>
+<div class="line"><a name="l00911"></a><span class="lineno">  911</span>&#160;    json = _json_iter-&gt;peek();</div>
+<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;    <span class="keywordflow">if</span> (*json != start_char) { <span class="keywordflow">return</span> incorrect_type_error(incorrect_type_message); }</div>
+<div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;    _json_iter-&gt;return_current_and_advance();</div>
+<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;  }</div>
+<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160; </div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160; </div>
+<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a>;</div>
+<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;}</div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160; </div>
+<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160; </div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
+<div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160; </div>
+<div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;  assert_at_root();</div>
+<div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
+<div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;}</div>
+<div class="line"><a name="l00928"></a><span class="lineno">  928</span>&#160;simdjson_inline <span class="keyword">const</span> uint8_t *value_iterator::peek_non_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00929"></a><span class="lineno">  929</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00930"></a><span class="lineno">  930</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span> peek_start(); }</div>
+<div class="line"><a name="l00931"></a><span class="lineno">  931</span>&#160; </div>
+<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;  assert_at_non_root_start();</div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;peek();</div>
+<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;}</div>
+<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160; </div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160; </div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;  assert_at_root();</div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;}</div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::advance_non_root_scalar(<span class="keyword">const</span> <span class="keywordtype">char</span> *type) noexcept {</div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;  logger::log_value(*_json_iter, start_position(), depth(), type);</div>
+<div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;  <span class="keywordflow">if</span> (!is_at_start()) { <span class="keywordflow">return</span>; }</div>
+<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160; </div>
+<div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;  assert_at_non_root_start();</div>
+<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;  _json_iter-&gt;return_current_and_advance();</div>
+<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;  _json_iter-&gt;ascend_to(depth()-1);</div>
+<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;}</div>
+<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160; </div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::incorrect_type_error(<span class="keyword">const</span> <span class="keywordtype">char</span> *message) <span class="keyword">const</span> noexcept {</div>
+<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;  logger::log_error(*_json_iter, start_position(), depth(), message);</div>
+<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;  <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a1de02af1d67e8350f612eee0dcf634b4">INCORRECT_TYPE</a>;</div>
+<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;}</div>
+<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160; </div>
+<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_start() const noexcept {</div>
+<div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;  <span class="keywordflow">return</span> position() == start_position();</div>
+<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;}</div>
+<div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160; </div>
+<div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_key() const noexcept {</div>
+<div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;  <span class="comment">// Keys are at the same depth as the object.</span></div>
+<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;  <span class="comment">// Note here that we could be safer and check that we are within an object,</span></div>
+<div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;  <span class="comment">// but we do not.</span></div>
+<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;  <span class="keywordflow">return</span> _depth == _json_iter-&gt;_depth &amp;&amp; *_json_iter-&gt;peek() == <span class="charliteral">&#39;&quot;&#39;</span>;</div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;}</div>
+<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160; </div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_at_iterator_start() const noexcept {</div>
+<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;  <span class="comment">// We can legitimately be either at the first value ([1]), or after the array if it&#39;s empty ([]).</span></div>
+<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;  <span class="keyword">auto</span> delta = position() - start_position();</div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;  <span class="keywordflow">return</span> delta == 1 || delta == 2;</div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;}</div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160; </div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_start() const noexcept {</div>
+<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position == _start_position );</div>
+<div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
+<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
+<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;}</div>
+<div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160; </div>
+<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_container_start() const noexcept {</div>
+<div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position == _start_position + 1 );</div>
+<div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
+<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
+<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;}</div>
+<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160; </div>
+<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_next() const noexcept {</div>
+<div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
+<div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth );</div>
+<div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
+<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;}</div>
+<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160; </div>
+<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::move_at_start() noexcept {</div>
+<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;  _json_iter-&gt;_depth = _depth;</div>
+<div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160;  _json_iter-&gt;token.set_position(_start_position);</div>
+<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;}</div>
+<div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160; </div>
+<div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;simdjson_inline <span class="keywordtype">void</span> value_iterator::move_at_container_start() noexcept {</div>
+<div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;  _json_iter-&gt;_depth = _depth;</div>
+<div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160;  _json_iter-&gt;token.set_position(_start_position + 1);</div>
+<div class="line"><a name="l01001"></a><span class="lineno"> 1001</span>&#160;}</div>
+<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160; </div>
+<div class="line"><a name="l01003"></a><span class="lineno"> 1003</span>&#160;simdjson_inline simdjson_result&lt;bool&gt; value_iterator::reset_array() noexcept {</div>
+<div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160;  <span class="keywordflow">if</span>(error()) { <span class="keywordflow">return</span> error(); }</div>
+<div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;  move_at_container_start();</div>
+<div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160;  <span class="keywordflow">return</span> started_array();</div>
+<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;}</div>
+<div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160; </div>
+<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;simdjson_inline simdjson_result&lt;bool&gt; value_iterator::reset_object() noexcept {</div>
+<div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;  <span class="keywordflow">if</span>(error()) { <span class="keywordflow">return</span> error(); }</div>
+<div class="line"><a name="l01011"></a><span class="lineno"> 1011</span>&#160;  move_at_container_start();</div>
+<div class="line"><a name="l01012"></a><span class="lineno"> 1012</span>&#160;  <span class="keywordflow">return</span> started_object();</div>
+<div class="line"><a name="l01013"></a><span class="lineno"> 1013</span>&#160;}</div>
+<div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160; </div>
+<div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_child() const noexcept {</div>
+<div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;token._position &gt; _start_position );</div>
+<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;  SIMDJSON_ASSUME( _json_iter-&gt;_depth == _depth + 1 );</div>
+<div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 0 );</div>
+<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;}</div>
+<div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160; </div>
+<div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_root() const noexcept {</div>
+<div class="line"><a name="l01022"></a><span class="lineno"> 1022</span>&#160;  assert_at_start();</div>
+<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;  SIMDJSON_ASSUME( _depth == 1 );</div>
+<div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;}</div>
+<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160; </div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_at_non_root_start() const noexcept {</div>
+<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;  assert_at_start();</div>
+<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;  SIMDJSON_ASSUME( _depth &gt; 1 );</div>
+<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;}</div>
+<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160; </div>
+<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span> value_iterator::assert_is_valid() const noexcept {</div>
+<div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;  SIMDJSON_ASSUME( _json_iter != <span class="keyword">nullptr</span> );</div>
+<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;}</div>
+<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160; </div>
+<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;simdjson_inline <span class="keywordtype">bool</span> value_iterator::is_valid() const noexcept {</div>
+<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;  <span class="keywordflow">return</span> _json_iter != <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;}</div>
+<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160; </div>
+<div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;simdjson_inline simdjson_result&lt;json_type&gt; value_iterator::type() const noexcept {</div>
+<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;  <span class="keywordflow">switch</span> (*peek_start()) {</div>
+<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;{&#39;</span>:</div>
+<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330aa8cfde6331bd59eb2ac96f8911c4b666">json_type::object</a>;</div>
+<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;[&#39;</span>:</div>
+<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330af1f713c9e000f5d3f280adbd124df4f5">json_type::array</a>;</div>
+<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;&quot;&#39;</span>:</div>
+<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab45cffe084dd3d20d928bee85e7b0f21">json_type::string</a>;</div>
+<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;n&#39;</span>:</div>
+<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd">json_type::null</a>;</div>
+<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;t&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;f&#39;</span>:</div>
+<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a84e2c64f38f78ba3ea5c905ab5a2da27">json_type::boolean</a>;</div>
+<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;-&#39;</span>:</div>
+<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;0&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;1&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;2&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;3&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;4&#39;</span>:</div>
+<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;    <span class="keywordflow">case</span> <span class="charliteral">&#39;5&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;6&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;7&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;8&#39;</span>: <span class="keywordflow">case</span> <span class="charliteral">&#39;9&#39;</span>:</div>
+<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">json_type::number</a>;</div>
+<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;    <span class="keywordflow">default</span>:</div>
+<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;      <span class="keywordflow">return</span> <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4005fbda56edc47e077e5cfd4e68cda9">TAPE_ERROR</a>;</div>
+<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;  }</div>
+<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;}</div>
+<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160; </div>
+<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;simdjson_inline token_position value_iterator::start_position() const noexcept {</div>
+<div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;  <span class="keywordflow">return</span> _start_position;</div>
+<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;}</div>
+<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160; </div>
+<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;simdjson_inline token_position value_iterator::position() const noexcept {</div>
+<div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;position();</div>
+<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;}</div>
+<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160; </div>
+<div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;simdjson_inline token_position value_iterator::end_position() const noexcept {</div>
+<div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;end_position();</div>
+<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;}</div>
+<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160; </div>
+<div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;simdjson_inline token_position value_iterator::last_position() const noexcept {</div>
+<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;last_position();</div>
+<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;}</div>
+<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160; </div>
+<div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;simdjson_inline <a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> value_iterator::report_error(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error, <span class="keyword">const</span> <span class="keywordtype">char</span> *message) noexcept {</div>
+<div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;  <span class="keywordflow">return</span> _json_iter-&gt;report_error(error, message);</div>
+<div class="line"><a name="l01078"></a><span class="lineno"> 1078</span>&#160;}</div>
+<div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160; </div>
+<div class="line"><a name="l01080"></a><span class="lineno"> 1080</span>&#160;} <span class="comment">// namespace ondemand</span></div>
+<div class="line"><a name="l01081"></a><span class="lineno"> 1081</span>&#160;} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a name="l01082"></a><span class="lineno"> 1082</span>&#160;} <span class="comment">// namespace simdjson</span></div>
 <div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160; </div>
-<div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::value_iterator &amp;&amp;value) noexcept</div>
-<div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(value)) {}</div>
-<div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;::simdjson_result(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</div>
-<div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(error) {}</div>
-<div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160; </div>
-<div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160; </div>
+<div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;::simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::value_iterator &amp;&amp;value) noexcept</div>
+<div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(std::forward&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(value)) {}</div>
+<div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;simdjson_inline simdjson_result&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;::simdjson_result(<a class="code" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) noexcept</div>
+<div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160;    : implementation_simdjson_result_base&lt;SIMDJSON_IMPLEMENTATION::ondemand::value_iterator&gt;(error) {}</div>
 <div class="line"><a name="l01090"></a><span class="lineno"> 1090</span>&#160; </div>
-<div class="line"><a name="l01091"></a><span class="lineno"> 1091</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H</span></div>
+<div class="line"><a name="l01091"></a><span class="lineno"> 1091</span>&#160;} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a name="l01092"></a><span class="lineno"> 1092</span>&#160; </div>
+<div class="line"><a name="l01093"></a><span class="lineno"> 1093</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H</span></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string</a></div><div class="ttdoc">A string escaped per JSON rules, terminated with quote (&quot;).</div><div class="ttdef"><b>Definition:</b> <a href="raw__json__string_8h_source.html#l00036">raw_json_string.h:36</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_html_affa14023a66c65f906ee3e673443d943"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html#affa14023a66c65f906ee3e673443d943">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string::unsafe_is_equal</a></div><div class="ttdeci">simdjson_inline bool unsafe_is_equal(size_t length, std::string_view target) const noexcept</div><div class="ttdoc">This compares the current instance to the std::string_view target: returns true if they are byte-by-b...</div><div class="ttdef"><b>Definition:</b> <a href="raw__json__string-inl_8h_source.html#l00058">raw_json_string-inl.h:58</a></div></div>
 <div class="ttc" id="anamespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_html_ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd"><div class="ttname"><a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::json_type::null</a></div><div class="ttdeci">@ null</div><div class="ttdoc">A JSON null (null)</div></div>
