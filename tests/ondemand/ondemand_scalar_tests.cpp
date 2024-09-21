@@ -369,15 +369,24 @@ namespace scalar_tests {
     ondemand::parser parser;
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
-    bool x;
-    ASSERT_SUCCESS(doc.is_null().get(x));
-    ASSERT_TRUE(!x);
+    ASSERT_ERROR(doc.is_null(), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
+
+  bool nul() {
+    TEST_START();
+    auto json = R"( nul )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.is_null(), INCORRECT_TYPE);
     TEST_SUCCEED();
   }
 
   bool run() {
     return
            nully() &&
+           nul() &&
            string_with_trailing() &&
            uint64_with_trailing() &&
            int64_with_trailing() &&
