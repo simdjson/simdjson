@@ -13,6 +13,7 @@
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/value.h"
+#include "simdjson/generic/ondemand/value-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 #include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -168,9 +169,16 @@ template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept {
 template<> simdjson_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
 template<> simdjson_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
-template<typename T> simdjson_inline error_code document::get(T &out) & noexcept {
-  return get<T>().get(out);
-}
+template<> simdjson_inline error_code document::get(array& out) & noexcept { return get_array().get(out); }
+template<> simdjson_inline error_code document::get(object& out) & noexcept { return get_object().get(out); }
+template<> simdjson_inline error_code document::get(raw_json_string& out) & noexcept { return get_raw_json_string().get(out); }
+template<> simdjson_inline error_code document::get(std::string_view& out) & noexcept { return get_string(false).get(out); }
+template<> simdjson_inline error_code document::get(double& out) & noexcept { return get_double().get(out); }
+template<> simdjson_inline error_code document::get(uint64_t& out) & noexcept { return get_uint64().get(out); }
+template<> simdjson_inline error_code document::get(int64_t& out) & noexcept { return get_int64().get(out); }
+template<> simdjson_inline error_code document::get(bool& out) & noexcept { return get_bool().get(out); }
+template<> simdjson_inline error_code document::get(value& out) & noexcept { return get_value().get(out); }
+
 
 #if SIMDJSON_EXCEPTIONS
 template <class T>

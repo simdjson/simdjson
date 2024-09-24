@@ -26,8 +26,8 @@ struct nlohmann_json {
       }
     }
 
-    result.text = top_tweet["text"];
-    result.screen_name = top_tweet["user"]["screen_name"];
+    result.text = to_string(top_tweet["text"]);
+    result.screen_name = to_string(top_tweet["user"]["screen_name"]);
     return result.retweet_count != -1;
   }
 };
