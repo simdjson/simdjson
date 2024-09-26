@@ -41,7 +41,7 @@ public:
   template <typename T>
   simdjson_inline simdjson_result<T> get()
 #ifdef __cpp_concepts
-    noexcept(deserializable<T, value> ? nothrow_deserializable<T, value> : true)
+    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
 #endif
@@ -65,13 +65,13 @@ public:
   template <typename T>
   simdjson_inline error_code get(T &out)
 #ifdef __cpp_concepts
-    noexcept(deserializable<T, value> ? nothrow_deserializable<T, value> : true)
+    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
 #endif
  {
 #ifdef __cpp_concepts
-    if constexpr (deserializable<T, value>) {
+    if constexpr (custom_deserializable<T, value>) {
       return deserialize(*this, out);
     } else {
 #endif // __cpp_concepts

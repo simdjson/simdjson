@@ -1,5 +1,6 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
+#include "simdjson/std/vector.h"
 
 #include <string>
 #include <vector>
@@ -63,10 +64,10 @@ struct Car {
   }
 };
 
-static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::value>, "It should be invocable");
-static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
-static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::value>, "It should be invocable");
-static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
+static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
+static_assert(simdjson::custom_deserializable<std::vector<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::custom_deserializable<std::vector<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
 
 bool custom_test() {
   TEST_START();
