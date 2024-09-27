@@ -26,7 +26,7 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 
   uint64_t x;
   SIMDJSON_TRY(val.get_uint64().get(x));
-  if (x > limits::max()) {
+  if (x > (limits::max)()) {
     return NUMBER_OUT_OF_RANGE;
   }
   out = static_cast<T>(x);
@@ -47,7 +47,7 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 
   int64_t x;
   SIMDJSON_TRY(val.get_int64().get(x));
-  if (x > limits::max() || x < limits::min()) {
+  if (x > (limits::max)() || x < (limits::min)()) {
     return NUMBER_OUT_OF_RANGE;
   }
   out = static_cast<T>(x);
