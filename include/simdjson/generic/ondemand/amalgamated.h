@@ -24,6 +24,8 @@
 #include "simdjson/generic/ondemand/object_iterator.h"
 #include "simdjson/generic/ondemand/serialization.h"
 
+#include "simdjson/generic/ondemand/std_deserialize.h"
+
 // Inline definitions
 #include "simdjson/generic/ondemand/array-inl.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
@@ -42,5 +44,4 @@
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 
-// Conversions
-#include "simdjson/std/std.h"
+

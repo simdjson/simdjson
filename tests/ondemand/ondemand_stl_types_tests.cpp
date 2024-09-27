@@ -1,13 +1,11 @@
 #include "simdjson.h"
-#include "simdjson/std/memory.h"
-#include "simdjson/std/vector.h"
 #include "test_ondemand.h"
 
 #include <string>
 #include <vector>
 
 namespace stl_types {
-#if SIMDJSON_EXCEPTIONS && defined(SIMDJSON_SUPPORTS_DESERIALIZATION)
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
 
 bool basic_general_madness() {
   TEST_START();
@@ -37,7 +35,7 @@ bool basic_general_madness() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && defined(SIMDJSON_SUPPORTS_DESERIALIZATION)
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       basic_general_madness() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;

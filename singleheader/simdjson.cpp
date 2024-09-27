@@ -1,4 +1,4 @@
-/* auto-generated on 2024-08-01 09:31:50 -0400. Do not edit! */
+/* auto-generated on 2024-09-26 09:27:38 -1000. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -77,6 +77,18 @@
 #endif
 #endif
 
+#ifdef __has_include
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+
+#ifdef __cpp_concepts
+#include <utility>
+#define SIMDJSON_SUPPORTS_DESERIALIZATION 1
+#else // __cpp_concepts
+#define SIMDJSON_SUPPORTS_DESERIALIZATION 0
+#endif
 #endif // SIMDJSON_COMPILER_CHECK_H
 /* end file simdjson/compiler_check.h */
 /* including simdjson/portability.h: #include "simdjson/portability.h" */

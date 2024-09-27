@@ -1,23 +1,14 @@
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+
 #ifndef SIMDJSON_ONDEMAND_DESERIALIZE_H
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_ONDEMAND_DESERIALIZE_H
 #include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/array.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
-#ifdef __has_include
-#if __has_include(<version>)
-#include <version>
-#endif
-#endif
 
-#ifdef __cpp_concepts
-#include <utility>
-#endif
-
+#include <concepts>
 namespace simdjson {
-
-#ifdef __cpp_concepts
-#define SIMDJSON_SUPPORTS_DESERIALIZATION 1
-
 
 namespace tag_invoke_fn_ns {
 void tag_invoke();
@@ -114,11 +105,9 @@ inline constexpr struct deserialize_tag {
     return tag_invoke(*this, object, output);
   }
 
-  // default implementations can also be done here
 } deserialize{};
-
-#endif
 
 } // namespace simdjson
 
 #endif // SIMDJSON_ONDEMAND_DESERIALIZE_H
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION

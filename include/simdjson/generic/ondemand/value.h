@@ -40,7 +40,7 @@ public:
    */
   template <typename T>
   simdjson_inline simdjson_result<T> get()
-#ifdef __cpp_concepts
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
     noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
@@ -64,17 +64,17 @@ public:
    */
   template <typename T>
   simdjson_inline error_code get(T &out)
-#ifdef __cpp_concepts
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
     noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
 #endif
  {
-#ifdef __cpp_concepts
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
     if constexpr (custom_deserializable<T, value>) {
       return deserialize(*this, out);
     } else {
-#endif // __cpp_concepts
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
       // Unless the simdjson library or the user provides an inline implementation, calling this method should
       // immediately fail.
       static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -84,7 +84,7 @@ public:
         " You may also add support for custom types, see our documentation.");
       static_cast<void>(out); // to get rid of unused errors
       return UNINITIALIZED;
-#ifdef __cpp_concepts
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
     }
 #endif
   }

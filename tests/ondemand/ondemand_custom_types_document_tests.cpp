@@ -1,11 +1,10 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
-#include "simdjson/std/vector.h"
 
 #include <string>
 #include <vector>
 
-#ifdef __cpp_concepts
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
 
 namespace simdjson {
 
@@ -18,7 +17,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
 
 } // namespace simdjson
 
-#endif // __cpp_concepts
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 
 namespace doc_custom_types_tests {
 #if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
