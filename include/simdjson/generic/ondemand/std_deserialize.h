@@ -19,6 +19,7 @@ namespace simdjson {
 //////////////////////////////
 // Number deserialization
 //////////////////////////////
+
 template <std::unsigned_integral T>
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   using limits = std::numeric_limits<T>;
@@ -151,6 +152,7 @@ error_code tag_invoke(deserialize_tag, ValT &val,
 //////////////////////////////
 // std::unique_ptr deserialization
 //////////////////////////////
+
 /**
  * This CPO (Customization Point Object) will help deserialize into
  * `unique_ptr`s.

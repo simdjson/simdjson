@@ -111,3 +111,4 @@ inline constexpr struct deserialize_tag {
 
 #endif // SIMDJSON_ONDEMAND_DESERIALIZE_H
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+
