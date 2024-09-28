@@ -5,6 +5,31 @@
 #include <vector>
 #include <list>
 
+class Array : public std::vector<float> {};
+
+namespace simdjson {
+template <>
+constexpr bool require_custom_serialization<Array> = true;
+
+
+template <typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val,
+                      Array &out) noexcept(false) {
+
+  ondemand::array arr;
+  SIMDJSON_TRY(val.get_array().get(arr));
+  for (auto v : arr) {
+    float temp;
+    if (auto const err = v.get<float>().get(temp); err) {
+      return err;
+    }
+    out.push_back(temp);
+    out.push_back(temp); // adding it twice
+  }
+  return SUCCESS;
+}
+}
+
 namespace stl_types {
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
 
@@ -58,7 +83,6 @@ bool basic_general_madness_vector() {
   TEST_SUCCEED();
 }
 
-
 bool basic_general_madness_list() {
   TEST_START();
   simdjson::padded_string json =
@@ -85,6 +109,30 @@ bool basic_general_madness_list() {
 }
 
 
+
+bool basic_general_madness_Array() {
+  TEST_START();
+  simdjson::padded_string json =
+      R"( [ { "codes": [1.2, 3.4, 5.6, 7.8, 9.0] },
+            { "codes": [2.2, 4.4, 6.6, 8.8, 10.0] } ])"_padded;
+
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc = parser.iterate(json);
+  Array codes;
+  for (auto val : doc) {
+    simdjson::ondemand::object obj;
+    SIMDJSON_TRY(val.get_object().get(obj));
+    obj["codes"].get(codes); // append to it
+  }
+
+  if (codes.size() != 20) {
+    return false;
+  }
+
+  TEST_SUCCEED();
+}
+
+
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
@@ -92,6 +140,7 @@ bool run() {
       basic_general_madness() &&
       basic_general_madness_vector() &&
       basic_general_madness_list() &&
+      basic_general_madness_Array() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }

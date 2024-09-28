@@ -12,6 +12,8 @@
 #include <string>
 
 namespace simdjson {
+template <typename T>
+constexpr bool require_custom_serialization = false;
 
 //////////////////////////////
 // Number deserialization
@@ -67,9 +69,9 @@ template <typename T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val,
                       T &out) noexcept(false) {
   using value_type = typename T::value_type;
-  //static_assert(
-  //    allows_automated_serialization<T>(),
-  //    "You have overridden allows_automated_serialization<T> and it returns false. ");
+  static_assert(
+      !require_custom_serialization<T>,
+      "You have overridden require_custom_serialization<T> and it returns false. ");
   static_assert(
       deserializable<value_type, ValT>,
       "The specified type inside the container must itself be deserializable");
