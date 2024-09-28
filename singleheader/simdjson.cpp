@@ -1,4 +1,4 @@
-/* auto-generated on 2024-07-15 08:51:57 -0400. Do not edit! */
+/* auto-generated on 2024-09-27 22:03:18 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2670,6 +2670,33 @@ inline const std::string error_message(int error) noexcept;
 #endif // SIMDJSON_ERROR_H
 /* end file simdjson/error.h */
 /* skipped duplicate #include "simdjson/portability.h" */
+/* including simdjson/concepts.h: #include "simdjson/concepts.h" */
+/* begin file simdjson/concepts.h */
+#ifndef SIMDJSON_CONCEPTS_H
+#define SIMDJSON_CONCEPTS_H
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+
+#include <concepts>
+#include <string>
+#include <string_view>
+
+namespace simdjson {
+namespace concepts {
+
+// std::vector and std::deque are pushable containers
+template <typename T>
+concept pushable_container =
+    requires(T a, typename T::value_type val) {
+      a.push_back(val);
+    } && !std::is_same_v<T, std::string> &&
+    !std::is_same_v<T, std::string_view> &&
+    !std::is_same_v<T, const char*>;
+
+} // namespace concepts
+} // namespace simdjson
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif //SIMDJSON_CONCEPTS_H
+/* end file simdjson/concepts.h */
 
 /**
  * @brief The top level simdjson namespace, containing everything the library provides.
@@ -6455,7 +6482,6 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 
 #endif // SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
 /* end file simdjson/internal/simdprune_tables.h */
-
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H
 /* end file simdjson/generic/dependencies.h */
 /* including generic/dependencies.h: #include <generic/dependencies.h> */
