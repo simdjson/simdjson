@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+
 class Array : public std::vector<float> {};
 
 namespace simdjson {
@@ -29,6 +31,7 @@ error_code tag_invoke(deserialize_tag, ValT &val,
   return SUCCESS;
 }
 }
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 
 namespace stl_types {
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
