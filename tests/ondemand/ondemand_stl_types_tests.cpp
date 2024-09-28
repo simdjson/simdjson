@@ -9,6 +9,7 @@
 #include <queue>
 #include <deque>
 #include <unordered_set>
+#include <optional>
 
 #if SIMDJSON_SUPPORTS_DESERIALIZATION
 
