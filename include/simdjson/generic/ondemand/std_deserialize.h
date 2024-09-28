@@ -9,10 +9,7 @@
 
 #include <concepts>
 #include <limits>
-#include <list>
-#include <memory>
 #include <string>
-#include <vector>
 
 namespace simdjson {
 
@@ -53,66 +50,10 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   out = static_cast<T>(x);
   return SUCCESS;
 }
-
-//////////////////////////////
-// STL list deserialization
-//////////////////////////////
-
-template <typename T, typename AllocT, typename ValT>
-error_code tag_invoke(deserialize_tag, ValT &val,
-                      std::list<T, AllocT> &out) noexcept(false) {
-
-  // For better error messages, don't use these as constraints on
-  // the tag_invoke CPO.
-  static_assert(
-      deserializable<T, ValT>,
-      "The specified type inside the list must itself be deserializable");
-  static_assert(
-      std::is_default_constructible_v<T>,
-      "The specified type inside the list must default constructible.");
-
-  SIMDJSON_IMPLEMENTATION::ondemand::array arr;
-  SIMDJSON_TRY(val.get_array().get(arr));
-  for (auto v : arr) {
-    if (auto const err = v.get<T>().get(out.emplace_back()); err) {
-      // If an error occurs, the empty element that we just inserted gets
-      // removed. We're not using a temp variable because if T is a heavy type,
-      // we want the valid path to be the fast path and the slow path be the
-      // path that has errors in it.
-      static_cast<void>(out.pop_back());
-      return err;
-    }
-  }
-  return SUCCESS;
-}
-
-//////////////////////////////
-// std::string deserialization
-//////////////////////////////
-
-template <typename CharT,
-          typename TraitsT,
-          typename AllocT,
-          typename ValT>
-error_code tag_invoke(deserialize_tag, ValT &val, std::basic_string<CharT, TraitsT, AllocT> &out) noexcept(false) {
-  using string_type = std::basic_string<CharT, TraitsT, AllocT>;
-
-  if constexpr (std::same_as<string_type, string_type>) {
-    SIMDJSON_TRY(val.get_string(out));
-  } else {
-    // todo: optimize performance
-    std::string tmp;
-    SIMDJSON_TRY(val.get_string(tmp));
-    for (auto const ch : tmp) {
-      out.push_back(ch);
-    }
-  }
-  return SUCCESS;
-}
-
-//////////////////////////////
-// STL Vector deserialization
-//////////////////////////////
+//template <typename>
+//struct is_deserialization_enabled : std::true_type {};
+//template <typename>
+//consteval bool allows_automated_serialization() { return true; }
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -121,73 +62,30 @@ error_code tag_invoke(deserialize_tag, ValT &val, std::basic_string<CharT, Trait
  * explicitly specify the type of the container as needed: e.g.,
  * doc.get<std::vector<int>>().
  */
-template <typename T, typename AllocT, typename ValT>
+template <typename T, typename ValT>
+  requires simdjson::concepts::pushable_container<T>
 error_code tag_invoke(deserialize_tag, ValT &val,
-                      std::vector<T, AllocT> &out) noexcept(false) {
-
-  // For better error messages, don't use these as constraints on
-  // the tag_invoke CPO.
+                      T &out) noexcept(false) {
+  using value_type = typename T::value_type;
+  //static_assert(
+  //    allows_automated_serialization<T>(),
+  //    "You have overridden allows_automated_serialization<T> and it returns false. ");
   static_assert(
-      deserializable<T, ValT>,
-      "The specified type inside the vector must itself be deserializable");
+      deserializable<value_type, ValT>,
+      "The specified type inside the container must itself be deserializable");
   static_assert(
-      std::is_default_constructible_v<T>,
-      "The specified type inside the vector must default constructible.");
+      std::is_default_constructible_v<value_type>,
+      "The specified type inside the container must default constructible.");
 
   SIMDJSON_IMPLEMENTATION::ondemand::array arr;
   SIMDJSON_TRY(val.get_array().get(arr));
   for (auto v : arr) {
-    if (auto const err = v.get<T>().get(out.emplace_back()); err) {
-      // If an error occurs, the empty element that we just inserted gets
-      // removed. We're not using a temp variable because if T is a heavy type,
-      // we want the valid path to be the fast path and the slow path be the
-      // path that has errors in it.
-      static_cast<void>(out.pop_back());
+    value_type temp;
+    if (auto const err = v.get<value_type>().get(temp); err) {
       return err;
     }
+    out.push_back(temp); // note that this can be done with emplace_back for better performance
   }
-  return SUCCESS;
-}
-
-//////////////////////////////
-// std::unique_ptr deserialization
-//////////////////////////////
-
-/**
- * This CPO (Customization Point Object) will help deserialize into
- * `unique_ptr`s.
- *
- * If constructing T is nothrow, this conversion should be nothrow as well since
- * we return MEMALLOC if we're not able to allocate memory instead of throwing
- * the the error message.
- *
- * @tparam T The type inside the unique_ptr
- * @tparam Deleter The Deleter of the unique_ptr
- * @tparam ValT document/value type
- * @param val document/value
- * @param out output unique_ptr
- * @return status of the conversion
- */
-template <typename T, typename Deleter, typename ValT>
-error_code tag_invoke(deserialize_tag, ValT &val,
-                      std::unique_ptr<T, Deleter>
-                          &out) noexcept(nothrow_deserializable<T, ValT>) {
-
-  // For better error messages, don't use these as constraints on
-  // the tag_invoke CPO.
-  static_assert(
-      deserializable<T, ValT>,
-      "The specified type inside the unique_ptr must itself be deserializable");
-  static_assert(
-      std::is_default_constructible_v<T>,
-      "The specified type inside the unique_ptr must default constructible.");
-
-  auto ptr = new (std::nothrow) T();
-  if (ptr == nullptr) {
-    return MEMALLOC;
-  }
-  SIMDJSON_TRY(val.template get<T>(*ptr));
-  out.reset(ptr);
   return SUCCESS;
 }
 } // namespace simdjson

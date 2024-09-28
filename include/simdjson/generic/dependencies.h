@@ -16,5 +16,5 @@
 #include "simdjson/internal/jsoncharutils_tables.h"
 #include "simdjson/internal/numberparsing_tables.h"
 #include "simdjson/internal/simdprune_tables.h"
-
+#include "simdjson/concepts.h"
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H
