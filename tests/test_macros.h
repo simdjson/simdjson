@@ -110,6 +110,7 @@ simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected,
   return assert_equal( count, 1, operation );
 }
 #define TEST_START()                    do { std::cout << "> Running " << __func__ << " ..." << std::endl; } while(0);
+#define TYPED_TEST_START(T)             do { std::cout << "> Running " << __func__ << "<" << typeid(T).name() << "> ..." << std::endl; } while(0);
 #define SUBTEST(NAME, TEST)             do { std::cout << " - Subtest " << (NAME) << " ..." << std::endl; if (!(TEST)) { return false; } } while (0);
 #define ASSERT_EQUAL(ACTUAL, EXPECTED)  do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_result ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);

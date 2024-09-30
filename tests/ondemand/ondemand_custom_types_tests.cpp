@@ -6,30 +6,13 @@
 
 #if SIMDJSON_SUPPORTS_DESERIALIZATION
 
-template <typename T>
-struct is_unique_ptr : std::false_type {
-};
-
-
-template <typename T>
-struct is_unique_ptr<std::unique_ptr<T>> : std::true_type {
-};
-
-template <typename T>
-concept is_unique_ptr_v = is_unique_ptr<T>::value;
-
 
 namespace simdjson {
 
-// this is to demonstrate that we can use concept; otherwise a simple
-// type_identity<unique_ptr<T>> as the second argument would have done the job.
-//
 // This tag_invoke MUST be inside simdjson namespace
 template <typename T>
-  requires is_unique_ptr_v<T>
-auto tag_invoke(deserialize_tag, auto &val, T& out) {
-  using type = typename T::element_type;
-  out = std::make_unique<type>(val.template get<type>());
+auto tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
+  out = std::make_unique<T>(val.template get<T>());
   return SUCCESS;
 }
 
