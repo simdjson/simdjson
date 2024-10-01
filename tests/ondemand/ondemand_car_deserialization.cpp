@@ -9,10 +9,10 @@ using namespace simdjson;
  * A custom type that we want to parse.
  */
 struct Car {
-  std::string make;
-  std::string model;
-  int64_t year;
-  std::vector<double> tire_pressure;
+  std::string make{};
+  std::string model{};
+  int64_t year{};
+  std::vector<double> tire_pressure{};
   bool operator==(const Car &other) const {
     return make == other.make && model == other.model && year == other.year &&
            tire_pressure == other.tire_pressure;

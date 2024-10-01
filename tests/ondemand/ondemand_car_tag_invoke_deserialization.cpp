@@ -19,10 +19,10 @@ int main(void) {
  * A custom type that we want to parse.
  */
 struct Car {
-  std::string make;
-  std::string model;
-  int year;
-  std::vector<float> tire_pressure;
+  std::string make{};
+  std::string model{};
+  int year{};
+  std::vector<float> tire_pressure{};
   bool operator==(const Car &other) const {
     return make == other.make && model == other.model && year == other.year &&
            tire_pressure == other.tire_pressure;
@@ -41,8 +41,8 @@ std::ostream &operator<<(std::ostream &os, const Car &c) {
 
 namespace simdjson {
 // This tag_invoke MUST be inside simdjson namespace
-template <>
-auto tag_invoke(deserialize_tag, auto &val, Car& car) {
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Car& car) {
   ondemand::object obj;
   auto error = val.get_object().get(obj);
   if (error) {

@@ -17,8 +17,8 @@ static_assert(simdjson::concepts::appendable_containers<Array>, "Array must be a
 static_assert(!simdjson::require_custom_serialization<Array>);
 namespace simdjson {
 // This tag_invoke MUST be inside simdjson namespace
-template <>
-auto tag_invoke(deserialize_tag, auto &val, Array& out) {
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
     simdjson::ondemand::array arr;
     SIMDJSON_TRY(val.get_array().get(arr));
     for (auto v : arr) {

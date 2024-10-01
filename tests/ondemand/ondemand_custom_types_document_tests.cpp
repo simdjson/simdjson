@@ -4,20 +4,6 @@
 #include <string>
 #include <vector>
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
-
-namespace simdjson {
-
-// unique_ptr<T>
-template <typename T>
-error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
-  out = std::make_unique<T>(val.template get<T>());
-  return SUCCESS;
-}
-
-} // namespace simdjson
-
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 
 namespace doc_custom_types_tests {
 #if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
