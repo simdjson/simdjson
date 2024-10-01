@@ -4,23 +4,6 @@
 #include <string>
 #include <vector>
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
-
-
-namespace simdjson {
-
-// This tag_invoke MUST be inside simdjson namespace
-template <typename T>
-auto tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
-  out = std::make_unique<T>(val.template get<T>());
-  return SUCCESS;
-}
-
-} // namespace simdjson
-
-
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
-
 
 namespace custom_types_tests {
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION

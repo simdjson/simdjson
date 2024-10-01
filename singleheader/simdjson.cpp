@@ -1,4 +1,4 @@
-/* auto-generated on 2024-09-27 22:03:18 -0400. Do not edit! */
+/* auto-generated on 2024-09-30 10:57:33 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2677,25 +2677,114 @@ inline const std::string error_message(int error) noexcept;
 #if SIMDJSON_SUPPORTS_DESERIALIZATION
 
 #include <concepts>
-#include <string>
-#include <string_view>
+#include <type_traits>
 
 namespace simdjson {
 namespace concepts {
 
-// std::vector and std::deque are pushable containers
+namespace details {
+#define SIMDJSON_IMPL_CONCEPT(name, method)                                    \
+  template <typename T>                                                        \
+  concept supports_##name = !std::is_const_v<T> && requires {                  \
+    typename std::remove_cvref_t<T>::value_type;                               \
+    requires requires(typename std::remove_cvref_t<T>::value_type &&val,       \
+                      T obj) {                                                 \
+      obj.method(std::move(val));                                              \
+      requires !requires { obj = std::move(val); };                            \
+    };                                                                         \
+  };
+
+SIMDJSON_IMPL_CONCEPT(emplace_back, emplace_back);
+SIMDJSON_IMPL_CONCEPT(emplace, emplace);
+SIMDJSON_IMPL_CONCEPT(push_back, push_back);
+SIMDJSON_IMPL_CONCEPT(add, add);
+SIMDJSON_IMPL_CONCEPT(push, push);
+SIMDJSON_IMPL_CONCEPT(append, append);
+SIMDJSON_IMPL_CONCEPT(insert, insert);
+SIMDJSON_IMPL_CONCEPT(op_append, operator+=);
+
+#undef SIMDJSON_IMPL_CONCEPT
+} // namespace details
+
+/// Check if T is a container that we can append to, including:
+///   std::vector, std::deque, std::list, std::string, ...
 template <typename T>
-concept pushable_container =
-    requires(T a, typename T::value_type val) {
-      a.push_back(val);
-    } && !std::is_same_v<T, std::string> &&
-    !std::is_same_v<T, std::string_view> &&
-    !std::is_same_v<T, const char*>;
+concept appendable_containers =
+    details::supports_emplace_back<T> || details::supports_emplace<T> ||
+    details::supports_push_back<T> || details::supports_push<T> ||
+    details::supports_add<T> || details::supports_append<T> ||
+    details::supports_insert<T>;
+
+/// Insert into the container however possible
+template <appendable_containers T, typename... Args>
+constexpr decltype(auto) emplace_one(T &vec, Args &&...args) {
+  if constexpr (details::supports_emplace_back<T>) {
+    return vec.emplace_back(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_emplace<T>) {
+    return vec.emplace(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_push_back<T>) {
+    return vec.push_back(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_push<T>) {
+    return vec.push(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_add<T>) {
+    return vec.add(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_append<T>) {
+    return vec.append(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_insert<T>) {
+    return vec.insert(std::forward<Args>(args)...);
+  } else if constexpr (details::supports_op_append<T> && sizeof...(Args) == 1) {
+    return vec.operator+=(std::forward<Args>(args)...);
+  } else {
+    static_assert(!sizeof(T *),
+                  "We don't know how to add things to this container");
+  }
+}
+
+/// This checks if the container will return a reference to the newly added
+/// element after an insert which for example `std::vector::emplace_back` does
+/// since C++17; this will allow some optimizations.
+template <typename T>
+concept returns_reference = appendable_containers<T> && requires {
+  typename std::remove_cvref_t<T>::reference;
+  requires requires(typename std::remove_cvref_t<T>::value_type &&val, T obj) {
+    {
+      emplace_one(obj, std::move(val))
+    } -> std::same_as<typename std::remove_cvref_t<T>::reference>;
+  };
+};
+
+template <typename T>
+concept smart_pointer = requires(std::remove_cvref_t<T> ptr) {
+  // Check if T has a member type named element_type
+  typename std::remove_cvref_t<T>::element_type;
+
+  // Check if T has a get() member function
+  {
+    ptr.get()
+  } -> std::same_as<typename std::remove_cvref_t<T>::element_type *>;
+
+  // Check if T can be dereferenced
+  { *ptr } -> std::same_as<typename std::remove_cvref_t<T>::element_type &>;
+};
+
+template <typename T>
+concept optional_type = requires(std::remove_cvref_t<T> obj) {
+  typename std::remove_cvref_t<T>::value_type;
+  { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
+  requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
+    obj.emplace(std::move(val));
+    obj = std::move(val);
+    {
+      obj.value_or(val)
+    } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
+  };
+  { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
+};
 
 } // namespace concepts
 } // namespace simdjson
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION
-#endif //SIMDJSON_CONCEPTS_H
+#endif // SIMDJSON_CONCEPTS_H
 /* end file simdjson/concepts.h */
 
 /**

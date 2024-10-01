@@ -12,14 +12,13 @@
 #include <optional>
 
 #if SIMDJSON_SUPPORTS_DESERIALIZATION
-
-class Array : public std::vector<float> {
-
-public:
-  template <typename ValT>
-  friend error_code tag_invoke(simdjson::deserialize_tag, ValT &val,
-                        Array &out) noexcept(false) {
-
+class Array : public std::vector<float> {};
+static_assert(simdjson::concepts::appendable_containers<Array>, "Array must be appendable_containers");
+static_assert(!simdjson::require_custom_serialization<Array>);
+namespace simdjson {
+// This tag_invoke MUST be inside simdjson namespace
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
     simdjson::ondemand::array arr;
     SIMDJSON_TRY(val.get_array().get(arr));
     for (auto v : arr) {
@@ -31,9 +30,10 @@ public:
       out.push_back(temp); // adding it twice
     }
     return error_code::SUCCESS;
-  }
-};
+}
+} // namespace simdjson
 
+// require_custom_serialization
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 
 namespace stl_types {
@@ -130,11 +130,7 @@ bool basic_general_madness_Array() {
     SIMDJSON_TRY(val.get_object().get(obj));
     obj["codes"].get(codes); // append to it
   }
-
-  if (codes.size() != 20) {
-    return false;
-  }
-
+  ASSERT_EQUAL(codes.size(), 20);
   TEST_SUCCEED();
 }
 

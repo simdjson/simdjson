@@ -90,6 +90,7 @@ concept nothrow_deserializable = nothrow_custom_deserializable<T, ValT> || is_bu
 inline constexpr struct deserialize_tag {
   using value_type = SIMDJSON_IMPLEMENTATION::ondemand::value;
   using document_type = SIMDJSON_IMPLEMENTATION::ondemand::document;
+  using document_reference_type = SIMDJSON_IMPLEMENTATION::ondemand::document_reference;
 
   // Customization Point for value
   template <typename T>
@@ -104,6 +105,14 @@ inline constexpr struct deserialize_tag {
   [[nodiscard]] constexpr /* error_code */ auto operator()(document_type &object, T& output) const noexcept(nothrow_custom_deserializable<T, document_type>) {
     return tag_invoke(*this, object, output);
   }
+
+  // Customization Point for document reference
+  template <typename T>
+    requires custom_deserializable<T, document_reference_type>
+  [[nodiscard]] constexpr /* error_code */ auto operator()(document_reference_type &object, T& output) const noexcept(nothrow_custom_deserializable<T, document_reference_type>) {
+    return tag_invoke(*this, object, output);
+  }
+
 
 } deserialize{};
 
