@@ -1059,7 +1059,10 @@ int main(void) {
 ### 2. Use `tag_invoke` for custom types (C++20)
 
 If your system supports C++20, we recommend that you adopt the `tag_invoke` approach
-instead to deserialize custom types. It may prove to be considerably simpler.
+instead to deserialize custom types. It may prove to be considerably simpler. When
+simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_DESERIALIZATION` macro
+to 1, otherwise it is set to 0.
+
 Consider a custom class `Car`:
 
 ```C++
