@@ -2,6 +2,8 @@
 link_libraries(simdjson)
 include_directories(..)
 add_subdirectory(compilation_failure_tests)
+add_cpp_test(ondemand_car_tag_invoke_deserialization LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_car_deserialization            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_log_tests                      LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_log_error_tests                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_tostring_tests                 LABELS ondemand acceptance per_implementation)

@@ -17,7 +17,7 @@ An overview of what you need to know to use simdjson, with examples.
   - [Using the parsed JSON](#using-the-parsed-json)
     - [Using the parsed JSON: additional examples](#using-the-parsed-json-additional-examples)
   - [Adding support for custom types](#adding-support-for-custom-types)
-    - [1. Specialize `simdjson::ondemand::value::get` to get custom types](#1-specialize-simdjsonondemandvalueget-to-get-custom-types)
+    - [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize-simdjsonondemandvalueget-to-get-custom-types-pre-c20)
     - [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
   - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
   - [UTF-8 validation (alone)](#utf-8-validation-alone)
@@ -797,17 +797,10 @@ There are 2 main ways provided by simdjson to deserialize a value into a custom 
    2. Specialize `simdjson::ondemand::value::get` for each value
 2. Using `tag_invoke` *(the recommended way if your system supports C++20 or better)*
 
-The differences between the two approaches are as follows:
+We describe both of them in the following sections. Most users who have systems compatible with
+C++20 or better should skip ahead to [using `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20) as it is more powerful and simpler.
 
-1. Your compiler needs to support C++20 for `tag_invoke`.
-2. The first way limits you to know your type fully, but in the `tag_invoke` way, you can use C++20 concepts and template meta programming as well.
-3. Another difference between the two ways is that in `tag_invoke` way you may or may not mark your deserialization function (`tag_invoke` itself) as `noexcept`, but in the
-   *template specialization* way (the first way) you HAVE TO mark your specialization as `noexcept` which means that you may need to catch exceptions so
-   that your function does not throw any exception all the while it potentially can (for example any type like `std::string`, `std::vector`, etc. that has an allocator can potentially throw exceptions).
-4. Another difference is that the `tag_invoke` way can work on both `document` and `value` but in the first way you have to provide 2 distinct specializations.
-5. If you by mistake use both way with each other, the *specialization way* will be used silently due to backward-compatibility.
-
-### 1. Specialize `simdjson::ondemand::value::get` to get custom types
+### 1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)
 
 Suppose you have your own types, such as a `Car` struct:
 
@@ -843,13 +836,14 @@ type:
 
 We may do so by providing additional template definitions to the `ondemand::value` type.
 We may start by providing a definition for `std::vector<double>` as follows. Observe
-how we guard the code with `#ifndef __cpp_concepts`: that is because the necessary code
+how we guard the code with `#if !SIMDJSON_SUPPORTS_DESERIALIZATION`: that is because the necessary code
 is automatically provided by simdjson if C++20 (and concepts) are available.
 See [Use `tag_invoke` for custom types](#2-use-tag_invoke-for-custom-types-c20) if you have
 C++20 support.
 
 ```c++
-#ifndef __cpp_concepts // because the code is unnecessary with C++20
+#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+// The code is unnecessary with C++20:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
 simdjson::ondemand::value::get() noexcept {
@@ -861,7 +855,7 @@ simdjson::ondemand::value::get() noexcept {
     double val;
     error = v.get_double().get(val);
     if (error) { return error; }
-    try { vec.push_back(val); } catch (...) { return simdjson::UNEXPECTED_ERROR; }
+    vec.push_back(val);
   }
   return vec;
 }
@@ -877,27 +871,10 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
   auto error = get_object().get(obj);
   if (error) { return error; }
   Car car;
-  // Instead of repeatedly obj["something"], we iterate through the object which
-  // we expect to be faster.
-  for (auto field : obj) {
-    raw_json_string key;
-    error = field.key().get(key);
-    if (error) { return error; }
-
-    if (key == "make") {
-      error = field.value().get_string(car.make);
-      if (error) { return error; }
-    } else if (key == "model") {
-      error = field.value().get_string(car.model);
-      if (error) { return error; }
-    } else if (key == "year") {
-      error = field.value().get_int64().get(car.year);
-      if (error) { return error; }
-    } else if (key == "tire_pressure") {
-      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
-      if (error) { return error; }
-    }
-  }
+  if((error = obj["make"].get_string(car.make))) { return error; }
+  if((error = obj["model"].get_string(car.model))) { return error; }
+  if((error = obj["year"].get_int64().get(car.year))) { return error; }
+  if((error = obj["tire_pressure"].get<std::vector<double>>().get(car.tire_pressure))) { return error; }
   return car;
 }
 ```
@@ -921,7 +898,8 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#ifndef __cpp_concepts // because the code is unnecessary with C++20
+#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+// This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
 simdjson::ondemand::value::get() noexcept {
@@ -939,33 +917,16 @@ simdjson::ondemand::value::get() noexcept {
 }
 #endif
 
-
 template <>
 simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
   ondemand::object obj;
   auto error = get_object().get(obj);
   if (error) { return error; }
   Car car;
-  // Instead of repeatedly obj["something"], we iterate through the object which
-  // we expect to be faster.
-  for (auto field : obj) {
-    raw_json_string key;
-    error = field.key().get(key);
-    if (error) { return error; }
-    if (key == "make") {
-      error = field.value().get_string(car.make);
-      if (error) { return error; }
-    } else if (key == "model") {
-      error = field.value().get_string(car.model);
-      if (error) { return error; }
-    } else if (key == "year") {
-      error = field.value().get_int64().get(car.year);
-      if (error) { return error; }
-    } else if (key == "tire_pressure") {
-      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
-      if (error) { return error; }
-    }
-  }
+  if((error = obj["make"].get_string(car.make))) { return error; }
+  if((error = obj["model"].get_string(car.model))) { return error; }
+  if((error = obj["year"].get_int64().get(car.year))) { return error; }
+  if((error = obj["tire_pressure"].get<std::vector<double>>().get(car.tire_pressure))) { return error; }
   return car;
 }
 
@@ -983,7 +944,6 @@ int main(void) {
     Car c(val); // an exception may be thrown
     std::cout << c.make << std::endl;
   }
-  direct();
   return EXIT_SUCCESS;
 }
 ```
@@ -1039,16 +999,19 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#ifndef __cpp_concepts // because the code is unnecessary with C++20
+#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+// This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
 simdjson::ondemand::value::get() noexcept {
   ondemand::array array;
-  if (auto error = get_array().get(array); error) { return error; }
+  auto error = get_array().get(array);
+  if (error) { return error; }
   std::vector<double> vec;
   for (auto v : array) {
     double val;
-    if (auto error = v.get_double().get(val); error) { return error; }
+    error = v.get_double().get(val);
+    if (error) { return error; }
     vec.push_back(val);
   }
   return vec;
@@ -1059,30 +1022,26 @@ template <>
 simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexcept {
   ondemand::object obj;
   auto error = get_object().get(obj);
-  if (error) {
-    return error;
-  }
+  if (error) { return error; }
   Car car;
-  // Instead of repeatedly obj["something"], we iterate through the object which
-  // we expect to be faster.
-  for (auto field : obj) {
-    raw_json_string key;
-    error = field.key().get(key);
-    if (error) { return error; }
-    if (key == "make") {
-      error = field.value().get_string(car.make);
-      if (error) { return error; }
-    } else if (key == "model") {
-      error = field.value().get_string(car.model);
-      if (error) { return error; }
-    } else if (key == "year") {
-      error = field.value().get_int64().get(car.year);
-      if (error) { return error; }
-    } else if (key == "tire_pressure") {
-      error = field.value().get<std::vector<double>>().get(car.tire_pressure);
-      if (error) { return error; }
-    }
-  }
+  if((error = obj["make"].get_string(car.make))) { return error; }
+  if((error = obj["model"].get_string(car.model))) { return error; }
+  if((error = obj["year"].get_int64().get(car.year))) { return error; }
+  if((error = obj["tire_pressure"].get<std::vector<double>>().get(car.tire_pressure))) { return error; }
+  return car;
+}
+
+
+template <>
+simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() noexcept {
+  ondemand::object obj;
+  auto error = get_object().get(obj);
+  if (error) { return error; }
+  Car car;
+  if((error = obj["make"].get_string(car.make))) { return error; }
+  if((error = obj["model"].get_string(car.model))) { return error; }
+  if((error = obj["year"].get_int64().get(car.year))) { return error; }
+  if((error = obj["tire_pressure"].get<std::vector<double>>().get(car.tire_pressure))) { return error; }
   return car;
 }
 
@@ -1099,68 +1058,64 @@ int main(void) {
 
 ### 2. Use `tag_invoke` for custom types (C++20)
 
-A standard approach to provide support for deserialization is to add a `tag_invoke` function
-in your own class:
+If your system supports C++20, we recommend that you adopt the `tag_invoke` approach
+instead to deserialize custom types. It may prove to be considerably simpler.
+Consider a custom class `Car`:
 
 ```C++
-/**
- * A custom type that we want to parse.
- */
-
 struct Car {
   std::string make;
   std::string model;
-  int year = 0;
-  std::vector<double> tire_pressure;
-
-  friend simdjson_result<Car>
-  tag_invoke(simdjson::deserialize_tag, std::type_identity<Car>, auto &val) {
-    simdjson::ondemand::object obj;
-    auto error = val.get_object().get(obj);
-    if (error) {
-      return error;
-    }
-    Car car{};
-    // Instead of repeatedly obj["something"], we iterate through the object
-    // which we expect to be faster.
-    for (auto field : obj) {
-      simdjson::ondemand::raw_json_string key;
-      error = field.key().get(key);
-      if (error) {
-        return error;
-      }
-      if (key == "make") {
-        error = field.value().get_string(car.make);
-        if (error) {
-          return error;
-        }
-      } else if (key == "model") {
-        error = field.value().get_string(car.model);
-        if (error) {
-          return error;
-        }
-      } else if (key == "year") {
-        error = field.value().get(car.year);
-        if (error) {
-          return error;
-        }
-      } else if (key == "tire_pressure") {
-        error = field.value().get(car.tire_pressure);
-        if (error) {
-          return error;
-        }
-      }
-    }
-    return car;
-  }
+  int year;
+  std::vector<float> tire_pressure;
 };
 ```
 
-Let us explain each argument of `tag_invoke`:
+Observe how we defined the class to use types that simdjson does not directly support (`float`, `int`).
+With C++20 support, the library grabs from the JSON the generic type (`double`, `int`) and then it
+casts it automatically.
 
-- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO)
-- `std::type_identity<T>`: We specify the custom type we want here
-- `simdjson::ondemand::value&` or `simdjson::ondemand::document&`: the value or document that we want to deserialize from; you may want to just specify `auto&` to capture both of them.
+You may support deserializing directly from a JSON value or document to your own `Car` instance
+by defining a single `tag_invoke` function:
+
+
+```C++
+namespace simdjson {
+// This tag_invoke MUST be inside simdjson namespace
+template <>
+auto tag_invoke(deserialize_tag, auto &val, Car& car) {
+  ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  if ((error = obj["make"].get_string(car.make))) {
+    return error;
+  }
+  if ((error = obj["model"].get_string(car.model))) {
+    return error;
+  }
+  if ((error = obj["year"].get(car.year))) {
+    return error;
+  }
+  if ((error = obj["tire_pressure"].get<std::vector<float>>().get(
+           car.tire_pressure))) {
+    return error;
+  }
+  return simdjson::SUCCESS;
+}
+} // namespace simdjson
+```
+
+Observe how we call `get<std::vector<float>>()` even though we never defined support
+for `std::vector<float>` in the simdjson library: it is all automated thanks to C++20 concepts.
+
+Importantly, the `tag_invoke` function must be inside the `simdjson` namespace.
+Let us explain each argument of `tag_invoke` function.
+
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter.
+- `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
+- The third parameter is an instance of the type that you want to support.
 
 You can use it like so:
 
@@ -1179,11 +1134,6 @@ Observe how we first get an instance of `document` and then we cast.
 You can also handle errors explicitly:
 
 ```cpp
-  simdjson::padded_string json =
-      R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
-       "tire_pressure": [ 40.1, 39.9 ] })"_padded;
-  simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
   Car c;
   auto error = doc.get(c);
   if(error) { std::cerr << simdjson::error_message(error); return false; }
@@ -1215,8 +1165,6 @@ explicit casting. The cast may throw an exception.
 Once more, you can handle errors explicitly:
 
 ```cpp
-  simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
   for (auto val : doc) {
     Car c;
     auto error = val.get(c);
@@ -1239,25 +1187,13 @@ You can also use the custom `Car` type as part of a template such as `std::vecto
   }
 ```
 
-You can also extend support to arbitrary templates.
-Suppose your custom types are `std::unique_ptr<any type>`,
-you could add the following `tag_invoke`:
+By default, we support a wide range of standard templates such as
+`std::vector`,  `std::list`, `std::set`, `std::stack`, `std:queue`,
+`std:deque`, `std::priority_queue`, `std::unordered_set`, `std::multiset`,
+`std::unordered_multiset`, `std::unique_ptr`, `std::shared_ptr`, `std::optional`,
+etc. They are handled automatically.
 
-```C++
-namespace simdjson {
-
-  // This tag_invoke MUST be inside simdjson namespace since we can't make it a friend of unique_ptr
-  template <typename T>
-  auto tag_invoke(deserialize_tag, std::type_identity<std::unique_ptr<T>>, auto &val) {
-    return simdjson_result{std::make_unique<T>(val.template get<T>())};
-  }
-
-} // namespace simdjson
-```
-
-You can also mark your `tag_invoke` function as `noexcept` and we will obey that, unlike the *template specialization* way.
-
-You would use it like this:
+E.g., you can recover an `std::unique_ptr<Car>` like so:
 ```C++
 int main() {
   auto const json = R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
@@ -1269,6 +1205,26 @@ int main() {
   return EXIT_SUCCESS;
 }
 ```
+
+You may also conditionally fill in `std::optional` values.
+
+```C++
+
+  padded_string json =
+      R"( { "car1": { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] }
+})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::optional<Car> car;
+  error = doc["key not found"].get<std::optional<Car>>().get(car);
+  // car has no value, error != simdjson::SUCCESS
+  error = doc["car1"].get<std::optional<Car>>().get(car);
+  // car has value Car{"Toyota", "Camry", 2018, {40.1f, 39.9f}}
+  // error is simdjson::SUCCESS
+```
+
+And so forth.
 
 Minifying JSON strings without parsing
 ----------------------
