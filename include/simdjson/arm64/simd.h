@@ -412,6 +412,66 @@ namespace {
     }
   };
 
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+      static const uint8x16_t BITMASK64_BUILDER_MASK = simdjson_make_uint8x16_t(
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      );
+#else
+      static const uint8x16_t BITMASK64_BUILDER_MASK = {
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
+        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
+      };
+#endif
+
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<4> {
+    const uint64_t mask;
+    operator uint64_t() && { return mask; }
+  }; // struct simd_bitmask64_builder<4>
+
+  template<>
+  struct simd_bitmask64_builder<3> {
+    const uint8x16_t sum01;
+    const simd8<bool> val2;
+    simdjson_inline simd_bitmask64_builder<4> next(simd8<bool> val3) {
+      // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
+      uint8x16_t sum23 = vpaddq_u8(val2 & BITMASK64_BUILDER_MASK, val3 & BITMASK64_BUILDER_MASK);
+      uint8x16_t sum0123 = vpaddq_u8(sum01, sum23);
+
+      // This algorithm is actually designed to create a 128-bit mask from 8 16-byte simd masks,
+      // but since we only want 64 bits, we add the mask to itself (creating the final mask twice).
+      uint8x16_t sum01230123 = vpaddq_u8(sum0123, sum0123);
+      return { vgetq_lane_u64(vreinterpretq_u64_u8(sum01230123), 0) };
+    }
+  }; // struct simd_bitmask64_builder<3>
+
+  template<>
+  struct simd_bitmask64_builder<2> {
+    const uint8x16_t sum01;
+    simdjson_inline simd_bitmask64_builder<3> next(simd8<bool> val2) {
+      return { sum01, val2 };
+    }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const simd8<bool> val0;
+    simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val1) {
+      return { vpaddq_u8(val0 & BITMASK64_BUILDER_MASK, val1 & BITMASK64_BUILDER_MASK) };
+    }
+  }; // struct simd_bitmask64_builder<1>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val) {
+      return { val };
+    }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
@@ -449,23 +509,11 @@ namespace {
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
-      const uint8x16_t bit_mask = simdjson_make_uint8x16_t(
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
-      );
-#else
-      const uint8x16_t bit_mask = {
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
-      };
-#endif
-      // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
-      uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
-      uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
-      sum0 = vpaddq_u8(sum0, sum1);
-      sum0 = vpaddq_u8(sum0, sum0);
-      return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1])
+        .next(this->chunks[2])
+        .next(this->chunks[3]);
     }
 
     simdjson_inline uint64_t eq(const T m) const {

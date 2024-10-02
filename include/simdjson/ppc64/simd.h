@@ -392,6 +392,51 @@ template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
   }
 };
 
+template <int N = 0>
+struct simd_bitmask64_builder;
+
+template<>
+struct simd_bitmask64_builder<4> {
+  const uint64_t bitmask;
+  simdjson_inline operator uint64_t() && { return bitmask; }
+}; // struct simd_bitmask64_builder<4>
+
+template<>
+struct simd_bitmask64_builder<3> {
+  const int bitmask01;
+  const int bitmask2;
+  simdjson_inline simd_bitmask64_builder<4> next(simd8<bool> val) {
+    return {
+      uint64_t(this->bitmask01) |
+      (uint64_t(this->bitmask2) << 32) |
+      (uint64_t(val.to_bitmask()) << 48)
+    };
+  }
+}; // struct simd_bitmask64_builder<3>
+
+template<>
+struct simd_bitmask64_builder<2> {
+  const int bitmask01;
+  simdjson_inline simd_bitmask64_builder<3> next(simd8<bool> val) {
+    return { bitmask01, val.to_bitmask() };
+  }
+}; // struct simd_bitmask64_builder<2>
+
+template<>
+struct simd_bitmask64_builder<1> {
+  const int bitmask0;
+  simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val) {
+    return { bitmask0 | (val.to_bitmask() << 16) };
+  }
+}; // struct simd_bitmask64_builder<1>
+
+template<>
+struct simd_bitmask64_builder<0> {
+  simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val) {
+    return { val.to_bitmask() };
+  }
+}; // struct simd_bitmask64_builder<0>
+
 template <typename T> struct simd8x64 {
   static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
   static_assert(NUM_CHUNKS == 4,
@@ -434,11 +479,11 @@ template <typename T> struct simd8x64 {
   }
 
   simdjson_inline uint64_t to_bitmask() const {
-    uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
-    uint64_t r1 = this->chunks[1].to_bitmask();
-    uint64_t r2 = this->chunks[2].to_bitmask();
-    uint64_t r3 = this->chunks[3].to_bitmask();
-    return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1])
+        .next(this->chunks[2])
+        .next(this->chunks[3]);
   }
 
   simdjson_inline uint64_t eq(const T m) const {

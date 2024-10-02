@@ -260,6 +260,51 @@ namespace simd {
     simdjson_inline int get_bit() const { return _mm_movemask_epi8(_mm_slli_epi16(*this, 7-N)); }
   };
 
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<4> {
+    const uint64_t bitmask;
+    operator uint64_t() && { return bitmask; }
+  }; // struct simd_bitmask64_builder<4>
+
+  template<>
+  struct simd_bitmask64_builder<3> {
+    uint32_t bitmask01;
+    const int bitmask2;
+    simdjson_inline simd_bitmask64_builder<4> next(simd8<bool> val3) {
+      return {
+        uint64_t(this->bitmask01) |
+        (uint64_t(this->bitmask2) << 32) |
+        (uint64_t(val3.to_bitmask()) << 48)
+      };
+    }
+  }; // struct simd_bitmask64_builder<3>
+
+  template<>
+  struct simd_bitmask64_builder<2> {
+    uint32_t bitmask01;
+    simdjson_inline simd_bitmask64_builder<3> next(simd8<bool> val2) {
+      return { bitmask01, val2.to_bitmask() };
+    }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const int bitmask0;
+    simdjson_inline simd_bitmask64_builder<2> next(simd8<bool> val1) {
+      return { uint32_t(bitmask0) | (uint32_t(val1.to_bitmask()) << 16) };
+    }
+  }; // struct simd_bitmask64_builder<1>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val0) {
+      return { val0.to_bitmask() };
+    }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);
@@ -293,11 +338,11 @@ namespace simd {
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-      uint64_t r0 = uint32_t(this->chunks[0].to_bitmask() );
-      uint64_t r1 =          this->chunks[1].to_bitmask() ;
-      uint64_t r2 =          this->chunks[2].to_bitmask() ;
-      uint64_t r3 =          this->chunks[3].to_bitmask() ;
-      return r0 | (r1 << 16) | (r2 << 32) | (r3 << 48);
+      return simd_bitmask64_builder<0>()
+        .next(this->chunks[0])
+        .next(this->chunks[1])
+        .next(this->chunks[2])
+        .next(this->chunks[3]);
     }
 
     simdjson_inline uint64_t eq(const T m) const {
