@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <list>
 #include <optional>
 
 using namespace simdjson;
@@ -60,6 +61,26 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, Car& car) {
   if ((error = obj["tire_pressure"].get<std::vector<float>>().get(
            car.tire_pressure))) {
     return error;
+  }
+  return simdjson::SUCCESS;
+}
+
+// suppose we want to filter out all Toyotas
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, std::list<Car>& car) {
+  ondemand::array arr;
+  auto error = val.get_array().get(arr);
+  if (error) {
+    return error;
+  }
+  for (auto v : arr) {
+    Car c;
+    if ((error = v.get<Car>().get(c))) {
+      return error;
+    }
+    if(c.make != "Toyota") {
+      car.push_back(c);
+    }
   }
   return simdjson::SUCCESS;
 }
@@ -167,6 +188,38 @@ bool vector_car_deserialize() {
 }
 
 
+bool list_car_deserialize() {
+  TEST_START();
+  padded_string json =
+      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  [[maybe_unused]] auto doc_error = parser.iterate(json).get(doc);
+#if SIMDJSON_EXCEPTIONS
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+  std::list<Car> cars = doc.get<std::list<Car>>();  // an exception may be thrown
+#else
+  std::list<Car> cars(doc); // an exception may be thrown
+#endif
+#else
+  std::list<Car> cars;
+  if (auto error = doc.get<std::list<Car>>().get(cars)) {
+    std::cerr << error << std::endl;
+    return EXIT_FAILURE;
+  }
+#endif
+  std::list<Car> expected = {{"Kia", "Soul", 2012, {30.1f, 31.0f}}};
+  ASSERT_EQUAL(cars.size(), expected.size());
+  ASSERT_EQUAL(cars.front(), expected.front());
+  TEST_SUCCEED();
+}
+
 bool optional_car_deserialize() {
   TEST_START();
   padded_string json =
@@ -224,7 +277,7 @@ bool car_stream_deserialize() {
   std::vector<Car> cars;
 
 #if SIMDJSON_EXCEPTIONS
-  for(ondemand::document_reference doc : stream) {
+  for(auto doc : stream) {
     cars.push_back((Car)doc); // an exception may be thrown
   }
 #else
@@ -267,7 +320,8 @@ bool car_unique_ptr_deserialize() {
   TEST_SUCCEED();
 }
 
-bool run() { return optional_car_deserialize()
+bool run() { return list_car_deserialize()
+                    && optional_car_deserialize()
                     && car_unique_ptr_deserialize()
                     && vector_car_deserialize()
                     && car_stream_deserialize()

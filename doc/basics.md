@@ -528,7 +528,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   double value;
   auto doc = parser.iterate(abstract_json);
   auto error = doc["str"]["123"]["abc"].get(value);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   cout << value << endl; // Prints 3.14
   ```
   This examples also show how we can string several operations and only check for the error once, a strategy we call  *error chaining*.
@@ -964,11 +964,11 @@ int main(void) {
   ondemand::parser parser;
   ondemand::document doc;
   auto error = parser.iterate(json).get(doc);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   for (auto val : doc) {
     Car c;
     error = val.get<Car>().get(c);
-    if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
     std::cout << c.make << std::endl;
   }
   return EXIT_SUCCESS;
@@ -1058,6 +1058,14 @@ int main(void) {
 
 ### 2. Use `tag_invoke` for custom types (C++20)
 
+In C++20, the standard introduced the notion of *customization point*.
+A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.
+
+A tag_invoke function serves as a mechanism for customization points. It is not directly part of the C++ standard library but is often used in libraries that implement customization points.
+The tag_invoke function is typically a generic function that takes a tag type and additional arguments.
+The first argument is usually a tag type (often an empty struct) that uniquely identifies the customization point (e.g., deserialization of custom types in simdjson). Users or library providers can specialize tag_invoke for their types by defining it in the appropriate namespace, often inline namespace.
+
+
 If your system supports C++20, we recommend that you adopt the `tag_invoke` approach
 instead to deserialize custom types. It may prove to be considerably simpler. When
 simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_DESERIALIZATION` macro
@@ -1085,8 +1093,8 @@ by defining a single `tag_invoke` function:
 ```C++
 namespace simdjson {
 // This tag_invoke MUST be inside simdjson namespace
-template <>
-auto tag_invoke(deserialize_tag, auto &val, Car& car) {
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Car& car) {
   ondemand::object obj;
   auto error = val.get_object().get(obj);
   if (error) {
@@ -1116,7 +1124,7 @@ for `std::vector<float>` in the simdjson library: it is all automated thanks to 
 Importantly, the `tag_invoke` function must be inside the `simdjson` namespace.
 Let us explain each argument of `tag_invoke` function.
 
-- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter.
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.
 - `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
 - The third parameter is an instance of the type that you want to support.
 
@@ -1229,6 +1237,39 @@ You may also conditionally fill in `std::optional` values.
 
 And so forth.
 
+Advanced users may want to overwrite the defaults provided by the simdjson library.
+Suppose for example that you want to construct an instance of `std::list<Car>`, but
+you also want to filter out any car made by Toyota. You may provide your own
+`tag_invoke` function:
+
+```c++
+namespace simdjson {
+// suppose we want to filter out all Toyotas
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, std::list<Car>& car) {
+  ondemand::array arr;
+  auto error = val.get_array().get(arr);
+  if (error) {
+    return error;
+  }
+  for (auto v : arr) {
+    Car c;
+    if ((error = v.get<Car>().get(c))) {
+      return error;
+    }
+    if(c.make != "Toyota") {
+      car.push_back(c);
+    }
+  }
+  return simdjson::SUCCESS;
+}
+}
+```
+
+With this code, deserializing an `std::list<Car>` instance would capture only the cars
+that are not made by Toyota.
+
+
 Minifying JSON strings without parsing
 ----------------------
 
@@ -1243,6 +1284,7 @@ In some cases, you may have valid JSON strings that you do not wish to parse but
   std::unique_ptr<char[]> buffer{new char[length]};
   size_t new_length{}; // It will receive the minified length.
   auto error = simdjson::minify(some_string, length, buffer.get(), new_length);
+  if(error) { std::cerr << simdjson::error_message(error); }
   // The buffer variable now has "[1,2,3,4]" and new_length has value 9.
 ```
 
@@ -1440,7 +1482,7 @@ pair. You can retrieve the value with .get() without generating an exception, li
 ```c++
 ondemand::document doc;
 auto error = parser.iterate(json).get(doc);
-if (error) { cerr << error << endl; exit(1); }
+if(error) { std::cerr << simdjson::error_message(error); exit(1); }
 ```
 
 When there is no error, the error code `simdjson::SUCCESS`is returned: it evaluates as false as a Boolean.
@@ -1471,7 +1513,7 @@ bool simple_error_example() {
     auto error = doc["bad number"].get_double().get(x);
     // returns "simdjson::NUMBER_ERROR"
     if (error != SUCCESS) {
-      std::cout << error << std::endl;
+      std::cerr << simdjson::error_message(error) << std::endl;
       return false;
     }
     std::cout << "Got " << x << std::endl;
@@ -1524,7 +1566,6 @@ We can write a "quick start" example where we attempt to parse the following JSO
 Our program loads the file, selects value corresponding to key `"search_metadata"` which expected to be an object, and then
 it selects the key `"count"` within that object.
 
-
 ```C++
 #include <iostream>
 #include "simdjson.h"
@@ -1532,10 +1573,10 @@ it selects the key `"count"` within that object.
 int main(void) {
   simdjson::ondemand::parser parser;
   auto error = padded_string::load("twitter.json").get(json);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   simdjson::ondemand::document tweets;
   error = parser.iterate(json).get(tweets);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   simdjson::ondemand::value res;
   error = tweets["search_metadata"]["count"].get(res);
   if (error != SUCCESS) {
@@ -1566,12 +1607,12 @@ int main(void) {
   simdjson::ondemand::document tweets;
   padded_string json;
   auto error = padded_string::load("twitter.json").get(json);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   error = parser.iterate(json).get(tweets);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   uint64_t identifier;
   error = tweets["statuses"].at(0)["id"].get(identifier);
-  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
   std::cout << identifier << std::endl;
 }
 ```
@@ -1595,40 +1636,40 @@ bool parse() {
 
   // Iterating through an array of objects
   auto error = parser.iterate(cars_json).get(doc);
-  if (error) { std::cerr << error << std::endl; return false; }
+  if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
   ondemand::array cars; // invalid until the get() succeeds
   error = doc.get_array().get(cars);
 
   for (auto car_value : cars) {
     ondemand::object car; // invalid until the get() succeeds
     error = car_value.get_object().get(car);
-    if (error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
 
     // Accessing a field by name
     std::string_view make;
     std::string_view model;
     error = car["make"].get(make);
-    if (error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
     error = car["model"].get(model);
-    if (error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
 
     cout << "Make/Model: " << make << "/" << model << endl;
 
     // Casting a JSON element to an integer
     uint64_t year{};
     error = car["year"].get(year);
-    if (error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
     cout << "- This car is " << 2020 - year << " years old." << endl;
 
     // Iterating through an array of floats
     double total_tire_pressure = 0;
     ondemand::array pressures;
     error = car["tire_pressure"].get_array().get(pressures);
-    if (error) { std::cerr << error << std::endl; return false; }
+    if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
     for (auto tire_pressure_value : pressures) {
       double tire_pressure;
       error = tire_pressure_value.get_double().get(tire_pressure);
-      if (error) { std::cerr << error << std::endl; return false; }
+      if (error) { std::cerr << simdjson::error_message(error) << std::endl; return false; }
       total_tire_pressure += tire_pressure;
     }
     cout << "- Average tire pressure: " << (total_tire_pressure / 4) << endl;
@@ -1750,7 +1791,7 @@ auto doc = parser.iterate(broken_json);
 int64_t i;
 auto error = doc["integer"].get_int64().get(i);    // Expect to get integer from "integer" key, but get TAPE_ERROR
 if (error) {
-  std::cout << error << std::endl;    // Prints TAPE_ERROR error message
+  std::cerr << simdjson::error_message(error) << std::endl;    // Prints TAPE_ERROR error message
   // Recover a pointer to the location of the first error:
   const char * ptr;
   doc.current_location().get(ptr);
@@ -1787,7 +1828,7 @@ auto doc = parser.iterate(json);
 int64_t i;
 auto error = doc["integer"].get_int64().get(i);    // Incorrect call on array, INCORRECT_TYPE error
 if (error) {
-  std::cout << error << std::endl;     // Prints INCORRECT_TYPE error message
+  std::cerr << simdjson::error_message(error) << std::endl;     // Prints INCORRECT_TYPE error message
   std::cout<< doc.current_location() << std::endl;  // Prints "[1,2,3] " (location of INCORRECT_TYPE error)
 }
 ```
@@ -1960,7 +2001,7 @@ for (auto doc: stream) {
     error = doc.at_pointer("/4").get(val);
     // error == simdjson::CAPACITY
     if (error) {
-      std::cerr << error << std::endl;
+      std::cerr << simdjson::error_message(error) << std::endl;
       // We left 293 bytes unprocessed at the tail end of the input.
       std::cout << " unprocessed bytes at the end: " << stream.truncated_bytes() << std::endl;
       break;
