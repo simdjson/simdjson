@@ -4,20 +4,6 @@
 #include <string>
 #include <vector>
 
-#ifdef __cpp_concepts
-
-namespace simdjson {
-
-// unique_ptr<T>
-template <typename T>
-error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<T>& out) {
-  out = std::make_unique<T>(val.template get<T>());
-  return SUCCESS;
-}
-
-} // namespace simdjson
-
-#endif // __cpp_concepts
 
 namespace doc_custom_types_tests {
 #if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
@@ -63,10 +49,10 @@ struct Car {
   }
 };
 
-static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::value>, "It should be invocable");
-static_assert(simdjson::deserializable<std::unique_ptr<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
-static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::value>, "It should be invocable");
-static_assert(simdjson::deserializable<std::vector<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
+static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
+static_assert(simdjson::custom_deserializable<std::vector<Car>, simdjson::ondemand::value>, "It should be invocable");
+static_assert(simdjson::custom_deserializable<std::vector<Car>, simdjson::ondemand::document>, "Tag_invoke should work with document as well.");
 
 bool custom_test() {
   TEST_START();

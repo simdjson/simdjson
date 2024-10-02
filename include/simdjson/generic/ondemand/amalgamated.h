@@ -3,8 +3,8 @@
 #endif
 
 // Stuff other things depend on
-#include "simdjson/generic/ondemand/deserialize.h"
 #include "simdjson/generic/ondemand/base.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/value.h"
 #include "simdjson/generic/ondemand/logger.h"
@@ -24,6 +24,9 @@
 #include "simdjson/generic/ondemand/object_iterator.h"
 #include "simdjson/generic/ondemand/serialization.h"
 
+// Deserialization for standard types
+#include "simdjson/generic/ondemand/std_deserialize.h"
+
 // Inline definitions
 #include "simdjson/generic/ondemand/array-inl.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
@@ -42,4 +45,4 @@
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 
-#include "simdjson/generic/ondemand/tag_invoke.h"
+

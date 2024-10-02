@@ -4,43 +4,9 @@
 #include <string>
 #include <vector>
 
-#ifdef __cpp_concepts
-
-template <typename T>
-struct is_unique_ptr : std::false_type {
-};
-
-
-template <typename T>
-struct is_unique_ptr<std::unique_ptr<T>> : std::true_type {
-};
-
-template <typename T>
-concept is_unique_ptr_v = is_unique_ptr<T>::value;
-
-
-namespace simdjson {
-
-// this is to demonstrate that we can use concept; otherwise a simple
-// type_identity<unique_ptr<T>> as the second argument would have done the job.
-//
-// This tag_invoke MUST be inside simdjson namespace
-template <typename T>
-  requires is_unique_ptr_v<T>
-auto tag_invoke(deserialize_tag, ondemand::value &val, T& out) {
-  using type = typename T::element_type;
-  out = std::make_unique<type>(val.template get<type>());
-  return SUCCESS;
-}
-
-} // namespace simdjson
-
-
-#endif // __cpp_concepts
-
 
 namespace custom_types_tests {
-#if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
 struct Car {
   std::string make{};
   std::string model{};
@@ -87,7 +53,7 @@ struct Car {
   }
 };
 
-static_assert(simdjson::deserializable<std::unique_ptr<Car>>, "It should be deserializable");
+static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>, "It should be deserializable");
 
 bool custom_uniqueptr_test() {
   TEST_START();
@@ -214,7 +180,7 @@ bool custom_no_except() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       custom_test() &&
       custom_uniqueptr_test() &&
       custom_no_except() &&
