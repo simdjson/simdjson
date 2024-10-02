@@ -378,7 +378,7 @@ such as a `std::vector<Car>` like so if you support exceptions:
   ondemand::document_stream stream;
   [[maybe_unused]] auto error = parser.iterate_many(json).get(stream);
   std::vector<Car> cars;
-  for(ondemand::document_reference doc : stream) {
+  for(auto doc : stream) {
     cars.push_back((Car)doc); // an exception may be thrown
   }
 ```

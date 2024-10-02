@@ -836,18 +836,6 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::do
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>(first).get<T>(out);
 }
-template <>
-simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(SIMDJSON_IMPLEMENTATION::ondemand::document_reference &out) & noexcept {
-  if (error()) { return error(); }
-  out = first;
-  return SUCCESS;
-}
-template <>
-simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(SIMDJSON_IMPLEMENTATION::ondemand::document_reference &out) && noexcept {
-  if (error()) { return error(); }
-  out = first;
-  return SUCCESS;
-}
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::type() noexcept {
   if (error()) { return error(); }
   return first.type();
@@ -877,10 +865,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
-template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>::type>
+template <class T>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator T() noexcept(false) {
+  static_assert(std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false, "You should not call get<T> when T is a document");
+  static_assert(std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false, "You should not call get<T> when T is a document");
   if (error()) { throw simdjson_error(error()); }
-  return first;
+  return first.get<T>();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
