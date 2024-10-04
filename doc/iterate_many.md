@@ -25,6 +25,7 @@ Contents
 - [Use cases](#use-cases)
 - [Tracking your position](#tracking-your-position)
 - [Incomplete streams](#incomplete-streams)
+- [C++20 features](#c20-features)
 
 Motivation
 -----------
@@ -287,4 +288,112 @@ string
 string
 object
 array
+```
+
+
+C++20 features
+--------------------
+
+In C++20, the standard introduced the notion of *customization point*.
+A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.
+
+A tag_invoke function serves as a mechanism for customization points. It is not directly part of the C++ standard library but is often used in libraries that implement customization points.
+The tag_invoke function is typically a generic function that takes a tag type and additional arguments.
+The first argument is usually a tag type (often an empty struct) that uniquely identifies the customization point (e.g., deserialization of custom types in simdjson). Users or library providers can specialize tag_invoke for their types by defining it in the appropriate namespace, often inline namespace.
+
+
+
+You can deserialize you own data structures conveniently if your system supports C++20.
+When it is the case, the macro `SIMDJSON_SUPPORTS_DESERIALIZATION` will be set to 1 by
+the simdjson library.
+
+Consider a custom class `Car`:
+
+```C++
+struct Car {
+  std::string make;
+  std::string model;
+  int year;
+  std::vector<float> tire_pressure;
+};
+```
+
+
+You may support deserializing directly from a JSON value or document to your own `Car` instance
+by defining a single `tag_invoke` function:
+
+
+```C++
+namespace simdjson {
+// This tag_invoke MUST be inside simdjson namespace
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Car& car) {
+  ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  if ((error = obj["make"].get_string(car.make))) {
+    return error;
+  }
+  if ((error = obj["model"].get_string(car.model))) {
+    return error;
+  }
+  if ((error = obj["year"].get(car.year))) {
+    return error;
+  }
+  if ((error = obj["tire_pressure"].get<std::vector<float>>().get(
+           car.tire_pressure))) {
+    return error;
+  }
+  return simdjson::SUCCESS;
+}
+} // namespace simdjson
+```
+
+Importantly, the `tag_invoke` function must be inside the `simdjson` namespace.
+Let us explain each argument of `tag_invoke` function.
+
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.
+- `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
+- The third parameter is an instance of the type that you want to support.
+
+Please see our main documentation (`basics.md`) under
+"Use `tag_invoke` for custom types (C++20)" for details about
+tag_invoke functions.
+
+Given a stream of JSON documents, you can add them to a data struture
+such as a `std::vector<Car>` like so if you support exceptions:
+
+```C++
+  padded_string json =
+      R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] }
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] }
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+)"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream stream;
+  [[maybe_unused]] auto error = parser.iterate_many(json).get(stream);
+  std::vector<Car> cars;
+  for(auto doc : stream) {
+    cars.push_back((Car)doc); // an exception may be thrown
+  }
+```
+
+Otherwise you may use this longer version for explicit handling of errors:
+
+
+```C++
+  std::vector<Car> cars;
+  for(auto doc : stream) {
+    Car c;
+    if ((error = doc.get<Car>().get(c))) {
+      std::cerr << simdjson::error_message(error); << std::endl;
+      return EXIT_FAILURE;
+    }
+    cars.push_back(c);
+  }
 ```
