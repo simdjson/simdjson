@@ -471,7 +471,7 @@ void jsondollar() {
   dom::object obj;
   error = doc.get_object().get(obj);
   if(error) { exit(-1); }
-  int64_t x;
+  int64_t x = 0; // initialization to silence unwarranted compiler warning
   error = obj.at_path("$[3].foo.a[1]").get(x);
   if(error) { exit(-1); }
   if(x != 20) { exit(-1); }
@@ -490,7 +490,7 @@ void jsonpath() {
   dom::element doc;
   auto error = parser.parse(cars_json).get(doc);
   if(error) { exit(-1); }
-  double p;
+  double p = 0.0; // initialization to silence unwarranted compiler warning
   error = doc.at_path("[0].tire_pressure[1]").get(p);
   if(error) { exit(-1); }
   if(p != 39.9) { exit(-1); }
