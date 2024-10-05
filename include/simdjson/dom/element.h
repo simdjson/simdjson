@@ -397,6 +397,21 @@ public:
    */
   inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
 
+  /**
+   * Get the value associated with the given JSONPath expression. We only support
+   * JSONPath queries that trivially convertible to JSON Pointer queries: key
+   * names and array indices.
+   *
+   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   *
+   * @return The value associated with the given JSONPath expression, or:
+   *         - INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails
+   *         - NO_SUCH_FIELD if a field does not exist in an object
+   *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
+   *         - INCORRECT_TYPE if a non-integer is used to access an array
+  */
+  inline simdjson_result<element> at_path(std::string_view json_path) const noexcept;
+
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
   /**
    *
@@ -526,6 +541,7 @@ public:
   simdjson_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   simdjson_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   simdjson_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
+  simdjson_inline simdjson_result<dom::element> at_path(const std::string_view json_path) const noexcept;
   [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
   simdjson_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
   simdjson_inline simdjson_result<dom::element> at(size_t index) const noexcept;

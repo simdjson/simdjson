@@ -2,6 +2,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
+#include "simdjson/jsonpathutil.h"
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
@@ -161,53 +162,6 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
     child = child.at_pointer(json_pointer.substr(i));
   }
   return child;
-}
-
-inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
-  if (json_path.empty() || (json_path.front() != '.' &&
-      json_path.front() != '[')) {
-    return "-1"; // This is just a sentinel value, the caller should check for this and return an error.
-  }
-
-  std::string result;
-  // Reserve space to reduce allocations, adjusting for potential increases due
-  // to escaping.
-  result.reserve(json_path.size() * 2);
-
-  size_t i = 0;
-
-  while (i < json_path.length()) {
-    if (json_path[i] == '.') {
-      result += '/';
-    } else if (json_path[i] == '[') {
-      result += '/';
-      ++i; // Move past the '['
-      while (i < json_path.length() && json_path[i] != ']') {
-          if (json_path[i] == '~') {
-            result += "~0";
-          } else if (json_path[i] == '/') {
-            result += "~1";
-          } else {
-            result += json_path[i];
-          }
-          ++i;
-      }
-      if (i == json_path.length() || json_path[i] != ']') {
-          return "-1"; // Using sentinel value that will be handled as an error by the caller.
-      }
-    } else {
-      if (json_path[i] == '~') {
-          result += "~0";
-      } else if (json_path[i] == '/') {
-          result += "~1";
-      } else {
-          result += json_path[i];
-      }
-    }
-    ++i;
-  }
-
-  return result;
 }
 
 inline simdjson_result<value> array::at_path(std::string_view json_path) noexcept {
