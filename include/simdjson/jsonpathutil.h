@@ -9,7 +9,6 @@ namespace simdjson {
  * Converts JSONPath to JSON Pointer.
  * @param json_path The JSONPath string to be converted.
  * @return A string containing the equivalent JSON Pointer.
- * @throws simdjson_error If the conversion fails.
  */
 inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
   size_t i = 0;

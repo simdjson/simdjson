@@ -13,5 +13,6 @@
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string_view.h"
 #include "simdjson/internal/dom_parser_implementation.h"
+#include "simdjson/jsonpathutil.h"
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H
