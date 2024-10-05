@@ -140,7 +140,13 @@ bool demo_relative_path() {
     std::cerr << "cannot parse: " << error << std::endl;
     return false;
   }
-  for (auto car_element : cars) {
+  dom::array cars_array;
+  error = cars.get(cars_array);
+  if (error) {
+    std::cerr << "cannot get array: " << error << std::endl;
+    return false;
+  }
+  for (auto car_element : cars_array) {
     double x;
     ASSERT_SUCCESS(car_element.at_path(".tire_pressure[1]").get(x));
     measured.push_back(x);

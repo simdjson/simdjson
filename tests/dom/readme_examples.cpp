@@ -461,7 +461,44 @@ void parse_documentation_lowlevel() {
   (void)element;
 }
 
+
+void jsondollar() {
+  dom::parser parser;
+  auto json = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+  dom::element doc;
+  auto error = parser.parse(json).get(doc);
+  if(error) { exit(-1); }
+  dom::object obj;
+  error = doc.get_object().get(obj);
+  if(error) { exit(-1); }
+  int64_t x;
+  error = obj.at_path("$[3].foo.a[1]").get(x);
+  if(error) { exit(-1); }
+  if(x != 20) { exit(-1); }
+  x = obj.at_path("$.d.foo2.a.2");
+  if(x != 30) { exit(-1); }
+  if(error) { exit(-1); }
+}
+
+void jsonpath() {
+  auto cars_json = R"( [
+    { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+  ] )"_padded;
+  dom::parser parser;
+  dom::element doc;
+  auto error = parser.parse(cars_json).get(doc);
+  if(error) { exit(-1); }
+  double p;
+  error = doc.at_path("[0].tire_pressure[1]").get(p);
+  if(error) { exit(-1); }
+  if(p != 39.9) { exit(-1); }
+}
+
 int main() {
+  jsonpath();
+  jsondollar();
   basics_dom_1();
   basics_dom_2();
   basics_dom_3();
