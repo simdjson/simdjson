@@ -1224,7 +1224,11 @@ be represented as `value` instances. You can check that a document is a scalar w
 JSONPath
 ------------
 
-The simdjson library now supports a subset of [JSONPath](https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library supports a subset of [JSONPath](https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+
+This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of
+[`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects
+ and arrays: make sure to consume the values between each call to `at_path`.
 
 Consider the following example:
 
@@ -1266,7 +1270,7 @@ doc.at_path((const char*)u8".\u00E9") // returns an error (NO_SUCH_FIELD)
 ```
 
 
-We also support the `$` prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g,
+We also support the `$` prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g.,
 
 ```c++
 auto json = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
