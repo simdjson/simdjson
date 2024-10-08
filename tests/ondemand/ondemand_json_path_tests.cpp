@@ -346,6 +346,54 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 
+    bool many_json_paths_with_prefix() {
+        TEST_START();
+        // object
+        {
+            auto cfoofoo2 = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+            ondemand::parser parser;
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
+            ondemand::object obj;
+            ASSERT_SUCCESS(doc.get_object().get(obj));
+            int64_t x;
+            ASSERT_SUCCESS(obj.at_path("$.c.foo.a[1]").get(x));
+            ASSERT_EQUAL(x, 20);
+            ASSERT_SUCCESS(obj.at_path("$.d.foo2.a.2").get(x));
+            ASSERT_EQUAL(x, 30);
+            ASSERT_SUCCESS(obj.at_path("$.e").get(x));
+            ASSERT_EQUAL(x, 120);
+        }
+        // array
+        {
+            auto cfoofoo2 = R"( [ 111, 2, 3, { "foo": { "a": [ 10, 20, 33 ] }}, { "foo2": { "a": [ 10, 20, 30 ] }}, 1001 ])"_padded;
+            ondemand::parser parser;
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(cfoofoo2).get(doc));
+            ondemand::array arr;
+            ASSERT_SUCCESS(doc.get_array().get(arr));
+            int64_t x;
+            ASSERT_SUCCESS(arr.at_path("$[3].foo.a[1]").get(x));
+            ASSERT_EQUAL(x, 20);
+        }
+        // onject array
+        {
+            auto dogcatpotato = R"( { "dog" : [1,2,3], "cat" : [5, 6, 7], "potato" : [1234]})"_padded;
+
+            ondemand::parser parser;
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(dogcatpotato).get(doc));
+            ondemand::object obj;
+            ASSERT_SUCCESS(doc.get_object().get(obj));
+            int64_t x;
+            ASSERT_SUCCESS(obj.at_path("$.dog[1]").get(x));
+            ASSERT_EQUAL(x, 2);
+            ASSERT_SUCCESS(obj.at_path("$.potato[0]").get(x));
+            ASSERT_EQUAL(x, 1234);
+        }
+        TEST_SUCCEED();
+    }
+
 #if SIMDJSON_EXCEPTIONS
     bool json_path_invalidation_exceptions() {
         TEST_START();
@@ -392,6 +440,7 @@ namespace json_path_tests {
                 many_json_paths_array() &&
                 many_json_paths_object() &&
                 many_json_paths_object_array() &&
+                many_json_paths_with_prefix() &&
                 run_broken_tests() &&
                 json_path_invalidation() &&
                 demo_test() &&

@@ -8,6 +8,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c17-support)
 * [JSON Pointer](#json-pointer)
+* [JSONPath](#jsonpath)
 * [Error Handling](#error-handling)
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
@@ -257,6 +258,49 @@ for (dom::element car_element : cars) {
 }
 ```
 
+JSONPath
+------------
+
+
+The simdjson library supports a subset of [JSONPath](https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+
+Consider the following example:
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+dom::parser parser;
+dom::element doc;
+auto error = parser.parse(cars_json).get(doc);
+if(error) { /*won't happen*/ }
+double p;
+error = doc.at_path("[0].tire_pressure[1]").get(p);
+if(error) { /*won't happen*/ }
+cout << p << endl; // Prints 39.9
+```
+
+
+We also support the `$` prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g.,
+
+```c++
+auto json = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+dom::parser parser;
+dom::element doc;
+auto error = parser.parse(json).get(doc);
+if(error) { /*won't happen*/ }
+dom::object obj;
+error = doc.get_object().get(obj);
+if(error) { /*won't happen*/ }
+int64_t x;
+error = obj.at_path("$[3].foo.a[1]").get(x);
+if(error) { /*won't happen*/ }
+if(x != 20) { /*won't happen*/ }
+x = obj.at_path("$.d.foo2.a.2");
+if(error) { /*won't happen*/ }
+```
 
 
 Error Handling

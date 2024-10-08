@@ -7,6 +7,7 @@
 #include "simdjson/dom/array.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/error-inl.h"
+#include "simdjson/jsonpathutil.h"
 #include "simdjson/internal/tape_ref-inl.h"
 
 #include <limits>
@@ -44,6 +45,13 @@ inline simdjson_result<dom::element> simdjson_result<dom::array>::at_pointer(std
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
 }
+
+ inline simdjson_result<dom::element> simdjson_result<dom::array>::at_path(std::string_view json_path) const noexcept {
+  auto json_pointer = json_path_to_pointer_conversion(json_path);
+  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
+  return at_pointer(json_pointer);
+ }
+
 inline simdjson_result<dom::element> simdjson_result<dom::array>::at(size_t index) const noexcept {
   if (error()) { return error(); }
   return first.at(index);
@@ -111,6 +119,12 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
     child = child.at_pointer(json_pointer.substr(i));
   }
   return child;
+}
+
+inline simdjson_result<element> array::at_path(std::string_view json_path) const noexcept {
+  auto json_pointer = json_path_to_pointer_conversion(json_path);
+  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
+  return at_pointer(json_pointer);
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {
