@@ -228,8 +228,8 @@ Free Padding</h1>
 <div class="line"><span class="comment">// Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the</span></div>
 <div class="line"><span class="comment">// page boundary.</span></div>
 <div class="line"><span class="keywordtype">bool</span> need_allocation(<span class="keyword">const</span> <span class="keywordtype">char</span> *buf, <span class="keywordtype">size_t</span> len) {</div>
-<div class="line">  <span class="keywordflow">return</span> ((<span class="keyword">reinterpret_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(buf + len - 1) % page_size()) &lt;</div>
-<div class="line">          <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
+<div class="line">  <span class="keywordflow">return</span> ((<span class="keyword">reinterpret_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(buf + len - 1) % page_size())</div>
+<div class="line">    + <a class="code" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a> &gt; <span class="keyword">static_cast&lt;</span>uintptr_t<span class="keyword">&gt;</span>(page_size()));</div>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line"><a class="code" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div>
