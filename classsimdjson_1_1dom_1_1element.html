@@ -218,6 +218,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:a3777fed88f37555f2d090aeb604a117c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1element.html#a3777fed88f37555f2d090aeb604a117c">at_pointer</a> (const std::string_view json_pointer) const noexcept</td></tr>
 <tr class="memdesc:a3777fed88f37555f2d090aeb604a117c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON pointer.  <a href="classsimdjson_1_1dom_1_1element.html#a3777fed88f37555f2d090aeb604a117c">More...</a><br /></td></tr>
 <tr class="separator:a3777fed88f37555f2d090aeb604a117c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae63f42ca3ef7d7eda92b4366db200782"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1element.html#ae63f42ca3ef7d7eda92b4366db200782">at_path</a> (std::string_view json_path) const noexcept</td></tr>
+<tr class="memdesc:ae63f42ca3ef7d7eda92b4366db200782"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <a href="classsimdjson_1_1dom_1_1element.html#ae63f42ca3ef7d7eda92b4366db200782">More...</a><br /></td></tr>
+<tr class="separator:ae63f42ca3ef7d7eda92b4366db200782"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8b5798004a859bf922778226b8c1cce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1element.html#aa8b5798004a859bf922778226b8c1cce">at</a> (const std::string_view json_pointer) const noexcept</td></tr>
 <tr class="memdesc:aa8b5798004a859bf922778226b8c1cce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard and allowed the following :  <a href="classsimdjson_1_1dom_1_1element.html#aa8b5798004a859bf922778226b8c1cce">More...</a><br /></td></tr>
 <tr class="separator:aa8b5798004a859bf922778226b8c1cce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -315,7 +318,7 @@ template&lt;&gt; </td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00417">417</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00428">428</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -349,7 +352,7 @@ template&lt;&gt; </td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00424">424</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00435">435</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -387,7 +390,7 @@ template&lt;&gt; </td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00427">427</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00438">438</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -422,7 +425,46 @@ template&lt;&gt; </td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00430">430</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00441">441</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="ae63f42ca3ef7d7eda92b4366db200782"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae63f42ca3ef7d7eda92b4366db200782">&#9670;&nbsp;</a></span>at_path()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt; simdjson::dom::element::at_path </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the value associated with the given JSONPath expression. </p>
+<p>We only support JSONPath queries that trivially convertible to JSON Pointer queries: key names and array indices.</p>
+<p><a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00</a></p>
+<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSONPath expression, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails</li>
+<li>NO_SUCH_FIELD if a field does not exist in an object</li>
+<li>INDEX_OUT_OF_BOUNDS if an array index is larger than an array length</li>
+<li>INCORRECT_TYPE if a non-integer is used to access an array </li>
+</ul>
+</dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00421">421</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -463,7 +505,7 @@ template&lt;&gt; </td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00395">395</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00401">401</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -499,7 +541,7 @@ template&lt;&gt; </td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00362">362</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00368">368</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -535,7 +577,7 @@ template&lt;&gt; </td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00365">365</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00371">371</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -633,7 +675,7 @@ template&lt;typename T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The error that occurred, or SUCCESS if there was no error. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00309">309</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00315">315</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -663,7 +705,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to an array. </p>
 <dl class="section return"><dt>Returns</dt><dd>An object that can be used to iterate the array, or: INCORRECT_TYPE if the JSON element is not an array. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00289">289</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00295">295</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -693,7 +735,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to a bool. </p>
 <dl class="section return"><dt>Returns</dt><dd>A bool value. Returns INCORRECT_TYPE if the JSON element is not a boolean. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00200">200</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00206">206</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -726,7 +768,7 @@ template&lt;typename T &gt; </div>
 <p>It is possible to get a single string_view instance which represents both the string content and its length: see <a class="el" href="classsimdjson_1_1dom_1_1element.html#ae83652b5016ce4d4ff71f8f9bc05913e" title="Cast this element to a string.">get_string()</a>.</p>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a null-terminated UTF-8 string. This string is stored in the parser and will be invalidated the next time it parses a document or when it is destroyed. Returns INCORRECT_TYPE if the JSON element is not a string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00209">209</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00215">215</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -756,7 +798,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to a double floating-point. </p>
 <dl class="section return"><dt>Returns</dt><dd>A double value. Returns INCORRECT_TYPE if the JSON element is not a number. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00267">267</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00273">273</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -786,7 +828,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to a signed integer. </p>
 <dl class="section return"><dt>Returns</dt><dd>A signed 64-bit integer. Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE if it is negative. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00252">252</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00258">258</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -816,7 +858,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to an object. </p>
 <dl class="section return"><dt>Returns</dt><dd>An object that can be used to look up or iterate the object's fields, or: INCORRECT_TYPE if the JSON element is not an object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00298">298</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00304">304</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -847,7 +889,7 @@ template&lt;typename T &gt; </div>
 <p>The string is guaranteed to be valid UTF-8.</p>
 <dl class="section return"><dt>Returns</dt><dd>An UTF-8 string. The string is stored in the parser and will be invalidated the next time it parses a document or when it is destroyed. Returns INCORRECT_TYPE if the JSON element is not a string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00229">229</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00235">235</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -878,7 +920,7 @@ template&lt;typename T &gt; </div>
 <p>It is possible to get a single string_view instance which represents both the string content and its length: see <a class="el" href="classsimdjson_1_1dom_1_1element.html#ae83652b5016ce4d4ff71f8f9bc05913e" title="Cast this element to a string.">get_string()</a>.</p>
 <dl class="section return"><dt>Returns</dt><dd>A string length in bytes. Returns INCORRECT_TYPE if the JSON element is not a string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00219">219</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00225">225</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -908,7 +950,7 @@ template&lt;typename T &gt; </div>
 <p>Cast this element to an unsigned integer. </p>
 <dl class="section return"><dt>Returns</dt><dd>An unsigned 64-bit integer. Returns INCORRECT_TYPE if the JSON element is not an integer, or NUMBER_OUT_OF_RANGE if it is too large. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00238">238</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00244">244</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -949,7 +991,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00324">324</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00330">330</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -979,7 +1021,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json array. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;array&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00338">338</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00344">344</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1009,7 +1051,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json <code>true</code> or <code>false</code>. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;bool&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00344">344</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00350">350</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1039,7 +1081,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json number that fits in a double. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;double&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00343">343</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00349">349</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1069,7 +1111,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json number that fits in a signed 64-bit integer. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;int64_t&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00341">341</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00347">347</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1099,7 +1141,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json number. </p>
 <p>Both integers and floating points will return true. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00345">345</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00351">351</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1129,7 +1171,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json object. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;object&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00339">339</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00345">345</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1159,7 +1201,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json string. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;std::string_view&gt;()</a> or <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;const char *&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00340">340</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00346">346</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1189,7 +1231,7 @@ template&lt;typename T &gt; </div>
 <p>Whether this element is a json number that fits in an unsigned 64-bit integer. </p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7" title="Tell whether the value can be cast to provided type (T).">is&lt;uint64_t&gt;()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00342">342</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00348">348</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1225,7 +1267,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00359">359</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00365">365</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1261,7 +1303,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00353">353</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00359">359</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1299,7 +1341,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00354">354</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00360">360</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1335,7 +1377,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00358">358</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00364">364</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1372,7 +1414,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00357">357</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00363">363</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1408,7 +1450,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00360">360</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00366">366</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1445,7 +1487,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00355">355</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00361">361</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1482,7 +1524,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00356">356</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00362">362</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1513,7 +1555,7 @@ template&lt;typename T &gt; </div>
 <p>operator&lt; defines a total order for element allowing to use them in ordered C++ STL containers </p>
 <dl class="section return"><dt>Returns</dt><dd>TRUE if the key appears before the other one in the tape </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00433">433</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00444">444</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1544,7 +1586,7 @@ template&lt;typename T &gt; </div>
 <p>operator== allows to verify if two element values reference the same JSON item </p>
 <dl class="section return"><dt>Returns</dt><dd>TRUE if the two values references the same JSON element </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00436">436</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00447">447</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1583,7 +1625,7 @@ template&lt;typename T &gt; </div>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00374">374</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00380">380</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1622,7 +1664,7 @@ template&lt;typename T &gt; </div>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00371">371</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="element-inl_8h_source.html#l00377">377</a> of file <a class="el" href="element-inl_8h_source.html">element-inl.h</a>.</p>
 
 </div>
 </div>

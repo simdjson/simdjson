@@ -4,7 +4,7 @@ var indexSectionsWithContent =
   1: "adefiknoprsv",
   2: "s",
   3: "s",
-  4: "abcdefghiklmnoprstuvw~",
+  4: "abcdefghijklmnoprstuvw~",
   5: "bdfiklopsv",
   6: "den",
   7: "ejs",

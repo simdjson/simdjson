@@ -204,7 +204,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Design notes: Instead of constructing a string_view and then comparing it with a user-provided strings, it is probably more performant to have dedicated functions taking as a parameter the string we want to compare against and return true when they are equal.</p>
 <p>That avoids the creation of a temporary std::string_view. Though it is possible for the compiler to avoid entirely any overhead due to string_view, relying too much on compiler magic is problematic: compiler magic sometimes fail, and then what do you do? Also, enticing users to rely on high-performance function is probably better on the long run. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00221">221</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00233">233</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -235,7 +235,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Returns true if the key in this key/value pair is equal to the provided string_view in a case-insensitive manner. </p>
 <p>Case comparisons may only be handled correctly for ASCII strings. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00232">232</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00244">244</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -265,7 +265,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the length (in bytes) of the key in this key/value pair. </p>
 <p>You should expect this function to be faster than <a class="el" href="classsimdjson_1_1dom_1_1object_1_1iterator.html#a951609ca7a164b499ff19adbe2de7983" title="Get the key of this key/value pair.">key()</a>.<a class="el" href="classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873" title="Get the size of the object (number of keys).">size()</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00198">198</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00210">210</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -296,7 +296,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Check if these values come from the same place in the JSON. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00167">167</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00179">179</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -326,7 +326,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the next key/value pair. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00185">185</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00197">197</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -357,7 +357,7 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <p>Get the next key/value pair. </p>
 <p>Part of the std::iterator interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00190">190</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00202">202</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>

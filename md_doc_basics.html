@@ -924,7 +924,7 @@ JSON Pointer</h1>
 </div><!-- fragment --><p>When the JSON Pointer Path is the empty string (<code>""</code>) applied to a scalar document (lone string, number, Boolean or null), a SCALAR_DOCUMENT_AS_VALUE error is returned because scalar document cannot be represented as <code>value</code> instances. You can check that a document is a scalar with the method <code>scalar()</code>.</p>
 <h1><a class="anchor" id="autotoc_md16"></a>
 JSONPath</h1>
-<p>The simdjson library now supports a subset of <a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">JSONPath</a> through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
+<p>The simdjson library supports a subset of <a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">JSONPath</a> through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
 <p>This implementation relies on <code>at_path()</code> converting its argument to JSON Pointer and then calling <code>at_pointer</code>, which makes use of <a href="#rewind"><code>rewind</code></a> to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects and arrays: make sure to consume the values between each call to <code>at_path</code>.</p>
 <p>Consider the following example:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -953,6 +953,14 @@ JSONPath</h1>
 <div class="line">auto doc = parser.iterate(json);</div>
 <div class="line">doc.at_path(&quot;.\\u00E9&quot;) == 123; // true</div>
 <div class="line">doc.at_path((const char*)u8&quot;.\u00E9&quot;) // returns an error (NO_SUCH_FIELD)</div>
+</div><!-- fragment --><p>We also support the <code>$</code> prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g.,</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">auto json = R&quot;( { &quot;c&quot; :{ &quot;foo&quot;: { &quot;a&quot;: [ 10, 20, 30 ] }}, &quot;d&quot;: { &quot;foo2&quot;: { &quot;a&quot;: [ 10, 20, 30 ] }} , &quot;e&quot;: 120 })&quot;_padded;</div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line">ondemand::document doc = parser.iterate(json);</div>
+<div class="line">ondemand::object obj = doc.get_object();</div>
+<div class="line">int64_t x = obj.at_path(&quot;$.c.foo.a[1]&quot;); // 20</div>
+<div class="line">x = obj.at_path(&quot;$.d.foo2.a.2&quot;); // 30</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md17"></a>
 Error handling</h1>
 <p>Error handing with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.</p>

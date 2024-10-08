@@ -4,6 +4,7 @@ var structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4 =
     [ "at", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#aa5fc1f2ba212d675892d7769f886a961", null ],
     [ "at_key", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a007b43b1f5a5eb29c71cc8f80fce25ae", null ],
     [ "at_key_case_insensitive", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#ae07877e1a2d4555e6226cfbfcbd52989", null ],
+    [ "at_path", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a7fe1e43e258b5844aeef0f6c69a185bc", null ],
     [ "at_pointer", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a49a8f308fee51108430db6612da292da", null ],
     [ "begin", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a7c3dcc6e3cf1c8640bd484fe0ab21979", null ],
     [ "end", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a758ca9e0d3c830bd6cd9275c9697b18b", null ],

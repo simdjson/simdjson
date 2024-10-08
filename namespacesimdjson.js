@@ -98,6 +98,7 @@ var namespacesimdjson =
     [ "get_available_implementations", "namespacesimdjson.html#a7e4483a8ae684fdb5b2f1e7d4a8acc69", null ],
     [ "get_corpus", "namespacesimdjson.html#ad394176adf22f9151f92d9cd541d0aee", null ],
     [ "is_streaming", "namespacesimdjson.html#a6f306690d6d088d80b0cc2717040b2d0", null ],
+    [ "json_path_to_pointer_conversion", "namespacesimdjson.html#ade48fbb6e7d8bf0be40bf7345cfbe4be", null ],
     [ "minify", "namespacesimdjson.html#a94bb4244756d764cf0ed7de180ae6520", null ],
     [ "minify", "namespacesimdjson.html#a083a32b06fd32b6cd5e747abe3db6172", null ],
     [ "minify", "namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c", null ],

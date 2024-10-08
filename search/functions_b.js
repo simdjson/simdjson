@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['max_5fcapacity_469',['max_capacity',['../classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0',1,'simdjson::dom::parser::max_capacity()'],['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a1c1fa76cb23d179fc4e98c2707bd9530',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::max_capacity()']]],
-  ['max_5fdepth_470',['max_depth',['../classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5',1,'simdjson::dom::parser::max_depth()'],['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a53ae6fd25ecdc64171a03f8e542b276c',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::max_depth()']]],
-  ['minify_471',['minify',['../namespacesimdjson.html#aeb4ef5cab43d52da3fdd99cb689aff2c',1,'simdjson::minify(T x)'],['../namespacesimdjson.html#a94bb4244756d764cf0ed7de180ae6520',1,'simdjson::minify(const char *buf, size_t len, char *dst, size_t &amp;dst_len) noexcept']]]
+  ['length_467',['length',['../structsimdjson_1_1padded__string.html#a863fded7b347718299190ad3f501d38c',1,'simdjson::padded_string']]],
+  ['load_468',['load',['../classsimdjson_1_1dom_1_1parser.html#ab3e5bbb1974a1932aead90ad63883a23',1,'simdjson::dom::parser::load()'],['../structsimdjson_1_1padded__string.html#aaf017ffe731c738da5eb31c63b987d3a',1,'simdjson::padded_string::load()']]],
+  ['load_5finto_5fdocument_469',['load_into_document',['../classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807',1,'simdjson::dom::parser']]],
+  ['load_5fmany_470',['load_many',['../classsimdjson_1_1dom_1_1parser.html#a5300851ba21d0a0273a11510fd1c378a',1,'simdjson::dom::parser']]]
 ];

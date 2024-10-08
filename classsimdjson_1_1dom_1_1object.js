@@ -4,6 +4,7 @@ var classsimdjson_1_1dom_1_1object =
     [ "object", "classsimdjson_1_1dom_1_1object.html#ae2e1a8cbaab9d352495d1dc993407be3", null ],
     [ "at_key", "classsimdjson_1_1dom_1_1object.html#a4fb3e04e0ea591132da90341bf9ed819", null ],
     [ "at_key_case_insensitive", "classsimdjson_1_1dom_1_1object.html#ab075da9eb7678f6321cecf4cbd196039", null ],
+    [ "at_path", "classsimdjson_1_1dom_1_1object.html#aa9d243605183d484a797cc06ac32a0ee", null ],
     [ "at_pointer", "classsimdjson_1_1dom_1_1object.html#ace84581be0fee46d5128c49710522aba", null ],
     [ "begin", "classsimdjson_1_1dom_1_1object.html#afe127a7e9ec8dab9ec76160525a68a83", null ],
     [ "end", "classsimdjson_1_1dom_1_1object.html#a79cf291477bcaa1bf2328411b411587d", null ],

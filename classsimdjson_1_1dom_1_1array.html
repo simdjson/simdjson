@@ -125,6 +125,9 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <tr class="memitem:a8141c7d98672bc3ab69fea7b63afcfb2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1array.html#a8141c7d98672bc3ab69fea7b63afcfb2">at_pointer</a> (std::string_view json_pointer) const noexcept</td></tr>
 <tr class="memdesc:a8141c7d98672bc3ab69fea7b63afcfb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON pointer.  <a href="classsimdjson_1_1dom_1_1array.html#a8141c7d98672bc3ab69fea7b63afcfb2">More...</a><br /></td></tr>
 <tr class="separator:a8141c7d98672bc3ab69fea7b63afcfb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9d596ea0c2e0a6732866d5d9c1fa3ec"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1array.html#aa9d596ea0c2e0a6732866d5d9c1fa3ec">at_path</a> (std::string_view json_path) const noexcept</td></tr>
+<tr class="memdesc:aa9d596ea0c2e0a6732866d5d9c1fa3ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <a href="classsimdjson_1_1dom_1_1array.html#aa9d596ea0c2e0a6732866d5d9c1fa3ec">More...</a><br /></td></tr>
+<tr class="separator:aa9d596ea0c2e0a6732866d5d9c1fa3ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a6373cc1542a7137b79978680a93d18"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1array.html#a6a6373cc1542a7137b79978680a93d18">at</a> (size_t index) const noexcept</td></tr>
 <tr class="memdesc:a6a6373cc1542a7137b79978680a93d18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value at the given index.  <a href="classsimdjson_1_1dom_1_1array.html#a6a6373cc1542a7137b79978680a93d18">More...</a><br /></td></tr>
 <tr class="separator:a6a6373cc1542a7137b79978680a93d18"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,7 +174,46 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00116">116</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00130">130</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="aa9d596ea0c2e0a6732866d5d9c1fa3ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9d596ea0c2e0a6732866d5d9c1fa3ec">&#9670;&nbsp;</a></span>at_path()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt; simdjson::dom::array::at_path </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the value associated with the given JSONPath expression. </p>
+<p>We only support JSONPath queries that trivially convertible to JSON Pointer queries: key names and array indices.</p>
+<p><a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00</a></p>
+<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSONPath expression, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails</li>
+<li>NO_SUCH_FIELD if a field does not exist in an object</li>
+<li>INDEX_OUT_OF_BOUNDS if an array index is larger than an array length</li>
+<li>INCORRECT_TYPE if a non-integer is used to access an array </li>
+</ul>
+</dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00124">124</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>
@@ -210,7 +252,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00075">75</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00083">83</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>
@@ -240,7 +282,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>Return the first array element. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00059">59</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00067">67</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>
@@ -270,7 +312,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>One past the last array element. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00063">63</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00071">71</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>
@@ -301,7 +343,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>Note that this is not the same thing as <code><a class="el" href="classsimdjson_1_1dom_1_1array.html#a698f2f984d1a78a68962c06b2f047686" title="Get the size of the array (number of immediate children).">size()</a></code>, which reports the number of actual elements within an array (not counting its children).</p>
 <p>Since an element can use 1 or 2 slots on the tape, you can only use this to figure out the total size of an array (including its children, recursively) if you know its structure ahead of time. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00071">71</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00079">79</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>
@@ -331,7 +373,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>Get the size of the array (number of immediate children). </p>
 <p>It is a saturated value with a maximum of 0xFFFFFF: if the value is 0xFFFFFF then the size is 0xFFFFFF or greater. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00067">67</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2array-inl_8h_source.html#l00075">75</a> of file <a class="el" href="dom_2array-inl_8h_source.html">array-inl.h</a>.</p>
 
 </div>
 </div>

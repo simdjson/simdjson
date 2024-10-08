@@ -128,6 +128,9 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <tr class="memitem:ace84581be0fee46d5128c49710522aba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1object.html#ace84581be0fee46d5128c49710522aba">at_pointer</a> (std::string_view json_pointer) const noexcept</td></tr>
 <tr class="memdesc:ace84581be0fee46d5128c49710522aba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSON pointer.  <a href="classsimdjson_1_1dom_1_1object.html#ace84581be0fee46d5128c49710522aba">More...</a><br /></td></tr>
 <tr class="separator:ace84581be0fee46d5128c49710522aba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9d243605183d484a797cc06ac32a0ee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1object.html#aa9d243605183d484a797cc06ac32a0ee">at_path</a> (std::string_view json_path) const noexcept</td></tr>
+<tr class="memdesc:aa9d243605183d484a797cc06ac32a0ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <a href="classsimdjson_1_1dom_1_1object.html#aa9d243605183d484a797cc06ac32a0ee">More...</a><br /></td></tr>
+<tr class="separator:aa9d243605183d484a797cc06ac32a0ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fb3e04e0ea591132da90341bf9ed819"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1dom_1_1object.html#a4fb3e04e0ea591132da90341bf9ed819">at_key</a> (std::string_view key) const noexcept</td></tr>
 <tr class="memdesc:a4fb3e04e0ea591132da90341bf9ed819"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given key.  <a href="classsimdjson_1_1dom_1_1object.html#a4fb3e04e0ea591132da90341bf9ed819">More...</a><br /></td></tr>
 <tr class="separator:a4fb3e04e0ea591132da90341bf9ed819"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,7 +182,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00134">134</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00146">146</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -216,7 +219,46 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00146">146</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00158">158</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="aa9d243605183d484a797cc06ac32a0ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa9d243605183d484a797cc06ac32a0ee">&#9670;&nbsp;</a></span>at_path()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">element</a> &gt; simdjson::dom::object::at_path </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the value associated with the given JSONPath expression. </p>
+<p>We only support JSONPath queries that trivially convertible to JSON Pointer queries: key names and array indices.</p>
+<p><a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00</a></p>
+<dl class="section return"><dt>Returns</dt><dd>The value associated with the given JSONPath expression, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails</li>
+<li>NO_SUCH_FIELD if a field does not exist in an object</li>
+<li>INDEX_OUT_OF_BOUNDS if an array index is larger than an array length</li>
+<li>INCORRECT_TYPE if a non-integer is used to access an array </li>
+</ul>
+</dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00140">140</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -257,7 +299,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00089">89</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00095">95</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -287,7 +329,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>Return the first key/value pair. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00070">70</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00076">76</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -317,7 +359,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>One past the last key/value pair. </p>
 <p>Part of the std::iterable interface. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00074">74</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00080">80</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -357,7 +399,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00086">86</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00092">92</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -397,7 +439,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00083">83</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00089">89</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -427,7 +469,7 @@ simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <p>Get the size of the object (number of keys). </p>
 <p>It is a saturated value with a maximum of 0xFFFFFF: if the value is 0xFFFFFF then the size is 0xFFFFFF or greater. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00078">78</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2object-inl_8h_source.html#l00084">84</a> of file <a class="el" href="dom_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>

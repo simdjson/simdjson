@@ -304,16 +304,16 @@ simdjson_inline void&#160;</td><td class="memItemRight" valign="bottom"><b>set_m
 <p>Start iterating an on-demand JSON document. </p>
 <p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html" title="A JSON fragment iterator.">ondemand::parser</a> parser; document doc = parser.iterate(json);</p>
 <p>It is expected that the content is a valid UTF-8 file, containing a valid JSON document. Otherwise the iterate method may return an error. In particular, the whole input should be valid: we do not attempt to tolerate incorrect content either before or after a JSON document. If there is a UTF-8 BOM, the parser skips it.</p>
-<h3><a class="anchor" id="autotoc_md130"></a>
+<h3><a class="anchor" id="autotoc_md131"></a>
 IMPORTANT: Validate what you use</h3>
 <p>Calling iterate on an invalid JSON document may not immediately trigger an error. The call to iterate does not parse and validate the whole document.</p>
-<h3><a class="anchor" id="autotoc_md131"></a>
+<h3><a class="anchor" id="autotoc_md132"></a>
 IMPORTANT: Buffer Lifetime</h3>
 <p>Because parsing is done while you iterate, you <em>must</em> keep the JSON buffer around at least as long as the document iteration.</p>
-<h3><a class="anchor" id="autotoc_md132"></a>
+<h3><a class="anchor" id="autotoc_md133"></a>
 IMPORTANT: Document Lifetime</h3>
 <p>Only one iteration at a time can happen per parser, and the parser <em>must</em> be kept alive during iteration to ensure intermediate buffers can be accessed. Any document must be destroyed before you call parse() again or destroy the parser.</p>
-<h3><a class="anchor" id="autotoc_md133"></a>
+<h3><a class="anchor" id="autotoc_md134"></a>
 REQUIRED: Buffer Padding</h3>
 <p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -389,19 +389,19 @@ REQUIRED: Buffer Padding</h3>
 <p>No copy of the input buffer is made.</p>
 <p>The function is lazy: it may be that no more than one JSON document at a time is parsed.</p>
 <p>The caller is responsabile to ensure that the input string data remains unchanged and is not deleted during the loop.</p>
-<h3><a class="anchor" id="autotoc_md137"></a>
+<h3><a class="anchor" id="autotoc_md138"></a>
 Format</h3>
 <p>The buffer must contain a series of one or more JSON documents, concatenated into a single buffer, separated by ASCII whitespace. It effectively parses until it has a fully valid document, then starts parsing the next document at that point. (It does this with more parallelism and lookahead than you might think, though.)</p>
 <p>documents that consist of an object or array may omit the whitespace between them, concatenating with no separator. Documents that consist of a single primitive (i.e. documents that are not arrays or objects) MUST be separated with ASCII whitespace.</p>
 <p>The characters inside a JSON document, and between JSON documents, must be valid Unicode (UTF-8). If there is a UTF-8 BOM, the parser skips it.</p>
 <p>The documents must not exceed batch_size bytes (by default 1MB) or they will fail to parse. Setting batch_size to excessively large or excessively small values may impact negatively the performance.</p>
-<h3><a class="anchor" id="autotoc_md138"></a>
+<h3><a class="anchor" id="autotoc_md139"></a>
 REQUIRED: Buffer Padding</h3>
 <p>The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what those bytes are initialized to, as long as they are allocated. These bytes will be read: if you using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the SIMDJSON_PADDING bytes to avoid runtime warnings.</p>
-<h3><a class="anchor" id="autotoc_md139"></a>
+<h3><a class="anchor" id="autotoc_md140"></a>
 Threads</h3>
 <p>When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the hood to do some lookahead.</p>
-<h3><a class="anchor" id="autotoc_md140"></a>
+<h3><a class="anchor" id="autotoc_md141"></a>
 Parser Capacity</h3>
 <p>If the parser's current capacity is less than batch_size, it will allocate enough capacity to handle it (up to max_capacity).</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -498,7 +498,7 @@ Parser Capacity</h3>
  with newline, etc. </p>
 <p>to a user-provided buffer. The result must be valid UTF-8. The provided pointer is advanced to the end of the string by reference, and a string_view instance is returned. You can ensure that your buffer is large enough by allocating a block of memory at least as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.</p>
 <p>This unescape function is a low-level function. If you want a more user-friendly approach, you should avoid <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instances (e.g., by calling unescaped_key() instead of key() or get_string() instead of get_raw_json_string()).</p>
-<h2><a class="anchor" id="autotoc_md141"></a>
+<h2><a class="anchor" id="autotoc_md142"></a>
 IMPORTANT: string_view lifetime</h2>
 <p>The string_view is only valid as long as the bytes in dst.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -553,7 +553,7 @@ IMPORTANT: string_view lifetime</h2>
  with newline, etc. </p>
 <p>to a user-provided buffer. The result may not be valid UTF-8. See <a href="https://simonsapin.github.io/wtf-8/">https://simonsapin.github.io/wtf-8/</a> The provided pointer is advanced to the end of the string by reference, and a string_view instance is returned. You can ensure that your buffer is large enough by allocating a block of memory at least as large as the input JSON plus SIMDJSON_PADDING and then unescape all strings to this one buffer.</p>
 <p>This unescape function is a low-level function. If you want a more user-friendly approach, you should avoid <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a> instances (e.g., by calling unescaped_key() instead of key() or get_string() instead of get_raw_json_string()).</p>
-<h2><a class="anchor" id="autotoc_md142"></a>
+<h2><a class="anchor" id="autotoc_md143"></a>
 IMPORTANT: string_view lifetime</h2>
 <p>The string_view is only valid as long as the bytes in dst.</p>
 <dl class="params"><dt>Parameters</dt><dd>

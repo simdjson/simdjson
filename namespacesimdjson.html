@@ -354,6 +354,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 <tr class="memitem:ad394176adf22f9151f92d9cd541d0aee"><td class="memItemLeft" align="right" valign="top"><a id="ad394176adf22f9151f92d9cd541d0aee"></a>
 <a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_corpus</b> (const char *path)</td></tr>
 <tr class="separator:ad394176adf22f9151f92d9cd541d0aee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade48fbb6e7d8bf0be40bf7345cfbe4be"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ade48fbb6e7d8bf0be40bf7345cfbe4be">json_path_to_pointer_conversion</a> (std::string_view json_path)</td></tr>
+<tr class="memdesc:ade48fbb6e7d8bf0be40bf7345cfbe4be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts JSONPath to JSON Pointer.  <a href="namespacesimdjson.html#ade48fbb6e7d8bf0be40bf7345cfbe4be">More...</a><br /></td></tr>
+<tr class="separator:ade48fbb6e7d8bf0be40bf7345cfbe4be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a94bb4244756d764cf0ed7de180ae6520"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a94bb4244756d764cf0ed7de180ae6520">minify</a> (const char *buf, size_t len, char *dst, size_t &amp;dst_len) noexcept</td></tr>
 <tr class="memdesc:a94bb4244756d764cf0ed7de180ae6520"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minify the input string assuming that it represents a JSON string, does not parse or validate.  <a href="namespacesimdjson.html#a94bb4244756d764cf0ed7de180ae6520">More...</a><br /></td></tr>
 <tr class="separator:a94bb4244756d764cf0ed7de180ae6520"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -640,6 +643,43 @@ constexpr SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS size_t&#160;</td><td class="memI
 
 <p>The active implementation. </p>
 <p>Automatically initialized on first use to the most advanced implementation supported by this hardware. </p>
+
+</div>
+</div>
+<a id="ade48fbb6e7d8bf0be40bf7345cfbe4be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade48fbb6e7d8bf0be40bf7345cfbe4be">&#9670;&nbsp;</a></span>json_path_to_pointer_conversion()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::json_path_to_pointer_conversion </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Converts JSONPath to JSON Pointer. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">json_path</td><td>The JSONPath string to be converted. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A string containing the equivalent JSON Pointer. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="jsonpathutil_8h_source.html#l00013">13</a> of file <a class="el" href="jsonpathutil_8h_source.html">jsonpathutil.h</a>.</p>
 
 </div>
 </div>

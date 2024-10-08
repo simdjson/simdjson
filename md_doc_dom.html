@@ -98,6 +98,7 @@ $(document).ready(function(){initNavTree('md_doc_dom.html',''); initResizable();
 <li><a href="#using-the-parsed-json">Using the Parsed JSON</a></li>
 <li><a href="#c17-support">C++17 Support</a></li>
 <li><a href="#json-pointer">JSON Pointer</a></li>
+<li><a href="#jsonpath">JSONPath</a></li>
 <li><a href="#error-handling">Error Handling</a><ul>
 <li><a href="#error-handling-example">Error Handling Example</a></li>
 <li><a href="#exceptions">Exceptions</a></li>
@@ -273,6 +274,40 @@ JSON Pointer</h1>
 <div class="line">    cout &lt;&lt; x &lt;&lt; endl; // Prints 39.9, 31 and 30</div>
 <div class="line">}</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md42"></a>
+JSONPath</h1>
+<p>The simdjson library supports a subset of <a href="https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00">JSONPath</a> through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
+<p>Consider the following example:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">auto cars_json = R&quot;( [</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9, 37.7, 40.4 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012, &quot;tire_pressure&quot;: [ 30.1, 31.0, 28.6, 28.7 ] },</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999, &quot;tire_pressure&quot;: [ 29.8, 30.0, 30.2, 30.5 ] }</div>
+<div class="line">] )&quot;_padded;</div>
+<div class="line">dom::parser parser;</div>
+<div class="line">dom::element doc;</div>
+<div class="line">auto error = parser.parse(cars_json).get(doc);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+<div class="line">double p;</div>
+<div class="line">error = doc.at_path(&quot;[0].tire_pressure[1]&quot;).get(p);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+<div class="line">cout &lt;&lt; p &lt;&lt; endl; // Prints 39.9</div>
+</div><!-- fragment --><p>We also support the <code>$</code> prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g.,</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">auto json = R&quot;( { &quot;c&quot; :{ &quot;foo&quot;: { &quot;a&quot;: [ 10, 20, 30 ] }}, &quot;d&quot;: { &quot;foo2&quot;: { &quot;a&quot;: [ 10, 20, 30 ] }} , &quot;e&quot;: 120 })&quot;_padded;</div>
+<div class="line">dom::parser parser;</div>
+<div class="line">dom::element doc;</div>
+<div class="line">auto error = parser.parse(json).get(doc);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+<div class="line">dom::object obj;</div>
+<div class="line">error = doc.get_object().get(obj);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+<div class="line">int64_t x;</div>
+<div class="line">error = obj.at_path(&quot;$[3].foo.a[1]&quot;).get(x);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+<div class="line">if(x != 20) { /*won&#39;t happen*/ }</div>
+<div class="line">x = obj.at_path(&quot;$.d.foo2.a.2&quot;);</div>
+<div class="line">if(error) { /*won&#39;t happen*/ }</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md43"></a>
 Error Handling</h1>
 <p>All simdjson APIs that can fail return <code>simdjson_result&lt;T&gt;</code>, which is a &lt;value, error_code&gt; pair. You can retrieve the value with .get(), like so:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -335,7 +370,7 @@ Error Handling</h1>
 <div class="line">  return EXIT_SUCCESS;</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The <code>at()</code> method has linear-time complexity: it should not be used to iterate over the content of an array.</p>
-<h2><a class="anchor" id="autotoc_md43"></a>
+<h2><a class="anchor" id="autotoc_md44"></a>
 Error Handling Example</h2>
 <p>This is how the example in "Using the Parsed JSON" could be written using only error code checking:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -444,7 +479,7 @@ Error Handling Example</h2>
 <div class="line">}</div>
 </div><!-- fragment --><p>To ensure you don't write any code that uses exceptions, compile with <code>SIMDJSON_EXCEPTIONS=OFF</code>. For example, if including the project via cmake:</p>
 <div class="fragment"><div class="line">target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md44"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md45"></a>
 Exceptions</h2>
 <p>Users more comfortable with an exception flow may choose to directly cast the <code>simdjson_result&lt;T&gt;</code> to the desired type:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -461,7 +496,7 @@ Exceptions</h2>
 <div class="line">  std::cout &lt;&lt; &quot;ID: &quot; &lt;&lt; tweets[&quot;statuses&quot;].at(0)[&quot;id&quot;] &lt;&lt; std::endl;</div>
 <div class="line">  return EXIT_SUCCESS;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md45"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md46"></a>
 Tree Walking and JSON Element Types</h1>
 <p>Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON (* ignoring nuances like trailing commas and escaping strings, for brevity's sake):</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -508,7 +543,7 @@ Tree Walking and JSON Element Types</h1>
 <div class="line">  dom::parser parser;</div>
 <div class="line">  print_json(parser.load(&quot;twitter.json&quot;));</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md46"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md47"></a>
 Reusing the parser for maximum efficiency</h1>
 <p>If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once and reuse it. The simdjson library will allocate and retain internal buffers between parses, keeping buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner, you can parse terabytes of JSON data without doing any new allocation.</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -532,7 +567,7 @@ Reusing the parser for maximum efficiency</h1>
 <p><b>You are only borrowing the document from the simdjson parser. Don't keep it long term!</b> </p>
 </blockquote>
 <p>This is key: don't keep the <code>document&amp;</code>, <code>dom::element</code>, <code>dom::array</code>, <code>dom::object</code> or <code>string_view</code> objects you get back from the API. Convert them to C++ native values, structs and arrays that you own.</p>
-<h1><a class="anchor" id="autotoc_md47"></a>
+<h1><a class="anchor" id="autotoc_md48"></a>
 Server Loops: Long-Running Processes and Memory Capacity</h1>
 <p>The simdjson library automatically expands its memory capacity when larger documents are parsed, so that you don't unexpectedly fail. In a short process that reads a bunch of files and then exits, this works pretty flawlessly.</p>
 <p>Server loops, though, are long-running processes that will keep the parser around forever. This means that if you encounter a really, really large document, simdjson will not resize back down. The simdjson library lets you adjust your allocation strategy to prevent your server from growing without bound:</p>
@@ -564,16 +599,16 @@ Server Loops: Long-Running Processes and Memory Capacity</h1>
 <div class="line">   if (error == CAPACITY) { request.respond(413); continue; }</div>
 <div class="line">   // ...</div>
 <div class="line"> }</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md48"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md49"></a>
 Best Use of the DOM API</h1>
 <p>The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of <code>dom::element</code> instances, each representing an object, an array or an atomic type (null, true, false, number). These <code>dom::element</code> instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.</p>
-<h1><a class="anchor" id="autotoc_md49"></a>
+<h1><a class="anchor" id="autotoc_md50"></a>
 Padding and Temporary Copies</h1>
 <p>The simdjson function <code>parser.parse</code> reads data from a padded buffer, containing SIMDJSON_PADDING extra bytes added at the end. If you are passing a <code>padded_string</code> to <code>parser.parse</code> or loading the JSON directly from disk (<code>parser.load</code>), padding is automatically handled. When calling <code>parser.parse</code> on a pointer (e.g., <code>parser.parse(my_char_pointer, my_length_in_bytes)</code>) a temporary copy is made by default with adequate padding and you, again, do not need to be concerned with padding.</p>
 <p>Some users may not be able use our <code>padded_string</code> class or to load the data directly from disk (<code>parser.load</code>). They may need to pass data pointers to the library. If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call <code>parser.parse</code> with the <code>realloc_if_needed</code> parameter set to false (e.g., <code>parser.parse(my_char_pointer, my_length_in_bytes, false)</code>). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:</p>
 <p>```C++ const char *json = R"({"key":"value"})"; const size_t json_len = std::strlen(json); std::unique_ptr&lt;char[]&gt; padded_json_copy{new char[json_len + SIMDJSON_PADDING]}; memcpy(padded_json_copy.get(), json, json_len); memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING); <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">simdjson::dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">simdjson::dom::element</a> element = parser.parse(padded_json_copy.get(), json_len, false); ````</p>
 <p>Setting the <code>realloc_if_needed</code> parameter <code>false</code> in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.</p>
-<h1><a class="anchor" id="autotoc_md50"></a>
+<h1><a class="anchor" id="autotoc_md51"></a>
 Performance Tips</h1>
 <ul>
 <li>For release builds, we recommend setting <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directrive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>

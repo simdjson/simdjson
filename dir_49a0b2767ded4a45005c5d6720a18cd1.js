@@ -27,6 +27,7 @@ var dir_49a0b2767ded4a45005c5d6720a18cd1 =
     [ "implementation.h", "implementation_8h_source.html", null ],
     [ "implementation_detection.h", "implementation__detection_8h_source.html", null ],
     [ "jsonioutil.h", "jsonioutil_8h_source.html", null ],
+    [ "jsonpathutil.h", "jsonpathutil_8h_source.html", null ],
     [ "lasx.h", "lasx_8h_source.html", null ],
     [ "lsx.h", "lsx_8h_source.html", null ],
     [ "minify.h", "minify_8h_source.html", null ],
