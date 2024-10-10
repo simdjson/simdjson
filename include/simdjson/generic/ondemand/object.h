@@ -11,8 +11,7 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
-#if defined(__cpp_concepts) && defined(__cpp_consteval)
-#define SIMDJSON_SUPPORTS_EXTRACT 1
+#if SIMDJSON_SUPPORTS_EXTRACT
 
 template <typename T>
 concept endpoint = std::is_invocable_r_v<error_code, T, simdjson_result<value>> &&
@@ -79,7 +78,7 @@ public:
   /** @overload simdjson_inline simdjson_result<value> find_field(std::string_view key) & noexcept; */
   simdjson_inline simdjson_result<value> find_field(std::string_view key) && noexcept;
 
-#ifdef SIMDJSON_SUPPORTS_EXTRACT
+#if SIMDJSON_SUPPORTS_EXTRACT
   /**
    * Extract all the fields in one go
    * Funcs are invocables that take a simdjson_result<value> as input.

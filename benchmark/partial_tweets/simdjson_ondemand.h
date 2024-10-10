@@ -45,7 +45,6 @@ BENCHMARK_TEMPLATE(partial_tweets, simdjson_ondemand)->UseManualTime();
 
 
 #if SIMDJSON_SUPPORTS_EXTRACT
-
 using namespace simdjson::ondemand;
 
 struct simdjson_ondemand_extract {

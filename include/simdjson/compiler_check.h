@@ -50,4 +50,18 @@
 #endif
 #endif
 
+#ifdef __has_include
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+
+
+
+#if defined(__cpp_concepts)
+#define SIMDJSON_SUPPORTS_EXTRACT 1
+#else
+#define SIMDJSON_SUPPORTS_EXTRACT 0
+#endif
+
 #endif // SIMDJSON_COMPILER_CHECK_H
