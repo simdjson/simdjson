@@ -15,6 +15,141 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+
+#if SIMDJSON_SUPPORTS_EXTRACT
+
+
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
+template <endpoint ...Funcs>
+simdjson_inline error_code object::extract(Funcs&&... endpoints) {
+  return iter.on_field_raw([&, eps = std::make_tuple(std::forward<Funcs>(endpoints)...)](auto field_key, error_code& error) mutable {
+    std::apply([&](auto &...endpoints) {
+       std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(value(iter.child()))) == SUCCESS : true) && ...);
+    }, eps);
+    if (error) {
+      return true;
+    }
+    return false;
+  });
+}
+#else
+template <endpoint ...Funcs>
+simdjson_inline error_code object::extract(Funcs&&... endpoints) noexcept((nothrow_endpoint<Funcs> && ...)) {
+  return iter.on_field_raw([&](auto field_key, error_code& error) noexcept((nothrow_endpoint<Funcs> && ...)) {
+    std::ignore = ((field_key.unsafe_is_equal(endpoints.key()) ? (error = endpoints(value(iter.child()))) == SUCCESS : true) && ...);
+    if (error) {
+      return true;
+    }
+    return false;
+  });
+}
+#endif
+
+template <typename T>
+struct to {
+private:
+  T *pointer;
+  std::string_view m_key;
+
+public:
+  constexpr explicit(false)
+      to(std::string_view const inp_key, T &obj_ref) noexcept
+      : pointer{std::addressof(obj_ref)}, m_key{inp_key} {}
+
+  constexpr to(to const &) = default;
+  constexpr to(to &&) noexcept = default;
+  constexpr to &operator=(to const &) = default;
+  constexpr to &operator=(to &&) noexcept = default;
+  constexpr ~to() = default;
+
+  [[nodiscard]] constexpr std::string_view key() const noexcept {
+    return m_key;
+  }
+
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept(
+      std::is_nothrow_assignable_v<T, simdjson_result<value>>) {
+    return val.get<T>(*pointer);
+  }
+};
+
+template <typename Func>
+  requires(std::is_invocable_v<Func, simdjson_result<value>>)
+struct to<Func> {
+private:
+  Func func;
+  std::string_view m_key;
+
+public:
+  constexpr explicit(false)
+      to(std::string_view const inp_key,
+         Func &&inp_func) noexcept(std::is_nothrow_copy_assignable_v<Func>)
+      : func{std::forward<Func>(inp_func)}, m_key{inp_key} {}
+
+  constexpr to(to const &) = default;
+  constexpr to(to &&) noexcept = default;
+  constexpr to& operator=(to const &) = default;
+  constexpr to& operator=(to &&) noexcept = default;
+  constexpr ~to() = default;
+
+  [[nodiscard]] constexpr std::string_view key() const noexcept {
+    return m_key;
+  }
+
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept(
+      std::is_nothrow_invocable_v<Func, simdjson_result<value>>) {
+    if constexpr (std::is_invocable_r_v<error_code, Func, simdjson_result<value>>) {
+      return func(val);
+    } else {
+      static_cast<void>(func(val));
+      return SUCCESS;
+    }
+  }
+};
+
+template <typename Func>
+  requires(std::is_invocable_v<Func, simdjson_result<value>>)
+to(std::string_view, Func &&) -> to<Func>;
+
+template <typename T>
+to(std::string_view, T&) -> to<T>;
+
+template <endpoint... Tos>
+struct sub {
+private:
+  using tuple_type = std::tuple<Tos...>;
+  tuple_type tos;
+
+public:
+
+  // double templating to make perfect forwarding work
+  template <typename ...T>
+    requires ((std::same_as<T, Tos> && ...))
+  explicit constexpr sub(T&&...inp_tos) noexcept(std::is_nothrow_constructible_v<tuple_type, T...>)
+      : tos{std::forward<T>(inp_tos)...} {}
+
+  constexpr sub(sub const &) = default;
+  constexpr sub(sub &&) noexcept = default;
+  constexpr sub &operator=(sub const &) = default;
+  constexpr sub &operator=(sub &&) = default;
+  constexpr ~sub() = default;
+
+  [[nodiscard]] constexpr error_code operator()(simdjson_result<value> val) noexcept((nothrow_endpoint<Tos> && ...)) {
+    object obj;
+    if (auto const err = val.get_object().get(obj); err) {
+      return err;
+    }
+    return std::apply([&obj]<typename... T>(T &&...app_tos) {
+      return obj.extract(std::forward<T>(app_tos)...);
+    }, tos);
+  }
+};
+
+template <endpoint... Tos>
+sub(Tos&&...) -> sub<Tos...>;
+
+#endif
+
+
 simdjson_inline simdjson_result<value> object::find_field_unordered(const std::string_view key) & noexcept {
   bool has_value;
   SIMDJSON_TRY( iter.find_field_unordered_raw(key).get(has_value) );

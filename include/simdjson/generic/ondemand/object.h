@@ -11,6 +11,19 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+#if SIMDJSON_SUPPORTS_EXTRACT
+
+template <typename T>
+concept endpoint = std::is_invocable_r_v<error_code, T, simdjson_result<value>> &&
+                   std::is_copy_constructible_v<T> && requires(T to) {
+                     { to.key() } noexcept -> std::convertible_to<std::string_view>;
+                   };
+
+template <typename T>
+concept nothrow_endpoint = endpoint<T> && std::is_nothrow_invocable_r_v<error_code, T, simdjson_result<value>>;
+
+#endif
+
 /**
  * A forward-only JSON object field iterator.
  */
@@ -64,6 +77,21 @@ public:
   simdjson_inline simdjson_result<value> find_field(std::string_view key) & noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field(std::string_view key) & noexcept; */
   simdjson_inline simdjson_result<value> find_field(std::string_view key) && noexcept;
+
+#if SIMDJSON_SUPPORTS_EXTRACT
+  /**
+   * Extract all the fields in one go
+   * Funcs are invocables that take a simdjson_result<value> as input.
+   */
+  template <endpoint ...Funcs>
+  simdjson_inline error_code extract(Funcs&&... endpoints)
+#ifndef SIMDJSON_REGULAR_VISUAL_STUDIO // msvc thinks noexcept is not the same in definition
+ noexcept((nothrow_endpoint<Funcs> && ...))
+#endif
+ ;
+#endif
+
+
 
   /**
    * Look up a field by name on an object, without regard to key order.
