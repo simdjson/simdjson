@@ -278,8 +278,12 @@ public:
    * behavior of the parser for future operations.
    */
   bool threaded{true};
+  #else
+  /**
+   * When SIMDJSON_THREADS_ENABLED is not defined, the parser instance cannot use threads.
+   */
+  bool threaded{false};
   #endif
-
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
    * The result must be valid UTF-8.
