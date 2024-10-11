@@ -282,7 +282,7 @@ public:
   /**
    * When SIMDJSON_THREADS_ENABLED is not defined, the parser instance cannot use threads.
    */
-  const bool threaded{false};
+  bool threaded{false};
   #endif
   /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.

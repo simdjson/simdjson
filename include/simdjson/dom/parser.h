@@ -556,7 +556,7 @@ public:
   /**
    * When SIMDJSON_THREADS_ENABLED is not defined, the parser instance cannot use threads.
    */
-  const bool threaded{false};
+  bool threaded{false};
 #endif
   /** @private Use the new DOM API instead */
   class Iterator;
