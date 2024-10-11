@@ -8,10 +8,12 @@
 #include "simdjson/generic/ondemand/json_type.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/value.h"
+#include "simdjson/generic/ondemand/value-inl.h"
 #include "simdjson/generic/ondemand/array-inl.h"
 #include "simdjson/generic/ondemand/json_iterator-inl.h"
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
+#include "simdjson/generic/ondemand/deserialize.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -165,6 +167,16 @@ template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept {
 template<> simdjson_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
 template<> simdjson_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
+template<> simdjson_inline error_code document::get(array& out) & noexcept { return get_array().get(out); }
+template<> simdjson_inline error_code document::get(object& out) & noexcept { return get_object().get(out); }
+template<> simdjson_inline error_code document::get(raw_json_string& out) & noexcept { return get_raw_json_string().get(out); }
+template<> simdjson_inline error_code document::get(std::string_view& out) & noexcept { return get_string(false).get(out); }
+template<> simdjson_inline error_code document::get(double& out) & noexcept { return get_double().get(out); }
+template<> simdjson_inline error_code document::get(uint64_t& out) & noexcept { return get_uint64().get(out); }
+template<> simdjson_inline error_code document::get(int64_t& out) & noexcept { return get_int64().get(out); }
+template<> simdjson_inline error_code document::get(bool& out) & noexcept { return get_bool().get(out); }
+template<> simdjson_inline error_code document::get(value& out) & noexcept { return get_value().get(out); }
+
 template<> simdjson_deprecated simdjson_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(false); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<double> document::get() && noexcept { return std::forward<document>(*this).get_double(); }
@@ -172,13 +184,6 @@ template<> simdjson_deprecated simdjson_inline simdjson_result<uint64_t> documen
 template<> simdjson_deprecated simdjson_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<bool> document::get() && noexcept { return std::forward<document>(*this).get_bool(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<value> document::get() && noexcept { return get_value(); }
-
-template<typename T> simdjson_inline error_code document::get(T &out) & noexcept {
-  return get<T>().get(out);
-}
-template<typename T> simdjson_deprecated simdjson_inline error_code document::get(T &out) && noexcept {
-  return std::forward<document>(*this).get<T>().get(out);
-}
 
 #if SIMDJSON_EXCEPTIONS
 template <class T>
@@ -818,6 +823,26 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   if (error()) { return error(); }
   return first.is_null();
 }
+template<typename T>
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>();
+}
+template<typename T>
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>(first).get<T>();
+}
+template <class T>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) & noexcept {
+  if (error()) { return error(); }
+  return first.get<T>(out);
+}
+template <class T>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) && noexcept {
+  if (error()) { return error(); }
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>(first).get<T>(out);
+}
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::json_type> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::type() noexcept {
   if (error()) { return error(); }
   return first.type();
@@ -829,6 +854,18 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_string() noexcept {
   if (error()) { return error(); }
   return first.is_string();
+}
+template <>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(SIMDJSON_IMPLEMENTATION::ondemand::document_reference &out) & noexcept {
+  if (error()) { return error(); }
+  out = first;
+  return SUCCESS;
+}
+template <>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(SIMDJSON_IMPLEMENTATION::ondemand::document_reference &out) && noexcept {
+  if (error()) { return error(); }
+  out = first;
+  return SUCCESS;
 }
 simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::is_negative() noexcept {
   if (error()) { return error(); }
@@ -847,10 +884,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
   return first.get_number();
 }
 #if SIMDJSON_EXCEPTIONS
-template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false>::type>
+template <class T>
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator T() noexcept(false) {
+  static_assert(std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::value == false, "You should not call get<T> when T is a document");
+  static_assert(std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false, "You should not call get<T> when T is a document");
   if (error()) { throw simdjson_error(error()); }
-  return first;
+  return first.get<T>();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }

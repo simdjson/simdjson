@@ -152,7 +152,6 @@ simdjson_inline document_stream::iterator::iterator(document_stream* _stream, bo
 }
 
 simdjson_inline simdjson_result<ondemand::document_reference> document_stream::iterator::operator*() noexcept {
-  //if(stream->error) { return stream->error; }
   return simdjson_result<ondemand::document_reference>(stream->doc, stream->error);
 }
 
