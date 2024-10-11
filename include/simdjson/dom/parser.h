@@ -549,9 +549,14 @@ public:
   /**
    * The parser instance can use threads when they are available to speed up some
    * operations. It is enabled by default. Changing this attribute will change the
-   * behavior of the parser for future operations.
+   * behavior of the parser for future operations. Set to true by default.
    */
   bool threaded{true};
+#else
+  /**
+   * When SIMDJSON_THREADS_ENABLED is not defined, the parser instance cannot use threads.
+   */
+  const bool threaded{false};
 #endif
   /** @private Use the new DOM API instead */
   class Iterator;
