@@ -50,6 +50,8 @@ double from_chars(const char *first, const char* end) noexcept;
 #define SIMDJSON_ISALIGNED_N(ptr, n) (((uintptr_t)(ptr) & ((n)-1)) == 0)
 
 #if SIMDJSON_REGULAR_VISUAL_STUDIO
+  // We could use [[deprecated]] but it requires C++14
+  #define simdjson_deprecated __declspec(deprecated)
 
   #define simdjson_really_inline __forceinline
   #define simdjson_never_inline __declspec(noinline)
@@ -88,6 +90,8 @@ double from_chars(const char *first, const char* end) noexcept;
   #define SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
 
 #else // SIMDJSON_REGULAR_VISUAL_STUDIO
+  // We could use [[deprecated]] but it requires C++14
+  #define simdjson_deprecated __attribute__((deprecated))
 
   #define simdjson_really_inline inline __attribute__((always_inline))
   #define simdjson_never_inline inline __attribute__((noinline))

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 3.10.0
+    VERSION 3.10.1
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -23,7 +23,11 @@ string(
 set(SIMDJSON_LIB_VERSION "23.0.0" CACHE STRING "simdjson library version")
 set(SIMDJSON_LIB_SOVERSION "23" CACHE STRING "simdjson library soversion")
 
-option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson" OFF)
+option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
+if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
+  message(WARNING "SIMDJSON_BUILD_STATIC_LIB only makes sense if BUILD_SHARED_LIBS is set to ON")
+  message(WARNING "You might be building and installing a two identical static libraries.")
+endif()
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
@@ -51,6 +55,7 @@ endif()
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
+  option(SIMDJSON_SINGLEHEADER "Disable singleheader generation" ON)
 endif()
 
 include(cmake/handle-deprecations.cmake)
@@ -155,11 +160,13 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-install(
-    FILES singleheader/simdjson.h
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT simdjson_Development
-)
+if(SIMDJSON_SINGLEHEADER)
+  install(
+      FILES singleheader/simdjson.h
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+      COMPONENT simdjson_Development
+  )
+endif()
 
 install(
     TARGETS simdjson
@@ -203,6 +210,7 @@ if(SIMDJSON_BUILD_STATIC_LIB)
       TARGETS simdjson_static
       EXPORT simdjson_staticTargets
       ARCHIVE COMPONENT simdjson_Development
+      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
   install(
       EXPORT simdjson_staticTargets
@@ -279,6 +287,7 @@ enable_testing()
 add_custom_target(all_tests)
 
 add_subdirectory(windows)
+include(cmake/CPM.cmake)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 
@@ -286,8 +295,9 @@ add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 # most of the data has been moved to https://github.com/simdjson/simdjson-data
 add_subdirectory(jsonexamples)
 
-
+if(SIMDJSON_SINGLEHEADER)
 add_subdirectory(singleheader)
+endif()
 
 
 

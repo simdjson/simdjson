@@ -221,6 +221,19 @@ bool gen_raw2() {
   TEST_SUCCEED();
 }
 
+bool jsondollar() {
+  TEST_START();
+  auto json = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::object obj = doc.get_object();
+  int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
+  ASSERT_EQUAL(x, 20);
+  x = obj.at_path("$.d.foo2.a.2"); // 30
+  ASSERT_EQUAL(x, 30);
+  TEST_SUCCEED();
+}
+
 bool gen_raw3() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -1876,6 +1889,7 @@ bool run() {
 #if SIMDJSON_CPLUSPLUS17
     && big_int_array()
 #endif // SIMDJSON_CPLUSPLUS17
+    && jsondollar()
     && big_int_array_as_double()
     && key_raw_json_token()
     && to_optional()

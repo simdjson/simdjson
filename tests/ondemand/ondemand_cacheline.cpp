@@ -21,8 +21,24 @@ long page_size() {
 // Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the
 // page boundary.
 bool need_allocation(const char *buf, size_t len) {
-  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size()) <
-          simdjson::SIMDJSON_PADDING);
+  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
+    + simdjson::SIMDJSON_PADDING > static_cast<uintptr_t>(page_size()));
+}
+
+bool check_need_allocation() {
+  long ps = page_size();
+  std::vector<std::tuple<uintptr_t,size_t,bool>> test_cases = {
+    {2*ps, 5, false}, {2*ps, ps, true}, {2*ps, 100, false},
+  };
+  for(auto t : test_cases) {
+    uintptr_t buf = std::get<0>(t);
+    size_t len = std::get<1>(t);
+    bool expected = std::get<2>(t);
+    if(need_allocation(reinterpret_cast<const char *>(buf), len) != expected) {
+      return false;
+    }
+  }
+  return true;
 }
 
 simdjson::padded_string_view
@@ -39,6 +55,10 @@ get_padded_string_view(const char *buf, size_t len,
 
 int main() {
   printf("page_size: %ld\n", page_size());
+  if(!check_need_allocation()) {
+    printf("Bug in the need_allocation function.\n");
+    return EXIT_FAILURE;
+  }
   const char *jsonpoiner = R"(
         {
             "key": "value"

@@ -6,9 +6,9 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/generic/numberparsing.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/json_type-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
-#include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -799,6 +799,8 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_tr
   if(result) { // we have something that looks like a null.
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("null");
+  } else if (json[0] == 'n') {
+    return incorrect_type_error("Not a null but starts with n");
   }
   return result;
 }
