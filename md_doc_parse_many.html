@@ -137,6 +137,7 @@ Design</h2>
 Threads</h2>
 <p>But how can we make use of threads if they are available? We found a pretty cool algorithm that allows us to quickly identify the position of the last JSON document in a given batch. Knowing exactly where the end of the batch is, we no longer need for stage 2 to finish in order to load a new batch. We already know where to start the next batch. Therefore, we can run stage 1 on the next batch concurrently while the main thread is going through stage 2. Running stage 1 in a different thread can, in best cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders of magnitude cheaper. Ain't that awesome!</p>
 <p>Thread support is only active if thread supported is detected in which case the macro SIMDJSON_THREADS_ENABLED is set. You can also manually pass <code>SIMDJSON_THREADS_ENABLED=1</code> flag to the library. Otherwise the library runs in single-thread mode.</p>
+<p>You should be consistent. If you link against the simdjson library built for multithreading (i.e., with <code>SIMDJSON_THREADS_ENABLED</code>), then you should build your application with multithreading system (setting <code>SIMDJSON_THREADS_ENABLED=1</code> and linking against a thread library).</p>
 <p>A <code>document_stream</code> instance uses at most two threads: there is a main thread and a worker thread. You should expect the main thread to be fully occupied while the worker thread is partially busy (e.g., 80% of the time).</p>
 <h1><a class="anchor" id="autotoc_md90"></a>
 Support</h1>

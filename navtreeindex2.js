@@ -1,5 +1,10 @@
 var NAVTREEINDEX2 =
 {
+"classsimdjson_1_1dom_1_1element.html#ac111e6d27806dbd39794f2c394f95757":[11,0,0,0,3,17],
+"classsimdjson_1_1dom_1_1element.html#ac5017726a573f59c3494b92bb66a3beb":[11,0,0,0,3,37],
+"classsimdjson_1_1dom_1_1element.html#aca693f57d73a5ce95d1f7bedf67289b7":[11,0,0,0,3,49],
+"classsimdjson_1_1dom_1_1element.html#adadf66ec37675d5f3fac9816a8aacba2":[11,0,0,0,3,32],
+"classsimdjson_1_1dom_1_1element.html#ae38f84f4272ae3c32b32dd6d5007ffb9":[11,0,0,0,3,33],
 "classsimdjson_1_1dom_1_1element.html#ae3c0226046e29cfb0e868c5251a87e53":[11,0,0,0,3,45],
 "classsimdjson_1_1dom_1_1element.html#ae5ce6ad2e6036b4bb7a78261858bb337":[11,0,0,0,3,13],
 "classsimdjson_1_1dom_1_1element.html#ae63f42ca3ef7d7eda92b4366db200782":[11,0,0,0,3,5],
@@ -67,6 +72,7 @@ var NAVTREEINDEX2 =
 "classsimdjson_1_1dom_1_1parser.html#a45eafeae54efd98552a48c5efe4b93de":[11,0,0,0,6,17],
 "classsimdjson_1_1dom_1_1parser.html#a5300851ba21d0a0273a11510fd1c378a":[11,0,0,0,6,9],
 "classsimdjson_1_1dom_1_1parser.html#a62aa4cdd077e243a72695c4e24535a5c":[11,0,0,0,6,16],
+"classsimdjson_1_1dom_1_1parser.html#a63fe2363db0d3acf458519698beaacf4":[11,0,0,0,6,40],
 "classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc":[11,0,0,0,6,37],
 "classsimdjson_1_1dom_1_1parser.html#a6b460c66661f1145d454b53c7ef5f514":[11,0,0,0,6,5],
 "classsimdjson_1_1dom_1_1parser.html#a720a2dd204322bcfcb5e9743ecf51da1":[11,0,0,0,6,35],
@@ -243,11 +249,5 @@ var NAVTREEINDEX2 =
 "group__object.html#gaaaf58bcf25e6d30a3469848d36c65a05":[9,0,2],
 "group__object.html#gab66bdaf2c97d2cbd2a94a5a3e67ffabc":[9,0,4],
 "group__object.html#gab9563a58e164e9f5f75805cffb3582ec":[9,0,8],
-"group__object.html#gacefcaf06811426a241ed97a6948a94ee":[9,0,3],
-"group__scalar.html":[9,2],
-"haswell_2base_8h_source.html":[12,0,0,0,5,0],
-"haswell_2begin_8h_source.html":[12,0,0,0,5,1],
-"haswell_2bitmanipulation_8h_source.html":[12,0,0,0,5,2],
-"haswell_2bitmask_8h_source.html":[12,0,0,0,5,3],
-"haswell_2end_8h_source.html":[12,0,0,0,5,4]
+"group__object.html#gacefcaf06811426a241ed97a6948a94ee":[9,0,3]
 };

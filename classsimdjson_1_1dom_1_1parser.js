@@ -39,5 +39,6 @@ var classsimdjson_1_1dom_1_1parser =
     [ "parse_many", "classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2", null ],
     [ "set_max_capacity", "classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc", null ],
     [ "document_stream", "classsimdjson_1_1dom_1_1parser.html#a403473bb5329fca6defc6299fb45b780", null ],
-    [ "parser::Iterator", "classsimdjson_1_1dom_1_1parser.html#a86e3ab93ec6521c51b1eca11421201f4", null ]
+    [ "parser::Iterator", "classsimdjson_1_1dom_1_1parser.html#a86e3ab93ec6521c51b1eca11421201f4", null ],
+    [ "threaded", "classsimdjson_1_1dom_1_1parser.html#a63fe2363db0d3acf458519698beaacf4", null ]
 ];
