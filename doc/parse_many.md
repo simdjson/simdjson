@@ -103,7 +103,8 @@ cases, remove almost entirely its cost and replaces it by the overhead of a thre
 of magnitude cheaper. Ain't that awesome!
 
 Thread support is only active if thread supported is detected in which case the macro
-SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in  single-thread mode.
+SIMDJSON_THREADS_ENABLED is set.  You can also manually pass `SIMDJSON_THREADS_ENABLED=1` flag
+to the library. Otherwise the library runs in single-thread mode.
 
 A `document_stream` instance uses at most two threads: there is a main thread and a worker thread.
 You should expect the main thread to be fully occupied while the worker thread is partially busy
