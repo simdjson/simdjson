@@ -314,6 +314,20 @@ namespace simd {
     simdjson_inline uint64_t get_bit() const { return _mm512_movepi8_mask(_mm512_slli_epi16(*this, 7-N)); }
   };
 
+  template <int N = 0>
+  struct simd_bitmask64_builder;
+
+  template<>
+  struct simd_bitmask64_builder<1> {
+    const __mmask64 bitmask;
+    operator __mmask64() && { return bitmask; }
+  }; // struct simd_bitmask64_builder<2>
+
+  template<>
+  struct simd_bitmask64_builder<0> {
+    simdjson_inline simd_bitmask64_builder<1> next(simd8<bool> val) { return { _mm512_movepi8_mask(val) }; }
+  }; // struct simd_bitmask64_builder<0>
+
   template<typename T>
   struct simd8x64 {
     static constexpr int NUM_CHUNKS = 64 / sizeof(simd8<T>);

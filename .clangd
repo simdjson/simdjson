@@ -45,3 +45,11 @@ Diagnostics:
     Suppress:
         - pragma_attribute_no_pop_eof
         - pragma_attribute_stack_mismatch
+---
+# clang 18
+If:
+    PathMatch:
+        - dependencies/.cache/json11/json11.cpp
+CompileFlags:
+    Add:
+        - -Wno-unqualified-std-cast-call
