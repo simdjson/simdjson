@@ -1,3 +1,4 @@
+#include <type_traits>
 #ifndef SIMDJSON_GENERIC_ONDEMAND_VALUE_ITERATOR_INL_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -107,6 +108,108 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
     default:
       return report_error(TAPE_ERROR, "Missing comma between object fields");
   }
+}
+
+template <typename Func>
+simdjson_warn_unused simdjson_inline error_code value_iterator::on_field_raw(Func&& func)
+#ifdef __cpp_lib_is_invocable
+  noexcept(std::is_nothrow_invocable_r_v<bool, Func, raw_json_string, error_code&>)
+#else
+  noexcept(false)
+#endif
+{
+#ifdef __cpp_lib_is_invocable
+  static_assert(std::is_invocable_r_v<bool, Func, raw_json_string, error_code&>, "Invalid function provided.");
+#endif
+
+  error_code error = SUCCESS;
+  bool has_value;
+  //
+  // Initially, the object can be in one of a few different places:
+  //
+  // 1. The start of the object, at the first field:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //      ^ (depth 2, index 1)
+  //    ```
+  if (at_first_field()) {
+    has_value = true;
+
+  //
+  // 2. When a previous search did not yield a value or the object is empty:
+  //
+  //    ```
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                     ^ (depth 0)
+  //    { }
+  //        ^ (depth 0, index 2)
+  //    ```
+  //
+  } else if (!is_open()) {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+    // If we're past the end of the object, we're being iterated out of order.
+    // Note: this is not perfect detection. It's possible the user is inside some other object; if so,
+    // this object iterator will blithely scan that object for fields.
+    if (_json_iter->depth() < depth() - 1) { return OUT_OF_ORDER_ITERATION; }
+#endif
+    return EMPTY;
+
+  // 3. When a previous search found a field or an iterator yielded a value:
+  //
+  //    ```
+  //    // When a field was not fully consumed (or not even touched at all)
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //           ^ (depth 2)
+  //    // When a field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                   ^ (depth 1)
+  //    // When the last field was fully consumed
+  //    { "a": [ 1, 2 ], "b": [ 3, 4 ] }
+  //                                   ^ (depth 1)
+  //    ```
+  //
+  } else {
+    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+#if SIMDJSON_DEVELOPMENT_CHECKS
+    if (_json_iter->start_position(_depth) != start_position()) { return OUT_OF_ORDER_ITERATION; }
+#endif
+  }
+  while (has_value) {
+    // Get the key and colon, stopping at the value.
+    raw_json_string actual_key;
+    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
+    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
+    // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
+    // The depth is left unchanged by field_key().
+    if ((error = field_key().get(actual_key) )) { abandon(); return error; };
+    // field_value() will advance and check that we find a ':' separating the
+    // key and the value. It will also increment the depth by one.
+    if ((error = field_value() )) { abandon(); return error; }
+    // If it matches, stop and return
+    // We could do it this way if we wanted to allow arbitrary
+    // key content (including escaped quotes).
+    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
+    // Instead we do the following which may trigger buffer overruns if the
+    // user provides an adversarial key (containing a well placed unescaped quote
+    // character and being longer than the number of bytes remaining in the JSON
+    // input).
+    if (func(actual_key, error)) {
+      break;
+    }
+
+    // The call to skip_child is meant to skip over the value corresponding to the key.
+    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
+    SIMDJSON_TRY( skip_child() ); // Skip the value entirely
+    // The has_next_field() advances the pointer and check that either ',' or '}' is found.
+    // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
+    // then we are in error and we abort.
+    if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
+  }
+
+  // If the loop ended, we're out of fields to look at.
+  return error;
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {

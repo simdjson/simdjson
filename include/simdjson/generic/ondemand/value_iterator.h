@@ -6,6 +6,12 @@
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#ifdef __has_include
+#if __has_include (<version>)
+#include <version>
+#endif
+#endif
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -197,6 +203,22 @@ public:
    * fail to match some keys with escapes (\u, \n, etc.).
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> find_field_raw(const std::string_view key) noexcept;
+
+
+  /**
+   * Runs Func on each key found.
+   * Almost same as `find_field_raw` but it runs `func` instead of checking the key ourselves.
+   *
+   * @param Func func(raw_json_string key, error_code& error) noexcept
+   */
+  template <typename Func>
+  simdjson_warn_unused simdjson_inline error_code on_field_raw(Func&& func)
+#ifdef __cpp_lib_is_invocable
+  noexcept(std::is_nothrow_invocable_r_v<bool, Func, raw_json_string, error_code&>)
+#else
+  noexcept(false)
+#endif
+  ;
 
   /**
    * Find the field with the given key without regard to order, and *without* unescaping.
