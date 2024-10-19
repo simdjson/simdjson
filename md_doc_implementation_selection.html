@@ -99,7 +99,7 @@ $(document).ready(function(){initNavTree('md_doc_implementation_selection.html',
 <li><a href="#manually-selecting-the-implementation">Manually Selecting the Implementation</a></li>
 <li><a href="#checking-that-an-implementation-can-run-on-your-system">Checking that an Implementation can Run on your System</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md52"></a>
+<h1><a class="anchor" id="autotoc_md54"></a>
 Overview</h1>
 <p>The simdjson library takes advantage of SIMD instruction sets such as NEON, SSE and AVX to achieve much of its speed. Because these instruction sets work differently, simdjson has to compile a different version of the JSON parser for different CPU architectures, often with different algorithms to take better advantage of a given CPU!</p>
 <p>The current implementations are:</p><ul>
@@ -115,10 +115,10 @@ Overview</h1>
 <p>In many cases, you don't know where your compiled binary is going to run, so simdjson automatically compiles <em>all</em> the implementations into the executable. On Intel, it will include 4 implementations (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is unnecessary, and on PPC it will include 2 (ppc64 and fallback).</p>
 <p>If you know more about where you're going to run and want to save the space, you can disable any of these implementations at compile time with <code>-DSIMDJSON_IMPLEMENTATION_X=0</code> (where X is ICELAKE, HASWELL, WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).</p>
 <p>The simdjson library automatically sets header flags for each implementation as it compiles; there is no need to set architecture-specific flags yourself (e.g., <code>-mavx2</code>, <code>/AVX2</code> or <code>-march=haswell</code>), and it may even break runtime dispatch and your binaries will fail to run on older processors. <em>Note:</em> for POWER9 processors make sure you compile it with <code>-mcpu=power9</code> and <code>-mtune=power9</code> to get maximum performance.</p>
-<h1><a class="anchor" id="autotoc_md53"></a>
+<h1><a class="anchor" id="autotoc_md55"></a>
 Runtime CPU Detection</h1>
 <p>When you first use simdjson, it will detect the CPU you're running on, and swap over to the fastest implementation for it. This is a small, one-time cost and for many people will be paid the first time they call <code>parse()</code> or <code>load()</code>.</p>
-<h1><a class="anchor" id="autotoc_md54"></a>
+<h1><a class="anchor" id="autotoc_md56"></a>
 Inspecting the Detected Implementation</h1>
 <p>You can check what implementation is running with <code>active_implementation</code>:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -126,7 +126,7 @@ Inspecting the Detected Implementation</h1>
 <div class="line">cout &lt;&lt; &quot;Detected the best implementation for your machine: &quot; &lt;&lt; simdjson::get_active_implementation()-&gt;name();</div>
 <div class="line">cout &lt;&lt; &quot;(&quot; &lt;&lt; simdjson::get_active_implementation()-&gt;description() &lt;&lt; &quot;)&quot; &lt;&lt; endl;</div>
 </div><!-- fragment --><p>Implementation detection will happen in this case when you first call <code>name()</code>.</p>
-<h1><a class="anchor" id="autotoc_md55"></a>
+<h1><a class="anchor" id="autotoc_md57"></a>
 Querying Available Implementations</h1>
 <p>You can list all available implementations, regardless of which one was selected:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -138,7 +138,7 @@ Querying Available Implementations</h1>
 <div class="line">cout &lt;&lt; simdjson::get_available_implementations()[&quot;fallback&quot;]-&gt;description() &lt;&lt; endl;</div>
 </div><!-- fragment --><p> When an implementation is not available, the bracket call <code><a class="el" href="namespacesimdjson.html#a7e4483a8ae684fdb5b2f1e7d4a8acc69" title="The list of available implementations compiled into simdjson.">simdjson::get_available_implementations()</a>[name]</code> will return the null pointer.</p>
 <p>The available implementations have been compiled but may not necessarily be run safely on your system see <a href="#checking-that-an-implementation-can-run-on-your-system">Checking that an Implementation can Run on your System</a>.</p>
-<h1><a class="anchor" id="autotoc_md56"></a>
+<h1><a class="anchor" id="autotoc_md58"></a>
 Manually Selecting the Implementation</h1>
 <p>If you're trying to do performance tests or see how different implementations of simdjson run, you can select the CPU architecture yourself:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -150,7 +150,7 @@ Manually Selecting the Implementation</h1>
 <div class="line">if (! my_implementation) { exit(1); }</div>
 <div class="line">if (! my_implementation-&gt;supported_by_runtime_system()) { exit(1); }</div>
 <div class="line">simdjson::get_active_implementation() = my_implementation;</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md59"></a>
 Checking that an Implementation can Run on your System</h1>
 <p>You should call <code>supported_by_runtime_system()</code> to compare the processor's features with the need of the implementation.</p>
 <div class="fragment"><div class="line"> {c++}</div>

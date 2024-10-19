@@ -151,7 +151,7 @@ $(document).ready(function(){initNavTree('md_doc_ondemand_design.html',''); init
 <li><b>Validate What You Use:</b> On-Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.</li>
 </ul>
 <p>To understand why On-Demand is different, it is helpful to review the major approaches to parsing and parser APIs in use today.</p>
-<h2><a class="anchor" id="autotoc_md70"></a>
+<h2><a class="anchor" id="autotoc_md73"></a>
 DOM Parsers</h2>
 <p>Many of the most usable, popular JSON APIs (including simdjson) deserialize into a <b>DOM</b>: an intermediate tree of objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM). The DOM is then accessed by the programmer like any other in-memory data structure. The resulting API let you refer to each array or object separately, using familiar techniques like iteration (<code>for (auto value : array)</code>) or indexing (<code>object["key"]</code>). In some cases, the values are even deserialized directly into familiar C++ constructs like vectors and maps.</p>
 <p>The DOM approach is conceptually simple and "programmer friendly". Using the DOM tree is often easy enough that many users use the DOM as-is instead of creating their own custom data structures.</p>
@@ -176,7 +176,7 @@ DOM Parsers</h2>
 <li>Performance drain from <a href="#type-blindness">type blindness</a>.</li>
 </ul>
 <p>What the simdjson library demonstrates is that a DOM API may be quite fast indeed: we can parse files at speeds of several gigabytes per second. However, in some instances, it may be possible to achieve even higher speeds.</p>
-<h2><a class="anchor" id="autotoc_md71"></a>
+<h2><a class="anchor" id="autotoc_md74"></a>
 Event-Based Parsers (SAX, SAJ, etc.)</h2>
 <p>The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the cost of parsing and storing the entire JSON. In the event-based model, a core JSON engine parses the JSON document piece by piece, but instead of stuffing values in a DOM tree, it passes each value to a callback function, letting the user decide for themselves how to handle it. In such a model, the programmer may need to provide functions for all possible events (a number, a string, a new object, a new array, the array ends, the object ends, and so on). This allows programmers to work with much larger files without running out of memory.</p>
 <p>The drawback is complexity: event-based APIs generally have you define a single callback for each type (e.g. <code>string_field(std::string_view key, std::string_view value)</code>). Because of this, the programmer suffers from context blindness: when they find a string they have to check where it is before they know what to do with it. Is this string the text of the tweet, the screen name, or something else? Are we even in a tweet right now, or is this from some other place in the document entirely? Though an event-based approach may allow superior performance, it is demanding of the programmer who must efficiently keep track of its current state within the JSON input.</p>
@@ -226,7 +226,7 @@ Event-Based Parsers (SAX, SAJ, etc.)</h2>
 <li>Lacks the safety of DOM: malformed documents could be ingested.</li>
 </ul>
 <p>Though an event-based approach might have its niche uses, we believe that it is rarely ideally suited. We suspect that it is mostly used when performance and memory is a concern, and no other option (except DOM) is readily available.</p>
-<h2><a class="anchor" id="autotoc_md72"></a>
+<h2><a class="anchor" id="autotoc_md75"></a>
 Schema-Based Parser Generators</h2>
 <p>In a schema-based model, the programmer provides a description of a data structure, and the parser constructs the data structure in question during parsing. These parsers take a schema&ndash;a description of your JSON, with field names, types, everything&ndash;and generate classes/structs in your language of choice, as well as a parser to deserialize the JSON into those structs. Some such parsers let you define your own data structures (<code>struct</code>) and they let a preprocessor inspects it and generates a custom JSON parser for it. Though not all of these schema-based parser generators generate a parser or even optimize for streaming, but they are <em>able</em> to in principle. Unlike the DOM and the event-based models, a schema-based approach assumes that the structure of the document is known at compile-time.</p>
 <p>Pros of the schema-based approach:</p><ul>
@@ -240,14 +240,14 @@ Schema-Based Parser Generators</h2>
 <li>It is less flexible than the DOM or event-based approaches, sometimes limited to a deserialization-to-objects scenario.</li>
 <li>The structure of the data must be fully known at compile-time.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md73"></a>
+<h2><a class="anchor" id="autotoc_md76"></a>
 Type Blindness and Branch Misprediction</h2>
 <p>The DOM and event-based parsing model suffer from <b>type blindness</b>: even when the programmer knows exactly what fields and what types are in the JSON document, the parser does not. This means it has to look at each value blind with a big "switch" statement, asking "is this a number? A string? A boolean? An array? An object?"</p>
 <p>In modern processors, this kind of switch statement can make your program run slower than it needs to because of the high cost of branch misprediction. Indeed, modern processor cores rely on speculative execution for speed. They "read ahead" in your program, predicting which instructions to run as soon as the data is available. A single-threaded program can execute 2, 3 or even more instructions per cycle&ndash;largely because of speculative execution.</p>
 <p>Unfortunately, when the processor mispredicts the instructions, typically due to a mispredicted branch, all of the work done from the misprediction has be discarded and started anew. The processor may have been executing 3 or 4 instructions per cycle, and consuming the corresponding power, but all of the work may have been wasteful.</p>
 <p>Type blindness means that the processor has to guess, for every JSON value, whether it will be an array, an object, number, string or boolean since these correspond to distinct code paths. Though some JSON files have predictable content, we find in practice that many JSON files stress the branch prediction. Though branch predictors improve with each new generation of processors, the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become able to schedule longer streams of instructions.</p>
 <p>On-Demand parsing is tailor-made to solve this problem at the source, parsing values only after the user declares their type by asking for a <code>double</code>, an <code>int</code>, a <code>string</code>, etc. It attempts to do so while preserving most of the flexibility of DOM parsing.</p>
-<h1><a class="anchor" id="autotoc_md74"></a>
+<h1><a class="anchor" id="autotoc_md77"></a>
 Algorithm</h1>
 <p>To help visualize the algorithm, we'll walk through the example C++ given at the top, for this JSON:</p>
 <div class="fragment"><div class="line">{</div>
@@ -257,7 +257,7 @@ Algorithm</h1>
 <div class="line">  ],</div>
 <div class="line">  &quot;search_metadata&quot;: { &quot;count&quot;: 2 }</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md75"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md78"></a>
 Starting the iteration</h2>
 <ol type="1">
 <li><p class="startli">First, we declare a parser object that keeps internal buffers necessary for parsing. This can be reused to parse multiple JSON files, so you do not pay the high cost of allocating memory every time (and so it can stay in cache!).</p>
@@ -465,9 +465,9 @@ Starting the iteration</h2>
 <p class="startli">This means you can very efficiently do things like read a single value from a JSON file, or take the top N, for example. It also means the things you don't use won't be fully validated. This is a general principle of On-Demand: don't validate what you don't use. We still fully validate values you do use, however, as well as the objects and arrays that lead to them, so that you can be sure you get the information you need.</p>
 </li>
 </ol>
-<h1><a class="anchor" id="autotoc_md76"></a>
+<h1><a class="anchor" id="autotoc_md79"></a>
 Design Features</h1>
-<h2><a class="anchor" id="autotoc_md77"></a>
+<h2><a class="anchor" id="autotoc_md80"></a>
 String Parsing</h2>
 <p>When the user requests strings, we unescape them to a single string buffer much like the DOM parser so that users enjoy the same string performance as the core simdjson. We do not write the length to the string buffer, however; that is stored in the <code>string_view</code> instance we return to the user.</p>
 <div class="fragment"><div class="line">{C++}</div>
@@ -489,7 +489,7 @@ String Parsing</h2>
 <div class="line">for(auto field : doc.get_object())  {</div>
 <div class="line">      std::string_view keyv = field.unescaped_key();</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md78"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md81"></a>
 Iteration Safety</h2>
 <p>The On-Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear in production systems:</p>
 <ul>
@@ -532,7 +532,7 @@ Iteration Safety</h2>
 <div class="line">     // the following is safe:</div>
 <div class="line">     if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</div>
 <div class="line">   }</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md79"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md82"></a>
 Benefits of the On-Demand Approach</h2>
 <p>We expect that the On-Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.</p>
 <ul>
@@ -540,7 +540,7 @@ Benefits of the On-Demand Approach</h2>
 <li>Straightforward, programmer-friendly interface (arrays and objects).</li>
 <li>Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md80"></a>
+<h2><a class="anchor" id="autotoc_md83"></a>
 Limitations of the On-Demand Approach</h2>
 <p>The On-Demand approach has some limitations:</p>
 <ul>
@@ -552,7 +552,7 @@ Limitations of the On-Demand Approach</h2>
 <li>The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On-Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On-Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On-Demand code for different processors.</li>
 <li>There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., <code>parse_many</code>).</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md81"></a>
+<h2><a class="anchor" id="autotoc_md84"></a>
 Applicability of the On-Demand Approach</h2>
 <p>At this time we recommend the On-Demand API in the following cases:</p>
 <ol type="1">
@@ -567,7 +567,7 @@ Applicability of the On-Demand Approach</h2>
 <li>Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.</li>
 <li>You are working with stable JSON APIs which have a consistent layout and JSON dialect.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md82"></a>
+<h1><a class="anchor" id="autotoc_md85"></a>
 Checking Your CPU Selection (x64 systems)</h1>
 <p>The On-Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the least common denominator (since the program could theoretically be run anywhere). Since On-Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.</p>
 <p>On relevant systems, the On-Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.</p>

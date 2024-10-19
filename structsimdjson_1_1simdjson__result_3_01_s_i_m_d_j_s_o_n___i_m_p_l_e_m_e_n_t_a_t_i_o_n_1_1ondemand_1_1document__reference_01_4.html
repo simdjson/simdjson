@@ -158,10 +158,26 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:a956a0b0a4f8f910c45be61370ae96586"><td class="memItemLeft" align="right" valign="top"><a id="a956a0b0a4f8f910c45be61370ae96586"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_null</b> () noexcept</td></tr>
 <tr class="separator:a956a0b0a4f8f910c45be61370ae96586"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa22a52f43e1fa09cfe4645a87879661a"><td class="memTemplParams" colspan="2"><a id="aa22a52f43e1fa09cfe4645a87879661a"></a>
-template&lt;class T , typename std::enable_if&lt; std::is_same&lt; T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &gt;::value==false &gt;::type &gt; </td></tr>
-<tr class="memitem:aa22a52f43e1fa09cfe4645a87879661a"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
-<tr class="separator:aa22a52f43e1fa09cfe4645a87879661a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5375782e75df630af9f0b78ad948ad41"><td class="memTemplParams" colspan="2"><a id="a5375782e75df630af9f0b78ad948ad41"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5375782e75df630af9f0b78ad948ad41"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;noexcept</td></tr>
+<tr class="separator:a5375782e75df630af9f0b78ad948ad41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memTemplParams" colspan="2"><a id="aaf8a640299c928d8f0838cc5ec9b72b1"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;&amp;noexcept</td></tr>
+<tr class="separator:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d7669e2eb1dad34b2b58168503499b6"><td class="memTemplParams" colspan="2"><a id="a2d7669e2eb1dad34b2b58168503499b6"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a2d7669e2eb1dad34b2b58168503499b6"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;noexcept</td></tr>
+<tr class="separator:a2d7669e2eb1dad34b2b58168503499b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48b839ebd922ee8a7804b83148fd151c"><td class="memTemplParams" colspan="2"><a id="a48b839ebd922ee8a7804b83148fd151c"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a48b839ebd922ee8a7804b83148fd151c"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;&amp;noexcept</td></tr>
+<tr class="separator:a48b839ebd922ee8a7804b83148fd151c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b08a9262a2406b26dae10d44011373e"><td class="memTemplParams" colspan="2"><a id="a1b08a9262a2406b26dae10d44011373e"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:a1b08a9262a2406b26dae10d44011373e"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator T</b> () noexcept(false)</td></tr>
+<tr class="separator:a1b08a9262a2406b26dae10d44011373e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a096cb746c1e63523c55b0180884e4462"><td class="memItemLeft" align="right" valign="top"><a id="a096cb746c1e63523c55b0180884e4462"></a>
 simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><b>operator SIMDJSON_IMPLEMENTATION::ondemand::array</b> () &amp;noexcept(false)</td></tr>
 <tr class="separator:a096cb746c1e63523c55b0180884e4462"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,6 +274,30 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 <tr class="memitem:afcaa2ac76fe35a23a80f71a4be86807f"><td class="memItemLeft" align="right" valign="top"><a id="afcaa2ac76fe35a23a80f71a4be86807f"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">SIMDJSON_IMPLEMENTATION::ondemand::value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>at_path</b> (std::string_view json_path) noexcept</td></tr>
 <tr class="separator:afcaa2ac76fe35a23a80f71a4be86807f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5375782e75df630af9f0b78ad948ad41"><td class="memTemplParams" colspan="2"><a id="a5375782e75df630af9f0b78ad948ad41"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5375782e75df630af9f0b78ad948ad41"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;noexcept</td></tr>
+<tr class="separator:a5375782e75df630af9f0b78ad948ad41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memTemplParams" colspan="2"><a id="aaf8a640299c928d8f0838cc5ec9b72b1"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;&amp;noexcept</td></tr>
+<tr class="separator:aaf8a640299c928d8f0838cc5ec9b72b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d7669e2eb1dad34b2b58168503499b6"><td class="memTemplParams" colspan="2"><a id="a2d7669e2eb1dad34b2b58168503499b6"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:a2d7669e2eb1dad34b2b58168503499b6"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;noexcept</td></tr>
+<tr class="separator:a2d7669e2eb1dad34b2b58168503499b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48b839ebd922ee8a7804b83148fd151c"><td class="memTemplParams" colspan="2"><a id="a48b839ebd922ee8a7804b83148fd151c"></a>
+template&lt;class T &gt; </td></tr>
+<tr class="memitem:a48b839ebd922ee8a7804b83148fd151c"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;&amp;noexcept</td></tr>
+<tr class="separator:a48b839ebd922ee8a7804b83148fd151c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfaf36585513ebee34033055b4dc29bf"><td class="memItemLeft" align="right" valign="top"><a id="abfaf36585513ebee34033055b4dc29bf"></a>
+template&lt;&gt; </td></tr>
+<tr class="memitem:abfaf36585513ebee34033055b4dc29bf"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html">SIMDJSON_IMPLEMENTATION::ondemand::document_reference</a> &amp;out) &amp;noexcept</td></tr>
+<tr class="separator:abfaf36585513ebee34033055b4dc29bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8ed12cd1542716a8a7ccf05e6f79ad5"><td class="memItemLeft" align="right" valign="top"><a id="ab8ed12cd1542716a8a7ccf05e6f79ad5"></a>
+template&lt;&gt; </td></tr>
+<tr class="memitem:ab8ed12cd1542716a8a7ccf05e6f79ad5"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html">SIMDJSON_IMPLEMENTATION::ondemand::document_reference</a> &amp;out) &amp;&amp;noexcept</td></tr>
+<tr class="separator:ab8ed12cd1542716a8a7ccf05e6f79ad5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html">simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base&lt; SIMDJSON_IMPLEMENTATION::ondemand::document_reference &gt;</a></td></tr>
 <tr class="memitem:a108dd35fd49314820106a21afa0fb2ea inherit pub_methods_structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base"><td class="memItemLeft" align="right" valign="top"><a id="a108dd35fd49314820106a21afa0fb2ea"></a>
 simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html#a108dd35fd49314820106a21afa0fb2ea">implementation_simdjson_result_base</a> () noexcept=default</td></tr>
@@ -321,7 +361,7 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00854">854</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00960">960</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ac1bcd8afb10742d6f18b8f2f07ba0392"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac1bcd8afb10742d6f18b8f2f07ba0392">&#9670;&nbsp;</a></span>raw_json_token()</h2>
@@ -349,7 +389,7 @@ Additional Inherited Members</h2></td></tr>
 <p>std::string_view document_reference::raw_json_token() const noexcept </p>
 <p>std::string_view document_reference::raw_json_token() const noexcept </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00898">898</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00937">937</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>

@@ -162,6 +162,18 @@ simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">sim
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a4113ad7b0069a49619bec9d243d2216e"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;noexcept</td></tr>
 <tr class="separator:a4113ad7b0069a49619bec9d243d2216e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa49a7a3733405e00ac7348747a4f5958"><td class="memTemplParams" colspan="2"><a id="aa49a7a3733405e00ac7348747a4f5958"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:aa49a7a3733405e00ac7348747a4f5958"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> () &amp;&amp;noexcept</td></tr>
+<tr class="separator:aa49a7a3733405e00ac7348747a4f5958"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac248d778d4c0d562846f92b4c8f46b9f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ac248d778d4c0d562846f92b4c8f46b9f"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html#ac248d778d4c0d562846f92b4c8f46b9f">get</a> (T &amp;out) &amp;noexcept</td></tr>
+<tr class="memdesc:ac248d778d4c0d562846f92b4c8f46b9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get this value as the given type.  <a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html#ac248d778d4c0d562846f92b4c8f46b9f">More...</a><br /></td></tr>
+<tr class="separator:ac248d778d4c0d562846f92b4c8f46b9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c95e6e0450ab8bcc053b99d71ea9bb2"><td class="memTemplParams" colspan="2"><a id="a9c95e6e0450ab8bcc053b99d71ea9bb2"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a9c95e6e0450ab8bcc053b99d71ea9bb2"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><b>get</b> (T &amp;out) &amp;&amp;noexcept</td></tr>
+<tr class="separator:a9c95e6e0450ab8bcc053b99d71ea9bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adec459feebebf8af6c5b999b9489b420"><td class="memItemLeft" align="right" valign="top"><a id="adec459feebebf8af6c5b999b9489b420"></a>
 simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>raw_json</b> () noexcept</td></tr>
 <tr class="separator:adec459feebebf8af6c5b999b9489b420"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -277,8 +289,51 @@ template&lt;&gt; </td></tr>
 <div class="textblock"><p>A <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> is a thin wrapper around a document reference instance. </p>
 <p>The <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> instances are used primarily/solely for streams of JSON documents. They differ from document instances when parsing a scalar value (a document that is not an array or an object). In the case of a document, we expect the document to be fully consumed. In the case of a <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a>, we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00700">700</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00743">743</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac248d778d4c0d562846f92b4c8f46b9f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac248d778d4c0d562846f92b4c8f46b9f">&#9670;&nbsp;</a></span>get()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_reference::get </td>
+          <td>(</td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>out</em></td><td>)</td>
+          <td> &amp;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get this value as the given type. </p>
+<p>Supported types: object, array, <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html" title="A string escaped per JSON rules, terminated with quote (&quot;).">raw_json_string</a>, string_view, uint64_t, int64_t, double, bool, value</p>
+<p>Be mindful that the document instance must remain in scope while you are accessing object, array and value instances.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">out</td><td>This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>INCORRECT_TYPE If the JSON value is not an object. </dd>
+<dd>
+SUCCESS If the parse succeeded and the out parameter was set to the value. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00804">804</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+
+</div>
+</div>
 <a id="a47b30548f71aca4317bdc4c6955cd719"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a47b30548f71aca4317bdc4c6955cd719">&#9670;&nbsp;</a></span>get_uint64()</h2>
 
@@ -307,7 +362,7 @@ template&lt;&gt; </td></tr>
 <p>However, for streams of JSON documents, we want to be able to start from "321" "321" "321" and parse it successfully as a stream of JSON documents, calling get_uint64_in_string() successfully each time.</p>
 <p>To achieve this result, we pass a 'false' to a get_root_value_iterator() method: this indicates that we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00639">639</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00644">644</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>

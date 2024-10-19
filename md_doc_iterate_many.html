@@ -96,7 +96,7 @@ $(document).ready(function(){initNavTree('md_doc_iterate_many.html',''); initRes
 <div class="line">{&quot;text&quot;:&quot;c&quot;}</div>
 <div class="line">...</div>
 </div><!-- fragment --><p> ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.</p>
-<h1><a class="anchor" id="autotoc_md58"></a>
+<h1><a class="anchor" id="autotoc_md60"></a>
 Contents</h1>
 <ul>
 <li><a href="#motivations">Motivations</a></li>
@@ -111,20 +111,21 @@ Contents</h1>
 <li><a href="#use-cases">Use cases</a></li>
 <li><a href="#tracking-your-position">Tracking your position</a></li>
 <li><a href="#incomplete-streams">Incomplete streams</a></li>
+<li><a href="#c20-features">C++20 features</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md59"></a>
+<h1><a class="anchor" id="autotoc_md61"></a>
 Motivation</h1>
 <p>The main motivation for this piece of software is to achieve maximum speed and offer a better quality of life in parsing files containing multiple small JSON documents.</p>
 <p>The JavaScript Object Notation (JSON) <a href="https://tools.ietf.org/html/rfc7159">RFC7159</a> is a handy serialization format. However, when serializing a large sequence of values as an array, or a possibly indeterminate-length or never- ending sequence of values, JSON may be inconvenient.</p>
 <p>Consider a sequence of one million values, each possibly one kilobyte when encoded &ndash; roughly one gigabyte. It is often desirable to process such a dataset incrementally without having to first read all of it before beginning to produce results.</p>
-<h1><a class="anchor" id="autotoc_md60"></a>
+<h1><a class="anchor" id="autotoc_md62"></a>
 How it works</h1>
-<h2><a class="anchor" id="autotoc_md61"></a>
+<h2><a class="anchor" id="autotoc_md63"></a>
 Context</h2>
 <p>Before parsing anything, simdjson first preprocesses the JSON text by identifying all structural indexes (i.e. the starting position of any JSON value, as well as any important operators like <code>,</code>, <code>:</code>, <code>]</code> or <code>}</code>) and validating UTF8. This stage is referred to stage 1. However, during this process, simdjson has no knowledge of whether parsed a valid document, multiple documents, or even if the document is complete. Then, to iterate through the JSON text during parsing, we use what we call a JSON iterator that will navigate through the text using these structural indexes. This JSON iterator is not visible though, but it is the key component to make parsing work.</p>
 <p>Prior to iterate_many, most people who had to parse a multiline JSON file would proceed by reading the file line by line, using a utility function like <code>std::getline</code> or equivalent, and would then use the <code>parse</code> on each of those lines. From a performance point of view, this process is highly inefficient, in that it requires a lot of unnecessary memory allocation and makes use of the <code>getline</code> function, which is fundamentally slow, slower than the act of parsing with simdjson <a href="https://lemire.me/blog/2019/06/18/how-fast-is-getline-in-c/">(more on this here)</a>.</p>
 <p>Unlike the popular parser RapidJson, our DOM does not require the buffer once the parsing job is completed, the DOM and the buffer are completely independent. The drawback of this architecture is that we need to allocate some additional memory to store our ParsedJson data, for every document inside a given file. Memory allocation can be slow and become a bottleneck, therefore, we want to minimize it as much as possible.</p>
-<h2><a class="anchor" id="autotoc_md62"></a>
+<h2><a class="anchor" id="autotoc_md64"></a>
 Design</h2>
 <p>To achieve a minimum amount of allocations, we opted for a design where we create only one parser object and therefore allocate its memory once, and then recycle it for every document in a given file. But, knowing that they often have largely varying size, we need to make sure that we allocate enough memory so that all the documents can fit. This value is what we call the batch size. As of right now, we need to manually specify a value for this batch size, it has to be at least as big as the biggest document in your file, but not too big so that it submerges the cached memory. The bigger the batch size, the fewer we need to make allocations. We found that 1MB is somewhat a sweet spot.</p>
 <ol type="1">
@@ -134,13 +135,13 @@ Design</h2>
 <li>Each time the user calls <code>++</code> to read the next document, the JSON iterator moves to the start the next document.</li>
 <li>When we reach the end of the batch, we call stage 1 on the next batch, starting from the end of the last document, and go to step 3.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md63"></a>
+<h2><a class="anchor" id="autotoc_md65"></a>
 Threads</h2>
 <p>But how can we make use of threads if they are available? We found a pretty cool algorithm that allows us to quickly identify the position of the last JSON document in a given batch. Knowing exactly where the end of the last document in the batch is, we can safely parse through the last document without any worries that it might be incomplete. Therefore, we can run stage 1 on the next batch concurrently while parsing the documents in the current batch. Running stage 1 in a different thread can, in best cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders of magnitude cheaper. Ain't that awesome!</p>
 <p>Thread support is only active if thread supported is detected in which case the macro SIMDJSON_THREADS_ENABLED is set. You can also manually pass <code>SIMDJSON_THREADS_ENABLED=1</code> flag to the library. Otherwise the library runs in single-thread mode.</p>
 <p>You should be consistent. If you link against the simdjson library built for multithreading (i.e., with <code>SIMDJSON_THREADS_ENABLED</code>), then you should build your application with multithreading system (setting <code>SIMDJSON_THREADS_ENABLED=1</code> and linking against a thread library).</p>
 <p>A <code>document_stream</code> instance uses at most two threads: there is a main thread and a worker thread.</p>
-<h1><a class="anchor" id="autotoc_md64"></a>
+<h1><a class="anchor" id="autotoc_md66"></a>
 Support</h1>
 <p>Since we want to offer flexibility and not restrict ourselves to a specific file format, we support any file that contains any amount of valid JSON document, <b>separated by one or more character that is considered whitespace</b> by the JSON spec. Anything that is not whitespace will be parsed as a JSON document and could lead to failure.</p>
 <p>Whitespace Characters:</p><ul>
@@ -156,7 +157,7 @@ Support</h1>
 <li><a href="https://tools.ietf.org/html/rfc7464">Record separator-delimited JSON (RFC 7464)</a> &lt;- Not supported by JsonStream!</li>
 <li><a href="https://en.wikipedia.org/wiki/JSON_streaming">More on Wikipedia...</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md65"></a>
+<h1><a class="anchor" id="autotoc_md67"></a>
 API</h1>
 <p>Example:</p>
 <div class="fragment"><div class="line"> {c++}</div>
@@ -168,7 +169,7 @@ API</h1>
 <div class="line">}</div>
 <div class="line">// Prints 1 2 3</div>
 </div><!-- fragment --><p>See <a href="basics.md#newline-delimited-json-ndjson-and-json-lines">basics.md</a> for an overview of the API.</p>
-<h1><a class="anchor" id="autotoc_md66"></a>
+<h1><a class="anchor" id="autotoc_md68"></a>
 Use cases</h1>
 <p>From <a href="http://jsonlines.org/examples/">jsonlines.org</a>:</p>
 <ul>
@@ -178,7 +179,7 @@ Use cases</h1>
 </li>
 <li><b>Easy Nested Data</b> ```json {"name": "Gilbert", "wins": [["straight", "7♣"], ["one pair", "10♥"]]} {"name": "Alexa", "wins": [["two pair", "4♠"], ["two pair", "9♠"]]} {"name": "May", "wins": []} {"name": "Deloise", "wins": [["three of a kind", "5♣"]]} ``&lsquo; JSON Lines&rsquo; biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to work with than a directory full of XML files.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md67"></a>
+<h1><a class="anchor" id="autotoc_md69"></a>
 Tracking your position</h1>
 <p>Some users would like to know where the document they parsed is in the input array of bytes. It is possible to do so by accessing directly the iterator and calling its <code>current_index()</code> method which reports the location (in bytes) of the current document in the input stream. You may also call the <code>source()</code> method to get a <code>std::string_view</code> instance on the document and <code>error()</code> to check if there were any error.</p>
 <p>Let us illustrate the idea with code:</p>
@@ -207,7 +208,7 @@ Tracking your position</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">got full document at 29</div>
 <div class="line">[1,2,3]</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md68"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md70"></a>
 Incomplete streams</h1>
 <p>Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the <code>truncated_bytes()</code> method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect <code>truncated_bytes()</code> to return zero.</p>
 <p>Consider the following example where a truncated document (<code>{"key":"intentionally unclosed string</code>) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the <code>truncated_bytes()</code> method returns 39.</p>
@@ -225,7 +226,7 @@ Incomplete streams</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">39 bytes</div>
 </div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.</p>
-<h1><a class="anchor" id="autotoc_md69"></a>
+<h1><a class="anchor" id="autotoc_md71"></a>
 Comma-separated documents</h1>
 <p>We also support comma-separated documents, but with some performance limitations. The <code>iterate_many</code> function takes in an option to allow parsing of comma separated documents (which defaults on false). In this mode, the entire buffer is processed in one batch. Therefore, the total size of the document should not exceed the maximal capacity of the parser (4 GB). This mode also effectively disallow multithreading. It is therefore mostly suitable for not "very large" inputs. In this mode, the batch_size parameter is effectively ignored, as it is set to at least the document size.</p>
 <p>Example:</p>
@@ -251,6 +252,81 @@ Comma-separated documents</h1>
 <div class="line">string</div>
 <div class="line">object</div>
 <div class="line">array</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md72"></a>
+C++20 features</h1>
+<p>In C++20, the standard introduced the notion of <em>customization point</em>. A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.</p>
+<p>A tag_invoke function serves as a mechanism for customization points. It is not directly part of the C++ standard library but is often used in libraries that implement customization points. The tag_invoke function is typically a generic function that takes a tag type and additional arguments. The first argument is usually a tag type (often an empty struct) that uniquely identifies the customization point (e.g., deserialization of custom types in simdjson). Users or library providers can specialize tag_invoke for their types by defining it in the appropriate namespace, often inline namespace.</p>
+<p>You can deserialize you own data structures conveniently if your system supports C++20. When it is the case, the macro <code>SIMDJSON_SUPPORTS_DESERIALIZATION</code> will be set to 1 by the simdjson library.</p>
+<p>Consider a custom class <code>Car</code>:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">struct Car {</div>
+<div class="line">  std::string make;</div>
+<div class="line">  std::string model;</div>
+<div class="line">  int year;</div>
+<div class="line">  std::vector&lt;float&gt; tire_pressure;</div>
+<div class="line">};</div>
+</div><!-- fragment --><p>You may support deserializing directly from a JSON value or document to your own <code>Car</code> instance by defining a single <code>tag_invoke</code> function:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">namespace simdjson {</div>
+<div class="line">// This tag_invoke MUST be inside simdjson namespace</div>
+<div class="line">template &lt;typename simdjson_value&gt;</div>
+<div class="line">auto tag_invoke(deserialize_tag, simdjson_value &amp;val, Car&amp; car) {</div>
+<div class="line">  ondemand::object obj;</div>
+<div class="line">  auto error = val.get_object().get(obj);</div>
+<div class="line">  if (error) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  if ((error = obj[&quot;make&quot;].get_string(car.make))) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  if ((error = obj[&quot;model&quot;].get_string(car.model))) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  if ((error = obj[&quot;year&quot;].get(car.year))) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  if ((error = obj[&quot;tire_pressure&quot;].get&lt;std::vector&lt;float&gt;&gt;().get(</div>
+<div class="line">           car.tire_pressure))) {</div>
+<div class="line">    return error;</div>
+<div class="line">  }</div>
+<div class="line">  return simdjson::SUCCESS;</div>
+<div class="line">}</div>
+<div class="line">} // namespace simdjson</div>
+</div><!-- fragment --><p>Importantly, the <code>tag_invoke</code> function must be inside the <code>simdjson</code> namespace. Let us explain each argument of <code>tag_invoke</code> function.</p>
+<ul>
+<li><code>simdjson::deserialize_tag</code>: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.</li>
+<li><code>var</code>: It receives automatically a <code>simdjson</code> value type (document, value, document_reference).</li>
+<li>The third parameter is an instance of the type that you want to support.</li>
+</ul>
+<p>Please see our main documentation (<code>basics.md</code>) under "Use `tag_invoke` for custom types (C++20)" for details about tag_invoke functions.</p>
+<p>Given a stream of JSON documents, you can add them to a data struture such as a <code>std::vector&lt;Car&gt;</code> like so if you support exceptions:</p>
+<div class="fragment"><div class="line"> {C++}</div>
+<div class="line">  padded_string json =</div>
+<div class="line">      R&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 40.1, 39.9 ] }</div>
+<div class="line">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 30.1, 31.0 ] }</div>
+<div class="line">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</div>
+<div class="line">       &quot;tire_pressure&quot;: [ 29.8, 30.0 ] }</div>
+<div class="line">)&quot;_padded;</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  ondemand::document_stream stream;</div>
+<div class="line">  [[maybe_unused]] auto error = parser.iterate_many(json).get(stream);</div>
+<div class="line">  std::vector&lt;Car&gt; cars;</div>
+<div class="line">  for(auto doc : stream) {</div>
+<div class="line">    cars.push_back((Car)doc); // an exception may be thrown</div>
+<div class="line">  }</div>
+</div><!-- fragment --><p>Otherwise you may use this longer version for explicit handling of errors:</p>
+<div class="fragment"><div class="line">{C++}</div>
+<div class="line"> std::vector&lt;Car&gt; cars;</div>
+<div class="line"> for(auto doc : stream) {</div>
+<div class="line">   Car c;</div>
+<div class="line">   if ((error = doc.get&lt;Car&gt;().get(c))) {</div>
+<div class="line">     std::cerr &lt;&lt; simdjson::error_message(error); &lt;&lt; std::endl;</div>
+<div class="line">     return EXIT_FAILURE;</div>
+<div class="line">   }</div>
+<div class="line">   cars.push_back(c);</div>
+<div class="line"> }</div>
 </div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
