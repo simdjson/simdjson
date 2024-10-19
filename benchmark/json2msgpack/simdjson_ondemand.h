@@ -50,7 +50,7 @@ private:
                                               uint8_t *p) noexcept;
   simdjson_inline void
   write_raw_string(simdjson::ondemand::raw_json_string rjs);
-  inline void recursive_processor(simdjson::ondemand::value element);
+  inline void recursive_processor(simdjson::ondemand::value&& element);
   inline void recursive_processor_ref(simdjson::ondemand::value& element);
 
   simdjson::ondemand::parser parser;
@@ -90,12 +90,13 @@ simdjson2msgpack::to_msgpack(const simdjson::padded_string &json,
   } else {
     simdjson::ondemand::value val = doc;
 #define SIMDJSON_GCC_COMPILER ((__GNUC__) && !(__clang__) && !(__INTEL_COMPILER))
-#if SIMDJSON_GCC_COMPILER
+#if 1
+//SIMDJSON_GCC_COMPILER
     // the GCC compiler does well with by-value passing.
     // GCC has superior recursive inlining:
     // https://stackoverflow.com/questions/29186186/why-does-gcc-generate-a-faster-program-than-clang-in-this-recursive-fibonacci-co
     // https://godbolt.org/z/TeK4doE51
-    recursive_processor(val);
+    recursive_processor(std::move(val));
 #else
     recursive_processor_ref(val);
 #endif
@@ -140,7 +141,7 @@ void simdjson2msgpack::write_raw_string(
   write_uint32_at(uint32_t(v.size()), location);
 }
 
-void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
+void simdjson2msgpack::recursive_processor(simdjson::ondemand::value&& element) {
   switch (element.type()) {
   case simdjson::ondemand::json_type::array: {
     uint32_t counter = 0;
@@ -148,7 +149,7 @@ void simdjson2msgpack::recursive_processor(simdjson::ondemand::value element) {
     uint8_t *location = skip_uint32();
     for (auto child : element.get_array()) {
       counter++;
-      recursive_processor(child.value());
+      recursive_processor(std::move(child.value()));
     }
     write_uint32_at(counter, location);
   } break;
