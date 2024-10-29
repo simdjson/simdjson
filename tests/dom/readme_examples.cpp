@@ -461,6 +461,13 @@ void parse_documentation_lowlevel() {
   (void)element;
 }
 
+void simplepad() {
+  std::string json = "[1]";
+  dom::parser parser;
+  dom::element doc;
+  auto error = parser.parse(simdjson::pad(json)).get(doc);
+  if(error) { exit(-1); }
+}
 
 void jsondollar() {
   dom::parser parser;
@@ -497,6 +504,7 @@ void jsonpath() {
 }
 
 int main() {
+  simplepad();
   jsonpath();
   jsondollar();
   basics_dom_1();

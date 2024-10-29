@@ -8,7 +8,15 @@
 #endif
 using namespace std;
 using namespace simdjson;
-using error_code=simdjson::error_code;
+using error_code = simdjson::error_code;
+
+bool simplepad() {
+  std::string json = "[1]";
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(simdjson::pad(json)).get(doc);
+  return error == SUCCESS;
+}
 
 bool string1() {
   const char * data = "my data"; // 7 bytes
@@ -1918,6 +1926,7 @@ bool run() {
     && using_the_parsed_json_4()
     && using_the_parsed_json_5()
 #endif
+    && simplepad()
     && using_the_parsed_json_6()
     && json_pointer_simple()
     && json_pointer_unicode()

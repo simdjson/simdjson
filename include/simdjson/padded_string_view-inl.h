@@ -53,6 +53,11 @@ inline bool padded_string_view::remove_utf8_bom() noexcept {
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false) { return out << s.value(); }
 #endif
 
+inline padded_string_view pad(std::string& s) noexcept {
+  const auto len = s.size();
+  s.append(SIMDJSON_PADDING, ' ');
+  return padded_string_view(s.data(), len, s.size());
+}
 } // namespace simdjson
 
 
