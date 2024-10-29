@@ -3,6 +3,7 @@
 
 #include "simdjson/arm64/begin.h"
 #include "simdjson/generic/ondemand/amalgamated.h"
+#include "simdjson/generic/builder/amalgamated.h"
 #include "simdjson/arm64/end.h"
 
 #endif // SIMDJSON_ARM64_ONDEMAND_H

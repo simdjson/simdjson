@@ -3,6 +3,7 @@
 
 #include "simdjson/lsx/begin.h"
 #include "simdjson/generic/ondemand/amalgamated.h"
+#include "simdjson/generic/builder/amalgamated.h"
 #include "simdjson/lsx/end.h"
 
 #endif // SIMDJSON_LSX_ONDEMAND_H
