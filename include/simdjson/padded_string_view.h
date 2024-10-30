@@ -83,6 +83,15 @@ public:
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string_view> &s) noexcept(false);
 #endif
 
+/**
+ * Create a padded_string_view from a string. The string will be padded with SIMDJSON_PADDING
+ * space characters. The resulting padded_string_view will have a length equal to the original
+ * string.
+ *
+ * @param s The string.
+ * @return The padded string.
+ */
+inline padded_string_view pad(std::string& s) noexcept;
 } // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_VIEW_H

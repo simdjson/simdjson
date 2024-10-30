@@ -60,6 +60,19 @@ std::string data = "my data";
 simdjson::padded_string my_padded_data(data); // copies to a padded buffer
 ```
 
+Whenever you pass an `std::string` reference to `parser::parse`,
+the parser will access the bytes beyond the end of
+the string but before the end of the allocated memory (`std::string::capacity()`).
+If you are using a sanitizer that checks for reading uninitialized bytes or `std::string`'s
+container-overflow checks, you may encounter sanitizer warnings.
+You can safely ignore these warnings. Or you can call `simdjson::pad(std::string&)` to pad the
+string with `SIMDJSON_PADDING` spaces: this function returns a `simdjson::padding_string_view` which can be be passed to the parser's iterator function:
+
+```c++
+std::string json = "[1]";
+dom::element doc = parser.parse(simdjson::pad(json));
+```
+
 The parsed document resulting from the `parser.load` and `parser.parse` calls depends on the `parser` instance. Thus the `parser` instance must remain in scope. Furthermore, you must have at most one parsed document in play per `parser` instance.
 You cannot copy a `parser` instance, you may only move it.
 

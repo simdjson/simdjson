@@ -84,6 +84,22 @@ public:
    * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
    * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
+   * ### std::string references
+   *
+   * If you pass a mutable std::string reference (std::string&), the parser will seek to extend
+   * its capacity to SIMDJSON_PADDING bytes beyond the end of the string.
+   *
+   * Whenever you pass an std::string reference, the parser will access the bytes beyond the end of
+   * the string but before the end of the allocated memory (std::string::capacity()).
+   * If you are using a sanitizer that checks for reading uninitialized bytes or std::string's
+   * container-overflow checks, you may encounter sanitizer warnings.
+   * You can safely ignore these warnings. Or you can call simdjson::pad(std::string&) to pad the
+   * string with SIMDJSON_PADDING spaces: this function returns a simdjson::padding_string_view
+   * which can be be passed to the parser's iterate function:
+   *
+   *    std::string json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )";
+   *    document doc = parser.iterate(simdjson::pad(json));
+   *
    * @param json The JSON to parse.
    * @param len The length of the JSON.
    * @param capacity The number of bytes allocated in the JSON (must be at least len+SIMDJSON_PADDING).
