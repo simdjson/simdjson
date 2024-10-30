@@ -369,6 +369,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="name
 <tr class="memitem:a667605c4c36cfa45bf111d6c76d39284"><td class="memItemLeft" align="right" valign="top">std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a667605c4c36cfa45bf111d6c76d39284">operator&lt;&lt;</a> (std::ostream &amp;out, <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a> &gt; &amp;s) noexcept(false)</td></tr>
 <tr class="memdesc:a667605c4c36cfa45bf111d6c76d39284"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">padded_string</a> instance to an output stream.  <a href="namespacesimdjson.html#a667605c4c36cfa45bf111d6c76d39284">More...</a><br /></td></tr>
 <tr class="separator:a667605c4c36cfa45bf111d6c76d39284"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4131fd8cef9c8046d0bc9aee8d44d16"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16">pad</a> (std::string &amp;s) noexcept</td></tr>
+<tr class="memdesc:ac4131fd8cef9c8046d0bc9aee8d44d16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">padded_string_view</a> from a string.  <a href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16">More...</a><br /></td></tr>
+<tr class="separator:ac4131fd8cef9c8046d0bc9aee8d44d16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -925,6 +928,44 @@ template&lt;class T &gt; </div>
 </dl>
 
 <p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00053">53</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="ac4131fd8cef9c8046d0bc9aee8d44d16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4131fd8cef9c8046d0bc9aee8d44d16">&#9670;&nbsp;</a></span>pad()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a> simdjson::pad </td>
+          <td>(</td>
+          <td class="paramtype">std::string &amp;&#160;</td>
+          <td class="paramname"><em>s</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a <a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">padded_string_view</a> from a string. </p>
+<p>The string will be padded with SIMDJSON_PADDING space characters. The resulting <a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">padded_string_view</a> will have a length equal to the original string.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">s</td><td>The string. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The padded string. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00056">56</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>

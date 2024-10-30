@@ -412,7 +412,7 @@ Static Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Load this padded string from a file. </p>
-<h2><a class="anchor" id="autotoc_md149"></a>
+<h2><a class="anchor" id="autotoc_md151"></a>
 Windows and Unicode</h2>
 <p>Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001) before calling this function. This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
 <dl class="section return"><dt>Returns</dt><dd>IO_ERROR on error. Be mindful that on some 32-bit systems, the file size might be limited to 2 GB.</dd></dl>

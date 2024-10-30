@@ -107,6 +107,7 @@ var namespacesimdjson =
     [ "operator<<", "namespacesimdjson.html#a39bbbf605c0068e4a65c2d8885727fc9", null ],
     [ "operator<<", "namespacesimdjson.html#a667605c4c36cfa45bf111d6c76d39284", null ],
     [ "operator<<", "namespacesimdjson.html#a4447c2af37e8fa57daa0cedd948a810d", null ],
+    [ "pad", "namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16", null ],
     [ "prettify", "namespacesimdjson.html#adf3293e0e757f2db0f279347c3b57914", null ],
     [ "prettify", "namespacesimdjson.html#aed443864cc94c09c3f88eea39f8ce645", null ],
     [ "to_json_string", "namespacesimdjson.html#a598dd79ec46726de8a6d409ba1bae034", null ],
