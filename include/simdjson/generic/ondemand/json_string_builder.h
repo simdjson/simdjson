@@ -131,9 +131,15 @@ private:
    * that this function would not be repeatedly called.
    */
   simdjson_inline void grow_buffer(size_t desired_capacity);
-  std::unique_ptr<char[]> buffer;
-  size_t position;
-  size_t capacity;
+
+  /**
+   * We use this helper function to make sure that is_valid is kept consistent.
+   */
+  simdjson_inline void set_valid(bool valid) noexcept;
+
+  std::unique_ptr<char[]> buffer{};
+  size_t position{0};
+  size_t capacity{0};
   bool is_valid{true};
 };
 
