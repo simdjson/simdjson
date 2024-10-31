@@ -77,7 +77,7 @@ public:
    * Append the std::string_view directly, without escaping.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void append_raw(std::string_view str)  noexcept;
+  simdjson_inline void append_raw(std::string_view input)  noexcept;
 
   /**
    * Append len characters from str.
@@ -136,6 +136,7 @@ private:
    * We use this helper function to make sure that is_valid is kept consistent.
    */
   simdjson_inline void set_valid(bool valid) noexcept;
+
 
   std::unique_ptr<char[]> buffer{};
   size_t position{0};
