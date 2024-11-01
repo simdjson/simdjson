@@ -1,5 +1,9 @@
 var NAVTREEINDEX6 =
 {
+"structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a3df3c734f49ce63bc3dd8ae7283e6720":[11,0,0,4,28],
+"structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a44ea6742d136192ac67eb1c73fe1edbf":[11,0,0,4,38],
+"structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a48760539a35aca31d02866a9d26e4c9e":[11,0,0,4,16],
+"structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a49a8f308fee51108430db6612da292da":[11,0,0,4,5],
 "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a758ca9e0d3c830bd6cd9275c9697b18b":[11,0,0,4,7],
 "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a75e13d079118b2e532b872026debf1aa":[11,0,0,4,0],
 "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a7c3dcc6e3cf1c8640bd484fe0ab21979":[11,0,0,4,6],
@@ -56,9 +60,5 @@ var NAVTREEINDEX6 =
 "westmere_2ondemand_8h_source.html":[12,0,0,0,12,8],
 "westmere_2simd_8h_source.html":[12,0,0,0,12,9],
 "westmere_2stringparsing__defs_8h_source.html":[12,0,0,0,12,10],
-"westmere_8h_source.html":[12,0,0,0,41],
-"":[10,0,0,8,0],
-"":[10,0,0,8],
-"":[10,0,1],
-"":[10,0,0,8,1,0]
+"westmere_8h_source.html":[12,0,0,0,41]
 };
