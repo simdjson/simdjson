@@ -209,6 +209,13 @@ std::string data = "my data";
 simdjson::padded_string my_padded_data(data); // copies to a padded buffer
 ```
 
+You can then parse the JSON data from the `simdjson::padded_string` instance:
+
+
+```c++
+ondemand::document doc = parser.iterate(my_padded_data);
+```
+
 Whenever you pass an `std::string` reference to `parser::iterate`,
 the parser will access the bytes beyond the end of
 the string but before the end of the allocated memory (`std::string::capacity()`).
