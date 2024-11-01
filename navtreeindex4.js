@@ -1,9 +1,5 @@
 var NAVTREEINDEX4 =
 {
-"namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27":[10,0,0,49],
-"namespacesimdjson.html#a4447c2af37e8fa57daa0cedd948a810d":[10,0,0,52],
-"namespacesimdjson.html#a44db29a59fd9f65464171bb1caeb0914":[10,0,0,58],
-"namespacesimdjson.html#a4c998fcc6bf2bca2196b45a5c3e1967a":[10,0,0,60],
 "namespacesimdjson.html#a4ee1eccef6fb8cdcdaf794e3e3d9ee66":[10,0,0,68],
 "namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1":[10,0,0,69],
 "namespacesimdjson.html#a537445bb236ae76d2b5559b1851b7108":[10,0,0,48],
@@ -249,5 +245,9 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#af2fdfe4a3e6f617e07e213f0d50a3cc4":[11,0,0,8,5],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html":[11,0,0,9],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a197bf2b7db2dc1d4fa59a1d12ee42526":[11,0,0,9,4],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a1c7c269b4567376cdd0e1406a2b43f1d":[11,0,0,9,0]
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a1c7c269b4567376cdd0e1406a2b43f1d":[11,0,0,9,0],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a62db081f4d22ed0434cf997b3bd3f2c1":[11,0,0,9,1],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a80d1a491f89534a7474f7a6ff6ab236d":[11,0,0,9,3],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#ade4fad54d7e78d06501c053dbb2fc704":[11,0,0,9,2],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html":[11,0,0,10]
 };

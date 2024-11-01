@@ -227,6 +227,9 @@ The basics: loading and parsing JSON documents</h1>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">std::string data = &quot;my data&quot;;</div>
 <div class="line">simdjson::padded_string my_padded_data(data); // copies to a padded buffer</div>
+</div><!-- fragment --><p>You can then parse the JSON data from the <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> instance:</p>
+<div class="fragment"><div class="line"> {c++}</div>
+<div class="line">ondemand::document doc = parser.iterate(my_padded_data);</div>
 </div><!-- fragment --><p>Whenever you pass an <code>std::string</code> reference to <code>parser::iterate</code>, the parser will access the bytes beyond the end of the string but before the end of the allocated memory (<code>std::string::capacity()</code>). If you are using a sanitizer that checks for reading uninitialized bytes or <code>std::string</code>'s container-overflow checks, you may encounter sanitizer warnings. You can safely ignore these warnings. Or you can call <code><a class="el" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16" title="Create a padded_string_view from a string.">simdjson::pad(std::string&amp;)</a></code> to pad the string with <code>SIMDJSON_PADDING</code> spaces: this function returns a <code>simdjson::padding_string_view</code> which can be be passed to the parser's iterator function:</p>
 <div class="fragment"><div class="line"> {c++}</div>
 <div class="line">std::string json = &quot;[1]&quot;;</div>
