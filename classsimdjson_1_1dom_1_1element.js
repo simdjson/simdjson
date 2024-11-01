@@ -49,6 +49,7 @@ var classsimdjson_1_1dom_1_1element =
     [ "operator<", "classsimdjson_1_1dom_1_1element.html#a2f9448091caf47e5ecc325956e14ed73", null ],
     [ "operator==", "classsimdjson_1_1dom_1_1element.html#afbe1c01508f1cc39b41b79596cb5717b", null ],
     [ "operator[]", "classsimdjson_1_1dom_1_1element.html#a367d22eeabc1881a8eb18bae2f2ba3b8", null ],
+    [ "operator[]", "classsimdjson_1_1dom_1_1element.html#a2a0bea8742d646123f800e0d1f72217c", null ],
     [ "operator[]", "classsimdjson_1_1dom_1_1element.html#aca693f57d73a5ce95d1f7bedf67289b7", null ],
     [ "tie", "classsimdjson_1_1dom_1_1element.html#a5342161b8c52c78b2f5edac10e9d05ca", null ],
     [ "tie", "classsimdjson_1_1dom_1_1element.html#a5342161b8c52c78b2f5edac10e9d05ca", null ],

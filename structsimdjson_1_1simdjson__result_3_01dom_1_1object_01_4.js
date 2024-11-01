@@ -7,6 +7,7 @@ var structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4 =
     [ "begin", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#a660ae79c537b7347b2b934870aac680a", null ],
     [ "end", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#a171669c4e5f048b858139a2b1767cd7b", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#a0eb5e478654a4d80045f81e99666d7e1", null ],
+    [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#aaf82da23f301e46ecbdf2ef270ff0fa2", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#ae7aaa4b623ae007a33b0faa37374cc33", null ],
     [ "size", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html#a53309d2504209b1d4b00df48f1c074d3", null ]
 ];

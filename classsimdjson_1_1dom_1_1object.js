@@ -10,6 +10,7 @@ var classsimdjson_1_1dom_1_1object =
     [ "end", "classsimdjson_1_1dom_1_1object.html#a79cf291477bcaa1bf2328411b411587d", null ],
     [ "operator element", "classsimdjson_1_1dom_1_1object.html#ad4fdfb4c4df15af03f44a11201b0545d", null ],
     [ "operator[]", "classsimdjson_1_1dom_1_1object.html#a2691ceae488be203aac2d5ef5b67347f", null ],
+    [ "operator[]", "classsimdjson_1_1dom_1_1object.html#a0488fd4ec014787e9e4158088e35c6ea", null ],
     [ "operator[]", "classsimdjson_1_1dom_1_1object.html#acc66a2f2eb74fbe359d4064531764f50", null ],
     [ "size", "classsimdjson_1_1dom_1_1object.html#a93ec5c36aae913f266f533b2e02bc873", null ],
     [ "element", "classsimdjson_1_1dom_1_1object.html#a0602f94f596fa800408eeb034b5850ab", null ],

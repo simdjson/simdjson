@@ -38,6 +38,7 @@ var structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4 =
     [ "operator std::string_view", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#adf99d7c2a96f5f2da265aceef4b47986", null ],
     [ "operator uint64_t", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#adaf461aa2908f3d8cf8ac931334755d3", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#ac98e4007887019f8dcf2dac07a8a3a3b", null ],
+    [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#aa411131bd3ad8be72c518979d78260b5", null ],
     [ "operator[]", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a44ea6742d136192ac67eb1c73fe1edbf", null ],
     [ "type", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html#a324bb5d94ca6c176f5cc7635998c71a9", null ]
 ];

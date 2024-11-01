@@ -57,6 +57,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "operator T", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a4d381cbad85e6b5498328f2c9bacb8ab", null ],
     [ "operator uint64_t", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afb7be23d4f1006d5eae234d8c8c8d286", null ],
     [ "operator[]", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a930e15defdcb082793fb22fe5b161de5", null ],
+    [ "operator[]", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#ac5031c5342413b1afea78514e61dcd21", null ],
     [ "operator[]", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8af215f249821f44ee33eb3cf2dac53b", null ],
     [ "raw_json", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9271a0be9a741a34c3a63f77363963a6", null ],
     [ "raw_json_token", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a37427e768435aafef5af097b8cc3cfec", null ],
