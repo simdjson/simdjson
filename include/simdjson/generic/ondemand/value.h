@@ -414,6 +414,7 @@ public:
   simdjson_inline simdjson_result<value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<value> operator[](const char *key) noexcept;
+  simdjson_result<value> operator[](int) noexcept = delete;
 
   /**
    * Get the type of this JSON value. It does not validate or consume the value.
@@ -781,6 +782,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](int) noexcept = delete;
 
   /**
    * Get the type of this JSON value.
