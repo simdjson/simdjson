@@ -15,8 +15,27 @@ namespace builder {
 
 //////////////////////////
 // TODO: at the end of the processing, possibly as an optional step, we should
-// validate the UTF-8 of the string.
+// validate the UTF-8 of the string. This should call simdjson::validate_utf8 (easy!!!).
 /////////////////////////
+/////////////////////////
+// TODO: We can be string_build constexpr (or largely so) with C++20.
+// We can use std::is_constant_evaluated() where needed.
+/////////////////////////
+/**
+
+constexpr int myFunction(int x) {
+    if (std::is_constant_evaluated()) {
+        // Compile-time implementation
+        // This part will be used when the function is called in a constant expression context
+        return x * 2;  // Example: simple doubling at compile time
+    } else {
+        // Runtime implementation
+        // This part will run when the function is called at runtime
+        std::cout << "Function called at runtime with x = " << x << std::endl;
+        return x + 10;  // Example: adding 10 at runtime
+    }
+}
+ */
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it

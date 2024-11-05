@@ -39,7 +39,7 @@ simdjson_inline void string_builder::grow_buffer(size_t desired_capacity) {
     set_valid(false);
     return;
   }
-  memcpy(new_buffer.get(), buffer.get(), position);
+  std::memcpy(new_buffer.get(), buffer.get(), position);
   buffer.swap(new_buffer);
   capacity = desired_capacity;
 }
@@ -98,7 +98,7 @@ int fast_digit_count_32(uint32_t x) {
       34349738368, 34349738368, 34349738368, 34349738368, 38554705664,
       38554705664, 38554705664, 41949672960, 41949672960, 41949672960,
       42949672960, 42949672960};
-  return (x + table[int_log2(x)]) >> 32;
+  return uint32_t((x + table[int_log2(x)]) >> 32);
 }
 
 int int_log2(uint64_t x) { return 63 - leading_zeroes(x | 1); }
@@ -141,7 +141,6 @@ simdjson_inline size_t digit_count(number_type v) noexcept {
     return digit_count_64(v);
   }
 }
-
 
 } // internal
 
@@ -210,26 +209,57 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
 }
 
 simdjson_inline void string_builder::escape_and_append(std::string_view input)  noexcept {
-  (void)input;
+  // escaping might turn a control character into \x00xx so 6 characters.
+  capacity_check(6 * input.size());
+  position += simdjson::write_string_escaped(input, buffer.get() + position);
 }
 
 
 simdjson_inline void string_builder::escape_and_append_with_quotes(std::string_view input)  noexcept {
-  (void)input;
+  // escaping might turn a control character into \x00xx so 6 characters.
+  capacity_check(2 + 6 * input.size());
+  buffer.get()[position++] = '"';
+  position += simdjson::write_string_escaped(input, buffer.get() + position);
+  buffer.get()[position++] = '"';
 }
 
 simdjson_inline void string_builder::append_raw(const char *c)  noexcept {
-  (void)c;
+  capacity_check(1);
+  buffer.get()[position++] = *c;
 }
 
 simdjson_inline void string_builder::append_raw(std::string_view input)  noexcept {
-  (void)input;
+  capacity_check(input.size());
+  std::memcpy(buffer.get() + position, input.data(), input.size());
+  position += input.size();
 }
 
 simdjson_inline void string_builder::append_raw(const char *str, size_t len)  noexcept {
-  (void)str;
-  (void)len;
+  capacity_check(len);
+  std::memcpy(buffer.get() + position, str, len);
+  position += len;
 }
+
+
+/*****
+TODO: implement these...
+
+
+
+#if SIMDJSON_EXCEPTIONS
+
+  simdjson_inline operator std::string() const noexcept(false);
+
+  simdjson_inline operator std::string_view() const noexcept(false);
+#endif
+
+
+  simdjson_inline simdjson_result<std::string_view> view() const noexcept;
+
+  simdjson_inline simdjson_result<const char *> c_str();
+
+
+*****/
 
 } // namespace builder
 } // namespace SIMDJSON_IMPLEMENTATION
