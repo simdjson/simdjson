@@ -1164,6 +1164,8 @@ INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
 <p>The string is guaranteed to be valid UTF-8.</p>
 <p>Equivalent to <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8d50c7c494ab9acc4a644cc77dd058f9" title="Get this value as the given type.">get&lt;std::string_view&gt;()</a>.</p>
 <p>Important: a value should be consumed once. Calling <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a9d574e04d5dfde0bf99dea4926232fe4" title="Cast this JSON value to a string.">get_string()</a> twice on the same value is an error.</p>
+<p>In some instances, you may want to allow replacement of invalid Unicode sequences. You may do so by passing the allow_replacement parameter as true. In the following example, the string "431924697b\udff0L\u0001Y" is not valid Unicode. By passing true to get_string, we allow the replacement of the invalid Unicode sequences with the Unicode replacement character (U+FFFD).</p>
+<p>simdjson::ondemand::parser parser; auto json = R"({"deviceId":"431924697b\udff0L\u0001Y"})"_padded; simdjson::ondemand::document doc = parser.iterate(json); auto view = doc["deviceId"].get_string(true);</p>
 <dl class="section return"><dt>Returns</dt><dd>An UTF-8 string. The string is stored in the parser and will be invalidated the next time it parses a document or when it is destroyed. </dd>
 <dd>
 INCORRECT_TYPE if the JSON value is not a string. </dd></dl>
