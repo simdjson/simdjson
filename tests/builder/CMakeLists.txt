@@ -1,0 +1,12 @@
+# All remaining tests link with simdjson proper
+link_libraries(simdjson)
+include_directories(..)
+add_cpp_test(builder_string_builder_tests              LABELS ondemand acceptance per_implementation)
+
+# Copy the simdjson dll into the tests directory
+if(MSVC AND BUILD_SHARED_LIBS)
+  add_custom_command(TARGET builder_string_builder_tests POST_BUILD        # Adds a post-build event
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
+        "$<TARGET_FILE:simdjson>"      # <--this is in-file
+        "$<TARGET_FILE_DIR:builder_string_builder_tests>")                 # <--this is out-file path
+endif(MSVC AND BUILD_SHARED_LIBS)

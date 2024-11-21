@@ -24,7 +24,7 @@ namespace builder {
  */
 class string_builder {
 public:
-  simdjson_inline string_builder(size_t initial_capacity);
+  simdjson_inline string_builder(size_t initial_capacity = 1024);
 
   /**
    * Append number (includes Booleans). Booleans are mapped to the strings

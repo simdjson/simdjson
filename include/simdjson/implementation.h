@@ -33,7 +33,7 @@ simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string_view s
  * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
  * @return number of bytes written
  */
-size_t write_string_escaped(const std::string_view input, char *out) noexcept;
+simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept;
 
 /**
  * Validate the UTF-8 string.
@@ -143,7 +143,7 @@ public:
   * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
   * @return number of bytes written
   */
-  size_t write_string_escaped(const std::string_view input, char *out) noexcept;
+  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) noexcept;
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
   simdjson_inline implementation(

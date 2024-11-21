@@ -146,14 +146,12 @@ simdjson_inline size_t digit_count(number_type v) noexcept {
 
 } // internal
 
-
-
 template<typename number_type, typename>
 simdjson_inline void string_builder::append(number_type v) noexcept {
   static_assert(std::is_same<number_type, bool>::value
     || std::is_integral<number_type>::value || std::is_floating_point<number_type>::value, "Unsupported number type");
   // If C++17 is available, we can 'if constexpr' here.
-  if (std::is_same<number_type, bool>::value) {
+  if constexpr (std::is_same<number_type, bool>::value) {
     if (v) {
       constexpr char true_literal[] = "true";
       constexpr size_t true_len = sizeof(true_literal) - 1;
@@ -169,41 +167,41 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         position += false_len;
       }
     }
-  } else if (std::is_unsigned<number_type>::value) {
+  } else if constexpr (std::is_unsigned<number_type>::value) {
     constexpr size_t max_number_size = 20;
     if(capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       unsigned_type pv = static_cast<unsigned_type>(v);
-      size_t digit_count = internal::digit_count(pv);
-      char *write_pointer = buffer.get() + position + digit_count;
+      size_t dc = internal::digit_count(pv);
+      char *write_pointer = buffer.get() + position + dc;
       // optimization opportunity: if v is large, we can do better.
       while(v >= 10) {
-        *write_pointer-- = char('0' + (v % 10));
-        v /= 10;
+        *write_pointer-- = char('0' + (pv % 10));
+        pv /= 10;
       }
-      *write_pointer = char('0' + v);
-      position += digit_count;
+      *write_pointer = char('0' + pv);
+      position += dc;
     }
-  } else if (std::is_integral<number_type>::value) {
+  } else if constexpr (std::is_integral<number_type>::value) {
     constexpr size_t max_number_size = 20;
     if(capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       bool negative = v < 0;
       unsigned_type pv = static_cast<unsigned_type>(negative ? -v : v);
-      size_t digit_count = internal::digit_count(pv);
+      size_t dc = internal::digit_count(pv);
       if(negative) {
         buffer.get()[position++] = '-';
       }
-      char *write_pointer = buffer.get() + position + digit_count;
+      char *write_pointer = buffer.get() + position + dc;
       // optimization opportunity: if v is large, we can do better.
-      while(v >= 10) {
-        *write_pointer-- = char('0' + (v % 10));
-        v /= 10;
+      while(pv >= 10) {
+        *write_pointer-- = char('0' + (pv % 10));
+        pv /= 10;
       }
-      *write_pointer = char('0' + v);
-      position += digit_count;
+      *write_pointer = char('0' + pv);
+      position += dc;
     }
-  } else if(std::is_floating_point<number_type>::value) {
+  } else if constexpr (std::is_floating_point<number_type>::value) {
     constexpr size_t max_number_size = 24;
     if(capacity_check(max_number_size)) {
       // We could specialize for float.

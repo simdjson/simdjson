@@ -26,3 +26,4 @@ endif()
 add_cpp_test(checkimplementation LABELS other per_implementation)
 
 add_subdirectory(compilation_failure_tests)
+add_subdirectory(builder)
