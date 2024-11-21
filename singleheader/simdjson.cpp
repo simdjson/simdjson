@@ -2443,7 +2443,8 @@ enum error_code {
   SCALAR_DOCUMENT_AS_VALUE,   ///< A scalar document is treated as a value.
   OUT_OF_BOUNDS,              ///< Attempted to access location outside of document.
   TRAILING_CONTENT,           ///< Unexpected trailing content in the JSON input
-  NUM_ERROR_CODES
+  OUT_OF_CAPACITY,            ///< The capacity was exceeded, we cannot allocate enough memory.
+  NUM_ERROR_CODES             ///< Placeholder for end of error code list.
 };
 
 /**

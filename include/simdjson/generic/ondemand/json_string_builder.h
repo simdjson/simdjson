@@ -13,29 +13,6 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
-//////////////////////////
-// TODO: at the end of the processing, possibly as an optional step, we should
-// validate the UTF-8 of the string. This should call simdjson::validate_utf8 (easy!!!).
-/////////////////////////
-/////////////////////////
-// TODO: We can be string_build constexpr (or largely so) with C++20.
-// We can use std::is_constant_evaluated() where needed.
-/////////////////////////
-/**
-
-constexpr int myFunction(int x) {
-    if (std::is_constant_evaluated()) {
-        // Compile-time implementation
-        // This part will be used when the function is called in a constant expression context
-        return x * 2;  // Example: simple doubling at compile time
-    } else {
-        // Runtime implementation
-        // This part will run when the function is called at runtime
-        std::cout << "Function called at runtime with x = " << x << std::endl;
-        return x + 10;  // Example: adding 10 at runtime
-    }
-}
- */
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -107,12 +84,18 @@ public:
   /**
    * Creates an std::string from the written JSON buffer.
    * Throws if memory allocation failed
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content if needed.
    */
   simdjson_inline operator std::string() const noexcept(false);
 
   /**
    * Creates an std::string_view from the written JSON buffer.
-   * Throws if memory allocation failed
+   * Throws if memory allocation failed.
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content if needed.
    */
   simdjson_inline operator std::string_view() const noexcept(false);
 #endif
@@ -120,6 +103,9 @@ public:
   /**
    * Returns a view on the written JSON buffer. Returns an error
    * if memory allocation failed.
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content.
    */
   simdjson_inline simdjson_result<std::string_view> view() const noexcept;
 
@@ -127,14 +113,23 @@ public:
    * Appends the null character to the buffer and returns
    * a pointer to the beginning of the written JSON buffer.
    * Returns an error if memory allocation failed.
+   * The result is null-terminated.
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content.
    */
-  simdjson_inline simdjson_result<const char *> c_str();
+  simdjson_inline simdjson_result<const char *> c_str() noexcept;
+
+  /**
+   * Return true if the content is valid UTF-8.
+   */
+  simdjson_inline bool validate_unicode() const noexcept;
 
   /**
    * Returns the current size of the written JSON buffer.
    * If an error occurred, returns 0.
    */
-  simdjson_inline size_t size() const;
+  simdjson_inline size_t size() const noexcept;
 
 private:
   /**

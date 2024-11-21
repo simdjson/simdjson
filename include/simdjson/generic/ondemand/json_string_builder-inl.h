@@ -27,7 +27,7 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   // check for overflow, most of the time there is no overflow
   if (simdjson_likely(position + upcoming_bytes < position)) { return false; }
   // We will rarely get here.
-  grow_buffer(std::max(capacity * 2, position + upcoming_bytes));
+  grow_buffer((std::max)(capacity * 2, position + upcoming_bytes));
   // If the buffer allocation failed, we set is_valid to false.
   return is_valid;
 }
@@ -55,23 +55,25 @@ simdjson_inline void string_builder::set_valid(bool valid) noexcept {
   }
 }
 
-simdjson_inline size_t string_builder::size() const {
+simdjson_inline size_t string_builder::size() const noexcept {
   return position;
 }
 
 
-simdjson_inline void string_builder::append(char c)  noexcept {
-    capacity_check(1);
-    buffer.get()[position++] = c;
+simdjson_inline void string_builder::append(char c) noexcept {
+    if(capacity_check(1)) {
+      buffer.get()[position++] = c;
+    }
 }
 
 
-simdjson_inline void string_builder::append_null()  noexcept {
+simdjson_inline void string_builder::append_null() noexcept {
   constexpr char null_literal[] = "null";
   constexpr size_t null_len = sizeof(null_literal) - 1;
-  capacity_check(null_len);
-  std::memcpy(buffer.get() + position, null_literal, null_len);
-  position += null_len;
+  if(capacity_check(null_len)) {
+    std::memcpy(buffer.get() + position, null_literal, null_len);
+    position += null_len;
+  }
 }
 
 simdjson_inline void string_builder::clear()  noexcept {
@@ -155,111 +157,125 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     if (v) {
       constexpr char true_literal[] = "true";
       constexpr size_t true_len = sizeof(true_literal) - 1;
-      capacity_check(true_len);
-      std::memcpy(buffer.get() + position, true_literal, true_len);
-      position += true_len;
+      if(capacity_check(true_len)) {
+        std::memcpy(buffer.get() + position, true_literal, true_len);
+        position += true_len;
+      }
     } else {
       constexpr char false_literal[] = "false";
       constexpr size_t false_len = sizeof(false_literal) - 1;
-      capacity_check(false_len);
-      std::memcpy(buffer.get() + position, false_literal, false_len);
-      position += false_len;
+      if(capacity_check(false_len)) {
+        std::memcpy(buffer.get() + position, false_literal, false_len);
+        position += false_len;
+      }
     }
   } else if (std::is_unsigned<number_type>::value) {
     constexpr size_t max_number_size = 20;
-    capacity_check(max_number_size);
-    size_t digit_count = internal::digit_count(v);
-    char *write_pointer = buffer.get() + position + digit_count;
-    // optimization opportunity: if v is large, we can do better.
-    while(v >= 10) {
-      *write_pointer-- = char('0' + (v % 10));
-      v /= 10;
+    if(capacity_check(max_number_size)) {
+      using unsigned_type = typename std::make_unsigned<number_type>::type;
+      unsigned_type pv = static_cast<unsigned_type>(v);
+      size_t digit_count = internal::digit_count(pv);
+      char *write_pointer = buffer.get() + position + digit_count;
+      // optimization opportunity: if v is large, we can do better.
+      while(v >= 10) {
+        *write_pointer-- = char('0' + (v % 10));
+        v /= 10;
+      }
+      *write_pointer = char('0' + v);
+      position += digit_count;
     }
-    *write_pointer = char('0' + v);
-    position += digit_count;
   } else if (std::is_integral<number_type>::value) {
     constexpr size_t max_number_size = 20;
-    capacity_check(max_number_size);
-    using unsigned_type = typename std::make_unsigned<number_type>::type;
-    bool negative = v < 0;
-    unsigned_type pv = static_cast<unsigned_type>(negative ? -v : v);
-    size_t digit_count = internal::digit_count(pv);
-    if(negative) {
-      buffer.get()[position++] = '-';
-    }
-    char *write_pointer = buffer.get() + position + digit_count;
-    // optimization opportunity: if v is large, we can do better.
-    while(v >= 10) {
-      *write_pointer-- = char('0' + (v % 10));
-      v /= 10;
-    }
-    *write_pointer = char('0' + v);
-    position += digit_count;
-    if(v < 0) {
+    if(capacity_check(max_number_size)) {
+      using unsigned_type = typename std::make_unsigned<number_type>::type;
+      bool negative = v < 0;
+      unsigned_type pv = static_cast<unsigned_type>(negative ? -v : v);
+      size_t digit_count = internal::digit_count(pv);
+      if(negative) {
+        buffer.get()[position++] = '-';
+      }
+      char *write_pointer = buffer.get() + position + digit_count;
+      // optimization opportunity: if v is large, we can do better.
+      while(v >= 10) {
+        *write_pointer-- = char('0' + (v % 10));
+        v /= 10;
+      }
+      *write_pointer = char('0' + v);
+      position += digit_count;
     }
   } else if(std::is_floating_point<number_type>::value) {
     constexpr size_t max_number_size = 24;
-    capacity_check(max_number_size);
-    // We could specialize for float.
-    char *end = simdjson::internal::to_chars(buffer.get() + position, nullptr, double(v));
-    position = end - buffer.get();
-  } else {
-    // We should never get here.
+    if(capacity_check(max_number_size)) {
+      // We could specialize for float.
+      char *end = simdjson::internal::to_chars(buffer.get() + position, nullptr, double(v));
+      position = end - buffer.get();
+    }
   }
 }
 
 simdjson_inline void string_builder::escape_and_append(std::string_view input)  noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
-  capacity_check(6 * input.size());
-  position += simdjson::write_string_escaped(input, buffer.get() + position);
+  if(capacity_check(6 * input.size())) {
+    position += simdjson::write_string_escaped(input, buffer.get() + position);
+  }
 }
 
 
 simdjson_inline void string_builder::escape_and_append_with_quotes(std::string_view input)  noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
-  capacity_check(2 + 6 * input.size());
-  buffer.get()[position++] = '"';
-  position += simdjson::write_string_escaped(input, buffer.get() + position);
-  buffer.get()[position++] = '"';
+  if(capacity_check(2 + 6 * input.size())) {
+    buffer.get()[position++] = '"';
+    position += simdjson::write_string_escaped(input, buffer.get() + position);
+    buffer.get()[position++] = '"';
+  }
 }
 
 simdjson_inline void string_builder::append_raw(const char *c)  noexcept {
-  capacity_check(1);
-  buffer.get()[position++] = *c;
+  if(capacity_check(1)) {
+    buffer.get()[position++] = *c;
+  }
 }
 
 simdjson_inline void string_builder::append_raw(std::string_view input)  noexcept {
-  capacity_check(input.size());
-  std::memcpy(buffer.get() + position, input.data(), input.size());
-  position += input.size();
+  if(capacity_check(input.size())) {
+    std::memcpy(buffer.get() + position, input.data(), input.size());
+    position += input.size();
+  }
 }
 
 simdjson_inline void string_builder::append_raw(const char *str, size_t len)  noexcept {
-  capacity_check(len);
-  std::memcpy(buffer.get() + position, str, len);
-  position += len;
+  if(capacity_check(len)) {
+    std::memcpy(buffer.get() + position, str, len);
+    position += len;
+  }
 }
 
-
-/*****
-TODO: implement these...
-
-
-
 #if SIMDJSON_EXCEPTIONS
+simdjson_inline string_builder::operator std::string() const noexcept(false) {
+  return std::string(std::string_view());
+}
 
-  simdjson_inline operator std::string() const noexcept(false);
-
-  simdjson_inline operator std::string_view() const noexcept(false);
+simdjson_inline string_builder::operator std::string_view() const noexcept(false) {
+  return view();
+}
 #endif
 
+simdjson_inline simdjson_result<std::string_view> string_builder::view() const noexcept {
+  if (!is_valid) { return simdjson::OUT_OF_CAPACITY; }
+  return std::string_view(buffer.get(), position);
+}
 
-  simdjson_inline simdjson_result<std::string_view> view() const noexcept;
+simdjson_inline simdjson_result<const char *> string_builder::c_str() noexcept {
+  if(capacity_check(1)) {
+    buffer.get()[position] = '\0';
+    return buffer.get();
+  }
+  return simdjson::OUT_OF_CAPACITY;
+}
 
-  simdjson_inline simdjson_result<const char *> c_str();
-
-
-*****/
+simdjson_inline bool string_builder::validate_unicode() const noexcept {
+  return simdjson::validate_utf8(buffer.get(), position);
+}
 
 } // namespace builder
 } // namespace SIMDJSON_IMPLEMENTATION
