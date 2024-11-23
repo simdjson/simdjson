@@ -143,7 +143,7 @@ public:
    * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
    * @return number of bytes written
    */
-  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) const noexcept;
+  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) const noexcept = 0;
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
   simdjson_inline implementation(
