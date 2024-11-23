@@ -186,6 +186,9 @@ public:
   simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) const noexcept final override {
     return set_best()->validate_utf8(buf, len);
   }
+  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final {
+    return set_best()->write_string_escaped(input, out);
+  }
   simdjson_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
@@ -235,6 +238,9 @@ public:
   }
   simdjson_warn_unused error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
+  }
+  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final {
+    return 0;
   }
   simdjson_warn_unused bool validate_utf8(const char *, size_t) const noexcept final override {
     return false; // Just refuse to validate. Given that we have a fallback implementation
@@ -318,6 +324,9 @@ simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, s
 }
 simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
   return get_active_implementation()->validate_utf8(buf, len);
+}
+simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
+  return get_active_implementation()->write_string_escaped(input, out);
 }
 const implementation * builtin_implementation() {
   static const implementation * builtin_impl = get_available_implementations()[SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];

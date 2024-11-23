@@ -137,13 +137,13 @@ public:
   simdjson_warn_unused virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
   /**
-  * Write the string to the output buffer while escaping double-quote, backlash and ascii control characters.
-  *
-  * @param input the string_view to escape
-  * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
-  * @return number of bytes written
-  */
-  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) noexcept;
+   * Write the string to the output buffer while escaping double-quote, backlash and ascii control characters.
+   *
+   * @param input the string_view to escape
+   * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
+   * @return number of bytes written
+   */
+  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) const noexcept;
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
   simdjson_inline implementation(

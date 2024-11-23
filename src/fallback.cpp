@@ -402,6 +402,10 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   return stage2(_doc);
 }
 
+simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
+  return fallback::stringparsing::write_string_escaped(input, out);
+}
+
 } // namespace fallback
 } // namespace simdjson
 

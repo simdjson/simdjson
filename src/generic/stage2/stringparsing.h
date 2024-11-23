@@ -236,6 +236,104 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
+  // We are making the following assumption: most strings will either be very short or they will not
+  // need escaping.
+  size_t i = 0;
+  size_t pos = 0;
+  if(input.size() >= sizeof(simd8<uint8_t>)) {
+    auto vec_processing = [input,out]() -> size_t {
+      size_t i = 0;
+      size_t pos = 0;
+      for(;input.size() - i >= sizeof(simd8<uint8_t>); i += sizeof(simd8<uint8_t>)) {
+        simd8<uint8_t> vinput(reinterpret_cast<const uint8_t *>(input.data()) + i);
+        // instead of doing it register by register, we could regroup, but consider
+        // that we expect most strings to be short.
+        if(((vinput <= 31) | (vinput == '\\') | (vinput == '"')).any()) {
+          return i; // We have a character that needs escaping
+          // We could be more carefully and identify the character that needs escaping.
+        }
+        vinput.store(reinterpret_cast<uint8_t *>(out) + pos);
+        pos += sizeof(simd8<uint8_t>);
+      }
+      if(i == input.size()) { return input.size(); }
+      simd8<uint8_t> vinput(reinterpret_cast<const uint8_t *>(input.data()) + input.size() - sizeof(simd8<uint8_t>));
+      if(((vinput <= 31) | (vinput == '\\') | (vinput == '"')).any()) {
+        return i; // We have a character that needs escaping
+        // We could be more carefully and identify the character that needs escaping.
+      }
+      vinput.store(reinterpret_cast<uint8_t *>(out) + input.size() - sizeof(simd8<uint8_t>));
+      return input.size();
+    };
+    i = vec_processing();
+    pos = i;
+    if(i == input.size()) { return pos; }
+    // Here we only continue if there was a character that needed escaping.
+  }
+  static std::string_view control_chars[] = {
+    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
+    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
+    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
+    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
+    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
+  static std::array<uint8_t, 256> json_quotable_character =
+    []() constexpr {
+      std::array<uint8_t, 256> result{};
+      for (int i = 0; i < 32; i++) {
+        result[i] = 1;
+      }
+      for (int i : {'"', '\\'}) {
+        result[i] = 1;
+      }
+      return result;
+    }();
+  // The rest could possibly be vectorized, but consider that we expect most strings
+  // to be short or not to require escaping.
+  for (; i < input.size(); i++) {
+    uint8_t c = static_cast<uint8_t>(input[i]);
+    if(json_quotable_character[c]) {
+      switch (c) {
+      case '"':
+        out[pos++] = '\\';
+        out[pos++] = '"';
+        break;
+      case '\\':
+        out[pos++] = '\\';
+        out[pos++] = '\\';
+        break;
+      case '\b':
+        out[pos++] = '\\';
+        out[pos++] = 'b';
+        break;
+      case '\f':
+        out[pos++] = '\\';
+        out[pos++] = 'f';
+        break;
+      case '\n':
+        out[pos++] = '\\';
+        out[pos++] = 'n';
+        break;
+      case '\r':
+        out[pos++] = '\\';
+        out[pos++] = 'r';
+        break;
+      case '\t':
+        out[pos++] = '\\';
+        out[pos++] = 't';
+        break;
+      default:
+        control_chars[c].copy(out + pos, 6);
+        pos += 6;
+      }
+    } else {
+      out[pos++] = c;
+    }
+  }
+  return pos;
+}
+
+
+
 } // namespace stringparsing
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION

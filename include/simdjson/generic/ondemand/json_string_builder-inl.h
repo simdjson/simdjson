@@ -218,7 +218,6 @@ simdjson_inline void string_builder::escape_and_append(std::string_view input)  
   }
 }
 
-
 simdjson_inline void string_builder::escape_and_append_with_quotes(std::string_view input)  noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
   if(capacity_check(2 + 6 * input.size())) {
