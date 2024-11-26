@@ -241,28 +241,25 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= sizeof(simd8<uint8_t>)) {
+  if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t i = 0;
       size_t pos = 0;
-      for(;input.size() - i >= sizeof(simd8<uint8_t>); i += sizeof(simd8<uint8_t>)) {
-        simd8<uint8_t> vinput(reinterpret_cast<const uint8_t *>(input.data()) + i);
-        // instead of doing it register by register, we could regroup, but consider
-        // that we expect most strings to be short.
-        if(((vinput <= 31) | (vinput == '\\') | (vinput == '"')).any()) {
-          return i; // We have a character that needs escaping
-          // We could be more carefully and identify the character that needs escaping.
+      for(;input.size() - i >= escaping::BYTES_PROCESSED; i += escaping::BYTES_PROCESSED) {
+        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + i, reinterpret_cast<uint8_t *>(out) + pos);
+        if(vinput.has_escape()) {
+          return i + vinput.escape_index(); // We have a character that needs escaping
         }
-        vinput.store(reinterpret_cast<uint8_t *>(out) + pos);
-        pos += sizeof(simd8<uint8_t>);
+        pos += escaping::BYTES_PROCESSED;
       }
       if(i == input.size()) { return input.size(); }
-      simd8<uint8_t> vinput(reinterpret_cast<const uint8_t *>(input.data()) + input.size() - sizeof(simd8<uint8_t>));
-      if(((vinput <= 31) | (vinput == '\\') | (vinput == '"')).any()) {
-        return i; // We have a character that needs escaping
-        // We could be more carefully and identify the character that needs escaping.
+      // We virtually backtrack so we can load a full vector register
+      i = input.size() - escaping::BYTES_PROCESSED;
+      pos = i;
+      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + i, reinterpret_cast<uint8_t *>(out) + pos);
+      if(vinput.has_escape()) {
+        return i + vinput.escape_index(); // We have a character that needs escaping
       }
-      vinput.store(reinterpret_cast<uint8_t *>(out) + input.size() - sizeof(simd8<uint8_t>));
       return input.size();
     };
     i = vec_processing();

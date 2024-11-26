@@ -134,6 +134,12 @@ namespace {
       tmp = vpaddq_u8(tmp, tmp);
       return vgetq_lane_u16(vreinterpretq_u16_u8(tmp), 0);
     }
+    // Returns 4-bit out of each byte, alternating between the high 4 bits and low
+    // bits result it is 64 bit.
+    simdjson_inline uint64_t to_bitmask64() const {
+      return vget_lane_u64(
+          vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(*this), 4)), 0);
+    }
     simdjson_inline bool any() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
   };
 
