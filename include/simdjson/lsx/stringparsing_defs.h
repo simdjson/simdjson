@@ -62,6 +62,7 @@ struct escaping {
 simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *dst) {
   static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "escaping finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v(src);
+  v.store(dst);
   simd8<bool> is_quote = (v == '"');
   simd8<bool> is_backslash = (v == '\\');
   simd8<bool> is_control = (v < 32);
