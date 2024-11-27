@@ -173,9 +173,9 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       unsigned_type pv = static_cast<unsigned_type>(v);
       size_t dc = internal::digit_count(pv);
-      char *write_pointer = buffer.get() + position + dc;
+      char *write_pointer = buffer.get() + position + dc - 1;
       // optimization opportunity: if v is large, we can do better.
-      while(v >= 10) {
+      while(pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
       }
@@ -192,7 +192,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       if(negative) {
         buffer.get()[position++] = '-';
       }
-      char *write_pointer = buffer.get() + position + dc;
+      char *write_pointer = buffer.get() + position + dc - 1;
       // optimization opportunity: if v is large, we can do better.
       while(pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
