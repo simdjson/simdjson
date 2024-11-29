@@ -49,7 +49,7 @@ namespace builder_tests {
         TEST_START();
         simdjson::builder::string_builder sb;
         sb.append(1.1);
-        ASSERT_EQUAL(sb.size(), 2);
+        ASSERT_EQUAL(sb.size(), 3);
         std::string_view p;
         auto result = sb.view().get(p);
         ASSERT_EQUAL(result, SUCCESS);
