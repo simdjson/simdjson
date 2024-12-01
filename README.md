@@ -31,6 +31,7 @@ Table of Contents
 * [Documentation](#documentation)
 * [Godbolt](#godbolt)
 * [Performance results](#performance-results)
+* [Packages](#packages)
 * [Bindings and Ports of simdjson](#bindings-and-ports-of-simdjson)
 * [About simdjson](#about-simdjson)
 * [Funding](#funding)
@@ -143,6 +144,9 @@ speed for [synthetic files over various sizes generated with a script](https://g
 For NDJSON files, we can exceed 3 GB/s with [our  multithreaded parsing functions](https://github.com/simdjson/simdjson/blob/master/doc/parse_many.md).
 
 
+Packages
+------------------------------
+[![Packaging status](https://repology.org/badge/vertical-allrepos/simdjson.svg)](https://repology.org/project/simdjson/versions)
 
 
 Bindings and Ports of simdjson
