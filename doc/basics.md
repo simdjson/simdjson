@@ -557,7 +557,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
   whole array. You should only call `count_elements` as a last resort as it may
-  require scanning the document twice or more. You may use it as follows if your document is itself an array:
+  require scanning the document twice or more. In the spirit of On-Demand, the `count_elements` function does not validate the values in the array. You may use it as follows if your document is itself an array:
 
   ```C++
   auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;

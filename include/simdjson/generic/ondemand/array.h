@@ -44,7 +44,8 @@ public:
    * calling this function, if successful, the array is 'rewinded' at its
    * beginning as if it had never been accessed. If the JSON is malformed (e.g.,
    * there is a missing comma), then an error is returned and it is no longer
-   * safe to continue.
+   * safe to continue. Note that count_elements() does not validate the JSON values,
+   * only the structure of the array.
    *
    * To check that an array is empty, it is more performant to use
    * the is_empty() method.
