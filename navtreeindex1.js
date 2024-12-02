@@ -1,9 +1,5 @@
 var NAVTREEINDEX1 =
 {
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a4111757108422ffaf647024319205d5c":[11,0,0,1,0,4,0,6],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a58e963dfc405dfd62e06f3b158349ce7":[11,0,0,1,0,4,0,3],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a5fe3ce985cc1921d5917667d6b25841b":[11,0,0,1,0,4,0,8],
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a7a0d2e5fad4f195a866b6baa15846d39":[11,0,0,1,0,4,0,12],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#a7c20332b4481f29ace969e40cfce5f5f":[11,0,0,1,0,4,0,10],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#aafaa3ab05db7276e461c4da811aa821c":[11,0,0,1,0,4,0,1],
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_1_1iterator.html#adee0c974b66f734b3b67f5600bbe594f":[11,0,0,1,0,4,0,0],
@@ -249,5 +245,9 @@ var NAVTREEINDEX1 =
 "classsimdjson_1_1dom_1_1element.html#a4c77063d766c7db197f8674407b504d7":[11,0,0,0,3,28],
 "classsimdjson_1_1dom_1_1element.html#a5185447e6bf8949e7c5e9c22711e8764":[11,0,0,0,3,4],
 "classsimdjson_1_1dom_1_1element.html#a5342161b8c52c78b2f5edac10e9d05ca":[11,0,0,0,3,52],
-"classsimdjson_1_1dom_1_1element.html#a5342161b8c52c78b2f5edac10e9d05ca":[11,0,0,0,3,51]
+"classsimdjson_1_1dom_1_1element.html#a5342161b8c52c78b2f5edac10e9d05ca":[11,0,0,0,3,51],
+"classsimdjson_1_1dom_1_1element.html#a548e0fc369eb455ea477e20fb0793627":[11,0,0,0,3,20],
+"classsimdjson_1_1dom_1_1element.html#a5db654c4e603254bd308a7c068d79c43":[11,0,0,0,3,57],
+"classsimdjson_1_1dom_1_1element.html#a65bd96042cc0f19dc3e0635937edded4":[11,0,0,0,3,36],
+"classsimdjson_1_1dom_1_1element.html#a686a21f39c755dcbf95116757d2193bd":[11,0,0,0,3,3]
 };

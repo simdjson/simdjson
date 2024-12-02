@@ -1,9 +1,5 @@
 var NAVTREEINDEX4 =
 {
-"namespacesimdjson.html#a28a847c4b31fc804bec2987b171dbd07":[10,0,0,71],
-"namespacesimdjson.html#a2cda17221b852e5c398bad5bf350d270":[10,0,0,57],
-"namespacesimdjson.html#a32b88c95630f78ed1115379735bbbf34":[10,0,0,66],
-"namespacesimdjson.html#a32d36effa0943f5006e9d4151f5de0e4":[10,0,0,73],
 "namespacesimdjson.html#a39bbbf605c0068e4a65c2d8885727fc9":[10,0,0,50],
 "namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27":[10,0,0,49],
 "namespacesimdjson.html#a4447c2af37e8fa57daa0cedd948a810d":[10,0,0,52],
@@ -249,5 +245,9 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#a7193907a54632951e337fc41febf75a4":[11,0,0,8,0],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#a81e6dce45f02badff382827d3e947cfe":[11,0,0,8,4],
 "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#a9cbd4221483497ef9b84233d7f3e0eec":[11,0,0,8,2],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#aabb4bb3d53dbd6343f2a590b8f02824b":[11,0,0,8,9]
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#aabb4bb3d53dbd6343f2a590b8f02824b":[11,0,0,8,9],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#aac43b7e80c89bf9ec7742c7889d4eaec":[11,0,0,8,3],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html#af2fdfe4a3e6f617e07e213f0d50a3cc4":[11,0,0,8,5],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html":[11,0,0,9],
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html#a197bf2b7db2dc1d4fa59a1d12ee42526":[11,0,0,9,4]
 };

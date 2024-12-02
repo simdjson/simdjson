@@ -643,7 +643,7 @@ static constexpr <a class="el" href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m
 </div><div class="memdoc">
 
 <p>This method scans the array and counts the number of elements. </p>
-<p>The count_elements method should always be called before you have begun iterating through the array: it is expected that you are pointing at the beginning of the array. The runtime complexity is linear in the size of the array. After calling this function, if successful, the array is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. </p>
+<p>The count_elements method should always be called before you have begun iterating through the array: it is expected that you are pointing at the beginning of the array. The runtime complexity is linear in the size of the array. After calling this function, if successful, the array is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. Note that <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ab408c2ea4be8874e3514b389c70a5667" title="This method scans the array and counts the number of elements.">count_elements()</a> does not validate the JSON values, only the structure of the array. </p>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00204">204</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
