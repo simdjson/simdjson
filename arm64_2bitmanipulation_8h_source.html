@@ -112,7 +112,7 @@ $(document).ready(function(){initNavTree('arm64_2bitmanipulation_8h_source.html'
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="comment">// See issue https://github.com/simdjson/simdjson/issues/1965</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;SIMDJSON_NO_SANITIZE_MEMORY</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;simdjson_inline <span class="keywordtype">int</span> trailing_zeroes(uint64_t input_num) {</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ret;</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;  <span class="comment">// Search the mask data from least significant bit (LSB)</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;  <span class="comment">// to the most significant bit (MSB) for a set bit (1).</span></div>
@@ -136,7 +136,7 @@ $(document).ready(function(){initNavTree('arm64_2bitmanipulation_8h_source.html'
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;SIMDJSON_NO_SANITIZE_UNDEFINED</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">/* result might be undefined when input_num is zero */</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;simdjson_inline <span class="keywordtype">int</span> leading_zeroes(uint64_t input_num) {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> leading_zero = 0;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="comment">// Search the mask data from most significant bit (MSB)</span></div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="comment">// to least significant bit (LSB) for a set bit (1).</span></div>
@@ -177,7 +177,7 @@ $(document).ready(function(){initNavTree('arm64_2bitmanipulation_8h_source.html'
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;simdjson_inline <span class="keywordtype">bool</span> add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;  *result = value1 + value2;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;  <span class="keywordflow">return</span> *result &lt; value1;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#else</span></div>

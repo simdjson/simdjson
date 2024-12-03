@@ -105,7 +105,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">namespace </span>{</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">namespace </span>simd {</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="keyword">namespace </span>{</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">// Start of private section with Visual Studio workaround</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
@@ -214,7 +214,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="comment">// We return uint32_t instead of uint16_t because that seems to be more efficient for most</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="comment">// purposes (cutting it down to uint16_t costs performance in some compilers).</span></div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    simdjson_inline uint32_t to_bitmask()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;      <span class="keyword">const</span> uint8x16_t bit_mask =  simdjson_make_uint8x16_t(0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;                                                   0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;<span class="preprocessor">#else</span></div>
@@ -245,7 +245,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="comment">// Splat constructor</span></div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="comment">// Member-by-member initialization</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    simdjson_inline simd8(</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      uint8_t v0,  uint8_t v1,  uint8_t v2,  uint8_t v3,  uint8_t v4,  uint8_t v5,  uint8_t v6,  uint8_t v7,</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;      uint8_t v8,  uint8_t v9,  uint8_t v10, uint8_t v11, uint8_t v12, uint8_t v13, uint8_t v14, uint8_t v15</div>
@@ -339,7 +339,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;      uint64x2_t shufmask64 = {thintable_epi8[mask1], thintable_epi8[mask2]};</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;      uint8x16_t shufmask = vreinterpretq_u8_u64(shufmask64);</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;      <span class="comment">// we increment by 0x08 the second half of the mask</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;      uint8x16_t inc = simdjson_make_uint8x16_t(0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;      uint8x16_t inc = {0, 0, 0, 0, 0, 0, 0, 0, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};</div>
@@ -369,7 +369,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;      uint8x8_t compactmask1 = vcreate_u8(thintable_epi8[mask1]);</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;      uint8x8_t compactmask2 = vcreate_u8(thintable_epi8[mask2]);</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      <span class="comment">// we increment by 0x08 the second half of the mask</span></div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;      uint8x8_t inc = simdjson_make_uint8x8_t(0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08);</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;      uint8x8_t inc = {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08};</div>
@@ -421,7 +421,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="comment">// Array constructor</span></div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    simdjson_inline simd8(<span class="keyword">const</span> int8_t* values) : simd8(load(values)) {}</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="comment">// Member-by-member initialization</span></div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    simdjson_inline simd8(</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;      int8_t v0,  int8_t v1,  int8_t v2,  int8_t v3, int8_t v4,  int8_t v5,  int8_t v6,  int8_t v7,</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;      int8_t v8,  int8_t v9,  int8_t v10, int8_t v11, int8_t v12, int8_t v13, int8_t v14, int8_t v15</div>
@@ -542,7 +542,7 @@ $(document).ready(function(){initNavTree('arm64_2simd_8h_source.html',''); initR
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    }</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160; </div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    simdjson_inline uint64_t to_bitmask()<span class="keyword"> const </span>{</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">#if SIMDJSON_REGULAR_VISUAL_STUDIO</span></div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;      <span class="keyword">const</span> uint8x16_t bit_mask = simdjson_make_uint8x16_t(</div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80</div>
