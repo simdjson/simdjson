@@ -86,7 +86,7 @@ struct simdjson_error : public std::exception {
    */
   simdjson_error(error_code error) noexcept : _error{error} { }
   /** The error message */
-  const char *what() const noexcept { return error_message(error()); }
+  const char *what() const noexcept override { return error_message(error()); }
   /** The error code */
   error_code error() const noexcept { return _error; }
 private:
