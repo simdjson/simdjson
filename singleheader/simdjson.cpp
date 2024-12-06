@@ -1,4 +1,4 @@
-/* auto-generated on 2024-10-10 22:17:29 -0400. Do not edit! */
+/* auto-generated on 2024-12-02 20:24:24 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -124,14 +124,10 @@ using std::size_t;
 #ifdef __clang__
 // clang under visual studio
 #define SIMDJSON_CLANG_VISUAL_STUDIO 1
-#define SIMDJSON_REGULAR_VISUAL_STUDIO 0
 #else
 // just regular visual studio (best guess)
-#define SIMDJSON_CLANG_VISUAL_STUDIO 0
 #define SIMDJSON_REGULAR_VISUAL_STUDIO 1
 #endif // __clang__
-#else
-#define SIMDJSON_VISUAL_STUDIO 0
 #endif // _MSC_VER
 
 #if (defined(__x86_64__) || defined(_M_AMD64)) && !defined(_M_ARM64EC)
@@ -160,26 +156,6 @@ using std::size_t;
 #endif // defined(__x86_64__) || defined(_M_AMD64)
 #ifndef SIMDJSON_IS_32BITS
 #define SIMDJSON_IS_32BITS 0
-#endif
-
-#ifndef SIMDJSON_IS_X86_64
-#define SIMDJSON_IS_X86_64 0
-#endif
-
-#ifndef SIMDJSON_IS_ARM64
-#define SIMDJSON_IS_ARM64 0
-#endif
-
-#ifndef SIMDJSON_IS_RISCV64
-#define SIMDJSON_IS_RISCV64 0
-#endif
-
-#ifndef SIMDJSON_IS_LOONGARCH64
-#define SIMDJSON_IS_LOONGARCH64 0
-#endif
-
-#ifndef SIMDJSON_IS_PPC64_VMX
-#define SIMDJSON_IS_PPC64_VMX 0
 #endif
 
 #if SIMDJSON_IS_32BITS
