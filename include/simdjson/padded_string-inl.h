@@ -187,11 +187,11 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
 } // namespace simdjson
 
-inline simdjson::padded_string operator "" _padded(const char *str, size_t len) {
+inline simdjson::padded_string operator ""_padded(const char *str, size_t len) {
   return simdjson::padded_string(str, len);
 }
 #ifdef __cpp_char8_t
-inline simdjson::padded_string operator "" _padded(const char8_t *str, size_t len) {
+inline simdjson::padded_string operator ""_padded(const char8_t *str, size_t len) {
   return simdjson::padded_string(reinterpret_cast<const char8_t *>(str), len);
 }
 #endif
