@@ -1,4 +1,4 @@
-/* auto-generated on 2024-12-02 20:24:24 -0500. Do not edit! */
+/* auto-generated on 2024-12-07 11:12:25 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2480,7 +2480,7 @@ struct simdjson_error : public std::exception {
    */
   simdjson_error(error_code error) noexcept : _error{error} { }
   /** The error message */
-  const char *what() const noexcept { return error_message(error()); }
+  const char *what() const noexcept override { return error_message(error()); }
   /** The error code */
   error_code error() const noexcept { return _error; }
 private:
