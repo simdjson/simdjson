@@ -228,7 +228,7 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1padded__string.html#aaf47c9ce732d92bd6e43c035f41338da":[11,0,0,24,6],
 "structsimdjson_1_1padded__string.html#ac06ec74c78934565cdf50df163d35476":[11,0,0,24,1],
 "structsimdjson_1_1simdjson__error.html":[11,0,0,6],
-"structsimdjson_1_1simdjson__error.html#a73b15aae33a4eef105d0735e03d83a49":[11,0,0,6,2],
+"structsimdjson_1_1simdjson__error.html#a2a57ebe2cfb24b519fb1ef0fcf129022":[11,0,0,6,2],
 "structsimdjson_1_1simdjson__error.html#aa8143615e5f6f02474f6ab165682ab6e":[11,0,0,6,1],
 "structsimdjson_1_1simdjson__error.html#af5355b65f85b897251b3665086075f39":[11,0,0,6,0],
 "structsimdjson_1_1simdjson__result.html":[11,0,0,7],
