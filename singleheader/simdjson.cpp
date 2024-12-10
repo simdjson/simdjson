@@ -1,4 +1,4 @@
-/* auto-generated on 2024-12-07 11:12:25 -0500. Do not edit! */
+/* auto-generated on 2024-12-07 11:13:00 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2736,14 +2736,14 @@ namespace details {
     };                                                                         \
   };
 
-SIMDJSON_IMPL_CONCEPT(emplace_back, emplace_back);
-SIMDJSON_IMPL_CONCEPT(emplace, emplace);
-SIMDJSON_IMPL_CONCEPT(push_back, push_back);
-SIMDJSON_IMPL_CONCEPT(add, add);
-SIMDJSON_IMPL_CONCEPT(push, push);
-SIMDJSON_IMPL_CONCEPT(append, append);
-SIMDJSON_IMPL_CONCEPT(insert, insert);
-SIMDJSON_IMPL_CONCEPT(op_append, operator+=);
+SIMDJSON_IMPL_CONCEPT(emplace_back, emplace_back)
+SIMDJSON_IMPL_CONCEPT(emplace, emplace)
+SIMDJSON_IMPL_CONCEPT(push_back, push_back)
+SIMDJSON_IMPL_CONCEPT(add, add)
+SIMDJSON_IMPL_CONCEPT(push, push)
+SIMDJSON_IMPL_CONCEPT(append, append)
+SIMDJSON_IMPL_CONCEPT(insert, insert)
+SIMDJSON_IMPL_CONCEPT(op_append, operator+=)
 
 #undef SIMDJSON_IMPL_CONCEPT
 } // namespace details
