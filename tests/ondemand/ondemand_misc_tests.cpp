@@ -537,6 +537,24 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  simdjson_warn_unused bool issue2312() {
+    TEST_START();
+    std::string init_string = R"("abc":)";
+    init_string.resize(init_string.size() + simdjson::SIMDJSON_PADDING);
+    simdjson::padded_string_view padded_view{init_string.data(), 5, init_string.size()};
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded_view).get(doc));
+    std::string_view abc;
+    ASSERT_SUCCESS(doc.get_string().get(abc));
+    ASSERT_EQUAL(abc, "abc");
+    ASSERT_SUCCESS(parser.iterate(padded_view).get(doc));
+    std::string_view raw;
+    ASSERT_SUCCESS(doc.raw_json().get(raw));
+    ASSERT_EQUAL(raw, "\"abc\"");
+    TEST_SUCCEED();
+  }
+
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -620,6 +638,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue2312() &&
 #if SIMDJSON_EXCEPTIONS
            issue2199() &&
 #endif

@@ -102,7 +102,7 @@ or indexing (`object["key"]`). In some cases, the values are even deserialized d
 maps.
 
 The DOM approach is conceptually simple and "programmer friendly". Using the
-DOM tree is often easy enough that many users use the DOM as-is instead of creating
+DOM tree is often easy enough that many users process the DOM as-is instead of creating
 their own custom data structures.
 
 The DOM approach was the only way to parse JSON documents up to version 0.6 of the simdjson library.

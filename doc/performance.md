@@ -158,7 +158,9 @@ On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers 
 
 When compiling with Visual Studio, we recommend the flags `/Ob2 /O2` or better. We do not recommend that you compile simdjson with architecture-specific flags such as  `arch:AVX2`. The simdjson library automatically selects the best execution kernel at runtime.
 
-Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component (ClangCL). You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the [LLVM CLang compiler is binary compatible with Visual Studio](https://clang.llvm.org/docs/MSVCCompatibility.html) which means that you can combine their binaries (executables and libraries).
+Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component (clang-cl). You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the [LLVM CLang compiler is binary compatible with Visual Studio](https://clang.llvm.org/docs/MSVCCompatibility.html) which means that you can combine their binaries (executables and libraries).
+
+We recommend Visual Studio users prefer LLVM (clang-cl). It compiles to faster release binaries. Furthermore, it compilers faster in release mode.
 
 Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows is excellent (on par with Linux).
 

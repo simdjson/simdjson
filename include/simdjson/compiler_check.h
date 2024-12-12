@@ -56,10 +56,21 @@
 #endif
 #endif
 
-#ifdef __cpp_concepts
+#ifdef __clang__
+// concepts are not supported in LLVM 12, see
+// https://libcxx.llvm.org/Status/Cxx20.html
+#if __clang_major__ < 13
+#ifndef SIMDJSON_CONCEPT_DISABLED
+#define SIMDJSON_CONCEPT_DISABLED 1
+#endif // #ifndef SIMDJSON_CONCEPT_DISABLED
+#endif // __clang_major__ < 13
+#endif // __clang__
+
+#if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #include <utility>
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 1
-#else // __cpp_concepts
+#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
-#endif
+#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
 #endif // SIMDJSON_COMPILER_CHECK_H
