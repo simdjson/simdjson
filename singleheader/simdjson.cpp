@@ -1,4 +1,4 @@
-/* auto-generated on 2024-12-12 01:21:26 -0500. Do not edit! */
+/* auto-generated on 2024-12-12 10:37:26 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -82,16 +82,6 @@
 #include <version>
 #endif
 #endif
-
-#ifdef __clang__
-// concepts are not supported in LLVM 12, see
-// https://libcxx.llvm.org/Status/Cxx20.html
-#if __clang_major__ < 13
-#ifndef SIMDJSON_CONCEPT_DISABLED
-#define SIMDJSON_CONCEPT_DISABLED 1
-#endif // #ifndef SIMDJSON_CONCEPT_DISABLED
-#endif // __clang_major__ < 13
-#endif // __clang__
 
 #if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #include <utility>
