@@ -246,11 +246,14 @@ simdjson_inline simdjson_result<value> document::operator[](const char *key) & n
 }
 
 simdjson_inline error_code document::consume() noexcept {
-  if(is_scalar()) {
+  bool scalar = false;
+  auto error = is_scalar().get(scalar);
+  if(error) { return error; }
+  if(scalar) {
     iter.return_current_and_advance();
     return SUCCESS;
   }
-  auto error = iter.skip_child(0);
+  error = iter.skip_child(0);
   if(error) { iter.abandon(); }
   return error;
 }
