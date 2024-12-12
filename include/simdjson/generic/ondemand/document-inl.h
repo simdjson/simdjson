@@ -246,7 +246,14 @@ simdjson_inline simdjson_result<value> document::operator[](const char *key) & n
 }
 
 simdjson_inline error_code document::consume() noexcept {
-  auto error = iter.skip_child(0);
+  bool scalar = false;
+  auto error = is_scalar().get(scalar);
+  if(error) { return error; }
+  if(scalar) {
+    iter.return_current_and_advance();
+    return SUCCESS;
+  }
+  error = iter.skip_child(0);
   if(error) { iter.abandon(); }
   return error;
 }
@@ -268,6 +275,8 @@ simdjson_inline simdjson_result<json_type> document::type() noexcept {
 }
 
 simdjson_inline simdjson_result<bool> document::is_scalar() noexcept {
+  // For more speed, we could do:
+  // return iter.is_single_token();
   json_type this_type;
   auto error = type().get(this_type);
   if(error) { return error; }
