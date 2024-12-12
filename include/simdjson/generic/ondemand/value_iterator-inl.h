@@ -667,19 +667,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   return get_root_raw_json_string(check_trailing).unescape_wobbly(json_iter());
 }
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_root_raw_json_string(bool check_trailing) noexcept {
-  printf("===get_root_raw_json_string===\n");
   auto json = peek_scalar("string");
-  printf("===get_root_raw_json_aaastring===\n");
-
   if (*json != '"') { return incorrect_type_error("Not a string"); }
-    printf("===get_root_raw_sssjson_aaastring===\n");
-
   if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
-  printf("===get_root_aaaraw_json_aaastring===\n");
-
   advance_scalar("string");
-    printf("===fuckget_root_aaaraw_json_aaastring===\n");
-
   return raw_json_string(json+1);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
