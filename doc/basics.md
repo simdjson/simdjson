@@ -422,9 +422,13 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   of the object: to warn you, an OUT_OF_ORDER_ITERATION error is generated [when development checks](#avoiding-pitfalls-enable-development-checks) are active. If you need to access an object more
   than once, you may call `reset()` on it although we discourage this practice. Keep in mind that
   you should consume each value at most once.
+
+  When you are iterating through an object, you are advancing through its keys and values. You should not also access the object or other objects. E.g. within a loop over `myobject`, you should not be accessing `myobject`. The following is an anti-pattern: `for(auto value: myobject) {myobject["mykey"]}`.
+
+  You should never reset an object as you are iterating through it. The following is an anti-pattern: `for(auto value: myobject) {myobject.reset()}`.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
   you should iterate through the array and keep an index yourself. Exceptionally, if need a single value
-  out of the array, you may use an array access (e.g., `array[1]`).
+  out of the array, you may use an array access (e.g., `array[1]`). You should never reset an array as you are iterating through it. The following is an anti-pattern: `for(auto value: myarray) {myarray.reset()}`.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. It may generate the error `simdjson::NO_SUCH_FIELD` if there is no such key in the object, it may throw an exception (see [Error handling](#error-handling)). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
@@ -1970,6 +1974,7 @@ to the document `rewind()` method, except that it does not rewind the
 internal string buffer. Thus you should consume values only once
 even if you can iterate through the array or object more than once.
 If you unescape a string within an array more than once, you have unsafe code.
+You must not call `reset()` on an object or an array as you are iterating through it.
 
 
 Newline-Delimited JSON (ndjson) and JSON lines
