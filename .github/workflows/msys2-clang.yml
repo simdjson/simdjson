@@ -20,7 +20,7 @@ jobs:
           - msystem: "MINGW64"
             install: mingw-w64-x86_64-libxml2 mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-clang
             type: Debug
-            - msystem: "MINGW64"
+          - msystem: "MINGW64"
             install: mingw-w64-x86_64-libxml2 mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-clang
             type: RelWithDebInfo
     env:

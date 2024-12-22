@@ -24,7 +24,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
-      CLANGVERSION: 15
+      CLANGVERSION: 19
       # which optimization level to use for the sanitizer build (see build_fuzzer.variants.sh)
       OPTLEVEL: -O3
 
