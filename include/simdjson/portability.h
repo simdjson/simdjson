@@ -48,6 +48,7 @@ using std::size_t;
 #elif defined(__loongarch_lp64)
 #define SIMDJSON_IS_LOONGARCH64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
+#define SIMDJSON_IS_PPC64 1
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
 #endif // defined(__ALTIVEC__)
