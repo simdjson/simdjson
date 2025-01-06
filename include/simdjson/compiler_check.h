@@ -56,7 +56,6 @@
 #endif
 #endif
 
-#endif
 #if defined(__apple_build_version__)
 #if __apple_build_version__ < 14000000
 #define SIMDJSON_CONCEPT_DISABLED 1 // apple-clang/13 doesn't support std::convertible_to
