@@ -57,8 +57,12 @@
 #endif
 
 #if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+#if __cpp_concepts >= 202002L
 #include <utility>
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 1
+#else
+#define SIMDJSON_SUPPORTS_DESERIALIZATION 0
+#endif
 #else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
