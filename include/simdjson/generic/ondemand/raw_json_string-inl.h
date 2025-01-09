@@ -64,7 +64,7 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string
 }
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
-  // Assumptions: does not contain uescaped quote characters("), and
+  // Assumptions: does not contain unescaped quote characters("), and
   // the raw content is quote terminated within a valid JSON string.
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
