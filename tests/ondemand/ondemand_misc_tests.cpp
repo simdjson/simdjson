@@ -5,6 +5,23 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+bool issue2322() {
+  TEST_START();
+  std::vector<std::pair<std::string, bool>> examples = {{R"("hello")", false},
+                                         {R"(\"hello)", true},
+                                         {R"("hello\")", true},
+                                         {R"("hel\"lo")", false},
+                                         {R"("hel\\lo")", false},
+                                         {R"(\"hel\\\"lo\")", true},
+                                         {R"(\\"hel\\\"lo\")", false}};
+  for (std::pair<std::string, bool> v : examples) {
+    ASSERT_EQUAL(ondemand::raw_json_string::is_free_from_unescaped_quote(v.first),
+                 v.second);
+    ASSERT_EQUAL(ondemand::raw_json_string::is_free_from_unescaped_quote(v.first.c_str()),
+                 v.second);
+  }
+  TEST_SUCCEED();
+}
 #if SIMDJSON_EXCEPTIONS
   // user reported an asan error:
   bool issue2199() {
@@ -638,6 +655,7 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue2322() &&
            issue2312() &&
 #if SIMDJSON_EXCEPTIONS
            issue2199() &&
