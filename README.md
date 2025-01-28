@@ -1,7 +1,8 @@
 
 [![Ubuntu 20.04 CI](https://github.com/simdjson/simdjson/workflows/Ubuntu%2020.04%20CI%20(GCC%209)/badge.svg)](https://simdjson.org/plots.html)
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
-[![][license img]][license]
+[![][license img]][license] [![][licensemit img]][licensemit]
+
 
 [![Doxygen Documentation](https://img.shields.io/badge/docs-doxygen-green.svg)](https://simdjson.github.io/simdjson/)
 
@@ -211,6 +212,11 @@ RGPIN-2017-03910 and RGPIN-2024-03787.
 [license]: LICENSE
 [license img]: https://img.shields.io/badge/License-Apache%202-blue.svg
 
+
+[licensemit]: LICENSE-MIT
+[licensemit img]: https://img.shields.io/badge/License-MIT-blue.svg
+
+
 Contributing to simdjson
 ------------------------
 
@@ -220,7 +226,7 @@ Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing 
 License
 -------
 
-This code is made available under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
+This code is made available under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) as well as under the MIT License. As a user, you can pick the license you prefer.
 
 Under Windows, we build some tools using the windows/dirent_portable.h file (which is outside our library code): it is under the liberal (business-friendly) MIT license.
 
