@@ -6,10 +6,14 @@
 #include <cstdlib>
 #include <cfloat>
 #include <cassert>
+#include <climits>
 #ifndef _WIN32
 // strcasecmp, strncasecmp
 #include <strings.h>
 #endif
+
+static_assert(CHAR_BIT == 8, "simdjson requires 8-bit bytes");
+
 
 // We are using size_t without namespace std:: throughout the project
 using std::size_t;
@@ -44,6 +48,7 @@ using std::size_t;
 #elif defined(__loongarch_lp64)
 #define SIMDJSON_IS_LOONGARCH64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
+#define SIMDJSON_IS_PPC64 1
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
 #endif // defined(__ALTIVEC__)

@@ -48,7 +48,7 @@ Requirements
 ------------------
 
 - A recent compiler (LLVM clang 6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
-- Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64 or ARM64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clangcl) as well as as the regular Visual Studio compiler. We also support MinGW 64-bit under Windows.
+- Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64 or ARM64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We also support MinGW 64-bit under Windows.
 
 
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better, AMD Zen 4 or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
@@ -422,9 +422,13 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   of the object: to warn you, an OUT_OF_ORDER_ITERATION error is generated [when development checks](#avoiding-pitfalls-enable-development-checks) are active. If you need to access an object more
   than once, you may call `reset()` on it although we discourage this practice. Keep in mind that
   you should consume each value at most once.
+
+  When you are iterating through an object, you are advancing through its keys and values. You should not also access the object or other objects. E.g. within a loop over `myobject`, you should not be accessing `myobject`. The following is an anti-pattern: `for(auto value: myobject) {myobject["mykey"]}`.
+
+  You should never reset an object as you are iterating through it. The following is an anti-pattern: `for(auto value: myobject) {myobject.reset()}`.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
   you should iterate through the array and keep an index yourself. Exceptionally, if need a single value
-  out of the array, you may use an array access (e.g., `array[1]`).
+  out of the array, you may use an array access (e.g., `array[1]`). You should never reset an array as you are iterating through it. The following is an anti-pattern: `for(auto value: myarray) {myarray.reset()}`.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. It may generate the error `simdjson::NO_SUCH_FIELD` if there is no such key in the object, it may throw an exception (see [Error handling](#error-handling)). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
@@ -557,7 +561,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   For this purpose, `array` instances have a `count_elements` method. Users should be
   aware that the `count_elements` method can be costly since it requires scanning the
   whole array. You should only call `count_elements` as a last resort as it may
-  require scanning the document twice or more. You may use it as follows if your document is itself an array:
+  require scanning the document twice or more. You should never use the `count_elements` as part of an attempt to iterate through the array: use a `for` loop to iterate through arrays. In the spirit of On-Demand, the `count_elements` function does not validate the values in the array: they are validated when they are consumed. You may use it as follows if your document is itself an array:
 
   ```C++
   auto cars_json = R"( [ 40.1, 39.9, 37.7, 40.4 ] )"_padded;
@@ -1625,7 +1629,7 @@ The following is a similar example where one wants to get the id of the first tw
 triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break that expression down:
 
 - Get the list of tweets (the `"statuses"` key of the document) using `["statuses"]`). The result is expected to be an array.
-- Get the first tweet using `.at(0)`. The result is expected to be an object.
+- Get the first tweet using `.at(0)`. The result is expected to be an object. Observe that the `at` method can only be called once on an array (it cannot be used for iteration).
 - Get the id of the tweet using ["id"]. We expect the value to be a non-negative integer.
 
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
@@ -1650,8 +1654,8 @@ int main(void) {
 }
 ```
 
-The `at` method can only be called once on an array. It cannot be used
-to iterate through the values of an array.
+*Important remark*: The `at` method can only be called once on an array. It cannot be used
+to iterate through the values of an array. We deliberately forbid this usage to avoid performance antipatterns. If you need to iterate through the values of an array, you should use a `for` loop.
 
 ### Error handling examples without exceptions
 
@@ -1970,6 +1974,7 @@ to the document `rewind()` method, except that it does not rewind the
 internal string buffer. Thus you should consume values only once
 even if you can iterate through the array or object more than once.
 If you unescape a string within an array more than once, you have unsafe code.
+You must not call `reset()` on an object or an array as you are iterating through it.
 
 
 Newline-Delimited JSON (ndjson) and JSON lines

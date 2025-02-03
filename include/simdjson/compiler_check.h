@@ -56,10 +56,22 @@
 #endif
 #endif
 
-#ifdef __cpp_concepts
+#if defined(__apple_build_version__)
+#if __apple_build_version__ < 14000000
+#define SIMDJSON_CONCEPT_DISABLED 1 // apple-clang/13 doesn't support std::convertible_to
+#endif
+#endif
+
+
+#if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+#if __cpp_concepts >= 201907L
 #include <utility>
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 1
-#else // __cpp_concepts
+#else
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif
+#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+#define SIMDJSON_SUPPORTS_DESERIALIZATION 0
+#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
 #endif // SIMDJSON_COMPILER_CHECK_H

@@ -1,9 +1,8 @@
 name: Doxygen GitHub Pages
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types: [created]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 

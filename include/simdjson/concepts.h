@@ -20,14 +20,14 @@ namespace details {
     };                                                                         \
   };
 
-SIMDJSON_IMPL_CONCEPT(emplace_back, emplace_back);
-SIMDJSON_IMPL_CONCEPT(emplace, emplace);
-SIMDJSON_IMPL_CONCEPT(push_back, push_back);
-SIMDJSON_IMPL_CONCEPT(add, add);
-SIMDJSON_IMPL_CONCEPT(push, push);
-SIMDJSON_IMPL_CONCEPT(append, append);
-SIMDJSON_IMPL_CONCEPT(insert, insert);
-SIMDJSON_IMPL_CONCEPT(op_append, operator+=);
+SIMDJSON_IMPL_CONCEPT(emplace_back, emplace_back)
+SIMDJSON_IMPL_CONCEPT(emplace, emplace)
+SIMDJSON_IMPL_CONCEPT(push_back, push_back)
+SIMDJSON_IMPL_CONCEPT(add, add)
+SIMDJSON_IMPL_CONCEPT(push, push)
+SIMDJSON_IMPL_CONCEPT(append, append)
+SIMDJSON_IMPL_CONCEPT(insert, insert)
+SIMDJSON_IMPL_CONCEPT(op_append, operator+=)
 
 #undef SIMDJSON_IMPL_CONCEPT
 } // namespace details

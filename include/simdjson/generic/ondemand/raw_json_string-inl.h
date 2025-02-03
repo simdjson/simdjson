@@ -20,36 +20,39 @@ simdjson_inline const char * raw_json_string::raw() const noexcept { return rein
 
 simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
   size_t pos{0};
-  // if the content has no escape character, just scan through it quickly!
-  for(;pos < target.size() && target[pos] != '\\';pos++) {}
-  // slow path may begin.
-  bool escaping{false};
-  for(;pos < target.size();pos++) {
-    if((target[pos] == '"') && !escaping) {
-      return false;
-    } else if(target[pos] == '\\') {
-      escaping = !escaping;
-    } else {
-      escaping = false;
+  while(pos < target.size()) {
+    pos = target.find('"', pos);
+    if(pos == std::string_view::npos) { return true; }
+    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos > 1 && target[pos-2] == '\\') {
+      size_t backslash_count{2};
+      for(size_t i = 3; i <= pos; i++) {
+        if(target[pos-i] == '\\') { backslash_count++; }
+        else { break; }
+      }
+      if(backslash_count % 2 == 0) { return false; }
     }
+    pos++;
   }
   return true;
 }
 
 simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* target) noexcept {
   size_t pos{0};
-  // if the content has no escape character, just scan through it quickly!
-  for(;target[pos] && target[pos] != '\\';pos++) {}
-  // slow path may begin.
-  bool escaping{false};
-  for(;target[pos];pos++) {
-    if((target[pos] == '"') && !escaping) {
-      return false;
-    } else if(target[pos] == '\\') {
-      escaping = !escaping;
-    } else {
-      escaping = false;
+  while(target[pos]) {
+    const char * result = strchr(target+pos, '"');
+    if(result == nullptr) { return true; }
+    pos = result - target;
+    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos > 1 && target[pos-2] == '\\') {
+      size_t backslash_count{2};
+      for(size_t i = 3; i <= pos; i++) {
+        if(target[pos-i] == '\\') { backslash_count++; }
+        else { break; }
+      }
+      if(backslash_count % 2 == 0) { return false; }
     }
+    pos++;
   }
   return true;
 }
@@ -61,7 +64,7 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string
 }
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
-  // Assumptions: does not contain unescaped quote characters, and
+  // Assumptions: does not contain unescaped quote characters("), and
   // the raw content is quote terminated within a valid JSON string.
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
