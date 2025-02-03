@@ -209,6 +209,25 @@ std::string data = "my data";
 simdjson::padded_string my_padded_data(data); // copies to a padded buffer
 ```
 
+You can then parse the JSON data from the `simdjson::padded_string` instance:
+
+
+```c++
+ondemand::document doc = parser.iterate(my_padded_data);
+```
+
+Whenever you pass an `std::string` reference to `parser::iterate`,
+the parser will access the bytes beyond the end of
+the string but before the end of the allocated memory (`std::string::capacity()`).
+If you are using a sanitizer that checks for reading uninitialized bytes or `std::string`'s
+container-overflow checks, you may encounter sanitizer warnings.
+You can safely ignore these warnings. Or you can call `simdjson::pad(std::string&)` to pad the
+string with `SIMDJSON_PADDING` spaces: this function returns a `simdjson::padding_string_view` which can be be passed to the parser's iterator function:
+
+```c++
+std::string json = "[1]";
+ondemand::document doc = parser.iterate(simdjson::pad(json));
+```
 
 We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.

@@ -163,6 +163,17 @@ public:
    * Important: a value should be consumed once. Calling get_string() twice on the same value
    * is an error.
    *
+   * In some instances, you may want to allow replacement of invalid Unicode sequences.
+   * You may do so by passing the allow_replacement parameter as true. In the following
+   * example, the string "431924697b\udff0L\u0001Y" is not valid Unicode. By passing true
+   * to get_string, we allow the replacement of the invalid Unicode sequences with the Unicode
+   * replacement character (U+FFFD).
+   *
+   *   simdjson::ondemand::parser parser;
+   *   auto json = R"({"deviceId":"431924697b\udff0L\u0001Y"})"_padded;
+   *   simdjson::ondemand::document doc = parser.iterate(json);
+   *   auto view = doc["deviceId"].get_string(true);
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -414,6 +425,7 @@ public:
   simdjson_inline simdjson_result<value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<value> operator[](const char *key) noexcept;
+  simdjson_result<value> operator[](int) noexcept = delete;
 
   /**
    * Get the type of this JSON value. It does not validate or consume the value.
@@ -781,6 +793,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](int) noexcept = delete;
 
   /**
    * Get the type of this JSON value.

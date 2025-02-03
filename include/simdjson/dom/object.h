@@ -145,6 +145,7 @@ public:
    *         - INCORRECT_TYPE if this is not an object
    */
   inline simdjson_result<element> operator[](const char *key) const noexcept;
+  simdjson_result<element> operator[](int) const noexcept = delete;
 
   /**
    * Get the value associated with the given JSON pointer. We use the RFC 6901
@@ -258,6 +259,7 @@ public:
 
   inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  simdjson_result<dom::element> operator[](int) const noexcept = delete;
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
