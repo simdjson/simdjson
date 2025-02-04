@@ -85,7 +85,7 @@ namespace builder_tests {
         std::string_view p;
         auto result = sb.view().get(p);
         ASSERT_EQUAL(result, SUCCESS);
-        ASSERT_EQUAL(p, "Hello, \"world\"!");
+        ASSERT_EQUAL(p, "Hello, \\\"world\\\"!");
         TEST_SUCCEED();
     }
 

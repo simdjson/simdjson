@@ -228,9 +228,8 @@ simdjson_inline void string_builder::escape_and_append_with_quotes(std::string_v
 }
 
 simdjson_inline void string_builder::append_raw(const char *c)  noexcept {
-  if(capacity_check(1)) {
-    buffer.get()[position++] = *c;
-  }
+  size_t len = std::strlen(c);
+  append_raw(c, len);
 }
 
 simdjson_inline void string_builder::append_raw(std::string_view input)  noexcept {
