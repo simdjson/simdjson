@@ -243,22 +243,22 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
   size_t pos = 0;
   if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
-      size_t i = 0;
-      size_t pos = 0;
-      for(;input.size() - i >= escaping::BYTES_PROCESSED; i += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + i, reinterpret_cast<uint8_t *>(out) + pos);
+      size_t index = 0;
+      size_t position = 0;
+      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
+        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
         if(vinput.has_escape()) {
-          return i + vinput.escape_index(); // We have a character that needs escaping
+          return index + vinput.escape_index(); // We have a character that needs escaping
         }
-        pos += escaping::BYTES_PROCESSED;
+        position += escaping::BYTES_PROCESSED;
       }
-      if(i == input.size()) { return input.size(); }
+      if(index == input.size()) { return input.size(); }
       // We virtually backtrack so we can load a full vector register
-      i = input.size() - escaping::BYTES_PROCESSED;
-      pos = i;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + i, reinterpret_cast<uint8_t *>(out) + pos);
+      index = input.size() - escaping::BYTES_PROCESSED;
+      position = index;
+      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
       if(vinput.has_escape()) {
-        return i + vinput.escape_index(); // We have a character that needs escaping
+        return index + vinput.escape_index(); // We have a character that needs escaping
       }
       return input.size();
     };
@@ -274,13 +274,13 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
     "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
   static std::array<uint8_t, 256> json_quotable_character =
-    []() constexpr {
+    []() SIMDJSON_CONSTEXPR_LAMBDA {
       std::array<uint8_t, 256> result{};
-      for (int i = 0; i < 32; i++) {
-        result[i] = 1;
+      for (int index = 0; index < 32; index++) {
+        result[index] = 1;
       }
-      for (int i : {'"', '\\'}) {
-        result[i] = 1;
+      for (int index : {'"', '\\'}) {
+        result[index] = 1;
       }
       return result;
     }();
