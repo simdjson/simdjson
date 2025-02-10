@@ -239,8 +239,8 @@ public:
   simdjson_warn_unused error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
   }
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final {
-    return 0;
+  simdjson_warn_unused size_t write_string_escaped(const std::string_view, char *) const noexcept final override {
+    return 0; // TODO: Evaluate whether this is the right thing to do for unsupported architecture.
   }
   simdjson_warn_unused bool validate_utf8(const char *, size_t) const noexcept final override {
     return false; // Just refuse to validate. Given that we have a fallback implementation
