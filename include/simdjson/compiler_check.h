@@ -50,6 +50,14 @@
 #endif
 #endif
 
+#ifndef SIMDJSON_CONSTEXPR_LAMBDA
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_CONSTEXPR_LAMBDA constexpr
+#else
+#define SIMDJSON_CONSTEXPR_LAMBDA
+#endif
+#endif
+
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
