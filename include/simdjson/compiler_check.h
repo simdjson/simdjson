@@ -58,10 +58,21 @@
 #endif
 #endif
 
+
+
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
 #endif
+#endif
+
+// The current specification is unclear on how we detect
+// static reflection, both __cpp_lib_reflection and
+// __cpp_impl_reflection are proposed in the draft specification.
+// For now, we disable static reflect by default. It must be
+// specified at compiler time.
+#ifndef SIMDJSON_STATIC_REFLECTION
+#define SIMDJSON_STATIC_REFLECTION 0 // disabled by default.
 #endif
 
 #if defined(__apple_build_version__)

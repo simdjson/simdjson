@@ -49,4 +49,5 @@
 // but it is convenient for now to have them here.
 #include "simdjson/generic/ondemand/json_string_builder.h"
 #include "simdjson/generic/ondemand/json_string_builder-inl.h"
+#include "simdjson/generic/ondemand/json_builder.h"
 

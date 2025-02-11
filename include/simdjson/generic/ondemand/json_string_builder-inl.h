@@ -3,10 +3,10 @@
  * but we will move it to a builder directory later.
  */
 #include <type_traits>
-#ifndef SIMDJSON_GENERIC_BUILDER_INL_H
+#ifndef SIMDJSON_GENERIC_STRING_BUILDER_INL_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_BUILDER_INL_H
+#define SIMDJSON_GENERIC_STRING_BUILDER_INL_H
 #include "simdjson/generic/builder/json_string_builder.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -277,4 +277,4 @@ simdjson_inline bool string_builder::validate_unicode() const noexcept {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_BUILDER_INL_H
+#endif // SIMDJSON_GENERIC_STRING_BUILDER_INL_H

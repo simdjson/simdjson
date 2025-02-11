@@ -2,7 +2,9 @@
 link_libraries(simdjson)
 include_directories(..)
 add_cpp_test(builder_string_builder_tests              LABELS ondemand acceptance per_implementation)
-
+if(SIMDJSON_STATIC_REFLECTION)
+  add_cpp_test(static_reflection_builder_tests           LABELS ondemand acceptance per_implementation)
+endif(SIMDJSON_STATIC_REFLECTION)
 # Copy the simdjson dll into the tests directory
 if(MSVC AND BUILD_SHARED_LIBS)
   add_custom_command(TARGET builder_string_builder_tests POST_BUILD        # Adds a post-build event

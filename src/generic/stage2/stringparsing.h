@@ -332,6 +332,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

@@ -2,10 +2,10 @@
  * This file is part of the builder API. It is temporarily in the ondemand directory
  * but we will move it to a builder directory later.
  */
-#ifndef SIMDJSON_GENERIC_BUILDER_H
+#ifndef SIMDJSON_GENERIC_STRING_BUILDER_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_BUILDER_H
+#define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -164,4 +164,4 @@ private:
 }
 } // namespace simdjson
 
-#endif // SIMDJSON_GENERIC_BUILDER_H
+#endif // SIMDJSON_GENERIC_STRING_BUILDER_H

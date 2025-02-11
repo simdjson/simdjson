@@ -27,7 +27,7 @@ namespace builder_tests {
         ASSERT_EQUAL(sb.size(), 1);
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "a");
         TEST_SUCCEED();
     }
@@ -40,7 +40,7 @@ namespace builder_tests {
         ASSERT_EQUAL(sb.size(), 2);
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "42");
         TEST_SUCCEED();
     }
@@ -52,7 +52,7 @@ namespace builder_tests {
         ASSERT_EQUAL(sb.size(), 3);
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "1.1");
         TEST_SUCCEED();
     }
@@ -64,7 +64,7 @@ namespace builder_tests {
         ASSERT_EQUAL(sb.size(), 4);
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "null");
         TEST_SUCCEED();
     }
@@ -84,7 +84,7 @@ namespace builder_tests {
         sb.escape_and_append("Hello, \"world\"!");
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "Hello, \\\"world\\\"!");
         TEST_SUCCEED();
     }
@@ -95,7 +95,7 @@ namespace builder_tests {
         sb.escape_and_append_with_quotes("Hello, \"world\"!");
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "\"Hello, \\\"world\\\"!\"");
         TEST_SUCCEED();
     }
@@ -106,7 +106,7 @@ namespace builder_tests {
         sb.append_raw("Test");
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "Test");
         TEST_SUCCEED();
     }
@@ -117,7 +117,7 @@ namespace builder_tests {
         sb.append_raw("Test String", 4);
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "Test");
         TEST_SUCCEED();
     }
@@ -128,7 +128,7 @@ namespace builder_tests {
         sb.append('a');
         std::string_view p;
         auto result = sb.view().get(p);
-        ASSERT_EQUAL(result, SUCCESS);
+        ASSERT_SUCCESS(result);
         ASSERT_EQUAL(p, "a");
         TEST_SUCCEED();
     }
@@ -171,7 +171,7 @@ namespace builder_tests {
             true;
     }
 
-} // namespace twitter_tests
+} // namespace builder_tests
 
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, builder_tests::run);
