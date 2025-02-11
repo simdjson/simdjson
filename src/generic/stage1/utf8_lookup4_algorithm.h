@@ -163,7 +163,7 @@ using namespace simd;
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
       simd8<uint8_t> sc = check_special_cases(input, prev1);
-      this->error |= check_multibyte_lengths(input, prev_input, sc);
+      this->error |= check_multibyte_lengths(input, prev_input, sc).any_bits_set_anywhere();
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
