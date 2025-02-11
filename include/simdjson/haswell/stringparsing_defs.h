@@ -29,7 +29,7 @@ public:
 }; // struct backslash_and_quote
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
-  // this can read up to 15 bytes beyond the buffer size, but we require
+  // this can read up to 31 bytes beyond the buffer size, but we require
   // SIMDJSON_PADDING of padding
   static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "backslash and quote finder must process fewer than SIMDJSON_PADDING bytes");
   simd8<uint8_t> v(src);
