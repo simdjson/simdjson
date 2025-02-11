@@ -423,12 +423,13 @@ namespace {
     simd8x64() = delete; // no default constructor allowed
 
     simdjson_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
+
     simdjson_inline simd8x64(const T ptr[64]) {
       uint8x16x4_t v = vld4q_u8(ptr);
-      this->chunks[0] = v.val[0];
-      this->chunks[1] = v.val[1];
-      this->chunks[2] = v.val[2];
-      this->chunks[3] = v.val[3];
+      this->chunks[0].value = v.val[0];
+      this->chunks[1].value = v.val[1];
+      this->chunks[2].value = v.val[2];
+      this->chunks[3].value = v.val[3];
     }
 
     simdjson_inline void store(T ptr[64]) const {
@@ -446,10 +447,10 @@ namespace {
       uint64_t offsets = popcounts * 0x0101010101010101;
 
       for (uint64_t i = 0; i < 8; i++) { // TODO Investigate: Can `vst1_s8` turn into `str`? Should it?
-        vst1_s8(&output[(offsets >> (8*i)) & 0xFF], vqtbl4_u8(
+        output[(offsets >> (8*i)) & 0xFF] = vqtbl4_u8(
             {{ this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3] }},
             vqadd_u8(vcreate_u8(interleaved_thintable_epi8[(mask >> (8*i)) & 0xFF]), vdup_n_u8(2*i))
-        ));
+        );
       }
 
       return offsets >> 56;
@@ -461,7 +462,7 @@ namespace {
       uint8x16_t t2 = vsriq_n_u8(t1, t0, 2);
       uint8x16_t t3 = vsriq_n_u8(t2, t2, 4);
       uint8x8_t t4 = vshrn_n_u16(t3, 4);
-      return vgetq_lane_u64(vreinterpretq_u64_u8(t4), 0);
+      return vgetq_lane_u64(vreinterpret_u64_u8(t4), 0);
     }
 
     simdjson_inline uint64_t eq(const T m) const {
