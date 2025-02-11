@@ -425,10 +425,10 @@ namespace {
     // simdjson_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
     simdjson_inline simd8x64(const T ptr[64]) {
       uint8x16x4_t v = vld4q_u8(ptr);
-      this->chunks[0] = v[0];
-      this->chunks[1] = v[1];
-      this->chunks[2] = v[2];
-      this->chunks[3] = v[3];
+      this->chunks[0] = v.val[0];
+      this->chunks[1] = v.val[1];
+      this->chunks[2] = v.val[2];
+      this->chunks[3] = v.val[3];
     }
 
     simdjson_inline void store(T ptr[64]) const {
