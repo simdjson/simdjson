@@ -440,11 +440,11 @@ namespace {
       // compute the prefix sum of the popcounts of each byte
       uint64_t offsets = popcounts * 0x0101010101010101;
 
-      for (uint64_t i = 0; i < 8; i++) { // TODO Investigate: Can `vst1_s8` turn into `str`? Should it?
-        output[(offsets >> (8*i)) & 0xFF] = vqtbl4_u8(
+      for (uint64_t i = 0; i < 8; i++) { // TODO Investigate: Can `vst1_u8` turn into `str`? Should it?
+        vst1_u8((uint8_t*)output[(offsets >> (8*i)) & 0xFF], vqtbl4_u8(
             {{ this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3] }},
             vqadd_u8(vcreate_u8(interleaved_thintable_epi8[(mask >> (8*i)) & 0xFF]), vdup_n_u8(2*i))
-        );
+        ));
       }
 
       return offsets >> 56;
