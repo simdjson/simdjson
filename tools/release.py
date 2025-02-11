@@ -184,8 +184,6 @@ else:
        if(detectedreadme != toversionstring(*newversion)):
            print(colored(255, 0, 0, "Consider updating the readme link to "+toversionstring(*newversion)))
 
-
-
 print("Please run the tests before issuing a release. \n")
 print("to issue release, enter \n git commit -a && git push  &&  git tag -a v"+toversionstring(*newversion)+" -m \"version "+toversionstring(*newversion)+"\" &&  git push --tags \n")
 
