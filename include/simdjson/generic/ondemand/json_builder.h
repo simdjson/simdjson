@@ -8,6 +8,8 @@
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/builder/json_string_builder.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
+#if SIMDJSON_STATIC_REFLECTION
+
 #include <charconv>
 #include <cstring>
 #include <experimental/meta>
@@ -19,7 +21,6 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
-#if SIMDJSON_STATIC_REFLECTION
 
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
@@ -158,8 +159,9 @@ simdjson_error to_json(const Z &z, std::string &s) {
   s.assign(view);
   return SUCCESS;
 }
-#endif // SIMDJSON_STATIC_REFLECTION
 } // namespace json_builder
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+#endif // SIMDJSON_STATIC_REFLECTION
+
 #endif
