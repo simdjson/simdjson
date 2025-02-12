@@ -55,6 +55,28 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   return SUCCESS;
 }
 
+//////////////////////////////
+// String deserialization
+//////////////////////////////
+
+template<typename T>
+concept string_like = requires(T obj, const char* c_str, std::size_t count) {
+    { obj.size() } -> std::convertible_to<std::size_t>;
+    { obj.empty() } -> std::convertible_to<bool>;
+    { obj[0] } -> std::convertible_to<typename T::value_type>;
+    { obj.assign(c_str, count) } -> std::same_as<T&>;
+};
+
+template <string_like T>
+  requires(!require_custom_serialization<T>)
+error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
+  std::string_view x;
+  SIMDJSON_TRY(val.get_string().get(x));
+  out.assign(x.data(), x.size());
+  return SUCCESS;
+}
+
+
 /**
  * STL containers have several constructors including one that takes a single
  * size argument. Thus, some compilers (Visual Studio) will not be able to

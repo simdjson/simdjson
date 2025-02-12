@@ -32,12 +32,8 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, kid &k) {
     return error;
   }
   std::vector<std::string_view> toys;
-  // annoying we cannot do get<std::vector<std::string>>(k.toys)!!!
-  if ((error = obj["toys"].get<std::vector<std::string_view>>().get(toys))) {
+  if((error = obj["toys"].get<std::vector<std::string>>(k.toys))) {
     return error;
-  }
-  for (auto toy : toys) {
-    k.toys.push_back(std::string(toy));
   }
   return simdjson::SUCCESS;
 }
@@ -73,7 +69,6 @@ bool serialize_deserialize_kid() {
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc;
   ASSERT_SUCCESS(parser.iterate(json_str).get(doc));
-
   kid k;
   ASSERT_SUCCESS(doc.get<kid>().get(k));
   ASSERT_EQUAL(k.age, 12);
