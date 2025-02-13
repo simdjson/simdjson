@@ -182,6 +182,35 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
   return SUCCESS;
 }
 
+#if SIMDJSON_STATIC_REFLECTION
+/* Deserialization of user defined types relying on static reflection */
+template <typename T>
+  requires(simdjson::json_builder::user_defined_type<T>)
+simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>,
+                              auto &val) {
+  ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  T t;
+  for (auto keyval : obj) {
+    std::string_view key;
+    SIMDJSON_TRY(keyval.escaped_key().get(key));
+    [:json_builder::expand(std::meta::nonstatic_data_members_of(^T)
+                           ):] >> [&]<auto mem> {
+      if (key == std::string_view(std::meta::identifier_of(mem))) {
+        error = keyval.value().get(t.[:mem:]);
+      }
+    };
+    if (error) {
+      return error;
+    }
+  }
+  return t;
+}
+#endif // SIMDJSON_STATIC_REFLECTION
+
 } // namespace simdjson
 
 #endif // SIMDJSON_ONDEMAND_DESERIALIZE_H
