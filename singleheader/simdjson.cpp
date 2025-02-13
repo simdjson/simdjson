@@ -1,4 +1,4 @@
-/* auto-generated on 2025-02-09 20:25:08 -0800. Do not edit! */
+/* auto-generated on 2025-02-13 08:35:33 -0800. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -85,10 +85,21 @@
 #endif
 #endif
 
+
+
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
 #endif
+#endif
+
+// The current specification is unclear on how we detect
+// static reflection, both __cpp_lib_reflection and
+// __cpp_impl_reflection are proposed in the draft specification.
+// For now, we disable static reflect by default. It must be
+// specified at compiler time.
+#ifndef SIMDJSON_STATIC_REFLECTION
+#define SIMDJSON_STATIC_REFLECTION 0 // disabled by default.
 #endif
 
 #if defined(__apple_build_version__)
@@ -13883,6 +13894,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace arm64
 } // namespace simdjson
@@ -20264,6 +20276,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace haswell
 } // namespace simdjson
@@ -26632,6 +26645,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace icelake
 } // namespace simdjson
@@ -33277,6 +33291,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace ppc64
 } // namespace simdjson
@@ -40484,6 +40499,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace westmere
 } // namespace simdjson
@@ -46670,6 +46686,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace lsx
 } // namespace simdjson
@@ -52847,6 +52864,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace lasx
 } // namespace simdjson
@@ -56196,6 +56214,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
 
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace fallback
 } // namespace simdjson
