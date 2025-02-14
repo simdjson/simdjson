@@ -159,7 +159,7 @@ namespace simd {
       // (AMD Zen4 has terrible performance with it, it is effectively broken)
       // _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
       __m512i compressed = _mm512_maskz_compress_epi8(~mask, *this);
-      _mm512_storeu_epi8(output, compressed); // could use a mask
+      _mm512_storeu_si512(output, compressed); // could use a mask
     }
 
     template<typename L>
