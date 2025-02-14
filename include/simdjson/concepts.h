@@ -107,6 +107,7 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
 };
 
+
 } // namespace concepts
 } // namespace simdjson
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION

@@ -3,12 +3,16 @@
 #ifndef SIMDJSON_ONDEMAND_DESERIALIZE_H
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_ONDEMAND_DESERIALIZE_H
+#include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/base.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <concepts>
 #include <limits>
+#if SIMDJSON_STATIC_REFLECTION
+#include <experimental/meta>
+#endif
 
 namespace simdjson {
 template <typename T>
@@ -59,23 +63,15 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 // String deserialization
 //////////////////////////////
 
-template<typename T>
-concept string_like = requires(T obj, const char* c_str, std::size_t count) {
-    { obj.size() } -> std::convertible_to<std::size_t>;
-    { obj.empty() } -> std::convertible_to<bool>;
-    { obj[0] } -> std::convertible_to<typename T::value_type>;
-    { obj.assign(c_str, count) } -> std::same_as<T&>;
-};
 
-template <string_like T>
-  requires(!require_custom_serialization<T>)
-error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, auto &val, std::string &out) noexcept {
   std::string_view x;
   SIMDJSON_TRY(val.get_string().get(x));
   out.assign(x.data(), x.size());
   return SUCCESS;
 }
 
+static_assert(custom_deserializable<std::string>);
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -182,32 +178,57 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
   return SUCCESS;
 }
 
+
 #if SIMDJSON_STATIC_REFLECTION
-/* Deserialization of user defined types relying on static reflection */
+
+
 template <typename T>
-  requires(simdjson::json_builder::user_defined_type<T>)
-simdjson_result<T> tag_invoke(deserialize_tag, std::type_identity<T>,
-                              auto &val) {
-  ondemand::object obj;
-  auto error = val.get_object().get(obj);
-  if (error) {
-    return error;
+constexpr bool user_defined_type = false;
+
+// workaround from
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth
+// for missing expansion statements
+namespace __impl {
+template <auto... vals> struct replicator_type {
+  template <typename F> constexpr void operator>>(F body) const {
+    (body.template operator()<vals>(), ...);
   }
-  T t;
-  for (auto keyval : obj) {
-    std::string_view key;
-    SIMDJSON_TRY(keyval.escaped_key().get(key));
-    [:json_builder::expand(std::meta::nonstatic_data_members_of(^T)
-                           ):] >> [&]<auto mem> {
-      if (key == std::string_view(std::meta::identifier_of(mem))) {
-        error = keyval.value().get(t.[:mem:]);
-      }
-    };
-    if (error) {
-      return error;
+};
+
+template <auto... vals> replicator_type<vals...> replicator = {};
+} // namespace __impl
+
+template <typename R> consteval auto expand(R range) {
+  std::vector<std::meta::info> args;
+  for (auto r : range) {
+    args.push_back(std::meta::reflect_value(r));
+  }
+  return substitute(^__impl::replicator, args);
+}
+// end of workaround
+
+template <typename T, typename ValT>
+  requires(user_defined_type<T> && std::is_class_v<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  SIMDJSON_TRY(val.get_object().get(obj));
+
+  [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto mem> {
+    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
+    static_assert(
+      deserializable<decltype(out.[:mem:]), ValT>,
+      "The specified type inside the class must itself be deserializable");
+    SIMDJSON_IMPLEMENTATION::ondemand::value v;
+    auto e = obj[key].get(v);
+    if(e == SUCCESS) {
+      e = v.get(out.[:mem:]);
+    } else if(e == NO_SUCH_FIELD) {
+      // ignore
+    } else {
+    //  return e;
     }
-  }
-  return t;
+  };
+  return SUCCESS;
 }
 #endif // SIMDJSON_STATIC_REFLECTION
 

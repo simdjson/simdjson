@@ -34,31 +34,6 @@ concept container_but_not_string =
     } && !std::is_same_v<T, std::string> &&
     !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char *>;
 
-template <typename T>
-concept user_defined_type = std::is_class<T>::value;
-
-// workaround from
-// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth
-// for missing expansion statements
-namespace __impl {
-template <auto... vals> struct replicator_type {
-  template <typename F> constexpr void operator>>(F body) const {
-    (body.template operator()<vals>(), ...);
-  }
-};
-
-template <auto... vals> replicator_type<vals...> replicator = {};
-} // namespace __impl
-
-template <typename R> consteval auto expand(R range) {
-  std::vector<std::meta::info> args;
-  for (auto r : range) {
-    args.push_back(std::meta::reflect_value(r));
-  }
-  return substitute(^__impl::replicator, args);
-}
-// end of workaround
-
 template <class T>
   requires(container_but_not_string<T>)
 constexpr void atom(string_builder &b, const T &t) {
@@ -91,7 +66,7 @@ constexpr void atom(string_builder &b, const number_type t) {
 }
 
 template <class T>
-  requires(user_defined_type<T> && !container_but_not_string<T> &&
+  requires(std::is_class_v<T> && !container_but_not_string<T> &&
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char *>)

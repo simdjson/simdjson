@@ -10,34 +10,12 @@ struct kid {
   int age;
   std::string name;
   std::vector<std::string> toys;
-  auto operator<=>(const kid &) const = default;
 };
 
-////////////////////
-// We do it manually, but this should be done by static reflection:
-////////////////////
-namespace simdjson {
-// This tag_invoke MUST be inside simdjson namespace
-template <typename simdjson_value>
-auto tag_invoke(deserialize_tag, simdjson_value &val, kid &k) {
-  ondemand::object obj;
-  auto error = val.get_object().get(obj);
-  if (error) {
-    return error;
-  }
-  if ((error = obj["age"].get(k.age))) {
-    return error;
-  }
-  if ((error = obj["name"].get_string(k.name))) {
-    return error;
-  }
-  std::vector<std::string_view> toys;
-  if((error = obj["toys"].get<std::vector<std::string>>(k.toys))) {
-    return error;
-  }
-  return simdjson::SUCCESS;
-}
-} // namespace simdjson
+// This instruct simdjson to instantiate the deserialization routine
+// for the type kid. This applies only to struct and class types.
+template<>
+constexpr bool simdjson::user_defined_type<kid> = true;
 
 struct Z {
   int x;
