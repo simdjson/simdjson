@@ -63,6 +63,16 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 // String deserialization
 //////////////////////////////
 
+error_code tag_invoke(deserialize_tag, auto &val, char &out) noexcept {
+  std::string_view x;
+  SIMDJSON_TRY(val.get_string().get(x));
+  if(x.size() != 1) {
+    return INCORRECT_TYPE;
+  }
+  out = x[0];
+  return SUCCESS;
+}
+
 
 error_code tag_invoke(deserialize_tag, auto &val, std::string &out) noexcept {
   std::string_view x;
@@ -70,8 +80,6 @@ error_code tag_invoke(deserialize_tag, auto &val, std::string &out) noexcept {
   out.assign(x.data(), x.size());
   return SUCCESS;
 }
-
-static_assert(custom_deserializable<std::string>);
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -183,7 +191,11 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
 
 
 template <typename T>
-constexpr bool user_defined_type = false;
+constexpr bool user_defined_type = (std::is_class_v<T>
+&& !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
+!concepts::appendable_containers<T> && !require_custom_serialization<T>);
+
+
 
 // workaround from
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth

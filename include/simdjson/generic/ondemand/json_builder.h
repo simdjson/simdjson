@@ -53,14 +53,15 @@ constexpr void atom(string_builder &b, const T &t) {
 template <class T>
   requires(std::is_same_v<T, std::string> ||
            std::is_same_v<T, std::string_view> ||
-           std::is_same_v<T, const char *>)
+           std::is_same_v<T, const char *> ||
+           std::is_same_v<T, char>)
 constexpr void atom(string_builder &b, const T &t) {
   b.escape_and_append_with_quotes(t);
 }
 
 
 template<typename number_type,
-         typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
+         typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 constexpr void atom(string_builder &b, const number_type t) {
   b.append(t);
 }
@@ -68,8 +69,7 @@ constexpr void atom(string_builder &b, const number_type t) {
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view> &&
-           !std::is_same_v<T, const char *>)
+           !std::is_same_v<T, std::string_view>)
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');

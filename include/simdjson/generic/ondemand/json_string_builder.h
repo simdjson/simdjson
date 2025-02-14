@@ -64,6 +64,11 @@ public:
   simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
 
   /**
+   * Append the character surrounded by double quotes, after escaping it.
+   * There is no UTF-8 validation.
+   */
+  simdjson_inline void escape_and_append_with_quotes(char input)  noexcept;
+  /**
    * Append the C string directly, without escaping.
    * There is no UTF-8 validation.
    */

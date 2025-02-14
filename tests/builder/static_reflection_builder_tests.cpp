@@ -10,15 +10,12 @@ struct kid {
   int age;
   std::string name;
   std::vector<std::string> toys;
+  bool operator<=> (const kid&) const = default;
 };
-
-// This instruct simdjson to instantiate the deserialization routine
-// for the type kid. This applies only to struct and class types.
-template<>
-constexpr bool simdjson::user_defined_type<kid> = true;
 
 struct Z {
   int x;
+  bool operator<=> (const Z&) const = default;
 };
 
 struct Y {
@@ -26,6 +23,7 @@ struct Y {
   std::string h;
   std::vector<int> i;
   Z z;
+  bool operator<=> (const Y&) const = default;
 };
 
 struct X {
@@ -36,6 +34,7 @@ struct X {
   std::vector<int> e;
   std::vector<std::string> f;
   Y y;
+  bool operator<=> (const X&) const = default;
 };
 
 namespace builder_tests {
@@ -84,16 +83,17 @@ bool serialize_deserialize_x_y_z() {
                 .h = "test string\n\r\"",
                 .i = {1, 2, 3},
                 .z = {.x = 1000}}};
-  std::string json_str;
-  simdjson::builder::string_builder sb;
-  fast_to_json_string(sb, s1);
-  std::string_view p;
-  ASSERT_SUCCESS(sb.view().get(p));
-  std::string pstr(p.data(), p.size());
-  std::cout << p << std::endl;
+  std::string pstr;
+  ASSERT_SUCCESS(simdjson::builder::to_json_string(s1).get(pstr));
   ASSERT_EQUAL(
       pstr,
-      R"({"a":1,"b":10,"c":0,"d":"test string\n\r\"","e":[1,2,3],"f":["ab","cd","fg"],"y":{"g":100,"h":"test string\n\r\"","i":[1,2,3],"z":{"x":1000}}})");
+      R"({"a":"1","b":10,"c":0,"d":"test string\n\r\"","e":[1,2,3],"f":["ab","cd","fg"],"y":{"g":100,"h":"test string\n\r\"","i":[1,2,3],"z":{"x":1000}}})");
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(simdjson::pad(pstr)).get(doc));
+  X s2;
+  ASSERT_SUCCESS(doc.get<X>().get(s2));
+  ASSERT_TRUE(s1 == s2);
   TEST_SUCCEED();
 }
 

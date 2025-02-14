@@ -227,6 +227,16 @@ simdjson_inline void string_builder::escape_and_append_with_quotes(std::string_v
   }
 }
 
+simdjson_inline void string_builder::escape_and_append_with_quotes(char input)  noexcept {
+  // escaping might turn a control character into \x00xx so 6 characters.
+  if(capacity_check(2 + 6 * 1)) {
+    buffer.get()[position++] = '"';
+    std::string_view cinput(&input, 1);
+    position += simdjson::write_string_escaped(cinput, buffer.get() + position);
+    buffer.get()[position++] = '"';
+  }
+}
+
 simdjson_inline void string_builder::append_raw(const char *c)  noexcept {
   size_t len = std::strlen(c);
   append_raw(c, len);
