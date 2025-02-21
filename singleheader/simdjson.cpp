@@ -1,4 +1,4 @@
-/* auto-generated on 2025-02-13 08:35:33 -0800. Do not edit! */
+/* auto-generated on 2025-02-14 00:21:23 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2859,6 +2859,7 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   };
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
 };
+
 
 } // namespace concepts
 } // namespace simdjson

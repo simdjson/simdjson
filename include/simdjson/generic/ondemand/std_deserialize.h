@@ -242,6 +242,38 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   };
   return SUCCESS;
 }
+
+template <typename simdjson_value, typename T>
+  requires(user_defined_type<std::remove_cvref_t<T>>)
+error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<T>();
+    if (!out) {
+      return MEMALLOC;
+    }
+  }
+  if (auto err = val.get(*out)) {
+    out.reset();
+    return err;
+  }
+  return SUCCESS;
+}
+
+template <typename simdjson_value, typename T>
+  requires(user_defined_type<std::remove_cvref_t<T>>)
+error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<T>();
+    if (!out) {
+      return MEMALLOC;
+    }
+  }
+  if (auto err = val.get(*out)) {
+    out.reset();
+    return err;
+  }
+  return SUCCESS;
+}
 #endif // SIMDJSON_STATIC_REFLECTION
 
 } // namespace simdjson
