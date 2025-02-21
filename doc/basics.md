@@ -1986,7 +1986,7 @@ serialize data into streams of multiple JSON documents. That is, instead of one 
 write out multiple records as independent JSON documents, to be read one-by-one.
 
 The simdjson library also supports multithreaded JSON streaming through a large file
-containing many smaller JSON documents in either [ndjson](http://ndjson.org)
+containing many smaller JSON documents in either [ndjson](https://github.com/ndjson/ndjson-spec)
 or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays
 or objects, we even support direct file concatenation without whitespace. However, if there
 is content between your JSON documents, it should be exclusively ASCII white-space characters.
