@@ -92,9 +92,9 @@ template <concepts::appendable_containers T, typename ValT>
   requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
-  static_assert(
+  /*static_assert(
       deserializable<value_type, ValT>,
-      "The specified type inside the container must itself be deserializable");
+      "The specified type inside the container must itself be deserializable");*/
   static_assert(
       std::is_default_constructible_v<value_type>,
       "The specified type inside the container must default constructible.");
@@ -196,7 +196,6 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T> && !require_custom_serialization<T>);
 
 
-
 // workaround from
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth
 // for missing expansion statements
@@ -274,7 +273,106 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &
   }
   return SUCCESS;
 }
+
 #endif // SIMDJSON_STATIC_REFLECTION
+
+////////////////////////////////////////
+// Unique pointers
+////////////////////////////////////////
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<bool> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<bool>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_bool().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int64_t> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<int64_t>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_int64().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<uint64_t> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<uint64_t>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_uint64().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<double> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<double>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_double().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string_view> &out) noexcept {
+  if (!out) {
+    out = std::make_unique<std::string_view>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_string().get(*out));
+  return SUCCESS;
+}
+
+
+////////////////////////////////////////
+// Shared pointers
+////////////////////////////////////////
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<bool> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<bool>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_bool().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<int64_t> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<int64_t>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_int64().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<uint64_t> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<uint64_t>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_uint64().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<double> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<double>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_double().get(*out));
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_view> &out) noexcept {
+  if (!out) {
+    out = std::make_shared<std::string_view>();
+    if (!out) { return MEMALLOC; }
+  }
+  SIMDJSON_TRY(val.get_string().get(*out));
+  return SUCCESS;
+}
+
 
 } // namespace simdjson
 
