@@ -16,7 +16,6 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
