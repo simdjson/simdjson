@@ -98,3 +98,44 @@ Example: string_builder
         return true;
     }
 ```
+
+C++26 static reflection
+------------------------
+
+If you have a compiler with support C++26 static reflection, you can compile
+your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
+
+```cpp
+#define SIMDJSON_STATIC_REFLECTION 1
+//...
+#include "simdjson.h"
+```
+
+And then you can append your data structures to a `string_builder` instance
+automatically. In most cases, it should work automatically:
+
+```cpp
+    bool car_test() {
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        append(sb, c);
+        std::string_view p;
+        if(sb.view().get(p)) {
+            return false; // there was an error
+        }
+        // p holds the JSON:
+        // "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}"
+        return true;
+    }
+```
+
+If you prefer, you can also create a string directly:
+
+```cpp
+  std::string json;
+  if(simdjson::builder::to_json_string(c).get(json)) {
+    // there was an error
+  } else {
+    // json contain the serialized JSON
+  }
+```

@@ -5,6 +5,12 @@
 #include <vector>
 
 using namespace simdjson;
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<double> tire_pressure;
+};
 
 struct kid {
   int age;
@@ -38,6 +44,35 @@ struct X {
 };
 
 namespace builder_tests {
+
+
+  bool car_test() {
+    TEST_START();
+    simdjson::builder::string_builder sb;
+    Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+    append(sb, c);
+    std::string_view p;
+    auto result = sb.view().get(p);
+    ASSERT_SUCCESS(result);
+    ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+    std::string pstr(p.begin(), p.end());
+    ASSERT_EQUAL(pstr, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(simdjson::pad(pstr)).get(doc));
+    Car c2;
+    ASSERT_SUCCESS(doc.get<Car>().get(c2));
+    ASSERT_EQUAL(c2.make, "Toyota");
+    ASSERT_EQUAL(c2.model, "Corolla");
+    ASSERT_EQUAL(c2.year, 2017);
+    ASSERT_EQUAL(c2.tire_pressure.size(), 4);
+    ASSERT_EQUAL(c2.tire_pressure[0], 30.0);
+    ASSERT_EQUAL(c2.tire_pressure[1], 30.2);
+    ASSERT_EQUAL(c2.tire_pressure[2], 30.513);
+    ASSERT_EQUAL(c2.tire_pressure[3], 30.79);
+    TEST_SUCCEED();
+  }
+
 
 bool serialize_deserialize_kid() {
   TEST_START();
@@ -98,7 +133,7 @@ bool serialize_deserialize_x_y_z() {
 }
 
 bool run() {
-  return serialize_deserialize_kid() && serialize_deserialize_x_y_z() && true;
+  return car_test() && serialize_deserialize_kid() && serialize_deserialize_x_y_z() && true;
 }
 
 } // namespace builder_tests
