@@ -32,3 +32,6 @@ if (TARGET benchmark::benchmark)
   endif()
 endif()
 
+if(SIMDJSON_STATIC_REFLECTION)
+  include(static_reflect)
+endf(SIMDJSON_STATIC_REFLECTION)
