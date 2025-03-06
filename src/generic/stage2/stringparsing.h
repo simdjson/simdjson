@@ -1,3 +1,4 @@
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -236,12 +237,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -266,7 +270,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",

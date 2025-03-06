@@ -93,4 +93,12 @@
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 
+#if !defined(SIMDJSON_CONSTEVAL)
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#define SIMDJSON_CONSTEVAL 1
+#else
+#define SIMDJSON_CONSTEVAL 0
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#endif // !defined(SIMDJSON_CONSTEVAL)
+
 #endif // SIMDJSON_COMPILER_CHECK_H

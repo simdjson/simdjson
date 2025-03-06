@@ -64,6 +64,9 @@ template<typename number_type,
 constexpr void atom(string_builder &b, const number_type t) {
   b.append(t);
 }
+#if SIMDJSON_CONSTEVAL
+consteval std::string consteval_to_quoted_escaped(std::string_view input);
+#endif
 
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
@@ -75,7 +78,8 @@ constexpr void atom(string_builder &b, const T &t) {
   [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto dm> {
     if (i != 0)
       b.append(',');
-    b.escape_and_append_with_quotes(std::meta::identifier_of(dm));
+    constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
+    b.append_raw(key);
     b.append(':');
     atom(b, t.[:dm:]);
     i++;
@@ -90,7 +94,8 @@ template <class Z> void append(string_builder &b, const Z &z) {
   [:expand(std::meta::nonstatic_data_members_of(^Z)):] >> [&]<auto dm> {
     if (i != 0)
       b.append(',');
-    b.escape_and_append_with_quotes(std::meta::identifier_of(dm));
+    constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
+    b.append_raw(key);
     b.append(':');
     atom(b, z.[:dm:]);
     i++;
