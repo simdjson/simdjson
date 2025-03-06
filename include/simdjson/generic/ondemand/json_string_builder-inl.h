@@ -108,7 +108,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 }
 #endif
 
-static constexpr std::array<uint8_t, 256> json_quotable_character = {
+static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256> json_quotable_character = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
