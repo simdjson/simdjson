@@ -2,6 +2,7 @@
  * This file is part of the builder API. It is temporarily in the ondemand
  * directory but we will move it to a builder directory later.
  */
+#include <array>
 #include <cstring>
 #include <type_traits>
 #ifndef SIMDJSON_GENERIC_STRING_BUILDER_INL_H
@@ -52,7 +53,7 @@ simple_needs_escaping(std::string_view v) {
 }
 
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
     return simple_needs_escaping(view);
   }
@@ -77,7 +78,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return vmaxvq_u32(vreinterpretq_u32_u8(running)) != 0;
 }
 #elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
     return simple_needs_escaping(view);
   }
@@ -103,12 +104,12 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return _mm_movemask_epi8(running) != 0;
 }
 #else
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return simple_needs_escaping(view);
 }
 #endif
 
-static constexpr std::array<uint8_t, 256> json_quotable_character = {
+static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256> json_quotable_character = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
