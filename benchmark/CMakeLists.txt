@@ -34,4 +34,4 @@ endif()
 
 if(SIMDJSON_STATIC_REFLECTION)
   include(static_reflect)
-endf(SIMDJSON_STATIC_REFLECTION)
+endif(SIMDJSON_STATIC_REFLECTION)
