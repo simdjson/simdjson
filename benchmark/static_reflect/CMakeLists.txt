@@ -2,8 +2,8 @@
 CPMAddPackage(
   NAME reflect-cpp
   GITHUB_REPOSITORY getml/reflect-cpp
-  PATCHES reflect-cpp.patch
-  GIT_TAG v0.13.0
+  GIT_TAG v0.17.0
+  EXCLUDE_FROM_ALL YES
 )
 
 
@@ -24,7 +24,7 @@ if(RUST_FOUND)
   message(STATUS "Rust found: " ${Rust_VERSION} )
   add_subdirectory("${corrosion_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/_deps/corrosion" EXCLUDE_FROM_ALL)
   # Important: we want to build in release mode!
-  corrosion_import_crate(MANIFEST_PATH "competitors/serde-benchmark/Cargo.toml" NO_LINKER_OVERRIDE PROFILE release)
+  corrosion_import_crate(MANIFEST_PATH "serde-benchmark/Cargo.toml" NO_LINKER_OVERRIDE PROFILE release)
 else()
   message(STATUS "Rust/Cargo is unavailable." )
   message(STATUS "We will not benchmark serde-benchmark." )
@@ -41,4 +41,4 @@ endif()
 
 
 
-include(twitter_data)
+add_subdirectory(twitter_data)
