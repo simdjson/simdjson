@@ -130,7 +130,7 @@ If your documents are all objects or arrays, then you may even have nothing betw
 E.g., `[1,2]{"32":1}` is recognized as two documents.
 
 Some official formats **(non-exhaustive list)**:
-- [Newline-Delimited JSON (NDJSON)](http://ndjson.org/)
+- [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec/)
 - [JSON lines (JSONL)](http://jsonlines.org/)
 - [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by JsonStream!
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)

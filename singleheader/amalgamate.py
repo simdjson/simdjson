@@ -488,12 +488,30 @@ if SCRIPTPATH != AMALGAMATE_OUTPUT_PATH:
   shutil.copy2(os.path.join(SCRIPTPATH,"amalgamate_demo.cpp"),AMALGAMATE_OUTPUT_PATH)
   shutil.copy2(os.path.join(SCRIPTPATH,"README.md"),AMALGAMATE_OUTPUT_PATH)
 
+
+
+
+def create_zip():
+    import zipfile
+    outdir = AMALGAMATE_OUTPUT_PATH
+
+    path = os.path.join(outdir, "singleheader.zip")
+    print(f"Creating {path}")
+    with zipfile.ZipFile(path, 'w') as zf:
+        for name in ["simdjson.cpp", "simdjson.h"]:
+            source = os.path.join(outdir, name)
+            print(f"Adding {source}")
+            zf.write(source, name)
+    print(f"Created {path}")
+create_zip()
 print("Done with all files generation.")
 
 print(f"Files have been written to directory: {AMALGAMATE_OUTPUT_PATH}/")
 print(subprocess.run(['ls', '-la', AMAL_C, AMAL_H, DEMOCPP, README],
                      stdout=subprocess.PIPE).stdout.decode('utf-8').strip())
 print("Done with all files generation.")
+
+
 
 
 #

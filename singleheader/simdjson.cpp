@@ -1,4 +1,4 @@
-/* auto-generated on 2025-02-21 00:31:07 +0000. Do not edit! */
+/* auto-generated on 2025-03-06 18:24:10 -0500. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -119,6 +119,14 @@
 #else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
+#if !defined(SIMDJSON_CONSTEVAL)
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#define SIMDJSON_CONSTEVAL 1
+#else
+#define SIMDJSON_CONSTEVAL 0
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#endif // !defined(SIMDJSON_CONSTEVAL)
 
 #endif // SIMDJSON_COMPILER_CHECK_H
 /* end file simdjson/compiler_check.h */
@@ -795,22 +803,22 @@ inline namespace literals {
 inline namespace string_view_literals {
 
 
-constexpr std::string_view operator "" _sv( const char* str, size_t len ) noexcept  // (1)
+constexpr std::string_view operator ""_sv( const char* str, size_t len ) noexcept  // (1)
 {
     return std::string_view{ str, len };
 }
 
-constexpr std::u16string_view operator "" _sv( const char16_t* str, size_t len ) noexcept  // (2)
+constexpr std::u16string_view operator ""_sv( const char16_t* str, size_t len ) noexcept  // (2)
 {
     return std::u16string_view{ str, len };
 }
 
-constexpr std::u32string_view operator "" _sv( const char32_t* str, size_t len ) noexcept  // (3)
+constexpr std::u32string_view operator ""_sv( const char32_t* str, size_t len ) noexcept  // (3)
 {
     return std::u32string_view{ str, len };
 }
 
-constexpr std::wstring_view operator "" _sv( const wchar_t* str, size_t len ) noexcept  // (4)
+constexpr std::wstring_view operator ""_sv( const wchar_t* str, size_t len ) noexcept  // (4)
 {
     return std::wstring_view{ str, len };
 }
@@ -2141,22 +2149,22 @@ nssv_inline_ns namespace string_view_literals {
 
 #if nssv_CONFIG_STD_SV_OPERATOR && nssv_HAVE_STD_DEFINED_LITERALS
 
-nssv_constexpr nonstd::sv_lite::string_view operator "" sv( const char* str, size_t len ) nssv_noexcept  // (1)
+nssv_constexpr nonstd::sv_lite::string_view operator ""sv( const char* str, size_t len ) nssv_noexcept  // (1)
 {
     return nonstd::sv_lite::string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::u16string_view operator "" sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
+nssv_constexpr nonstd::sv_lite::u16string_view operator ""sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
 {
     return nonstd::sv_lite::u16string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::u32string_view operator "" sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
+nssv_constexpr nonstd::sv_lite::u32string_view operator ""sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
 {
     return nonstd::sv_lite::u32string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::wstring_view operator "" sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
+nssv_constexpr nonstd::sv_lite::wstring_view operator ""sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
 {
     return nonstd::sv_lite::wstring_view{ str, len };
 }
@@ -2165,22 +2173,22 @@ nssv_constexpr nonstd::sv_lite::wstring_view operator "" sv( const wchar_t* str,
 
 #if nssv_CONFIG_USR_SV_OPERATOR
 
-nssv_constexpr nonstd::sv_lite::string_view operator "" _sv( const char* str, size_t len ) nssv_noexcept  // (1)
+nssv_constexpr nonstd::sv_lite::string_view operator ""_sv( const char* str, size_t len ) nssv_noexcept  // (1)
 {
     return nonstd::sv_lite::string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::u16string_view operator "" _sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
+nssv_constexpr nonstd::sv_lite::u16string_view operator ""_sv( const char16_t* str, size_t len ) nssv_noexcept  // (2)
 {
     return nonstd::sv_lite::u16string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::u32string_view operator "" _sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
+nssv_constexpr nonstd::sv_lite::u32string_view operator ""_sv( const char32_t* str, size_t len ) nssv_noexcept  // (3)
 {
     return nonstd::sv_lite::u32string_view{ str, len };
 }
 
-nssv_constexpr nonstd::sv_lite::wstring_view operator "" _sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
+nssv_constexpr nonstd::sv_lite::wstring_view operator ""_sv( const wchar_t* str, size_t len ) nssv_noexcept  // (4)
 {
     return nonstd::sv_lite::wstring_view{ str, len };
 }
@@ -8597,6 +8605,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -8606,6 +8618,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -11402,6 +11446,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -11411,6 +11459,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -13561,6 +13641,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for arm64 */
 /* including generic/stage2/stringparsing.h for arm64: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for arm64 */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -13799,12 +13880,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -13829,7 +13913,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -15128,6 +15212,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -15137,6 +15225,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
@@ -17792,6 +17912,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -17801,6 +17925,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
@@ -19943,6 +20099,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for haswell */
 /* including generic/stage2/stringparsing.h for haswell: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for haswell */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -20181,12 +20338,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -20211,7 +20371,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -21193,14 +21353,18 @@ namespace simd {
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
-    // Only the first 32 - count_ones(mask) bytes of the result are significant but 32 bytes
+    // Only the first 64 - count_ones(mask) bytes of the result are significant but 64 bytes
     // get written.
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     simdjson_inline void compress(uint64_t mask, L * output) const {
-      _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+      // we deliberately avoid _mm512_mask_compressstoreu_epi8 for portability
+      // (AMD Zen4 has terrible performance with it, it is effectively broken)
+      // _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+      __m512i compressed = _mm512_maskz_compress_epi8(~mask, *this);
+      _mm512_storeu_si512(output, compressed); // could use a mask
     }
 
     template<typename L>
@@ -21438,6 +21602,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -21447,6 +21615,39 @@ public:
   uint64_t bs_bits;
   uint64_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
@@ -23852,14 +24053,18 @@ namespace simd {
 
     // Copies to 'output" all bytes corresponding to a 0 in the mask (interpreted as a bitset).
     // Passing a 0 value for mask would be equivalent to writing out every byte to output.
-    // Only the first 32 - count_ones(mask) bytes of the result are significant but 32 bytes
+    // Only the first 64 - count_ones(mask) bytes of the result are significant but 64 bytes
     // get written.
     // Design consideration: it seems like a function with the
     // signature simd8<L> compress(uint32_t mask) would be
     // sensible, but the AVX ISA makes this kind of approach difficult.
     template<typename L>
     simdjson_inline void compress(uint64_t mask, L * output) const {
-      _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+      // we deliberately avoid _mm512_mask_compressstoreu_epi8 for portability
+      // (AMD Zen4 has terrible performance with it, it is effectively broken)
+      // _mm512_mask_compressstoreu_epi8 (output,~mask,*this);
+      __m512i compressed = _mm512_maskz_compress_epi8(~mask, *this);
+      _mm512_storeu_si512(output, compressed); // could use a mask
     }
 
     template<typename L>
@@ -24097,6 +24302,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -24106,6 +24315,39 @@ public:
   uint64_t bs_bits;
   uint64_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 15 bytes beyond the buffer size, but we require
@@ -26312,6 +26554,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for icelake */
 /* including generic/stage2/stringparsing.h for icelake: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for icelake */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -26550,12 +26793,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -26580,7 +26826,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -28014,6 +28260,10 @@ public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote
   copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() {
     return ((bs_bits - 1) & quote_bits) != 0;
@@ -28029,6 +28279,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote
 backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
@@ -30789,6 +31072,10 @@ public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote
   copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() {
     return ((bs_bits - 1) & quote_bits) != 0;
@@ -30804,6 +31091,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote
 backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
@@ -32958,6 +33278,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for ppc64 */
 /* including generic/stage2/stringparsing.h for ppc64: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for ppc64 */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -33196,12 +33517,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -33226,7 +33550,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -34923,6 +35247,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -34932,6 +35260,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -38013,6 +38374,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -38022,6 +38387,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -40166,6 +40564,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for westmere */
 /* including generic/stage2/stringparsing.h for westmere: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for westmere */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -40404,12 +40803,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -40434,7 +40836,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -41635,6 +42037,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -41644,6 +42050,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -44195,6 +44634,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -44204,6 +44647,39 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -46353,6 +46829,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for lsx */
 /* including generic/stage2/stringparsing.h for lsx: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for lsx */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -46591,12 +47068,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -46621,7 +47101,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -47803,6 +48283,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -47812,6 +48296,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -50379,6 +50895,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -50388,6 +50908,38 @@ public:
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  // For short strings, we use a scalar approach
+  if(len < BYTES_PROCESSED) {
+    bool requires_escaping = false;
+    for(size_t i = 0; i < len; i++) {
+      uint8_t c = src[i];
+      requires_escaping |= (c == '\\' || c == '"' || c < 32);
+    }
+    return requires_escaping;
+  }
+  // We use SIMD:
+  simd8<bool> requires_escaping{};
+  size_t j = 0;
+  for(; j + BYTES_PROCESSED <= len; j += BYTES_PROCESSED) {
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  if(j < len) {
+    // We virtually backtrack so we can load a full vector register
+    j = len - BYTES_PROCESSED;
+    simd8<uint8_t> v(src + j);
+    simd8<bool> is_quote = (v == '"');
+    simd8<bool> is_backslash = (v == '\\');
+    simd8<bool> is_control = (v < 32);
+    requires_escaping |= is_backslash | is_quote | is_control;
+  }
+  return requires_escaping.any();
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // this can read up to 31 bytes beyond the buffer size, but we require
@@ -52531,6 +53083,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 /* end file generic/stage2/json_iterator.h for lasx */
 /* including generic/stage2/stringparsing.h for lasx: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for lasx */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -52769,12 +53322,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -52799,7 +53355,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
@@ -53484,6 +54040,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
   simdjson_inline bool has_backslash() { return c == '\\'; }
@@ -53492,6 +54052,16 @@ public:
 
   uint8_t c;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  bool requires_escaping = false;
+  for(size_t i = 0; i < len; i++) {
+    uint8_t c = src[i];
+    requires_escaping |= (c == '\\' || c == '"' || c < 32);
+  }
+  return requires_escaping;
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // store to dest unconditionally - we can overwrite the bits we don't like later
@@ -55642,6 +56212,10 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  /////////////
+  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
+  /////////////
+  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
   simdjson_inline bool has_backslash() { return c == '\\'; }
@@ -55650,6 +56224,16 @@ public:
 
   uint8_t c;
 }; // struct backslash_and_quote
+
+
+simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
+  bool requires_escaping = false;
+  for(size_t i = 0; i < len; i++) {
+    uint8_t c = src[i];
+    requires_escaping |= (c == '\\' || c == '"' || c < 32);
+  }
+  return requires_escaping;
+}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // store to dest unconditionally - we can overwrite the bits we don't like later
@@ -55881,6 +56465,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 /* end file generic/stage1/find_next_document_index.h for fallback */
 /* including generic/stage2/stringparsing.h for fallback: #include <generic/stage2/stringparsing.h> */
 /* begin file generic/stage2/stringparsing.h for fallback */
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
@@ -56119,12 +56704,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/////////////
+/// TODO: This function is not used in the codebase. It is not clear if it is needed.
+/////////////
 simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
   // We are making the following assumption: most strings will either be very short or they will not
   // need escaping.
   size_t i = 0;
   size_t pos = 0;
-  if(input.size() >= escaping::BYTES_PROCESSED) {
+  /*if(input.size() >= escaping::BYTES_PROCESSED) {
     auto vec_processing = [input,out]() -> size_t {
       size_t index = 0;
       size_t position = 0;
@@ -56149,7 +56737,7 @@ simdjson_warn_unused size_t write_string_escaped(const std::string_view input, c
     pos = i;
     if(i == input.size()) { return pos; }
     // Here we only continue if there was a character that needed escaping.
-  }
+  }*/
   static std::string_view control_chars[] = {
     "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
     "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
