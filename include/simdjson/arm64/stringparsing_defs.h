@@ -54,7 +54,7 @@ simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, 
   }
   if(j < len) {
     // We virtually backtrack so we can load a full vector register
-    j = lenn - BYTES_PROCESSED;
+    j = len - BYTES_PROCESSED;
     simd8<uint8_t> v(src + j);
     simd8<bool> is_quote = (v == '"');
     simd8<bool> is_backslash = (v == '\\');
