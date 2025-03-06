@@ -130,7 +130,7 @@ int main() {
   bench_nlohmann(my_struct);
   bench_simdjson_static_reflection(my_struct);
 #ifdef SIMDJSON_RUST_VERSION
-  printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.");
+  printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.\n");
   serde_benchmark::TwitterData * td = serde_benchmark::twitter_from_str(json_str.c_str(), json_str.size());
   bench_rust(td);
   serde_benchmark::free_twitter(td);
