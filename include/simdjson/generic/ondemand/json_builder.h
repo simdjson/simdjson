@@ -16,7 +16,6 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -85,7 +84,7 @@ constexpr void atom(string_builder &b, const T &t) {
 }
 
 // works for struct
-template <class Z> void fast_to_json_string(string_builder &b, const Z &z) {
+template <class Z> void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
   [:expand(std::meta::nonstatic_data_members_of(^Z)):] >> [&]<auto dm> {
@@ -102,7 +101,7 @@ template <class Z> void fast_to_json_string(string_builder &b, const Z &z) {
 // works for container
 template <class Z>
   requires(container_but_not_string<Z>)
-void fast_to_json_string(string_builder &b, const Z &z) {
+void append(string_builder &b, const Z &z) {
   if (z.size() == 0) {
     b.append_raw("[]");
     return;
@@ -119,7 +118,7 @@ void fast_to_json_string(string_builder &b, const Z &z) {
 template <class Z>
 simdjson_result<std::string> to_json_string(const Z &z) {
   string_builder b;
-  fast_to_json_string(b, z);
+  append(b, z);
   std::string_view s;
   if(auto e = b.view().get(s); e) { return e; }
   return std::string(s);
@@ -128,7 +127,7 @@ simdjson_result<std::string> to_json_string(const Z &z) {
 template <class Z>
 simdjson_error to_json(const Z &z, std::string &s) {
   string_builder b;
-  fast_to_json_string(b, z);
+  append(b, z);
   std::string_view view;
   if(auto e = b.view().get(view); e) { return e; }
   s.assign(view);

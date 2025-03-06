@@ -1,5 +1,4 @@
 # All remaining tests link with simdjson proper
-link_libraries(simdjson)
 include_directories(..)
 add_cpp_test(builder_string_builder_tests              LABELS ondemand acceptance per_implementation)
 if(SIMDJSON_STATIC_REFLECTION)

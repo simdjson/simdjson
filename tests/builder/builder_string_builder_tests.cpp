@@ -4,6 +4,13 @@
 
 using namespace simdjson;
 
+struct Car {
+    std::string make;
+    std::string model;
+    int64_t year;
+    std::vector<double> tire_pressure;
+}; // Car
+
 namespace builder_tests {
   using namespace std;
 
@@ -151,8 +158,62 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
+    void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
+        // start of JSON
+        builder.append_raw("{");
+
+        // "make"
+        builder.escape_and_append_with_quotes("make");
+        builder.append_raw(":");
+        builder.escape_and_append_with_quotes(car.make);
+
+        // "model"
+        builder.append_raw(",");
+        builder.escape_and_append_with_quotes("model");
+        builder.append_raw(":");
+        builder.escape_and_append_with_quotes(car.model);
+
+        // "year"
+        builder.append_raw(",");
+        builder.escape_and_append_with_quotes("year");
+        builder.append_raw(":");
+        builder.append(car.year);
+
+        // "tire_pressure"
+        builder.append_raw(",");
+        builder.escape_and_append_with_quotes("tire_pressure");
+        builder.append_raw(":[");
+
+        // vector tire_pressure
+        for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
+            builder.append(car.tire_pressure[i]);
+            if (i < car.tire_pressure.size() - 1) {
+                builder.append_raw(",");
+            }
+        }
+        // end of array
+        builder.append_raw("]");
+
+        // end of object
+        builder.append_raw("}");
+    }
+
+    bool car_test() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        serialize_car(c, sb);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+
+
     bool run() {
         return
+            car_test() &&
     #if SIMDJSON_EXCEPTIONS
             string_convertion_except() &&
     #endif
