@@ -53,7 +53,7 @@ simple_needs_escaping(std::string_view v) {
 }
 
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
     return simple_needs_escaping(view);
   }
@@ -78,7 +78,7 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_v
   return vmaxvq_u32(vreinterpretq_u32_u8(running)) != 0;
 }
 #elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
     return simple_needs_escaping(view);
   }
@@ -104,7 +104,7 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_v
   return _mm_movemask_epi8(running) != 0;
 }
 #else
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool fast_needs_escaping(std::string_view view) {
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return simple_needs_escaping(view);
 }
 #endif
@@ -155,8 +155,7 @@ SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
   }
 }
 
-SIMDJSON_CONSTEXPR_LAMBDA inline size_t
-write_string_escaped(const std::string_view input, char *out) {
+inline size_t write_string_escaped(const std::string_view input, char *out) {
   size_t mysize = input.size();
   if (!fast_needs_escaping(input)) { // fast path!
     memcpy(out, input.data(), input.size());
