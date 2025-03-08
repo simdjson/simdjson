@@ -32,3 +32,6 @@ if (TARGET benchmark::benchmark)
   endif()
 endif()
 
+if(SIMDJSON_STATIC_REFLECTION)
+  add_subdirectory(static_reflect)
+endif(SIMDJSON_STATIC_REFLECTION)
