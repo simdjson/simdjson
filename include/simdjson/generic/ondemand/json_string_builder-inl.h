@@ -85,7 +85,8 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   size_t i = 0;
   __m128i running = _mm_setzero_si128();
   for (; i + 15 < view.size(); i += 16) {
-    __m128i word = _mm_loadu_si128((const __m128i *)(view.data() + i));
+
+    __m128i word = _mm_loadu_si128(reinterpret_cast<const __m128i *>(view.data() + i));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
     running = _mm_or_si128(
@@ -94,7 +95,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   }
   if (i < view.size()) {
     __m128i word =
-        _mm_loadu_si128((const __m128i *)(view.data() + view.length() - 16));
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(view.data() + view.length() - 16));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
     running = _mm_or_si128(
@@ -127,7 +128,7 @@ find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
 
   for (auto pos = view.begin() + location; pos != view.end(); ++pos) {
-    if (json_quotable_character[(uint8_t)*pos]) {
+    if (json_quotable_character[static_cast<uint8_t>(*pos)]) {
       return pos - view.begin();
     }
   }
