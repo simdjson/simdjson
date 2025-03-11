@@ -35,6 +35,10 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(st
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
 }
+inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::at_path_new(std::string_view json_path) const noexcept {
+  if (error()) { return error(); }
+  return first.at_path_new(json_path);
+}
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(std::string_view json_path) const noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
@@ -43,6 +47,10 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(std::
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
+}
+inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::get_values() const noexcept {
+  if (error()) { return error(); }
+  return first.get_values();
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
@@ -136,7 +144,31 @@ inline simdjson_result<element> object::at_pointer(std::string_view json_pointer
   }
   return child;
 }
+inline simdjson_result<std::vector<element>> object::at_path_new(std::string_view json_path) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
+  if(json_path.empty()) { // an empty string means that we return the current node
+      // TODO: revisit handling this - return element(this->tape); // copy the current node
+      return {};
+  }
 
+  // TODO: Do some additional json_path validation here
+  // else if(json_pointer[0] != '/') { // otherwise there is an error
+  //    return INVALID_JSON_POINTER;
+  // }
+
+
+  if (json_path.length() == 4 && json_path[0] == '$' && json_path[1] == '[' && json_path[2] == '*' && json_path[3] == ']')  // $[*]
+  {
+    return get_values();
+  }
+
+  if (json_path.length() == 3 && json_path[0] == '$' && json_path[1] == '.' && json_path[2] == '*') // $.*
+  {
+    return get_values();
+  }
+
+  return {}; //TODO: Revisit this also
+}
 inline simdjson_result<element> object::at_path(std::string_view json_path) const noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
@@ -152,6 +184,18 @@ inline simdjson_result<element> object::at_key(std::string_view key) const noexc
   }
   return NO_SUCH_FIELD;
 }
+
+inline simdjson_result<std::vector<element>> object::get_values() const noexcept {
+  iterator end_field = end();
+
+  std::vector<element> result = {}; // TODO: Do some allocations here for optimization?
+  for (iterator field = begin(); field != end_field; ++field) {
+    result.push_back(field.value());
+  }
+
+  return result;
+}
+
 // In case you wonder why we need this, please see
 // https://github.com/simdjson/simdjson/issues/323
 // People do seek keys in a case-insensitive manner.
