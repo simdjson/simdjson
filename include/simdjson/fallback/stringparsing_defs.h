@@ -14,10 +14,6 @@ struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
   simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
-  /////////////
-  /// TODO: This function is not used in the codebase. It is not clear if it is needed.
-  /////////////
-  simdjson_inline static bool requires_escaping(const uint8_t *src, size_t len);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
   simdjson_inline bool has_backslash() { return c == '\\'; }
@@ -26,16 +22,6 @@ public:
 
   uint8_t c;
 }; // struct backslash_and_quote
-
-
-simdjson_inline bool backslash_and_quote::requires_escaping(const uint8_t *src, size_t len) {
-  bool requires_escaping = false;
-  for(size_t i = 0; i < len; i++) {
-    uint8_t c = src[i];
-    requires_escaping |= (c == '\\' || c == '"' || c < 32);
-  }
-  return requires_escaping;
-}
 
 simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8_t *src, uint8_t *dst) {
   // store to dest unconditionally - we can overwrite the bits we don't like later
