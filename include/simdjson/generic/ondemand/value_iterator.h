@@ -125,7 +125,8 @@ public:
    *
    * @returns Whether the object had any fields (returns false for empty).
    * @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the *parent*
-   *        array or object is incomplete).
+   *        array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that
+   *        invalidates the document.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> started_object() noexcept;
   /**
@@ -135,7 +136,8 @@ public:
    *
    * @returns Whether the object had any fields (returns false for empty).
    * @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the *parent*
-   *        array or object is incomplete).
+   *        array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that
+   *        invalidates the document.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> started_root_object() noexcept;
 
@@ -257,7 +259,8 @@ public:
    *
    * @returns Whether the array had any elements (returns false for empty).
    * @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the *parent*
-   *        array or object is incomplete).
+   *        array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that
+   *        invalidates the document.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> started_array() noexcept;
   /**
@@ -267,7 +270,8 @@ public:
    *
    * @returns Whether the array had any elements (returns false for empty).
    * @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the *parent*
-   *        array or object is incomplete).
+   *        array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that
+   *        invalidates the document.
    */
   simdjson_warn_unused simdjson_inline simdjson_result<bool> started_root_array() noexcept;
 

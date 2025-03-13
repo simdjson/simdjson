@@ -1531,7 +1531,20 @@ Some errors are recoverable:
 * You may get the error `simdjson::INCORRECT_TYPE` after trying to convert a value to an incorrect type: e.g., you expected a number and try to convert the value to a number, but it is an array.
 * You may query a key from an object, but the key is missing in which case you get the error `simdjson::NO_SUCH_FIELD`: e.g., you call `obj["myname"]` and the object does not have a key `"myname"`.
 
-Other errors (e.g., `simdjson::INCOMPLETE_ARRAY_OR_OBJECT`) may indicate a fatal error and often follow from the fact that the document is not valid JSON. In which case, it is no longer possible to continue accessing the document: calling the method `is_alive()` on the document instance returns false. All following accesses will keep returning the same fatal error (e.g., `simdjson::INCOMPLETE_ARRAY_OR_OBJECT`).
+Other errors (`simdjson::INCOMPLETE_ARRAY_OR_OBJECT` and `simdjson::TAPE_ERROR`)  indicate a fatal error and follow from the fact that the document is not valid JSON. These errors are not recoverable: you cannot continue. In which case, it is no longer safe to continue accessing the document: calling the method `is_alive()` on the document instance returns false. It is your responsability as a user to stop using the simdjson
+document after encountering these fatal errors. Consider the following example, after
+the fatal error, the document instance cannot be used. Observe how the JSON input is invalid.
+```cpp
+  simdjson::padded_string badjson = R"( { "make": "Toyota", "model": "Camry",  "year"})"_padded;
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  auto errordoc = parser.iterate(badjson).get(doc);
+  // errordoc == simdjson::SUCCESS
+  simdjson::ondemand::value v;
+  auto error = doc.get_object()["year"].get(v);
+  // simdjson::is_fatal(error)) is true!
+  // doc.is_alive() is false
+```
 
 When you use the code without exceptions, it is your responsibility to check for error before using the
 result: if there is an error, the result value will not be valid and using it will caused undefined behavior. Most compilers should be able to help you if you activate the right
