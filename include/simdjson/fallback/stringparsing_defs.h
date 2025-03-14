@@ -29,6 +29,24 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   return { src[0] };
 }
 
+
+struct escaping {
+  static constexpr uint32_t BYTES_PROCESSED = 1;
+  simdjson_inline static escaping copy_and_find(const uint8_t *src, uint8_t *dst);
+
+  simdjson_inline bool has_escape() { return escape_bits; }
+  simdjson_inline int escape_index() { return 0; }
+
+  bool escape_bits;
+}; // struct escaping
+
+
+
+simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *dst) {
+  dst[0] = src[0];
+  return { (src[0] == '\\') || (src[0] == '"') || (src[0] < 32) };
+}
+
 } // unnamed namespace
 } // namespace fallback
 } // namespace simdjson
