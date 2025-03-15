@@ -1,11 +1,10 @@
 extern crate serde;
 extern crate serde_json;
 extern crate libc;
-use std::slice;
 
 use libc::{c_char, size_t};
 use serde::{Serialize, Deserialize};
-
+use std::{collections::HashMap, ffi::CString, os::raw::c_char, ptr, slice};
 /******************************************************/
 /******************************************************/
 /**
@@ -167,4 +166,137 @@ pub unsafe extern "C" fn free_twitter(raw: *mut TwitterData) {
 #[no_mangle]
 pub unsafe extern fn free_string(ptr: *const c_char) {
     let _ = std::ffi::CString::from_raw(ptr as *mut _);
+}
+
+// Functions associated with the CitmCatalog benchmark
+
+#[derive(Serialize, Deserialize)]
+pub struct Area {
+    pub id: i64,
+    pub name: String,
+    pub parent: i64,
+    #[serde(rename = "childAreas")]
+    pub child_areas: Vec<i64>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AudienceSubCategory {
+    pub id: i64,
+    pub name: String,
+    pub parent: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Event {
+    pub id: i64,
+    pub name: String,
+    pub description: String,
+    #[serde(rename = "subTopic")]
+    pub sub_topic: i64,
+    pub topic: i64,
+    pub audience: Vec<i64>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Performance {
+    pub id: i64,
+    pub name: String,
+    pub event: i64,
+    pub start: String,
+    #[serde(rename = "venueCode")]
+    pub venue_code: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SeatCategory {
+    pub id: i64,
+    pub name: String,
+    pub areas: Vec<i64>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SubTopic {
+    pub id: i64,
+    pub name: String,
+    pub parent: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Topic {
+    pub id: i64,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Venue {
+    pub id: i64,
+    pub name: String,
+    pub address: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CitmCatalog {
+    pub areas: HashMap<String, Area>,
+    #[serde(rename = "audienceSubCategory")]
+    pub audience_sub_category: HashMap<String, AudienceSubCategory>,
+    pub events: HashMap<String, Event>,
+    pub performances: HashMap<String, Performance>,
+    #[serde(rename = "seatCategory")]
+    pub seat_category: HashMap<String, SeatCategory>,
+    #[serde(rename = "subTopic")]
+    pub sub_topic: HashMap<String, SubTopic>,
+    pub topic: HashMap<String, Topic>,
+    pub venue: HashMap<String, Venue>,
+}
+
+/// Creates a CitmCatalog from a JSON string (UTF-8 encoded).
+#[no_mangle]
+pub unsafe extern "C" fn citm_from_str(
+    raw_input: *const c_char,
+    raw_input_length: usize
+) -> *mut CitmCatalog {
+    if raw_input.is_null() {
+        return ptr::null_mut();
+    }
+
+    // Convert the raw pointer + length into a Rust slice
+    let bytes = slice::from_raw_parts(raw_input as *const u8, raw_input_length);
+    let input_str = match std::str::from_utf8(bytes) {
+        Ok(s) => s,
+        Err(_) => return ptr::null_mut(),
+    };
+
+    // Try deserializing the input string into CitmCatalog
+    match serde_json::from_str::<CitmCatalog>(input_str) {
+        Ok(catalog) => Box::into_raw(Box::new(catalog)),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Serializes a CitmCatalog into a JSON string (UTF-8).
+#[no_mangle]
+pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *const c_char {
+    if raw_catalog.is_null() {
+        return ptr::null();
+    }
+
+    let catalog_ref = &*raw_catalog;
+    let serialized = match serde_json::to_string(catalog_ref) {
+        Ok(json_string) => json_string,
+        Err(_) => return ptr::null(),
+    };
+
+    // Convert the Rust String into a C-compatible string
+    match CString::new(serialized) {
+        Ok(cstr) => cstr.into_raw(),
+        Err(_) => ptr::null(),
+    }
+}
+
+/// Frees the CitmCatalog pointer.
+#[no_mangle]
+pub unsafe extern "C" fn free_citm(raw_catalog: *mut CitmCatalog) {
+    if !raw_catalog.is_null() {
+        drop(Box::from_raw(raw_catalog));
+    }
 }

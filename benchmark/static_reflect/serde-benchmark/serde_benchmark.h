@@ -13,6 +13,8 @@
 
 namespace serde_benchmark {
 
+struct CitmCatalog;
+
 struct TwitterData;
 
 extern "C" {
@@ -24,6 +26,15 @@ const char *str_from_twitter(TwitterData *raw);
 void free_twitter(TwitterData *raw);
 
 void free_string(const char *ptr);
+
+/// Creates a CitmCatalog from a JSON string (UTF-8 encoded).
+CitmCatalog *citm_from_str(const char *raw_input, uintptr_t raw_input_length);
+
+/// Serializes a CitmCatalog into a JSON string (UTF-8).
+const char *str_from_citm(CitmCatalog *raw_catalog);
+
+/// Frees the CitmCatalog pointer.
+void free_citm(CitmCatalog *raw_catalog);
 
 } // extern "C"
 
