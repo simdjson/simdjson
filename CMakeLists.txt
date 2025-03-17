@@ -117,7 +117,7 @@ if(SIMDJSON_STATIC_REFLECTION)
   # This is a hack:
   simdjson_add_props(
       target_compile_options PUBLIC
-      -freflection -stdlib=libc++ -std=c++26
+      -freflection -fexpansion-statements -stdlib=libc++ -std=c++26
   )
 else()
   simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
