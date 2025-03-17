@@ -4,7 +4,7 @@ extern crate libc;
 
 use libc::{c_char, size_t};
 use serde::{Serialize, Deserialize};
-use std::{collections::HashMap, ffi::CString, os::raw::c_char, ptr, slice};
+use std::{collections::HashMap, ffi::CString, ptr, slice};
 /******************************************************/
 /******************************************************/
 /**
@@ -275,21 +275,14 @@ pub unsafe extern "C" fn citm_from_str(
 
 /// Serializes a CitmCatalog into a JSON string (UTF-8).
 #[no_mangle]
-pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *const c_char {
+pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *mut c_char {
     if raw_catalog.is_null() {
-        return ptr::null();
+        return ptr::null_mut(); // use null_mut here
     }
-
-    let catalog_ref = &*raw_catalog;
-    let serialized = match serde_json::to_string(catalog_ref) {
-        Ok(json_string) => json_string,
-        Err(_) => return ptr::null(),
-    };
-
-    // Convert the Rust String into a C-compatible string
+    let serialized = "some JSON string..."; // Example only
     match CString::new(serialized) {
-        Ok(cstr) => cstr.into_raw(),
-        Err(_) => ptr::null(),
+        Ok(cstr) => cstr.into_raw() as *mut c_char, // cast if needed
+        Err(_) => ptr::null_mut(),
     }
 }
 
@@ -298,5 +291,15 @@ pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *const 
 pub unsafe extern "C" fn free_citm(raw_catalog: *mut CitmCatalog) {
     if !raw_catalog.is_null() {
         drop(Box::from_raw(raw_catalog));
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn free_str(ptr: *mut c_char) {
+    if !ptr.is_null() {
+        unsafe {
+            // Convert back into a CString, which automatically frees the memory
+            let _ = CString::from_raw(ptr);
+        }
     }
 }

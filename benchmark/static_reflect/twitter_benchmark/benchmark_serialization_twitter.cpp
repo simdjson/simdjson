@@ -9,7 +9,7 @@
 #include <string>
 #include "twitter_data.h"
 #include "nlohmann_twitter_data.h"
-#include "../benchmark_helper.h"
+#include "../benchmark_utils/benchmark_helper.h"
 #if SIMDJSON_BENCH_CPP_REFLECT
 #include <rfl.hpp>
 #include <rfl/json.hpp>

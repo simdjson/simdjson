@@ -31,10 +31,12 @@ void free_string(const char *ptr);
 CitmCatalog *citm_from_str(const char *raw_input, uintptr_t raw_input_length);
 
 /// Serializes a CitmCatalog into a JSON string (UTF-8).
-const char *str_from_citm(CitmCatalog *raw_catalog);
+char *str_from_citm(CitmCatalog *raw_catalog);
 
 /// Frees the CitmCatalog pointer.
 void free_citm(CitmCatalog *raw_catalog);
+
+void free_str(char *ptr);
 
 } // extern "C"
 

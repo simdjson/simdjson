@@ -9,7 +9,7 @@
 #include <string>
 #include "citm_catalog_data.h"
 #include "nlohmann_citm_catalog_data.h"
-#include "../benchmark_helper.h"
+#include "../benchmark_utils/benchmark_helper.h"
 
 #if SIMDJSON_BENCH_CPP_REFLECT
 #include <rfl.hpp>
@@ -49,7 +49,7 @@ void bench_rust(serde_benchmark::CitmCatalog *data) {
                  // Note: not freeing the string to avoid affecting the timing
                }));
   // Free Rust-allocated string after benchmarking
-  serde_benchmark::free_str(output);
+  serde_benchmark::free_str(const_cast<char*>(output));
 }
 #endif // SIMDJSON_RUST_VERSION
 
