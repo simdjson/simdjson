@@ -70,7 +70,7 @@ public:
    * The memory allocation is strict: you
    * can you use this function to increase
    * or lower the amount of allocated memory.
-   * Passsing zero clears the memory.
+   * Passing zero clears the memory.
    */
   error_code allocate(size_t len) noexcept;
   /** @private Capacity in bytes, in terms
