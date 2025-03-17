@@ -367,7 +367,7 @@ Please see our main documentation (`basics.md`) under
 "Use `tag_invoke` for custom types (C++20)" for details about
 tag_invoke functions.
 
-Given a stream of JSON documents, you can add them to a data struture
+Given a stream of JSON documents, you can add them to a data structure
 such as a `std::vector<Car>` like so if you support exceptions:
 
 ```C++
