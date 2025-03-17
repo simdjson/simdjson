@@ -271,6 +271,7 @@ simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPL
   if (error()) { return error(); }
   return first.raw_json();
 }
+
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_OBJECT_INL_H

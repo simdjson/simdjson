@@ -813,15 +813,17 @@ for (ondemand::object points : parser.iterate(points_json)) {
 Adding support for custom types
 ----------------------
 
-There are 2 main ways provided by simdjson to deserialize a value into a custom type:
+There are 3 main ways provided by simdjson to deserialize a value into a custom type:
 
 1. Provide a [**template specialization** for member functions](https://en.cppreference.com/w/cpp/language/template_specialization#Members_of_specializations)
    1. Specialize `simdjson::ondemand::document::get` for the whole document
    2. Specialize `simdjson::ondemand::value::get` for each value
 2. Using `tag_invoke` *(the recommended way if your system supports C++20 or better)*
+3. Using static reflectioin (requires C++26 or better)
 
-We describe both of them in the following sections. Most users who have systems compatible with
+We describe all of them in the following sections. Most users who have systems compatible with
 C++20 or better should skip ahead to [using `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20) as it is more powerful and simpler.
+The C++26 approach is even simpler.
 
 ### 1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)
 
@@ -1291,6 +1293,29 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, std::list<Car>& car) {
 
 With this code, deserializing an `std::list<Car>` instance would capture only the cars
 that are not made by Toyota.
+
+### 3. Using static reflection (C++26)
+
+If you have a C++26 compatible compiler, you can compile
+your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
+
+```cpp
+#define SIMDJSON_STATIC_REFLECTION 1
+//...
+#include "simdjson.h"
+```
+
+Then you can deserialize a type such as `Car` automatically:
+```cpp
+std::string json =  R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] } )";
+simdjson::ondemand::parser parser;
+simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json)).get(doc);
+Car c = doc.get<Car>();
+```
+
+You can also automatically serialize the `Car` instance to a JSON string, see
+our [Builder documentation](builder.md).
 
 
 Minifying JSON strings without parsing
