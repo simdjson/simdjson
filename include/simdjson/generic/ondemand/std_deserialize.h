@@ -100,7 +100,12 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       "The specified type inside the container must default constructible.");
 
   SIMDJSON_IMPLEMENTATION::ondemand::array arr;
-  SIMDJSON_TRY(val.get_array().get(arr));
+  if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
+    arr = val;
+  } else {
+    SIMDJSON_TRY(val.get_array().get(arr));
+  }
+
   for (auto v : arr) {
     if constexpr (concepts::returns_reference<T>) {
       if (auto const err = v.get<value_type>().get(concepts::emplace_one(out));
@@ -222,26 +227,31 @@ template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
-  SIMDJSON_TRY(val.get_object().get(obj));
+  if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
+    obj = val;
+  } else {
+    SIMDJSON_TRY(val.get_object().get(obj));
+  }
+  error_code e = simdjson::SUCCESS;
 
   [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto mem> {
     constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
     static_assert(
-      deserializable<decltype(out.[:mem:]), ValT>,
+      deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
       "The specified type inside the class must itself be deserializable");
-    SIMDJSON_IMPLEMENTATION::ondemand::value v;
-    auto e = obj[key].get(v);
-    if(e == SUCCESS) {
-      e = v.get(out.[:mem:]);
-    } else if(e == NO_SUCH_FIELD) {
-      // ignore
-    } else {
-    //  return e;
+    // as long we are succesful or the field is not found, we continue
+    if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
+      obj[key].get(out.[:mem:]);
     }
   };
-  return SUCCESS;
-}
+  /**  TODO: we need to migrate to the following code once the compiler supports it:
+  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^T)) {
+    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
 
+  }
+  */
+  return e;
+}
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept {
