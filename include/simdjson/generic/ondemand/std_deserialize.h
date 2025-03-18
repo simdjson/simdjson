@@ -239,13 +239,15 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   error_code e = simdjson::SUCCESS;
 
   [:expand(std::meta::nonstatic_data_members_of(^^T)):] >> [&]<auto mem> {
-    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
-    static_assert(
-      deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
-      "The specified type inside the class must itself be deserializable");
-    // as long we are succesful or the field is not found, we continue
-    if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-      obj[key].get(out.[:mem:]);
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+      constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
+      static_assert(
+        deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
+        "The specified type inside the class must itself be deserializable");
+      // as long we are succesful or the field is not found, we continue
+      if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
+        obj[key].get(out.[:mem:]);
+      }
     }
   };
   /**  TODO: we need to migrate to the following code once the compiler supports it:
