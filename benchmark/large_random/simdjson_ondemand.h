@@ -32,12 +32,12 @@ struct simdjson_ondemand_static_reflect {
 
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
     auto doc = parser.iterate(json);
-    ondemand::array arr = doc.get_array();
-    arr.get<std::vector<point>>(result);
+    //ondemand::array arr = doc.get_array();
+    //arr.get<std::vector<point>>(result);
     // We can also do it like so:
-    //for (ondemand::object coord : doc) {
-    //  result.emplace_back(coord.get<point>());
-    //}
+    for (ondemand::object coord : doc) {
+      result.emplace_back(coord.get<point>());
+    }
     // It seems that doing the reflection is slower than doing the manual lookup.
     // E.g., it is faster if we do result.emplace_back(coord["x"], coord["y"], coord["z"]);
     return true;

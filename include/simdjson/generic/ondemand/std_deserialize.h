@@ -204,7 +204,7 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 // workaround from
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth
 // for missing expansion statements
-namespace __impl {
+/*namespace __impl {
 template <auto... vals> struct replicator_type {
   template <typename F> constexpr void operator>>(F body) const {
     (body.template operator()<vals>(), ...);
@@ -220,37 +220,28 @@ template <typename R> consteval auto expand(R range) {
     args.push_back(std::meta::reflect_value(r));
   }
   return substitute(^__impl::replicator, args);
-}
+}*/
 // end of workaround
 
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+  constexpr error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
     obj = val;
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
-  error_code e = simdjson::SUCCESS;
-
-  [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto mem> {
-    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
-    static_assert(
-      deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
-      "The specified type inside the class must itself be deserializable");
-    // as long we are succesful or the field is not found, we continue
-    if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-      obj[key].get(out.[:mem:]);
+  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^^T)) {
+    if(std::meta::is_const(mem)) {
+      continue;
     }
-  };
-  /**  TODO: we need to migrate to the following code once the compiler supports it:
-  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^T)) {
-    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
-
+    std::string_view key = std::string_view(std::meta::identifier_of(mem));
+    if(error_code e = obj[key].get(out.[:mem:]); e != simdjson::SUCCESS && e != simdjson::NO_SUCH_FIELD) {
+      return e;
+    }
   }
-  */
-  return e;
+  return simdjson::SUCCESS;
 }
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)

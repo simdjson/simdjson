@@ -75,7 +75,17 @@ template <class T>
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto dm> {
+  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^^T)) {
+    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
+    if (i != 0)
+      b.append(',');
+    b.append_raw(consteval_to_quoted_escaped(key));
+    b.append(':');
+    atom(b, t.*mem);
+    i++;
+  }
+  b.append('}');
+  /*[:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto dm> {
     if (i != 0)
       b.append(',');
     constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
@@ -84,14 +94,14 @@ constexpr void atom(string_builder &b, const T &t) {
     atom(b, t.[:dm:]);
     i++;
   };
-  b.append('}');
+  b.append('}');*/
 }
 
 // works for struct
 template <class Z> void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^Z)):] >> [&]<auto dm> {
+  template for (constexpr auto dm : std::meta::nonstatic_data_members_of(^^Z)) {
     if (i != 0)
       b.append(',');
     constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
@@ -99,7 +109,7 @@ template <class Z> void append(string_builder &b, const Z &z) {
     b.append(':');
     atom(b, z.[:dm:]);
     i++;
-  };
+  }
   b.append('}');
 }
 
