@@ -202,24 +202,28 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 
 
 // workaround from
-// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r3.html#back-and-forth
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r10.html#back-and-forth
 // for missing expansion statements
 namespace __impl {
-template <auto... vals> struct replicator_type {
-  template <typename F> constexpr void operator>>(F body) const {
-    (body.template operator()<vals>(), ...);
-  }
-};
+  template<auto... vals>
+  struct replicator_type {
+    template<typename F>
+      constexpr void operator>>(F body) const {
+        (body.template operator()<vals>(), ...);
+      }
+  };
 
-template <auto... vals> replicator_type<vals...> replicator = {};
-} // namespace __impl
+  template<auto... vals>
+  replicator_type<vals...> replicator = {};
+}
 
-template <typename R> consteval auto expand(R range) {
+template<typename R>
+consteval auto expand(R range) {
   std::vector<std::meta::info> args;
   for (auto r : range) {
-    args.push_back(std::meta::reflect_value(r));
+    args.push_back(reflect_value(r));
   }
-  return substitute(^__impl::replicator, args);
+  return substitute(^^__impl::replicator, args);
 }
 // end of workaround
 
@@ -234,14 +238,16 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   }
   error_code e = simdjson::SUCCESS;
 
-  [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto mem> {
-    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
-    static_assert(
-      deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
-      "The specified type inside the class must itself be deserializable");
-    // as long we are succesful or the field is not found, we continue
-    if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-      obj[key].get(out.[:mem:]);
+  [:expand(std::meta::nonstatic_data_members_of(^^T)):] >> [&]<auto mem> {
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+      constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
+      static_assert(
+        deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
+        "The specified type inside the class must itself be deserializable");
+      // as long we are succesful or the field is not found, we continue
+      if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
+        obj[key].get(out.[:mem:]);
+      }
     }
   };
   /**  TODO: we need to migrate to the following code once the compiler supports it:
