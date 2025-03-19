@@ -46,9 +46,8 @@ void bench_rust(serde_benchmark::CitmCatalog *data) {
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");
                  }
-                 // Note: not freeing the string to avoid affecting the timing
+                 serde_benchmark::free_str(const_cast<char*>(output));
                }));
-  // Free Rust-allocated string after benchmarking
   serde_benchmark::free_str(const_cast<char*>(output));
 }
 #endif // SIMDJSON_RUST_VERSION
