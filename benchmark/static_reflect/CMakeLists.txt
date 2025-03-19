@@ -39,6 +39,6 @@ else()
   endif()
 endif()
 
-
-
-add_subdirectory(twitter_data)
+# Add the benchmark executable targets
+add_subdirectory(twitter_benchmark)
+add_subdirectory(citm_catalog_benchmark)

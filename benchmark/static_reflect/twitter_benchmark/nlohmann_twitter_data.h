@@ -105,7 +105,6 @@ std::string nlohmann_serialize(const std::vector<Status>& v) {
   return a.dump();
 }
 
-
 void to_json(nlohmann::json &j, const TwitterData &t) {
   j = nlohmann::json{{"statuses", t.statuses}};
 }
