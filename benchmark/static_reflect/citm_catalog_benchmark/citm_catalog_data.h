@@ -67,14 +67,14 @@ struct Venue {
 };
 
 struct CitmCatalog {
-  std::map<std::string, Area> areas;
-  std::map<std::string, AudienceSubCategory> audienceSubCategory;
-  std::map<std::string, Event> events;
-  std::map<std::string, Performance> performances;
-  std::map<std::string, SeatCategory> seatCategory;
-  std::map<std::string, SubTopic> subTopic;
-  std::map<std::string, Topic> topic;
-  std::map<std::string, Venue> venue;
+  std::vector<std::pair<std::string, Area>> areas;
+  std::vector<std::pair<std::string, AudienceSubCategory>> audienceSubCategory;
+  std::vector<std::pair<std::string, Event>> events;
+  std::vector<std::pair<std::string, Performance>> performances;
+  std::vector<std::pair<std::string, SeatCategory>> seatCategory;
+  std::vector<std::pair<std::string, SubTopic>> subTopic;
+  std::vector<std::pair<std::string, Topic>> topic;
+  std::vector<std::pair<std::string, Venue>> venue;
 
   bool operator==(const CitmCatalog &other) const = default;
 };

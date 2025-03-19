@@ -70,15 +70,26 @@ void bench_nlohmann(CitmCatalog &data) {
 }
 
 void bench_simdjson_static_reflection(CitmCatalog &data) {
-  std::string output = simdjson::to_json(data);
-  size_t output_volume = output.size();
+  simdjson::builder::string_builder sb;
+  simdjson::builder::append(sb, data);
+  std::string_view p;
+  if(sb.view().get(p)) {
+    std::cerr << "Error!" << std::endl;
+  }
+  size_t output_volume = p.size();
+  sb.clear();
   printf("# output volume: %zu bytes\n", output_volume);
 
   volatile size_t measured_volume = 0;
-  pretty_print(1, output_volume, "bench_simdjson_static_reflection",
-               bench([&data, &measured_volume, &output_volume]() {
-                 std::string output = simdjson::to_json(data);
-                 measured_volume = output.size();
+  pretty_print(sizeof(data), output_volume, "bench_simdjson_static_reflection",
+               bench([&data, &measured_volume, &output_volume, &sb]() {
+                 sb.clear();
+                 simdjson::builder::append(sb, data);
+                 std::string_view p;
+                 if(sb.view().get(p)) {
+                   std::cerr << "Error!" << std::endl;
+                 }
+                 measured_volume = sb.size();
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");
                  }
