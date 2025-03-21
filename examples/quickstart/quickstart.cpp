@@ -1,5 +1,5 @@
-#include <iostream>
 #include "simdjson.h"
+#include <iostream>
 #include <vector>
 
 int main(void) {
@@ -27,14 +27,22 @@ int main(void) {
     ]
   })"_padded;
 
-
   // simdjson::dom::element tweets = parser.load("twitter.json");
-  // std::cout << tweets["search_metadata"]["count"] << " results." << std::endl;
+  // std::cout << tweets["search_metadata"]["count"] << " results." <<
+  // std::endl;
 
   simdjson::dom::element parsed_json = parser.parse(json_string);
   // std::cout << parsed_json["firstName"] << std::endl;
 
-  auto result = parsed_json.at_path_new("$.*");
+  // selects all the top level elements
+  // auto result = parsed_json.at_path_new("$.*");
+
+  // selects all address properties - $.address.*
+  auto result = parsed_json.at_path_new("$.address.*");
+
+  // selects all address properties - $["address"].*
+  // auto result = parsed_json.at_path_new("$["address"].*");
+
   std::vector<simdjson::dom::element> values = result.value();
 
   std::string string_result;
@@ -43,10 +51,10 @@ int main(void) {
   for (int i = 0; i < values.size(); ++i) {
     simdjson::internal::string_builder<> sb;
     sb.append(values[i]);
-    string_result = string_result += sb.str();
-    string_result += ",\n";
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
-  string_result += "]";
+  string_result += "\n]";
 
   std::cout << string_result << std::endl;
 
