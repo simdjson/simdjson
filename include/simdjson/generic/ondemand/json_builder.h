@@ -75,7 +75,7 @@ template <class T>
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^T)):] >> [&]<auto dm> {
+  [:expand(std::meta::nonstatic_data_members_of(^^T)):] >> [&]<auto dm> {
     if (i != 0)
       b.append(',');
     constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
@@ -91,7 +91,7 @@ constexpr void atom(string_builder &b, const T &t) {
 template <class Z> void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^Z)):] >> [&]<auto dm> {
+  [:expand(std::meta::nonstatic_data_members_of(^^Z)):] >> [&]<auto dm> {
     if (i != 0)
       b.append(',');
     constexpr auto key = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
