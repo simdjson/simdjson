@@ -55,6 +55,16 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   return SUCCESS;
 }
 
+template <concepts::constructible_from_string_view T, typename ValT>
+  requires(!require_custom_serialization<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+  out = T{str};
+  return SUCCESS;
+}
+
+
 /**
  * STL containers have several constructors including one that takes a single
  * size argument. Thus, some compilers (Visual Studio) will not be able to
@@ -115,14 +125,19 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       std::is_default_constructible_v<value_type>,
       "The specified value type inside the container must default constructible.");
  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
- SIMDJSON_TRY(val.get_object().get(arr));
- for (auto v : obj) {
+ SIMDJSON_TRY(val.get_object().get(obj));
+ for (auto field : obj) {
     std::string_view key;
-    SIMDJSON_TRY(v.get_key().get(key));
-    value_type T;
-    SIMDJSON_TRY(v.get_value().get<T>().get(T));
-    out.emplace(key, T); // might throw an exception
+    SIMDJSON_TRY(field.unescaped_key().get(key));
+    value_type this_value;
+    SIMDJSON_TRY(field.value().get<value_type>().get(this_value));
+    [[maybe_unused]] std::pair<typename T::iterator, bool> result = out.emplace(key, this_value);
+    // unclear what to do if the key already exists
+    // if (result.second == false) {
+    //   // key already exists
+    // }
  }
+ (void)out;
  return SUCCESS;
 }
 
