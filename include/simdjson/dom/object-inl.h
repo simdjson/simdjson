@@ -220,13 +220,14 @@ object::at_path_new(std::string_view json_path) const noexcept {
     return get_values();
   }
 
-
-  // TODO: I am assuming is not valid to have a nested check on the result of a wildcard
-  // so I'm not checking for wildcard here, but just keys
-  // This assumption is probably wrong and I will need to verify
+  // TODO: I am assuming is not valid to have a nested check on the result of a
+  // wildcard so I'm not checking for wildcard here, but just keys This
+  // assumption is probably wrong and I will need to verify
 
   // JSONPath starts with $
-  if (!json_path.empty() && json_path.front() == '$') {
+  if (!json_path.empty() &&
+      json_path.front() ==
+          '$') { // TODO: Must all Json path start with a root element ($)?
     // for json_path - $.example_key.* or $["example_key"].*
     json_path = json_path.substr(1); // .example_key.* or ["example_key"]
     if (json_path[0] == '.' || json_path[0] == '[') {
@@ -239,12 +240,41 @@ object::at_path_new(std::string_view json_path) const noexcept {
         auto child = at_pointer("/" + std::string(key));
 
         json_path = json_path.substr(second_dot); // .* or [*]
-        if ((json_path[0] == '.' && json_path[1] == '*') || (json_path[0] == '[' && json_path[1] == '*' && json_path[2] == ']')) {
-          return child.at_path_new("$.*");
-        }
+        if ((json_path[0] == '.' && json_path[1] == '*') ||
+            (json_path[0] == '[' && json_path[1] == '*' &&
+             json_path[2] == ']')) {
 
-        // TODO: Handle key here i.e .another_key
-        return {};
+          auto wildcard_results = child.at_path_new("$.*");
+
+          // where there's additional paths/keys after the wildcard i.e
+          // .*.additional_key or [*].additional_key
+          // .*["additional_key"] or [*]["additional_key"]
+          if ((json_path[0] == '.' && json_path[1] == '*' &&
+               json_path.size() != 2) ||
+              (json_path[0] == '[' && json_path[1] == '*' &&
+               json_path[2] == ']' && json_path.size() != 3)) {
+            std::vector<simdjson::dom::element> result = {};
+            auto wildcard_values = wildcard_results.value();
+
+            auto is_dot = (json_path[0] == '.') ? true : false;
+            json_path = json_path.substr(
+                is_dot ? 2 : 4); // .additional_key or ["additional_key"]
+
+            std::vector<simdjson::dom::element>::iterator iterator =
+                wildcard_values.begin();
+            for (; iterator != wildcard_values.end(); ++iterator) {
+              auto nested_result =
+                  iterator->at_path_new("$" + std::string(json_path))
+                      .value();
+              result.insert(result.end(), nested_result.begin(),
+                            nested_result.end());
+            }
+
+            return result;
+          }
+
+          return wildcard_results;
+        }
       }
 
       // recursive e.g "example_key"].* or "example_key"][*]
@@ -254,7 +284,9 @@ object::at_path_new(std::string_view json_path) const noexcept {
         auto child = at_pointer("/" + std::string(key));
 
         json_path = json_path.substr(close_bracket);
-        if ((json_path[0] == '.' && json_path[1] == '*') || (json_path[0] == '[' && json_path[1] == '*' && json_path[2] == ']')) {
+        if ((json_path[0] == '.' && json_path[1] == '*') ||
+            (json_path[0] == '[' && json_path[1] == '*' &&
+             json_path[2] == ']')) {
           return child.at_path_new("$[*]");
         }
 
@@ -262,17 +294,18 @@ object::at_path_new(std::string_view json_path) const noexcept {
         return {};
       }
     } else {
-      return INVALID_JSON_POINTER; // TODO: Create exception for invalid JSON_PATH
+      return INVALID_JSON_POINTER; // TODO: Create exception for invalid
+                                   // JSON_PATH
     }
   } else {
     // TODO: Handle Json path starting without '$'
     return {};
-}
-if (json_path.empty() || (json_path[0] != '.' && json_path[0] != '[')) {
-  return {}; // TODO: Revisit
-}
+  }
+  if (json_path.empty() || (json_path[0] != '.' && json_path[0] != '[')) {
+    return {}; // TODO: Revisit
+  }
 
-return {}; // TODO: Revisit this also
+  return {}; // TODO: Revisit this also
 }
 inline simdjson_result<element>
 object::at_path(std::string_view json_path) const noexcept {

@@ -18,11 +18,19 @@ int main(void) {
     "phoneNumbers": [
       {
         "type"  : "iPhone",
-        "number": "0123-4567-8888"
+        "numbers": [
+          "0123-4567-8888",
+          "0123-4567-8788",
+          "0123-4567-8887"
+        ]
       },
       {
         "type"  : "home",
-        "number": "0123-4567-8910"
+        "numbers": [
+          "0123-4567-8910",
+          "0123-4267-8910",
+          "0103-4567-8910"
+        ]
       }
     ]
   })"_padded;
@@ -37,11 +45,14 @@ int main(void) {
   // selects all the top level elements
   // auto result = parsed_json.at_path_new("$.*");
 
-  // selects all address properties - $.address.*
-  auto result = parsed_json.at_path_new("$.address.*");
+  // // selects all address properties - $.address.*
+  // auto result = parsed_json.at_path_new("$.address.*");
 
   // selects all address properties - $["address"].*
   // auto result = parsed_json.at_path_new("$["address"].*");
+
+  // selects nested properties - $.*.streetAddress
+  auto result = parsed_json.at_path_new("$.*.streetAddress");
 
   std::vector<simdjson::dom::element> values = result.value();
 
