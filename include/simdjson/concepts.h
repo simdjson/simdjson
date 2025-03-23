@@ -32,14 +32,30 @@ SIMDJSON_IMPL_CONCEPT(op_append, operator+=)
 #undef SIMDJSON_IMPL_CONCEPT
 } // namespace details
 
+
+template <typename T>
+concept string_view_like = std::is_convertible_v<T, std::string_view> &&
+                           !std::is_convertible_v<T, const char*>;
+
+template<typename T>
+concept constructible_from_string_view = std::is_constructible_v<T, std::string_view>
+                                        && !std::is_same_v<T, std::string_view>
+                                        && std::is_default_constructible_v<T>;
+
+template<typename M>
+concept string_view_keyed_map = string_view_like<typename M::key_type>
+              && requires(std::remove_cvref_t<M>& m, typename M::key_type sv, typename M::mapped_type v) {
+    { m.emplace(sv, v) } -> std::same_as<std::pair<typename M::iterator, bool>>;
+};
+
 /// Check if T is a container that we can append to, including:
 ///   std::vector, std::deque, std::list, std::string, ...
 template <typename T>
 concept appendable_containers =
-    details::supports_emplace_back<T> || details::supports_emplace<T> ||
+    (details::supports_emplace_back<T> || details::supports_emplace<T> ||
     details::supports_push_back<T> || details::supports_push<T> ||
     details::supports_add<T> || details::supports_append<T> ||
-    details::supports_insert<T>;
+    details::supports_insert<T>) && !string_view_keyed_map<T>;
 
 /// Insert into the container however possible
 template <appendable_containers T, typename... Args>
@@ -106,6 +122,8 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   };
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
 };
+
+
 
 } // namespace concepts
 } // namespace simdjson

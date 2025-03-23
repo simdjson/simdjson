@@ -1243,7 +1243,6 @@ int main() {
 You may also conditionally fill in `std::optional` values.
 
 ```C++
-
   padded_string json =
       R"( { "car1": { "make": "Toyota", "model": "Camry",  "year": 2018,
        "tire_pressure": [ 40.1, 39.9 ] }
@@ -1255,6 +1254,23 @@ You may also conditionally fill in `std::optional` values.
   // car has no value, error != simdjson::SUCCESS
   error = doc["car1"].get<std::optional<Car>>().get(car);
   // car has value Car{"Toyota", "Camry", 2018, {40.1f, 39.9f}}
+  // error is simdjson::SUCCESS
+```
+
+You can also deserialized to map-like types with keys that can be constructed
+from `std::string_view` instances:
+
+
+```C++
+  padded_string json =
+      R"( { "car1": { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] }
+})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std:map<std::string,Car> cars;
+  error = doc.get<std:map<std::string,Car>>().get(cars);
+  // car has value car1->Car{"Toyota", "Camry", 2018, {40.1f, 39.9f}}
   // error is simdjson::SUCCESS
 ```
 
