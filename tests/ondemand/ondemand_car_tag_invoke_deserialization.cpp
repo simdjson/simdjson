@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 #include <optional>
+#include <map>
+#include <unordered_map>
 
 using namespace simdjson;
 
@@ -238,6 +240,40 @@ bool optional_car_deserialize() {
   TEST_SUCCEED();
 }
 
+
+bool car_deserialize_to_map() {
+  TEST_START();
+  std::map<std::string,std::string> expected =  { {"make", "Toyota"}, {"model", "Camry"}};
+  padded_string json =
+      R"( { "make": "Toyota", "model": "Camry" })"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  [[maybe_unused]] auto error = parser.iterate(json).get(doc);
+  static_assert(simdjson::concepts::string_view_keyed_map<std::map<std::string, std::string>>, "should be custom deserializable");
+  using map_type = typename std::map<std::string,std::string>;
+  static_assert(simdjson::custom_deserializable<map_type,simdjson::ondemand::value>, "should be custom deserializable");
+  map_type brands;
+  error = doc.get<map_type>().get(brands);
+  ASSERT_TRUE(brands == expected);
+  TEST_SUCCEED();
+}
+
+bool car_deserialize_with_map() {
+  TEST_START();
+  padded_string json =
+      R"( { "car1": { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] }
+})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  [[maybe_unused]] auto error = parser.iterate(json).get(doc);
+  std::map<std::string,Car> car;
+  error = doc.get<std::map<std::string,Car>>().get(car);
+  std::optional<Car> expected = Car{"Toyota", "Camry", 2018, {40.1f, 39.9f}};
+  ASSERT_TRUE(car["car1"] == expected);
+  TEST_SUCCEED();
+}
+
 bool car_doc_deserialize() {
   TEST_START();
   padded_string json = R"(  { "make": "Toyota", "model": "Camry",  "year": 2018,
@@ -320,7 +356,9 @@ bool car_unique_ptr_deserialize() {
   TEST_SUCCEED();
 }
 
-bool run() { return list_car_deserialize()
+bool run() { return car_deserialize_with_map()
+                    && car_deserialize_to_map()
+                    && list_car_deserialize()
                     && optional_car_deserialize()
                     && car_unique_ptr_deserialize()
                     && vector_car_deserialize()

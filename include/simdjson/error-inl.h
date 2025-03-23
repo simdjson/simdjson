@@ -6,6 +6,11 @@
 #include <iostream>
 
 namespace simdjson {
+
+inline bool is_fatal(error_code error) noexcept {
+  return error == TAPE_ERROR || error == INCOMPLETE_ARRAY_OR_OBJECT;
+}
+
 namespace internal {
   // We store the error code so we can validate the error message is associated with the right code
   struct error_code_info {
