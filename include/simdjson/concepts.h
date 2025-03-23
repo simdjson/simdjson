@@ -107,6 +107,22 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
 };
 
+template <typename T>
+concept string_view_like = std::is_convertible_v<T, std::string_view> &&
+                           !std::is_convertible_v<T, const char*>;
+
+template<typename T, typename U>
+concept constructible_from_string_view = string_view_like<U> && requires(T t, U sv) {
+    T{sv};
+};
+
+template<typename M, typename U>
+concept string_view_keyed_map = string_view_like<U> && requires(M m, U sv,
+                                              typename M::mapped_type v) {
+    { m.emplace(sv, v) } -> std::same_as<std::pair<typename M::iterator, bool>>;
+};
+
+
 } // namespace concepts
 } // namespace simdjson
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION

@@ -100,6 +100,34 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
 }
 
 
+/**
+ * We want to support std::map and std::unordered_map but only for
+ * string-keyed types.
+ */
+ template <concepts::string_view_keyed_map T, typename ValT>
+ requires(!require_custom_serialization<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
+  using value_type = typename std::remove_cvref_t<T>::mapped_type;
+  static_assert(
+     deserializable<value_type, ValT>,
+     "The specified value type inside the container must itself be deserializable");
+  static_assert(
+      std::is_default_constructible_v<value_type>,
+      "The specified value type inside the container must default constructible.");
+ SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+ SIMDJSON_TRY(val.get_object().get(arr));
+ for (auto v : obj) {
+    std::string_view key;
+    SIMDJSON_TRY(v.get_key().get(key));
+    value_type T;
+    SIMDJSON_TRY(v.get_value().get<T>().get(T));
+    out.emplace(key, T); // might throw an exception
+ }
+ return SUCCESS;
+}
+
+
+
 
 /**
  * This CPO (Customization Point Object) will help deserialize into
