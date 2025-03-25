@@ -7,10 +7,10 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/builder/json_string_builder.h"
+#include "simdjson/concepts.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #if SIMDJSON_STATIC_REFLECTION
 
-#include "simdjson/concepts.h"
 #include <charconv>
 #include <cstring>
 #include <experimental/meta>
