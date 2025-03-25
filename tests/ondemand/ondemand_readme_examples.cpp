@@ -10,6 +10,20 @@ using namespace std;
 using namespace simdjson;
 using error_code = simdjson::error_code;
 
+bool fatal_error() {
+  TEST_START();
+  padded_string badjson = R"( { "make": "Toyota", "model": "Camry",  "year"})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto errordoc = parser.iterate(badjson).get(doc);
+  if(errordoc != simdjson::SUCCESS) { return false; }
+  simdjson::ondemand::value v;
+  auto error = doc.get_object()["year"].get(v);
+  ASSERT_TRUE(simdjson::is_fatal(error));
+  ASSERT_FALSE(doc.is_alive());
+  TEST_SUCCEED();
+}
+
 bool simplepad() {
   std::string json = "[1]";
   ondemand::parser parser;
@@ -22,14 +36,14 @@ bool string1() {
   const char * data = "my data"; // 7 bytes
   simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
   std::cout << my_padded_data << std::endl;
-  return true;
+  TEST_SUCCEED();
 }
 
 bool string2() {
   std::string data = "my data";
   simdjson::padded_string my_padded_data(data); // copies to a padded buffer
   std::cout << my_padded_data << std::endl;
-  return true;
+  TEST_SUCCEED();
 }
 
 bool to_string_example_no_except() {
@@ -1893,6 +1907,7 @@ bool value_raw_json_object() {
 #endif
 bool run() {
   return true
+    && fatal_error()
 #if SIMDJSON_EXCEPTIONS
 #if SIMDJSON_CPLUSPLUS17
     && big_int_array()
