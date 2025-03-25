@@ -10,6 +10,7 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #if SIMDJSON_STATIC_REFLECTION
 
+#include "simdjson/concepts.h"
 #include <charconv>
 #include <cstring>
 #include <experimental/meta>
@@ -58,6 +59,27 @@ constexpr void atom(string_builder &b, const T &t) {
   b.escape_and_append_with_quotes(t);
 }
 
+template <concepts::string_view_keyed_map T>
+constexpr void atom(string_builder &b, const T &m) {
+  if (m.empty()) {
+    b.append_raw("{}");
+    return;
+  }
+  b.append('{');
+  bool first = true;
+  for (const auto& [key, value] : m) {
+    if (!first) {
+      b.append(',');
+    }
+    first = false;
+    // Keys must be convertible to string_view per the concept
+    b.escape_and_append_with_quotes(key);
+    b.append(':');
+    atom(b, value);
+  }
+  b.append('}');
+}
+
 
 template<typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
@@ -70,6 +92,7 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input);
 
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
+           !concepts::string_view_keyed_map<T> &&
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view>)
 constexpr void atom(string_builder &b, const T &t) {
