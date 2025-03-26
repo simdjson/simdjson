@@ -220,8 +220,7 @@ object::at_path_new(std::string_view json_path) const noexcept {
     return get_values();
   }
 
-  if (json_path.find("*") == std::string::npos) {
-    return {this->at_path(json_path)};
+  if (json_path.find("*") != std::string::npos) {
 
     // TODO: I am assuming is not valid to have a nested check on the result of
     // a wildcard so I'm not checking for wildcard here, but just keys This
@@ -245,16 +244,20 @@ object::at_path_new(std::string_view json_path) const noexcept {
           if (key == "*") {
             child = get_values();
           } else {
-            child = {at_pointer("/" + std::string(key))};
+            child = std::vector<element>{at_pointer("/" + std::string(key)).value()};
           }
 
-          json_path = json_path.substr(second_dot + 1); // * or
-          std::vector<element>::iterator iterator = child.begin();
+          json_path = json_path.substr(second_dot); // .example_key or .*
+          std::vector<element> child_value = child.value();
+          std::vector<element>::iterator iterator = child_value.begin();
 
-          auto result;
+          std::vector<element> result;
 
-          for (; iterator != child.end(); ++iterator) {
-          result.push_back(iterator->at_path_new("$" + std::string(json_path));
+          for (; iterator != child_value.end(); ++iterator) {
+            auto child_result =
+                iterator->at_path_new("$" + std::string(json_path)).value();
+            result.insert(result.end(), child_result.begin(),
+                          child_result.end());
           }
 
           return result;
@@ -263,21 +266,25 @@ object::at_path_new(std::string_view json_path) const noexcept {
         // recursive e.g "example_key"].* or "example_key"][*]
         size_t close_bracket = json_path.find(']');
         if (close_bracket != std::string_view::npos && json_path[0] == '"') {
-          auto key = json_path.substr(1, close_bracket - 1); // example_key
+          auto key = json_path.substr(1, close_bracket - 1); // example_key or *
 
           simdjson_result<std::vector<element>> child = {};
           if (key == "*") {
             child = get_values();
           } else {
-            child = {at_pointer("/" + std::string(key))};
+            child = std::vector<element>{at_pointer("/" + std::string(key)).value()};
           }
-          json_path = json_path.substr(close_bracket + 1);
-          std::vector<element>::iterator iterator = child.begin();
+          json_path = json_path.substr(close_bracket + 1); // .* or [*]
+          std::vector<element> child_value = child.value();
+          std::vector<element>::iterator iterator = child_value.begin();
 
-          auto result;
+          std::vector<element> result;
 
-          for (; iterator != child.end(); ++iterator) {
-          result.push_back(iterator->at_path_new("$" + std::string(json_path));
+          for (; iterator != child_value.end(); ++iterator) {
+            auto child_result =
+                iterator->at_path_new("$" + std::string(json_path)).value();
+            result.insert(result.end(), child_result.begin(),
+                          child_result.end());
           }
 
           return result;
@@ -289,12 +296,12 @@ object::at_path_new(std::string_view json_path) const noexcept {
 
       // TODO: Handle only key here
     } else {
+      // TODO: Handle JSON starting without $
       return INVALID_JSON_POINTER; // TODO: Create exception for invalid
                                    // JSON_PATH
     }
   } else {
-    // TODO: Handle Json path starting without '$'
-    return {};
+    return std::vector<element>{this->at_path(json_path).value()};
   }
   if (json_path.empty() || (json_path[0] != '.' && json_path[0] != '[')) {
     return {}; // TODO: Revisit
