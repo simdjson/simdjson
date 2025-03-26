@@ -133,9 +133,16 @@ int main() {
   bench_simdjson_static_reflection(my_struct);
 #ifdef SIMDJSON_RUST_VERSION
   printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.\n");
-  serde_benchmark::CitmCatalog * cc = serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
-  bench_rust(cc);
-  serde_benchmark::free_citm(cc);
+  // Create a Rust-compatible CitmCatalog structure from the JSON string
+  serde_benchmark::CitmCatalog* rust_data =
+    serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
+
+  if (rust_data == nullptr) {
+    printf("# Failed to initialize Rust data structure\n");
+  } else {
+    bench_rust(rust_data);
+    serde_benchmark::free_citm(rust_data);
+  }
 #endif
 #if SIMDJSON_BENCH_CPP_REFLECT
   bench_reflect_cpp(my_struct);

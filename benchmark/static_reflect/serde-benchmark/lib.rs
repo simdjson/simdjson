@@ -5,6 +5,7 @@ extern crate libc;
 use libc::{c_char, size_t};
 use serde::{Serialize, Deserialize};
 use std::{collections::HashMap, ffi::CString, ptr, slice};
+use serde::de::{self, Deserializer};
 /******************************************************/
 /******************************************************/
 /**
@@ -173,7 +174,7 @@ pub unsafe extern fn free_string(ptr: *const c_char) {
 #[derive(Serialize, Deserialize)]
 pub struct Area {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
     pub parent: i64,
     #[serde(rename = "childAreas")]
     pub child_areas: Vec<i64>,
@@ -182,71 +183,224 @@ pub struct Area {
 #[derive(Serialize, Deserialize)]
 pub struct AudienceSubCategory {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
     pub parent: i64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Event {
+    #[serde(default)]
+    pub description: Option<String>,
     pub id: i64,
-    pub name: String,
-    pub description: String,
-    #[serde(rename = "subTopic")]
-    pub sub_topic: i64,
-    pub topic: i64,
-    pub audience: Vec<i64>,
+    #[serde(default)]
+    pub logo: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub subTopicIds: Vec<i64>,
+    #[serde(default)]
+    pub subjectCode: Option<String>,
+    #[serde(default)]
+    pub subtitle: Option<String>,
+    #[serde(default)]
+    pub topicIds: Vec<i64>,
+    // Add a catch-all for any other fields
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Performance {
+    #[serde(default)]
     pub id: i64,
-    pub name: String,
+
+    #[serde(default)]
+    pub name: Option<String>,
+
+    #[serde(default)]
     pub event: i64,
-    pub start: String,
+
+    // This is the key fix - accept any JSON value type for timestamps
+    // This allows both string dates and integer timestamps (line 3511)
+    #[serde(default)]
+    pub start: serde_json::Value,
+
     #[serde(rename = "venueCode")]
-    pub venue_code: i64,
+    pub venue_code: String,
+
+    // Add a catch-all for any other fields
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SeatCategory {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
     pub areas: Vec<i64>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SubTopic {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
     pub parent: i64,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Topic {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Venue {
     pub id: i64,
-    pub name: String,
+    pub name: Option<String>,  // Changed to Option
     pub address: i64,
 }
 
-#[derive(Serialize, Deserialize)]
+// Custom deserializers
+fn deserialize_string_to_area<'de, D>(deserializer: D) -> Result<HashMap<String, Area>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        let id_num = id.parse::<i64>().unwrap_or(0);
+        result.insert(id.clone(), Area {
+            id: id_num,
+            name: Some(name),
+            parent: 0,
+            child_areas: Vec::new(),
+        });
+    }
+
+    Ok(result)
+}
+
+fn deserialize_string_to_audience_subcategory<'de, D>(deserializer: D) -> Result<HashMap<String, AudienceSubCategory>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        let id_num = id.parse::<i64>().unwrap_or(0);
+        result.insert(id.clone(), AudienceSubCategory {
+            id: id_num,
+            name: Some(name),
+            parent: 0,
+        });
+    }
+
+    Ok(result)
+}
+
+fn deserialize_string_to_seat_category<'de, D>(deserializer: D) -> Result<HashMap<String, SeatCategory>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        let id_num = id.parse::<i64>().unwrap_or(0);
+        result.insert(id.clone(), SeatCategory {
+            id: id_num,
+            name: Some(name),
+            areas: Vec::new(),
+        });
+    }
+
+    Ok(result)
+}
+
+fn deserialize_string_to_subtopic<'de, D>(deserializer: D) -> Result<HashMap<String, SubTopic>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        let id_num = id.parse::<i64>().unwrap_or(0);
+        result.insert(id.clone(), SubTopic {
+            id: id_num,
+            name: Some(name),
+            parent: 0,
+        });
+    }
+
+    Ok(result)
+}
+
+fn deserialize_string_to_topic<'de, D>(deserializer: D) -> Result<HashMap<String, Topic>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        let id_num = id.parse::<i64>().unwrap_or(0);
+        result.insert(id.clone(), Topic {
+            id: id_num,
+            name: Some(name),
+        });
+    }
+
+    Ok(result)
+}
+
+fn deserialize_string_to_venue<'de, D>(deserializer: D) -> Result<HashMap<String, Venue>, D::Error>
+where D: Deserializer<'de> {
+    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
+    let mut result = HashMap::new();
+
+    for (id, name) in string_map {
+        result.insert(id.clone(), Venue {
+            id: 0,
+            name: Some(name),
+            address: 0,
+        });
+    }
+
+    Ok(result)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CitmCatalog {
-    pub areas: HashMap<String, Area>,
-    #[serde(rename = "audienceSubCategory")]
-    pub audience_sub_category: HashMap<String, AudienceSubCategory>,
+    #[serde(rename = "areaNames")]
+    pub area_names: HashMap<String, String>,
+
+    #[serde(rename = "audienceSubCategoryNames")]
+    pub audience_subcategory_names: HashMap<String, String>,
+
+    #[serde(default)]
+    #[serde(rename = "blockNames")]
+    pub block_names: HashMap<String, String>,
+
     pub events: HashMap<String, Event>,
-    pub performances: HashMap<String, Performance>,
-    #[serde(rename = "seatCategory")]
-    pub seat_category: HashMap<String, SeatCategory>,
-    #[serde(rename = "subTopic")]
-    pub sub_topic: HashMap<String, SubTopic>,
-    pub topic: HashMap<String, Topic>,
-    pub venue: HashMap<String, Venue>,
+
+    #[serde(default)]
+    pub performances: Vec<Performance>,
+
+    #[serde(rename = "seatCategoryNames")]
+    pub seat_category_names: HashMap<String, String>,
+
+    #[serde(rename = "subTopicNames")]
+    pub subtopic_names: HashMap<String, String>,
+
+    #[serde(default)]
+    #[serde(rename = "subjectNames")]
+    pub subject_names: HashMap<String, String>,
+
+    #[serde(rename = "topicNames")]
+    pub topic_names: HashMap<String, String>,
+
+    #[serde(rename = "topicSubTopics")]
+    pub topic_subtopics: HashMap<String, Vec<i64>>,
+
+    #[serde(rename = "venueNames")]
+    pub venue_names: HashMap<String, String>,
+
+    // Catch-all for other fields
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 /// Creates a CitmCatalog from a JSON string (UTF-8 encoded).
@@ -256,6 +410,7 @@ pub unsafe extern "C" fn citm_from_str(
     raw_input_length: usize
 ) -> *mut CitmCatalog {
     if raw_input.is_null() {
+        eprintln!("Error: Input pointer is null");
         return ptr::null_mut();
     }
 
@@ -263,13 +418,20 @@ pub unsafe extern "C" fn citm_from_str(
     let bytes = slice::from_raw_parts(raw_input as *const u8, raw_input_length);
     let input_str = match std::str::from_utf8(bytes) {
         Ok(s) => s,
-        Err(_) => return ptr::null_mut(),
+        Err(e) => {
+            eprintln!("Error: Invalid UTF-8 string: {}", e);
+            return ptr::null_mut();
+        }
     };
 
     // Try deserializing the input string into CitmCatalog
     match serde_json::from_str::<CitmCatalog>(input_str) {
         Ok(catalog) => Box::into_raw(Box::new(catalog)),
-        Err(_) => ptr::null_mut(),
+        Err(e) => {
+            eprintln!("Error deserializing JSON: {}", e);
+            eprintln!("JSON snippet (first 200 chars): {:.200}...", input_str);
+            ptr::null_mut()
+        }
     }
 }
 
@@ -277,12 +439,27 @@ pub unsafe extern "C" fn citm_from_str(
 #[no_mangle]
 pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *mut c_char {
     if raw_catalog.is_null() {
-        return ptr::null_mut(); // use null_mut here
+        eprintln!("Error: Catalog pointer is null");
+        return ptr::null_mut();
     }
-    let serialized = "some JSON string..."; // Example only
-    match CString::new(serialized) {
-        Ok(cstr) => cstr.into_raw() as *mut c_char, // cast if needed
-        Err(_) => ptr::null_mut(),
+
+    // Fix: Actually serialize the catalog
+    let catalog = &*raw_catalog;
+
+    match serde_json::to_string(catalog) {
+        Ok(serialized) => {
+            match CString::new(serialized) {
+                Ok(cstr) => cstr.into_raw(),
+                Err(e) => {
+                    eprintln!("Error creating CString: {}", e);
+                    ptr::null_mut()
+                }
+            }
+        },
+        Err(e) => {
+            eprintln!("Error serializing catalog to JSON: {}", e);
+            ptr::null_mut()
+        }
     }
 }
 
