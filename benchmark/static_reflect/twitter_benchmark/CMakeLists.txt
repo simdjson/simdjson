@@ -8,7 +8,6 @@ add_executable(benchmark_serialization_twitter benchmark_serialization_twitter.c
     target_compile_definitions(benchmark_serialization_twitter PRIVATE SIMDJSON_RUST_VERSION="${Rust_VERSION}")
 endif()
 target_link_libraries(benchmark_serialization_twitter PRIVATE simdjson::simdjson nlohmann_json)
-target_link_libraries(benchmark_serialization_twitter PRIVATE profiler)
 target_link_libraries(benchmark_serialization_twitter PRIVATE reflectcpp)
 target_compile_definitions(benchmark_serialization_twitter PRIVATE SIMDJSON_BENCH_CPP_REFLECT=1)
 
