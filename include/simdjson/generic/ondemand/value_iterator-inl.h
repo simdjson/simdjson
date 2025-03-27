@@ -778,19 +778,23 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   }
   return result;
 }
+
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1+1]; // +1 for null termination
-  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
-  auto result = parse_bool(tmpbuf);
-  if(result.error() == SUCCESS) {
-    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
-    advance_root_scalar("bool");
-  }
-  return result;
+  // We have a boolean if we have either "true" or "false" and the next character is either
+  // a structural character or whitespace. We also check that the length is correct:
+  // "true" and "false" are 4 and 5 characters long, respectively.
+  bool value_true = (max_len >= 4 && !atomparsing::str4ncmp(json, "true") &&
+  (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])));
+  bool value_false = (max_len >= 5 && !atomparsing::str4ncmp(json, "false") &&
+  (max_len == 5 || jsoncharutils::is_structural_or_whitespace(json[5])));
+  if(value_true == false && value_false == false) { return incorrect_type_error("Not a boolean"); }
+  if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  advance_root_scalar("bool");
+  return value_true;
 }
+
 simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("null");
