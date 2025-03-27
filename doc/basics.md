@@ -1949,6 +1949,8 @@ conclude that you have trailing content and that your document is not valid JSON
 You may then use `doc.current_location()` to obtain a pointer to the start of the trailing
 content.
 
+Example 1.
+
 ```C++
   auto json = R"([1, 2] foo ])"_padded;
   ondemand::parser parser;
@@ -1959,6 +1961,21 @@ content.
   }
   if (!doc.at_end()) {
     // In this instance, we will be left pointing at 'foo' since we have consumed the array [1,2].
+    std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
+  }
+```
+
+Example 2.
+
+```cpp
+  auto json = R"(["extra close"]])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::array array = doc.get_array();
+  for (std::string_view values : array) {
+    std::cout << values << std::endl;
+  }
+  if(!doc.at_end()) {
     std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
   }
 ```

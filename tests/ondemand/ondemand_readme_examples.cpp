@@ -286,6 +286,22 @@ bool at_end() {
   TEST_SUCCEED();
 }
 
+
+bool at_end_array() {
+  TEST_START();
+  auto json = R"(["extra close"]])"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  ondemand::array array = doc.get_array();
+  for (std::string_view values : array) {
+    std::cout << values << std::endl;
+  }
+  if(!doc.at_end()) {
+    std::cerr << "trailing content at byte index " << doc.current_location() - json.data() << std::endl;
+  }
+  TEST_SUCCEED();
+}
+
 bool examplecrt() {
   TEST_START();
   padded_string padded_input_json = R"([
@@ -1971,8 +1987,9 @@ bool run() {
     && current_location_tape_error_with_except()
     && examplecrt()
     && examplecrt_realloc()
+    && at_end_array()
   #endif
-  ;
+    ;
 }
 
 int main(int argc, char *argv[]) {
