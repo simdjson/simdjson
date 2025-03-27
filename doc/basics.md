@@ -1270,8 +1270,8 @@ from `std::string_view` instances:
 })"_padded;
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
-  std:map<std::string,Car> cars;
-  error = doc.get<std:map<std::string,Car>>().get(cars);
+  std::map<std::string,Car> cars;
+  error = doc.get<std::map<std::string,Car>>().get(cars);
   // car has value car1->Car{"Toyota", "Camry", 2018, {40.1f, 39.9f}}
   // error is simdjson::SUCCESS
 ```

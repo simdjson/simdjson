@@ -84,6 +84,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothr
   return SUCCESS;
 }
 
+
 /**
  * STL containers have several constructors including one that takes a single
  * size argument. Thus, some compilers (Visual Studio) will not be able to
@@ -165,7 +166,45 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
  return SUCCESS;
 }
 
+template <concepts::string_view_keyed_map T>
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept {
+  using value_type = typename std::remove_cvref_t<T>::mapped_type;
 
+  out.clear();
+  for (auto field : obj) {
+    std::string_view key;
+    SIMDJSON_TRY(field.unescaped_key().get(key));
+
+    SIMDJSON_IMPLEMENTATION::ondemand::value value_obj;
+    SIMDJSON_TRY(field.value().get(value_obj));
+
+    value_type this_value;
+    SIMDJSON_TRY(value_obj.get(this_value));
+    out.emplace(typename T::key_type(key), std::move(this_value));
+  }
+  return SUCCESS;
+}
+
+template <concepts::string_view_keyed_map T>
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::value &val, T &out) noexcept {
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  SIMDJSON_TRY(val.get_object().get(obj));
+  return simdjson::deserialize(obj, out);
+}
+
+template <concepts::string_view_keyed_map T>
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document &doc, T &out) noexcept {
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  SIMDJSON_TRY(doc.get_object().get(obj));
+  return simdjson::deserialize(obj, out);
+}
+
+template <concepts::string_view_keyed_map T>
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &doc, T &out) noexcept {
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  SIMDJSON_TRY(doc.get_object().get(obj));
+  return simdjson::deserialize(obj, out);
+}
 
 
 /**
