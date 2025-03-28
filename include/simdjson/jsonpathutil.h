@@ -2,7 +2,7 @@
 #define SIMDJSON_JSONPATHUTIL_H
 
 #include <string>
-#include <string_view>
+#include "simdjson/common_defs.h"
 
 namespace simdjson {
 /**

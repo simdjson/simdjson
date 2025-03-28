@@ -233,6 +233,7 @@ double from_chars(const char *first, const char* end) noexcept;
 // and even if __cpp_lib_string_view is undefined, it is the case
 // with Apple clang version 11.
 // We must handle it. *This is important.*
+#ifndef _MSC_VER
 #ifndef SIMDJSON_HAS_STRING_VIEW
 #if defined __has_include
 // do not combine the next #if with the previous one (unsafe)
@@ -248,6 +249,7 @@ double from_chars(const char *first, const char* end) noexcept;
 #endif // __has_include (<string_view>)
 #endif // defined __has_include
 #endif // def SIMDJSON_HAS_STRING_VIEW
+#endif // def _MSC_VER
 // end of complicated but important routine to try to detect string_view.
 
 //
