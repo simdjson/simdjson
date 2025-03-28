@@ -1257,7 +1257,7 @@ You may also conditionally fill in `std::optional` values.
   // error is simdjson::SUCCESS
 ```
 
-You can also deserialized to map-like types with keys that can be constructed
+You can also deserialize to map-like types with keys that can be constructed
 from `std::string_view` instances:
 
 
