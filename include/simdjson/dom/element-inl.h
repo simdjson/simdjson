@@ -432,15 +432,16 @@ inline simdjson_result<std::vector<element>> element::at_path_new(std::string_vi
     case internal::tape_type::START_OBJECT:
       return object(tape).at_path_new(json_path);
     case internal::tape_type::START_ARRAY:
-      return INVALID_JSON_POINTER;
+      return array(tape).at_path_new(json_path);
       // return array(tape).at_path_new(json_path); TODO: To revisit
     default: {
-      if (!json_path.empty()) { // a non-empty string can be invalid, or accessing a primitive (issue 2154)
-        if (is_pointer_well_formed(json_path)) {
-          return NO_SUCH_FIELD;
-        }
-        return INVALID_JSON_POINTER;
-      }
+      return std::vector<element>{};
+      // if (!json_path.empty()) { // a non-empty string can be invalid, or accessing a primitive (issue 2154)
+      //   if (is_pointer_well_formed(json_path)) {
+      //     return NO_SUCH_FIELD;
+      //   }
+      //   return INVALID_JSON_POINTER;
+      // }
 
       // TODO: Handle later
       // an empty string means that we return the current node
