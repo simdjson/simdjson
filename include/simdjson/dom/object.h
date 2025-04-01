@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_DOM_OBJECT_H
 #define SIMDJSON_DOM_OBJECT_H
 
+#include <vector>
+
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/element.h"
 #include "simdjson/internal/tape_ref.h"
@@ -172,6 +174,8 @@ public:
    */
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
+  inline simdjson_result<std::vector<element>> at_path_new(std::string_view json_path) const noexcept;
+
   /**
    * Get the value associated with the given JSONPath expression. We only support
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
@@ -202,6 +206,8 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
   inline simdjson_result<element> at_key(std::string_view key) const noexcept;
+
+  inline simdjson_result<std::vector<element>> get_values() const noexcept;
 
   /**
    * Get the value associated with the given key in a case-insensitive manner.
@@ -261,8 +267,10 @@ public:
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   simdjson_result<dom::element> operator[](int) const noexcept = delete;
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> at_path_new(std::string_view json_path_new) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;
   inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
