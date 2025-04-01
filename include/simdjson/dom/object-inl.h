@@ -237,7 +237,7 @@ object::at_path_new(std::string_view json_path) const noexcept {
 
         // recursive e.g example_key.* or example_key[*]
         size_t second_dot = json_path.find('.');
-        if (second_dot != std::string_view::npos && json_path[0] != '"') {
+        if (second_dot != std::string_view::npos && (json_path[0] != '"' && json_path[0] != '\'')) {
           auto key = json_path.substr(0, second_dot); // example_key or *
           simdjson_result<std::vector<element>> child = {};
 
@@ -265,8 +265,8 @@ object::at_path_new(std::string_view json_path) const noexcept {
 
         // recursive e.g "example_key"].* or "example_key"][*]
         size_t close_bracket = json_path.find(']');
-        if (close_bracket != std::string_view::npos && json_path[0] == '"') {
-          auto key = json_path.substr(1, close_bracket - 1); // example_key or *
+        if (close_bracket != std::string_view::npos && (json_path[0] == '"' || json_path[0] == '\'')) {
+          auto key = json_path.substr(1, close_bracket - 2); // example_key or *
 
           simdjson_result<std::vector<element>> child = {};
           if (key == "*") {
