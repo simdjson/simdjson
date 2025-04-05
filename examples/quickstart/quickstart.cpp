@@ -45,11 +45,17 @@ int main(void) {
   // selects all the top level elements
   // auto result = parsed_json.at_path_new("$.*");
 
-  // // selects all address properties - $.address.*
+  // selects all the top level elements
+  // auto result = parsed_json.at_path_new("$[*]");
+
+  // selects all address properties - $.address.*
   // auto result = parsed_json.at_path_new("$.address.*");
 
   // selects all address properties - $["address"].*
-  auto result = parsed_json.at_path_new("$['address'].*");
+  // auto result = parsed_json.at_path_new("$['address'].*");
+
+  // selects all phoneNumbers properties - $.phoneNumbers.*
+  auto result = parsed_json.at_path_new("$.phoneNumbers.*");
 
   // selects nested properties - $.*.streetAddress
   // auto result = parsed_json.at_path_new("$.*.streetAddress");

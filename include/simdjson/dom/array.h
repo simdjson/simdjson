@@ -143,6 +143,8 @@ public:
    */
   inline simdjson_result<element> at(size_t index) const noexcept;
 
+  inline simdjson_result<std::vector<element>> get_values() const noexcept;
+
   /**
    * Implicitly convert object to element
    */
@@ -172,6 +174,7 @@ public:
   inline simdjson_result<std::vector<dom::element>> at_path_new(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);
