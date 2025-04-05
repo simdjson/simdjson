@@ -181,7 +181,12 @@ array::at_path_new(std::string_view json_path) const noexcept {
     return get_values();
   }
 
-  return std::vector<element>{at_path(json_path).value()};
+  auto result = at_path(json_path);
+  if (result.error()) {
+    return std::vector<element>{};
+  }
+
+  return std::vector{result.value()};
 }
 
 inline simdjson_result<element>

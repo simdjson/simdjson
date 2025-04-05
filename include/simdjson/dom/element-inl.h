@@ -433,7 +433,6 @@ inline simdjson_result<std::vector<element>> element::at_path_new(std::string_vi
       return object(tape).at_path_new(json_path);
     case internal::tape_type::START_ARRAY:
       return array(tape).at_path_new(json_path);
-      // return array(tape).at_path_new(json_path); TODO: To revisit
     default: {
       return std::vector<element>{};
       // if (!json_path.empty()) { // a non-empty string can be invalid, or accessing a primitive (issue 2154)

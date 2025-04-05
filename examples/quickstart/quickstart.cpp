@@ -55,10 +55,10 @@ int main(void) {
   // auto result = parsed_json.at_path_new("$['address'].*");
 
   // selects all phoneNumbers properties - $.phoneNumbers.*
-  auto result = parsed_json.at_path_new("$.phoneNumbers.*");
+  // auto result = parsed_json.at_path_new("$.phoneNumbers.*");
 
   // selects nested properties - $.*.streetAddress
-  // auto result = parsed_json.at_path_new("$.*.streetAddress");
+  auto result = parsed_json.at_path_new("$.*.streetAddress");
 
   std::vector<simdjson::dom::element> values = result.value();
 
