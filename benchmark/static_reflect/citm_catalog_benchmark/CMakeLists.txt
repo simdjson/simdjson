@@ -8,7 +8,6 @@ if(TARGET serde-benchmark)
 endif()
 
 target_link_libraries(benchmark_serialization_citm_catalog PRIVATE simdjson::simdjson nlohmann_json)
-target_link_libraries(benchmark_serialization_citm_catalog PRIVATE profiler)
 target_link_libraries(benchmark_serialization_citm_catalog PRIVATE reflectcpp)
 target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE SIMDJSON_BENCH_CPP_REFLECT=1)
 
