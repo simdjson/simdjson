@@ -174,7 +174,7 @@ public:
    */
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
-  inline simdjson_result<std::vector<element>> at_path_new(std::string_view json_path) const noexcept;
+  inline simdjson_result<std::vector<element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
 
   /**
    * Get the value associated with the given JSONPath expression. We only support
@@ -267,7 +267,7 @@ public:
   inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   simdjson_result<dom::element> operator[](int) const noexcept = delete;
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
-  inline simdjson_result<std::vector<dom::element>> at_path_new(std::string_view json_path_new) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path_new) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
   inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;

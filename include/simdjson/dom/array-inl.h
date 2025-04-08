@@ -70,12 +70,12 @@ inline simdjson_result<dom::element> simdjson_result<dom::array>::at_path(
 }
 
 inline simdjson_result<std::vector<dom::element>>
-simdjson_result<dom::array>::at_path_new(
+simdjson_result<dom::array>::at_path_with_wildcard(
     std::string_view json_path) const noexcept {
   if (error()) {
     return error();
   }
-  return first.at_path_new(json_path);
+  return first.at_path_with_wildcard(json_path);
 }
 
 inline simdjson_result<dom::element>
@@ -169,7 +169,7 @@ array::at_pointer(std::string_view json_pointer) const noexcept {
 }
 
 inline simdjson_result<std::vector<element>>
-array::at_path_new(std::string_view json_path) const noexcept {
+array::at_path_with_wildcard(std::string_view json_path) const noexcept {
   if (json_path.length() == 3 && json_path[0] == '$' && json_path[1] == '.' &&
       json_path[2] == '*') {
     return get_values();

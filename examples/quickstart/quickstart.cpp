@@ -39,26 +39,28 @@ int main(void) {
   // std::cout << tweets["search_metadata"]["count"] << " results." <<
   // std::endl;
 
+
+
   simdjson::dom::element parsed_json = parser.parse(json_string);
   // std::cout << parsed_json["firstName"] << std::endl;
 
   // selects all the top level elements
-  // auto result = parsed_json.at_path_new("$.*");
+  auto result = parsed_json.at_path_with_wildcard("$.*");
 
   // selects all the top level elements
-  // auto result = parsed_json.at_path_new("$[*]");
+  // auto result = parsed_json.at_path_with_wildcard("$[*]");
 
   // selects all address properties - $.address.*
-  // auto result = parsed_json.at_path_new("$.address.*");
+  // auto result = parsed_json.at_path_with_wildcard("$.address.*");
 
   // selects all address properties - $["address"].*
-  // auto result = parsed_json.at_path_new("$['address'].*");
+  // auto result = parsed_json.at_path_with_wildcard("$['address'].*");
 
   // selects all phoneNumbers properties - $.phoneNumbers.*
-  // auto result = parsed_json.at_path_new("$.phoneNumbers.*");
+  // auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
 
   // selects nested properties - $.*.streetAddress
-  auto result = parsed_json.at_path_new("$.*.streetAddress");
+  // auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
 
   std::vector<simdjson::dom::element> values = result.value();
 

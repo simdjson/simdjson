@@ -48,12 +48,12 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(
   return first.at_pointer(json_pointer);
 }
 inline simdjson_result<std::vector<dom::element>>
-simdjson_result<dom::object>::at_path_new(
+simdjson_result<dom::object>::at_path_with_wildcard(
     std::string_view json_path) const noexcept {
   if (error()) {
     return error();
   }
-  return first.at_path_new(json_path);
+  return first.at_path_with_wildcard(json_path);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(
     std::string_view json_path) const noexcept {
@@ -193,7 +193,7 @@ object::at_pointer(std::string_view json_pointer) const noexcept {
   return child;
 }
 inline simdjson_result<std::vector<element>>
-object::at_path_new(std::string_view json_path) const noexcept {
+object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(
       tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   if (json_path
@@ -255,7 +255,7 @@ object::at_path_new(std::string_view json_path) const noexcept {
 
           for (; iterator != child_value.end(); ++iterator) {
             auto child_result =
-                iterator->at_path_new("$" + std::string(json_path)).value();
+                iterator->at_path_with_wildcard("$" + std::string(json_path)).value();
             result.insert(result.end(), child_result.begin(),
                           child_result.end());
           }
@@ -282,7 +282,7 @@ object::at_path_new(std::string_view json_path) const noexcept {
 
           for (; iterator != child_value.end(); ++iterator) {
             auto child_result =
-                iterator->at_path_new("$" + std::string(json_path)).value();
+                iterator->at_path_with_wildcard("$" + std::string(json_path)).value();
             result.insert(result.end(), child_result.begin(),
                           child_result.end());
           }
