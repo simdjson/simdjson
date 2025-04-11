@@ -3,13 +3,7 @@
 #include <chrono>
 #include <ratio>
 
-simdjson::dom::parser parser;
-simdjson::dom::element parsed_json;
-
-simdjson::simdjson_result<std::vector<simdjson::dom::element>> result;
-
-static void DoSetup(const benchmark::State &state) {
-  simdjson::padded_string json_string = R"(
+simdjson::padded_string json_string = R"(
   {
     "firstName": "John",
     "lastName" : "doe",
@@ -39,60 +33,16 @@ static void DoSetup(const benchmark::State &state) {
     ]
   })"_padded;
 
-  parsed_json = parser.parse(json_string);
-}
+simdjson::dom::parser parser{};
+simdjson::dom::element parsed_json = parser.parse(json_string);
 
-void wildcard_dot_top_level_elements() {
-  // selects all the top level elements
-  auto result = parsed_json.at_path_with_wildcard("$.*");
-}
-
-void wildcard_bracket_top_level_elements() {
-  // selects all the top level elements
-  auto result = parsed_json.at_path_with_wildcard("$[*]");
-}
-
-void wildcard_dot_element_properties_address() {
-  // selects all address properties - $.address.*
-  auto result = parsed_json.at_path_with_wildcard("$.address.*");
-}
-
-void wildcard_bracket_element_properties_address() {
-  // selects all address properties - $["address"].*
-  auto result = parsed_json.at_path_with_wildcard("$['address'].*");
-}
-void wildcard_dot_element_properties_phoneNumbers() {
-  // selects all phoneNumbers properties - $.phoneNumbers.*
-  auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
-}
-
-void wildcard_bracket_element_nested_properties_streetAddress() {
-  // selects nested properties - $.*.streetAddress
-  auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
-}
-
-static void BM_json_path_with_wildcard(benchmark::State &state, Func func) {
-  int microseconds = state.range(0);
-
-  std::chrono::duration<double, std::micro> sleep_duration{
-      static_cast<double>(microseconds)};
-
+void BM_wildcard_dot_top_level_elements(benchmark::State &state) {
   for (auto _ : state) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    func();
+    // selects all the top level elements
+    auto result = parsed_json.at_path_with_wildcard("$.*");
     std::vector<simdjson::dom::element> values = result.value();
-
-    std::string string_result;
-    string_result = "[";
-    for (int i = 0; i < values.size(); ++i) {
-      simdjson::internal::string_builder<> sb;
-      sb.append(values[i]);
-      string_result = string_result +=
-          std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-    }
-    string_result += "\n]";
-    std::cout << string_result << std::endl;
 
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -103,17 +53,120 @@ static void BM_json_path_with_wildcard(benchmark::State &state, Func func) {
   }
 }
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_dot_top_level_elements_test, &wildcard_dot_top_level_elements);
+BENCHMARK(BM_wildcard_dot_top_level_elements)->UseManualTime();
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_bracket_top_level_elements_test, &wildcard_bracket_top_level_elements);
+void BM_wildcard_bracket_top_level_elements(benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_dot_element_properties_address_test, &wildcard_dot_element_properties_address);
+    // selects all the top level elements
+    auto result = parsed_json.at_path_with_wildcard("$[*]");
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_bracket_element_properties_address_test, &wildcard_bracket_element_properties_address);
+    std::vector<simdjson::dom::element> values = result.value();
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_dot_element_properties_phoneNumbers_test, &wildcard_dot_element_properties_phoneNumbers);
+    auto end = std::chrono::high_resolution_clock::now();
 
-BENCHMARK_CAPTURE(BM_json_path_with_wildcard, wildcard_bracket_element_nested_properties_streetAddress_test, &wildcard_bracket_element_nested_properties_streetAddress);
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_bracket_top_level_elements)->UseManualTime();
+
+void BM_wildcard_dot_element_properties_address(benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects all address properties - $.address.*
+    auto result = parsed_json.at_path_with_wildcard("$.address.*");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_dot_element_properties_address)->UseManualTime();
+
+void BM_wildcard_bracket_element_properties_address(benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects all address properties - $["address"].*
+    auto result = parsed_json.at_path_with_wildcard("$['address'].*");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_bracket_element_properties_address)->UseManualTime();
+
+void BM_wildcard_dot_element_properties_phoneNumbers(benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects all phoneNumbers properties - $.phoneNumbers.*
+    auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_dot_element_properties_phoneNumbers)->UseManualTime();
+
+void BM_wildcard_bracket_element_nested_properties_streetAddress(
+    benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects nested properties - $.*.streetAddress
+    auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_bracket_element_nested_properties_streetAddress)
+    ->UseManualTime();
+
+void print_result(std::vector<simdjson::dom::element> &values) {
+  std::string string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
+  }
+  string_result += "\n]";
+  std::cout << string_result << std::endl;
+}
 
 BENCHMARK_MAIN();
-}
