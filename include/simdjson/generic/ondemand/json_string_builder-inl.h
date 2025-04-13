@@ -421,7 +421,10 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       bool negative = v < 0;
-      unsigned_type pv = static_cast<unsigned_type>(negative ? -v : v);
+      unsigned_type pv = static_cast<unsigned_type>(v);
+      if (negative) {
+        pv = 0 - pv; // the 0 is for Microsoft
+      }
       size_t dc = internal::digit_count(pv);
       if (negative) {
         buffer.get()[position++] = '-';
