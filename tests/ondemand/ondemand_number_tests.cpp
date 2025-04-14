@@ -184,6 +184,20 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool issue_1532() {
+    TEST_START();
+    padded_string negative_zero_string(std::string_view("-0"));
+    simdjson::ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(negative_zero_string).get(doc));
+    double x;
+    ASSERT_SUCCESS(doc.get(x));
+    // should be minus 0
+    ASSERT_TRUE(std::signbit(x));
+    ASSERT_TRUE(x == -0);
+    TEST_SUCCEED();
+  }
+
   bool old_crashes() {
     TEST_START();
     github_issue_1273();
@@ -504,7 +518,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return gigantic_big_int() &&
+    return issue_1532() &&
+           gigantic_big_int() &&
            big_int_not_zero() &&
            negative_big_int() &&
            issue2099() &&
