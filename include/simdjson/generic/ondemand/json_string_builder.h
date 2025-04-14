@@ -68,12 +68,56 @@ public:
    * There is no UTF-8 validation.
    */
   simdjson_inline void escape_and_append_with_quotes(char input)  noexcept;
+
+  /**
+   * Append the character surrounded by double quotes, after escaping it.
+   * There is no UTF-8 validation.
+   */
+   simdjson_inline void escape_and_append_with_quotes(const char* input)  noexcept;
+
   /**
    * Append the C string directly, without escaping.
    * There is no UTF-8 validation.
    */
   simdjson_inline void append_raw(const char *c)  noexcept;
 
+  /**
+   * Append "{" to the buffer.
+   */
+  simdjson_inline void start_object()  noexcept;
+
+  /**
+   * Append "}" to the buffer.
+   */
+  simdjson_inline void end_object()  noexcept;
+
+  /**
+   * Append "[" to the buffer.
+   */
+  simdjson_inline void start_array()  noexcept;
+
+  /**
+   * Append "]" to the buffer.
+   */
+  simdjson_inline void end_array()  noexcept;
+
+  /**
+   * Append "," to the buffer.
+   */
+  simdjson_inline void append_comma()  noexcept;
+
+  /**
+   * Append ":" to the buffer.
+   */
+  simdjson_inline void append_colon()  noexcept;
+
+  /**
+   * Append a key-value pair to the buffer.
+   * The key is escaped and surrounded by double quotes.
+   * The value is escaped if it is a string.
+   */
+   template<typename key_type, typename value_type>
+  simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
   /**
    * Append the std::string_view directly, without escaping.
    * There is no UTF-8 validation.
@@ -155,7 +199,6 @@ private:
    * We use this helper function to make sure that is_valid is kept consistent.
    */
   simdjson_inline void set_valid(bool valid) noexcept;
-
 
   std::unique_ptr<char[]> buffer{};
   size_t position{0};

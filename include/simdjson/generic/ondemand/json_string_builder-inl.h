@@ -486,6 +486,11 @@ string_builder::escape_and_append_with_quotes(char input) noexcept {
   }
 }
 
+simdjson_inline void string_builder::escape_and_append_with_quotes(const char* input)  noexcept {
+  std::string_view cinput(input);
+  escape_and_append_with_quotes(cinput);
+}
+
 simdjson_inline void string_builder::append_raw(const char *c) noexcept {
   size_t len = std::strlen(c);
   append_raw(c, len);
@@ -536,6 +541,75 @@ simdjson_inline simdjson_result<const char *> string_builder::c_str() noexcept {
 
 simdjson_inline bool string_builder::validate_unicode() const noexcept {
   return simdjson::validate_utf8(buffer.get(), position);
+}
+
+simdjson_inline void string_builder::start_object()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = '{';
+  }
+}
+
+
+simdjson_inline void string_builder::end_object()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = '}';
+  }
+}
+
+
+simdjson_inline void string_builder::start_array()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = '[';
+  }
+}
+
+
+simdjson_inline void string_builder::end_array()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = ']';
+  }
+}
+
+
+simdjson_inline void string_builder::append_comma()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = ',';
+  }
+}
+
+
+simdjson_inline void string_builder::append_colon()  noexcept {
+  if (capacity_check(1)) {
+    buffer.get()[position++] = ':';
+  }
+}
+
+template<typename key_type, typename value_type>
+simdjson_inline void string_builder::append_key_value(key_type key, value_type value) noexcept {
+  static_assert(
+    std::is_arithmetic<value_type>::value ||
+    std::is_same<value_type, char>::value ||
+    std::is_same<value_type, const char*>::value ||
+    std::is_convertible<value_type, std::string_view>::value ||
+    std::is_same<value_type, std::nullptr_t>::value,
+    "Unsupported value type");
+  static_assert(
+    std::is_same<key_type, const char*>::value ||
+    std::is_convertible<key_type, std::string_view>::value,
+    "Unsupported key type");
+  escape_and_append_with_quotes(key);
+  append_colon();
+  SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
+    append_null();
+  } else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, char>::value) {
+    escape_and_append_with_quotes(value);
+  } else SIMDJSON_IF_CONSTEXPR(std::is_convertible<value_type, std::string_view>::value) {
+    escape_and_append_with_quotes(value);
+  } else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, const char*>::value) {
+    escape_and_append_with_quotes(value);
+  } else {
+    append(value);
+  }
 }
 
 } // namespace builder

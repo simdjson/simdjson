@@ -217,7 +217,7 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
-    void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
+    void serialize_car_long(const Car& car, simdjson::builder::string_builder& builder) {
         // start of JSON
         builder.append_raw("{");
 
@@ -257,6 +257,55 @@ namespace builder_tests {
         builder.append_raw("}");
     }
 
+    bool car_test_long() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        serialize_car_long(c, sb);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+
+
+    void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
+        // start of JSON
+        builder.start_object();
+
+        // "make"
+        builder.append_key_value("make", car.make);
+        builder.append_comma();
+
+        // "model"
+        builder.append_key_value("model", car.model);
+
+        builder.append_comma();
+
+        // "year"
+        builder.append_key_value("year", car.year);
+
+        builder.append_comma();
+
+        // "tire_pressure"
+        builder.escape_and_append_with_quotes("tire_pressure");
+        builder.append_colon();
+        builder.start_array();
+        // vector tire_pressure
+        for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
+            builder.append(car.tire_pressure[i]);
+            if (i < car.tire_pressure.size() - 1) {
+                builder.append_comma();
+            }
+        }
+        // end of array
+        builder.end_array();
+
+        // end of object
+        builder.end_object();
+    }
+
     bool car_test() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -269,11 +318,11 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
-
     bool run() {
         return
             various_integers() &&
             various_unsigned_integers() &&
+            car_test_long() &&
             car_test() &&
     #if SIMDJSON_EXCEPTIONS
             string_convertion_except() &&

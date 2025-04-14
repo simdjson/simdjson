@@ -47,42 +47,33 @@ Example: string_builder
 
     void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
         // start of JSON
-        builder.append_raw("{");
+        builder.start_object();
 
         // "make"
-        builder.escape_and_append_with_quotes("make");
-        builder.append_raw(":");
-        builder.escape_and_append_with_quotes(car.make);
+        builder.append_key_value("make", car.make);
+        builder.append_comma();
 
         // "model"
-        builder.append_raw(",");
-        builder.escape_and_append_with_quotes("model");
-        builder.append_raw(":");
-        builder.escape_and_append_with_quotes(car.model);
+        builder.append_key_value("model", car.model);
+        builder.append_comma();
 
         // "year"
-        builder.append_raw(",");
-        builder.escape_and_append_with_quotes("year");
-        builder.append_raw(":");
-        builder.append(car.year);
+        builder.append_key_value("year", car.year);
+        builder.append_comma();
 
         // "tire_pressure"
-        builder.append_raw(",");
         builder.escape_and_append_with_quotes("tire_pressure");
-        builder.append_raw(":[");
-
+        builder.append_colon();
+        builder.start_array();
         // vector tire_pressure
         for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
             builder.append(car.tire_pressure[i]);
             if (i < car.tire_pressure.size() - 1) {
-                builder.append_raw(",");
+                builder.append_comma();
             }
         }
-        // end of array
-        builder.append_raw("]");
-
-        // end of object
-        builder.append_raw("}");
+        builder.end_array();
+        builder.end_object();
     }
 
     bool car_test() {
