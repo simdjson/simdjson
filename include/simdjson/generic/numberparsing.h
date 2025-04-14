@@ -647,12 +647,16 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   if (i > uint64_t(INT64_MAX)) {
     WRITE_UNSIGNED(i, src, writer);
   } else {
+#if SIMDJSON_MINUS_ZERO_AS_FLOAT
     if(i == 0 && negative) {
       // We have to write -0.0 instead of 0
       WRITE_DOUBLE(-0.0, src, writer);
     } else {
       WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
     }
+#else
+  WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
+#endif
   }
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
   return SUCCESS;

@@ -399,7 +399,10 @@ namespace number_tests {
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
-    return basic_test_64bit("-0", -0.0) &&
+    return
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+           basic_test_64bit("-0", -0.0) &&
+    #endif // SIMDJSON_MINUS_ZERO_AS_FLOAT
            basic_test_64bit("-1e-999", -0.0) &&
            basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
            basic_test_64bit("4503599627370496.5", 4503599627370496.5) &&
