@@ -1117,6 +1117,12 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
       if (simdjson_unlikely(digit_count == 19 && memcmp(src, smaller_big_integer, 19) > 0)) {
         return number_type::big_integer;
       }
+#if SIMDJSON_MINUS_ZERO_AS_FLOAT
+      if(digit_count == 1 && src[0] == '0') {
+        // We have to write -0.0 instead of 0
+        return number_type::floating_point_number;
+      }
+#endif
       return number_type::signed_integer;
     }
     // Let us check if we have a big integer (>=2**64).
