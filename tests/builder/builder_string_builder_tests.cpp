@@ -107,6 +107,65 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
+    bool various_integers() {
+        TEST_START();
+        std::vector<std::pair<int64_t, std::string_view>> test_cases = {
+            {0, "0"},
+            {1, "1"},
+            {-1, "-1"},
+            {42, "42"},
+            {-42, "-42"},
+            {100, "100"},
+            {-100, "-100"},
+            {999, "999"},
+            {-999, "-999"},
+            {2147483647, "2147483647"},  // max 32-bit integer
+            {-2147483648, "-2147483648"}, // min 32-bit integer
+            {4294967296ULL, "4294967296"}, // 2^32
+            {-4294967296LL, "-4294967296"},
+            {10000000000LL, "10000000000"}, // 10 billion
+            {-10000000000LL, "-10000000000"},
+            {9223372036854775807LL, "9223372036854775807"}, // max 64-bit integer
+            {-9223372036854775807LL-1, "-9223372036854775808"}, // min 64-bit integer
+            {1234567890123LL, "1234567890123"},
+            {-1234567890123LL, "-1234567890123"},
+        };
+        for (const auto& [value, expected] : test_cases) {
+            simdjson::builder::string_builder sb;
+            sb.append(value);
+            std::string_view p;
+            auto result = sb.view().get(p);
+            ASSERT_SUCCESS(result);
+            ASSERT_EQUAL(p, expected);
+        }
+        TEST_SUCCEED();
+    }
+
+    bool various_unsigned_integers() {
+        TEST_START();
+        std::vector<std::pair<uint64_t, std::string_view>> test_cases = {
+            {0, "0"},
+            {1, "1"},
+            {42, "42"},
+            {100, "100"},
+            {999, "999"},
+            {2147483647, "2147483647"},  // max 32-bit integer
+            {4294967296ULL, "4294967296"}, // 2^32
+            {10000000000LL, "10000000000"}, // 10 billion
+            {9223372036854775807LL, "9223372036854775807"}, // max 64-bit integer
+            {1234567890123LL, "1234567890123"},
+        };
+        for (const auto& [value, expected] : test_cases) {
+            simdjson::builder::string_builder sb;
+            sb.append(value);
+            std::string_view p;
+            auto result = sb.view().get(p);
+            ASSERT_SUCCESS(result);
+            ASSERT_EQUAL(p, expected);
+        }
+        TEST_SUCCEED();
+    }
+
     bool append_raw() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -213,6 +272,8 @@ namespace builder_tests {
 
     bool run() {
         return
+            various_integers() &&
+            various_unsigned_integers() &&
             car_test() &&
     #if SIMDJSON_EXCEPTIONS
             string_convertion_except() &&

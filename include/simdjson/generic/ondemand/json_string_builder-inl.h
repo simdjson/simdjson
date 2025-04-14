@@ -42,10 +42,43 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
+static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256> json_quotable_character = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+/**
+
+A possible SWAR implementation of has_json_escapable_byte. It is not used because
+it is slower than the current implementation. It is kept here for reference (to show
+that we tried it).
+
+ bool fast2_has_json_escapable_byte(uint64_t x) {
+    uint64_t is_ascii = 0x8080808080808080ULL & ~x;
+    uint64_t lt32 =
+        (x - 0x2020202020202020ULL);
+    uint64_t sub34 = x ^ 0x2222222222222222ULL;
+    uint64_t eq34 = (sub34 - 0x0101010101010101ULL);
+    uint64_t sub92 = x ^ 0x5C5C5C5C5C5C5C5CULL;
+    uint64_t eq92 = (sub92 - 0x0101010101010101ULL);
+    return ((lt32 | eq34 | eq92) & is_ascii) != 0;
+  }
+
+**/
+
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool
 simple_needs_escaping(std::string_view v) {
   for (char c : v) {
-    if ((uint8_t(c) < 32) | (c == '"') | (c == '\\')) {
+    // a table lookup is faster than a series of comparisons
+    if(json_quotable_character[static_cast<uint8_t>(c)]) {
       return true;
     }
   }
@@ -110,18 +143,6 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 }
 #endif
 
-static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256> json_quotable_character = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 SIMDJSON_CONSTEXPR_LAMBDA inline size_t
 find_next_json_quotable_character(const std::string_view view,
@@ -333,7 +354,25 @@ simdjson_inline size_t digit_count(number_type v) noexcept {
                 "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
   return fast_digit_count(v);
 }
-
+static const char decimal_table[200] = {
+  0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
+  0x30, 0x36, 0x30, 0x37, 0x30, 0x38, 0x30, 0x39, 0x31, 0x30, 0x31, 0x31,
+  0x31, 0x32, 0x31, 0x33, 0x31, 0x34, 0x31, 0x35, 0x31, 0x36, 0x31, 0x37,
+  0x31, 0x38, 0x31, 0x39, 0x32, 0x30, 0x32, 0x31, 0x32, 0x32, 0x32, 0x33,
+  0x32, 0x34, 0x32, 0x35, 0x32, 0x36, 0x32, 0x37, 0x32, 0x38, 0x32, 0x39,
+  0x33, 0x30, 0x33, 0x31, 0x33, 0x32, 0x33, 0x33, 0x33, 0x34, 0x33, 0x35,
+  0x33, 0x36, 0x33, 0x37, 0x33, 0x38, 0x33, 0x39, 0x34, 0x30, 0x34, 0x31,
+  0x34, 0x32, 0x34, 0x33, 0x34, 0x34, 0x34, 0x35, 0x34, 0x36, 0x34, 0x37,
+  0x34, 0x38, 0x34, 0x39, 0x35, 0x30, 0x35, 0x31, 0x35, 0x32, 0x35, 0x33,
+  0x35, 0x34, 0x35, 0x35, 0x35, 0x36, 0x35, 0x37, 0x35, 0x38, 0x35, 0x39,
+  0x36, 0x30, 0x36, 0x31, 0x36, 0x32, 0x36, 0x33, 0x36, 0x34, 0x36, 0x35,
+  0x36, 0x36, 0x36, 0x37, 0x36, 0x38, 0x36, 0x39, 0x37, 0x30, 0x37, 0x31,
+  0x37, 0x32, 0x37, 0x33, 0x37, 0x34, 0x37, 0x35, 0x37, 0x36, 0x37, 0x37,
+  0x37, 0x38, 0x37, 0x39, 0x38, 0x30, 0x38, 0x31, 0x38, 0x32, 0x38, 0x33,
+  0x38, 0x34, 0x38, 0x35, 0x38, 0x36, 0x38, 0x37, 0x38, 0x38, 0x38, 0x39,
+  0x39, 0x30, 0x39, 0x31, 0x39, 0x32, 0x39, 0x33, 0x39, 0x34, 0x39, 0x35,
+  0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
+};
 } // namespace internal
 
 template <typename number_type, typename>
@@ -367,7 +406,11 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       unsigned_type pv = static_cast<unsigned_type>(v);
       size_t dc = internal::digit_count(pv);
       char *write_pointer = buffer.get() + position + dc - 1;
-      // optimization opportunity: if v is large, we can do better.
+      while (pv >= 100) {
+        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
+        write_pointer -= 2;
+        pv /= 100;
+      }
       while (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
@@ -381,13 +424,20 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       bool negative = v < 0;
-      unsigned_type pv = static_cast<unsigned_type>(negative ? -v : v);
+      unsigned_type pv = static_cast<unsigned_type>(v);
+      if (negative) {
+        pv = 0 - pv; // the 0 is for Microsoft
+      }
       size_t dc = internal::digit_count(pv);
       if (negative) {
         buffer.get()[position++] = '-';
       }
       char *write_pointer = buffer.get() + position + dc - 1;
-      // optimization opportunity: if v is large, we can do better.
+      while (pv >= 100) {
+        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
+        write_pointer -= 2;
+        pv /= 100;
+      }
       while (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
