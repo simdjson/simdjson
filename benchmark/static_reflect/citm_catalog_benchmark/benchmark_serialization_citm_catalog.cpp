@@ -111,7 +111,25 @@ std::string read_file(const std::string &file_path, size_t read_size = 65536) {
   return out;
 }
 
-int main() {
+// Function to check if benchmark name contains filter substring
+bool matches_filter(const std::string& benchmark_name, const std::string& filter) {
+  return filter.empty() || benchmark_name.find(filter) != std::string::npos;
+}
+
+int main(int argc, char* argv[]) {
+  std::string filter;
+
+  // Parse command-line arguments
+  for (int i = 1; i < argc; ++i) {
+      if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--filter") == 0) {
+          if (i + 1 < argc) {
+              filter = argv[++i];
+          } else {
+              std::cerr << "Error: -f/--filter requires an argument" << std::endl;
+              return EXIT_FAILURE;
+          }
+      }
+  }
   // Testing correctness of round-trip (serialization + deserialization)
   std::string json_str = read_file(JSON_FILE);
 
@@ -129,23 +147,31 @@ int main() {
   }
 
   // Benchmarking the serialization
-  bench_nlohmann(my_struct);
-  bench_simdjson_static_reflection(my_struct);
+  if (matches_filter("nlohmann", filter)) {
+    bench_nlohmann(my_struct);
+  }
+  if (matches_filter("simdjson_static_reflection", filter)) {
+    bench_simdjson_static_reflection(my_struct);
+  }
 #ifdef SIMDJSON_RUST_VERSION
-  printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.\n");
-  // Create a Rust-compatible CitmCatalog structure from the JSON string
-  serde_benchmark::CitmCatalog* rust_data =
-    serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
+  if (matches_filter("rust", filter)) {
+    printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.\n");
+    // Create a Rust-compatible CitmCatalog structure from the JSON string
+    serde_benchmark::CitmCatalog* rust_data =
+      serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
 
-  if (rust_data == nullptr) {
-    printf("# Failed to initialize Rust data structure\n");
-  } else {
-    bench_rust(rust_data);
-    serde_benchmark::free_citm(rust_data);
+    if (rust_data == nullptr) {
+      printf("# Failed to initialize Rust data structure\n");
+    } else {
+      bench_rust(rust_data);
+      serde_benchmark::free_citm(rust_data);
+    }
   }
 #endif
 #if SIMDJSON_BENCH_CPP_REFLECT
-  bench_reflect_cpp(my_struct);
+  if (matches_filter("reflect_cpp", filter)) {
+    bench_reflect_cpp(my_struct);
+  }
 #endif
   return EXIT_SUCCESS;
 }
