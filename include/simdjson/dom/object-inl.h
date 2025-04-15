@@ -208,16 +208,19 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   //    return INVALID_JSON_POINTER;
   // }
 
-  if (json_path.length() == 4 && json_path[0] == '$' && json_path[1] == '[' &&
-      json_path[2] == '*' && json_path[3] == ']') // $[*]
-  {
-    return get_values();
+
+  if (json_path.length() == 4) {
+    std::string_view match = "$[*]";
+    if (memcmp(json_path.data(), match.data(), 4) == 0) {
+      return get_values();
+    }
   }
 
-  if (json_path.length() == 3 && json_path[0] == '$' && json_path[1] == '.' &&
-      json_path[2] == '*') // $.*
-  {
-    return get_values();
+  if (json_path.length() == 3) {
+    std::string_view match = "$.*";
+    if (memcmp(json_path.data(), match.data(), 3) == 0) {
+      return get_values();
+    }
   }
 
   if (json_path.find("*") != std::string::npos) {
