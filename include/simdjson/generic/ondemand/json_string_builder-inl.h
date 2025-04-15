@@ -411,7 +411,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         write_pointer -= 2;
         pv /= 100;
       }
-      while (pv >= 10) {
+      if (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
       }
@@ -438,7 +438,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         write_pointer -= 2;
         pv /= 100;
       }
-      while (pv >= 10) {
+      if (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
       }
