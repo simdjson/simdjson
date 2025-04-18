@@ -399,7 +399,11 @@ namespace number_tests {
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
-    return basic_test_64bit("-1e-999", -0.0) &&
+    return
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+           basic_test_64bit("-0", -0.0) &&
+    #endif // SIMDJSON_MINUS_ZERO_AS_FLOAT
+           basic_test_64bit("-1e-999", -0.0) &&
            basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
            basic_test_64bit("4503599627370496.5", 4503599627370496.5) &&
            basic_test_64bit("4503599627475352.5", 4503599627475352.5) &&
@@ -1245,7 +1249,6 @@ namespace dom_api_tests {
   bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-
     ASSERT_EQUAL( uint64_t(parser.parse("0"_padded)), 0);
     ASSERT_EQUAL( int64_t(parser.parse("0"_padded)), 0);
     ASSERT_EQUAL( double(parser.parse("0"_padded)), 0);

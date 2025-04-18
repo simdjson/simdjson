@@ -312,7 +312,30 @@ namespace number_tests {
     ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
     ASSERT_EQUAL(number.get_double(), 1e9);
     TEST_SUCCEED();
-}
+  }
+
+  bool minus_zero() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "-0"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::number number;
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
+    #else
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::signed_integer);
+    #endif
+    ondemand::number_type nt{};
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+    ASSERT_EQUAL(nt, ondemand::number_type::floating_point_number);
+    #else
+    ASSERT_EQUAL(nt, ondemand::number_type::signed_integer);
+    #endif
+    TEST_SUCCEED();
+  }
 
   bool issue1878() {
     TEST_START();
@@ -504,7 +527,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return gigantic_big_int() &&
+    return minus_zero() &&
+           gigantic_big_int() &&
            big_int_not_zero() &&
            negative_big_int() &&
            issue2099() &&
