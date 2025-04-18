@@ -224,7 +224,7 @@ public:
    * Be mindful that the document instance must remain in scope while you are accessing object, array and value instances.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
-   * @returns INCORRECT_TYPE If the JSON value is not an object.
+   * @returns INCORRECT_TYPE If the JSON value is of the given type.
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
    */
   template<typename T>

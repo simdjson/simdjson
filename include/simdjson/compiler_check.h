@@ -50,10 +50,29 @@
 #endif
 #endif
 
+#ifndef SIMDJSON_CONSTEXPR_LAMBDA
+#if SIMDJSON_CPLUSPLUS17
+#define SIMDJSON_CONSTEXPR_LAMBDA constexpr
+#else
+#define SIMDJSON_CONSTEXPR_LAMBDA
+#endif
+#endif
+
+
+
 #ifdef __has_include
 #if __has_include(<version>)
 #include <version>
 #endif
+#endif
+
+// The current specification is unclear on how we detect
+// static reflection, both __cpp_lib_reflection and
+// __cpp_impl_reflection are proposed in the draft specification.
+// For now, we disable static reflect by default. It must be
+// specified at compiler time.
+#ifndef SIMDJSON_STATIC_REFLECTION
+#define SIMDJSON_STATIC_REFLECTION 0 // disabled by default.
 #endif
 
 #if defined(__apple_build_version__)
@@ -73,5 +92,13 @@
 #else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
+#if !defined(SIMDJSON_CONSTEVAL)
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#define SIMDJSON_CONSTEVAL 1
+#else
+#define SIMDJSON_CONSTEVAL 0
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#endif // !defined(SIMDJSON_CONSTEVAL)
 
 #endif // SIMDJSON_COMPILER_CHECK_H

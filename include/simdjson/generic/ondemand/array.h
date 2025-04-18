@@ -131,6 +131,37 @@ public:
    *         - INDEX_OUT_OF_BOUNDS if the array index is larger than an array length
    */
   simdjson_inline simdjson_result<value> at(size_t index) noexcept;
+
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+  /**
+   * Get this array as the given type.
+   *
+   * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
+   * @returns INCORRECT_TYPE If the JSON array is not of the given type.
+   * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
+   */
+  template <typename T>
+  simdjson_inline error_code get(T &out)
+     noexcept(custom_deserializable<T, array> ? nothrow_custom_deserializable<T, array> : true) {
+    static_assert(custom_deserializable<T, array>);
+    return deserialize(*this, out);
+  }
+  /**
+   * Get this array as the given type.
+   *
+   * @returns A value of the given type, parsed from the JSON.
+   * @returns INCORRECT_TYPE If the JSON value is not the given type.
+   */
+  template <typename T>
+  simdjson_inline simdjson_result<T> get()
+    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+  {
+    static_assert(std::is_default_constructible<T>::value, "The specified type is not default constructible.");
+    T out{};
+    SIMDJSON_TRY(get<T>(out));
+    return out;
+  }
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 protected:
   /**
    * Go to the end of the array, no matter where you are right now.
@@ -209,7 +240,28 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+  // TODO: move this code into object-inl.h
 
+  template<typename T>
+  simdjson_inline simdjson_result<T> get() noexcept {
+    if (error()) { return error(); }
+    if constexpr (std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
+      return first;
+    }
+    return first.get<T>();
+  }
+  template<typename T>
+  simdjson_inline error_code get(T& out) noexcept {
+    if (error()) { return error(); }
+    if constexpr (std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
+      out = first;
+    } else {
+      SIMDJSON_TRY( first.get<T>(out) );
+    }
+    return SUCCESS;
+  }
+#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
 };
 
 } // namespace simdjson
