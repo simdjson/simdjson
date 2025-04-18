@@ -118,7 +118,12 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
   std::cout << "I parsed " << value << " from " << numberstring.data() << std::endl;
   ```
-  The strings contain unescaped valid UTF-8 strings: no unmatched surrogate is allowed.
+  The strings contain unescaped valid UTF-8 strings: no unmatched surrogate is allowed.   Internally, numbers are stored as either 64-bit integers or 64-bit floating-point numbers.
+  Thus it is possible to get the full 64-bit integer range (either signed or  unsigned).
+  By default, the string `-0` is parsed as the integer 0 as in Python or C++. If you set the macro
+  `SIMDJSON_MINUS_ZERO_AS_FLOAT` to `1` when building simdjson, you can get that `-0` is mapped to `-0.0`
+  as in JavaScript. You can get the desired effect by building simdjson with cmake setting the
+  `SIMDJSON_MINUS_ZERO_AS_FLOAT` to on: `cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON`.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`

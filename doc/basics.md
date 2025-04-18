@@ -47,13 +47,15 @@ An overview of what you need to know to use simdjson, with examples.
 Requirements
 ------------------
 
-- A recent compiler (LLVM clang 6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on a 64-bit (PPC, ARM or x64 Intel/AMD) POSIX systems such as macOS, freeBSD or Linux. We require that the compiler supports the C++11 standard or better.
-- Visual Studio 2017 or better under 64-bit Windows. Users should target a 64-bit build (x64 or ARM64) instead of a 32-bit build (x86). We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We also support MinGW 64-bit under Windows.
+The simdjson library is widely deployed in popular systems such as the Node.js runtime
+environment.
 
+- A recent compiler (LLVM clang 6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on POSIX systems such as macOS, FreeBSD or Linux. We require that the compiler supports the C++11 standard or better. We test the library on a big-endian system (IBM s390x with Linux).
+- Visual Studio 2017 or better. We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We also support MinGW 64-bit under Windows.
 
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better, AMD Zen 4 or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
 
-We test the library on a big-endian system (IBM s390x with Linux).
+
 
 Including simdjson
 ------------------
