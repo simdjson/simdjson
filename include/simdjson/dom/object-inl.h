@@ -70,8 +70,7 @@ simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   }
   return first.at_key(key);
 }
-inline std::vector<dom::element>
-simdjson_result<dom::object>::get_values() const noexcept {
+inline std::vector<dom::element> simdjson_result<dom::object>::get_values() const noexcept {
   return first.get_values();
 }
 inline simdjson_result<dom::element>
@@ -189,6 +188,26 @@ object::at_pointer(std::string_view json_pointer) const noexcept {
   }
   return child;
 }
+
+inline simdjson_result<std::vector<element>>
+process_elements_recursive(std::vector<element>::iterator current, std::vector<element>::iterator end, std::string_view path_suffix, std::vector<element> accumulator) noexcept {
+  if (current == end) {
+    return accumulator;
+  }
+
+  std::string child_result_key = "$";
+  child_result_key.reserve(path_suffix.size() + 1);
+  child_result_key += path_suffix;
+
+  std::vector<element> child_result = current->at_path_with_wildcard(child_result_key).value();
+
+  accumulator.reserve(accumulator.size() + child_result.size());
+  accumulator.insert(accumulator.end(), std::make_move_iterator(child_result.begin()), std::make_move_iterator(child_result.end()));
+
+  ++current;
+  return process_elements_recursive(current, end, path_suffix, std::move(accumulator));
+}
+
 inline simdjson_result<std::vector<element>>
 object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(
@@ -204,6 +223,7 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   // else if(json_pointer[0] != '/') { // otherwise there is an error
   //    return INVALID_JSON_POINTER;
   // }
+
 
   if (json_path.length() == 4) {
     std::string_view match = "$[*]";
@@ -236,11 +256,9 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
 
         // recursive e.g example_key.* or example_key[*]
         size_t second_dot = json_path.find('.');
-        if (second_dot != std::string_view::npos &&
-            (json_path[0] != '"' && json_path[0] != '\'')) // example_key.*
+        if (second_dot != std::string_view::npos && (json_path[0] != '"' && json_path[0] != '\'')) // example_key.*
         {
-          std::string_view key =
-              json_path.substr(0, second_dot); // example_key or *
+          std::string_view key = json_path.substr(0, second_dot); // example_key or *
           std::vector<element> child_values;
 
           if (key == "*") {
@@ -253,28 +271,14 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
           }
 
           json_path = json_path.substr(second_dot); // .example_key or .*
-          std::vector<element>::iterator iterator = child_values.begin();
 
           std::vector<element> result;
-          for (; iterator != child_values.end(); ++iterator) {
-            std::string child_result_key = "$";
-            child_result_key.reserve(json_path.size() + 1);
-            child_result_key += json_path;
-            std::vector<element> child_result =
-                iterator->at_path_with_wildcard(child_result_key).value();
-            result.reserve(child_result.size());
-            result.insert(result.end(),
-                          std::make_move_iterator(child_result.begin()),
-                          std::make_move_iterator(child_result.end()));
-          }
-
-          return result;
+          return process_elements_recursive(child_values.begin(), child_values.end(), json_path, result);
         }
 
         // recursive e.g "example_key"].* or "example_key"][*]
         size_t close_bracket = json_path.find(']');
-        if (close_bracket != std::string_view::npos &&
-            (json_path[0] == '"' || json_path[0] == '\'')) {
+        if (close_bracket != std::string_view::npos && (json_path[0] == '"' || json_path[0] == '\'')) {
           auto key = json_path.substr(1, close_bracket - 2); // example_key or *
 
           std::vector<element> child_values;
@@ -288,23 +292,9 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
           }
 
           json_path = json_path.substr(close_bracket + 1); // .* or [*]
-          std::vector<element>::iterator iterator = child_values.begin();
 
           std::vector<element> result;
-          for (; iterator != child_values.end(); ++iterator) {
-            std::string child_result_key = "$";
-            child_result_key.reserve(json_path.size() + 1);
-            child_result_key += json_path;
-            std::vector<element> child_result =
-                iterator->at_path_with_wildcard(child_result_key).value();
-
-            result.reserve(child_result.size());
-            result.insert(result.end(),
-                          std::make_move_iterator(child_result.begin()),
-                          std::make_move_iterator(child_result.end()));
-          }
-
-          return result;
+          return process_elements_recursive(child_values.begin(), child_values.end(), json_path, result);
         }
 
         // TODO: Handle here
