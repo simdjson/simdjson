@@ -134,6 +134,12 @@ if(
   )
 endif()
 
+option(SIMDJSON_MINUS_ZERO_AS_FLOAT "Treat -0 as a floating-point value" OFF)
+
+if(SIMDJSON_MINUS_ZERO_AS_FLOAT)
+  simdjson_add_props(target_compile_definitions PRIVATE SIMDJSON_MINUS_ZERO_AS_FLOAT=1)
+endif(SIMDJSON_MINUS_ZERO_AS_FLOAT)
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(loongarch64)$")
     option(SIMDJSON_PREFER_LSX "Prefer LoongArch SX" ON)
     include(CheckCXXCompilerFlag)
