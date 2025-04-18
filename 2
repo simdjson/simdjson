@@ -70,8 +70,11 @@ simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   }
   return first.at_key(key);
 }
-inline std::vector<dom::element>
+inline simdjson_result<std::vector<dom::element>>
 simdjson_result<dom::object>::get_values() const noexcept {
+  if (error()) {
+    return error();
+  }
   return first.get_values();
 }
 inline simdjson_result<dom::element>
@@ -205,6 +208,7 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   //    return INVALID_JSON_POINTER;
   // }
 
+
   if (json_path.length() == 4) {
     std::string_view match = "$[*]";
     if (memcmp(json_path.data(), match.data(), 4) == 0) {
@@ -236,36 +240,28 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
 
         // recursive e.g example_key.* or example_key[*]
         size_t second_dot = json_path.find('.');
-        if (second_dot != std::string_view::npos &&
-            (json_path[0] != '"' && json_path[0] != '\'')) // example_key.*
+        if (second_dot != std::string_view::npos && (json_path[0] != '"' && json_path[0] != '\'')) // example_key.*
         {
-          std::string_view key =
-              json_path.substr(0, second_dot); // example_key or *
-          std::vector<element> child_values;
+          std::string_view key = json_path.substr(0, second_dot); // example_key or *
+          simdjson_result<std::vector<element>> child = {};
 
           if (key == "*") {
-            child_values = get_values();
+            child = get_values();
           } else {
-            std::string child_key = "/";
-            child_key.reserve(key.size() + 1);
-            child_key += key;
-            child_values.emplace_back(at_pointer(child_key).value());
+            child = std::vector<element>{at_pointer("/" + std::string(key)).value()};
           }
 
           json_path = json_path.substr(second_dot); // .example_key or .*
-          std::vector<element>::iterator iterator = child_values.begin();
+          std::vector<element> child_value = child.value();
+          std::vector<element>::iterator iterator = child_value.begin();
 
           std::vector<element> result;
-          for (; iterator != child_values.end(); ++iterator) {
-            std::string child_result_key = "$";
-            child_result_key.reserve(json_path.size() + 1);
-            child_result_key += json_path;
-            std::vector<element> child_result =
-                iterator->at_path_with_wildcard(child_result_key).value();
-            result.reserve(child_result.size());
-            result.insert(result.end(),
-                          std::make_move_iterator(child_result.begin()),
-                          std::make_move_iterator(child_result.end()));
+
+          for (; iterator != child_value.end(); ++iterator) {
+            auto child_result =
+                iterator->at_path_with_wildcard("$" + std::string(json_path)).value();
+            result.insert(result.end(), child_result.begin(),
+                          child_result.end());
           }
 
           return result;
@@ -273,35 +269,26 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
 
         // recursive e.g "example_key"].* or "example_key"][*]
         size_t close_bracket = json_path.find(']');
-        if (close_bracket != std::string_view::npos &&
-            (json_path[0] == '"' || json_path[0] == '\'')) {
+        if (close_bracket != std::string_view::npos && (json_path[0] == '"' || json_path[0] == '\'')) {
           auto key = json_path.substr(1, close_bracket - 2); // example_key or *
 
-          std::vector<element> child_values;
+          simdjson_result<std::vector<element>> child = {};
           if (key == "*") {
-            child_values = get_values();
+            child = get_values();
           } else {
-            std::string child_key = "/";
-            child_key.reserve(key.size() + 1);
-            child_key += key;
-            child_values.emplace_back(at_pointer(child_key).value());
+            child = std::vector<element>{at_pointer("/" + std::string(key)).value()};
           }
-
           json_path = json_path.substr(close_bracket + 1); // .* or [*]
-          std::vector<element>::iterator iterator = child_values.begin();
+          std::vector<element> child_value = child.value();
+          std::vector<element>::iterator iterator = child_value.begin();
 
           std::vector<element> result;
-          for (; iterator != child_values.end(); ++iterator) {
-            std::string child_result_key = "$";
-            child_result_key.reserve(json_path.size() + 1);
-            child_result_key += json_path;
-            std::vector<element> child_result =
-                iterator->at_path_with_wildcard(child_result_key).value();
 
-            result.reserve(child_result.size());
-            result.insert(result.end(),
-                          std::make_move_iterator(child_result.begin()),
-                          std::make_move_iterator(child_result.end()));
+          for (; iterator != child_value.end(); ++iterator) {
+            auto child_result =
+                iterator->at_path_with_wildcard("$" + std::string(json_path)).value();
+            result.insert(result.end(), child_result.begin(),
+                          child_result.end());
           }
 
           return result;
@@ -318,10 +305,8 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
                                    // JSON_PATH
     }
   } else {
-    std::vector<element> result{this->at_path(json_path).value()};
-    return result;
+    return std::vector<element>{this->at_path(json_path).value()};
   }
-
   if (json_path.empty() || (json_path[0] != '.' && json_path[0] != '[')) {
     return {}; // TODO: Revisit
   }
@@ -348,7 +333,8 @@ object::at_key(std::string_view key) const noexcept {
   return NO_SUCH_FIELD;
 }
 
-inline std::vector<element> object::get_values() const noexcept {
+inline simdjson_result<std::vector<element>>
+object::get_values() const noexcept {
   iterator end_field = end();
 
   std::vector<element> result =

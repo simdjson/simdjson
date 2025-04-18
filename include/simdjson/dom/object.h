@@ -207,7 +207,7 @@ public:
    */
   inline simdjson_result<element> at_key(std::string_view key) const noexcept;
 
-  inline simdjson_result<std::vector<element>> get_values() const noexcept;
+  inline std::vector<element> get_values() const noexcept;
 
   /**
    * Get the value associated with the given key in a case-insensitive manner.
@@ -270,7 +270,7 @@ public:
   inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path_new) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
-  inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;
+  inline std::vector<dom::element> get_values() const noexcept;
   inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS

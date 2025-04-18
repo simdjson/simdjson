@@ -36,126 +36,126 @@ simdjson::padded_string json_string = R"(
 simdjson::dom::parser parser{};
 simdjson::dom::element parsed_json = parser.parse(json_string);
 
-void BM_wildcard_dot_top_level_elements(benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+void wildcard_dot_top_level_elements() {
+  // selects all the top level elements
 
-    // selects all the top level elements
-    auto result = parsed_json.at_path_with_wildcard("$.*");
-    std::vector<simdjson::dom::element> values = result.value();
+  std::cout << "Result for $.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.*");
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
+  string_result += "\n]";
+
+  std::cout << string_result << "\n";
 }
 
-BENCHMARK(BM_wildcard_dot_top_level_elements)->UseManualTime();
+void wildcard_bracket_top_level_elements() {
+  // selects all the top level elements
 
-void BM_wildcard_bracket_top_level_elements(benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+  std::cout << "Result for $[*]" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$[*]");
 
-    // selects all the top level elements
-    auto result = parsed_json.at_path_with_wildcard("$[*]");
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    std::vector<simdjson::dom::element> values = result.value();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
+  string_result += "\n]";
+
+  std::cout << string_result << "\n";
 }
 
-BENCHMARK(BM_wildcard_bracket_top_level_elements)->UseManualTime();
+void wildcard_dot_element_properties_address() {
+  // selects all address properties - $.address.*
+  std::cout << "Result for $.address.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.address.*");
 
-void BM_wildcard_dot_element_properties_address(benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    // selects all address properties - $.address.*
-    auto result = parsed_json.at_path_with_wildcard("$.address.*");
-
-    std::vector<simdjson::dom::element> values = result.value();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
+  string_result += "\n]";
+
+  std::cout << string_result << "\n";
 }
 
-BENCHMARK(BM_wildcard_dot_element_properties_address)->UseManualTime();
+void wildcard_bracket_element_properties_address() {
+  // selects all address properties - $["address"].*
+  std::cout << "Result for $['address'].*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$['address'].*");
 
-void BM_wildcard_bracket_element_properties_address(benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    // selects all address properties - $["address"].*
-    auto result = parsed_json.at_path_with_wildcard("$['address'].*");
-
-    std::vector<simdjson::dom::element> values = result.value();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
+  string_result += "\n]";
+
+  std::cout << string_result << "\n";
 }
 
-BENCHMARK(BM_wildcard_bracket_element_properties_address)->UseManualTime();
+void wildcard_dot_element_properties_phoneNumbers() {
+  // selects all phoneNumbers properties - $.phoneNumbers.*
+  std::cout << "Result for $.phoneNumbers.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
 
-void BM_wildcard_dot_element_properties_phoneNumbers(benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    // selects all phoneNumbers properties - $.phoneNumbers.*
-    auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
-
-    std::vector<simdjson::dom::element> values = result.value();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
+  string_result += "\n]";
+
+  std::cout << string_result << "\n";
 }
 
-BENCHMARK(BM_wildcard_dot_element_properties_phoneNumbers)->UseManualTime();
+void wildcard_bracket_element_nested_properties_streetAddress() {
+  // selects nested properties - $.*.streetAddress
+  std::cout << "Result for $.*.streetAddress" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
 
-void BM_wildcard_bracket_element_nested_properties_streetAddress(
-    benchmark::State &state) {
-  for (auto _ : state) {
-    auto start = std::chrono::high_resolution_clock::now();
+  std::vector<simdjson::dom::element> values = result.value();
+  std::string string_result;
 
-    // selects nested properties - $.*.streetAddress
-    auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
-
-    std::vector<simdjson::dom::element> values = result.value();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    auto elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
-    state.SetIterationTime(elapsed_seconds.count());
+  string_result = "[";
+  for (int i = 0; i < values.size(); ++i) {
+    simdjson::internal::string_builder<> sb;
+    sb.append(values[i]);
+    string_result = string_result +=
+        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
   }
-}
+  string_result += "\n]";
 
-BENCHMARK(BM_wildcard_bracket_element_nested_properties_streetAddress)
-    ->UseManualTime();
+  std::cout << string_result << "\n";
+}
 
 void print_result(std::vector<simdjson::dom::element> &values) {
   std::string string_result = "[";
@@ -169,4 +169,13 @@ void print_result(std::vector<simdjson::dom::element> &values) {
   std::cout << string_result << std::endl;
 }
 
-BENCHMARK_MAIN();
+int main(int argc, char **argv) {
+  wildcard_dot_top_level_elements();
+  wildcard_bracket_top_level_elements();
+  wildcard_dot_element_properties_address();
+  wildcard_bracket_element_properties_address();
+  wildcard_dot_element_properties_phoneNumbers();
+  wildcard_bracket_element_nested_properties_streetAddress();
+
+  return 0;
+}
