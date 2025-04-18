@@ -186,7 +186,7 @@ array::at_path_with_wildcard(std::string_view json_path) const noexcept {
     return std::vector<element>{};
   }
 
-  return std::vector{result.value()};
+  return std::vector{std::move(result.value())};
 }
 
 inline simdjson_result<element>
@@ -217,7 +217,7 @@ inline simdjson_result<std::vector<element>> array::get_values() const noexcept 
 
   std::vector<element> result = {};
   for (auto element : *this) {
-    result.push_back(element);
+    result.emplace_back(element);
   }
 
   return result;

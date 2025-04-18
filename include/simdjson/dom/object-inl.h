@@ -308,7 +308,7 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
                                    // JSON_PATH
     }
   } else {
-    std::vector<element> result{this->at_path(json_path).value()};
+    std::vector<element> result{std::move(this->at_path(json_path).value())};
     return result;
   }
 
