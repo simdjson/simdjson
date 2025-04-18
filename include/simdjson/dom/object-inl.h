@@ -340,11 +340,12 @@ object::at_key(std::string_view key) const noexcept {
 
 inline std::vector<element> object::get_values() const noexcept {
   iterator end_field = end();
+  iterator begin_field = begin();
 
-  std::vector<element> result =
-      {}; // TODO: Do some allocations here for optimization?
-  for (iterator field = begin(); field != end_field; ++field) {
-    result.push_back(field.value());
+  std::vector<element> result = {};
+  result.reserve(std::distance(begin_field, end_field));
+  for (iterator field = begin_field; field != end_field; ++field) {
+    result.emplace_back(field.value());
   }
 
   return result;
