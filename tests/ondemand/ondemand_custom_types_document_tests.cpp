@@ -95,6 +95,19 @@ bool uint8_t_test() {
   TEST_SUCCEED();
 }
 
+bool append_test() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  const simdjson::padded_string json =
+      R"({"data" : [1,2,3,4]})"_padded;
+      simdjson::ondemand::document d = parser.iterate(json);
+  std::vector<uint32_t> array = {0, 0};
+  d["data"].get<std::vector<uint32_t>>(array);
+  std::vector<uint32_t> expected = {0, 0, 1, 2, 3, 4};
+  ASSERT_EQUAL(array, expected);
+  TEST_SUCCEED();
+}
+
 bool readme_test() {
   TEST_START();
   auto const json = R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
@@ -174,6 +187,7 @@ bool simple_document_test_no_except() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && defined(__cpp_concepts)
+      append_test() &&
       uint8_t_test() &&
       readme_test() &&
       custom_test() &&
