@@ -1083,6 +1083,32 @@ int main(void) {
 
 ### 2. Use `tag_invoke` for custom types (C++20)
 
+The simdjson library takes advantage of C++20. An immediate benefit
+is that you can deserialize JSON data directly in standard containers
+and other standard value types:
+
+```C++
+simdjson::padded_string json = R"({"data" : [1,2,3,4]})"_padded;
+
+simdjson::ondemand::parser parser;
+simdjson::ondemand::document d = parser.iterate(json);
+std::vector<uint8_t> array = d["data"].get<std::vector<uint8_t>>();
+```
+
+Appending to an existing container is just as easy:
+
+```C++
+std::vector<uint32_t> array = {0, 0};
+
+simdjson::padded_string json = R"({"data" : [1,2,3,4]})"_padded;
+
+simdjson::ondemand::parser parser;
+simdjson::ondemand::document d = parser.iterate(json);
+
+d["data"].get<std::vector<uint32_t>>(array);
+// array is now {0,0,1,2,3,4}
+```
+
 In C++20, the standard introduced the notion of *customization point*.
 A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.
 

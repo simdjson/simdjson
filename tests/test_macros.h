@@ -46,6 +46,21 @@ simdjson_inline simdjson::error_code to_error_code(const simdjson::simdjson_resu
   return result.error();
 }
 
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
+  os << "["; // Start with opening bracket
+  if (!vec.empty()) {
+    // Print first element without leading comma
+    os << static_cast<uint16_t>(vec[0]);
+    // Print remaining elements with commas
+    for (size_t i = 1; i < vec.size(); ++i) {
+      os << ", " << static_cast<uint16_t>(vec[i]);
+    }
+  }
+  os << "]"; // End with closing bracket
+  return os;
+}
+
 template<typename T>
 simdjson_inline bool assert_success(const T &actual, const char *operation = "result") {
   simdjson::error_code error = to_error_code(actual);
