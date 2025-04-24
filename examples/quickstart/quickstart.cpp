@@ -36,127 +36,6 @@ simdjson::padded_string json_string = R"(
 simdjson::dom::parser parser{};
 simdjson::dom::element parsed_json = parser.parse(json_string);
 
-void wildcard_dot_top_level_elements() {
-  // selects all the top level elements
-
-  std::cout << "Result for $.*" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$.*");
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
-void wildcard_bracket_top_level_elements() {
-  // selects all the top level elements
-
-  std::cout << "Result for $[*]" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$[*]");
-
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
-void wildcard_dot_element_properties_address() {
-  // selects all address properties - $.address.*
-  std::cout << "Result for $.address.*" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$.address.*");
-
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
-void wildcard_bracket_element_properties_address() {
-  // selects all address properties - $["address"].*
-  std::cout << "Result for $['address'].*" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$['address'].*");
-
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
-void wildcard_dot_element_properties_phoneNumbers() {
-  // selects all phoneNumbers properties - $.phoneNumbers.*
-  std::cout << "Result for $.phoneNumbers.*" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
-
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
-void wildcard_bracket_element_nested_properties_streetAddress() {
-  // selects nested properties - $.*.streetAddress
-  std::cout << "Result for $.*.streetAddress" << "\n";
-  auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
-
-  std::vector<simdjson::dom::element> values = result.value();
-  std::string string_result;
-
-  string_result = "[";
-  for (int i = 0; i < values.size(); ++i) {
-    simdjson::internal::string_builder<> sb;
-    sb.append(values[i]);
-    string_result = string_result +=
-        std::string(i == 0 ? "" : ",") + "\n\t" + std::string(sb.str());
-  }
-  string_result += "\n]";
-
-  std::cout << string_result << "\n";
-}
-
 void print_result(std::vector<simdjson::dom::element> &values) {
   std::string string_result = "[";
   for (int i = 0; i < values.size(); ++i) {
@@ -167,6 +46,61 @@ void print_result(std::vector<simdjson::dom::element> &values) {
   }
   string_result += "\n]";
   std::cout << string_result << std::endl;
+}
+
+void wildcard_dot_top_level_elements() {
+  // selects all the top level elements
+
+  std::cout << "Result for $.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.*");
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
+void wildcard_bracket_top_level_elements() {
+  // selects all the top level elements
+
+  std::cout << "Result for $[*]" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$[*]");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
+void wildcard_dot_element_properties_address() {
+  // selects all address properties - $.address.*
+  std::cout << "Result for $.address.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.address.*");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
+void wildcard_bracket_element_properties_address() {
+  // selects all address properties - $["address"].*
+  std::cout << "Result for $['address'].*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$['address'].*");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
+void wildcard_dot_element_properties_phoneNumbers() {
+  // selects all phoneNumbers properties - $.phoneNumbers.*
+  std::cout << "Result for $.phoneNumbers.*" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
+void wildcard_bracket_element_nested_properties_streetAddress() {
+  // selects nested properties - $.*.streetAddress
+  std::cout << "Result for $.*.streetAddress" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
 }
 
 int main(int argc, char **argv) {
