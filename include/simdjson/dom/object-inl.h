@@ -70,7 +70,8 @@ simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   }
   return first.at_key(key);
 }
-inline std::vector<dom::element> simdjson_result<dom::object>::get_values() const noexcept {
+inline std::vector<dom::element>
+simdjson_result<dom::object>::get_values() const noexcept {
   return first.get_values();
 }
 inline simdjson_result<dom::element>
@@ -189,8 +190,9 @@ object::at_pointer(std::string_view json_pointer) const noexcept {
   return child;
 }
 
-inline simdjson_result<std::vector<element>>
-process_elements_recursive(std::vector<element>::iterator current, std::vector<element>::iterator end, std::string_view path_suffix, std::vector<element> accumulator) noexcept {
+inline simdjson_result<std::vector<element>> process_elements_recursive(
+    std::vector<element>::iterator current, std::vector<element>::iterator end,
+    std::string_view path_suffix, std::vector<element> accumulator) noexcept {
   if (current == end) {
     return accumulator;
   }
@@ -199,31 +201,28 @@ process_elements_recursive(std::vector<element>::iterator current, std::vector<e
   child_result_key.reserve(path_suffix.size() + 1);
   child_result_key += path_suffix;
 
-  std::vector<element> child_result = current->at_path_with_wildcard(child_result_key).value();
+  std::vector<element> child_result =
+      current->at_path_with_wildcard(child_result_key).value();
 
   accumulator.reserve(accumulator.size() + child_result.size());
-  accumulator.insert(accumulator.end(), std::make_move_iterator(child_result.begin()), std::make_move_iterator(child_result.end()));
+  accumulator.insert(accumulator.end(),
+                     std::make_move_iterator(child_result.begin()),
+                     std::make_move_iterator(child_result.end()));
 
   ++current;
-  return process_elements_recursive(current, end, path_suffix, std::move(accumulator));
+  return process_elements_recursive(current, end, path_suffix,
+                                    std::move(accumulator));
 }
 
 inline simdjson_result<std::vector<element>>
 object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(
       tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  if (json_path
-          .empty()) { // an empty string means that we return the current node
-    // TODO: revisit handling this - return element(this->tape); // copy the
-    // current node
-    return {};
+  if (json_path.empty() || (json_path[1] != '.' && json_path[1] != '[')) {
+    // TODO: I expect json path to always start with $ but this isn't currently
+    // expected in jsonpathutil.h. Need to verify why
+    return INVALID_JSON_POINTER;
   }
-
-  // TODO: Do some additional json_path validation here
-  // else if(json_pointer[0] != '/') { // otherwise there is an error
-  //    return INVALID_JSON_POINTER;
-  // }
-
 
   if (json_path.length() == 4) {
     std::string_view match = "$[*]";
@@ -240,84 +239,64 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   }
 
   if (json_path.find("*") != std::string::npos) {
+    size_t i = 0;
+    if (!json_path.empty() && json_path.front() == '$') {
+      i = 1;
+    }
 
-    // TODO: I am assuming is not valid to have a nested check on the result of
-    // a wildcard so I'm not checking for wildcard here, but just keys This
-    // assumption is probably wrong and I will need to verify
+    std::string key;
+    key.reserve(json_path.size());
 
-    // JSONPath starts with $
-    if (!json_path.empty() &&
-        json_path.front() ==
-            '$') { // TODO: Must all Json path start with a root element ($)?
-      // for json_path - $.example_key.* or $["example_key"].*
-      json_path = json_path.substr(1); // .example_key.* or ["example_key"].*
-      if (json_path[0] == '.' || json_path[0] == '[') {
-        json_path = json_path.substr(1); // example_key.* or "example_key"].*
-
-        // recursive e.g example_key.* or example_key[*]
-        size_t second_dot = json_path.find('.');
-        if (second_dot != std::string_view::npos && (json_path[0] != '"' && json_path[0] != '\'')) // example_key.*
-        {
-          std::string_view key = json_path.substr(0, second_dot); // example_key or *
-          std::vector<element> child_values;
-
-          if (key == "*") {
-            child_values = get_values();
-          } else {
-            std::string child_key = "/";
-            child_key.reserve(key.size() + 1);
-            child_key += key;
-            child_values.emplace_back(at_pointer(child_key).value());
-          }
-
-          json_path = json_path.substr(second_dot); // .example_key or .*
-
-          std::vector<element> result;
-          return process_elements_recursive(child_values.begin(), child_values.end(), json_path, result);
+    if (json_path[i] == '.') {
+      i += 1;
+      while (i < json_path.length()) {
+        if (json_path[i] == '.' || json_path[i] == '[') {
+          break;
         }
 
-        // recursive e.g "example_key"].* or "example_key"][*]
-        size_t close_bracket = json_path.find(']');
-        if (close_bracket != std::string_view::npos && (json_path[0] == '"' || json_path[0] == '\'')) {
-          auto key = json_path.substr(1, close_bracket - 2); // example_key or *
-
-          std::vector<element> child_values;
-          if (key == "*") {
-            child_values = get_values();
-          } else {
-            std::string child_key = "/";
-            child_key.reserve(key.size() + 1);
-            child_key += key;
-            child_values.emplace_back(at_pointer(child_key).value());
-          }
-
-          json_path = json_path.substr(close_bracket + 1); // .* or [*]
-
-          std::vector<element> result;
-          return process_elements_recursive(child_values.begin(), child_values.end(), json_path, result);
+        key += json_path[i];
+        ++i;
+      }
+    } else if (json_path[i] == '[' &&
+               (json_path[i + 1] == '\'' || json_path[i + 1] == '"')) {
+      i += 2;
+      while (i < json_path.length()) {
+        if (json_path[i] == '\'' || json_path[i] == '"') {
+          i += 2;
+          break;
         }
 
-        // TODO: Handle here
-        return {};
+        key += json_path[i];
+        ++i;
+      }
+    }
+
+    std::vector<element> child_values;
+
+    if (key.size() > 0) {
+      if (key == "*") {
+        child_values = get_values();
+      } else {
+        std::string child_key = "/";
+        child_key.reserve(key.size() + 1);
+        child_key += key;
+        child_values.emplace_back(at_pointer(child_key).value());
       }
 
-      // TODO: Handle only key here
+      json_path = json_path.substr(i);
+      std::vector<element> result;
+      return process_elements_recursive(child_values.begin(),
+                                        child_values.end(), json_path, result);
     } else {
-      // TODO: Handle JSON starting without $
-      return INVALID_JSON_POINTER; // TODO: Create exception for invalid
-                                   // JSON_PATH
+      // TODO: Handle here
+      return {};
     }
   } else {
     std::vector<element> result{std::move(this->at_path(json_path).value())};
     return result;
   }
-
-  if (json_path.empty() || (json_path[0] != '.' && json_path[0] != '[')) {
-    return {}; // TODO: Revisit
-  }
-
-  return {}; // TODO: Revisit this also
 }
+
 inline simdjson_result<element>
 object::at_path(std::string_view json_path) const noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
@@ -430,11 +409,11 @@ inline element object::iterator::value() const noexcept {
  * user-provided strings, it is probably more performant to have dedicated
  * functions taking as a parameter the string we want to compare against
  * and return true when they are equal. That avoids the creation of a
- * temporary std::string_view. Though it is possible for the compiler to avoid
- * entirely any overhead due to string_view, relying too much on compiler
- * magic is problematic: compiler magic sometimes fail, and then what do you
- * do? Also, enticing users to rely on high-performance function is probably
- * better on the long run.
+ * temporary std::string_view. Though it is possible for the compiler to
+ * avoid entirely any overhead due to string_view, relying too much on
+ * compiler magic is problematic: compiler magic sometimes fail, and then
+ * what do you do? Also, enticing users to rely on high-performance function
+ * is probably better on the long run.
  */
 
 inline bool object::iterator::key_equals(std::string_view o) const noexcept {
@@ -457,8 +436,8 @@ inline bool object::iterator::key_equals_case_insensitive(
     // See For case-insensitive string comparisons, avoid char-by-char
     // functions
     // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-    // Note that it might be worth rolling our own strncasecmp function, with
-    // vectorization.
+    // Note that it might be worth rolling our own strncasecmp function,
+    // with vectorization.
     return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
   }
   return false;
