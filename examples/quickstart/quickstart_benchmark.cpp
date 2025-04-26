@@ -115,6 +115,26 @@ void BM_wildcard_bracket_element_properties_address(benchmark::State &state) {
 
 BENCHMARK(BM_wildcard_bracket_element_properties_address)->UseManualTime();
 
+void BM_wildcard_bracket_element_properties_address_bracket(benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects all address properties - $["address"][*]
+    auto result = parsed_json.at_path_with_wildcard("$['address'][*]");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_bracket_element_properties_address_bracket)->UseManualTime();
+
 void BM_wildcard_dot_element_properties_phoneNumbers(benchmark::State &state) {
   for (auto _ : state) {
     auto start = std::chrono::high_resolution_clock::now();

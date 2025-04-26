@@ -85,6 +85,15 @@ void wildcard_bracket_element_properties_address() {
   print_result(values);
 }
 
+void wildcard_bracket_element_properties_address_bracket() {
+  // selects all address properties - $["address"].*
+  std::cout << "Result for $['address'][*]" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$['address'][*]");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
 void wildcard_dot_element_properties_phoneNumbers() {
   // selects all phoneNumbers properties - $.phoneNumbers.*
   std::cout << "Result for $.phoneNumbers.*" << "\n";
@@ -108,8 +117,8 @@ int main(int argc, char **argv) {
   wildcard_bracket_top_level_elements();
   wildcard_dot_element_properties_address();
   wildcard_bracket_element_properties_address();
+  wildcard_bracket_element_properties_address_bracket();
   wildcard_dot_element_properties_phoneNumbers();
   wildcard_bracket_element_nested_properties_streetAddress();
-
   return 0;
 }

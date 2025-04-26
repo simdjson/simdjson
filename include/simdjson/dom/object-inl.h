@@ -269,6 +269,10 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
         key += json_path[i];
         ++i;
       }
+    } else if (json_path[i] == '[' && json_path[i + 1] == '*' &&
+               json_path[i + 2] == ']') {
+      key += json_path[i + 1];
+      i += 2;
     }
 
     std::vector<element> child_values;
