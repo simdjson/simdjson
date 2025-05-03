@@ -112,13 +112,23 @@ void wildcard_bracket_element_nested_properties_streetAddress() {
   print_result(values);
 }
 
+void wildcard_firstName() {
+  // selects firstName - $.firstName
+  std::cout << "Result for $.firstName" << "\n";
+  auto result = parsed_json.at_path_with_wildcard("$.firstName");
+
+  std::vector<simdjson::dom::element> values = result.value();
+  print_result(values);
+}
+
 int main(int argc, char **argv) {
-  wildcard_dot_top_level_elements();
-  wildcard_bracket_top_level_elements();
-  wildcard_dot_element_properties_address();
-  wildcard_bracket_element_properties_address();
-  wildcard_bracket_element_properties_address_bracket();
-  wildcard_dot_element_properties_phoneNumbers();
+  // wildcard_dot_top_level_elements();
+  // wildcard_bracket_top_level_elements();
+  // wildcard_dot_element_properties_address();
+  // wildcard_bracket_element_properties_address();
+  // wildcard_bracket_element_properties_address_bracket();
+  // wildcard_dot_element_properties_phoneNumbers();
   wildcard_bracket_element_nested_properties_streetAddress();
+  wildcard_firstName();
   return 0;
 }

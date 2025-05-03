@@ -404,6 +404,22 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
   return true;
 }
 
+inline bool is_path_well_formed(std::string_view json_path) noexcept {
+  size_t i = 0;
+  // if JSONPath starts with $, skip it
+  if (!json_path.empty() && json_path.front() == '$') {
+    i = 1;
+  }
+
+  if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
+    // expect json path to always start with $ but this isn't currently
+    // expected in jsonpathutil.h. Need to verify why
+    return false;
+  }
+
+  return true;
+}
+
 inline simdjson_result<element> element::at_pointer(std::string_view json_pointer) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   switch (tape.tape_ref_type()) {
@@ -433,23 +449,9 @@ inline simdjson_result<std::vector<element>> element::at_path_with_wildcard(std:
       return object(tape).at_path_with_wildcard(json_path);
     case internal::tape_type::START_ARRAY:
       return array(tape).at_path_with_wildcard(json_path);
-    default: {
+    default:
       return std::vector<element>{};
-      // if (!json_path.empty()) { // a non-empty string can be invalid, or accessing a primitive (issue 2154)
-      //   if (is_pointer_well_formed(json_path)) {
-      //     return NO_SUCH_FIELD;
-      //   }
-      //   return INVALID_JSON_POINTER;
-      // }
-
-      // TODO: Handle later
-      // an empty string means that we return the current node
-      // dom::element copy(*this);
-      // return simdjson_result<element>(std::move(copy));
-    }
   }
-
-  return {}; // TODO: Handle this later
 }
 
 inline simdjson_result<element> element::at_path(std::string_view json_path) const noexcept {

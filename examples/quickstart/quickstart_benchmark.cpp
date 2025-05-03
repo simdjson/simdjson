@@ -177,6 +177,28 @@ void BM_wildcard_bracket_element_nested_properties_streetAddress(
 BENCHMARK(BM_wildcard_bracket_element_nested_properties_streetAddress)
     ->UseManualTime();
 
+void BM_wildcard_firstName(
+    benchmark::State &state) {
+  for (auto _ : state) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // selects firstName - $.firstName
+    auto result = parsed_json.at_path_with_wildcard("$.firstName");
+
+    std::vector<simdjson::dom::element> values = result.value();
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    auto elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+    state.SetIterationTime(elapsed_seconds.count());
+  }
+}
+
+BENCHMARK(BM_wildcard_firstName)
+    ->UseManualTime();
+
 void print_result(std::vector<simdjson::dom::element> &values) {
   std::string string_result = "[";
   for (int i = 0; i < values.size(); ++i) {

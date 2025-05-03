@@ -218,28 +218,34 @@ inline simdjson_result<std::vector<element>>
 object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(
       tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  if (json_path.empty() || (json_path[1] != '.' && json_path[1] != '[')) {
-    // TODO: I expect json path to always start with $ but this isn't currently
+
+  size_t i = 0;
+  // if JSONPath starts with $, skip it
+  if (!json_path.empty() && json_path.front() == '$') {
+    i = 1;
+  }
+
+  if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
+    // expect json path to always start with $ but this isn't currently
     // expected in jsonpathutil.h. Need to verify why
     return INVALID_JSON_POINTER;
   }
 
-  if (json_path.length() == 4) {
-    std::string_view match = "$[*]";
-    if (memcmp(json_path.data(), match.data(), 4) == 0) {
-      return get_values();
-    }
-  }
-
-  if (json_path.length() == 3) {
-    std::string_view match = "$.*";
-    if (memcmp(json_path.data(), match.data(), 3) == 0) {
-      return get_values();
-    }
-  }
-
   if (json_path.find("*") != std::string::npos) {
-    size_t i = 0;
+    if (json_path.length() == 4) {
+      std::string_view match = "$[*]";
+      if (memcmp(json_path.data(), match.data(), 4) == 0) {
+        return get_values();
+      }
+    }
+
+    if (json_path.length() == 3) {
+      std::string_view match = "$.*";
+      if (memcmp(json_path.data(), match.data(), 3) == 0) {
+        return get_values();
+      }
+    }
+
     if (!json_path.empty() && json_path.front() == '$') {
       i = 1;
     }
@@ -269,10 +275,6 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
         key += json_path[i];
         ++i;
       }
-    } else if (json_path[i] == '[' && json_path[i + 1] == '*' &&
-               json_path[i + 2] == ']') {
-      key += json_path[i + 1];
-      i += 2;
     }
 
     std::vector<element> child_values;
@@ -292,8 +294,7 @@ object::at_path_with_wildcard(std::string_view json_path) const noexcept {
       return process_elements_recursive(child_values.begin(),
                                         child_values.end(), json_path, result);
     } else {
-      // TODO: Handle here
-      return {};
+      return INVALID_JSON_POINTER;
     }
   } else {
     std::vector<element> result{std::move(this->at_path(json_path).value())};
