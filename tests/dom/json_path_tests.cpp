@@ -201,6 +201,7 @@ bool many_json_paths_object_array() {
   ASSERT_EQUAL(x, 2);
   ASSERT_SUCCESS(obj.at_path("$.potato[0]").get(x));
   ASSERT_EQUAL(x, 1234);
+
   TEST_SUCCEED();
 }
 bool many_json_paths_object() {
@@ -290,8 +291,106 @@ bool json_path_invalidation() {
     std::cout << c.make << " " << c.model << " " << c.year << "\n";
     ASSERT_EQUAL(expected[i++], c.make);
   }
+
   TEST_SUCCEED();
 }
+
+bool json_path_with_wildcard() {
+  TEST_START();
+
+  simdjson::padded_string json_string = R"(
+  {
+    "firstName": "John",
+    "lastName" : "doe",
+    "age"      : 26,
+    "address"  : {
+      "streetAddress": "naist street",
+      "city"         : "Nara",
+      "postalCode"   : "630-0192"
+    },
+    "phoneNumbers": [
+      {
+        "type"  : "iPhone",
+        "numbers": [
+          "0123-4567-8888",
+          "0123-4567-8788",
+          "0123-4567-8887"
+        ]
+      },
+      {
+        "type"  : "home",
+        "numbers": [
+          "0123-4567-8910",
+          "0123-4267-8910",
+          "0103-4567-8910"
+        ]
+      }
+    ]
+  })"_padded;
+
+  dom::parser parser;
+  dom::element parsed_json = parser.parse(json_string);
+  std::vector<dom::element> values;
+  simdjson_result<std::vector<dom::element>> result;
+
+
+  std::string_view string_value;
+  std::uint64_t num_value;
+  dom::object obj;
+
+  // $.*
+  result = parsed_json.at_path_with_wildcard("$.*");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $[*]
+  result = parsed_json.at_path_with_wildcard("$[*]");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $.address.*
+  result = parsed_json.at_path_with_wildcard("$.address.*");
+  values = result.value();
+
+  std::vector<std::string> expected = {"naist street", "Nara", "630-0192"};
+  for (int i = 0; i < 3; i++) {
+      ASSERT_SUCCESS(values[i].get(string_value));
+      ASSERT_EQUAL(string_value, expected[i]);
+  }
+
+  TEST_SUCCEED();
+}
+
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
 #if SIMDJSON_EXCEPTIONS
@@ -340,7 +439,7 @@ int main() {
       run_failure_test(TEST_JSON, ".~1abc", NO_SUCH_FIELD) &&
       run_failure_test(TEST_JSON, "./~01abc.01", INVALID_JSON_POINTER) &&
       run_failure_test(TEST_JSON, "./~01abc.", INVALID_JSON_POINTER) &&
-      run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS)) {
+      run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS)&& json_path_with_wildcard())   {
     std::cout << "Success!" << std::endl;
     return 0;
   } else {
