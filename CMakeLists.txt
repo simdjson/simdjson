@@ -256,8 +256,6 @@ endif()
 
 # ---- Developer mode extras ----
 
-set(CMAKE_BUILD_TYPE Debug)
-
 if(is_top_project AND NOT SIMDJSON_DEVELOPER_MODE)
   message(STATUS "Building only the library. Advanced users and contributors may want to turn SIMDJSON_DEVELOPER_MODE to ON, e.g., via -D SIMDJSON_DEVELOPER_MODE=ON.")
 elseif(SIMDJSON_DEVELOPER_MODE AND NOT is_top_project)
