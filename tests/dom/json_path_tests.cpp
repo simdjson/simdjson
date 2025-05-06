@@ -201,7 +201,6 @@ bool many_json_paths_object_array() {
   ASSERT_EQUAL(x, 2);
   ASSERT_SUCCESS(obj.at_path("$.potato[0]").get(x));
   ASSERT_EQUAL(x, 1234);
-
   TEST_SUCCEED();
 }
 bool many_json_paths_object() {
@@ -291,7 +290,6 @@ bool json_path_invalidation() {
     std::cout << c.make << " " << c.model << " " << c.year << "\n";
     ASSERT_EQUAL(expected[i++], c.make);
   }
-
   TEST_SUCCEED();
 }
 
