@@ -36,10 +36,3 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_quickstart_test(quickstart_ondemand_noexceptions11 quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11 LABELS quickstart_ondemand)
 
 endif()
-
-add_executable(quickstart_benchmark quickstart_benchmark.cpp)
-add_executable(quickstart_example quickstart.cpp)
-target_link_libraries(quickstart_example PRIVATE benchmark::benchmark)
-target_link_libraries(quickstart_example PRIVATE simdjson::simdjson)
-target_link_libraries(quickstart_benchmark PRIVATE benchmark::benchmark)
-target_link_libraries(quickstart_benchmark PRIVATE simdjson::simdjson)
