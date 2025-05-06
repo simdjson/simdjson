@@ -386,6 +386,13 @@ bool json_path_with_wildcard() {
       ASSERT_EQUAL(string_value, expected[i]);
   }
 
+  // $.*.streetAddress
+  result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
   TEST_SUCCEED();
 }
 
