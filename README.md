@@ -63,6 +63,7 @@ Real-world usage
 - [fastgron](https://github.com/adamritter/fastgron)
 - [WasmEdge](https://wasmedge.org)
 - [RonDB](https://github.com/logicalclocks/rondb)
+- [GreptimeDB](https://github.com/GreptimeTeam/greptimedb)
 
 
 If you are planning to use simdjson in a product, please work from one of our releases.
