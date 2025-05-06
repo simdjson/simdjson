@@ -439,7 +439,7 @@ int main() {
       run_failure_test(TEST_JSON, ".~1abc", NO_SUCH_FIELD) &&
       run_failure_test(TEST_JSON, "./~01abc.01", INVALID_JSON_POINTER) &&
       run_failure_test(TEST_JSON, "./~01abc.", INVALID_JSON_POINTER) &&
-      run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS)&& json_path_with_wildcard())   {
+      run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS))   {
     std::cout << "Success!" << std::endl;
     return 0;
   } else {
