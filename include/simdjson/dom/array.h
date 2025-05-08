@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_DOM_ARRAY_H
 #define SIMDJSON_DOM_ARRAY_H
 
+#include <vector>
+
 #include "simdjson/dom/base.h"
 #include "simdjson/internal/tape_ref.h"
 
@@ -107,7 +109,7 @@ public:
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
-
+  inline simdjson_result<std::vector<element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
   /**
    * Get the value associated with the given JSONPath expression. We only support
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
@@ -141,6 +143,8 @@ public:
    */
   inline simdjson_result<element> at(size_t index) const noexcept;
 
+  inline simdjson_result<std::vector<element>> get_values() const noexcept;
+
   /**
    * Implicitly convert object to element
    */
@@ -167,8 +171,10 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);
