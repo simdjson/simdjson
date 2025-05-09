@@ -122,6 +122,7 @@ struct event_aggregate {
   }
 
   double elapsed_sec() const { return total.elapsed_sec() / iterations; }
+  double total_elapsed_ns() const { return total.elapsed_ns(); }
   double elapsed_ns() const { return total.elapsed_ns() / iterations; }
   double cycles() const { return total.cycles() / iterations; }
   double instructions() const { return total.instructions() / iterations; }
