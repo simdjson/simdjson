@@ -12,8 +12,6 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 
 #include "gason.h"
 
-#include "json11.hpp"
-
 #include "rapidjson/document.h"
 #include "rapidjson/reader.h" // you have to check in the submodule
 #include "rapidjson/stringbuffer.h"
@@ -122,10 +120,6 @@ int main(int argc, char *argv[]) {
     return EXIT_SUCCESS;
   }
   bool rapid_correct = (d.Parse((const char *)buffer).HasParseError() == false);
-
-  std::string json11err;
-  bool dropbox_correct = ((json11::Json::parse(buffer, json11err).is_null()) ||
-                          (!json11err.empty())) == false;
   bool fastjson_correct = fastjson_parse(buffer);
   JsonValue value;
   JsonAllocator allocator;
@@ -174,8 +168,6 @@ int main(int argc, char *argv[]) {
          rapid_correct_checkencoding ? "correct" : "invalid");
   printf("sajson                     : %s \n",
          sajson_correct ? "correct" : "invalid");
-  printf("dropbox                    : %s \n",
-         dropbox_correct ? "correct" : "invalid");
   printf("fastjson                   : %s \n",
          fastjson_correct ? "correct" : "invalid");
   printf("gason                      : %s \n",

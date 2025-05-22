@@ -84,7 +84,7 @@ set_target_properties(
 )
 
 # FIXME: Use proper CMake integration for exports
-if(MSVC AND BUILD_SHARED_LIBS)
+if(WIN32 AND BUILD_SHARED_LIBS)
   target_compile_definitions(
       simdjson
       PRIVATE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1

@@ -114,7 +114,7 @@ if(NOT (MSVC AND MSVC_VERSION LESS 1920))
 endif()
 
 
-if(MSVC AND BUILD_SHARED_LIBS)
+if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(TARGET basictests POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
         "$<TARGET_FILE:simdjson>"      # <--this is in-file

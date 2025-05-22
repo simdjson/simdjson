@@ -12,7 +12,7 @@ cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark 
 if(SIMDJSON_GOOGLE_BENCHMARKS)
   CPMAddPackage(
         NAME google_benchmarks
-        URL https://github.com/google/benchmark/archive/refs/tags/v1.7.1.zip
+        URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
         OPTIONS
         "BENCHMARK_ENABLE_TESTING OFF"
         "BENCHMARK_ENABLE_INSTALL OFF"
@@ -98,14 +98,6 @@ int main() {}
 
   set_property(TARGET nlohmann_json APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS SIMDJSON_COMPETITION_NLOHMANN_JSON)
 
-  CPMAddPackage(
-      NAME json11
-      URL https://github.com/dropbox/json11/archive/ec4e45219af1d7cde3d58b49ed762376fccf1ace.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(json11 STATIC "${json11_SOURCE_DIR}/json11.cpp")
-  target_include_directories(json11 SYSTEM PUBLIC "${json11_SOURCE_DIR}")
-  target_compile_definitions(json11 INTERFACE SIMDJSON_COMPETITION_JSON11)
 
   set(jsoncpp_SOURCE_DIR "${simdjson_SOURCE_DIR}/dependencies/jsoncppdist")
   add_library(jsoncpp STATIC "${jsoncpp_SOURCE_DIR}/jsoncpp.cpp")
@@ -177,7 +169,7 @@ int main() {}
   endif()
 
   add_library(competition-all INTERFACE)
-  target_link_libraries(competition-all INTERFACE competition-core jsoncpp json11 fastjson gason ujson4c)
+  target_link_libraries(competition-all INTERFACE competition-core jsoncpp fastjson gason ujson4c)
 endfunction()
 
 if(SIMDJSON_COMPETITION)
