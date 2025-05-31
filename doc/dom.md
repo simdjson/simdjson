@@ -90,7 +90,7 @@ During the`load` or `parse` calls, neither the input file nor the input string a
 For best performance, a `parser` instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. [See our performance notes for details](performance.md).
 
 If you need a lower-level interface, you may call the function `parser.parse(const char * p, size_t l)` on a pointer `p` while specifying the
-length of your input `l` in bytes. To see how to get the very best performance from a low-level approach, you way want to read our [performance notes](https://github.com/simdjson/simdjson/blob/master/doc/performance.md#padding-and-temporary-copies) on this topic (see the Padding and Temporary Copies section).
+length of your input `l` in bytes. 
 
 *Windows-specific*:  Windows users who need to read files with
 non-ANSI characters in the name should set their code page to
