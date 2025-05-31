@@ -470,8 +470,8 @@ namespace parse_api_tests {
 
     simdjson::dom::parser parser;
     auto json = parser.parse(jsonData.data(), jsonData.size());
-    const simdjson::dom::element& jsonElement = json.value();
-    const simdjson::dom::element& rootElement = jsonElement["root"];
+    const simdjson::dom::element jsonElement = json.value();
+    const simdjson::dom::element rootElement = jsonElement["root"];
 
     if (jsonElement["asset"]["gltfUpAxis"].is_string()) {
       if (jsonElement["asset"]["gltfUpAxis"].get_string().value_unsafe() == std::string_view("Z")) {

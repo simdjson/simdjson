@@ -12,7 +12,7 @@ cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark 
 if(SIMDJSON_GOOGLE_BENCHMARKS)
   CPMAddPackage(
         NAME google_benchmarks
-        URL https://github.com/google/benchmark/archive/refs/tags/v1.7.1.zip
+        URL https://github.com/google/benchmark/archive/refs/tags/v1.9.4.zip
         OPTIONS
         "BENCHMARK_ENABLE_TESTING OFF"
         "BENCHMARK_ENABLE_INSTALL OFF"
