@@ -13,7 +13,7 @@ add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
 add_cpp_test(padded_string_tests LABELS other acceptance                   )
 add_cpp_test(prettify_tests      LABELS other acceptance per_implementation)
 
-if(MSVC AND BUILD_SHARED_LIBS)
+if(WIN32 AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
   add_custom_command(TARGET unicode_tests POST_BUILD        # Adds a post-build event
     COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake -E copy_if_different..."
