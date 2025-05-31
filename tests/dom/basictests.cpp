@@ -462,6 +462,31 @@ namespace parse_api_tests {
     return true;
   }
 #if SIMDJSON_EXCEPTIONS
+
+  bool issue_2375() {
+    TEST_START();
+    std::string jsonData =
+        R"eos({"asset":{"version":"1.0"},"geometricError":100,"root":{"boundingVolume":{"region":[10,0,10,10,0,109]},"geometricError":100,"refine":"ADD","children":[{"boundingVolume":{"region":[20,0,20,0,0,20]},"geometricError":70,"content":{"url":"city/tileset.json"}},{"transform":[4,1,0,0,-0.7,3.1,3.8,0,0.9,-3.7,3.21,0,12,-47,40,1],"boundingVolume":{"region":[-1.3,0.6,-1.39,0.6,0,20]},"geometricError":0,"content":{"url":"building.b3dm"}},{"transform":[0.9,0.2,0,0,-0.15,0.62,0.76,0,0.19,-0.74,0.64,0,12,-47,40,1],"viewerRequestVolume":{"region":[-1.3,0.6,-1.31,0.6,0,20]},"boundingVolume":{"region":[-1.31,0.6,-1.3,0.6,0,20]},"geometricError":0,"content":{"url":"points.pnts"}}]}})eos";
+
+    simdjson::dom::parser parser;
+    auto json = parser.parse(jsonData.data(), jsonData.size());
+    const simdjson::dom::element& jsonElement = json.value();
+    const simdjson::dom::element& rootElement = jsonElement["root"];
+
+    if (jsonElement["asset"]["gltfUpAxis"].is_string()) {
+      if (jsonElement["asset"]["gltfUpAxis"].get_string().value_unsafe() == std::string_view("Z")) {
+        printf("up\n");
+      }
+    }
+
+    if (rootElement.is_object()) {
+      printf("I can confirm that root is an object!\n");
+      return true;
+    }
+    printf("root is not an object!\n");
+    return false;
+  }
+
   bool issue679() {
     std::cout << "Running " << __func__ << std::endl;
     auto input = "[1, 2, 3]"_padded;
@@ -746,6 +771,7 @@ namespace parse_api_tests {
            parser_load_exception() &&
            parser_load_many_exception() &&
            issue679() &&
+           issue_2375() &&
 #endif
            true;
   }
