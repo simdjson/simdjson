@@ -22,7 +22,7 @@ endif()
 
 CPMAddPackage(
         NAME simdjson-data
-        URL https://github.com/simdjson/simdjson-data/archive/a5b13babe65c1bba7186b41b43d4cbdc20a5c470.zip
+        URL https://github.com/simdjson/simdjson-data/archive/351949906abde446f0314bf79606fb5d884f5be7.zip
 )
 
 option(SIMDJSON_USE_BOOST_JSON "Try to include BOOST_JSON, this may break your binaries under some systems." OFF)
