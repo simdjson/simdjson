@@ -23,6 +23,24 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+
+  bool testing_to_string() {
+    TEST_START();
+    auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    for (auto field : object) {
+      std::string key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+      ASSERT_EQUAL(key, "bebe");
+    }
+    TEST_SUCCEED();
+  }
+
+
   bool issue1977() {
     TEST_START();
     auto json = R"({"1": 2} foo })"_padded;
@@ -257,6 +275,19 @@ namespace object_tests {
   }
 
 #if SIMDJSON_EXCEPTIONS
+
+  bool testing_to_string_exception() {
+    TEST_START();
+    auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object object = doc.get_object();
+    for (auto field : object) {
+      std::string key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+    }
+    TEST_SUCCEED();
+  }
 
   bool issue1965() {
     TEST_START();
@@ -1310,9 +1341,11 @@ namespace object_tests {
   }
 
   bool run() {
-    return issue1979() &&
+    return testing_to_string() &&
+           issue1979() &&
            issue1977() &&
 #if SIMDJSON_EXCEPTIONS
+           testing_to_string_exception() &&
            issue1965() &&
 #endif
            issue1974a() &&

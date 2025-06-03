@@ -196,6 +196,7 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    * @throw simdjson_error if there was an error.
    */
   simdjson_inline operator T&&() && noexcept(false);
+
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
@@ -254,6 +255,13 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
   simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
+   * Copy the value to a provided std::string, only enabled for std::string_view.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  simdjson_warn_unused simdjson_inline error_code get(std::string &value) && noexcept;
+
+  /**
    * The error.
    */
   simdjson_inline error_code error() const noexcept;
@@ -287,6 +295,13 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    * @throw simdjson_error if there was an error.
    */
   simdjson_inline operator T&&() && noexcept(false);
+  /**
+   * Cast to the value to an rvalue std::string (will throw on error).
+   * Cette conversion n'est activée que pour T = std::string_view.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator std::string&&() && noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
