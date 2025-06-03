@@ -106,7 +106,7 @@ int main() {}
 
   CPMAddPackage(
       NAME rapidjson
-      URL https://github.com/Tencent/rapidjson/archive/f54b0e47a08782a6131cc3d60f94d038fa6e0a51.zip
+      URL https://github.com/Tencent/rapidjson/archive/805d7ed5dfe97a39b8b0816fd5eeed8731dc4936.zip
       DOWNLOAD_ONLY YES
   )
   add_library(rapidjson INTERFACE)
