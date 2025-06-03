@@ -2606,6 +2606,8 @@ can use it with features such as `std::optional`:
   // value was populated with "3.1416"
 ```
 
+You can generally convert any answer that would return an `std::string_view`.
+
 ```cpp
   auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
   ondemand::parser parser;
@@ -2616,7 +2618,7 @@ can use it with features such as `std::optional`:
     error = field.unescaped_key().get(key);
     if(error) { /* */ }
   }
-````
+```
 
 You should be mindful of the trade-off: allocating multiple
 `std::string` instances can become expensive.
