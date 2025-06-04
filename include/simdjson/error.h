@@ -261,8 +261,9 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_warn_unused simdjson_inline error_code get(std::string &value) && noexcept
 #if SIMDJSON_SUPPORTS_DESERIALIZATION
-  requires (!std::is_same_v<T, std::string>);
+  requires (!std::is_same_v<T, std::string>)
 #endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+  ;
   /**
    * The error.
    */
