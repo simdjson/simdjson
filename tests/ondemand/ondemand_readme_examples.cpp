@@ -23,6 +23,23 @@ bool fatal_error() {
   ASSERT_FALSE(doc.is_alive());
   TEST_SUCCEED();
 }
+bool to_string_object() {
+  TEST_START();
+  auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if(error) { return false; }
+  ondemand::object object;
+  error = doc.get_object().get(object);
+  if(error) { return false; }
+  for (auto field : object) {
+    std::string key;
+    error = field.unescaped_key().get(key);
+    if(error) { return false; }
+  }
+  return true;
+}
 
 bool simplepad() {
   std::string json = "[1]";
