@@ -5,7 +5,7 @@ cmake_policy(VERSION 3.5) # For doctest
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 3.12.3
+    VERSION 3.13.0
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -22,8 +22,8 @@ string(
 # ---- Options, variables ----
 
 # These version numbers are modified by tools/release.py
-set(SIMDJSON_LIB_VERSION "25.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "25" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_VERSION "26.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "26" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
 if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
