@@ -51,7 +51,7 @@ echo "╚═══════════════════════�
 echo
 
 # Configuration
-ITERATIONS=50
+ITERATIONS=10
 JOBS=4
 
 # ───────────────────────────── BOX-PRINT HELPER ────────────────────────────
