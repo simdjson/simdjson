@@ -60,11 +60,153 @@ print_box_line() {                         # usage: print_box_line "text"
   printf "║ %-*s ║\n" "${BOX_WIDTH}" "$1"
 }
 
-# Make sure we use the reflection-enabled clang
-[ -z "$CXX" ] && export CXX=/usr/local/bin/clang++
-[ -z "$CC" ] && export CC=/usr/local/bin/clang
+# Function to test if a compiler supports reflection with debug output
+test_reflection_support() {
+    local compiler="$1"
+    echo "  → Testing compiler: $compiler"
 
-echo "Using compiler: $($CXX --version | head -n1)"
+    if [ ! -x "$compiler" ] && ! command -v "$compiler" >/dev/null 2>&1; then
+        echo "  → Compiler not found or not executable"
+        return 1
+    fi
+
+    # Check compiler version first
+    echo "  → Compiler version: $("$compiler" --version 2>/dev/null | head -n1 || echo "version check failed")"
+
+    # Simple test: check if compiler accepts reflection flags
+    local test_file=$(mktemp /tmp/reflection_test_XXXXXX.cpp)
+    cat > "$test_file" << 'EOF'
+int main() {
+    return 0;
+}
+EOF
+
+    echo "  → Testing basic reflection flags..."
+    local test_exe=$(mktemp /tmp/reflection_test_XXXXXX)
+    local basic_result=$("$compiler" -freflection -fexpansion-statements -std=c++26 "$test_file" -o "$test_exe" 2>&1)
+    local basic_exit_code=$?
+
+    if [ $basic_exit_code -ne 0 ]; then
+        echo "  → Basic flags FAILED with exit code $basic_exit_code"
+        echo "  → Error output: $basic_result"
+        rm -f "$test_file" "$test_exe"
+        return 1
+    fi
+    echo "  → Basic flags: OK"
+    rm -f "$test_exe"
+
+    # Test reflection syntax
+    echo "  → Testing reflection syntax..."
+    cat > "$test_file" << 'EOF'
+struct Test {
+    int x;
+};
+
+int main() {
+    auto refl = ^^Test;
+    return 0;
+}
+EOF
+
+    local syntax_result=$("$compiler" -freflection -fexpansion-statements -std=c++26 "$test_file" -o "$test_exe" 2>&1)
+    local syntax_exit_code=$?
+
+    if [ $syntax_exit_code -eq 0 ]; then
+        echo "  → Reflection syntax: OK"
+        echo "  → ✓ REFLECTION SUPPORT CONFIRMED"
+        rm -f "$test_file" "$test_exe"
+        return 0
+    else
+        echo "  → Reflection syntax FAILED with exit code $syntax_exit_code"
+        echo "  → Error output: $syntax_result"
+        rm -f "$test_file" "$test_exe"
+        return 1
+    fi
+}
+
+# Find a compiler with reflection support
+echo "Searching for clang++ with reflection support..."
+
+REFLECTION_CXX=""
+REFLECTION_CC=""
+
+# List of potential clang++ locations to check
+POTENTIAL_COMPILERS=(
+    "/usr/local/bin/clang++"
+    "/opt/clang/bin/clang++"
+    "/usr/bin/clang++"
+    "clang++"
+)
+
+# If CXX is already set, test it first
+if [ -n "$CXX" ]; then
+    echo "Testing user-specified compiler: $CXX"
+    if test_reflection_support "$CXX"; then
+        REFLECTION_CXX="$CXX"
+        echo "✓ User-specified compiler supports reflection: $CXX"
+    else
+        echo "✗ User-specified compiler does not support reflection: $CXX"
+        echo "Will search for alternative..."
+    fi
+fi
+
+# If we don't have a working compiler yet, search for one
+if [ -z "$REFLECTION_CXX" ]; then
+    for compiler in "${POTENTIAL_COMPILERS[@]}"; do
+        echo "Testing: $compiler"
+        if test_reflection_support "$compiler"; then
+            REFLECTION_CXX="$compiler"
+            echo "✓ Found reflection-enabled compiler: $compiler"
+            break
+        else
+            echo "✗ No reflection support: $compiler"
+        fi
+    done
+fi
+
+# Check if we found a working compiler
+if [ -z "$REFLECTION_CXX" ]; then
+    echo
+    echo "╔════════════════════════════════════════════════════════════════════════════╗"
+    echo "║                                 ERROR                                      ║"
+    echo "╠════════════════════════════════════════════════════════════════════════════╣"
+    echo "║                                                                            ║"
+    echo "║ No clang++ compiler with reflection support found!                        ║"
+    echo "║                                                                            ║"
+    echo "║ This benchmark requires a compiler that supports C++26 reflection.        ║"
+    echo "║                                                                            ║"
+    echo "║ Options:                                                                   ║"
+    echo "║ 1. Use the Docker container: ./p2996/run_docker.sh                        ║"
+    echo "║ 2. Build clang with reflection from: https://github.com/bloomberg/clang-p2996 ║"
+    echo "║ 3. Set CXX environment variable to point to reflection-enabled clang++    ║"
+    echo "║                                                                            ║"
+    echo "║ Example: CXX=/path/to/reflection-clang++ ./benchmark_script.sh            ║"
+    echo "║                                                                            ║"
+    echo "╚════════════════════════════════════════════════════════════════════════════╝"
+    exit 1
+fi
+
+# Set the compilers
+export CXX="$REFLECTION_CXX"
+
+# Find corresponding C compiler
+if [ -n "$CC" ]; then
+    REFLECTION_CC="$CC"
+elif [ "$REFLECTION_CXX" = "/usr/local/bin/clang++" ]; then
+    REFLECTION_CC="/usr/local/bin/clang"
+elif [ "$REFLECTION_CXX" = "/opt/clang/bin/clang++" ]; then
+    REFLECTION_CC="/opt/clang/bin/clang"
+elif [ "$REFLECTION_CXX" = "/usr/bin/clang++" ]; then
+    REFLECTION_CC="/usr/bin/clang"
+else
+    REFLECTION_CC="clang"
+fi
+
+export CC="$REFLECTION_CC"
+
+echo
+echo "Using reflection-enabled compiler: $($CXX --version | head -n1)"
+echo "Using C compiler: $($CC --version | head -n1)"
 echo
 
 # Function to create manual parsing test
@@ -304,13 +446,13 @@ time_parsing_compilation() {
 
     echo "  Configuring..."
     if [ "$use_reflection" = "true" ]; then
-        cmake -DCMAKE_CXX_COMPILER=clang++ \
+        cmake -DCMAKE_CXX_COMPILER="$CXX" \
               -DSIMDJSON_DEVELOPER_MODE=ON \
               -DSIMDJSON_STATIC_REFLECTION=ON \
               -DBUILD_SHARED_LIBS=OFF \
               ../.. >/dev/null 2>&1
     else
-        cmake -DCMAKE_CXX_COMPILER=clang++ \
+        cmake -DCMAKE_CXX_COMPILER="$CXX" \
               -DSIMDJSON_DEVELOPER_MODE=ON \
               -DSIMDJSON_STATIC_REFLECTION=OFF \
               -DBUILD_SHARED_LIBS=OFF \
@@ -324,7 +466,7 @@ time_parsing_compilation() {
     # Time just the test compilation
     start_time=$(date +%s.%N)
 
-    /usr/local/bin/clang++ -std=c++17 -I../../include "$test_file" -L. -lsimdjson -o parsing_test >/dev/null 2>&1
+    "$CXX" -std=c++17 -I../../include "$test_file" -L. -lsimdjson -o parsing_test >/dev/null 2>&1
 
     end_time=$(date +%s.%N)
 
