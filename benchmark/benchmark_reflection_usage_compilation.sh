@@ -61,7 +61,7 @@ print_box_line() {                         # usage: print_box_line "text"
 }
 
 # Make sure we use the reflection-enabled clang
-export CXX=/usr/local/bin/clang++
+[ -z "$CXX" ] && export CXX=/usr/local/bin/clang++
 export CC=/usr/local/bin/clang
 
 echo "Using compiler: $(/usr/local/bin/clang++ --version | head -n1)"
