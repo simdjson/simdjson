@@ -64,7 +64,7 @@ print_box_line() {                         # usage: print_box_line "text"
 [ -z "$CXX" ] && export CXX=/usr/local/bin/clang++
 [ -z "$CC" ] && export CC=/usr/local/bin/clang
 
-echo "Using compiler: $(/usr/local/bin/clang++ --version | head -n1)"
+echo "Using compiler: $($CXX --version | head -n1)"
 echo
 
 # Function to create manual parsing test
