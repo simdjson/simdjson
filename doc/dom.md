@@ -7,6 +7,7 @@ An overview of what you need to know to use simdjson, with examples.
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents-using-the-dom-front-end)
 * [Using the Parsed JSON](#using-the-parsed-json)
 * [C++17 Support](#c17-support)
+* [C++20 Support](#c20-support)
 * [JSON Pointer](#json-pointer)
 * [JSONPath](#jsonpath)
 * [Error Handling](#error-handling)
@@ -238,6 +239,23 @@ for (dom::key_value_pair field : object) {
 }
 ```
 
+C++20 Support
+------------
+
+simdjson library also supports some C++20 feature including `std::ranges`:
+
+```c++
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+dom::parser parser;
+auto justmodel = [](auto car) { return car["model"]; };
+for (auto car : parser.parse(cars_json).get_array() | std::views::transform(justmodel)) {
+  std::cout << car << std::endl;
+}
+```
 
 JSON Pointer
 ------------
