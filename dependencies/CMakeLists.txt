@@ -5,7 +5,7 @@ option(SIMDJSON_ALLOW_DOWNLOADS
         ON)
 
 cmake_dependent_option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON
-        "SIMDJSON_ALLOW_DOWNLOADS OR MINGW" OFF)
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
 cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON
         "SIMDJSON_ALLOW_DOWNLOADS OR MINGW" OFF)
 
