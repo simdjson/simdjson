@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_DOM_ELEMENT_H
 #define SIMDJSON_DOM_ELEMENT_H
 
+#include <vector>
+
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/array.h"
 
@@ -399,6 +401,8 @@ public:
    */
   inline simdjson_result<element> at_pointer(const std::string_view json_pointer) const noexcept;
 
+  inline simdjson_result<std::vector<element>> at_path_with_wildcard(const std::string_view json_path) const noexcept;
+
   /**
    * Get the value associated with the given JSONPath expression. We only support
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
@@ -544,6 +548,7 @@ public:
   simdjson_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   simdjson_result<dom::element> operator[](int) const noexcept = delete;
   simdjson_inline simdjson_result<dom::element> at_pointer(const std::string_view json_pointer) const noexcept;
+  simdjson_inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(const std::string_view json_path) const noexcept;
   simdjson_inline simdjson_result<dom::element> at_path(const std::string_view json_path) const noexcept;
   [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
   simdjson_inline simdjson_result<dom::element> at(const std::string_view json_pointer) const noexcept;
