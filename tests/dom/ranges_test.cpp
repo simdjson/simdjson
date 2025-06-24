@@ -13,10 +13,11 @@ int main(void) {
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
   dom::parser parser;
-  auto cars = parser.parse(cars_json).get_array() |
-              std::views::transform([](auto car) -> std::string_view {
-                return car["model"].get_string();
-              });
+  auto justmodel = [](auto car) -> std::string_view {
+    return car["model"].get_string();
+  };
+  auto cars =
+      parser.parse(cars_json).get_array() | std::views::transform(justmodel);
 
   return std::ranges::equal(
              cars, std::vector<std::string_view>{"Camry", "Soul", "Tercel"})
