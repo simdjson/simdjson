@@ -19,8 +19,6 @@ int main(void) {
   auto cars =
       parser.parse(cars_json).get_array() | std::views::transform(justmodel);
 
-  return std::ranges::equal(
-             cars, std::vector<std::string_view>{"Camry", "Soul", "Tercel"})
-             ? EXIT_SUCCESS
-             : EXIT_FAILURE;
+  const std::vector<std::string_view> expected{"Camry", "Soul", "Tercel"};
+  return std::ranges::equal(cars, expected) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
