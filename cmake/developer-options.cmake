@@ -2,7 +2,7 @@
 # Flags used by exes and by the simdjson library (project-wide flags)
 #
 add_library(simdjson-internal-flags INTERFACE)
-
+set_target_properties(simdjson-internal-flags PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 option(SIMDJSON_CHECK_EOF "Check for the end of the input buffer. The setting is unnecessary since we require padding of the inputs. You should expect tests to fail with this option turned on." OFF)
 if(SIMDJSON_CHECK_EOF)
@@ -51,7 +51,6 @@ undefined behavior.")
 endif()
 
 option(SIMDJSON_SANITIZE_MEMORY "Sanitize memory" OFF)
-
 
 if(SIMDJSON_SANITIZE_MEMORY)
   message(STATUS "Setting the memory sanitizer.")
@@ -158,9 +157,6 @@ We recommend Visual Studio 2019 or better on a 64-bit system.")
     add_compile_options(/Zi)
   endif()
 else()
-  if(NOT WIN32)
-    target_compile_options(simdjson-internal-flags INTERFACE -fPIC)
-  endif()
   target_compile_options(
       simdjson-internal-flags INTERFACE
       -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
