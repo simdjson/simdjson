@@ -4,6 +4,8 @@
 
 #include "simdjson.h"
 #include "test_macros.h"
+#include "test_main.h"
+
 using namespace simdjson;
 namespace ranges_test {
 

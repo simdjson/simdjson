@@ -6,6 +6,7 @@
 #include "simdjson.h"
 #include "cast_tester.h"
 #include "test_macros.h"
+#include "test_main.h"
 
 template<typename T, typename F>
 bool test_ondemand(simdjson::ondemand::parser &parser, const simdjson::padded_string &json, const F& f) {
