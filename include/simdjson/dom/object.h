@@ -89,7 +89,7 @@ public:
   private:
     simdjson_inline iterator(const internal::tape_ref &tape) noexcept;
 
-    internal::tape_ref tape;
+    internal::tape_ref tape{};
 
     friend class object;
   };
@@ -224,7 +224,7 @@ public:
 private:
   simdjson_inline object(const internal::tape_ref &tape) noexcept;
 
-  internal::tape_ref tape;
+  internal::tape_ref tape{};
 
   friend class element;
   friend struct simdjson_result<element>;
