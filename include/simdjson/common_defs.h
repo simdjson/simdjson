@@ -282,16 +282,25 @@ namespace std {
 // It could also wrongly set SIMDJSON_DEVELOPMENT_CHECKS (e.g., if the programmer
 // sets _DEBUG in a release build under Visual Studio, or if some compiler fails to
 // set the __OPTIMIZE__ macro).
+// We make it so that if NDEBUG is defined, then SIMDJSON_DEVELOPMENT_CHECKS
+// is not defined, irrespective of the compiler.
+// We recommend that users set NDEBUG in release builds, so that
+// SIMDJSON_DEVELOPMENT_CHECKS is not defined in release builds by default,
+// irrespective of the compiler.
 #ifndef SIMDJSON_DEVELOPMENT_CHECKS
 #ifdef _MSC_VER
 // Visual Studio seems to set _DEBUG for debug builds.
-#ifdef _DEBUG
+// We set SIMDJSON_DEVELOPMENT_CHECKS to 1 if _DEBUG is defined
+// and NDEBUG is not defined.
+#if defined(_DEBUG) && !defined(NDEBUG)
 #define SIMDJSON_DEVELOPMENT_CHECKS 1
 #endif // _DEBUG
 #else // _MSC_VER
 // All other compilers appear to set __OPTIMIZE__ to a positive integer
 // when the compiler is optimizing.
-#ifndef __OPTIMIZE__
+// We only set SIMDJSON_DEVELOPMENT_CHECKS if both __OPTIMIZE__
+// and NDEBUG are not defined.
+#if !defined(__OPTIMIZE__) && !defined(NDEBUG)
 #define SIMDJSON_DEVELOPMENT_CHECKS 1
 #endif // __OPTIMIZE__
 #endif // _MSC_VER

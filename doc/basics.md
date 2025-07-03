@@ -322,13 +322,15 @@ transcode the UTF-8 strings produced by the simdjson library to other formats. S
 Avoiding pitfalls: enable development checks
 --------------------
 
-We recommend that you first compile and run your code in Debug mode:
+We recommend that you first compile and run your code in debug mode:
 
 - under Visual Studio, it means having the `_DEBUG` macro defined,
--  for other compilers, it means leaving the `__OPTIMIZE__` macro undefined.
+- for many other compilers, it means leaving the `__OPTIMIZE__` macro undefined.
 
-The simdjson code will set `SIMDJSON_DEVELOPMENT_CHECKS=1` in debug mode.
-Alternatively, you can set the macro `SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including
+The simdjson code will set `SIMDJSON_DEVELOPMENT_CHECKS=1` in debug mode. Because
+the C++ standard does not provide a direct way of checking for a debug build, and
+because you may want the checks while building with otimizations, you can set
+the  macro `SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including
 the `simdjson.h` header to enable these additional checks: just make sure you remove the
 definition once your code has been tested. When `SIMDJSON_DEVELOPMENT_CHECKS` is set to 1, the
 simdjson library runs additional (expensive) tests on your code to help ensure that you are
@@ -337,9 +339,12 @@ using the library in a safe manner.
 Once your code has been tested, you can then run it in
 Release mode: under Visual Studio, it means having the `_DEBUG` macro undefined, and, for other
 compilers, it means setting `__OPTIMIZE__` to a positive integer. You can also forcefully
-disable these checks by setting `SIMDJSON_DEVELOPMENT_CHECKS` to 0. Once your code is tested, we
-further encourage you to define `NDEBUG` in your Release builds to disable additional runtime
-testing and get the best performance.
+disable these checks by setting `SIMDJSON_DEVELOPMENT_CHECKS` to 0.
+
+Once your code is tested, we further encourage you to define `NDEBUG` in your release
+builds to disable additional runtime testing and get the best performance. We
+disable these checks on a best-effort basis but the C++ standard does not provide
+a direct way to check for a release build.
 
 Using the parsed JSON
 ---------------------

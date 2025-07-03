@@ -4,9 +4,9 @@ Performance Notes
 simdjson strives to be at its fastest *without tuning*, and generally achieves this. However, there
 are still some scenarios where tuning can enhance performance.
 Once your code is tested, we
-further encourage you to define `NDEBUG` in your Release builds to disable additional runtime
+further encourage you to define `NDEBUG` in your release builds to disable additional runtime
 testing and get the best performance.
-* [NDEBUG directive](#ndebug-directive)
+* [NDEBUG macro](#ndebug-macro)
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Reusing string buffers](#reusing-string-buffers)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
@@ -17,16 +17,27 @@ testing and get the best performance.
 * [Free Padding](#free-padding)
 
 
-NDEBUG directive
+NDEBUG macro
 -------------
 
-In C/C++, the `NDEBUG` pre-processor directive is not set by default. When it is not set, the simdjson library does
-many additional checks that may impact negatively the performance. We recommend that, once your code
-is well tested, you define `NDEBUG` directive in your Release builds. The `NDEBUG` directive should be defined
-prior to including the `simdjson.h` header.
+We recommend that you set `NDEBUG` macro in your release builds.
 
-The `NDEBUG` directive is generally independent from optimization flags. For example, setting `-O3` under
-GCC does not set the `NDEBUG` directive.
+In C/C++, the `NDEBUG` macro is not set by default.
+When it is not set, the software may do many additional checks that may impact
+negatively the performance. We recommend that, once your code
+is well tested, you define `NDEBUG` directive in your release builds.
+
+The `NDEBUG` directive is generally independent from optimization flags.
+For example, setting `-O3` under GCC does not set the `NDEBUG` directive.
+However, tools like `CMake` automatically
+set `NDEBUG` for release builds.
+
+In the simdjson library, we check the `NDEBUG` macro as well as other
+macros to make performant release builds. However, the C++ standard
+does not provide a definitive approach to determine whether you are
+compiling for a release build. Thus we recommend that you follow
+the practice of setting the `NDEBUG` macro in release mode to make sure
+that you do not get undesirable expensive checks.
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
