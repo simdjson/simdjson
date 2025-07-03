@@ -40,9 +40,18 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(std::
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
   return at_pointer(json_pointer);
 }
+inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::at_path_with_wildcard(std::string_view json_path) const noexcept {
+  if (error()) {
+    return error();
+  }
+  return first.at_path_with_wildcard(json_path);
+}
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
+}
+inline std::vector<dom::element> simdjson_result<dom::object>::get_values() const noexcept {
+  return first.get_values();
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
@@ -143,6 +152,114 @@ inline simdjson_result<element> object::at_path(std::string_view json_path) cons
   return at_pointer(json_pointer);
 }
 
+inline simdjson_result<std::vector<element>> process_elements_recursive(std::vector<element>::iterator current, std::vector<element>::iterator end, std::string_view path_suffix, std::vector<element> accumulator) noexcept {
+  if (current == end) {
+    return accumulator;
+  }
+
+  std::string child_result_key = "$";
+  child_result_key.reserve(path_suffix.size() + 1);
+  child_result_key += path_suffix;
+
+  std::vector<element> child_result =
+      current->at_path_with_wildcard(child_result_key).value();
+
+  accumulator.reserve(accumulator.size() + child_result.size());
+  accumulator.insert(accumulator.end(),
+                     std::make_move_iterator(child_result.begin()),
+                     std::make_move_iterator(child_result.end()));
+
+  ++current;
+  return process_elements_recursive(current, end, path_suffix,
+                                    std::move(accumulator));
+}
+
+inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::string_view json_path) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
+
+  size_t i = 0;
+  // if JSONPath starts with $, skip it
+  if (!json_path.empty() && json_path.front() == '$') {
+    i = 1;
+  }
+
+  if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
+    // expect json path to always start with $ but this isn't currently
+    // expected in jsonpathutil.h. Need to verify why
+    return INVALID_JSON_POINTER;
+  }
+
+  if (json_path.find("*") != std::string::npos) {
+    if (json_path.length() == 4) {
+      std::string_view match = "$[*]";
+      if (memcmp(json_path.data(), match.data(), 4) == 0) {
+        return get_values();
+      }
+    }
+
+    if (json_path.length() == 3) {
+      std::string_view match = "$.*";
+      if (memcmp(json_path.data(), match.data(), 3) == 0) {
+        return get_values();
+      }
+    }
+
+    if (!json_path.empty() && json_path.front() == '$') {
+      i = 1;
+    }
+
+    std::string key;
+    key.reserve(json_path.size());
+
+    if (json_path[i] == '.') {
+      i += 1;
+      while (i < json_path.length()) {
+        if (json_path[i] == '.' || json_path[i] == '[') {
+          break;
+        }
+
+        key += json_path[i];
+        ++i;
+      }
+    } else if (json_path[i] == '[' &&
+               (json_path[i + 1] == '\'' || json_path[i + 1] == '"')) {
+      i += 2;
+      while (i < json_path.length()) {
+        if (json_path[i] == '\'' || json_path[i] == '"') {
+          i += 2;
+          break;
+        }
+
+        key += json_path[i];
+        ++i;
+      }
+    }
+
+    std::vector<element> child_values;
+
+    if (key.size() > 0) {
+      if (key == "*") {
+        child_values = get_values();
+      } else {
+        std::string child_key = "/";
+        child_key.reserve(key.size() + 1);
+        child_key += key;
+        child_values.emplace_back(at_pointer(child_key).value());
+      }
+
+      json_path = json_path.substr(i);
+      std::vector<element> result;
+      return process_elements_recursive(child_values.begin(),
+                                        child_values.end(), json_path, result);
+    } else {
+      return INVALID_JSON_POINTER;
+    }
+  } else {
+    std::vector<element> result{std::move(this->at_path(json_path).value())};
+    return result;
+  }
+}
+
 inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
@@ -151,6 +268,19 @@ inline simdjson_result<element> object::at_key(std::string_view key) const noexc
     }
   }
   return NO_SUCH_FIELD;
+}
+
+inline std::vector<element> object::get_values() const noexcept {
+  iterator end_field = end();
+  iterator begin_field = begin();
+
+  std::vector<element> result = {};
+  result.reserve(std::distance(begin_field, end_field));
+  for (iterator field = begin_field; field != end_field; ++field) {
+    result.emplace_back(field.value());
+  }
+
+  return result;
 }
 // In case you wonder why we need this, please see
 // https://github.com/simdjson/simdjson/issues/323
