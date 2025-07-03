@@ -57,7 +57,7 @@ public:
     iterator& operator=(const iterator&) noexcept = default;
   private:
     simdjson_inline iterator(const internal::tape_ref &tape) noexcept;
-    internal::tape_ref tape;
+    internal::tape_ref tape{};
     friend class array;
   };
 
@@ -148,7 +148,7 @@ public:
 
 private:
   simdjson_inline array(const internal::tape_ref &tape) noexcept;
-  internal::tape_ref tape;
+  internal::tape_ref tape{};
   friend class element;
   friend struct simdjson_result<element>;
   template<typename T>
