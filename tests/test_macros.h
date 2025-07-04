@@ -139,5 +139,4 @@ simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected,
 #define RUN_TEST(ACTUAL)                do { if (!(ACTUAL)) { return false; } } while (0);
 #define TEST_FAIL(MESSAGE)              do { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; } while (0);
 #define TEST_SUCCEED()                  do { return true; } while (0);
-
 #endif // TEST_MACROS_H
