@@ -492,7 +492,7 @@ public:
 
 private:
   simdjson_inline element(const internal::tape_ref &tape) noexcept;
-  internal::tape_ref tape;
+  internal::tape_ref tape{};
   friend class document;
   friend class object;
   friend class array;
