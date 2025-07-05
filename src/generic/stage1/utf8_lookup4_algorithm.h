@@ -116,7 +116,7 @@ using namespace simd;
   // Return nonzero if there are incomplete multibyte characters at the end of the block:
   // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
   //
-  simdjson_inline simd8<uint8_t> is_incomplete(const simd8<uint8_t> input) {
+  simdjson_inline bool is_incomplete(const simd8<uint8_t> input) {
     // If the previous input's last 3 bytes match this, they're too short (they ended at EOF):
     // ... 1111____ 111_____ 11______
 #if SIMDJSON_IMPLEMENTATION_ICELAKE
@@ -139,16 +139,21 @@ using namespace simd;
     };
 #endif
     const simd8<uint8_t> max_value(&max_array[sizeof(max_array)-sizeof(simd8<uint8_t>)]);
-    return input.gt_bits(max_value);
+    return input.gt_bits(max_value).any_bits_set_anywhere();
   }
 
   struct utf8_checker {
     // If this is nonzero, there has been a UTF-8 error.
-    simd8<uint8_t> error;
+    bool error;
     // The last input we received
+
+  #if SIMDJSON_IMPLEMENTATION_ARM64
+    simd8<uint8_t> prev_input_blocks[3];
+  #else
     simd8<uint8_t> prev_input_block;
+  #endif
     // Whether the last input we received was incomplete (used for ASCII fast path)
-    simd8<uint8_t> prev_incomplete;
+    bool prev_incomplete;
 
     //
     // Check whether the current bytes are valid UTF-8.
@@ -158,7 +163,7 @@ using namespace simd;
       // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
       simd8<uint8_t> prev1 = input.prev<1>(prev_input);
       simd8<uint8_t> sc = check_special_cases(input, prev1);
-      this->error |= check_multibyte_lengths(input, prev_input, sc);
+      this->error |= check_multibyte_lengths(input, prev_input, sc).any_bits_set_anywhere();
     }
 
     // The only problem that can happen at EOF is that a multibyte character is too short
@@ -174,6 +179,51 @@ using namespace simd;
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
       } else {
+      #if SIMDJSON_IMPLEMENTATION_ARM64
+          // Flip prev1...prev3 so we can easily determine if they are 2+, 3+ or 4+ lead bytes
+          // (2, 3, 4-byte leads become large positive numbers instead of small negative numbers)
+
+          simd8<uint8_t> chunks[7] = {
+            input.chunks[1].prev<1>(this->prev_input_blocks[0]),
+            input.chunks[2].prev<1>(this->prev_input_blocks[1]),
+            input.chunks[3].prev<1>(this->prev_input_blocks[2]),
+            input.chunks[0],
+            input.chunks[1],
+            input.chunks[2],
+            input.chunks[3],
+          };
+
+          simd8<uint8_t> error = simd8<uint8_t>::zero();
+
+          for (uint64_t i = 0; i < 4; i++) {
+            simd8<uint8_t> prev0 = chunks[i + 3];
+            simd8<uint8_t> prev1 = chunks[i + 2];
+            simd8<uint8_t> prev2 = chunks[i + 1];
+            simd8<uint8_t> prev3 = chunks[i + 0];
+            simd8<uint8_t> sc = check_special_cases(prev0, prev1);
+            simd8<uint8_t> must23 = must_be_2_3_continuation(prev2, prev3);
+            simd8<uint8_t> must23_80 = must23 & uint8_t(0x80);
+
+            error |= must23_80 ^ sc;
+          }
+
+          this->error |= error.any_bits_set_anywhere();
+
+          // If there are incomplete multibyte characters at the end of the block,
+          // write that data into `self.err`.
+          // e.g. if there is a 4-byte character, but it's 3 bytes from the end.
+          //
+          // If the previous chunk's last 3 bytes match this, they're too short (if they ended at EOF):
+          // ... 1111____ 111_____ 11______
+          this->prev_incomplete =
+            (vgetq_lane_u8(input.chunks[1], 15) >= 0b11110000) |
+            (vgetq_lane_u8(input.chunks[2], 15) >= 0b11100000) |
+            (vgetq_lane_u8(input.chunks[3], 15) >= 0b11000000);
+
+          this->prev_input_blocks[0] = input.chunks[1];
+          this->prev_input_blocks[1] = input.chunks[2];
+          this->prev_input_blocks[2] = input.chunks[3];
+      #else
         // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 1)
                 ||(simd8x64<uint8_t>::NUM_CHUNKS == 2)
@@ -192,11 +242,12 @@ using namespace simd;
         }
         this->prev_incomplete = is_incomplete(input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1]);
         this->prev_input_block = input.chunks[simd8x64<uint8_t>::NUM_CHUNKS-1];
+      #endif
       }
     }
     // do not forget to call check_eof!
     simdjson_inline error_code errors() {
-      return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
+      return this->error ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
   }; // struct utf8_checker
