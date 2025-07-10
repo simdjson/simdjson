@@ -152,22 +152,25 @@ inline simdjson_result<element> object::at_path(std::string_view json_path) cons
   return at_pointer(json_pointer);
 }
 
-inline simdjson_result<std::vector<element>> process_elements_recursive(std::vector<element>::iterator current, std::vector<element>::iterator end, std::string_view path_suffix, std::vector<element> accumulator) noexcept {
+inline void process_elements_recursive(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) noexcept {
   if (current == end) {
-    return accumulator;
+    return;
   }
 
-  std::vector<element> child_result =
-      current->at_path_with_wildcard(path_suffix).value();
+  simdjson_result<std::vector<element>> result = current->at_path_with_wildcard(path_suffix);
 
-  accumulator.reserve(accumulator.size() + child_result.size());
-  accumulator.insert(accumulator.end(),
-                     std::make_move_iterator(child_result.begin()),
-                     std::make_move_iterator(child_result.end()));
+  if (!result.error()) {
+    std::vector<element> child_result = result.value();
+
+    accumulator.reserve(accumulator.size() + child_result.size());
+    accumulator.insert(accumulator.end(),
+                       std::make_move_iterator(child_result.begin()),
+                       std::make_move_iterator(child_result.end()));
+  }
 
   ++current;
-  return process_elements_recursive(current, end, path_suffix,
-                                    std::move(accumulator));
+  process_elements_recursive(current, end, path_suffix,
+                                    accumulator);
 }
 
 inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::string_view json_path) const noexcept {
@@ -249,14 +252,22 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
       std::string new_json_path = "$" + std::string(json_path.substr(i));
       json_path = new_json_path;
-      std::vector<element> result;
-      return process_elements_recursive(child_values.begin(),
-                                        child_values.end(), json_path, result);
+      std::vector<element> result = {};
+
+      std::vector<element>::iterator child_values_begin = child_values.begin();
+      std::vector<element>::iterator child_values_end = child_values.end();
+
+      process_elements_recursive(child_values_begin, child_values_end, json_path, result);
+      return result;
     } else {
       return INVALID_JSON_POINTER;
     }
   } else {
-    std::vector<element> result{std::move(this->at_path(json_path).value())};
+    auto at_path_result = this->at_path(json_path);
+    if (at_path_result.error()) {
+      return INVALID_JSON_POINTER;
+    }
+    std::vector<element> result{std::move(at_path_result.value())};
     return result;
   }
 }

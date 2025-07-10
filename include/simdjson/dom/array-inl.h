@@ -158,7 +158,7 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
 
   auto result = at_path(json_path);
   if (result.error()) {
-    return values;
+    return result.error();
   }
 
   return std::vector{std::move(result.value())};
