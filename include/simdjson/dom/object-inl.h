@@ -157,7 +157,7 @@ inline void process_elements_recursive(std::vector<element>::iterator& current, 
     return;
   }
 
-  simdjson_result<std::vector<element>> result = current->at_path_with_wildcard(path_suffix);
+  simdjson_result<std::vector<element>> result = current->at_path_with_wildcard('$' + std::string(path_suffix));
 
   if (!result.error()) {
     std::vector<element> child_result = result.value();
@@ -192,72 +192,48 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
     std::vector<element> child_values;
 
-    if (json_path.length() == 4) {
-      constexpr std::string_view match = "$[*]";
-      if (memcmp(json_path.data(), match.data(), 4) == 0) {
-        get_values(child_values);
-        return child_values;
-      }
-    }
-
-    if (json_path.length() == 3) {
-      constexpr std::string_view match = "$.*";
-      if (memcmp(json_path.data(), match.data(), 3) == 0) {
-        get_values(child_values);
-        return child_values;
-      }
+    if (json_path == "$[*]" || json_path == "$.*") {
+      get_values(child_values);
+      return child_values;
     }
 
     if (!json_path.empty() && json_path.starts_with('$')) {
       i = 1;
     }
 
-    std::string key;
-    key.reserve(json_path.size());
+    std::string_view key;
 
     if (json_path[i] == '.') {
+      size_t key_start = i+1;
       i += 1;
-      while (i < json_path.length()) {
-        if (json_path[i] == '.' || json_path[i] == '[') {
-          break;
-        }
-
-        key += json_path[i];
+      while (i < json_path.length() && json_path[i] != '[' && json_path[i] != '.') {
         ++i;
       }
-    } else if (json_path[i] == '[' &&
-               (json_path[i + 1] == '\'' || json_path[i + 1] == '"')) {
+
+      key = json_path.substr(key_start, i - key_start);
+    } else if (json_path[i] == '[' && (json_path[i+1] == '\'' || json_path[i+1] == '"')) {
+      size_t key_start = i+2;
       i += 2;
-      while (i < json_path.length()) {
-        if (json_path[i] == '\'' || json_path[i] == '"') {
-          i += 2;
-          break;
-        }
-
-        key += json_path[i];
+      while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
         ++i;
       }
-    }
 
+      key = json_path.substr(key_start, i - key_start);
+    }
 
     if (key.size() > 0) {
       if (key == "*") {
         get_values(child_values);
       } else {
-        std::string child_key = "/";
-        child_key.reserve(key.size() + 1);
-        child_key += key;
-        child_values.emplace_back(at_pointer(child_key).value());
+        child_values.emplace_back(at_pointer("/" + std::string(key)).value());
       }
 
-      std::string new_json_path = "$" + std::string(json_path.substr(i));
-      json_path = new_json_path;
       std::vector<element> result = {};
 
       std::vector<element>::iterator child_values_begin = child_values.begin();
       std::vector<element>::iterator child_values_end = child_values.end();
 
-      process_elements_recursive(child_values_begin, child_values_end, json_path, result);
+      process_elements_recursive(child_values_begin, child_values_end, json_path.substr(i), result);
       return result;
     } else {
       return INVALID_JSON_POINTER;

@@ -151,6 +151,8 @@ public:
   /**
    * Gets the values of items in an array element
    * This function has linear-time complexity: the values are checked one by one.
+   *
+   * @return The child elements of an array
    */
 
   inline std::vector<element>& get_values(std::vector<element>& out) const noexcept;

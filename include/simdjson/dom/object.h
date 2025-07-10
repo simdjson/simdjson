@@ -210,6 +210,8 @@ public:
   /**
    * Gets the values associated with keys of an object
    * This function has linear-time complexity: the keys are checked one by one.
+   *
+   * @return the values associated with each key of an object
    */
   inline std::vector<element>& get_values(std::vector<element>& out) const noexcept;
 
