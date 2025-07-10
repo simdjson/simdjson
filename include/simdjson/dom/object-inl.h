@@ -50,8 +50,8 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::s
   if (error()) { return error(); }
   return first.at_key(key);
 }
-inline std::vector<dom::element> simdjson_result<dom::object>::get_values() const noexcept {
-  return first.get_values();
+inline std::vector<dom::element>& simdjson_result<dom::object>::get_values(std::vector<dom::element>& out) const noexcept {
+  return first.get_values(out);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {
   if (error()) { return error(); }
@@ -157,12 +157,8 @@ inline simdjson_result<std::vector<element>> process_elements_recursive(std::vec
     return accumulator;
   }
 
-  std::string child_result_key = "$";
-  child_result_key.reserve(path_suffix.size() + 1);
-  child_result_key += path_suffix;
-
   std::vector<element> child_result =
-      current->at_path_with_wildcard(child_result_key).value();
+      current->at_path_with_wildcard(path_suffix).value();
 
   accumulator.reserve(accumulator.size() + child_result.size());
   accumulator.insert(accumulator.end(),
@@ -179,7 +175,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
   size_t i = 0;
   // if JSONPath starts with $, skip it
-  if (!json_path.empty() && json_path.front() == '$') {
+  if (!json_path.empty() && json_path.starts_with('$')) {
     i = 1;
   }
 
@@ -190,21 +186,26 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   }
 
   if (json_path.find("*") != std::string::npos) {
+
+    std::vector<element> child_values;
+
     if (json_path.length() == 4) {
-      std::string_view match = "$[*]";
+      constexpr std::string_view match = "$[*]";
       if (memcmp(json_path.data(), match.data(), 4) == 0) {
-        return get_values();
+        get_values(child_values);
+        return child_values;
       }
     }
 
     if (json_path.length() == 3) {
-      std::string_view match = "$.*";
+      constexpr std::string_view match = "$.*";
       if (memcmp(json_path.data(), match.data(), 3) == 0) {
-        return get_values();
+        get_values(child_values);
+        return child_values;
       }
     }
 
-    if (!json_path.empty() && json_path.front() == '$') {
+    if (!json_path.empty() && json_path.starts_with('$')) {
       i = 1;
     }
 
@@ -235,11 +236,10 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       }
     }
 
-    std::vector<element> child_values;
 
     if (key.size() > 0) {
       if (key == "*") {
-        child_values = get_values();
+        get_values(child_values);
       } else {
         std::string child_key = "/";
         child_key.reserve(key.size() + 1);
@@ -247,7 +247,8 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
         child_values.emplace_back(at_pointer(child_key).value());
       }
 
-      json_path = json_path.substr(i);
+      std::string new_json_path = "$" + std::string(json_path.substr(i));
+      json_path = new_json_path;
       std::vector<element> result;
       return process_elements_recursive(child_values.begin(),
                                         child_values.end(), json_path, result);
@@ -270,17 +271,16 @@ inline simdjson_result<element> object::at_key(std::string_view key) const noexc
   return NO_SUCH_FIELD;
 }
 
-inline std::vector<element> object::get_values() const noexcept {
+inline std::vector<element>& object::get_values(std::vector<element>& out) const noexcept {
   iterator end_field = end();
   iterator begin_field = begin();
 
-  std::vector<element> result = {};
-  result.reserve(std::distance(begin_field, end_field));
+  out.reserve(std::distance(begin_field, end_field));
   for (iterator field = begin_field; field != end_field; ++field) {
-    result.emplace_back(field.value());
+    out.emplace_back(field.value());
   }
 
-  return result;
+  return out;
 }
 // In case you wonder why we need this, please see
 // https://github.com/simdjson/simdjson/issues/323

@@ -109,7 +109,12 @@ public:
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    */
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
+
+  /**
+   * Adds support for JSONPath expression with wildcards '*'
+   */
   inline simdjson_result<std::vector<element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
+
   /**
    * Get the value associated with the given JSONPath expression. We only support
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
@@ -143,7 +148,12 @@ public:
    */
   inline simdjson_result<element> at(size_t index) const noexcept;
 
-  inline simdjson_result<std::vector<element>> get_values() const noexcept;
+  /**
+   * Gets the values of items in an array element
+   * This function has linear-time complexity: the values are checked one by one.
+   */
+
+  inline std::vector<element>& get_values(std::vector<element>& out) const noexcept;
 
   /**
    * Implicitly convert object to element
@@ -174,7 +184,7 @@ public:
   inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
-  inline simdjson_result<std::vector<dom::element>> get_values() const noexcept;
+  inline std::vector<dom::element>& get_values(std::vector<dom::element>& out) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);

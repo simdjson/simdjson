@@ -64,6 +64,10 @@ inline simdjson_result<dom::element> simdjson_result<dom::array>::at(size_t inde
   return first.at(index);
 }
 
+inline std::vector<dom::element>& simdjson_result<dom::array>::get_values(std::vector<dom::element>& out) const noexcept {
+  return first.get_values(out);
+}
+
 namespace dom {
 
 //
@@ -136,20 +140,25 @@ inline simdjson_result<element> array::at_path(std::string_view json_path) const
 
 
 inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::string_view json_path) const noexcept {
+
+  std::vector<element> values;
+
   if (json_path.length() == 3 && json_path[0] == '$' && json_path[1] == '.' &&
       json_path[2] == '*') {
-    return get_values();
+    get_values(values);
+    return values;
   }
 
   if (json_path.length() == 4 && json_path[0] == '$' && json_path[1] == '[' &&
       json_path[2] == '*' && json_path[3] == ']')
   {
-    return get_values();
+    get_values(values);
+    return values;
   }
 
   auto result = at_path(json_path);
   if (result.error()) {
-    return std::vector<element>{};
+    return values;
   }
 
   return std::vector{std::move(result.value())};
@@ -165,16 +174,13 @@ inline simdjson_result<element> array::at(size_t index) const noexcept {
   return INDEX_OUT_OF_BOUNDS;
 }
 
-inline simdjson_result<std::vector<element>> array::get_values() const noexcept {
-  SIMDJSON_DEVELOPMENT_ASSERT(
-      tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-
-  std::vector<element> result = {};
+inline std::vector<element>& array::get_values(std::vector<element>& out) const noexcept {
+  out.reserve(this->size());
   for (auto element : *this) {
-    result.emplace_back(element);
+    out.emplace_back(element);
   }
 
-  return result;
+  return out;
 }
 
 inline array::operator element() const noexcept {

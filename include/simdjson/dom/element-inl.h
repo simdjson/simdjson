@@ -407,7 +407,7 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 inline bool is_path_well_formed(std::string_view json_path) noexcept {
   size_t i = 0;
   // if JSONPath starts with $, skip it
-  if (!json_path.empty() && json_path.front() == '$') {
+  if (!json_path.empty() && json_path.starts_with('$')) {
     i = 1;
   }
 
