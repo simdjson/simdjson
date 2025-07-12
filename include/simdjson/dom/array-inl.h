@@ -143,15 +143,7 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
 
   std::vector<element> values;
 
-  if (json_path.length() == 3 && json_path[0] == '$' && json_path[1] == '.' &&
-      json_path[2] == '*') {
-    get_values(values);
-    return values;
-  }
-
-  if (json_path.length() == 4 && json_path[0] == '$' && json_path[1] == '[' &&
-      json_path[2] == '*' && json_path[3] == ']')
-  {
+  if (json_path == "$[*]" || json_path == "$.*") {
     get_values(values);
     return values;
   }
