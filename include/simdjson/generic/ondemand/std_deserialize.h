@@ -12,7 +12,7 @@
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <experimental/meta>
-#include <static_reflection> // for std::define_static_string
+// #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 
 namespace simdjson {
@@ -314,7 +314,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   }
   error_code e = simdjson::SUCCESS;
 
-  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^^T)) {
+  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
       static_assert(
@@ -325,7 +325,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
         obj[key].get(out.[:mem:]);
       }
     }
-  }
+  };
   return e;
 }
 template <typename simdjson_value, typename T>

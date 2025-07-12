@@ -17,7 +17,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <static_reflection> // for std::define_static_string
+// #include <static_reflection> // for std::define_static_string - header not available yet
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -99,7 +99,7 @@ template <class T>
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
-  template for (constexpr auto dm : std::meta::nonstatic_data_members_of(^^T)) {
+  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
     if (i != 0)
       b.append(',');
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
@@ -107,7 +107,7 @@ constexpr void atom(string_builder &b, const T &t) {
     b.append(':');
     atom(b, t.[:dm:]);
     i++;
-  }
+  };
   b.append('}');
 }
 
@@ -115,7 +115,7 @@ constexpr void atom(string_builder &b, const T &t) {
 template <class Z> void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
-  template for (constexpr auto dm : std::meta::nonstatic_data_members_of(^^Z)) {
+  [:expand(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
     if (i != 0)
       b.append(',');
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
@@ -123,7 +123,7 @@ template <class Z> void append(string_builder &b, const Z &z) {
     b.append(':');
     atom(b, z.[:dm:]);
     i++;
-  }
+  };
   b.append('}');
 }
 
