@@ -138,22 +138,101 @@ inline simdjson_result<element> array::at_path(std::string_view json_path) const
   return at_pointer(json_pointer);
 }
 
+inline void array::process_json_path_of_child_elements(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) const noexcept {
+  if (current == end) {
+    return;
+  }
+
+  simdjson_result<std::vector<element>> result = current->at_path_with_wildcard('$' + std::string(path_suffix));
+
+  if (!result.error()) {
+    std::vector<element> child_result = result.value();
+
+    accumulator.reserve(accumulator.size() + child_result.size());
+    accumulator.insert(accumulator.end(),
+                       std::make_move_iterator(child_result.begin()),
+                       std::make_move_iterator(child_result.end()));
+  }
+
+  ++current;
+  process_json_path_of_child_elements(current, end, path_suffix,
+                                    accumulator);
+}
 
 inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::string_view json_path) const noexcept {
 
-  std::vector<element> values;
+  std::vector<element> child_values;
 
   if (json_path == "$[*]" || json_path == "$.*") {
-    get_values(values);
-    return values;
+    get_values(child_values);
+    return child_values;
   }
 
-  auto result = at_path(json_path);
-  if (result.error()) {
-    return result.error();
-  }
+  if (json_path.find("*") != std::string::npos) {
+    size_t i = 0;
 
-  return std::vector{std::move(result.value())};
+    if (!json_path.empty() && json_path.starts_with('$')) {
+      i = 1;
+    }
+
+    if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
+      return INVALID_JSON_POINTER;
+    }
+
+    std::string_view key;
+
+    if (json_path[i] == '.') {
+      i += 1;
+      size_t key_start = i;
+
+      while (i < json_path.length() && json_path[i] != '[' && json_path[i] != '.') {
+        ++i;
+      }
+
+      key = json_path.substr(key_start, i - key_start);
+    } else if (json_path[i] == '[' && (json_path[i+1] == '\'' || json_path[i+1] == '"')) {
+      i += 2;
+      size_t key_start = i;
+      while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
+        ++i;
+      }
+
+      key = json_path.substr(key_start, i - key_start);
+
+      i += 2;
+    } else if (json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
+      key = "*";
+      i += 3;
+    }
+
+    if (key.size() > 0) {
+      if (key == "*") {
+        get_values(child_values);
+      } else {
+        child_values.emplace_back(at_pointer("/" + std::string(key)).value());
+      }
+
+      std::vector<element> result = {};
+
+      std::vector<element>::iterator child_values_begin = child_values.begin();
+      std::vector<element>::iterator child_values_end = child_values.end();
+
+      json_path = json_path.substr(i);
+
+      process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
+
+      return result;
+    } else {
+      return INVALID_JSON_POINTER;
+    }
+  } else {
+    auto result = at_path(json_path);
+    if (result.error()) {
+      return result.error();
+    }
+
+    return std::vector{std::move(result.value())};
+  }
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {

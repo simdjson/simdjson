@@ -152,7 +152,7 @@ inline simdjson_result<element> object::at_path(std::string_view json_path) cons
   return at_pointer(json_pointer);
 }
 
-inline void process_elements_recursive(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) noexcept {
+inline void object::process_json_path_of_child_elements(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) const noexcept {
   if (current == end) {
     return;
   }
@@ -169,7 +169,7 @@ inline void process_elements_recursive(std::vector<element>::iterator& current, 
   }
 
   ++current;
-  process_elements_recursive(current, end, path_suffix,
+  process_json_path_of_child_elements(current, end, path_suffix,
                                     accumulator);
 }
 
@@ -218,7 +218,11 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       key = json_path.substr(key_start, i - key_start);
 
       i += 2;
+    } else if (json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
+      key = "*";
+      i += 3;
     }
+
 
     if (key.size() > 0) {
       if (key == "*") {
@@ -234,7 +238,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
       json_path = json_path.substr(i);
 
-      process_elements_recursive(child_values_begin, child_values_end, json_path, result);
+      process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       return result;
     } else {
       return INVALID_JSON_POINTER;
