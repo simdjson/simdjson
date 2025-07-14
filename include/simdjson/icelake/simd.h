@@ -77,7 +77,6 @@ namespace simd {
     friend simdjson_really_inline uint64_t operator==(const simd8<T> lhs, const simd8<T> rhs) {
       return _mm512_cmpeq_epi8_mask(lhs, rhs);
     }
-
     static const int SIZE = sizeof(base<T>::value);
 
     template<int N=1>

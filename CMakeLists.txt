@@ -45,6 +45,20 @@ if(SIMDJSON_DISABLE_DEPRECATED_API)
   )
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.25.0")
+    option(SIMDJSON_STATIC_REFLECTION "Enables static reflection (experimental), requires C++26" OFF)
+else()
+    set(SIMDJSON_STATIC_REFLECTION OFF CACHE BOOL "Enables static reflection (experimental)" FORCE)
+    message(WARNING "SIMDJSON_STATIC_REFLECTION is disabled because your CMake version is below 3.25")
+endif()
+
+if(SIMDJSON_STATIC_REFLECTION)
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_STATIC_REFLECTION=1
+  )
+endif()
+
 option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
 checks for incorrect API usage. Enabled by default in DEBUG." OFF)
 if(SIMDJSON_DEVELOPMENT_CHECKS)
@@ -100,7 +114,16 @@ simdjson_add_props(
     PRIVATE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
 )
 
-simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
+if(SIMDJSON_STATIC_REFLECTION)
+  # We would like to require C++26, but no compiler supports that!
+  # This is a hack:
+  simdjson_add_props(
+      target_compile_options PUBLIC
+      -freflection -fexpansion-statements -stdlib=libc++ -std=c++26
+  )
+else()
+  simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
+endif()
 
 # workaround for GNU GCC poor AVX load/store code generation
 if(

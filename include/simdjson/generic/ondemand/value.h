@@ -34,6 +34,7 @@ public:
    *
    * You may use get_double(), get_bool(), get_uint64(), get_int64(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
+   * When SIMDJSON_SUPPORTS_DESERIALIZATION is set, custom types are also supported.
    *
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
@@ -57,6 +58,7 @@ public:
    * Get this value as the given type.
    *
    * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * If the macro SIMDJSON_SUPPORTS_DESERIALIZATION is set, then custom types are also supported.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
    * @returns INCORRECT_TYPE If the JSON value is not an object.

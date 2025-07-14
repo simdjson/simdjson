@@ -112,8 +112,14 @@ endif()
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a
 # target.
-set(SIMDJSON_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for simdjson")
-set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
+if(SIMDJSON_STATIC_REFLECTION)
+  # This is temporary.
+  set(SIMDJSON_CXX_STANDARD 26 CACHE STRING "the C++ standard to use for simdjson")
+  #set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
+else()
+  set(SIMDJSON_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for simdjson")
+  set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
