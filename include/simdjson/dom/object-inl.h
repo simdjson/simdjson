@@ -206,7 +206,11 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       if (key == "*") {
         get_values(child_values);
       } else {
-        child_values.emplace_back(at_pointer("/" + std::string(key)).value());
+        auto pointer_result = at_pointer("/" + std::string(key));
+
+        if (!pointer_result.error()) {
+          child_values.emplace_back(pointer_result.value());
+        }
       }
 
       std::vector<element> result = {};
