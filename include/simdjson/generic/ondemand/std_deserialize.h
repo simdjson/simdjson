@@ -12,6 +12,7 @@
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <experimental/meta>
+// #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 
 namespace simdjson {
@@ -313,9 +314,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   }
   error_code e = simdjson::SUCCESS;
 
-  [:expand(std::meta::nonstatic_data_members_of(^^T)):] >> [&]<auto mem> {
+  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
+      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
       static_assert(
         deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
         "The specified type inside the class must itself be deserializable");
@@ -325,12 +326,6 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
       }
     }
   };
-  /**  TODO: we need to migrate to the following code once the compiler supports it:
-  template for (constexpr auto mem : std::meta::nonstatic_data_members_of(^T)) {
-    constexpr std::string_view key = std::string_view(std::meta::identifier_of(mem));
-
-  }
-  */
   return e;
 }
 template <typename simdjson_value, typename T>
