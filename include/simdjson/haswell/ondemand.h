@@ -3,7 +3,6 @@
 
 #include "simdjson/haswell/begin.h"
 #include "simdjson/generic/ondemand/amalgamated.h"
-#include "simdjson/generic/builder/amalgamated.h"
 #include "simdjson/haswell/end.h"
 
 #endif // SIMDJSON_HASWELL_ONDEMAND_H

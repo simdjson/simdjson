@@ -1,4 +1,4 @@
-/* auto-generated on 2025-06-24 15:13:44 -0400. Do not edit! */
+/* auto-generated on 2025-07-14 11:45:25 -0400. Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -298,6 +298,7 @@ using std::size_t;
 #if defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
 // If NDEBUG is set, or __OPTIMIZE__ is set, or we are under MSVC in release mode,
 // then do away with asserts and use __assume.
+// We still recommend that our users set NDEBUG in release mode.
 #if SIMDJSON_VISUAL_STUDIO
 #define SIMDJSON_UNREACHABLE() __assume(0)
 #define SIMDJSON_ASSUME(COND) __assume(COND)
@@ -2342,16 +2343,25 @@ namespace std {
 // It could also wrongly set SIMDJSON_DEVELOPMENT_CHECKS (e.g., if the programmer
 // sets _DEBUG in a release build under Visual Studio, or if some compiler fails to
 // set the __OPTIMIZE__ macro).
+// We make it so that if NDEBUG is defined, then SIMDJSON_DEVELOPMENT_CHECKS
+// is not defined, irrespective of the compiler.
+// We recommend that users set NDEBUG in release builds, so that
+// SIMDJSON_DEVELOPMENT_CHECKS is not defined in release builds by default,
+// irrespective of the compiler.
 #ifndef SIMDJSON_DEVELOPMENT_CHECKS
 #ifdef _MSC_VER
 // Visual Studio seems to set _DEBUG for debug builds.
-#ifdef _DEBUG
+// We set SIMDJSON_DEVELOPMENT_CHECKS to 1 if _DEBUG is defined
+// and NDEBUG is not defined.
+#if defined(_DEBUG) && !defined(NDEBUG)
 #define SIMDJSON_DEVELOPMENT_CHECKS 1
 #endif // _DEBUG
 #else // _MSC_VER
 // All other compilers appear to set __OPTIMIZE__ to a positive integer
 // when the compiler is optimizing.
-#ifndef __OPTIMIZE__
+// We only set SIMDJSON_DEVELOPMENT_CHECKS if both __OPTIMIZE__
+// and NDEBUG are not defined.
+#if !defined(__OPTIMIZE__) && !defined(NDEBUG)
 #define SIMDJSON_DEVELOPMENT_CHECKS 1
 #endif // __OPTIMIZE__
 #endif // _MSC_VER

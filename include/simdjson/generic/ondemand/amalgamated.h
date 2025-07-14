@@ -45,4 +45,8 @@
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #include "simdjson/generic/ondemand/value_iterator-inl.h"
 
+// JSON builder, ideally they should not be part of the ondemand directory
+// but it is convenient for now to have them here.
+#include "simdjson/generic/ondemand/json_string_builder.h"
+#include "simdjson/generic/ondemand/json_string_builder-inl.h"
 

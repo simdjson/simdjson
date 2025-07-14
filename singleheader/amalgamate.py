@@ -10,11 +10,40 @@ import os
 import re
 import shutil
 import datetime
+import json
 from typing import Dict, List, Optional, Set, TextIO, Union, cast
 
+# Check for Python 3, this does not actually work.
 if sys.version_info < (3, 0):
     sys.stdout.write("Sorry, requires Python 3.x or better\n")
     sys.exit(1)
+
+rules = """
+
+We refer your to the HACKING.md file for more information on how the project is organized.
+
+To help understand the error, here are the rules for including files in simdjson:
+
+All implementation-specific files, including arm64.h, arm64/implementation.h and
+arm64/ondemand.h, must be within SIMDJSON_CONDITIONAL_INCLUDE blocks.
+
+Top-level headers must not be included in any SIMDJSON_CONDITIONAL_INCLUDE block.
+
+Generic files must be included only in amalgamator files (arm64.h,
+arm64/implementation.h, arm64/ondemand.h, generic/amalgamated.h).
+
+We fail if an implementation-specific file is included more than once in the same block.
+We fail if a generic file is included more than once per implementation in the same block.
+
+
+Tip: generally, "file" will search the including file's source directory first, then
+the search paths while <file> does it the other way around.
+We prefer to use <> in simdjson headers to avoid accidentally including a file from the
+wrong directory.
+
+The amalgamate.py script checks that all files are included.
+
+"""
 
 SCRIPTPATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 PROJECTPATH = os.path.dirname(SCRIPTPATH)
@@ -61,6 +90,22 @@ class SimdjsonFile:
 
     def __str__(self):
         return self.include_path
+
+    def dump(self):
+        return {
+            'root': self.root,
+            'include_path': self.include_path,
+            'includes': [include.include_path for include in self.includes],
+            'included_from': [included_from.include_path for included_from in self.included_from],
+            'editor_only_includes': [editor_only_include.include_path for editor_only_include in self.editor_only_includes],
+            'editor_only_included_from': [editor_only_included_from.include_path for editor_only_included_from in self.editor_only_included_from],
+            'processed': self.processed,
+            'dependency_file': self.dependency_file.include_path if self.dependency_file else None,
+            'is_amalgamator': self.is_amalgamator,
+            'implementation': self.implementation,
+        }
+    def json(self):
+        return json.dumps(self.dump(), indent=4, sort_keys=True, ensure_ascii=False)
 
     def __repr__(self):
         return self.include_path
@@ -162,20 +207,21 @@ class SimdjsonFile:
 
     def add_include(self, include: 'SimdjsonFile'):
         if self.is_conditional_include:
-            assert include.is_conditional_include, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE."
+            # If I have a dependency file, I can only include something that has a dependency file.
+            assert include.is_conditional_include, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE. {rules}"
             # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
             # if include.amalgamator_file:
             #     assert include.amalgamator_file == self, f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
         else:
-            assert include.is_amalgamator or not include.is_conditional_include, f"{self} cannot include {include} because it is an amalgamated file."
+            assert include.is_amalgamator or not include.is_conditional_include, f"{self} cannot include {include} because it is an amalgamated file. {rules}"
 
         self.includes.append(include)
         include.included_from.add(self)
 
     def add_editor_only_include(self, include: 'SimdjsonFile'):
-        assert self.is_conditional_include, f"Cannot use #ifndef SIMDJSON_CONDITIONAL_INCLUDE in {self} because it is not an amalgamated file."
+        assert self.is_conditional_include, f"Cannot use #ifndef SIMDJSON_CONDITIONAL_INCLUDE in {self} because it is not an amalgamated file. {rules}"
         if not include.is_conditional_include:
-            assert self.dependency_file, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE."
+            assert self.dependency_file, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE. {rules}"
         # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
         # elif include.amalgamator_file:
         #     assert self.is_amalgamated_before(self.amalgamator_file), f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
@@ -190,11 +236,11 @@ class SimdjsonFile:
                 if file.dependency_file == self:
                     for editor_only_include in file.editor_only_includes:
                         if not editor_only_include.is_conditional_include:
-                            assert editor_only_include in self.includes, f"{file} includes {editor_only_include}, but it is not included from {self}. It must be added to {self}."
+                            assert editor_only_include in self.includes, f"{file} includes {editor_only_include}, but it is not included from {self}. It must be added to {self}. {rules}"
                             if editor_only_include in extra_include_set:
                                 extra_include_set.remove(editor_only_include)
 
-            assert len(extra_include_set) == 0, f"{self} unnecessarily includes {extra_include_set}. They are not included in the corresponding amalgamated files."
+            assert len(extra_include_set) == 0, f"{self} unnecessarily includes {extra_include_set}. They are not included in the corresponding amalgamated files. {rules}"
 
 class SimdjsonRepository:
     def __init__(self, project_path: str, relative_roots: List[RelativeRoot]):
@@ -320,6 +366,7 @@ class Amalgamator:
 
         assert not self.editor_only_region
         with open(file.absolute_path, 'r') as fid2:
+            print(f"including: {file}")
             for line in fid2:
                 line = line.rstrip('\n')
 
@@ -329,9 +376,9 @@ class Amalgamator:
 
                 # Ignore lines inside #ifndef SIMDJSON_CONDITIONAL_INCLUDE
                 if re.search(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
-                    assert file.is_conditional_include, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE but is not an amalgamated file!"
-                    assert self.in_conditional_include_block, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE without a prior #define SIMDJSON_CONDITIONAL_INCLUDE: {self.include_stack}"
-                    assert not self.editor_only_region, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE twice in a row"
+                    assert file.is_conditional_include, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE but is not an amalgamated file! {rules}"
+                    assert self.in_conditional_include_block, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE without a prior #define SIMDJSON_CONDITIONAL_INCLUDE: {self.include_stack} {rules}"
+                    assert not self.editor_only_region, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE twice in a row {rules}"
                     self.editor_only_region = True
 
                 # Handle ignored lines (and ending ignore blocks)
@@ -349,7 +396,7 @@ class Amalgamator:
                         self.editor_only_region = False
                     continue
 
-                assert not end_ignore, f"{file} has #endif // SIMDJSON_CONDITIONAL_INCLUDE without #ifndef SIMDJSON_CONDITIONAL_INCLUDE"
+                assert not end_ignore, f"{file} has #endif // SIMDJSON_CONDITIONAL_INCLUDE without #ifndef SIMDJSON_CONDITIONAL_INCLUDE {rules}"
 
                 # Handle #include lines
                 included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
@@ -376,26 +423,26 @@ class Amalgamator:
                     self.implementation = None
                 elif re.search(r'\bSIMDJSON_IMPLEMENTATION\b', line) and file.include_path != IMPLEMENTATION_DETECTION_H:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
-                    assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}"
+                    assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}\n{rules}"
                     line = re.sub(r'\bSIMDJSON_IMPLEMENTATION\b',self.implementation,line)
 
                 # Handle defining and undefining SIMDJSON_CONDITIONAL_INCLUDE
                 defined = re.search(r'^#define\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
                 if defined:
-                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE defined in amalgamated file {file}! Not allowed."
-                    assert not self.in_conditional_include_block, f"{file} redefines SIMDJSON_CONDITIONAL_INCLUDE"
+                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE defined in amalgamated file {file}! Not allowed. {rules}"
+                    assert not self.in_conditional_include_block, f"{file} redefines SIMDJSON_CONDITIONAL_INCLUDE {rules}"
                     self.in_conditional_include_block = True
                     self.found_includes_per_conditional_block.clear()
                     self.write(f'/* defining SIMDJSON_CONDITIONAL_INCLUDE */')
                 elif re.search(r'^#undef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
-                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE undefined in amalgamated file {file}! Not allowed."
-                    assert self.in_conditional_include_block, f"{file} undefines SIMDJSON_CONDITIONAL_INCLUDE without defining it"
+                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE undefined in amalgamated file {file}! Not allowed. {rules}"
+                    assert self.in_conditional_include_block, f"{file} undefines SIMDJSON_CONDITIONAL_INCLUDE without defining it {rules}"
                     self.write(f'/* undefining SIMDJSON_CONDITIONAL_INCLUDE */')
                     self.in_conditional_include_block = False
 
                 self.write(line)
 
-            assert not self.editor_only_region, f"{file} ended without #endif // SIMDJSON_CONDITIONAL_INCLUDE"
+            assert not self.editor_only_region, f"{file} ended without #endif // SIMDJSON_CONDITIONAL_INCLUDE {rules}"
 
         self.write(f"/* end file {self.file_to_str(file)} */")
 
