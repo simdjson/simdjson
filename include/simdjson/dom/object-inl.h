@@ -197,32 +197,10 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       return child_values;
     }
 
-    std::string_view key;
+    std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(json_path);
 
-    if (json_path[i] == '.') {
-      i += 1;
-      size_t key_start = i;
-
-      while (i < json_path.length() && json_path[i] != '[' && json_path[i] != '.') {
-        ++i;
-      }
-
-      key = json_path.substr(key_start, i - key_start);
-    } else if (json_path[i] == '[' && (json_path[i+1] == '\'' || json_path[i+1] == '"')) {
-      i += 2;
-      size_t key_start = i;
-      while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
-        ++i;
-      }
-
-      key = json_path.substr(key_start, i - key_start);
-
-      i += 2;
-    } else if (json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
-      key = "*";
-      i += 3;
-    }
-
+    std::string_view key = key_and_json_path.first;
+    json_path = key_and_json_path.second;
 
     if (key.size() > 0) {
       if (key == "*") {
@@ -235,8 +213,6 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
       std::vector<element>::iterator child_values_begin = child_values.begin();
       std::vector<element>::iterator child_values_end = child_values.end();
-
-      json_path = json_path.substr(i);
 
       process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       return result;
