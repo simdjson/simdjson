@@ -19,7 +19,7 @@ namespace builder {
  * supports atomic types (Booleans, strings), it does not support composed
  * types (arrays and objects).
  *
- * Ultimately, this class should support kernel-specific optimizations. E.g.,
+ * Ultimately, this class can support kernel-specific optimizations. E.g.,
  * it may make use of SIMD instructions to escape strings faster.
  */
 class string_builder {
@@ -146,7 +146,7 @@ public:
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content if needed.
    */
-  simdjson_inline operator std::string_view() const noexcept(false);
+  simdjson_inline operator std::string_view() const noexcept(false) simdjson_lifetime_bound;
 #endif
 
   /**
