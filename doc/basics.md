@@ -1358,6 +1358,7 @@ your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
 ```
 
 Then you can deserialize a type such as `Car` automatically:
+
 ```cpp
 std::string json =  R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
        "tire_pressure": [ 40.1, 39.9 ] } )";
