@@ -356,4 +356,16 @@ namespace std {
 #define SIMDJSON_AVX512_ALLOWED 1
 #endif
 
+
+#ifndef __has_cpp_attribute
+#define simdjson_lifetime_bound
+#elif __has_cpp_attribute(msvc::lifetimebound)
+#define simdjson_lifetime_bound [[msvc::lifetimebound]]
+#elif __has_cpp_attribute(clang::lifetimebound)
+#define simdjson_lifetime_bound [[clang::lifetimebound]]
+#elif __has_cpp_attribute(lifetimebound)
+#define simdjson_lifetime_bound [[lifetimebound]]
+#else
+#define simdjson_lifetime_bound
+#endif
 #endif // SIMDJSON_COMMON_DEFS_H

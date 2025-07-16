@@ -322,7 +322,7 @@ public:
    *          time it parses a document or when it is destroyed.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
    */
-  simdjson_inline operator std::string_view() noexcept(false);
+  simdjson_inline operator std::string_view() noexcept(false) simdjson_lifetime_bound;
   /**
    * Cast this JSON value to a raw_json_string.
    *
@@ -331,7 +331,7 @@ public:
    * @returns A pointer to the raw JSON for the given string.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
    */
-  simdjson_inline operator raw_json_string() noexcept(false);
+  simdjson_inline operator raw_json_string() noexcept(false) simdjson_lifetime_bound;
   /**
    * Cast this JSON value to a bool.
    *

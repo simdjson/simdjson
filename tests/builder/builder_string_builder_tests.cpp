@@ -270,6 +270,7 @@ namespace builder_tests {
     }
 
 
+
     void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
         // start of JSON
         builder.start_object();
@@ -318,6 +319,17 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
+    #if SIMDJSON_EXCEPTIONS
+    bool car_test_exception() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        serialize_car_long(c, sb);
+        std::string_view p{sb};
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+    #endif
     bool run() {
         return
             various_integers() &&
@@ -325,6 +337,7 @@ namespace builder_tests {
             car_test_long() &&
             car_test() &&
     #if SIMDJSON_EXCEPTIONS
+            car_test_exception() &&
             string_convertion_except() &&
     #endif
             append_char() &&

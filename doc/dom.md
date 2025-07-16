@@ -1,7 +1,10 @@
 The Document-Object-Model (DOM) front-end
 ==========
 
-An overview of what you need to know to use simdjson, with examples.
+An overview of what you need to know to use simdjson to parse JSON documents with
+our DOM API, with examples. [Our documentation regarding the generation (serialization) of JSON documents is in a
+separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
+
 
 * [DOM vs On-Demand](#dom-vs-on-demand)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents-using-the-dom-front-end)
@@ -27,6 +30,10 @@ The simdjson library offers two distinct approaches on how to access a JSON docu
 a conventional Document-Object-Model (DOM) front-end. In such a scenario, the JSON document is
 entirely parsed, validated and materialized in memory as the first step. The programmer may
 then access the parsed data using this in-memory model.
+
+On-Demand is a different model where you parse just what you need, directly into your own
+data structure. The On-Demand approach, when well tuned, can provide superior performance.
+[We refer you to the On-Demand documentation for further details](https://github.com/simdjson/simdjson/blob/master/doc/basics.md).
 
 The Basics: Loading and Parsing JSON Documents using the DOM front-end
 ----------------------------------------------
