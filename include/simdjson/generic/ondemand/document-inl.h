@@ -195,8 +195,8 @@ simdjson_inline document::operator object() & noexcept(false) { return get_objec
 simdjson_inline document::operator uint64_t() noexcept(false) { return get_uint64(); }
 simdjson_inline document::operator int64_t() noexcept(false) { return get_int64(); }
 simdjson_inline document::operator double() noexcept(false) { return get_double(); }
-simdjson_inline document::operator std::string_view() noexcept(false) { return get_string(false); }
-simdjson_inline document::operator raw_json_string() noexcept(false) { return get_raw_json_string(); }
+simdjson_inline document::operator std::string_view() noexcept(false) simdjson_lifetime_bound { return get_string(false); }
+simdjson_inline document::operator raw_json_string() noexcept(false) simdjson_lifetime_bound { return get_raw_json_string(); }
 simdjson_inline document::operator bool() noexcept(false) { return get_bool(); }
 simdjson_inline document::operator value() noexcept(false) { return get_value(); }
 

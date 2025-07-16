@@ -1363,7 +1363,7 @@ Then you can deserialize a type such as `Car` automatically:
 std::string json =  R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
        "tire_pressure": [ 40.1, 39.9 ] } )";
 simdjson::ondemand::parser parser;
-simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json)).get(doc);
+simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json));
 Car c = doc.get<Car>();
 ```
 
