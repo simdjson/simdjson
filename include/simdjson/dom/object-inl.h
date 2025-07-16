@@ -157,20 +157,20 @@ inline void object::process_json_path_of_child_elements(std::vector<element>::it
     return;
   }
 
-  simdjson_result<std::vector<element>> result = current->at_path_with_wildcard('$' + std::string(path_suffix));
+  simdjson_result<std::vector<element>> result;
 
-  if (!result.error()) {
-    std::vector<element> child_result = result.value();
+  for (auto it = current; it != end; ++it) {
+    result = it->at_path_with_wildcard(path_suffix);
 
-    accumulator.reserve(accumulator.size() + child_result.size());
-    accumulator.insert(accumulator.end(),
-                       std::make_move_iterator(child_result.begin()),
-                       std::make_move_iterator(child_result.end()));
+    if (!result.error()) {
+      std::vector<element> child_result = result.value();
+
+      accumulator.reserve(accumulator.size() + child_result.size());
+      accumulator.insert(accumulator.end(),
+                         std::make_move_iterator(child_result.begin()),
+                         std::make_move_iterator(child_result.end()));
+    }
   }
-
-  ++current;
-  process_json_path_of_child_elements(current, end, path_suffix,
-                                    accumulator);
 }
 
 inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::string_view json_path) const noexcept {
@@ -218,7 +218,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       std::vector<element>::iterator child_values_begin = child_values.begin();
       std::vector<element>::iterator child_values_end = child_values.end();
 
-      process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
+      process_json_path_of_child_elements(child_values_begin, child_values_end, "$" + std::string(json_path), result);
       return result;
     } else {
       return INVALID_JSON_POINTER;
