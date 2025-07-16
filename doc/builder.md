@@ -12,11 +12,14 @@ speed and high convenience.
   * [Overview: string_builder](#overview--string-builder)
   * [Example: string_builder](#example--string-builder)
   * [C++26 static reflection](#c--26-static-reflection)
+    + [Without `string_buffer` instance](#without--string-buffer--instance)
+    + [Without `string_buffer` instance but with explicit error handling](#without--string-buffer--instance-but-with-explicit-error-handling)
 
 Overview: string_builder
 ---------------------------
 
 The string_builder class is a low-level utility for constructing JSON strings representing documents. It is optimized for performance, potentially leveraging kernel-specific features like SIMD instructions for tasks such as string escaping. This class supports atomic types (e.g., booleans, numbers, strings) but does not handle composed types directly (like arrays or objects).
+Note that JSON strings are always encoded as UTF-8.
 
 An `string_builder` is created with an initial buffer capacity (e.g., 1kB). The memory
 is reallocated when needed.
@@ -42,6 +45,9 @@ After writting the content, if you have reasons to believe that the content migh
 
 - `validate_unicode()`: Checks if the content in the JSON buffer is valid UTF-8. Returns: true if the content is valid UTF-8, false otherwise.
 
+You might need to do unicode validation if you have strings in your data structures containing
+malformed UTF-8.
+
 Once you are satisfied, you can recover the string as follows:
 
 - `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.)
@@ -54,51 +60,69 @@ Example: string_builder
 ---------------------------
 
 ```C++
+struct Car {
+    std::string make;
+    std::string model;
+    int64_t year;
+    std::vector<double> tire_pressure;
+};
 
-    void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
-        // start of JSON
-        builder.start_object();
+void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
+    // start of JSON
+    builder.start_object();
 
-        // "make"
-        builder.append_key_value("make", car.make);
-        builder.append_comma();
+    // "make"
+    builder.append_key_value("make", car.make);
+    builder.append_comma();
 
-        // "model"
-        builder.append_key_value("model", car.model);
-        builder.append_comma();
+    // "model"
+    builder.append_key_value("model", car.model);
+    builder.append_comma();
 
-        // "year"
-        builder.append_key_value("year", car.year);
-        builder.append_comma();
+    // "year"
+    builder.append_key_value("year", car.year);
+    builder.append_comma();
 
-        // "tire_pressure"
-        builder.escape_and_append_with_quotes("tire_pressure");
-        builder.append_colon();
-        builder.start_array();
-        // vector tire_pressure
-        for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
-            builder.append(car.tire_pressure[i]);
-            if (i < car.tire_pressure.size() - 1) {
-                builder.append_comma();
-            }
+    // "tire_pressure"
+    builder.escape_and_append_with_quotes("tire_pressure");
+    builder.append_colon();
+    builder.start_array();
+    // vector tire_pressure
+    for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
+        builder.append(car.tire_pressure[i]);
+        if (i < car.tire_pressure.size() - 1) {
+            builder.append_comma();
         }
-        builder.end_array();
-        builder.end_object();
     }
+    builder.end_array();
+    builder.end_object();
+}
 
-    bool car_test() {
-        simdjson::builder::string_builder sb;
-        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-        serialize_car(c, sb);
-        std::string_view p;
-        if(sb.view().get(p)) {
-            return false; // there was an error
-        }
-        // p holds the JSON:
-        // "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}"
-        return true;
+bool car_test() {
+    simdjson::builder::string_builder sb;
+    Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+    serialize_car(c, sb);
+    std::string_view p{sb};
+    // p holds the JSON:
+    // "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}"
+    return true;
+}
+```
+
+The `string_builder` constructor takes an optional parameter which specifies the initial
+memory allocation in byte. If you know approximately the size of your JSON output, you can
+pass this value as a parameter (e.g., `simdjson::builder::string_builder sb{1233213}`).
+
+The `string_builder` might throw an exception in case of error when you cast it result to `std::string_view`. If you wish to avoid exceptions, you can use the following programming pattern:
+
+```cpp
+    std::string_view p;
+    if(sb.view().get(p)) {
+        return false; // there was an error
     }
 ```
+
+In all cases, the `std::string_view` instance depends the corresponding `string_builder` instance.
 
 C++26 static reflection
 ------------------------
@@ -118,21 +142,55 @@ And then you can append your data structures to a `string_builder` instance
 automatically. In most cases, it should work automatically:
 
 ```cpp
+    struct Car {
+        std::string make;
+        std::string model;
+        int64_t year;
+        std::vector<double> tire_pressure;
+    };
+
     bool car_test() {
         simdjson::builder::string_builder sb;
         Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-        append(sb, c);
-        std::string_view p;
-        if(sb.view().get(p)) {
-            return false; // there was an error
-        }
+        sb << c;
+        std::string_view p{sb};
         // p holds the JSON:
         // "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}"
         return true;
     }
 ```
 
-If you prefer, you can also create a string directly:
+
+### Without `string_buffer` instance
+
+In some instances, you might want to create a string directly from your own data type.
+You can create a string directly, without an explicit `string_builder` instance
+with the `simdjson::builder::to_json_string` function.
+(Under the hood a `string_builder` instance may still be created.)
+
+```cpp
+    struct Car {
+        std::string make;
+        std::string model;
+        int64_t year;
+        std::vector<double> tire_pressure;
+    };
+
+    void f() {
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        std::string json = simdjson::builder::to_json_string(c);
+    }
+```
+
+If you know the output size, in bytes, of your JSON string, you may
+pass it as a second parameter (e.g., `simdjson::builder::to_json_string(c, 31123)`).
+
+
+
+### Without `string_buffer` instance but with explicit error handling
+
+If prefer a version without exceptions and explicit error handling, you can use the following
+pattern:
 
 ```cpp
   std::string json;
