@@ -9,6 +9,9 @@
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/serialization.h"
 #include "simdjson/generic/ondemand/value.h"
+#if SIMDJSON_STATIC_REFLECTION
+#include "simdjson/generic/ondemand/json_builder.h"
+#endif
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -108,6 +111,8 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
   if (x.error()) { return x.error(); }
   return to_json_string(x.value_unsafe());
 }
+
+
 } // namespace simdjson
 
 namespace simdjson { namespace SIMDJSON_IMPLEMENTATION { namespace ondemand {

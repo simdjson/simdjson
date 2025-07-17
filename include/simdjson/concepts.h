@@ -115,7 +115,6 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
   requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
     obj.emplace(std::move(val));
-    obj = std::move(val);
     {
       obj.value_or(val)
     } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
