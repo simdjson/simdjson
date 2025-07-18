@@ -138,6 +138,32 @@ constexpr void atom(string_builder &b, const T &ptr) {
   }
 }
 
+// Support for enums - serialize as string representation using expand approach from P2996R12
+template <typename T>
+  requires(std::is_enum_v<T>)
+void atom(string_builder &b, const T &e) {
+#if SIMDJSON_STATIC_REFLECTION
+  std::string_view result = "<unnamed>";
+  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+    if (e == [:enum_val:]) {
+      result = std::meta::identifier_of(enum_val);
+    }
+  };
+
+  if (result != "<unnamed>") {
+    b.append_raw("\"");
+    b.append_raw(result);
+    b.append_raw("\"");
+  } else {
+    // Fallback to integer if enum value not found
+    atom(b, static_cast<std::underlying_type_t<T>>(e));
+  }
+#else
+  // Fallback: serialize as integer if reflection not available
+  atom(b, static_cast<std::underlying_type_t<T>>(e));
+#endif
+}
+
 // Support for appendable containers that don't have operator[] (sets, etc.)
 template <concepts::appendable_containers T>
   requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&

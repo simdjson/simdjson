@@ -334,6 +334,33 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   };
   return e;
 }
+
+// Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
+template <typename T, typename ValT>
+  requires(std::is_enum_v<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+#if SIMDJSON_STATIC_REFLECTION
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+
+  bool found = false;
+  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+    if (!found && str == std::meta::identifier_of(enum_val)) {
+      out = [:enum_val:];
+      found = true;
+    }
+  };
+
+  return found ? SUCCESS : INCORRECT_TYPE;
+#else
+  // Fallback: deserialize as integer if reflection not available
+  std::underlying_type_t<T> int_val;
+  SIMDJSON_TRY(val.get(int_val));
+  out = static_cast<T>(int_val);
+  return SUCCESS;
+#endif
+}
+
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept {
@@ -507,7 +534,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_vi
 
 
 ////////////////////////////////////////
-// Explicit optional specializations 
+// Explicit optional specializations
 ////////////////////////////////////////
 error_code tag_invoke(deserialize_tag, auto &val, std::optional<std::string> &out) noexcept {
   // Check if the value is null
