@@ -536,7 +536,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_vi
 ////////////////////////////////////////
 // Explicit optional specializations
 ////////////////////////////////////////
-error_code tag_invoke(deserialize_tag, auto &val, std::optional<std::string> &out) noexcept {
+error_code tag_invoke(deserialize_tag, auto &val, concepts::optional_type &out) noexcept {
   // Check if the value is null
   if (val.is_null()) {
     out.reset(); // Set to nullopt
@@ -552,7 +552,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::optional<std::string> &ou
   return SUCCESS;
 }
 
-error_code tag_invoke(deserialize_tag, auto &val, std::optional<int> &out) noexcept {
+error_code tag_invoke(deserialize_tag, auto &val, concepts::optional_type &out) noexcept {
   // Check if the value is null
   if (val.is_null()) {
     out.reset(); // Set to nullopt

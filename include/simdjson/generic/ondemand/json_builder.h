@@ -15,7 +15,6 @@
 #include <cstring>
 #include <experimental/meta>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
