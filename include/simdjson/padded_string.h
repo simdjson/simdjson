@@ -101,12 +101,12 @@ struct padded_string final {
   /**
    * Create a std::string_view with the same content.
    */
-  operator std::string_view() const;
+  operator std::string_view() const simdjson_lifetime_bound;
 
   /**
    * Create a padded_string_view with the same content.
    */
-  operator padded_string_view() const noexcept;
+  operator padded_string_view() const noexcept simdjson_lifetime_bound;
 
   /**
    * Load this padded string from a file.
