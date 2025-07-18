@@ -20,32 +20,32 @@ namespace builder_tests {
       std::unique_ptr<int> null_unique_ptr;
       std::shared_ptr<std::string> null_shared_ptr;
     };
-    
+
     EmptyValues test;
     test.empty_string = "";
     // empty_vector is already empty by default
     test.null_optional = std::nullopt;
     test.null_unique_ptr = nullptr;
     test.null_shared_ptr = nullptr;
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"empty_string\":\"\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"empty_vector\":[]") != std::string::npos);
     ASSERT_TRUE(json.find("\"null_optional\":null") != std::string::npos);
     ASSERT_TRUE(json.find("\"null_unique_ptr\":null") != std::string::npos);
     ASSERT_TRUE(json.find("\"null_shared_ptr\":null") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<EmptyValues>();
     ASSERT_SUCCESS(get_result);
-    
+
     EmptyValues deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.empty_string, "");
     ASSERT_EQUAL(deserialized.empty_vector.size(), 0);
@@ -66,26 +66,26 @@ namespace builder_tests {
       std::string unicode;
       char null_char;
     };
-    
+
     SpecialChars test;
     test.quotes = "He said \"Hello\"";
     test.backslashes = "Path\\to\\file";
     test.newlines = "Line1\nLine2\tTabbed";
     test.unicode = "Café résumé";
     test.null_char = '\0';
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     // Test that quotes are properly escaped
     ASSERT_TRUE(json.find("\\\"Hello\\\"") != std::string::npos);
-    // Test that backslashes are properly escaped  
+    // Test that backslashes are properly escaped
     ASSERT_TRUE(json.find("\\\\to\\\\") != std::string::npos);
     // Test that newlines are properly escaped
     ASSERT_TRUE(json.find("\\n") != std::string::npos);
     ASSERT_TRUE(json.find("\\t") != std::string::npos);
-    
+
     // Test round-trip (excluding null char which has special handling)
     struct SpecialCharsNoNull {
       std::string quotes;
@@ -93,23 +93,23 @@ namespace builder_tests {
       std::string newlines;
       std::string unicode;
     };
-    
+
     SpecialCharsNoNull test_no_null;
     test_no_null.quotes = test.quotes;
     test_no_null.backslashes = test.backslashes;
     test_no_null.newlines = test.newlines;
     test_no_null.unicode = test.unicode;
-    
+
     auto result_no_null = builder::to_json_string(test_no_null);
     ASSERT_SUCCESS(result_no_null);
-    
+
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(result_no_null.value()));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<SpecialCharsNoNull>();
     ASSERT_SUCCESS(get_result);
-    
+
     SpecialCharsNoNull deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.quotes, test.quotes);
     ASSERT_EQUAL(deserialized.backslashes, test.backslashes);
@@ -130,7 +130,7 @@ namespace builder_tests {
       bool true_val;
       bool false_val;
     };
-    
+
     NumericLimits test;
     test.max_int = std::numeric_limits<int>::max();
     test.min_int = std::numeric_limits<int>::min();
@@ -138,22 +138,22 @@ namespace builder_tests {
     test.min_double = -1e100; // Large negative but safe double value
     test.true_val = true;
     test.false_val = false;
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"true_val\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"false_val\":false") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<NumericLimits>();
     ASSERT_SUCCESS(get_result);
-    
+
     NumericLimits deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.max_int, test.max_int);
     ASSERT_EQUAL(deserialized.min_int, test.min_int);
@@ -170,37 +170,37 @@ namespace builder_tests {
       int value;
       std::string name;
     };
-    
+
     struct Outer {
       Inner inner_obj;
       std::vector<Inner> inner_vector;
       std::optional<Inner> optional_inner;
       std::unique_ptr<Inner> unique_inner;
     };
-    
+
     Outer test;
     test.inner_obj = {42, "inner"};
     test.inner_vector = {{1, "first"}, {2, "second"}};
     test.optional_inner = Inner{99, "optional"};
     test.unique_inner = std::make_unique<Inner>(Inner{123, "unique"});
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"inner_obj\":{") != std::string::npos);
     ASSERT_TRUE(json.find("\"inner_vector\":[") != std::string::npos);
     ASSERT_TRUE(json.find("\"optional_inner\":{") != std::string::npos);
     ASSERT_TRUE(json.find("\"unique_inner\":{") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<Outer>();
     ASSERT_SUCCESS(get_result);
-    
+
     Outer deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.inner_obj.value, 42);
     ASSERT_EQUAL(deserialized.inner_obj.name, "inner");
@@ -217,20 +217,20 @@ namespace builder_tests {
 
   bool test_const_char_serialization_only() {
     TEST_START();
-    
+
     // Test that const char* can be serialized (but not round-tripped)
     const char* test_cstring = "const char test";
     auto result = builder::to_json_string(test_cstring);
     ASSERT_SUCCESS(result);
     ASSERT_EQUAL(result.value(), "\"const char test\"");
-    
+
     // Test with special characters in const char*
     const char* special_cstring = "quotes\"and\\backslashes";
     auto special_result = builder::to_json_string(special_cstring);
     ASSERT_SUCCESS(special_result);
     ASSERT_TRUE(special_result.value().find("\\\"") != std::string::npos);
     ASSERT_TRUE(special_result.value().find("\\\\") != std::string::npos);
-    
+
     TEST_SUCCEED();
   }
 

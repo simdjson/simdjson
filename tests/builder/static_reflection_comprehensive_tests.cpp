@@ -22,26 +22,26 @@ namespace builder_tests {
       double double_val;
       float float_val;
     };
-    
+
     PrimitiveTypes test{true, 'X', 42, 3.14159, 2.71f};
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"bool_val\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"char_val\":\"X\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"int_val\":42") != std::string::npos);
     ASSERT_TRUE(json.find("\"double_val\":3.14159") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<PrimitiveTypes>();
     ASSERT_SUCCESS(get_result);
-    
+
     PrimitiveTypes deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.bool_val, test.bool_val);
     ASSERT_EQUAL(deserialized.char_val, test.char_val);
@@ -58,24 +58,24 @@ namespace builder_tests {
       std::string string_val;
       std::string_view string_view_val;
     };
-    
+
     StringTypes test{"hello world", "test_view"};
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"string_val\":\"hello world\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_view_val\":\"test_view\"") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<StringTypes>();
     ASSERT_SUCCESS(get_result);
-    
+
     StringTypes deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.string_val, test.string_val);
 #endif
@@ -91,30 +91,30 @@ namespace builder_tests {
       std::optional<int> opt_int_null;
       std::optional<std::string> opt_string_null;
     };
-    
+
     OptionalTypes test;
     test.opt_int_with_value = 42;
     test.opt_string_with_value = "optional_test";
     test.opt_int_null = std::nullopt;
     test.opt_string_null = std::nullopt;
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"opt_int_with_value\":42") != std::string::npos);
     ASSERT_TRUE(json.find("\"opt_string_with_value\":\"optional_test\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"opt_int_null\":null") != std::string::npos);
     ASSERT_TRUE(json.find("\"opt_string_null\":null") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<OptionalTypes>();
     ASSERT_SUCCESS(get_result);
-    
+
     OptionalTypes deserialized = std::move(get_result.value());
     ASSERT_TRUE(deserialized.opt_int_with_value.has_value());
     ASSERT_EQUAL(*deserialized.opt_int_with_value, 42);
@@ -136,32 +136,32 @@ namespace builder_tests {
       std::unique_ptr<int> unique_int_null;
       std::shared_ptr<std::string> shared_string_null;
     };
-    
+
     SmartPointerTypes test;
     test.unique_int_with_value = std::make_unique<int>(123);
     test.shared_string_with_value = std::make_shared<std::string>("shared_test");
     test.unique_bool_with_value = std::make_unique<bool>(true);
     test.unique_int_null = nullptr;
     test.shared_string_null = nullptr;
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"unique_int_with_value\":123") != std::string::npos);
     ASSERT_TRUE(json.find("\"shared_string_with_value\":\"shared_test\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"unique_bool_with_value\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"unique_int_null\":null") != std::string::npos);
     ASSERT_TRUE(json.find("\"shared_string_null\":null") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<SmartPointerTypes>();
     ASSERT_SUCCESS(get_result);
-    
+
     SmartPointerTypes deserialized = std::move(get_result.value());
     ASSERT_TRUE(deserialized.unique_int_with_value != nullptr);
     ASSERT_EQUAL(*deserialized.unique_int_with_value, 123);
@@ -183,28 +183,28 @@ namespace builder_tests {
       std::set<std::string> string_set;
       std::map<std::string, int> string_map;
     };
-    
+
     ContainerTypes test;
     test.int_vector = {1, 2, 3, 4, 5};
     test.string_set = {"apple", "banana", "cherry"};
     test.string_map = {{"key1", 10}, {"key2", 20}, {"key3", 30}};
-    
+
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
-    
+
     std::string json = result.value();
     ASSERT_TRUE(json.find("\"int_vector\":[1,2,3,4,5]") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_set\":[") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_map\":{") != std::string::npos);
-    
+
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-    
+
     auto get_result = doc_result.value().get<ContainerTypes>();
     ASSERT_SUCCESS(get_result);
-    
+
     ContainerTypes deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.int_vector.size(), 5);
     ASSERT_EQUAL(deserialized.string_set.size(), 3);
@@ -217,30 +217,30 @@ namespace builder_tests {
 
   bool test_individual_serialization() {
     TEST_START();
-    
+
     // Test individual type serialization (not part of structs)
     auto bool_result = builder::to_json_string(true);
     ASSERT_SUCCESS(bool_result);
     ASSERT_EQUAL(bool_result.value(), "true");
-    
+
     auto int_result = builder::to_json_string(42);
     ASSERT_SUCCESS(int_result);
     ASSERT_EQUAL(int_result.value(), "42");
-    
+
     auto string_result = builder::to_json_string(std::string("hello"));
     ASSERT_SUCCESS(string_result);
     ASSERT_EQUAL(string_result.value(), "\"hello\"");
-    
+
     auto char_result = builder::to_json_string('X');
     ASSERT_SUCCESS(char_result);
     ASSERT_EQUAL(char_result.value(), "\"X\"");
-    
+
     // Test const char* serialization (serialization only, not round-trip)
     const char* cstring = "cstring";
     auto cstring_result = builder::to_json_string(cstring);
     ASSERT_SUCCESS(cstring_result);
     ASSERT_EQUAL(cstring_result.value(), "\"cstring\"");
-    
+
     TEST_SUCCEED();
   }
 
