@@ -2,8 +2,25 @@
 #include "simdjson/convert.h"
 #include "test_ondemand.h"
 
+#include <ranges>
 #include <string>
 #include <vector>
+#ifdef __cpp_lib_ranges
+
+static_assert(std::input_or_output_iterator<simdjson::auto_iterator>,
+              "Must be a valid input iterator");
+static_assert(std::semiregular<simdjson::auto_iterator>,
+              "Should be kinda regular");
+static_assert(std::ranges::__access::__member_end<simdjson::auto_parser<>>,
+              "Must be a valid input iterator");
+static_assert(std::ranges::range<simdjson::auto_parser<>>,
+              "Parser need to be a range.");
+static_assert(std::ranges::input_range<simdjson::auto_parser<>>,
+              "Parser need to be an input range.");
+static_assert(
+    requires(simdjson::auto_parser<> &parser) {
+      { parser.begin() } -> std::input_or_output_iterator;
+    }, "Must be valid iterator.");
 
 namespace convert_tests {
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
@@ -104,7 +121,6 @@ bool with_parser() {
 
 bool to_array() {
   TEST_START();
-  simdjson::ondemand::parser parser;
   for (auto val : to(json_cars).array()) {
     Car car{};
     if (auto const error = val.get(car)) {
@@ -119,11 +135,57 @@ bool to_array() {
   TEST_SUCCEED();
 }
 
+bool to_array_shortcut() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (auto val : to(parser, json_cars)) {
+    Car car{};
+    if (auto const error = val.get(car)) {
+      std::cerr << simdjson::error_message(error) << std::endl;
+      return false;
+    }
+    if (car.year < 1998) {
+      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+
+bool to_bad_array() {
+  TEST_START();
+  for ([[maybe_unused]] auto val : to(json_car)) {
+    Car car{};
+    if (val.get(car)) {
+      continue;
+    }
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool to_clean_array() {
+  TEST_START();
+  // std::ranges::for_each(to(json_cars), []([[maybe_unused]] auto &car) {
+  //
+  // });
+  // auto res = to(json_cars) | simdjson::to<Car>();
+  // [[maybe_unused]] auto r1 = std::ranges::begin(res);
+  // for (Car const car : to(json_cars) | simdjson::to<Car>()) {
+  //   if (car.year < 1998) {
+  //     std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+  //     return false;
+  //   }
+  // }
+  TEST_SUCCEED();
+}
+
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       simple() && simple_optional() && with_parser() && to_array() &&
+      to_array_shortcut() && to_bad_array() && to_clean_array() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }
@@ -133,3 +195,6 @@ bool run() {
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, convert_tests::run);
 }
+#else
+int main() { return 0; }
+#endif

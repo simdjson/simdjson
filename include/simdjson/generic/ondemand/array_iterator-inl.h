@@ -36,6 +36,9 @@ simdjson_inline array_iterator &array_iterator::operator++() noexcept {
   return *this;
 }
 
+simdjson_inline bool array_iterator::at_end() const noexcept {
+  return iter.at_end();
+}
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -72,7 +75,14 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterato
   ++(first);
   return *this;
 }
-
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator++(int) noexcept {
+  auto copy{*this};
+  this->operator++();
+  return copy;
+}
+simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::at_end() const noexcept {
+  return !first.iter.is_valid() || first.at_end();
+}
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_ARRAY_ITERATOR_INL_H

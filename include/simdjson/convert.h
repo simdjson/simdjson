@@ -4,11 +4,70 @@
 
 #include "simdjson/ondemand.h"
 #include <optional>
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
 
 namespace simdjson {
 
+/**
+ * A Wrapper for simdjson_result<ondemand::array_iterator> in order to make it
+ * compatible with ranges (to satisfy std::ranges::input_range).
+ */
+struct auto_iterator {
+  using iterator_category = std::forward_iterator_tag;
+  using type = simdjson_result<ondemand::array_iterator>;
+  using value_type = simdjson_result<ondemand::value>; // type::value_type
+  using reference = value_type &;
+  using const_reference = const value_type &;
+  using difference_type = std::ptrdiff_t;
+
+private:
+  type m_iter;
+  value_type m_value;
+
+public:
+  constexpr auto_iterator() noexcept = default;
+  explicit auto_iterator(type const &iter) noexcept
+      : m_iter{iter},
+        m_value{m_iter.at_end() || m_iter.error() != SUCCESS ? value_type{}
+                                                             : *m_iter} {};
+  auto_iterator(auto_iterator const &) = default;
+  auto_iterator(auto_iterator &&) = default;
+  auto_iterator &operator=(auto_iterator const &) = default;
+  auto_iterator &operator=(auto_iterator &&) noexcept = default;
+
+  const_reference operator*() const noexcept { return m_value; }
+
+  auto_iterator &operator++() noexcept {
+    ++m_iter;
+    m_value =
+        m_iter.at_end() || m_iter.error() != SUCCESS ? value_type{} : *m_iter;
+    return *this;
+  }
+  auto_iterator operator++(int) noexcept {
+    auto_iterator const tmp = *this;
+    operator++();
+    return tmp;
+  }
+
+  [[nodiscard]] bool operator==(auto_iterator const &other) const noexcept {
+    return m_iter == other.m_iter;
+  }
+
+  [[nodiscard]] bool operator!=(auto_iterator const &other) const noexcept {
+    return m_iter != other.m_iter;
+  }
+};
+
 template <typename ParserType = ondemand::parser>
-struct [[nodiscard]] auto_parser {
+struct [[nodiscard]] auto_parser
+#if __cpp_lib_ranges >= 202202L
+    : std::ranges::range_adaptor_closure<auto_parser<ParserType>>
+#endif
+{
+  using difference_type = std::ptrdiff_t;
+
 private:
   ParserType m_parser;
   ondemand::document m_doc;
@@ -101,6 +160,13 @@ public:
     }
     return {res.value()};
   }
+
+  simdjson_inline auto_iterator begin() noexcept {
+    return auto_iterator{m_doc.begin()};
+  }
+  simdjson_inline auto_iterator end() noexcept {
+    return auto_iterator{m_doc.end()};
+  }
 };
 
 /**
@@ -118,6 +184,23 @@ simdjson_inline auto to(ondemand::parser &parser,
   return auto_parser<ondemand::parser *>{parser, str};
 }
 
+#ifdef __cpp_lib_ranges
+
+template <typename T> consteval auto to() noexcept {
+  return
+      // filter out the bad types
+      std::views::filter(
+          [](simdjson_result<ondemand::value> const &obj) noexcept {
+            return obj.error() == simdjson::SUCCESS;
+          })
+      // convert to T
+      | std::views::transform([](simdjson_result<ondemand::value> &&obj) {
+          return obj.get<T>();
+        });
+}
+#endif
+
 } // namespace simdjson
+
 #endif // __cpp_concepts
 #endif // SIMDJSON_CONVERT_H
