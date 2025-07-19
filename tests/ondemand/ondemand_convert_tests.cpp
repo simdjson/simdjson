@@ -64,6 +64,14 @@ simdjson::padded_string json_car =
          "year": 2018,
          "tire_pressure": [ 40.1, 39.9 ]
        } )"_padded;
+simdjson::padded_string json_cars =
+    R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
 
 bool simple() {
   TEST_START();
@@ -94,34 +102,28 @@ bool with_parser() {
   TEST_SUCCEED();
 }
 
-// bool custom_no_except() {
-//   TEST_START();
-//   simdjson::padded_string json =
-//       R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-//        "tire_pressure": [ 40.1, 39.9 ] },
-//   { "make": "Kia",    "model": "Soul",   "year": 2012,
-//        "tire_pressure": [ 30.1, 31.0 ] },
-//   { "make": "Toyota", "model": "Tercel", "year": 1999,
-//        "tire_pressure": [ 29.8, 30.0 ] }
-// ])"_padded;
-//
-//   for (auto val : to(json)) {
-//     Car c;
-//     auto error = val.get(c);
-//     if (error) {
-//       std::cerr << simdjson::error_message(error) << std::endl;
-//       return false;
-//     }
-//   }
-//
-//   TEST_SUCCEED();
-// }
+bool to_array() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (auto val : to(json_cars).array()) {
+    Car car{};
+    if (auto const error = val.get(car)) {
+      std::cerr << simdjson::error_message(error) << std::endl;
+      return false;
+    }
+    if (car.year < 1998) {
+      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
-      simple() && simple_optional() && with_parser() &&
+      simple() && simple_optional() && with_parser() && to_array() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }

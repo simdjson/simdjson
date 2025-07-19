@@ -11,7 +11,7 @@ template <typename ParserType = ondemand::parser>
 struct [[nodiscard]] auto_parser {
 private:
   ParserType m_parser;
-  padded_string_view m_str;
+  ondemand::document m_doc;
 
   template <typename T>
   static constexpr bool is_nothrow_gettable = requires(ondemand::document doc) {
@@ -19,33 +19,36 @@ private:
   };
 
 public:
-  explicit auto_parser(ParserType &&parser, padded_string_view str)
-      : m_parser{std::move(parser)}, m_str{str} {}
+  explicit auto_parser(ParserType &&parser, ondemand::document &&doc) noexcept
+      : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
+
+  explicit auto_parser(ParserType &&parser,
+                       padded_string_view const str) noexcept
+      : m_parser{std::move(parser)}, m_doc{m_parser.iterate(str)} {}
+
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
-                       padded_string_view str)
+                       ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser}, m_str{str} {}
-  explicit auto_parser(ParserType parser, padded_string_view str)
+      : m_parser{&parser}, m_doc{std::move(doc)} {}
+
+  explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
+                       padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{parser}, m_str{str} {}
-  explicit auto_parser(padded_string_view const str) : m_str{str} {}
+      : m_parser{&parser}, m_doc{m_parser->iterate(str)} {}
+
+  explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
+    requires(std::is_pointer_v<ParserType>)
+      : m_parser{parser}, m_doc{std::move(doc)} {}
+
+  explicit auto_parser(padded_string_view const str) noexcept
+    requires(!std::is_pointer_v<ParserType>)
+      : m_parser{}, m_doc{m_parser.iterate(str)} {}
+
   auto_parser(auto_parser const &) = delete;
   auto_parser &operator=(auto_parser const &) = delete;
   auto_parser(auto_parser &&) noexcept = default;
   auto_parser &operator=(auto_parser &&) noexcept = default;
   ~auto_parser() = default;
-
-  template <typename T>
-  simdjson_inline simdjson_result<T> result() noexcept(is_nothrow_gettable<T>) {
-    ondemand::document doc = m_parser.iterate(m_str);
-    return doc.get<T>();
-  }
-
-  template <typename T>
-  simdjson_inline explicit(false)
-  operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
-    return result<T>();
-  }
 
   /// Get the parser
   std::remove_pointer_t<ParserType> &parser() noexcept {
@@ -57,9 +60,31 @@ public:
   }
 
   template <typename T>
+  simdjson_inline simdjson_result<T> result() noexcept(is_nothrow_gettable<T>) {
+    return m_doc.get<T>();
+  }
+
+  simdjson_inline simdjson_result<ondemand::array> array() noexcept {
+    return result<ondemand::array>();
+  }
+
+  simdjson_inline simdjson_result<ondemand::object> object() noexcept {
+    return result<ondemand::object>();
+  }
+
+  simdjson_inline simdjson_result<ondemand::number> number() noexcept {
+    return result<ondemand::number>();
+  }
+
+  template <typename T>
+  simdjson_inline explicit(false)
+  operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
+    return result<T>();
+  }
+
+  template <typename T>
   simdjson_inline explicit(false) operator T() noexcept(false) {
-    ondemand::document doc = parser().iterate(m_str);
-    return doc.get<T>();
+    return m_doc.get<T>();
   }
 
   // We can't have "operator std::optional<T>" because it would create an
@@ -70,8 +95,7 @@ public:
   template <typename T>
   simdjson_inline std::optional<T> optional() noexcept(is_nothrow_gettable<T>) {
     // For std::optional<T>
-    ondemand::document doc = parser().iterate(m_str);
-    auto res = doc.get<T>();
+    auto res = m_doc.get<T>();
     if (res.error()) [[unlikely]] {
       return std::nullopt;
     }
