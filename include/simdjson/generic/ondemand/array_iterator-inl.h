@@ -75,11 +75,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterato
   ++(first);
   return *this;
 }
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::operator++(int) noexcept {
-  auto copy{*this};
-  this->operator++();
-  return copy;
-}
 simdjson_inline bool simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator>::at_end() const noexcept {
   return !first.iter.is_valid() || first.at_end();
 }

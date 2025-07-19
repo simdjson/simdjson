@@ -82,9 +82,6 @@ namespace simdjson {
 
 template<>
 struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : public SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> {
-  using difference_type = std::ptrdiff_t;
-  using value_type = simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>;
-
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
@@ -97,7 +94,6 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : publ
   simdjson_inline bool operator==(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &) const noexcept;
   simdjson_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &) const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &operator++() noexcept;
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> operator++(int) noexcept;
 
   [[nodiscard]] simdjson_inline bool at_end() const noexcept;
 };
