@@ -248,17 +248,10 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
 /**
  * This CPO (Customization Point Object) will help deserialize into optional types.
  */
-template <concepts::optional_type T, typename ValT>
+template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, ValT>) {
+error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, decltype(val)>) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
-
-  static_assert(
-      deserializable<value_type, ValT>,
-      "The specified type inside the optional must itself be deserializable");
-  static_assert(
-      std::is_default_constructible_v<value_type>,
-      "The specified type inside the optional must default constructible.");
 
   // Check if the value is null
   if (val.is_null()) {
@@ -323,12 +316,10 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
-      static_assert(
-        deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
-        "The specified type inside the class must itself be deserializable");
+      // Note: removed static assert as optional types are now handled generically
       // as long we are succesful or the field is not found, we continue
       if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-        obj[key].get(out.[:mem:]);
+        e = obj[key].get(out.[:mem:]);
       }
     }
   };
@@ -536,37 +527,6 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_vi
 ////////////////////////////////////////
 // Explicit optional specializations
 ////////////////////////////////////////
-error_code tag_invoke(deserialize_tag, auto &val, std::optional<std::string> &out) noexcept {
-  // Check if the value is null
-  if (val.is_null()) {
-    out.reset(); // Set to nullopt
-    return SUCCESS;
-  }
-
-  if (!out) {
-    out.emplace();
-  }
-  std::string_view str;
-  SIMDJSON_TRY(val.get_string().get(str));
-  out.value() = std::string{str};
-  return SUCCESS;
-}
-
-error_code tag_invoke(deserialize_tag, auto &val, std::optional<int> &out) noexcept {
-  // Check if the value is null
-  if (val.is_null()) {
-    out.reset(); // Set to nullopt
-    return SUCCESS;
-  }
-
-  if (!out) {
-    out.emplace();
-  }
-  int64_t temp;
-  SIMDJSON_TRY(val.get_int64().get(temp));
-  out.value() = static_cast<int>(temp);
-  return SUCCESS;
-}
 
 ////////////////////////////////////////
 // Explicit smart pointer specializations for string and int types

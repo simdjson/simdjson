@@ -75,6 +75,19 @@ public:
   #if SIMDJSON_SUPPORTS_DESERIALIZATION
   if constexpr (custom_deserializable<T, value>) {
       return deserialize(*this, out);
+  } else if constexpr (concepts::optional_type<T>) {
+      using value_type = typename std::remove_cvref_t<T>::value_type;
+      
+      // Check if the value is null
+      if (is_null()) {
+        out.reset(); // Set to nullopt
+        return SUCCESS;
+      }
+
+      if (!out) {
+        out.emplace();
+      }
+      return get<value_type>(out.value());
   } else {
     static_assert(!sizeof(T), "The get<T> method with type T is not implemented by the simdjson library. "
       "And you do not seem to have added support for it. Indeed, we have that "
