@@ -6,6 +6,7 @@ if(SIMDJSON_STATIC_REFLECTION)
   add_cpp_test(static_reflection_comprehensive_tests     LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_edge_cases_tests        LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_enum_tests              LABELS ondemand acceptance per_implementation)
+  add_cpp_test(simple_api_tests                          LABELS ondemand acceptance per_implementation)
 endif(SIMDJSON_STATIC_REFLECTION)
 # Copy the simdjson dll into the tests directory
 if(MSVC AND BUILD_SHARED_LIBS)

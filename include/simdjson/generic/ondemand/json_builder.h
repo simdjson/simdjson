@@ -291,6 +291,65 @@ simdjson_error to_json(const Z &z, std::string &s) {
 } // namespace json_builder
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
+
+// Simplified API for reflection-based conversion
+namespace simdjson {
+
+#if SIMDJSON_STATIC_REFLECTION
+
+// Simple serialization: Object -> JSON string
+template <typename T>
+  requires(std::is_class_v<T> && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>)
+std::string convert(const T& obj) {
+  auto result = SIMDJSON_IMPLEMENTATION::builder::to_json_string(obj);
+  if (result.error()) {
+    throw simdjson_error(result.error());
+  }
+  return result.value();
+}
+
+// Simple deserialization: JSON string -> Object
+template <typename T>
+  requires(std::is_class_v<T> && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>)
+T convert(const std::string& json_str) {
+  SIMDJSON_IMPLEMENTATION::ondemand::parser parser;
+  padded_string padded_json(json_str);
+  auto doc = parser.iterate(padded_json);
+  if (doc.error()) {
+    throw simdjson_error(doc.error());
+  }
+  
+  auto result = doc.value().get<T>();
+  if (result.error()) {
+    throw simdjson_error(result.error());
+  }
+  
+  return result.value();
+}
+
+// Simple deserialization: JSON string -> Object (no-throw version)
+template <typename T>
+  requires(std::is_class_v<T> && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>)
+simdjson_result<T> try_convert(const std::string& json_str) {
+  SIMDJSON_IMPLEMENTATION::ondemand::parser parser;
+  padded_string padded_json(json_str);
+  auto doc = parser.iterate(padded_json);
+  SIMDJSON_TRY(doc.error());
+  
+  return doc.value().get<T>();
+}
+
+// Simple serialization: Object -> JSON string (no-throw version)
+template <typename T>
+  requires(std::is_class_v<T> && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>)
+simdjson_result<std::string> try_convert(const T& obj) {
+  return SIMDJSON_IMPLEMENTATION::builder::to_json_string(obj);
+}
+
+#endif // SIMDJSON_STATIC_REFLECTION
+
+} // namespace simdjson
+
 #endif // SIMDJSON_STATIC_REFLECTION
 
 #endif
