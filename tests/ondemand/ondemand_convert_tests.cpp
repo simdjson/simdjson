@@ -7,21 +7,6 @@
 #include <vector>
 #ifdef __cpp_lib_ranges
 
-static_assert(std::input_or_output_iterator<simdjson::auto_iterator>,
-              "Must be a valid input iterator");
-static_assert(std::semiregular<simdjson::auto_iterator>,
-              "Should be kinda regular");
-static_assert(std::ranges::__access::__member_end<simdjson::auto_parser<>>,
-              "Must be a valid input iterator");
-static_assert(std::ranges::range<simdjson::auto_parser<>>,
-              "Parser need to be a range.");
-static_assert(std::ranges::input_range<simdjson::auto_parser<>>,
-              "Parser need to be an input range.");
-static_assert(
-    requires(simdjson::auto_parser<> &parser) {
-      { parser.begin() } -> std::input_or_output_iterator;
-    }, "Must be valid iterator.");
-
 namespace convert_tests {
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
 struct Car {
@@ -73,6 +58,28 @@ struct Car {
 
 static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
               "It should be deserializable");
+
+static_assert(std::input_or_output_iterator<simdjson::auto_iterator>,
+              "Must be a valid input iterator");
+static_assert(std::semiregular<simdjson::auto_iterator>,
+              "Should be kinda regular");
+// static_assert(std::ranges::__access::__member_end<simdjson::auto_parser<>>,
+//               "Must be a valid input iterator");
+// static_assert(std::ranges::views::__adaptor::__is_range_adaptor_closure<
+//                   simdjson::auto_parser<>>,
+//               "Parser need to be range adaptor closure.");
+// static_assert(std::ranges::views::__adaptor::__adaptor_invocable<
+//                   decltype(simdjson::to<Car>()),
+//                   simdjson::auto_parser<>>,
+//               "I don't even know!");
+static_assert(std::ranges::range<simdjson::auto_parser<>>,
+              "Parser need to be a range.");
+static_assert(std::ranges::forward_range<simdjson::auto_parser<>>,
+              "Parser need to be an input range.");
+static_assert(
+    requires(simdjson::auto_parser<> &parser) {
+      { parser.begin() } -> std::input_or_output_iterator;
+    }, "Must be valid iterator.");
 
 simdjson::padded_string json_car =
     R"( {
@@ -166,17 +173,12 @@ bool to_bad_array() {
 
 bool to_clean_array() {
   TEST_START();
-  // std::ranges::for_each(to(json_cars), []([[maybe_unused]] auto &car) {
-  //
-  // });
-  // auto res = to(json_cars) | simdjson::to<Car>();
-  // [[maybe_unused]] auto r1 = std::ranges::begin(res);
-  // for (Car const car : to(json_cars) | simdjson::to<Car>()) {
-  //   if (car.year < 1998) {
-  //     std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
-  //     return false;
-  //   }
-  // }
+  for (Car const car : to(json_cars) | simdjson::to<Car>()) {
+    if (car.year < 1998) {
+      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+      return false;
+    }
+  }
   TEST_SUCCEED();
 }
 

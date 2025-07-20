@@ -14,7 +14,7 @@ namespace simdjson {
  * A Wrapper for simdjson_result<ondemand::array_iterator> in order to make it
  * compatible with ranges (to satisfy std::ranges::input_range).
  */
-struct auto_iterator {
+struct [[nodiscard]] auto_iterator {
   using iterator_category = std::forward_iterator_tag;
   using type = simdjson_result<ondemand::array_iterator>;
   using value_type = simdjson_result<ondemand::value>; // type::value_type
@@ -23,8 +23,8 @@ struct auto_iterator {
   using difference_type = std::ptrdiff_t;
 
 private:
-  type m_iter;
-  value_type m_value;
+  type m_iter{};
+  mutable value_type m_value{};
 
 public:
   constexpr auto_iterator() noexcept = default;
@@ -36,8 +36,10 @@ public:
   auto_iterator(auto_iterator &&) = default;
   auto_iterator &operator=(auto_iterator const &) = default;
   auto_iterator &operator=(auto_iterator &&) noexcept = default;
+  ~auto_iterator() = default;
 
-  const_reference operator*() const noexcept { return m_value; }
+  reference operator*() const noexcept { return m_value; }
+  reference operator*() noexcept { return m_value; }
 
   auto_iterator &operator++() noexcept {
     ++m_iter;
@@ -62,11 +64,21 @@ public:
 
 template <typename ParserType = ondemand::parser>
 struct [[nodiscard]] auto_parser
-#if __cpp_lib_ranges >= 202202L
-    : std::ranges::range_adaptor_closure<auto_parser<ParserType>>
+#if __cpp_lib_ranges
+    : std::ranges::view_interface<auto_parser<ParserType>>
 #endif
 {
+  using value_type = simdjson_result<ondemand::value>;
+  using size_type = size_t;
   using difference_type = std::ptrdiff_t;
+  using pointer = value_type *;
+  using const_pointer = const value_type *;
+  using reference = value_type &;
+  using const_reference = const value_type &;
+  using iterator = auto_iterator;
+#if __cplusplus > 202002L
+  using const_iterator = std::const_iterator<iterator>;
+#endif
 
 private:
   ParserType m_parser;
@@ -110,7 +122,7 @@ public:
   ~auto_parser() = default;
 
   /// Get the parser
-  std::remove_pointer_t<ParserType> &parser() noexcept {
+  [[nodiscard]] std::remove_pointer_t<ParserType> &parser() noexcept {
     if constexpr (std::is_pointer_v<ParserType>) {
       return *m_parser;
     } else {
@@ -119,30 +131,34 @@ public:
   }
 
   template <typename T>
-  simdjson_inline simdjson_result<T> result() noexcept(is_nothrow_gettable<T>) {
+  [[nodiscard]] simdjson_inline simdjson_result<T>
+  result() noexcept(is_nothrow_gettable<T>) {
     return m_doc.get<T>();
   }
 
-  simdjson_inline simdjson_result<ondemand::array> array() noexcept {
+  [[nodiscard]] simdjson_inline simdjson_result<ondemand::array>
+  array() noexcept {
     return result<ondemand::array>();
   }
 
-  simdjson_inline simdjson_result<ondemand::object> object() noexcept {
+  [[nodiscard]] simdjson_inline simdjson_result<ondemand::object>
+  object() noexcept {
     return result<ondemand::object>();
   }
 
-  simdjson_inline simdjson_result<ondemand::number> number() noexcept {
+  [[nodiscard]] simdjson_inline simdjson_result<ondemand::number>
+  number() noexcept {
     return result<ondemand::number>();
   }
 
   template <typename T>
-  simdjson_inline explicit(false)
+  [[nodiscard]] simdjson_inline explicit(false)
   operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
     return result<T>();
   }
 
   template <typename T>
-  simdjson_inline explicit(false) operator T() noexcept(false) {
+  [[nodiscard]] simdjson_inline explicit(false) operator T() noexcept(false) {
     return m_doc.get<T>();
   }
 
@@ -152,7 +168,8 @@ public:
   // We also cannot have "operator T&" without manual memory management either.
 
   template <typename T>
-  simdjson_inline std::optional<T> optional() noexcept(is_nothrow_gettable<T>) {
+  [[nodiscard]] simdjson_inline std::optional<T>
+  optional() noexcept(is_nothrow_gettable<T>) {
     // For std::optional<T>
     auto res = m_doc.get<T>();
     if (res.error()) [[unlikely]] {
@@ -186,15 +203,15 @@ simdjson_inline auto to(ondemand::parser &parser,
 
 #ifdef __cpp_lib_ranges
 
-template <typename T> consteval auto to() noexcept {
+template <typename T> decltype(auto) to() noexcept {
   return
       // filter out the bad types
       std::views::filter(
           [](simdjson_result<ondemand::value> const &obj) noexcept {
-            return obj.error() == simdjson::SUCCESS;
+            return obj.error() == SUCCESS;
           })
       // convert to T
-      | std::views::transform([](simdjson_result<ondemand::value> &&obj) {
+      | std::views::transform([](simdjson_result<ondemand::value> &obj) -> T {
           return obj.get<T>();
         });
 }
