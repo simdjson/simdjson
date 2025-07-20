@@ -291,8 +291,6 @@ simdjson_error to_json(const Z &z, std::string &s) {
 } // namespace json_builder
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
-
-
 #endif // SIMDJSON_STATIC_REFLECTION
 
 #endif
