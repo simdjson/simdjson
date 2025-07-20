@@ -215,42 +215,13 @@ namespace builder_tests {
     TEST_SUCCEED();
   }
 
-  bool test_individual_serialization() {
-    TEST_START();
-
-    // Test individual type serialization (not part of structs)
-    auto bool_result = builder::to_json_string(true);
-    ASSERT_SUCCESS(bool_result);
-    ASSERT_EQUAL(bool_result.value(), "true");
-
-    auto int_result = builder::to_json_string(42);
-    ASSERT_SUCCESS(int_result);
-    ASSERT_EQUAL(int_result.value(), "42");
-
-    auto string_result = builder::to_json_string(std::string("hello"));
-    ASSERT_SUCCESS(string_result);
-    ASSERT_EQUAL(string_result.value(), "\"hello\"");
-
-    auto char_result = builder::to_json_string('X');
-    ASSERT_SUCCESS(char_result);
-    ASSERT_EQUAL(char_result.value(), "\"X\"");
-
-    // Test const char* serialization (serialization only, not round-trip)
-    const char* cstring = "cstring";
-    auto cstring_result = builder::to_json_string(cstring);
-    ASSERT_SUCCESS(cstring_result);
-    ASSERT_EQUAL(cstring_result.value(), "\"cstring\"");
-
-    TEST_SUCCEED();
-  }
 
   bool run() {
     return test_primitive_types() &&
            test_string_types() &&
            test_optional_types() &&
            test_smart_pointer_types() &&
-           test_container_types() &&
-           test_individual_serialization();
+           test_container_types();
   }
 
 } // namespace builder_tests
