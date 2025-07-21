@@ -73,28 +73,30 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
 
   std::string_view key;
 
-  if (json_path[i] == '.') {
-    i += 1;
-    size_t key_start = i;
+  if (!json_path.empty()) {
+    if (json_path[i] == '.') {
+      i += 1;
+      size_t key_start = i;
 
-    while (i < json_path.length() && json_path[i] != '[' && json_path[i] != '.') {
-      ++i;
+      while (i < json_path.length() && json_path[i] != '[' && json_path[i] != '.') {
+        ++i;
+      }
+
+      key = json_path.substr(key_start, i - key_start);
+    } else if ((i+1 < json_path.size()) && json_path[i] == '[' && (json_path[i+1] == '\'' || json_path[i+1] == '"')) {
+      i += 2;
+      size_t key_start = i;
+      while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
+        ++i;
+      }
+
+      key = json_path.substr(key_start, i - key_start);
+
+      i += 2;
+    } else if ((i+2 < json_path.size()) && json_path[i] == '[' && (json_path[i+1] == '*' && json_path[i+2] == ']')) { // i.e [*].additional_keys or [*]["additional_keys"]
+      key = "*";
+      i += 3;
     }
-
-    key = json_path.substr(key_start, i - key_start);
-  } else if (json_path[i] == '[' && (i+1 < json_path.size() && (json_path[i+1] == '\'' || json_path[i+1] == '"'))) {
-    i += 2;
-    size_t key_start = i;
-    while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
-      ++i;
-    }
-
-    key = json_path.substr(key_start, i - key_start);
-
-    i += 2;
-  } else if (json_path[i] == '[' && (i+2 < json_path.size() && (json_path[i+1] == '*' && json_path[i+2] == ']'))) { // i.e [*].additional_keys or [*]["additional_keys"]
-    key = "*";
-    i += 3;
   }
 
   return std::make_pair(key, json_path.substr(i));
