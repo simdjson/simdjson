@@ -322,8 +322,15 @@ bool json_path_with_wildcard() {
           "0123-4267-8910",
           "0103-4567-8910"
         ]
+      },
+      { },
+      {
+        "type": "office",
+        "numbers": [ ]
       }
-    ]
+    ],
+    "empty_object": { },
+    "empty_array": [ ]
   })"_padded;
 
   dom::parser parser;
@@ -410,6 +417,34 @@ bool json_path_with_wildcard() {
     ASSERT_SUCCESS(values[i].get(string_value));
     ASSERT_EQUAL(string_value, expected_numbers[i]);
   }
+
+  // $.phoneNumbers[*].numbers[1]
+  result = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[1]");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[1]);
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[4]);
+
+  // $.empty_object.*
+  result = parsed_json.at_path_with_wildcard("$.empty_object.*");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.empty_array.*
+  result = parsed_json.at_path_with_wildcard("$.empty_array.*");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.phoneNumbers.*.numbers[3]
+  result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*.numbers[3]");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
 
   TEST_SUCCEED();
 }
