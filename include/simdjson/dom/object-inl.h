@@ -214,11 +214,14 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       }
 
       std::vector<element> result = {};
+      if (child_values.size() > 0) {
 
-      std::vector<element>::iterator child_values_begin = child_values.begin();
-      std::vector<element>::iterator child_values_end = child_values.end();
+        std::vector<element>::iterator child_values_begin = child_values.begin();
+        std::vector<element>::iterator child_values_end = child_values.end();
 
-      process_json_path_of_child_elements(child_values_begin, child_values_end, "$" + std::string(json_path), result);
+        process_json_path_of_child_elements(child_values_begin, child_values_end, "$" + std::string(json_path), result);
+      }
+
       return result;
     } else {
       return INVALID_JSON_POINTER;
@@ -226,7 +229,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   } else {
     auto at_path_result = this->at_path(json_path);
     if (at_path_result.error()) {
-      return INVALID_JSON_POINTER;
+      return at_path_result.error();
     }
     std::vector<element> result{std::move(at_path_result.value())};
     return result;

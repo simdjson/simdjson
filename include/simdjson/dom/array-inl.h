@@ -147,7 +147,7 @@ inline void array::process_json_path_of_child_elements(std::vector<element>::ite
 
 
   for (auto it = current; it != end; ++it) {
-    result = current->at_path_with_wildcard(path_suffix);
+    result = it->at_path_with_wildcard(path_suffix);
 
     if (!result.error()) {
       std::vector<element> child_result = result.value();
@@ -198,10 +198,12 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
 
       std::vector<element> result = {};
 
-      std::vector<element>::iterator child_values_begin = child_values.begin();
-      std::vector<element>::iterator child_values_end = child_values.end();
+      if (child_values.size() > 0) {
+        std::vector<element>::iterator child_values_begin = child_values.begin();
+        std::vector<element>::iterator child_values_end = child_values.end();
 
-      process_json_path_of_child_elements(child_values_begin, child_values_end, "$" + std::string(json_path), result);
+        process_json_path_of_child_elements(child_values_begin, child_values_end, "$" + std::string(json_path), result);
+      }
 
       return result;
     } else {
