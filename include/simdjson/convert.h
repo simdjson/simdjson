@@ -186,35 +186,58 @@ public:
   }
 };
 
-/**
- * Parse input string into any object if possible.
- */
-simdjson_inline auto to(padded_string_view const str) noexcept {
-  return auto_parser{str};
-}
-
-/**
- * Parse the input using the specified parser into any object if possible.
- */
-simdjson_inline auto to(ondemand::parser &parser,
-                        padded_string_view const str) noexcept {
-  return auto_parser<ondemand::parser *>{parser, str};
-}
-
 #ifdef __cpp_lib_ranges
 
-template <typename T> decltype(auto) to() noexcept {
-  return
-      // filter out the bad types
-      std::views::filter(
-          [](simdjson_result<ondemand::value> const &obj) noexcept {
-            return obj.error() == SUCCESS;
-          })
-      // convert to T
-      | std::views::transform([](simdjson_result<ondemand::value> &obj) -> T {
-          return obj.get<T>();
-        });
-}
+static constexpr struct [[nodiscard]] no_errors_adaptor
+    : std::ranges::range_adaptor_closure<no_errors_adaptor> {
+
+  [[nodiscard]] constexpr bool
+  operator()(simdjson_result<ondemand::value> const &val) const noexcept {
+    return val.error() == SUCCESS;
+  }
+
+  template <std::ranges::range Range>
+  constexpr auto operator()(Range &&rng) const noexcept {
+    return std::forward<Range>(rng) | std::views::filter(*this);
+  }
+} no_errors;
+
+template <typename T = void>
+struct [[nodiscard]] to_adaptor
+    : std::ranges::range_adaptor_closure<to_adaptor<T>> {
+
+  /// Convert to T
+  [[nodiscard]] constexpr T
+  operator()(simdjson_result<ondemand::value> &val) const noexcept {
+    return val.get<T>();
+  }
+
+  /// Make it an adaptor
+  template <std::ranges::range Range>
+  constexpr auto operator()(Range &&rng) const noexcept {
+    return std::forward<Range>(rng) | no_errors | std::views::transform(*this);
+  }
+
+  /**
+   * Parse input string into any object if possible.
+   */
+  constexpr auto operator()(padded_string_view const str) const noexcept {
+    return auto_parser{str};
+  }
+
+  /**
+   * Parse the input using the specified parser into any object if possible.
+   */
+  constexpr auto operator()(ondemand::parser &parser,
+                            padded_string_view const str) const noexcept {
+    return auto_parser<ondemand::parser *>{parser, str};
+  }
+};
+
+template <typename T> static constexpr to_adaptor<T> to{};
+
+static constexpr to_adaptor<> from{};
+
 #endif
 
 } // namespace simdjson

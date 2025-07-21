@@ -99,7 +99,7 @@ simdjson::padded_string json_cars =
 
 bool simple() {
   TEST_START();
-  Car car = to(json_car);
+  Car car = simdjson::from(json_car);
   if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
     return false;
   }
@@ -108,7 +108,7 @@ bool simple() {
 
 bool simple_optional() {
   TEST_START();
-  auto car = to(json_car).optional<Car>();
+  auto car = simdjson::from(json_car).optional<Car>();
   if (!car.has_value() || car->make != "Toyota" || car->model != "Camry" ||
       car->year != 2018) {
     return false;
@@ -119,7 +119,7 @@ bool simple_optional() {
 bool with_parser() {
   TEST_START();
   simdjson::ondemand::parser parser;
-  Car car = to(parser, json_car);
+  Car car = simdjson::from(parser, json_car);
   if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
     return false;
   }
@@ -128,7 +128,7 @@ bool with_parser() {
 
 bool to_array() {
   TEST_START();
-  for (auto val : to(json_cars).array()) {
+  for (auto val : simdjson::from(json_cars).array()) {
     Car car{};
     if (auto const error = val.get(car)) {
       std::cerr << simdjson::error_message(error) << std::endl;
@@ -145,7 +145,7 @@ bool to_array() {
 bool to_array_shortcut() {
   TEST_START();
   simdjson::ondemand::parser parser;
-  for (auto val : to(parser, json_cars)) {
+  for (auto val : simdjson::from(parser, json_cars)) {
     Car car{};
     if (auto const error = val.get(car)) {
       std::cerr << simdjson::error_message(error) << std::endl;
@@ -161,7 +161,7 @@ bool to_array_shortcut() {
 
 bool to_bad_array() {
   TEST_START();
-  for ([[maybe_unused]] auto val : to(json_car)) {
+  for ([[maybe_unused]] auto val : simdjson::from(json_car)) {
     Car car{};
     if (val.get(car)) {
       continue;
@@ -173,7 +173,7 @@ bool to_bad_array() {
 
 bool to_clean_array() {
   TEST_START();
-  for (Car const car : to(json_cars) | simdjson::to<Car>()) {
+  for (Car const car : simdjson::from(json_cars) | simdjson::to<Car>) {
     if (car.year < 1998) {
       std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
       return false;
