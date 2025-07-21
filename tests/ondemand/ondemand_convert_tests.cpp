@@ -171,6 +171,19 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
+bool test_no_errors() {
+  TEST_START();
+  for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
+    Car car{};
+    val.get(car);
+    if (car.year < 1998) {
+      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool to_clean_array() {
   TEST_START();
   for (Car const car : simdjson::from(json_cars) | simdjson::to<Car>) {
@@ -187,7 +200,8 @@ bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       simple() && simple_optional() && with_parser() && to_array() &&
-      to_array_shortcut() && to_bad_array() && to_clean_array() &&
+      to_array_shortcut() && to_bad_array() && test_no_errors() &&
+      to_clean_array() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }
