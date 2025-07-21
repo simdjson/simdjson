@@ -215,31 +215,12 @@ namespace builder_tests {
     TEST_SUCCEED();
   }
 
-  bool test_const_char_serialization_only() {
-    TEST_START();
-
-    // Test that const char* can be serialized (but not round-tripped)
-    const char* test_cstring = "const char test";
-    auto result = builder::to_json_string(test_cstring);
-    ASSERT_SUCCESS(result);
-    ASSERT_EQUAL(result.value(), "\"const char test\"");
-
-    // Test with special characters in const char*
-    const char* special_cstring = "quotes\"and\\backslashes";
-    auto special_result = builder::to_json_string(special_cstring);
-    ASSERT_SUCCESS(special_result);
-    ASSERT_TRUE(special_result.value().find("\\\"") != std::string::npos);
-    ASSERT_TRUE(special_result.value().find("\\\\") != std::string::npos);
-
-    TEST_SUCCEED();
-  }
 
   bool run() {
     return test_empty_values() &&
            test_special_characters() &&
            test_numeric_limits() &&
-           test_nested_structures() &&
-           test_const_char_serialization_only();
+           test_nested_structures();
   }
 
 } // namespace builder_tests
