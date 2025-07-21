@@ -202,6 +202,7 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
         std::vector<element>::iterator child_values_begin = child_values.begin();
         std::vector<element>::iterator child_values_end = child_values.end();
 
+        json_path = "$" + std::string(json_path);
 
         process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       }

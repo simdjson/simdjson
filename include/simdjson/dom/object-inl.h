@@ -184,7 +184,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
   if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
     // expect json path to always start with $ but this isn't currently
-    // expected in jsonpathutil.h. Need to verify why
+    // expected in jsonpathutil.h.
     return INVALID_JSON_POINTER;
   }
 
@@ -218,6 +218,8 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
         std::vector<element>::iterator child_values_begin = child_values.begin();
         std::vector<element>::iterator child_values_end = child_values.end();
+
+        json_path = "$" + std::string(json_path);
 
         process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       }
