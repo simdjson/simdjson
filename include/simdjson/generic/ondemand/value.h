@@ -77,7 +77,7 @@ public:
       return deserialize(*this, out);
   } else if constexpr (concepts::optional_type<T>) {
       using value_type = typename std::remove_cvref_t<T>::value_type;
-      
+
       // Check if the value is null
       if (is_null()) {
         out.reset(); // Set to nullopt
