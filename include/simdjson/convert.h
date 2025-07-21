@@ -10,6 +10,8 @@
 
 namespace simdjson {
 
+struct [[nodiscard]] auto_iterator_end {};
+
 /**
  * A Wrapper for simdjson_result<ondemand::array_iterator> in order to make it
  * compatible with ranges (to satisfy std::ranges::input_range).
@@ -22,29 +24,33 @@ struct [[nodiscard]] auto_iterator {
   using const_reference = const value_type &;
   using difference_type = std::ptrdiff_t;
 
+  struct auto_iterator_storage {
+    type m_iter{};
+    mutable value_type m_value{};
+  };
+
 private:
-  type m_iter{};
-  mutable value_type m_value{};
+  auto_iterator_storage *m_storage = nullptr;
 
 public:
   constexpr auto_iterator() noexcept = default;
-  explicit auto_iterator(type const &iter) noexcept
-      : m_iter{iter},
-        m_value{m_iter.at_end() || m_iter.error() != SUCCESS ? value_type{}
-                                                             : *m_iter} {};
+  explicit auto_iterator(auto_iterator_storage &storage) noexcept
+      : m_storage{&storage} {};
   auto_iterator(auto_iterator const &) = default;
   auto_iterator(auto_iterator &&) = default;
   auto_iterator &operator=(auto_iterator const &) = default;
   auto_iterator &operator=(auto_iterator &&) noexcept = default;
   ~auto_iterator() = default;
 
-  reference operator*() const noexcept { return m_value; }
-  reference operator*() noexcept { return m_value; }
+  reference operator*() const noexcept { return m_storage->m_value; }
+  reference operator*() noexcept { return m_storage->m_value; }
 
   auto_iterator &operator++() noexcept {
-    ++m_iter;
-    m_value =
-        m_iter.at_end() || m_iter.error() != SUCCESS ? value_type{} : *m_iter;
+    ++m_storage->m_iter;
+    m_storage->m_value =
+        m_storage->m_iter.at_end() || m_storage->m_iter.error() != SUCCESS
+            ? value_type{}
+            : *m_storage->m_iter;
     return *this;
   }
   auto_iterator operator++(int) noexcept {
@@ -54,11 +60,12 @@ public:
   }
 
   [[nodiscard]] bool operator==(auto_iterator const &other) const noexcept {
-    return m_iter == other.m_iter;
+    return m_storage == other.m_storage &&
+           m_storage->m_iter == other.m_storage->m_iter;
   }
 
-  [[nodiscard]] bool operator!=(auto_iterator const &other) const noexcept {
-    return m_iter != other.m_iter;
+  [[nodiscard]] bool operator==(auto_iterator_end) const noexcept {
+    return m_storage != nullptr && m_storage->m_iter.at_end();
   }
 };
 
@@ -84,19 +91,30 @@ private:
   ParserType m_parser;
   ondemand::document m_doc;
 
+  // Caching the iterator here:
+  iterator::auto_iterator_storage iter_storage{};
+
   template <typename T>
   static constexpr bool is_nothrow_gettable = requires(ondemand::document doc) {
     { doc.get<T>() } noexcept;
   };
 
 public:
+  // non-pointer constructors:
   explicit auto_parser(ParserType &&parser, ondemand::document &&doc) noexcept
+    requires(!std::is_pointer_v<ParserType>)
       : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
 
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
+    requires(!std::is_pointer_v<ParserType>)
       : m_parser{std::move(parser)}, m_doc{m_parser.iterate(str)} {}
 
+  explicit auto_parser(padded_string_view const str) noexcept
+    requires(!std::is_pointer_v<ParserType>)
+      : auto_parser{ParserType{}, str} {}
+
+  // pointer constructors:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
@@ -105,15 +123,11 @@ public:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser}, m_doc{m_parser->iterate(str)} {}
+      : auto_parser{parser, parser.iterate(str)} {}
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{parser}, m_doc{std::move(doc)} {}
-
-  explicit auto_parser(padded_string_view const str) noexcept
-    requires(!std::is_pointer_v<ParserType>)
-      : m_parser{}, m_doc{m_parser.iterate(str)} {}
+      : auto_parser{*parser, std::move(doc)} {}
 
   auto_parser(auto_parser const &) = delete;
   auto_parser &operator=(auto_parser const &) = delete;
@@ -179,11 +193,18 @@ public:
   }
 
   simdjson_inline auto_iterator begin() noexcept {
-    return auto_iterator{m_doc.begin()};
+    if (iter_storage.m_iter.error() != SUCCESS &&
+        !iter_storage.m_iter.at_end()) {
+      iter_storage = {.m_iter = iterator::type{m_doc.begin()},
+                      .m_value = iterator::value_type{
+                          iter_storage.m_iter.at_end() ||
+                                  iter_storage.m_iter.error() != SUCCESS
+                              ? value_type{}
+                              : *iter_storage.m_iter}};
+    }
+    return auto_iterator{iter_storage};
   }
-  simdjson_inline auto_iterator end() noexcept {
-    return auto_iterator{m_doc.end()};
-  }
+  simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
 #ifdef __cpp_lib_ranges
