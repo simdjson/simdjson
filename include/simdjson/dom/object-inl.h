@@ -192,7 +192,10 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
     std::vector<element> child_values;
 
-    if (json_path == "$[*]" || json_path == "$.*") {
+    if (
+      (json_path.compare(i, 3, "[*]") == 0 && json_path.size() == i + 3) ||
+      (json_path.compare(i, 2,".*") == 0 && json_path.size() == i + 2)
+    ) {
       get_values(child_values);
       return child_values;
     }
@@ -218,8 +221,6 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
 
         std::vector<element>::iterator child_values_begin = child_values.begin();
         std::vector<element>::iterator child_values_end = child_values.end();
-
-        json_path = "$" + std::string(json_path);
 
         process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       }

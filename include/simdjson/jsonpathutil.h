@@ -93,7 +93,7 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
       key = json_path.substr(key_start, i - key_start);
 
       i += 2;
-    } else if ((i+2 < json_path.size()) && json_path[i] == '[' && (json_path[i+1] == '*' && json_path[i+2] == ']')) { // i.e [*].additional_keys or [*]["additional_keys"]
+    } else if ((i+2 < json_path.size()) && json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
       key = "*";
       i += 3;
     }
@@ -101,8 +101,6 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
 
   return std::make_pair(key, json_path.substr(i));
 }
-
-
 
 } // namespace simdjson
 #endif // SIMDJSON_JSONPATHUTIL_H

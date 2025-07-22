@@ -161,6 +161,7 @@ inline void array::process_json_path_of_child_elements(std::vector<element>::ite
 }
 
 inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::string_view json_path) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
 
   size_t i = 0;
 
@@ -175,7 +176,10 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
   if (json_path.find("*") != std::string::npos) {
     std::vector<element> child_values;
 
-    if (json_path == "$[*]" || json_path == "$.*") {
+    if (
+      (json_path.compare(i, 3, "[*]") == 0 && json_path.size() == i + 3) ||
+      (json_path.compare(i, 2,".*") == 0 && json_path.size() == i + 2)
+    ) {
       get_values(child_values);
       return child_values;
     }
@@ -201,8 +205,6 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
       if (child_values.size() > 0) {
         std::vector<element>::iterator child_values_begin = child_values.begin();
         std::vector<element>::iterator child_values_end = child_values.end();
-
-        json_path = "$" + std::string(json_path);
 
         process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
       }
