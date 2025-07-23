@@ -292,6 +292,163 @@ bool json_path_invalidation() {
   }
   TEST_SUCCEED();
 }
+
+bool json_path_with_wildcard() {
+  TEST_START();
+
+  simdjson::padded_string json_string = R"(
+  {
+    "firstName": "John",
+    "lastName" : "doe",
+    "age"      : 26,
+    "address"  : {
+      "streetAddress": "naist street",
+      "city"         : "Nara",
+      "postalCode"   : "630-0192"
+    },
+    "phoneNumbers": [
+      {
+        "type"  : "iPhone",
+        "numbers": [
+          "0123-4567-8888",
+          "0123-4567-8788",
+          "0123-4567-8887"
+        ]
+      },
+      {
+        "type"  : "home",
+        "numbers": [
+          "0123-4567-8910",
+          "0123-4267-8910",
+          "0103-4567-8910"
+        ]
+      },
+      { },
+      {
+        "type": "office",
+        "numbers": [ ]
+      }
+    ],
+    "empty_object": { },
+    "empty_array": [ ]
+  })"_padded;
+
+  dom::parser parser;
+  dom::element parsed_json = parser.parse(json_string);
+  std::vector<dom::element> values;
+  simdjson_result<std::vector<dom::element>> result;
+
+
+  std::string_view string_value;
+  std::uint64_t num_value;
+  dom::object obj;
+
+  // $.*
+  result = parsed_json.at_path_with_wildcard("$.*");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $[*]
+  result = parsed_json.at_path_with_wildcard("$[*]");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $.address.*
+  result = parsed_json.at_path_with_wildcard("$.address.*");
+  values = result.value();
+
+  std::vector<std::string> expected = {"naist street", "Nara", "630-0192"};
+  for (int i = 0; i < 3; i++) {
+    ASSERT_SUCCESS(values[i].get(string_value));
+    ASSERT_EQUAL(string_value, expected[i]);
+  }
+
+  // $.*.streetAddress
+  result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  // $.phoneNumbers[*].numbers[*]
+  result = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]");
+  values = result.value();
+
+  std::vector<std::string> expected_numbers = {
+    "0123-4567-8888",
+    "0123-4567-8788",
+    "0123-4567-8887",
+    "0123-4567-8910",
+    "0123-4267-8910",
+    "0103-4567-8910"
+  };
+
+  for (int i = 0; i < 6; i++) {
+    ASSERT_SUCCESS(values[i].get(string_value));
+    ASSERT_EQUAL(string_value, expected_numbers[i]);
+  }
+
+  // $.phoneNumbers[*].numbers[1]
+  result = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[1]");
+  values = result.value();
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[1]);
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[4]);
+
+  // $.empty_object.*
+  result = parsed_json.at_path_with_wildcard("$.empty_object.*");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.empty_array.*
+  result = parsed_json.at_path_with_wildcard("$.empty_array.*");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.phoneNumbers.*.numbers[3]
+  result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*.numbers[3]");
+  values = result.value();
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  TEST_SUCCEED();
+}
+
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
 #if SIMDJSON_EXCEPTIONS
