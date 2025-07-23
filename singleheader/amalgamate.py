@@ -296,10 +296,10 @@ class SimdjsonRepository:
 
 class Amalgamator:
     @classmethod
-    def amalgamate(cls, output_path: str, filename: str, roots: List[RelativeRoot], timestamp: str):
+    def amalgamate(cls, output_path: str, filename: str, roots: List[RelativeRoot], timestamp: str, version: str):
         print(f"Creating {output_path}")
         fid = open(output_path, 'w')
-        print(f"/* auto-generated on {timestamp}. Do not edit! */", file=fid)
+        print(f"/* auto-generated on {timestamp}. version {version} Do not edit! */", file=fid)
         amalgamator = cls(fid, SimdjsonRepository(PROJECTPATH, roots))
         file = amalgamator.repository[filename]
         assert file, f"{filename} not found in {[os.path.join(PROJECTPATH, root) for root in roots]}!"
@@ -480,8 +480,13 @@ AMAL_C = os.path.join(AMALGAMATE_OUTPUT_PATH, "simdjson.cpp")
 DEMOCPP = os.path.join(AMALGAMATE_OUTPUT_PATH, "amalgamate_demo.cpp")
 README = os.path.join(AMALGAMATE_OUTPUT_PATH, "README.md")
 
-Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp).validate_all_files_used('include')
-Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp).validate_all_files_used('src')
+def read_version():
+    with open(os.path.join(PROJECTPATH, 'include/simdjson/simdjson_version.h')) as f:
+        return re.search(r'\d+\.\d+\.\d+', f.read()).group(0)
+
+version = read_version()
+Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp, version).validate_all_files_used('include')
+Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp, version).validate_all_files_used('src')
 
 # copy the README and DEMOCPP
 if SCRIPTPATH != AMALGAMATE_OUTPUT_PATH:
