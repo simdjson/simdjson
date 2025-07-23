@@ -77,7 +77,7 @@ template <typename T, typename ValT = SIMDJSON_IMPLEMENTATION::ondemand::value>
 concept custom_deserializable = tag_invocable<deserialize_tag, ValT&, T&>;
 
 template <typename T, typename ValT = SIMDJSON_IMPLEMENTATION::ondemand::value>
-concept deserializable = custom_deserializable<T, ValT> || is_builtin_deserializable_v<T>;
+concept deserializable = custom_deserializable<T, ValT> || is_builtin_deserializable_v<T> || concepts::optional_type<T>;
 
 template <typename T, typename ValT = SIMDJSON_IMPLEMENTATION::ondemand::value>
 concept nothrow_custom_deserializable = nothrow_tag_invocable<deserialize_tag, ValT&, T&>;
