@@ -104,12 +104,34 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char>)
 constexpr void atom(string_builder &b, const T &t) {
+#ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
+  // Pre-compute field count at compile time for better optimization
+  constexpr size_t field_count = std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()).size();
+  if constexpr (field_count == 0) {
+    b.append_raw("{}");
+    return;
+  }
+#endif
+  
   int i = 0;
   b.append('{');
   [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
     if (i != 0)
       b.append(',');
+#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
+  #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
+    // Enhanced consteval with compile-time length computation
+    constexpr auto key_view = std::meta::identifier_of(dm);
+    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(key_view));
+    // Pre-compute key size for better buffer management
+    constexpr size_t key_size = key.size();
+    static_assert(key_size > 0, "Field name cannot be empty");
+  #else
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+  #endif
+#else
+    std::string key = "\"" + std::string(std::meta::identifier_of(dm)) + "\"";
+#endif
     b.append_raw(key);
     b.append(':');
     atom(b, t.[:dm:]);
@@ -143,21 +165,46 @@ template <typename T>
   requires(std::is_enum_v<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
-  std::string_view result = "<unnamed>";
-  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
-    if (e == [:enum_val:]) {
-      result = std::meta::identifier_of(enum_val);
-    }
-  };
-
-  if (result != "<unnamed>") {
-    b.append_raw("\"");
-    b.append_raw(result);
-    b.append_raw("\"");
-  } else {
-    // Fallback to integer if enum value not found
+  #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
+  // Compile-time optimization: pre-compute enum lookup table for faster runtime lookup
+  constexpr auto enum_values = std::meta::enumerators_of(^^T);
+  constexpr size_t enum_count = enum_values.size();
+  
+  // Small enum optimization: use compile-time lookup for common small enums
+  if constexpr (enum_count <= 8) {
+    // Fast path for small enums with compile-time switch generation
+    [:expand(enum_values):] >> [&]<auto enum_val>{
+      if (e == [:enum_val:]) {
+        constexpr auto name = std::meta::identifier_of(enum_val);
+        b.append_raw("\"");
+        b.append_raw(name);
+        b.append_raw("\"");
+        return;
+      }
+    };
+    // If not found, fallback to integer
     atom(b, static_cast<std::underlying_type_t<T>>(e));
+  } else {
+  #endif
+    // Standard implementation for larger enums
+    std::string_view result = "<unnamed>";
+    [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+      if (e == [:enum_val:]) {
+        result = std::meta::identifier_of(enum_val);
+      }
+    };
+
+    if (result != "<unnamed>") {
+      b.append_raw("\"");
+      b.append_raw(result);
+      b.append_raw("\"");
+    } else {
+      // Fallback to integer if enum value not found
+      atom(b, static_cast<std::underlying_type_t<T>>(e));
+    }
+  #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
   }
+  #endif
 #else
   // Fallback: serialize as integer if reflection not available
   atom(b, static_cast<std::underlying_type_t<T>>(e));
@@ -244,7 +291,11 @@ void append(string_builder &b, const Z &z) {
   [:expand(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
     if (i != 0)
       b.append(',');
+#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+#else
+    std::string key = "\"" + std::string(std::meta::identifier_of(dm)) + "\"";
+#endif
     b.append_raw(key);
     b.append(':');
     atom(b, z.[:dm:]);

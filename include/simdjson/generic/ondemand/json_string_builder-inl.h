@@ -83,7 +83,11 @@ simple_needs_escaping(std::string_view v) {
   return false;
 }
 
-#if SIMDJSON_EXPERIMENTAL_HAS_NEON
+#ifdef SIMDJSON_ABLATION_NO_SIMD_ESCAPING
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
+  return simple_needs_escaping(view);
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_NEON
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
     return simple_needs_escaping(view);
@@ -93,7 +97,20 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   uint8x16_t v34 = vdupq_n_u8(34);
   uint8x16_t v92 = vdupq_n_u8(92);
 
+#ifndef SIMDJSON_ABLATION_NO_PREFETCH
+  // Prefetch data for better cache performance on large strings
+  if (simdjson_likely(view.size() > 64)) {
+    __builtin_prefetch(view.data() + 64, 0, 1);
+  }
+#endif
+
   for (; i + 15 < view.size(); i += 16) {
+#ifndef SIMDJSON_ABLATION_NO_PREFETCH
+    // Prefetch next cache line ahead
+    if (simdjson_likely(i + 64 < view.size())) {
+      __builtin_prefetch(view.data() + i + 64, 0, 1);
+    }
+#endif
     uint8x16_t word = vld1q_u8((const uint8_t *)view.data() + i);
     running = vorrq_u8(running, vceqq_u8(word, v34));
     running = vorrq_u8(running, vceqq_u8(word, v92));
@@ -115,8 +132,21 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   }
   size_t i = 0;
   __m128i running = _mm_setzero_si128();
-  for (; i + 15 < view.size(); i += 16) {
 
+#ifndef SIMDJSON_ABLATION_NO_PREFETCH
+  // Prefetch data for better cache performance on large strings
+  if (simdjson_likely(view.size() > 64)) {
+    __builtin_prefetch(view.data() + 64, 0, 1);
+  }
+#endif
+
+  for (; i + 15 < view.size(); i += 16) {
+#ifndef SIMDJSON_ABLATION_NO_PREFETCH
+    // Prefetch next cache line ahead for streaming access
+    if (simdjson_likely(i + 64 < view.size())) {
+      __builtin_prefetch(view.data() + i + 64, 0, 1);
+    }
+#endif
     __m128i word = _mm_loadu_si128(reinterpret_cast<const __m128i *>(view.data() + i));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
@@ -161,6 +191,7 @@ SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
     "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
     "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
 
+#ifdef SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS
 SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
   if (c == '"') {
     memcpy(out, "\\\"", 2);
@@ -174,15 +205,57 @@ SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
     out += v.size();
   }
 }
+#else
+// Optimized version with likely branch and manual inlining for hot paths
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&out) {
+  // Most common cases first for better branch prediction
+  if (simdjson_likely(c == '"')) {
+    // Manual unroll for common quote case
+    *out++ = '\\';
+    *out++ = '"';
+  } else if (simdjson_likely(c == '\\')) {
+    // Manual unroll for common backslash case  
+    *out++ = '\\';
+    *out++ = '\\';
+  } else {
+    // Less common control characters - use lookup table
+    std::string_view v = control_chars[uint8_t(c)];
+    // Prefetch next control char entry for potential next escape
+    __builtin_prefetch(&control_chars[uint8_t(c) + 1], 0, 1);
+    memcpy(out, v.data(), v.size());
+    out += v.size();
+  }
+}
+#endif
 
 inline size_t write_string_escaped(const std::string_view input, char *out) {
   size_t mysize = input.size();
+#ifdef SIMDJSON_ABLATION_NO_ESCAPE_FAST_PATH
+  // Always use slow path - no fast path optimization
+#elif defined(SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS)
   if (!fast_needs_escaping(input)) { // fast path!
     memcpy(out, input.data(), input.size());
     return input.size();
   }
+#else
+  // Optimized fast path with prefetching
+  if (simdjson_likely(!fast_needs_escaping(input))) {
+    // Prefetch destination memory for large copies
+    if (simdjson_likely(input.size() > 64)) {
+      __builtin_prefetch(out + 64, 1, 1);
+    }
+    memcpy(out, input.data(), input.size());
+    return input.size();
+  }
+#endif
   const char *const initout = out;
   size_t location = find_next_json_quotable_character(input, 0);
+#ifndef SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS
+  // Prefetch ahead in input string for next character scan
+  if (simdjson_likely(location + 64 < mysize)) {
+    __builtin_prefetch(input.data() + location + 64, 0, 1);
+  }
+#endif
   memcpy(out, input.data(), location);
   out += location;
   escape_json_char(input[location], out);
@@ -192,7 +265,7 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
     memcpy(out, input.data() + location, newlocation - location);
     out += newlocation - location;
     location = newlocation;
-    if (location == mysize) {
+    if (simdjson_unlikely(location == mysize)) {
       break;
     }
     escape_json_char(input[location], out);
@@ -201,7 +274,7 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
   return out - initout;
 }
 
-#if SIMDJSON_CONSTEVAL
+#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
 // unoptimized, meant for compile-time execution
 consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   std::string out = "\"";
@@ -233,15 +306,38 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   // We use the convention that when is_valid is false, then the capacity and
   // the position are 0.
   // Most of the time, this function will return true.
+#ifdef SIMDJSON_ABLATION_NO_BRANCH_HINTS
+  if (upcoming_bytes <= capacity - position) {
+    return true;
+  }
+  // check for overflow, most of the time there is no overflow
+  if (position + upcoming_bytes < position) {
+    return false;
+  }
+#else
   if (simdjson_likely(upcoming_bytes <= capacity - position)) {
     return true;
   }
   // check for overflow, most of the time there is no overflow
-  if (simdjson_likely(position + upcoming_bytes < position)) {
+  if (simdjson_unlikely(position + upcoming_bytes < position)) {
     return false;
   }
+#endif
   // We will rarely get here.
-  grow_buffer((std::max)(capacity * 2, position + upcoming_bytes));
+#ifdef SIMDJSON_ABLATION_LINEAR_GROWTH
+  grow_buffer(position + upcoming_bytes + 1024); // Linear growth with 1KB increment
+#elif defined(SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS)
+  grow_buffer((std::max)(capacity * 2, position + upcoming_bytes)); // Exponential growth
+#else
+  // Optimized growth with better cache behavior
+  size_t new_capacity = capacity * 2;
+  if (simdjson_unlikely(new_capacity < position + upcoming_bytes)) {
+    new_capacity = position + upcoming_bytes;
+  }
+  // Align to cache line boundary for better memory access patterns
+  new_capacity = (new_capacity + 63) & ~63;
+  grow_buffer(new_capacity);
+#endif
   // If the buffer allocation failed, we set is_valid to false.
   return is_valid;
 }
@@ -350,7 +446,12 @@ simdjson_inline size_t digit_count(number_type v) noexcept {
   static_assert(sizeof(number_type) == 8 || sizeof(number_type) == 4 ||
                     sizeof(number_type) == 2 || sizeof(number_type) == 1,
                 "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
+#ifdef SIMDJSON_ABLATION_NO_FAST_DIGITS
+  // Fallback: use standard library conversion to count digits
+  return std::to_string(v).length();
+#else
   return fast_digit_count(v);
+#endif
 }
 static const char decimal_table[200] = {
   0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
@@ -405,9 +506,17 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       size_t dc = internal::digit_count(pv);
       char *write_pointer = buffer.get() + position + dc - 1;
       while (pv >= 100) {
+#ifdef SIMDJSON_ABLATION_NO_LOOKUP_TABLES
+        // Fallback: use division and modulo instead of lookup table
+        *write_pointer-- = char('0' + (pv % 10));
+        pv /= 10;
+        *write_pointer-- = char('0' + (pv % 10));  
+        pv /= 10;
+#else
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
         write_pointer -= 2;
         pv /= 100;
+#endif
       }
       if (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
@@ -432,9 +541,17 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       }
       char *write_pointer = buffer.get() + position + dc - 1;
       while (pv >= 100) {
+#ifdef SIMDJSON_ABLATION_NO_LOOKUP_TABLES
+        // Fallback: use division and modulo instead of lookup table
+        *write_pointer-- = char('0' + (pv % 10));
+        pv /= 10;
+        *write_pointer-- = char('0' + (pv % 10));  
+        pv /= 10;
+#else
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
         write_pointer -= 2;
         pv /= 100;
+#endif
       }
       if (pv >= 10) {
         *write_pointer-- = char('0' + (pv % 10));
