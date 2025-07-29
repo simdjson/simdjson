@@ -122,9 +122,10 @@ constexpr void atom(string_builder &b, const T &t) {
   #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
     // Enhanced consteval with compile-time length computation
     constexpr auto key_view = std::meta::identifier_of(dm);
-    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(key_view));
+    constexpr auto key_str = consteval_to_quoted_escaped(key_view);
+    constexpr auto key = std::define_static_string(key_str);
     // Pre-compute key size for better buffer management
-    constexpr size_t key_size = key.size();
+    constexpr size_t key_size = key_str.size();
     static_assert(key_size > 0, "Field name cannot be empty");
   #else
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
