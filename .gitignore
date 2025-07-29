@@ -38,7 +38,7 @@ cmake-build-release/
 .history/
 
 # Visual Studio artifacts
-/VS/
+/.vs/
 
 # C/C++ build outputs
 .build/
