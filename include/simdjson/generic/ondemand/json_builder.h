@@ -14,6 +14,8 @@
 #include <charconv>
 #include <cstring>
 #include <experimental/meta>
+#include <memory>
+#include <optional>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -94,8 +96,13 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input);
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
            !concepts::string_view_keyed_map<T> &&
+           !concepts::optional_type<T> &&
+           !concepts::smart_pointer<T> &&
+           !concepts::appendable_containers<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view>)
+           !std::is_same_v<T, std::string_view> &&
+           !std::is_same_v<T, const char*> &&
+           !std::is_same_v<T, char>)
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
@@ -111,8 +118,127 @@ constexpr void atom(string_builder &b, const T &t) {
   b.append('}');
 }
 
+// Support for optional types (std::optional, etc.)
+template <concepts::optional_type T>
+constexpr void atom(string_builder &b, const T &opt) {
+  if (opt) {
+    atom(b, opt.value());
+  } else {
+    b.append_raw("null");
+  }
+}
+
+// Support for smart pointers (std::unique_ptr, std::shared_ptr, etc.)
+template <concepts::smart_pointer T>
+constexpr void atom(string_builder &b, const T &ptr) {
+  if (ptr) {
+    atom(b, *ptr);
+  } else {
+    b.append_raw("null");
+  }
+}
+
+// Support for enums - serialize as string representation using expand approach from P2996R12
+template <typename T>
+  requires(std::is_enum_v<T>)
+void atom(string_builder &b, const T &e) {
+#if SIMDJSON_STATIC_REFLECTION
+  std::string_view result = "<unnamed>";
+  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+    if (e == [:enum_val:]) {
+      result = std::meta::identifier_of(enum_val);
+    }
+  };
+
+  if (result != "<unnamed>") {
+    b.append_raw("\"");
+    b.append_raw(result);
+    b.append_raw("\"");
+  } else {
+    // Fallback to integer if enum value not found
+    atom(b, static_cast<std::underlying_type_t<T>>(e));
+  }
+#else
+  // Fallback: serialize as integer if reflection not available
+  atom(b, static_cast<std::underlying_type_t<T>>(e));
+#endif
+}
+
+// Support for appendable containers that don't have operator[] (sets, etc.)
+template <concepts::appendable_containers T>
+  requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
+           !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
+           !std::is_same_v<T, std::string> &&
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
+constexpr void atom(string_builder &b, const T &container) {
+  if (container.empty()) {
+    b.append_raw("[]");
+    return;
+  }
+  b.append('[');
+  bool first = true;
+  for (const auto& item : container) {
+    if (!first) {
+      b.append(',');
+    }
+    first = false;
+    atom(b, item);
+  }
+  b.append(']');
+}
+
+// append functions that delegate to atom functions for primitive types
+template <class T>
+  requires(std::is_arithmetic_v<T> && !std::is_same_v<T, char>)
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
+template <class T>
+  requires(std::is_same_v<T, std::string> ||
+           std::is_same_v<T, std::string_view> ||
+           std::is_same_v<T, const char *> ||
+           std::is_same_v<T, char>)
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
+template <concepts::optional_type T>
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
+template <concepts::smart_pointer T>
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
+template <concepts::appendable_containers T>
+  requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
+           !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
+           !std::is_same_v<T, std::string> &&
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
+template <concepts::string_view_keyed_map T>
+void append(string_builder &b, const T &t) {
+  atom(b, t);
+}
+
 // works for struct
-template <class Z> void append(string_builder &b, const Z &z) {
+template <class Z>
+  requires(std::is_class_v<Z> && !container_but_not_string<Z> &&
+           !concepts::string_view_keyed_map<Z> &&
+           !concepts::optional_type<Z> &&
+           !concepts::smart_pointer<Z> &&
+           !concepts::appendable_containers<Z> &&
+           !std::is_same_v<Z, std::string> &&
+           !std::is_same_v<Z, std::string_view> &&
+           !std::is_same_v<Z, const char*> &&
+           !std::is_same_v<Z, char>)
+void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
   [:expand(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {

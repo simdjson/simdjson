@@ -303,9 +303,9 @@ simdjson_inline void string_builder::clear() noexcept {
 namespace internal {
 
 // We could specialize further for 32-bit integers.
-int int_log2(uint32_t x) { return (63 - leading_zeroes(x | 1)); }
+simdjson_really_inline int int_log2(uint32_t x) { return (63 - leading_zeroes(x | 1)); }
 
-int fast_digit_count(uint32_t x) {
+simdjson_really_inline int fast_digit_count(uint32_t x) {
   static uint64_t table[] = {
       4294967296,  8589934582,  8589934582,  8589934582,  12884901788,
       12884901788, 12884901788, 17179868184, 17179868184, 17179868184,
@@ -317,9 +317,9 @@ int fast_digit_count(uint32_t x) {
   return uint32_t((x + table[int_log2(x)]) >> 32);
 }
 
-int int_log2(uint64_t x) { return 63 - leading_zeroes(x | 1); }
+simdjson_really_inline int int_log2(uint64_t x) { return 63 - leading_zeroes(x | 1); }
 
-int fast_digit_count(uint64_t x) {
+simdjson_really_inline int fast_digit_count(uint64_t x) {
   static uint64_t table[] = {9,
                              99,
                              999,
@@ -346,7 +346,7 @@ int fast_digit_count(uint64_t x) {
 
 template <typename number_type, typename = typename std::enable_if<
                                     std::is_unsigned<number_type>::value>::type>
-simdjson_inline size_t digit_count(number_type v) noexcept {
+simdjson_really_inline size_t digit_count(number_type v) noexcept {
   static_assert(sizeof(number_type) == 8 || sizeof(number_type) == 4 ||
                     sizeof(number_type) == 2 || sizeof(number_type) == 1,
                 "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
