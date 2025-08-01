@@ -6,7 +6,8 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
-#include "simdjson/generic/builder/json_string_builder.h"
+#include "simdjson/generic/ondemand/json_string_builder.h"
+#include "simdjson/generic/ondemand/json_string_builder-inl.h"
 #include "simdjson/concepts.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #if SIMDJSON_STATIC_REFLECTION
@@ -19,11 +20,54 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-// #include <static_reflection> // for std::define_static_string - header not available yet
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
+
+
+
+// Helper template to implement serialization with different strategies
+template<typename T, bool UseConsteval>
+struct atom_struct_impl {
+  static void serialize(string_builder &b, const T &t) {
+    // Runtime implementation - always use runtime string construction
+    int i = 0;
+    b.append('{');
+    [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
+      if (i++ != 0)
+        b.append(',');
+      std::string key = "\"" + std::string(std::meta::identifier_of(dm)) + "\"";
+      b.append_raw(key);
+      b.append(':');
+      atom(b, t.[:dm:]);
+    };
+    b.append('}');
+  }
+};
+
+#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
+// Specialization for consteval optimization
+template<typename T>
+struct atom_struct_impl<T, true> {
+  static void serialize(string_builder &b, const T &t) {
+    b.append('{');
+    bool first = true;
+    [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
+      if (!first)
+        b.append(',');
+      first = false;
+      // Create a compile-time string using define_static_string
+      constexpr auto escaped_name = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
+      constexpr const char* static_key = std::define_static_string(escaped_name);
+      b.append_raw(static_key);
+      b.append(':');
+      atom(b, t.[:dm:]);
+    };
+    b.append('}');
+  }
+};
+#endif
 
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
@@ -39,7 +83,7 @@ concept container_but_not_string =
 
 template <class T>
   requires(container_but_not_string<T>)
-constexpr void atom(string_builder &b, const T &t) {
+void atom(string_builder &b, const T &t) {
   if (t.size() == 0) {
     b.append_raw("[]");
     return;
@@ -58,12 +102,12 @@ template <class T>
            std::is_same_v<T, std::string_view> ||
            std::is_same_v<T, const char *> ||
            std::is_same_v<T, char>)
-constexpr void atom(string_builder &b, const T &t) {
+void atom(string_builder &b, const T &t) {
   b.escape_and_append_with_quotes(t);
 }
 
 template <concepts::string_view_keyed_map T>
-constexpr void atom(string_builder &b, const T &m) {
+void atom(string_builder &b, const T &m) {
   if (m.empty()) {
     b.append_raw("{}");
     return;
@@ -86,12 +130,9 @@ constexpr void atom(string_builder &b, const T &m) {
 
 template<typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
-constexpr void atom(string_builder &b, const number_type t) {
+void atom(string_builder &b, const number_type t) {
   b.append(t);
 }
-#if SIMDJSON_CONSTEVAL
-consteval std::string consteval_to_quoted_escaped(std::string_view input);
-#endif
 
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
@@ -103,47 +144,19 @@ template <class T>
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char>)
-constexpr void atom(string_builder &b, const T &t) {
-#ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
-  // Pre-compute field count at compile time for better optimization
-  constexpr size_t field_count = std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()).size();
-  if constexpr (field_count == 0) {
-    b.append_raw("{}");
-    return;
-  }
-#endif
+void atom(string_builder &b, const T &t) {
   
-  int i = 0;
-  b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
-    if (i != 0)
-      b.append(',');
+  // Always use consteval optimization when available
 #if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
-  #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
-    // Enhanced consteval with compile-time length computation
-    constexpr auto key_view = std::meta::identifier_of(dm);
-    constexpr auto key_str = consteval_to_quoted_escaped(key_view);
-    constexpr auto key = std::define_static_string(key_str);
-    // Pre-compute key size for better buffer management
-    constexpr size_t key_size = key_str.size();
-    static_assert(key_size > 0, "Field name cannot be empty");
-  #else
-    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
-  #endif
+  atom_struct_impl<T, true>::serialize(b, t);
 #else
-    std::string key = "\"" + std::string(std::meta::identifier_of(dm)) + "\"";
+  atom_struct_impl<T, false>::serialize(b, t);
 #endif
-    b.append_raw(key);
-    b.append(':');
-    atom(b, t.[:dm:]);
-    i++;
-  };
-  b.append('}');
 }
 
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
-constexpr void atom(string_builder &b, const T &opt) {
+void atom(string_builder &b, const T &opt) {
   if (opt) {
     atom(b, opt.value());
   } else {
@@ -153,7 +166,7 @@ constexpr void atom(string_builder &b, const T &opt) {
 
 // Support for smart pointers (std::unique_ptr, std::shared_ptr, etc.)
 template <concepts::smart_pointer T>
-constexpr void atom(string_builder &b, const T &ptr) {
+void atom(string_builder &b, const T &ptr) {
   if (ptr) {
     atom(b, *ptr);
   } else {
@@ -218,7 +231,7 @@ template <concepts::appendable_containers T>
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
-constexpr void atom(string_builder &b, const T &container) {
+void atom(string_builder &b, const T &container) {
   if (container.empty()) {
     b.append_raw("[]");
     return;
@@ -287,22 +300,8 @@ template <class Z>
            !std::is_same_v<Z, const char*> &&
            !std::is_same_v<Z, char>)
 void append(string_builder &b, const Z &z) {
-  int i = 0;
-  b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
-    if (i != 0)
-      b.append(',');
-#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
-    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
-#else
-    std::string key = "\"" + std::string(std::meta::identifier_of(dm)) + "\"";
-#endif
-    b.append_raw(key);
-    b.append(':');
-    atom(b, z.[:dm:]);
-    i++;
-  };
-  b.append('}');
+  // The atom function now handles both cases internally
+  atom(b, z);
 }
 
 // works for container

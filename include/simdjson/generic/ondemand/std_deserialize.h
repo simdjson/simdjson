@@ -12,7 +12,6 @@
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <experimental/meta>
-// #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 
 namespace simdjson {
@@ -315,7 +314,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 
   [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+      constexpr std::string_view key = std::meta::identifier_of(mem);
       // Note: removed static assert as optional types are now handled generically
       // as long we are succesful or the field is not found, we continue
       if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
