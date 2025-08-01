@@ -95,7 +95,7 @@ bench_simdjson_static_reflection                             :  1657.55 MB/s   0
 Performance Impact: -32.3% throughput vs baseline (2449.25 → 1657.55 MB/s)
 ```
 
-### Variant 3: No Fast Digits  
+### Variant 3: No Fast Digits
 ```
 bench_simdjson_static_reflection                             :  3201.16 MB/s   0.82 Ms/s
 # output volume: 93311 bytes
@@ -114,14 +114,14 @@ Beyond the core optimizations tested, several other performance-critical functio
 - **Alternative**: Linear growth with fixed increments
 - **Impact**: Memory allocation patterns affect serialization throughput
 
-### 2. **Branch Prediction Hints** 
+### 2. **Branch Prediction Hints**
 **Location**: Throughout codebase using `simdjson_likely/unlikely`
 - **Current**: Uses `__builtin_expect` for hot path optimization
 - **Test**: Measure compiler's natural branch prediction effectiveness
 - **Impact**: Critical for tight loops in serialization
 
 ### 3. **String Escaping Fast Path**
-**Location**: `json_string_builder-inl.h:184-191`  
+**Location**: `json_string_builder-inl.h:184-191`
 - **Optimization**: `memcpy` fast path when no escaping needed
 - **Alternative**: Always use character-by-character processing
 - **Impact**: Significant for strings without special characters
@@ -144,11 +144,11 @@ Beyond the core optimizations tested, several other performance-critical functio
 // Branch prediction hints ablation
 #ifdef SIMDJSON_ABLATION_NO_BRANCH_HINTS
   if (upcoming_bytes <= capacity - position) return true;
-#else  
+#else
   if (simdjson_likely(upcoming_bytes <= capacity - position)) return true;
 #endif
 
-// Buffer growth strategy ablation  
+// Buffer growth strategy ablation
 #ifdef SIMDJSON_ABLATION_LINEAR_GROWTH
   grow_buffer(position + upcoming_bytes + 1024); // Linear
 #else
@@ -179,7 +179,7 @@ Status: IMPLEMENTED - Testing in progress
 
 ### Variant 5: Linear Buffer Growth
 ```
-Status: IMPLEMENTED - Testing in progress  
+Status: IMPLEMENTED - Testing in progress
 ```
 
 **Implementation**: Changes buffer growth from exponential (`capacity * 2`) to linear (`position + upcoming_bytes + 1024`).
@@ -213,7 +213,7 @@ Status: IMPLEMENTED - Testing in progress
 
 **Measured Results:**
 1. **Fast digit counting removal**: +30.7% (3201.16 vs 2449.25 MB/s) - *Performance improvement*
-2. **Consteval optimizations**: -32.3% (1657.55 vs 2449.25 MB/s) - *Critical degradation*  
+2. **Consteval optimizations**: -32.3% (1657.55 vs 2449.25 MB/s) - *Critical degradation*
 3. **SIMD string escaping**: -2.8% (2380.46 vs 2449.25 MB/s) - *Minor degradation*
 
 **Additional Variants Implemented (Testing in Progress):**
@@ -237,7 +237,7 @@ Status: IMPLEMENTED - Testing in progress
 
 The consteval optimization demonstrates a classic trade-off:
 - **Increased compilation time**: Compile-time string processing adds overhead during build
-- **Significant runtime gains**: 32.3% performance improvement justifies the compilation cost  
+- **Significant runtime gains**: 32.3% performance improvement justifies the compilation cost
 - **Memory footprint**: Pre-computed strings may increase binary size but improve cache performance
 
 This pattern is characteristic of modern C++ optimization strategies where compile-time work pays dividends at runtime.
@@ -271,7 +271,7 @@ While we measured significant runtime performance differences, compilation time 
 **Ablation Variants Implementation:**
 Each variant is implemented through preprocessor definitions:
 - `SIMDJSON_ABLATION_NO_SIMD_ESCAPING`: Disables SIMD string escaping
-- `SIMDJSON_ABLATION_NO_CONSTEVAL`: Disables consteval optimizations  
+- `SIMDJSON_ABLATION_NO_CONSTEVAL`: Disables consteval optimizations
 - `SIMDJSON_ABLATION_NO_FAST_DIGITS`: Disables fast digit counting
 - `SIMDJSON_ABLATION_NO_LOOKUP_TABLES`: Disables decimal lookup tables
 - `SIMDJSON_ABLATION_SCALAR_ONLY`: Disables all SIMD
@@ -289,7 +289,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 }
 #elif SIMDJSON_EXPERIMENTAL_HAS_NEON
 // ... original NEON implementation
-#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2  
+#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
 // ... original SSE2 implementation
 #else
 // ... original fallback
@@ -299,11 +299,11 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 **Impact:** Forces scalar character-by-character checking instead of 16-byte SIMD processing for string escaping detection.
 
 #### Variant 2: No Consteval
-**Files Modified:** 
+**Files Modified:**
 - `include/simdjson/generic/ondemand/json_string_builder-inl.h:208-229`
 - `include/simdjson/generic/ondemand/json_builder.h:112,247`
 
-**Changes:** 
+**Changes:**
 1. Added `!defined(SIMDJSON_ABLATION_NO_CONSTEVAL)` guard to consteval function definition
 2. Replaced compile-time `consteval_to_quoted_escaped()` calls with runtime string concatenation
 
@@ -315,7 +315,7 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
 }
 #endif
 
-// In json_builder.h  
+// In json_builder.h
 #if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
     constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
 #else
@@ -345,7 +345,7 @@ simdjson_inline size_t digit_count(number_type v) noexcept {
 
 **Impact:** **Unexpected performance improvement (+30.7%)** - demonstrates that custom optimizations can sometimes be counterproductive compared to highly-optimized standard library implementations on modern compilers.
 
-#### Variant 4: No Branch Prediction Hints  
+#### Variant 4: No Branch Prediction Hints
 **File Modified:** `include/simdjson/generic/ondemand/json_string_builder-inl.h:240-256`
 
 **Change:** Disables `__builtin_expect` branch prediction hints in critical capacity checking function
@@ -410,7 +410,7 @@ Based on the ablation study results, several micro-optimizations have been imple
 ### 1. **Inline Function Optimizations** (`SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS`)
 **Implementation**: Manual inlining, improved branch predictions, and fast-path optimizations:
 - **escape_json_char()**: Manual loop unrolling for common quote/backslash cases
-- **capacity_check()**: Enhanced branch prediction with `simdjson_unlikely` for rare overflow path  
+- **capacity_check()**: Enhanced branch prediction with `simdjson_unlikely` for rare overflow path
 - **write_string_escaped()**: Optimized fast path detection with prefetching for large strings
 - **Buffer growth strategy**: Cache-line aligned allocation (64-byte boundaries) for better memory access
 
@@ -437,7 +437,7 @@ Based on the ablation study results, several micro-optimizations have been imple
 These micro-optimizations represent a **third performance layer** beyond the major algorithmic (consteval) and instruction-level (SIMD) optimizations:
 
 **Performance Hierarchy** (Updated):
-1. **Algorithmic layer** (consteval): ±32.3% impact - most critical  
+1. **Algorithmic layer** (consteval): ±32.3% impact - most critical
 2. **Instruction-level layer** (SIMD): ±2.8% impact - modest gains
 3. **Micro-optimization layer** (inline/prefetch/constant-folding): ±5-25% impact - fine-tuning
 
@@ -449,7 +449,7 @@ This ablation study successfully identified the key performance drivers in simdj
 
 1. **Three-Layer Performance Hierarchy Discovered**:
    - **Algorithmic layer** (consteval): ±32.3% impact - most critical
-   - **Instruction-level layer** (SIMD): ±2.8% impact - modest gains  
+   - **Instruction-level layer** (SIMD): ±2.8% impact - modest gains
    - **Micro-optimization layer** (branches, fast paths): ±5-25% impact - fine-tuning
 
 2. **Consteval dominates reflection performance**: 32.3% impact demonstrates that compile-time computation is the cornerstone of efficient C++26 reflection
@@ -463,7 +463,7 @@ This ablation study successfully identified the key performance drivers in simdj
 ### Reproducibility Notes:
 
 All measurements performed on:
-- **Compiler**: clang version 21.0.0git (bloomberg/clang-p2996) 
+- **Compiler**: clang version 21.0.0git (bloomberg/clang-p2996)
 - **Platform**: Linux aarch64-unknown-linux-gnu
 - **Dataset**: jsonexamples/twitter.json (93,311 bytes)
 - **Build**: Release mode with -Og optimization
@@ -476,13 +476,13 @@ mkdir build && cd build
 cmake -DCMAKE_CXX_COMPILER=clang++ -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_STATIC_REFLECTION=ON -DBUILD_SHARED_LIBS=OFF ..
 cmake --build . --target benchmark_serialization_twitter
 
-# No SIMD Escaping variant  
+# No SIMD Escaping variant
 cmake -DCMAKE_CXX_COMPILER=clang++ -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_STATIC_REFLECTION=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-DSIMDJSON_ABLATION_NO_SIMD_ESCAPING" ..
 
 # No Consteval variant
 cmake -DCMAKE_CXX_COMPILER=clang++ -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_STATIC_REFLECTION=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-DSIMDJSON_ABLATION_NO_CONSTEVAL" ..
 
-# No Branch Hints variant  
+# No Branch Hints variant
 cmake -DCMAKE_CXX_COMPILER=clang++ -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_STATIC_REFLECTION=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_CXX_FLAGS="-DSIMDJSON_ABLATION_NO_BRANCH_HINTS" ..
 
 # Linear Buffer Growth variant

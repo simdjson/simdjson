@@ -214,7 +214,7 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
     *out++ = '\\';
     *out++ = '"';
   } else if (simdjson_likely(c == '\\')) {
-    // Manual unroll for common backslash case  
+    // Manual unroll for common backslash case
     *out++ = '\\';
     *out++ = '\\';
   } else {
@@ -510,7 +510,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         // Fallback: use division and modulo instead of lookup table
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
-        *write_pointer-- = char('0' + (pv % 10));  
+        *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
 #else
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
@@ -545,7 +545,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         // Fallback: use division and modulo instead of lookup table
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
-        *write_pointer-- = char('0' + (pv % 10));  
+        *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
 #else
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);

@@ -159,9 +159,9 @@ Twitter Benchmark Results
 
 Variant                   Mean (MB/s)  StdDev     CV (%)   Impact       Compile (s)
 ------------------------- ------------ ---------- -------- ------------ ------------
-**Baseline**              3164.70      ±36.93     1.17     Reference    44.02       
-No Consteval              1571.96      ±26.00     1.65     -50.3%       40.31       
-No Simd Escaping          2285.77      ±33.34     1.46     -27.8%       41.51       
+**Baseline**              3164.70      ±36.93     1.17     Reference    44.02
+No Consteval              1571.96      ±26.00     1.65     -50.3%       40.31
+No Simd Escaping          2285.77      ±33.34     1.46     -27.8%       41.51
 ```
 
 ## Troubleshooting
@@ -271,7 +271,7 @@ To add a new benchmark:
   run: |
     ./ablation_study.sh -r 5 -c 10 -o ci_results
     python3 calculate_stats.py ci_results > ablation_summary.txt
-    
+
 - name: Upload Results
   uses: actions/upload-artifact@v3
   with:

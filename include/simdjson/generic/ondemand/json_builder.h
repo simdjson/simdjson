@@ -145,7 +145,7 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char>)
 void atom(string_builder &b, const T &t) {
-  
+
   // Always use consteval optimization when available
 #if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
   atom_struct_impl<T, true>::serialize(b, t);
@@ -183,7 +183,7 @@ void atom(string_builder &b, const T &e) {
   // Compile-time optimization: pre-compute enum lookup table for faster runtime lookup
   constexpr auto enum_values = std::meta::enumerators_of(^^T);
   constexpr size_t enum_count = enum_values.size();
-  
+
   // Small enum optimization: use compile-time lookup for common small enums
   if constexpr (enum_count <= 8) {
     // Fast path for small enums with compile-time switch generation

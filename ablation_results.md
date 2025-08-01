@@ -9,7 +9,7 @@ This ablation study evaluates the performance impact of various optimizations in
 - **Compiler**: Clang 21.0.0 (bloomberg/clang-p2996) with C++26 reflection support
 - **Platform**: aarch64-unknown-linux-gnu
 - **Build Type**: Release with `-O3` optimization
-- **Benchmarks**: 
+- **Benchmarks**:
   - Twitter JSON (93,311 bytes) - Complete Twitter API response
   - CITM Catalog (41,631 bytes) - Event catalog with maps and nested objects
 - **Methodology**: 10 runs for Twitter, 20 runs for CITM per variant with statistical analysis
@@ -44,11 +44,11 @@ cat ablation_results/ablation_summary.txt
    ```bash
    # Ensure you're in the simdjson root directory
    cd /path/to/simdjson
-   
+
    # Make scripts executable
    chmod +x ablation_study.sh
    chmod +x calculate_stats.py
-   
+
    # Verify build directory exists
    mkdir -p build
    ```
@@ -57,11 +57,11 @@ cat ablation_results/ablation_summary.txt
    ```bash
    # Full study with optimal settings (10 runs Twitter, 20 runs CITM, with compilation time)
    ./ablation_study.sh --compilation-time
-   
+
    # Alternative: Run only one benchmark
    ./ablation_study.sh -b twitter -r 15              # Twitter only with 15 runs
    ./ablation_study.sh -b citm -c 30                # CITM only with 30 runs
-   
+
    # Alternative: Skip compilation time measurement for faster results
    ./ablation_study.sh                              # Both benchmarks, no compilation time
    ```
@@ -70,7 +70,7 @@ cat ablation_results/ablation_summary.txt
    ```bash
    # Generate statistical analysis
    python3 calculate_stats.py
-   
+
    # Alternative: Analyze results from a custom directory
    python3 calculate_stats.py /path/to/custom/results
    ```
@@ -80,9 +80,9 @@ cat ablation_results/ablation_summary.txt
    # Results are saved in the ablation_results directory:
    ls ablation_results/
    # twitter_ablation_results.csv    - Raw Twitter benchmark data
-   # citm_ablation_results.csv       - Raw CITM benchmark data  
+   # citm_ablation_results.csv       - Raw CITM benchmark data
    # ablation_summary.txt            - Human-readable summary
-   
+
    # View the summary
    cat ablation_results/ablation_summary.txt
    ```
@@ -97,7 +97,7 @@ cat ablation_results/ablation_summary.txt
 ### Expected Runtime
 
 - Twitter benchmark (10 runs × 6 variants): ~2 minutes
-- CITM benchmark (20 runs × 6 variants): ~4 minutes  
+- CITM benchmark (20 runs × 6 variants): ~4 minutes
 - Compilation time measurement adds: ~5 minutes
 - **Total with compilation time**: ~11 minutes
 

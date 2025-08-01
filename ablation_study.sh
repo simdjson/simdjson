@@ -94,7 +94,7 @@ parse_args() {
                 ;;
         esac
     done
-    
+
     # Validate benchmark parameter
     case "$BENCHMARK" in
         twitter|citm|both)
@@ -104,13 +104,13 @@ parse_args() {
             exit 1
             ;;
     esac
-    
+
     # Validate runs parameters
     if ! [[ "$RUNS_TWITTER" =~ ^[0-9]+$ ]] || [ "$RUNS_TWITTER" -lt 1 ]; then
         echo "Error: --runs must be a positive integer"
         exit 1
     fi
-    
+
     if ! [[ "$RUNS_CITM" =~ ^[0-9]+$ ]] || [ "$RUNS_CITM" -lt 1 ]; then
         echo "Error: --citm-runs must be a positive integer"
         exit 1
@@ -129,9 +129,9 @@ setup_build() {
     if [[ ! -d "$BUILD_DIR" ]]; then
         mkdir -p "$BUILD_DIR"
     fi
-    
+
     cd "$BUILD_DIR"
-    
+
     # Ensure baseline configuration
     log "Setting up build directory with baseline configuration..."
     cmake .. -DCMAKE_CXX_COMPILER=clang++ \
@@ -146,14 +146,14 @@ build_variant() {
     local variant="$1"
     local flags="$2"
     local measure_time="$3"
-    
+
     log "Building variant: $variant"
-    
+
     cd "$BUILD_DIR"
-    
+
     # Configure with ablation flags
     cmake .. -DCMAKE_CXX_FLAGS="$flags" > /dev/null 2>&1
-    
+
     if [ "$measure_time" = true ]; then
         # Measure compilation time
         local start_time=$(date +%s.%N)
@@ -172,18 +172,18 @@ run_twitter_benchmark() {
     local variant="$1"
     local runs="$2"
     local results=()
-    
+
     # Check if benchmark exists
     if [[ ! -x "$BUILD_DIR/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter" ]]; then
         log "Twitter benchmark not found, skipping..."
         return 1
     fi
-    
+
     log "Running Twitter benchmark for $variant ($runs runs)..."
-    
+
     for ((i=1; i<=$runs; i++)); do
         local output=$($BUILD_DIR/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter -f simdjson_static_reflection 2>&1 | grep "bench_simdjson_static_reflection" || true)
-        
+
         if [[ -n "$output" ]]; then
             local throughput=$(echo "$output" | grep -o '[0-9]*\.[0-9]* MB/s' | grep -o '[0-9]*\.[0-9]*' | head -1)
             if [[ -n "$throughput" ]]; then
@@ -192,7 +192,7 @@ run_twitter_benchmark() {
             fi
         fi
     done
-    
+
     # Return results as comma-separated string
     printf '%s\n' "${results[@]}" | paste -sd,
 }
@@ -202,10 +202,10 @@ run_citm_benchmark() {
     local variant="$1"
     local runs="$2"
     local results=()
-    
+
     # Create and compile CITM test program
     log "Compiling CITM test program..."
-    
+
     cat > "$BUILD_DIR/citm_test.cpp" << 'EOF'
 #include <iostream>
 #include <chrono>
@@ -247,7 +247,7 @@ Catalog create_test_catalog() {
     Catalog catalog;
     catalog.catalogName = "CITM Test Catalog";
     catalog.lastUpdate = "2025-07-31T20:00:00Z";
-    
+
     for (int i = 0; i < 200; i++) {
         Event event;
         event.id = 10000 + i;
@@ -258,7 +258,7 @@ Catalog create_test_catalog() {
         catalog.events["evt_" + std::to_string(i)] = event;
         catalog.activeIds.push_back(event.id);
     }
-    
+
     for (int i = 0; i < 50; i++) {
         Venue venue;
         venue.id = 20000 + i;
@@ -268,13 +268,13 @@ Catalog create_test_catalog() {
         venue.features = {"Feature A", "Feature B", "Feature C"};
         catalog.venues["ven_" + std::to_string(i)] = venue;
     }
-    
+
     return catalog;
 }
 
 int main() {
     Catalog catalog = create_test_catalog();
-    
+
     // Warm up
     for (int i = 0; i < 50; i++) {
         simdjson::arm64::builder::string_builder sb;
@@ -282,22 +282,22 @@ int main() {
         std::string_view json;
         sb.view().get(json);
     }
-    
+
     // Single run measurement
     simdjson::arm64::builder::string_builder sb;
-    
+
     auto start = std::chrono::high_resolution_clock::now();
     simdjson::arm64::builder::append(sb, catalog);
     auto end = std::chrono::high_resolution_clock::now();
-    
+
     std::string_view json;
     sb.view().get(json);
-    
+
     double elapsed = std::chrono::duration<double>(end - start).count();
     double throughput = (json.size() / 1024.0 / 1024.0) / elapsed;
-    
+
     std::cout << throughput << std::endl;
-    
+
     return 0;
 }
 EOF
@@ -306,9 +306,9 @@ EOF
     clang++ -std=c++26 -freflection -fexpansion-statements -stdlib=libc++ -O3 \
         -DSIMDJSON_STATIC_REFLECTION=1 $flags \
         -I../include -I.. "$BUILD_DIR/citm_test.cpp" -o "$BUILD_DIR/citm_test" -L. -lsimdjson 2>/dev/null
-    
+
     log "Running CITM benchmark for $variant ($runs runs)..."
-    
+
     for ((i=1; i<=$runs; i++)); do
         local throughput=$($BUILD_DIR/citm_test 2>/dev/null)
         if [[ -n "$throughput" ]]; then
@@ -316,10 +316,10 @@ EOF
             log "  Run $i: $throughput MB/s"
         fi
     done
-    
+
     # Clean up
     rm -f "$BUILD_DIR/citm_test" "$BUILD_DIR/citm_test.cpp"
-    
+
     # Return results as comma-separated string
     printf '%s\n' "${results[@]}" | paste -sd,
 }
@@ -327,7 +327,7 @@ EOF
 # Function to calculate statistics
 calculate_stats() {
     local data="$1"
-    
+
     python3 -c "
 import sys
 import statistics
@@ -348,7 +348,7 @@ else:
 calculate_impact() {
     local baseline="$1"
     local variant="$2"
-    
+
     if (( $(echo "$baseline > 0" | bc -l) )); then
         echo "scale=1; (($variant - $baseline) / $baseline) * 100" | bc -l
     else
@@ -359,10 +359,10 @@ calculate_impact() {
 # Main function
 main() {
     parse_args "$@"
-    
+
     # Create output directory
     mkdir -p "$OUTPUT_DIR"
-    
+
     echo "=== simdjson C++26 Reflection Ablation Study ==="
     echo "Date: $(date)"
     echo "Benchmarks: $BENCHMARK"
@@ -370,77 +370,77 @@ main() {
     echo "CITM runs: $RUNS_CITM"
     echo "Measure compilation: $MEASURE_COMPILATION"
     echo ""
-    
+
     # Setup build directory
     setup_build
-    
+
     # Initialize results files
     local twitter_results="$OUTPUT_DIR/twitter_ablation_results.csv"
     local citm_results="$OUTPUT_DIR/citm_ablation_results.csv"
     local summary_file="$OUTPUT_DIR/ablation_summary.txt"
-    
+
     # Headers
     echo "Variant,Mean_MB/s,StdDev,CV%,Runs,Impact%,CompileTime_s" > "$twitter_results"
     echo "Variant,Mean_MB/s,StdDev,CV%,Runs,Impact%,CompileTime_s" > "$citm_results"
-    
+
     # Baseline values for impact calculation
     local twitter_baseline=0
     local citm_baseline=0
-    
+
     # Process each variant
     for variant in baseline no_consteval no_simd_escaping no_fast_digits no_branch_hints linear_growth; do
         echo "Processing variant: $variant"
-        
+
         # Build variant
         local compile_time=$(build_variant "$variant" "${ABLATION_VARIANTS[$variant]}" "$MEASURE_COMPILATION")
-        
+
         # Run Twitter benchmark if requested
         if [[ "$BENCHMARK" == "twitter" ]] || [[ "$BENCHMARK" == "both" ]]; then
             local twitter_data=$(run_twitter_benchmark "$variant" "$RUNS_TWITTER")
             if [[ -n "$twitter_data" ]]; then
                 local twitter_stats=$(calculate_stats "$twitter_data")
                 IFS=',' read -r mean stdev cv count <<< "$twitter_stats"
-                
+
                 if [[ "$variant" == "baseline" ]]; then
                     twitter_baseline=$mean
                     impact="0"
                 else
                     impact=$(calculate_impact "$twitter_baseline" "$mean")
                 fi
-                
+
                 echo "$variant,$mean,$stdev,$cv,$count,$impact,$compile_time" >> "$twitter_results"
                 echo "  Twitter: $mean MB/s (±$stdev, CV: $cv%, Impact: ${impact}%)"
             fi
         fi
-        
+
         # Run CITM benchmark if requested
         if [[ "$BENCHMARK" == "citm" ]] || [[ "$BENCHMARK" == "both" ]]; then
             local citm_data=$(run_citm_benchmark "$variant" "$RUNS_CITM")
             if [[ -n "$citm_data" ]]; then
                 local citm_stats=$(calculate_stats "$citm_data")
                 IFS=',' read -r mean stdev cv count <<< "$citm_stats"
-                
+
                 if [[ "$variant" == "baseline" ]]; then
                     citm_baseline=$mean
                     impact="0"
                 else
                     impact=$(calculate_impact "$citm_baseline" "$mean")
                 fi
-                
+
                 echo "$variant,$mean,$stdev,$cv,$count,$impact,$compile_time" >> "$citm_results"
                 echo "  CITM: $mean MB/s (±$stdev, CV: $cv%, Impact: ${impact}%)"
             fi
         fi
-        
+
         echo ""
     done
-    
+
     # Generate summary report
     {
         echo "=== Ablation Study Summary ==="
         echo "Generated: $(date)"
         echo ""
-        
+
         if [[ -f "$twitter_results" ]] && [[ $(wc -l < "$twitter_results") -gt 1 ]]; then
             echo "Twitter Benchmark Results:"
             echo "-------------------------"
@@ -448,7 +448,7 @@ main() {
             awk -F',' 'NR==1{printf "%-20s %12s %10s %8s %8s %10s %12s\n", $1, $2, $3, $4, $5, $6, $7} NR>1{printf "%-20s %12.2f %10.2f %8.2f %8d %10.1f %12.2f\n", $1, $2, $3, $4, $5, $6, $7}' "$twitter_results"
             echo ""
         fi
-        
+
         if [[ -f "$citm_results" ]] && [[ $(wc -l < "$citm_results") -gt 1 ]]; then
             echo "CITM Benchmark Results:"
             echo "-----------------------"
@@ -456,12 +456,12 @@ main() {
             awk -F',' 'NR==1{printf "%-20s %12s %10s %8s %8s %10s %12s\n", $1, $2, $3, $4, $5, $6, $7} NR>1{printf "%-20s %12.2f %10.2f %8.2f %8d %10.1f %12.2f\n", $1, $2, $3, $4, $5, $6, $7}' "$citm_results"
             echo ""
         fi
-        
+
         echo "Results saved to: $OUTPUT_DIR"
     } > "$summary_file"
-    
+
     cat "$summary_file"
-    
+
     echo ""
     echo "Detailed results saved to:"
     echo "  - $twitter_results"
