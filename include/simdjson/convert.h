@@ -205,8 +205,7 @@ public:
   simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
-#ifdef __cpp_lib_ranges
-#if defined(__cpp_lib_ranges_zip) && __cpp_lib_ranges_zip >= 202110L
+#if defined(__cpp_lib_ranges) && __cplusplus >= 202300L
 
 static constexpr struct [[nodiscard]] no_errors_adaptor
     : std::ranges::range_adaptor_closure<no_errors_adaptor> {
@@ -258,8 +257,7 @@ template <typename T> static constexpr to_adaptor<T> to{};
 
 static constexpr to_adaptor<> from{};
 
-#endif
-#endif
+#endif // defined(__cpp_lib_ranges) && __cplusplus >= 202300L
 
 } // namespace simdjson
 
