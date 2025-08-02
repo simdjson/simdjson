@@ -83,9 +83,7 @@ struct [[nodiscard]] auto_parser
   using reference = value_type &;
   using const_reference = const value_type &;
   using iterator = auto_iterator;
-#if __cplusplus > 202002L
-  using const_iterator = std::const_iterator<iterator>;
-#endif
+  using const_iterator = auto_iterator; // auto_iterator is already const
 
 private:
   ParserType m_parser;
@@ -208,6 +206,7 @@ public:
 };
 
 #ifdef __cpp_lib_ranges
+#if __cpp_lib_ranges_zip >= 202110L
 
 static constexpr struct [[nodiscard]] no_errors_adaptor
     : std::ranges::range_adaptor_closure<no_errors_adaptor> {
@@ -259,6 +258,7 @@ template <typename T> static constexpr to_adaptor<T> to{};
 
 static constexpr to_adaptor<> from{};
 
+#endif
 #endif
 
 } // namespace simdjson
