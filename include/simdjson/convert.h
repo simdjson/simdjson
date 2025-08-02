@@ -206,7 +206,7 @@ public:
 };
 
 #ifdef __cpp_lib_ranges
-#if __cpp_lib_ranges_zip >= 202110L
+#if defined(__cpp_lib_ranges_zip) && __cpp_lib_ranges_zip >= 202110L
 
 static constexpr struct [[nodiscard]] no_errors_adaptor
     : std::ranges::range_adaptor_closure<no_errors_adaptor> {
