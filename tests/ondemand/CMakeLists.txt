@@ -33,6 +33,7 @@ add_cpp_test(ondemand_iterate_many_csv               LABELS ondemand acceptance 
 add_cpp_test(ondemand_custom_types_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_document_tests    LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
 if(NOT SIMDJSON_SANITIZE)
   add_cpp_test(ondemand_cacheline              LABELS ondemand acceptance per_implementation)
 endif()
