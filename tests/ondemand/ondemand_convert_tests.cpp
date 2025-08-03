@@ -171,8 +171,6 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
-// These tests require C++23 ranges support which is currently disabled
-#if 0
 bool test_no_errors() {
   TEST_START();
   for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
@@ -196,11 +194,6 @@ bool to_clean_array() {
   }
   TEST_SUCCEED();
 }
-#else
-// Placeholder functions when ranges support is disabled
-bool test_no_errors() { return true; }
-bool to_clean_array() { return true; }
-#endif
 
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {

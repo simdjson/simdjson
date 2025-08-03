@@ -205,10 +205,10 @@ public:
   simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
-#if 0 // Disabled for now due to C++23 compatibility issues across different compilers
+#ifdef __cpp_lib_ranges
 
-static constexpr struct [[nodiscard]] no_errors_adaptor
-    : std::ranges::range_adaptor_closure<no_errors_adaptor> {
+// For C++20, we implement our own pipe operator since range_adaptor_closure is C++23
+static constexpr struct [[nodiscard]] no_errors_adaptor {
 
   [[nodiscard]] constexpr bool
   operator()(simdjson_result<ondemand::value> const &val) const noexcept {
@@ -222,8 +222,7 @@ static constexpr struct [[nodiscard]] no_errors_adaptor
 } no_errors;
 
 template <typename T = void>
-struct [[nodiscard]] to_adaptor
-    : std::ranges::range_adaptor_closure<to_adaptor<T>> {
+struct [[nodiscard]] to_adaptor {
 
   /// Convert to T
   [[nodiscard]] constexpr T
@@ -257,7 +256,18 @@ template <typename T> static constexpr to_adaptor<T> to{};
 
 static constexpr to_adaptor<> from{};
 
-#endif // 0 - Disabled ranges features
+// For C++20 ranges without range_adaptor_closure, we need to define pipe operators
+template <std::ranges::range Range>
+inline auto operator|(Range&& range, const no_errors_adaptor& adaptor) {
+  return adaptor(std::forward<Range>(range));
+}
+
+template <std::ranges::range Range, typename T>
+inline auto operator|(Range&& range, const to_adaptor<T>& adaptor) {
+  return adaptor(std::forward<Range>(range));
+}
+
+#endif // __cpp_lib_ranges
 
 } // namespace simdjson
 
