@@ -5,6 +5,7 @@
 #include <ranges>
 #include <string>
 #include <vector>
+
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
@@ -173,6 +174,7 @@ bool to_bad_array() {
 
 bool test_no_errors() {
   TEST_START();
+  std::cout << "Running test_no_errors with ranges support" << std::endl;
   for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
     Car car{};
     val.get(car);

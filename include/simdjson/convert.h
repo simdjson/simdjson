@@ -210,13 +210,13 @@ public:
 // For C++20, we implement our own pipe operator since range_adaptor_closure is C++23
 static constexpr struct [[nodiscard]] no_errors_adaptor {
 
-  [[nodiscard]] constexpr bool
+  [[nodiscard]] bool
   operator()(simdjson_result<ondemand::value> const &val) const noexcept {
     return val.error() == SUCCESS;
   }
 
   template <std::ranges::range Range>
-  constexpr auto operator()(Range &&rng) const noexcept {
+  auto operator()(Range &&rng) const noexcept {
     return std::forward<Range>(rng) | std::views::filter(*this);
   }
 } no_errors;
@@ -225,28 +225,28 @@ template <typename T = void>
 struct [[nodiscard]] to_adaptor {
 
   /// Convert to T
-  [[nodiscard]] constexpr T
+  [[nodiscard]] T
   operator()(simdjson_result<ondemand::value> &val) const noexcept {
     return val.get<T>();
   }
 
   /// Make it an adaptor
   template <std::ranges::range Range>
-  constexpr auto operator()(Range &&rng) const noexcept {
+  auto operator()(Range &&rng) const noexcept {
     return std::forward<Range>(rng) | no_errors | std::views::transform(*this);
   }
 
   /**
    * Parse input string into any object if possible.
    */
-  constexpr auto operator()(padded_string_view const str) const noexcept {
+  auto operator()(padded_string_view const str) const noexcept {
     return auto_parser{str};
   }
 
   /**
    * Parse the input using the specified parser into any object if possible.
    */
-  constexpr auto operator()(ondemand::parser &parser,
+  auto operator()(ondemand::parser &parser,
                             padded_string_view const str) const noexcept {
     return auto_parser<ondemand::parser *>{parser, str};
   }
