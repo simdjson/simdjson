@@ -106,7 +106,8 @@ public:
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_parser{std::move(parser)}, m_doc(m_parser.iterate(str)) {}
+      // Note: order matters! We need to call iterate BEFORE moving the parser
+      : m_doc(parser.iterate(str)), m_parser{std::move(parser)} {}
 
   explicit auto_parser(padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
