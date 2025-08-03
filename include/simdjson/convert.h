@@ -106,7 +106,10 @@ public:
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_parser{std::move(parser)}, m_doc{m_parser.iterate(str)} {}
+      : m_parser{std::move(parser)}, m_doc{} {
+    // Initialize m_doc after m_parser is ready
+    m_doc = std::move(m_parser.iterate(str).value_unsafe());
+  }
 
   explicit auto_parser(padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
@@ -121,7 +124,10 @@ public:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : auto_parser{parser, parser.iterate(str)} {}
+      : m_parser{&parser}, m_doc{} {
+    // Initialize m_doc after m_parser is ready
+    m_doc = std::move(parser.iterate(str).value_unsafe());
+  }
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
@@ -145,6 +151,7 @@ public:
   template <typename T>
   [[nodiscard]] simdjson_inline simdjson_result<T>
   result() noexcept(is_nothrow_gettable<T>) {
+    // For array and object types, we need to be at the start of the document
     return m_doc.get<T>();
   }
 
