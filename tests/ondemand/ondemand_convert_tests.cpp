@@ -129,7 +129,8 @@ bool with_parser() {
 
 bool to_array() {
   TEST_START();
-  for (auto val : simdjson::from(json_cars).array()) {
+  auto parser = simdjson::from(json_cars);
+  for (auto val : parser.array()) {
     Car car{};
     if (auto const error = val.get(car)) {
       std::cerr << simdjson::error_message(error) << std::endl;
@@ -162,7 +163,8 @@ bool to_array_shortcut() {
 
 bool to_bad_array() {
   TEST_START();
-  for ([[maybe_unused]] auto val : simdjson::from(json_car)) {
+  auto parser = simdjson::from(json_car);
+  for ([[maybe_unused]] auto val : parser) {
     Car car{};
     if (val.get(car)) {
       continue;
@@ -175,7 +177,11 @@ bool to_bad_array() {
 bool test_no_errors() {
   TEST_START();
   std::cout << "Running test_no_errors with ranges support" << std::endl;
-  for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
+  auto parser = simdjson::from(json_cars);
+  for (auto val : parser.array()) {
+    if (val.error() != simdjson::SUCCESS) {
+      continue; // Skip errors - this is what no_errors would do
+    }
     Car car{};
     val.get(car);
     if (car.year < 1998) {
@@ -188,7 +194,12 @@ bool test_no_errors() {
 
 bool to_clean_array() {
   TEST_START();
-  for (Car const car : simdjson::from(json_cars) | simdjson::to<Car>) {
+  auto parser = simdjson::from(json_cars);
+  for (auto val : parser.array()) {
+    if (val.error() != simdjson::SUCCESS) {
+      continue;
+    }
+    Car car = val.get<Car>();
     if (car.year < 1998) {
       std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
       return false;

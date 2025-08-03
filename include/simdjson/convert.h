@@ -86,8 +86,9 @@ struct [[nodiscard]] auto_parser
   using const_iterator = auto_iterator; // auto_iterator is already const
 
 private:
-  ondemand::document m_doc;
   ParserType m_parser;
+  ondemand::document m_doc;
+  error_code m_error{SUCCESS};
 
   // Caching the iterator here:
   iterator::auto_iterator_storage iter_storage{};
@@ -101,18 +102,28 @@ public:
   // non-pointer constructors:
   explicit auto_parser(ParserType &&parser, ondemand::document &&doc) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_doc{std::move(doc)}, m_parser{std::move(parser)} {}
+      : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+#endif
 
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_parser{std::move(parser)} {
+      : m_parser{std::move(parser)}, m_doc{}, m_error{SUCCESS} {
     // Initialize m_doc after m_parser to avoid potential issues
     auto doc_result = m_parser.iterate(str);
-    if (doc_result.error() == SUCCESS) {
+    m_error = doc_result.error();
+    if (m_error == SUCCESS) {
       m_doc = std::move(doc_result.value_unsafe());
     }
   }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
   explicit auto_parser(padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
@@ -122,18 +133,28 @@ public:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_doc{std::move(doc)}, m_parser{&parser} {}
+      : m_parser{&parser}, m_doc{std::move(doc)} {}
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+#endif
 
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser} {
+      : m_parser{&parser}, m_doc{}, m_error{SUCCESS} {
     // Initialize m_doc after m_parser to avoid potential issues
     auto doc_result = parser.iterate(str);
-    if (doc_result.error() == SUCCESS) {
+    m_error = doc_result.error();
+    if (m_error == SUCCESS) {
       m_doc = std::move(doc_result.value_unsafe());
     }
   }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
@@ -157,6 +178,9 @@ public:
   template <typename T>
   [[nodiscard]] simdjson_inline simdjson_result<T>
   result() noexcept(is_nothrow_gettable<T>) {
+    if (m_error != SUCCESS) {
+      return m_error;
+    }
     // For array and object types, we need to be at the start of the document
     return m_doc.get<T>();
   }
@@ -184,6 +208,9 @@ public:
 
   template <typename T>
   [[nodiscard]] simdjson_inline explicit(false) operator T() noexcept(false) {
+    if (m_error != SUCCESS) {
+      throw simdjson_error(m_error);
+    }
     return m_doc.get<T>();
   }
 
@@ -195,6 +222,9 @@ public:
   template <typename T>
   [[nodiscard]] simdjson_inline std::optional<T>
   optional() noexcept(is_nothrow_gettable<T>) {
+    if (m_error != SUCCESS) {
+      return std::nullopt;
+    }
     // For std::optional<T>
     auto res = m_doc.get<T>();
     if (res.error()) [[unlikely]] {
@@ -204,14 +234,28 @@ public:
   }
 
   simdjson_inline auto_iterator begin() noexcept {
+    if (m_error != SUCCESS) {
+      // Create an iterator with the error
+      iter_storage.m_iter = iterator::type(m_error);
+      iter_storage.m_value = value_type{};
+      return auto_iterator{iter_storage};
+    }
     if (iter_storage.m_iter.error() != SUCCESS &&
         !iter_storage.m_iter.at_end()) {
-      iter_storage = {.m_iter = iterator::type{m_doc.begin()},
-                      .m_value = iterator::value_type{
-                          iter_storage.m_iter.at_end() ||
-                                  iter_storage.m_iter.error() != SUCCESS
-                              ? value_type{}
-                              : *iter_storage.m_iter}};
+      // Try to get the document as an array
+      auto array_result = m_doc.get_array();
+      if (array_result.error() == SUCCESS) {
+        iter_storage = {.m_iter = iterator::type{array_result.value_unsafe().begin()},
+                        .m_value = iterator::value_type{
+                            iter_storage.m_iter.at_end() ||
+                                    iter_storage.m_iter.error() != SUCCESS
+                                ? value_type{}
+                                : *iter_storage.m_iter}};
+      } else {
+        // If it's not an array, create an error iterator
+        iter_storage.m_iter = iterator::type(array_result.error());
+        iter_storage.m_value = value_type{};
+      }
     }
     return auto_iterator{iter_storage};
   }
