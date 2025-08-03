@@ -86,8 +86,8 @@ struct [[nodiscard]] auto_parser
   using const_iterator = auto_iterator; // auto_iterator is already const
 
 private:
-  ParserType m_parser;
   ondemand::document m_doc;
+  ParserType m_parser;
 
   // Caching the iterator here:
   iterator::auto_iterator_storage iter_storage{};
@@ -101,7 +101,7 @@ public:
   // non-pointer constructors:
   explicit auto_parser(ParserType &&parser, ondemand::document &&doc) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
+      : m_doc{std::move(doc)}, m_parser{std::move(parser)} {}
 
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
@@ -117,12 +117,12 @@ public:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser}, m_doc{std::move(doc)} {}
+      : m_doc{std::move(doc)}, m_parser{&parser} {}
 
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser}, m_doc(parser.iterate(str)) {}
+      : m_doc(parser.iterate(str)), m_parser{&parser} {}
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
