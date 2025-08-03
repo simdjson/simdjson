@@ -106,10 +106,7 @@ public:
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
-      : m_parser{std::move(parser)}, m_doc{} {
-    // Initialize m_doc after m_parser is ready
-    m_doc = std::move(m_parser.iterate(str).value_unsafe());
-  }
+      : m_parser{std::move(parser)}, m_doc(m_parser.iterate(str)) {}
 
   explicit auto_parser(padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
@@ -124,10 +121,7 @@ public:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
-      : m_parser{&parser}, m_doc{} {
-    // Initialize m_doc after m_parser is ready
-    m_doc = std::move(parser.iterate(str).value_unsafe());
-  }
+      : m_parser{&parser}, m_doc(parser.iterate(str)) {}
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
