@@ -205,7 +205,7 @@ public:
   simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
-#if defined(__cpp_lib_ranges) && __cplusplus >= 202300L
+#if 0 // Disabled for now due to C++23 compatibility issues across different compilers
 
 static constexpr struct [[nodiscard]] no_errors_adaptor
     : std::ranges::range_adaptor_closure<no_errors_adaptor> {
@@ -257,7 +257,7 @@ template <typename T> static constexpr to_adaptor<T> to{};
 
 static constexpr to_adaptor<> from{};
 
-#endif // defined(__cpp_lib_ranges) && __cplusplus >= 202300L
+#endif // 0 - Disabled ranges features
 
 } // namespace simdjson
 
