@@ -248,17 +248,16 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
 /**
  * This CPO (Customization Point Object) will help deserialize into optional types.
  */
-template <concepts::optional_type T, typename ValT>
+template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, ValT>) {
+error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, decltype(val)>) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
 
-  static_assert(
-      deserializable<value_type, ValT>,
-      "The specified type inside the unique_ptr must itself be deserializable");
-  static_assert(
-      std::is_default_constructible_v<value_type>,
-      "The specified type inside the unique_ptr must default constructible.");
+  // Check if the value is null
+  if (val.is_null()) {
+    out.reset(); // Set to nullopt
+    return SUCCESS;
+  }
 
   if (!out) {
     out.emplace();
@@ -317,17 +316,42 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
-      static_assert(
-        deserializable<decltype(out.[:mem:]), SIMDJSON_IMPLEMENTATION::ondemand::object>,
-        "The specified type inside the class must itself be deserializable");
+      // Note: removed static assert as optional types are now handled generically
       // as long we are succesful or the field is not found, we continue
       if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-        obj[key].get(out.[:mem:]);
+        e = obj[key].get(out.[:mem:]);
       }
     }
   };
   return e;
 }
+
+// Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
+template <typename T, typename ValT>
+  requires(std::is_enum_v<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+#if SIMDJSON_STATIC_REFLECTION
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+
+  bool found = false;
+  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+    if (!found && str == std::meta::identifier_of(enum_val)) {
+      out = [:enum_val:];
+      found = true;
+    }
+  };
+
+  return found ? SUCCESS : INCORRECT_TYPE;
+#else
+  // Fallback: deserialize as integer if reflection not available
+  std::underlying_type_t<T> int_val;
+  SIMDJSON_TRY(val.get(int_val));
+  out = static_cast<T>(int_val);
+  return SUCCESS;
+#endif
+}
+
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept {
@@ -366,6 +390,10 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &
 // Unique pointers
 ////////////////////////////////////////
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<bool> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_unique<bool>();
     if (!out) { return MEMALLOC; }
@@ -375,6 +403,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<bool> &out) no
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int64_t> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_unique<int64_t>();
     if (!out) { return MEMALLOC; }
@@ -384,6 +416,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int64_t> &out)
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<uint64_t> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_unique<uint64_t>();
     if (!out) { return MEMALLOC; }
@@ -393,6 +429,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<uint64_t> &out
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<double> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_unique<double>();
     if (!out) { return MEMALLOC; }
@@ -402,6 +442,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<double> &out) 
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string_view> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_unique<std::string_view>();
     if (!out) { return MEMALLOC; }
@@ -415,6 +459,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string_vi
 // Shared pointers
 ////////////////////////////////////////
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<bool> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_shared<bool>();
     if (!out) { return MEMALLOC; }
@@ -424,6 +472,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<bool> &out) no
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<int64_t> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_shared<int64_t>();
     if (!out) { return MEMALLOC; }
@@ -433,6 +485,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<int64_t> &out)
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<uint64_t> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_shared<uint64_t>();
     if (!out) { return MEMALLOC; }
@@ -442,6 +498,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<uint64_t> &out
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<double> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_shared<double>();
     if (!out) { return MEMALLOC; }
@@ -451,6 +511,10 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<double> &out) 
 }
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_view> &out) noexcept {
+  if (val.is_null()) {
+    out.reset();
+    return SUCCESS;
+  }
   if (!out) {
     out = std::make_shared<std::string_view>();
     if (!out) { return MEMALLOC; }
@@ -459,6 +523,61 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_vi
   return SUCCESS;
 }
 
+
+////////////////////////////////////////
+// Explicit optional specializations
+////////////////////////////////////////
+
+////////////////////////////////////////
+// Explicit smart pointer specializations for string and int types
+////////////////////////////////////////
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string> &out) noexcept {
+  // Check if the value is null
+  if (val.is_null()) {
+    out.reset(); // Set to nullptr
+    return SUCCESS;
+  }
+
+  if (!out) {
+    out = std::make_unique<std::string>();
+  }
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+  *out = std::string{str};
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string> &out) noexcept {
+  // Check if the value is null
+  if (val.is_null()) {
+    out.reset(); // Set to nullptr
+    return SUCCESS;
+  }
+
+  if (!out) {
+    out = std::make_shared<std::string>();
+  }
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+  *out = std::string{str};
+  return SUCCESS;
+}
+
+error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int> &out) noexcept {
+  // Check if the value is null
+  if (val.is_null()) {
+    out.reset(); // Set to nullptr
+    return SUCCESS;
+  }
+
+  if (!out) {
+    out = std::make_unique<int>();
+  }
+  int64_t temp;
+  SIMDJSON_TRY(val.get_int64().get(temp));
+  *out = static_cast<int>(temp);
+  return SUCCESS;
+}
 
 } // namespace simdjson
 

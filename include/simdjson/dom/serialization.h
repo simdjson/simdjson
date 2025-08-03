@@ -107,6 +107,9 @@ protected:
  * by a "formatter" which handles the details. Thus
  * the string_builder template could support both minification
  * and prettification, and various other tradeoffs.
+ *
+ * This is not to be confused with the simdjson::builder::string_builder
+ * which is a different class.
  */
 template <class formatter = mini_formatter>
 class string_builder {

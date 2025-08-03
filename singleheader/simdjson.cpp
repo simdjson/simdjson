@@ -1,4 +1,4 @@
-/* auto-generated on 2025-08-03 18:36:14 +0000. Do not edit! */
+/* auto-generated on 2025-08-03 19:26:58 +0000. version 4.0.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -577,17 +577,6 @@ double from_chars(const char *first, const char* end) noexcept;
     // We assume by default static linkage
     #define SIMDJSON_DLLIMPORTEXPORT
     #endif
-
-/**
- * Workaround for the vcpkg package manager. Only vcpkg should
- * ever touch the next line. The SIMDJSON_USING_LIBRARY macro is otherwise unused.
- */
-#if SIMDJSON_USING_LIBRARY
-#define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
-#endif
-/**
- * End of workaround for the vcpkg package manager.
- */
 #else
     #define SIMDJSON_DLLIMPORTEXPORT
 #endif
@@ -2444,6 +2433,18 @@ namespace std {
 #define SIMDJSON_AVX512_ALLOWED 1
 #endif
 
+
+#ifndef __has_cpp_attribute
+#define simdjson_lifetime_bound
+#elif __has_cpp_attribute(msvc::lifetimebound)
+#define simdjson_lifetime_bound [[msvc::lifetimebound]]
+#elif __has_cpp_attribute(clang::lifetimebound)
+#define simdjson_lifetime_bound [[clang::lifetimebound]]
+#elif __has_cpp_attribute(lifetimebound)
+#define simdjson_lifetime_bound [[lifetimebound]]
+#else
+#define simdjson_lifetime_bound
+#endif
 #endif // SIMDJSON_COMMON_DEFS_H
 /* end file simdjson/common_defs.h */
 /* skipped duplicate #include "simdjson/compiler_check.h" */
@@ -2908,7 +2909,6 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
   requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
     obj.emplace(std::move(val));
-    obj = std::move(val);
     {
       obj.value_or(val)
     } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
@@ -6420,15 +6420,6 @@ simdjson_inline simdjson_warn_unused bool validate_utf8(const std::string_view s
 }
 
 /**
- * Write the string to the output buffer while escaping double-quote, backlash and ascii control characters.
- *
- * @param input the string_view to escape
- * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
- * @return number of bytes written
- */
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept;
-
-/**
  * Validate the UTF-8 string.
  *
  * @param p the string to validate.
@@ -6529,14 +6520,6 @@ public:
    */
   simdjson_warn_unused virtual bool validate_utf8(const char *buf, size_t len) const noexcept = 0;
 
-  /**
-   * Write the string to the output buffer while escaping double-quote, backlash and ascii control characters.
-   *
-   * @param input the string_view to escape
-   * @param out output buffer (for escaped string): to be safe, it should have 6 * input.size() allocated bytes.
-   * @return number of bytes written
-   */
-  simdjson_warn_unused virtual size_t write_string_escaped(const std::string_view input, char *out) const noexcept = 0;
 protected:
   /** @private Construct an implementation with the given name and description. For subclasses. */
   simdjson_inline implementation(
@@ -7262,7 +7245,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace arm64
@@ -7311,7 +7293,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace fallback
@@ -7363,7 +7344,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace haswell
@@ -7414,7 +7394,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace icelake
@@ -7469,7 +7448,6 @@ public:
                                          size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf,
                                           size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace ppc64
@@ -7516,7 +7494,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace westmere
@@ -7562,7 +7539,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace lsx
@@ -7608,7 +7584,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace lasx
@@ -7695,9 +7670,6 @@ public:
   simdjson_warn_unused bool validate_utf8(const char * buf, size_t len) const noexcept final override {
     return set_best()->validate_utf8(buf, len);
   }
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final {
-    return set_best()->write_string_escaped(input, out);
-  }
   simdjson_inline detect_best_supported_implementation_on_first_use() noexcept : implementation("best_supported_detector", "Detects the best supported implementation and sets it", 0) {}
 private:
   const implementation *set_best() const noexcept;
@@ -7747,9 +7719,6 @@ public:
   }
   simdjson_warn_unused error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
     return UNSUPPORTED_ARCHITECTURE;
-  }
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view, char *) const noexcept final override {
-    return 0; // TODO: Evaluate whether this is the right thing to do for unsupported architecture.
   }
   simdjson_warn_unused bool validate_utf8(const char *, size_t) const noexcept final override {
     return false; // Just refuse to validate. Given that we have a fallback implementation
@@ -7833,9 +7802,6 @@ simdjson_warn_unused error_code minify(const char *buf, size_t len, char *dst, s
 }
 simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) noexcept {
   return get_active_implementation()->validate_utf8(buf, len);
-}
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  return get_active_implementation()->write_string_escaped(input, out);
 }
 const implementation * builtin_implementation() {
   static const implementation * builtin_impl = get_available_implementations()[SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION)];
@@ -10678,7 +10644,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace arm64
@@ -13895,104 +13860,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -14520,10 +14387,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return arm64::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace arm64
@@ -17229,7 +17092,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace haswell
@@ -20297,104 +20159,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -20919,10 +20683,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return haswell::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace haswell
@@ -23627,7 +23387,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace icelake
@@ -26694,104 +26453,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -27359,10 +27020,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return icelake::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace icelake
@@ -30183,7 +29840,6 @@ public:
                                          size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf,
                                           size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace ppc64
@@ -33362,104 +33018,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -33957,10 +33515,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return ppc64::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace ppc64
@@ -37092,7 +36646,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace westmere
@@ -40590,104 +40143,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -41218,11 +40673,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   if (error) { return error; }
   return stage2(_doc);
 }
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return westmere::stringparsing::write_string_escaped(input, out);
-}
-
 } // namespace westmere
 } // namespace simdjson
 
@@ -43825,7 +43275,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace lsx
@@ -46797,104 +46246,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -47386,10 +46737,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return lsx::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace lsx
@@ -50007,7 +49354,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace lasx
@@ -52995,104 +52341,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
-
 } // namespace stringparsing
 
 } // unnamed namespace
@@ -53580,10 +52828,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return lasx::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace lasx
@@ -55783,7 +55027,6 @@ public:
   ) const noexcept final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final;
   simdjson_warn_unused bool validate_utf8(const char *buf, size_t len) const noexcept final;
-  simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) const noexcept final;
 };
 
 } // namespace fallback
@@ -56364,104 +55607,6 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
     }
   }
 }
-
-/////////////
-/// TODO: This function is not used in the codebase. It is not clear if it is needed.
-/////////////
-simdjson_warn_unused size_t write_string_escaped(const std::string_view input, char *out) noexcept {
-  // We are making the following assumption: most strings will either be very short or they will not
-  // need escaping.
-  size_t i = 0;
-  size_t pos = 0;
-  /*if(input.size() >= escaping::BYTES_PROCESSED) {
-    auto vec_processing = [input,out]() -> size_t {
-      size_t index = 0;
-      size_t position = 0;
-      for(;input.size() - index >= escaping::BYTES_PROCESSED; index += escaping::BYTES_PROCESSED) {
-        escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-        if(vinput.has_escape()) {
-          return index + vinput.escape_index(); // We have a character that needs escaping
-        }
-        position += escaping::BYTES_PROCESSED;
-      }
-      if(index == input.size()) { return input.size(); }
-      // We virtually backtrack so we can load a full vector register
-      index = input.size() - escaping::BYTES_PROCESSED;
-      position = index;
-      escaping vinput = escaping::copy_and_find(reinterpret_cast<const uint8_t *>(input.data()) + index, reinterpret_cast<uint8_t *>(out) + position);
-      if(vinput.has_escape()) {
-        return index + vinput.escape_index(); // We have a character that needs escaping
-      }
-      return input.size();
-    };
-    i = vec_processing();
-    pos = i;
-    if(i == input.size()) { return pos; }
-    // Here we only continue if there was a character that needed escaping.
-  }*/
-  static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
-  static std::array<uint8_t, 256> json_quotable_character =
-    []() SIMDJSON_CONSTEXPR_LAMBDA {
-      std::array<uint8_t, 256> result{};
-      for (int index = 0; index < 32; index++) {
-        result[index] = 1;
-      }
-      for (int index : {'"', '\\'}) {
-        result[index] = 1;
-      }
-      return result;
-    }();
-  // The rest could possibly be vectorized, but consider that we expect most strings
-  // to be short or not to require escaping.
-  for (; i < input.size(); i++) {
-    uint8_t c = static_cast<uint8_t>(input[i]);
-    if(json_quotable_character[c]) {
-      switch (c) {
-      case '"':
-        out[pos++] = '\\';
-        out[pos++] = '"';
-        break;
-      case '\\':
-        out[pos++] = '\\';
-        out[pos++] = '\\';
-        break;
-      case '\b':
-        out[pos++] = '\\';
-        out[pos++] = 'b';
-        break;
-      case '\f':
-        out[pos++] = '\\';
-        out[pos++] = 'f';
-        break;
-      case '\n':
-        out[pos++] = '\\';
-        out[pos++] = 'n';
-        break;
-      case '\r':
-        out[pos++] = '\\';
-        out[pos++] = 'r';
-        break;
-      case '\t':
-        out[pos++] = '\\';
-        out[pos++] = 't';
-        break;
-      default:
-        control_chars[c].copy(out + pos, 6);
-        pos += 6;
-      }
-    } else {
-      out[pos++] = c;
-    }
-  }
-  return pos;
-}
-
-
 
 } // namespace stringparsing
 
@@ -57767,10 +56912,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
-}
-
-simdjson_warn_unused size_t implementation::write_string_escaped(const std::string_view input, char *out) const noexcept {
-  return fallback::stringparsing::write_string_escaped(input, out);
 }
 
 } // namespace fallback

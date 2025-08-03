@@ -9,6 +9,9 @@
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/serialization.h"
 #include "simdjson/generic/ondemand/value.h"
+#if SIMDJSON_STATIC_REFLECTION
+#include "simdjson/generic/ondemand/json_builder.h"
+#endif
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {

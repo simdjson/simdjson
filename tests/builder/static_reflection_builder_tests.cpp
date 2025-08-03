@@ -48,14 +48,11 @@ namespace builder_tests {
 
   bool car_test() {
     TEST_START();
-    simdjson::builder::string_builder sb;
+#if SIMDJSON_STATIC_REFLECTION
     Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-    append(sb, c);
-    std::string_view p;
-    auto result = sb.view().get(p);
+    auto result = builder::to_json_string(c);
     ASSERT_SUCCESS(result);
-    ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
-    std::string pstr(p.begin(), p.end());
+    std::string pstr = result.value();
     ASSERT_EQUAL(pstr, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document doc;
@@ -70,12 +67,38 @@ namespace builder_tests {
     ASSERT_EQUAL(c2.tire_pressure[1], 30.2);
     ASSERT_EQUAL(c2.tire_pressure[2], 30.513);
     ASSERT_EQUAL(c2.tire_pressure[3], 30.79);
+#endif
     TEST_SUCCEED();
   }
+  #if SIMDJSON_EXCEPTIONS
+  bool car_test_exception() {
+      TEST_START();
+      simdjson::builder::string_builder sb;
+      Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+      append(sb, c);
+      std::string_view p{sb};
+      TEST_SUCCEED();
+  }
+  bool car_test_exception2() {
+      TEST_START();
+      simdjson::builder::string_builder sb;
+      Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+      sb << c;
+      std::string_view p{sb};
+      TEST_SUCCEED();
+  }
+  void car_test_to_json_exception() {
+    TEST_START();
+    Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+    std::string json = simdjson::builder::to_json_string(c);
+    TEST_SUCCEED();
+  }
+  #endif // SIMDJSON_EXCEPTIONS
 
 
 bool serialize_deserialize_kid() {
   TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
   simdjson::padded_string json_str =
       R"({"age": 12, "name": "John", "toys": ["car", "ball"]})"_padded;
   simdjson::ondemand::parser parser;
@@ -90,7 +113,7 @@ bool serialize_deserialize_kid() {
   ASSERT_EQUAL(k.toys[1], "ball");
   // Now, go the other direction:
   std::string json;
-  ASSERT_SUCCESS(simdjson::builder::to_json_string(k).get(json));
+  ASSERT_SUCCESS(builder::to_json_string(k).get(json));
   std::cout << json << std::endl;
   // Now we parse it back:
   simdjson::ondemand::parser parser2;
@@ -103,11 +126,13 @@ bool serialize_deserialize_kid() {
   ASSERT_EQUAL(k2.toys.size(), 2);
   ASSERT_EQUAL(k2.toys[0], "car");
   ASSERT_EQUAL(k2.toys[1], "ball");
+#endif
   TEST_SUCCEED();
 }
 
 bool serialize_deserialize_x_y_z() {
   TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
   X s1 = {.a = '1',
           .b = 10,
           .c = 0,
@@ -119,7 +144,7 @@ bool serialize_deserialize_x_y_z() {
                 .i = {1, 2, 3},
                 .z = {.x = 1000}}};
   std::string pstr;
-  ASSERT_SUCCESS(simdjson::builder::to_json_string(s1).get(pstr));
+  ASSERT_SUCCESS(builder::to_json_string(s1).get(pstr));
   ASSERT_EQUAL(
       pstr,
       R"({"a":"1","b":10,"c":0,"d":"test string\n\r\"","e":[1,2,3],"f":["ab","cd","fg"],"y":{"g":100,"h":"test string\n\r\"","i":[1,2,3],"z":{"x":1000}}})");
@@ -129,12 +154,23 @@ bool serialize_deserialize_x_y_z() {
   X s2;
   ASSERT_SUCCESS(doc.get<X>().get(s2));
   ASSERT_TRUE(s1 == s2);
+#endif
   TEST_SUCCEED();
 }
 
-bool run() {
-  return car_test() && serialize_deserialize_kid() && serialize_deserialize_x_y_z() && true;
-}
+  bool run() {
+    return
+
+  #if SIMDJSON_EXCEPTIONS
+          car_test_exception() &&
+          car_test_exception2() &&
+          car_test_to_json_exception() &&
+  #endif // SIMDJSON_EXCEPTIONS
+          car_test() &&
+          serialize_deserialize_kid() &&
+          serialize_deserialize_x_y_z() &&
+          true;
+  }
 
 } // namespace builder_tests
 
