@@ -164,12 +164,12 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
 
   size_t i = 0;
-
-  if (!json_path.empty() && json_path.starts_with('$')) {
+   // json_path.starts_with('$') requires C++20.
+  if (!json_path.empty() && json_path.front() == '$') {
     i = 1;
   }
 
-  if (json_path.empty() || (json_path[i] != '.' && json_path[i] != '[')) {
+  if (i >= json_path.size() || (json_path[i] != '.' && json_path[i] != '[')) {
     return INVALID_JSON_POINTER;
   }
 
