@@ -208,13 +208,168 @@ bool to_clean_array() {
   TEST_SUCCEED();
 }
 
+bool test_to_adaptor_basic() {
+  TEST_START();
+  // Test 1: Direct conversion from padded_string_view
+  auto parser = simdjson::to<Car>()(json_car);
+  Car car = parser.get<Car>();
+  if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool test_to_adaptor_with_parser() {
+  TEST_START();
+  // Test 2: Using to<T> with explicit parser
+  simdjson::ondemand::parser parser;
+  auto result = simdjson::to<Car>()(parser, json_car);
+  Car car = result.get<Car>();
+  if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool test_to_adaptor_with_value() {
+  TEST_START();
+  // Test 3: Using to<T> with simdjson_result<ondemand::value>
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc = parser.iterate(json_car);
+  simdjson::simdjson_result<simdjson::ondemand::value> val = doc.get_value();
+  
+  Car car = simdjson::to<Car>()(val);
+  if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool test_to_adaptor_with_range() {
+  TEST_START();
+  // Test 4: Using to<T> as a range adaptor
+  auto cars = simdjson::from(json_cars) | simdjson::to<Car>();
+  
+  std::vector<Car> car_vec;
+  for (auto car : cars) {
+    car_vec.push_back(car);
+  }
+  
+  if (car_vec.size() != 3) {
+    return false;
+  }
+  if (car_vec[0].make != "Toyota" || car_vec[1].make != "Kia" || car_vec[2].make != "Toyota") {
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool test_to_adaptor_pipe_syntax() {
+  TEST_START();
+  // Test 5: Using pipe syntax with to<T>
+  auto parser = simdjson::from(json_cars);
+  auto cars = parser | simdjson::no_errors | simdjson::to<Car>();
+  
+  int count = 0;
+  for (auto car : cars) {
+    count++;
+    if (car.year < 1998) {
+      return false;
+    }
+  }
+  
+  if (count != 3) {
+    return false;
+  }
+  TEST_SUCCEED();
+}
+
+bool test_to_adaptor_different_types() {
+  TEST_START();
+  // Test 6: Using to<T> with different types
+  simdjson::padded_string json_numbers = R"([1, 2, 3, 4, 5])"_padded;
+  auto numbers = simdjson::from(json_numbers) | simdjson::to<int64_t>();
+  
+  std::vector<int64_t> num_vec;
+  for (auto num : numbers) {
+    num_vec.push_back(num);
+  }
+  
+  if (num_vec.size() != 5 || num_vec[0] != 1 || num_vec[4] != 5) {
+    return false;
+  }
+  
+  // Test with strings
+  simdjson::padded_string json_strings = R"(["hello", "world", "test"])"_padded;
+  auto strings = simdjson::from(json_strings) | simdjson::to<std::string>();
+  
+  std::vector<std::string> str_vec;
+  for (auto str : strings) {
+    str_vec.push_back(str);
+  }
+  
+  if (str_vec.size() != 3 || str_vec[0] != "hello" || str_vec[2] != "test") {
+    return false;
+  }
+  
+  TEST_SUCCEED();
+}
+
+bool test_to_vs_from_equivalence() {
+  TEST_START();
+  // Test 7: Verify that simdjson::to and simdjson::from behave equivalently
+  // when used as adaptors
+  
+  // Using from (which is an alias for to<>)
+  auto parser1 = simdjson::from(json_car);
+  Car car1 = parser1.get<Car>();
+  
+  // Using to<> directly (same as from)
+  auto parser2 = simdjson::to<>()(json_car);
+  Car car2 = parser2.get<Car>();
+  
+  // Both should produce the same result
+  if (car1.make != car2.make || car1.model != car2.model || car1.year != car2.year) {
+    return false;
+  }
+  
+  // Test with arrays
+  auto cars_from = simdjson::from(json_cars) | simdjson::to<Car>();
+  auto cars_to = simdjson::to<>()(json_cars) | simdjson::to<Car>();
+  
+  std::vector<Car> vec_from, vec_to;
+  for (auto car : cars_from) {
+    vec_from.push_back(car);
+  }
+  for (auto car : cars_to) {
+    vec_to.push_back(car);
+  }
+  
+  if (vec_from.size() != vec_to.size() || vec_from.size() != 3) {
+    return false;
+  }
+  
+  for (size_t i = 0; i < vec_from.size(); ++i) {
+    if (vec_from[i].make != vec_to[i].make || 
+        vec_from[i].model != vec_to[i].model ||
+        vec_from[i].year != vec_to[i].year) {
+      return false;
+    }
+  }
+  
+  TEST_SUCCEED();
+}
+
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       simple() && simple_optional() && with_parser() && to_array() &&
       to_array_shortcut() && to_bad_array() && test_no_errors() &&
-      to_clean_array() &&
+      to_clean_array() && test_to_adaptor_basic() && 
+      test_to_adaptor_with_parser() && test_to_adaptor_with_value() &&
+      test_to_adaptor_with_range() && test_to_adaptor_pipe_syntax() &&
+      test_to_adaptor_different_types() && test_to_vs_from_equivalence() &&
 #endif // SIMDJSON_EXCEPTIONS
       true;
 }
