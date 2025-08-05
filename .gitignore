@@ -49,6 +49,27 @@ objs
 
 # C++ ignore from https://github.com/github/gitignore/blob/master/C%2B%2B.gitignore
 
+# CMake build artifacts
+CMakeCache.txt
+CMakeFiles/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+Makefile
+cmake_install.cmake
+simdjson-config*.cmake
+simdjson-props.cmake
+simdjson.pc
+
+# Build directories
+deps/
+examples/build_*/
+examples/*_demo
+examples/*_benchmark
+
+# Temporary files
+examples/CMakeLists_demo.txt
+examples/simple_http.h
+
 # Prerequisites
 *.d
 
