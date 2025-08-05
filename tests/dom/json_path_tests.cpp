@@ -341,14 +341,12 @@ bool json_path_with_wildcard() {
   std::string_view string_value;
   std::uint64_t num_value;
   dom::object obj;
-printf("Running json_path_with_wildcard tests ...\n");
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("1").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("2").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("a").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$2").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$a").error(), INVALID_JSON_POINTER);
-printf("Running json_path_with_wildcard tests ...ok\n");
   // $.*
   ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.*").get(values));
 
