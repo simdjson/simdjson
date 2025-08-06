@@ -216,11 +216,7 @@ bool test_no_errors() {
 
 bool to_clean_array() {
   TEST_START();
-  auto parser = simdjson::from(json_cars);
-  for (auto val : parser.array()) {
-    if (val.error() != simdjson::SUCCESS) {
-      continue;
-    }
+  for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
     Car car = val.get<Car>();
     if (car.year < 1998) {
       std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
