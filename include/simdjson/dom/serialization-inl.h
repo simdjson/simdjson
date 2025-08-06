@@ -240,7 +240,7 @@ simdjson_inline void base_formatter<formatter>::one_char(char c) {
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::chars(const char *begin,
                                                       const char *end) {
-  buffer.insert(buffer.end(), begin, end);
+  buffer.append(begin, end);
 }
 
 template <class formatter>
@@ -343,7 +343,7 @@ template <class formatter> inline void base_formatter<formatter>::clear() {
 
 template <class formatter>
 simdjson_inline std::string_view base_formatter<formatter>::str() const {
-  return std::string_view(buffer.data(), buffer.size());
+  return buffer.str();
 }
 
 simdjson_inline void mini_formatter::print_newline() { return; }

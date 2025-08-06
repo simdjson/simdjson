@@ -5,8 +5,6 @@
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 
-#include <vector>
-
 namespace simdjson {
 
 /**
@@ -73,7 +71,51 @@ public:
 protected:
   // implementation details (subject to change)
   /** Backing buffer **/
-  std::vector<char> buffer{}; // not ideal!
+  struct vector_with_small_buffer {
+    ~vector_with_small_buffer() { free_buffer(); }
+
+    void clear() {
+      size = 0;
+      capacity = StaticCapacity;
+      free_buffer();
+      buffer = array;
+    }
+
+    simdjson_inline void push_back(char c) {
+      if (capacity < size + 1)
+        grow(capacity * 2);
+      buffer[size++] = c;
+    }
+
+    simdjson_inline void append(const char *begin, const char *end) {
+      const size_t new_size = size + (end - begin);
+      if (capacity < new_size)
+        // std::max(new_size, capacity * 2); is broken in tests on Windows
+        grow(new_size < capacity * 2 ? capacity * 2 : new_size);
+      std::copy(begin, end, buffer + std::exchange(size, new_size));
+    }
+
+    std::string_view str() const { return std::string_view(buffer, size); }
+
+  private:
+    void free_buffer() {
+      if (buffer != array)
+        delete[] buffer;
+    }
+    void grow(size_t new_capacity) {
+      auto new_buffer = new char[new_capacity];
+      std::copy(buffer, buffer + size, new_buffer);
+      free_buffer();
+      buffer = new_buffer;
+      capacity = new_capacity;
+    }
+
+    static const size_t StaticCapacity = 64;
+    char array[StaticCapacity];
+    char *buffer = array;
+    size_t size = 0;
+    size_t capacity = StaticCapacity;
+  } buffer{};
 };
 
 /**
