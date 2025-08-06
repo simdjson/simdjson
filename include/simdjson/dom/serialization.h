@@ -16,8 +16,7 @@ namespace simdjson {
  */
 namespace internal {
 
-template<class formatter>
-class base_formatter {
+template <class formatter> class base_formatter {
 public:
   /** Add a comma **/
   simdjson_inline void comma();
@@ -57,15 +56,15 @@ public:
   simdjson_inline void one_char(char c);
 
   simdjson_inline void call_print_newline() {
-      static_cast<formatter*>(this)->print_newline();
+    static_cast<formatter *>(this)->print_newline();
   }
 
   simdjson_inline void call_print_indents(size_t depth) {
-      static_cast<formatter*>(this)->print_indents(depth);
+    static_cast<formatter *>(this)->print_indents(depth);
   }
 
   simdjson_inline void call_print_space() {
-      static_cast<formatter*>(this)->print_space();
+    static_cast<formatter *>(this)->print_space();
   }
 
 protected:
@@ -73,7 +72,6 @@ protected:
   /** Backing buffer **/
   std::vector<char> buffer{}; // not ideal!
 };
-
 
 /**
  * @private This is the class that we expect to use with the string_builder
@@ -111,8 +109,7 @@ protected:
  * This is not to be confused with the simdjson::builder::string_builder
  * which is a different class.
  */
-template <class formatter = mini_formatter>
-class string_builder {
+template <class formatter = mini_formatter> class string_builder {
 public:
   /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
@@ -134,11 +131,12 @@ public:
   simdjson_inline std::string_view str() const;
   /** Append a key_value_pair to the builder (to be printed) **/
   simdjson_inline void append(simdjson::dom::key_value_pair value);
+
 private:
   formatter format{};
 };
 
-} // internal
+} // namespace internal
 
 namespace dom {
 
@@ -147,33 +145,43 @@ namespace dom {
  *
  * @param out The output stream.
  * @param value The element.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ * @throw if there is an error with the underlying output stream. simdjson
+ * itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::element value);
+inline std::ostream &operator<<(std::ostream &out,
+                                simdjson::dom::element value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::element> x);
+inline std::ostream &
+operator<<(std::ostream &out,
+           simdjson::simdjson_result<simdjson::dom::element> x);
 #endif
 /**
  * Print JSON to an output stream.
  *
  * @param out The output stream.
  * @param value The array.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ * @throw if there is an error with the underlying output stream. simdjson
+ * itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::array value);
+inline std::ostream &operator<<(std::ostream &out, simdjson::dom::array value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out, simdjson::simdjson_result<simdjson::dom::array> x);
+inline std::ostream &
+operator<<(std::ostream &out,
+           simdjson::simdjson_result<simdjson::dom::array> x);
 #endif
 /**
  * Print JSON to an output stream.
  *
  * @param out The output stream.
  * @param value The object.
- * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ * @throw if there is an error with the underlying output stream. simdjson
+ * itself will not throw.
  */
-inline std::ostream& operator<<(std::ostream& out, simdjson::dom::object value);
+inline std::ostream &operator<<(std::ostream &out, simdjson::dom::object value);
 #if SIMDJSON_EXCEPTIONS
-inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<simdjson::dom::object> x);
+inline std::ostream &
+operator<<(std::ostream &out,
+           simdjson::simdjson_result<simdjson::dom::object> x);
 #endif
 } // namespace dom
 
@@ -185,47 +193,47 @@ inline std::ostream& operator<<(std::ostream& out,  simdjson::simdjson_result<si
  *   cout << to_string(doc) << endl; // prints [1,2,3]
  *
  */
-template <class T>
-std::string to_string(T x)   {
-    // in C++, to_string is standard: http://www.cplusplus.com/reference/string/to_string/
-    // Currently minify and to_string are identical but in the future, they may
-    // differ.
-    simdjson::internal::string_builder<> sb;
-    sb.append(x);
-    std::string_view answer = sb.str();
-    return std::string(answer.data(), answer.size());
+template <class T> std::string to_string(T x) {
+  // in C++, to_string is standard:
+  // http://www.cplusplus.com/reference/string/to_string/ Currently minify and
+  // to_string are identical but in the future, they may differ.
+  simdjson::internal::string_builder<> sb;
+  sb.append(x);
+  std::string_view answer = sb.str();
+  return std::string(answer.data(), answer.size());
 }
 #if SIMDJSON_EXCEPTIONS
-template <class T>
-std::string to_string(simdjson_result<T> x) {
-    if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+template <class T> std::string to_string(simdjson_result<T> x) {
+  if (x.error()) {
+    throw simdjson_error(x.error());
+  }
+  return to_string(x.value());
 }
 #endif
 
 /**
- * Minifies a JSON element or document, printing the smallest possible valid JSON.
+ * Minifies a JSON element or document, printing the smallest possible valid
+ * JSON.
  *
  *   dom::parser parser;
  *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
  *   cout << minify(doc) << endl; // prints [1,2,3]
  *
  */
-template <class T>
-std::string minify(T x)  {
-  return to_string(x);
-}
+template <class T> std::string minify(T x) { return to_string(x); }
 
 #if SIMDJSON_EXCEPTIONS
-template <class T>
-std::string minify(simdjson_result<T> x) {
-    if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+template <class T> std::string minify(simdjson_result<T> x) {
+  if (x.error()) {
+    throw simdjson_error(x.error());
+  }
+  return to_string(x.value());
 }
 #endif
 
 /**
- * Prettifies a JSON element or document, printing the valid JSON with indentation.
+ * Prettifies a JSON element or document, printing the valid JSON with
+ * indentation.
  *
  *   dom::parser parser;
  *   element doc = parser.parse("   [ 1 , 2 , 3 ] "_padded);
@@ -241,23 +249,22 @@ std::string minify(simdjson_result<T> x) {
  *   cout << prettify(doc) << endl;
  *
  */
-template <class T>
-std::string prettify(T x)  {
-    simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
-    sb.append(x);
-    std::string_view answer = sb.str();
-    return std::string(answer.data(), answer.size());
+template <class T> std::string prettify(T x) {
+  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
+  sb.append(x);
+  std::string_view answer = sb.str();
+  return std::string(answer.data(), answer.size());
 }
 
 #if SIMDJSON_EXCEPTIONS
-template <class T>
-std::string prettify(simdjson_result<T> x) {
-    if (x.error()) { throw simdjson_error(x.error()); }
-    return to_string(x.value());
+template <class T> std::string prettify(simdjson_result<T> x) {
+  if (x.error()) {
+    throw simdjson_error(x.error());
+  }
+  return to_string(x.value());
 }
 #endif
 
 } // namespace simdjson
-
 
 #endif
