@@ -55,6 +55,9 @@ public:
   /** Prints one character **/
   simdjson_inline void one_char(char c);
 
+  /** Prints characters in [begin, end) verbatim. **/
+  simdjson_inline void chars(const char *begin, const char *end);
+
   simdjson_inline void call_print_newline() {
     static_cast<formatter *>(this)->print_newline();
   }

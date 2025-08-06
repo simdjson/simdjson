@@ -169,14 +169,14 @@ template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
-  buffer.insert(buffer.end(), number_buffer, newp);
+  chars(number_buffer, newp);
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(int64_t x) {
   char number_buffer[24];
   char *newp = fast_itoa(number_buffer, x);
-  buffer.insert(buffer.end(), number_buffer, newp);
+  chars(number_buffer, newp);
 }
 
 template <class formatter>
@@ -186,7 +186,7 @@ simdjson_inline void base_formatter<formatter>::number(double x) {
   // safe because our implementation does not check the second
   // argument.
   char *newp = internal::to_chars(number_buffer, nullptr, x);
-  buffer.insert(buffer.end(), number_buffer, newp);
+  chars(number_buffer, newp);
 }
 
 template <class formatter>
@@ -217,24 +217,30 @@ simdjson_inline void base_formatter<formatter>::comma() {
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::true_atom() {
   const char *s = "true";
-  buffer.insert(buffer.end(), s, s + 4);
+  chars(s, s + 4);
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::false_atom() {
   const char *s = "false";
-  buffer.insert(buffer.end(), s, s + 5);
+  chars(s, s + 5);
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::null_atom() {
   const char *s = "null";
-  buffer.insert(buffer.end(), s, s + 4);
+  chars(s, s + 4);
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::one_char(char c) {
   buffer.push_back(c);
+}
+
+template <class formatter>
+simdjson_inline void base_formatter<formatter>::chars(const char *begin,
+                                                      const char *end) {
+  buffer.insert(buffer.end(), begin, end);
 }
 
 template <class formatter>
@@ -293,7 +299,7 @@ base_formatter<formatter>::string(std::string_view unescaped) {
 
   // At least for long strings, the following should be fast. We could
   // do better by integrating the checks and the insertion.
-  buffer.insert(buffer.end(), unescaped.data(), unescaped.data() + i);
+  chars(unescaped.data(), unescaped.data() + i);
   // We caught a control character if we enter this loop (slow).
   // Note that we are do not restart from the beginning, but rather we continue
   // from the point where we encountered something that requires escaping.
@@ -301,11 +307,11 @@ base_formatter<formatter>::string(std::string_view unescaped) {
     switch (unescaped[i]) {
     case '\"': {
       const char *s = "\\\"";
-      buffer.insert(buffer.end(), s, s + 2);
+      chars(s, s + 2);
     } break;
     case '\\': {
       const char *s = "\\\\";
-      buffer.insert(buffer.end(), s, s + 2);
+      chars(s, s + 2);
     } break;
     default:
       if (uint8_t(unescaped[i]) <= 0x1F) {
@@ -322,7 +328,7 @@ base_formatter<formatter>::string(std::string_view unescaped) {
             {6, "\\u0018"}, {6, "\\u0019"}, {6, "\\u001a"}, {6, "\\u001b"},
             {6, "\\u001c"}, {6, "\\u001d"}, {6, "\\u001e"}, {6, "\\u001f"}};
         auto u = escaped[uint8_t(unescaped[i])];
-        buffer.insert(buffer.end(), u.string, u.string + u.length);
+        chars(u.string, u.string + u.length);
       } else {
         one_char(unescaped[i]);
       }
