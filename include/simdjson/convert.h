@@ -104,11 +104,6 @@ public:
     requires(!std::is_pointer_v<ParserType>)
       : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-#endif
-
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
@@ -121,10 +116,6 @@ public:
     }
   }
 
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
   explicit auto_parser(padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
       : auto_parser{ParserType{}, str} {}
@@ -134,11 +125,6 @@ public:
                        ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
       : m_parser{&parser}, m_doc{std::move(doc)} {}
-
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-#endif
 
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
