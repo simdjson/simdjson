@@ -5,6 +5,8 @@
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 
+#include <utility>
+
 namespace simdjson {
 
 /**
