@@ -94,7 +94,8 @@ protected:
       if (capacity < new_size)
         // std::max(new_size, capacity * 2); is broken in tests on Windows
         grow(new_size < capacity * 2 ? capacity * 2 : new_size);
-      std::copy(begin, end, buffer + std::exchange(size, new_size));
+      std::copy(begin, end, buffer + size);
+      size = new_size;
     }
 
     std::string_view str() const { return std::string_view(buffer, size); }

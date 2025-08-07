@@ -2,6 +2,7 @@
 #define TEST_MACROS_H
 
 #include <iostream>
+#include <vector>
 
 #ifndef SIMDJSON_BENCHMARK_DATA_DIR
 #define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"

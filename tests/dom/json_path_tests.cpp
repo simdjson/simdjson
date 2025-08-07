@@ -4,6 +4,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+
 using namespace std::string_literals;
 
 #include "simdjson.h"

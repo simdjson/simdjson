@@ -6,6 +6,7 @@
 #endif
 #include "simdjson.h"
 #include <cstdio>
+#include <vector>
 // Returns the default size of the page in bytes on this system.
 long page_size() {
 #ifdef _WIN32
