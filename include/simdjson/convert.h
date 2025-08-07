@@ -197,12 +197,12 @@ public:
     if (m_error != SUCCESS) {
       return std::nullopt;
     }
+    T value;
     // For std::optional<T>
-    auto res = m_doc.get<T>();
-    if (res.error()) [[unlikely]] {
+    if (m_doc.get<T>().get(value)) [[unlikely]] {
       return std::nullopt;
     }
-    return {res.value()};
+    return {std::move(value)};
   }
 
   simdjson_inline auto_iterator begin() noexcept {
@@ -215,9 +215,9 @@ public:
     if (iter_storage.m_iter.error() != SUCCESS &&
         !iter_storage.m_iter.at_end()) {
       // Try to get the document as an array
-      auto array_result = m_doc.get_array();
-      if (array_result.error() == SUCCESS) {
-        iter_storage = {.m_iter = iterator::type{array_result.value_unsafe().begin()},
+      ondemand::array arr;
+      if(auto error = m_doc.get_array().get(arr); error == SUCCESS) {
+        iter_storage = {.m_iter = iterator::type{arr.begin()},
                         .m_value = iterator::value_type{
                             iter_storage.m_iter.at_end() ||
                                     iter_storage.m_iter.error() != SUCCESS
@@ -225,7 +225,7 @@ public:
                                 : *iter_storage.m_iter}};
       } else {
         // If it's not an array, create an error iterator
-        iter_storage.m_iter = iterator::type(array_result.error());
+        iter_storage.m_iter = iterator::type(error);
         iter_storage.m_value = value_type{};
       }
     }

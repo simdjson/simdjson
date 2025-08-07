@@ -107,6 +107,18 @@ bool simple() {
   TEST_SUCCEED();
 }
 
+bool broken() {
+  TEST_START();
+  simdjson::padded_string short_json_cars = R"( { "make )"_padded;
+  try {
+    Car car = simdjson::from(json_cars);
+    TEST_FAIL("Should not have succeeded");
+  } catch (...) {
+    TEST_SUCCEED();
+  }
+  TEST_SUCCEED();
+}
+
 bool simple_optional() {
   TEST_START();
   auto car = simdjson::from(json_car).optional<Car>();
@@ -296,7 +308,7 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
-      simple() && simple_optional() && with_parser() && to_array() &&
+      broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_array_shortcut() && to_bad_array() && test_no_errors() &&
       to_clean_array() && test_to_adaptor_basic() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
