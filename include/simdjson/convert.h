@@ -125,12 +125,7 @@ public:
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
       : m_parser{&parser}, m_doc{}, m_error{SUCCESS} {
-    // Initialize m_doc after m_parser to avoid potential issues
-    auto doc_result = parser.iterate(str);
-    m_error = doc_result.error();
-    if (m_error == SUCCESS) {
-      m_doc = std::move(doc_result.value_unsafe());
-    }
+    m_error = m_parser.iterate(str).get(m_doc);
   }
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
