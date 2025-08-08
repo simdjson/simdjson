@@ -14,20 +14,48 @@ jobs:
         with:
           path: dependencies/.cache
           key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-      - name: Use cmake
+
+      - name: Configure Debug Build
         run: |
-          mkdir builddebug &&
-          cd builddebug &&
-          CXX=g++-12 cmake -DSIMDJSON_CXX_STANDARD=20 -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
-          cmake --build .   &&
-          ctest --output-on-failure -LE explicitonly -j   &&
-          cd .. &&
-          mkdir build &&
-          cd build &&
-          CXX=g++-12 cmake -DSIMDJSON_CXX_STANDARD=20  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
-          cmake --build .   &&
-          ctest --output-on-failure -LE explicitonly -j   &&
-          cmake --install . &&
-          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
-          cd ../tests/installation_tests/find &&
-          mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
+          CXX=g++-12 cmake -DSIMDJSON_CXX_STANDARD=20 -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -B builddebug
+
+      - name: Compile Debug Build
+        run: |
+          cmake --build builddebug
+
+      - name: Test Debug Build
+        run: |
+          ctest --output-on-failure -LE explicitonly -j --test-dir builddebug
+
+      - name: Configure Release Build
+        run: |
+          CXX=g++-12 cmake -DSIMDJSON_CXX_STANDARD=20 -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination -B build
+
+      - name: Test Release Build
+        run: |
+          ctest --output-on-failure -LE explicitonly -j --test-dir build
+
+      - name: Install Release Build
+        run: |
+          cmake --install build
+
+      - name: Generate Example Code
+        run: |
+          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp
+
+      - name: Compile Example Code
+        run: |
+          c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson
+
+      - name: Run Example Code
+        run: |
+          ./linkandrun jsonexamples/twitter.json
+
+      - name: Configure Find Tests
+        run: |
+          cd tests/installation_tests/find && \
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination -B build
+
+      - name: Compile Find Tests
+        run: |
+          cd tests/installation_tests/find && cmake --build build
