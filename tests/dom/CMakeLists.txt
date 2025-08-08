@@ -132,7 +132,9 @@ if(
   )
   message(STATUS "compiler id: ${CMAKE_CXX_COMPILER_ID} version: ${CMAKE_CXX_COMPILER_VERSION}")
   add_cpp_test(ranges_test LABELS dom acceptance per_implementation)
-  set_target_properties(ranges_test PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+  if(NOT SIMDJSON_STATIC_REFLECTION)
+     set_target_properties(ranges_test PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+  endif()
 endif()
 
 if(WIN32 AND BUILD_SHARED_LIBS)

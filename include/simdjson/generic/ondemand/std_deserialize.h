@@ -11,7 +11,7 @@
 #include <concepts>
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
-#include <experimental/meta>
+#include <meta>
 // #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 

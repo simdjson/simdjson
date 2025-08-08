@@ -77,6 +77,7 @@ namespace builder_tests {
       Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
       append(sb, c);
       std::string_view p{sb};
+      (void)p; // to avoid unused variable warning
       TEST_SUCCEED();
   }
   bool car_test_exception2() {
@@ -85,12 +86,18 @@ namespace builder_tests {
       Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
       sb << c;
       std::string_view p{sb};
+      (void)p; // to avoid unused variable warning
       TEST_SUCCEED();
   }
-  void car_test_to_json_exception() {
+  bool car_test_to_json_exception() {
     TEST_START();
     Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-    std::string json = simdjson::builder::to_json_string(c);
+    std::string json = simdjson::to_json(c);
+    TEST_SUCCEED();
+  }
+  bool car_test_to_json_exception_value() {
+    TEST_START();
+    std::string json = simdjson::to_json(Car{"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}});
     TEST_SUCCEED();
   }
   #endif // SIMDJSON_EXCEPTIONS
@@ -165,6 +172,7 @@ bool serialize_deserialize_x_y_z() {
           car_test_exception() &&
           car_test_exception2() &&
           car_test_to_json_exception() &&
+          car_test_to_json_exception_value() &&
   #endif // SIMDJSON_EXCEPTIONS
           car_test() &&
           serialize_deserialize_kid() &&

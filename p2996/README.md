@@ -64,6 +64,7 @@ cmake --build buildreflect --target benchmark_serialization_citm_catalog benchma
 
 6. Run the tests...
 ```bash
+cmake --build buildreflect
 ctest --test-dir buildreflect --output-on-failure
 ```
 

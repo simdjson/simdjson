@@ -285,6 +285,9 @@ template <typename T> static constexpr to_adaptor<T> to{};
 
 static constexpr to_adaptor<> from{};
 
+template <typename T = void>
+using as = to_adaptor<T>;
+
 // For C++20 ranges without range_adaptor_closure, we need to define pipe operators
 template <std::ranges::range Range>
 inline auto operator|(Range&& range, const no_errors_adaptor& adaptor) {

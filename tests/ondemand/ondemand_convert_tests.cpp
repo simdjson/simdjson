@@ -214,6 +214,16 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
+bool test_basic_adaptor() {
+  TEST_START();
+  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
+    if (car.year < 1998) {
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool test_no_errors() {
   TEST_START();
   auto cars = simdjson::from(json_cars) | simdjson::no_errors;
@@ -308,7 +318,7 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
-      broken() && simple() && simple_optional() && with_parser() && to_array() &&
+      test_basic_adaptor() && broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_array_shortcut() && to_bad_array() && test_no_errors() &&
       to_clean_array() && test_to_adaptor_basic() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
