@@ -296,6 +296,11 @@ string_builder& operator<<(string_builder& b, const Z& z) {
 }
 } // namespace builder
 } // namespace SIMDJSON_IMPLEMENTATION
+// Alias the function template to 'to' in the global namespace
+template <class Z>
+simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
+  return SIMDJSON_IMPLEMENTATION::builder::to_json_string(z, initial_capacity);
+}
 } // namespace simdjson
 #endif // SIMDJSON_STATIC_REFLECTION
 

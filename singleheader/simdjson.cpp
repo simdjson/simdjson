@@ -1,4 +1,4 @@
-/* auto-generated on 2025-07-14 15:43:52 -0400. Do not edit! */
+/* auto-generated on 2025-08-05 16:29:59 +0000. version 4.0.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -577,17 +577,6 @@ double from_chars(const char *first, const char* end) noexcept;
     // We assume by default static linkage
     #define SIMDJSON_DLLIMPORTEXPORT
     #endif
-
-/**
- * Workaround for the vcpkg package manager. Only vcpkg should
- * ever touch the next line. The SIMDJSON_USING_LIBRARY macro is otherwise unused.
- */
-#if SIMDJSON_USING_LIBRARY
-#define SIMDJSON_DLLIMPORTEXPORT __declspec(dllimport)
-#endif
-/**
- * End of workaround for the vcpkg package manager.
- */
 #else
     #define SIMDJSON_DLLIMPORTEXPORT
 #endif
@@ -2444,6 +2433,18 @@ namespace std {
 #define SIMDJSON_AVX512_ALLOWED 1
 #endif
 
+
+#ifndef __has_cpp_attribute
+#define simdjson_lifetime_bound
+#elif __has_cpp_attribute(msvc::lifetimebound)
+#define simdjson_lifetime_bound [[msvc::lifetimebound]]
+#elif __has_cpp_attribute(clang::lifetimebound)
+#define simdjson_lifetime_bound [[clang::lifetimebound]]
+#elif __has_cpp_attribute(lifetimebound)
+#define simdjson_lifetime_bound [[lifetimebound]]
+#else
+#define simdjson_lifetime_bound
+#endif
 #endif // SIMDJSON_COMMON_DEFS_H
 /* end file simdjson/common_defs.h */
 /* skipped duplicate #include "simdjson/compiler_check.h" */
@@ -2908,7 +2909,6 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
   { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
   requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
     obj.emplace(std::move(val));
-    obj = std::move(val);
     {
       obj.value_or(val)
     } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
@@ -9170,6 +9170,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -15609,6 +15610,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -21903,6 +21905,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -28354,6 +28357,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -35164,6 +35168,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -41796,6 +41801,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -47874,6 +47880,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -53544,6 +53551,7 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/
@@ -56568,10 +56576,78 @@ simdjson_inline void validate_utf8_character() {
   idx += 4;
 }
 
+static const uint8_t CHAR_TYPE_SPACE     = 1 << 0;
+static const uint8_t CHAR_TYPE_OPERATOR  = 1 << 1;
+static const uint8_t CHAR_TYPE_ESC_ASCII = 1 << 2;
+static const uint8_t CHAR_TYPE_NON_ASCII = 1 << 3;
+
+const uint8_t char_table[256] = {
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+  0x04, 0x05, 0x05, 0x04, 0x04, 0x05, 0x04, 0x04,
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+  0x01, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x02, 0x04, 0x02, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00, 0x00,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
+};
+
+simdjson_inline bool char_is_type(uint8_t c, uint8_t type) {
+  return (char_table[c] & type);
+}
+
+simdjson_inline bool char_is_space(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_SPACE);
+}
+
+simdjson_inline bool char_is_operator(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_OPERATOR);
+}
+
+simdjson_inline bool char_is_space_or_operator(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_SPACE | CHAR_TYPE_OPERATOR);
+}
+
+simdjson_inline bool char_is_ascii_stop(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
+}
+
 // Returns true if the string is unclosed.
 simdjson_inline bool validate_string() {
   idx++; // skip first quote
-  while (idx < len && buf[idx] != '"') {
+  while (idx < len) {
+    do {
+      if (char_is_ascii_stop(buf[idx])) { break; }
+      idx++;
+    } while (idx < len);
+    if (idx >= len) { return true; }
+    if (buf[idx] == '"') {
+      return false;
+    }
     if (buf[idx] == '\\') {
       idx += 2;
     } else if (simdjson_unlikely(buf[idx] & 0x80)) {
@@ -56585,43 +56661,31 @@ simdjson_inline bool validate_string() {
   return false;
 }
 
-simdjson_inline bool is_whitespace_or_operator(uint8_t c) {
-  switch (c) {
-    case '{': case '}': case '[': case ']': case ',': case ':':
-    case ' ': case '\r': case '\n': case '\t':
-      return true;
-    default:
-      return false;
-  }
-}
-
 //
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
 simdjson_inline error_code scan() {
   bool unclosed_string = false;
   for (;idx<len;idx++) {
-    switch (buf[idx]) {
-      // String
-      case '"':
-        add_structural();
-        unclosed_string |= validate_string();
-        break;
-      // Operator
-      case '{': case '}': case '[': case ']': case ',': case ':':
-        add_structural();
-        break;
-      // Whitespace
-      case ' ': case '\r': case '\n': case '\t':
-        break;
-      // Primitive or invalid character (invalid characters will be checked in stage 2)
-      default:
-        // Anything else, add the structural and go until we find the next one
-        add_structural();
-        while (idx+1<len && !is_whitespace_or_operator(buf[idx+1])) {
-          idx++;
-        };
-        break;
+    do {
+      if (!char_is_space(buf[idx])) { break; }
+      idx++;
+    } while (idx < len);
+    if (idx >= len) { break; }
+    // String
+    if (buf[idx] == '"') {
+      add_structural();
+      unclosed_string |= validate_string();
+    // Operator
+    } else if (char_is_operator(buf[idx])) {
+      add_structural();
+    // Primitive or invalid character (invalid characters will be checked in stage 2)
+    } else {
+      // Anything else, add the structural and go until we find the next one
+      add_structural();
+      while (idx+1<len && !char_is_space_or_operator(buf[idx+1])) {
+        idx++;
+      };
     }
   }
   // We pad beyond.

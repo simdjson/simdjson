@@ -53,4 +53,5 @@
 
 #include "simdjson/dom.h"
 #include "simdjson/ondemand.h"
+#include "simdjson/convert.h"
 #endif // SIMDJSON_H
