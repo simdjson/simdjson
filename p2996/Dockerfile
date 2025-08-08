@@ -8,7 +8,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates gnupg \
            build-essential cmake make python3 zlib1g wget subversion unzip ninja-build git linux-perf && \
     rm -rf /var/lib/apt/lists/*
-ARG CLANG_COMMIT=83819c95355f0036e70760112d01cb9bffa3d149
+ARG CLANG_COMMIT=d77eff1cbd78fd065668acf93b1f5f400d39134d
 RUN git clone --depth=1 https://github.com/bloomberg/clang-p2996.git /tmp/clang-source && \
     cd /tmp/clang-source && \
     git fetch origin $CLANG_COMMIT --depth=1 && \
