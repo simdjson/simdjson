@@ -336,16 +336,19 @@ bool json_path_with_wildcard() {
   dom::parser parser;
   dom::element parsed_json = parser.parse(json_string);
   std::vector<dom::element> values;
-  simdjson_result<std::vector<dom::element>> result;
 
 
   std::string_view string_value;
   std::uint64_t num_value;
   dom::object obj;
-
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("1").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("2").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("a").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$2").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$a").error(), INVALID_JSON_POINTER);
   // $.*
-  result = parsed_json.at_path_with_wildcard("$.*");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.*").get(values));
 
   ASSERT_SUCCESS(values[0].get(string_value));
   ASSERT_EQUAL(string_value, "John");
@@ -364,8 +367,7 @@ bool json_path_with_wildcard() {
   ASSERT_EQUAL(string_value, "Nara");
 
   // $[*]
-  result = parsed_json.at_path_with_wildcard("$[*]");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$[*]").get(values));
 
   ASSERT_SUCCESS(values[0].get(string_value));
   ASSERT_EQUAL(string_value, "John");
@@ -384,8 +386,7 @@ bool json_path_with_wildcard() {
   ASSERT_EQUAL(string_value, "Nara");
 
   // $.address.*
-  result = parsed_json.at_path_with_wildcard("$.address.*");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.address.*").get(values));
 
   std::vector<std::string> expected = {"naist street", "Nara", "630-0192"};
   for (int i = 0; i < 3; i++) {
@@ -394,15 +395,13 @@ bool json_path_with_wildcard() {
   }
 
   // $.*.streetAddress
-  result = parsed_json.at_path_with_wildcard("$.*.streetAddress");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.*.streetAddress").get(values));
 
   ASSERT_SUCCESS(values[0].get(string_value));
   ASSERT_EQUAL(string_value, "naist street");
 
   // $.phoneNumbers[*].numbers[*]
-  result = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values));
 
   std::vector<std::string> expected_numbers = {
     "0123-4567-8888",
@@ -419,8 +418,7 @@ bool json_path_with_wildcard() {
   }
 
   // $.phoneNumbers[*].numbers[1]
-  result = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[1]");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[1]").get(values));
 
   ASSERT_SUCCESS(values[0].get(string_value));
   ASSERT_EQUAL(string_value, expected_numbers[1]);
@@ -429,20 +427,16 @@ bool json_path_with_wildcard() {
   ASSERT_EQUAL(string_value, expected_numbers[4]);
 
   // $.empty_object.*
-  result = parsed_json.at_path_with_wildcard("$.empty_object.*");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.empty_object.*").get(values));
 
   ASSERT_EQUAL(values.size(), 0);
 
   // $.empty_array.*
-  result = parsed_json.at_path_with_wildcard("$.empty_array.*");
-  values = result.value();
-
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.empty_array.*").get(values));
   ASSERT_EQUAL(values.size(), 0);
 
   // $.phoneNumbers.*.numbers[3]
-  result = parsed_json.at_path_with_wildcard("$.phoneNumbers.*.numbers[3]");
-  values = result.value();
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers.*.numbers[3]").get(values));
 
   ASSERT_EQUAL(values.size(), 0);
 
@@ -471,7 +465,7 @@ bool modern_support() {
 }
 
 int main() {
-  if (true && demo() && modern_support() &&
+  if (true && json_path_with_wildcard() && demo() && modern_support() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&

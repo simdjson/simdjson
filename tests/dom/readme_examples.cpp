@@ -21,6 +21,62 @@ void basics_2() {
   cout << doc;
 }
 
+void wild() {
+  simdjson::padded_string json_string = R"(
+  {
+    "firstName": "John",
+    "lastName": "doe",
+    "age": 26,
+    "address": {
+      "streetAddress": "naist street",
+      "city": "Nara",
+      "postalCode": "630-0192"
+    },
+    "phoneNumbers": [
+      {
+        "type": "iPhone",
+        "numbers": ["0123-4567-8888", "0123-4567-8788"]
+      },
+      {
+        "type": "home",
+        "numbers": ["0123-4567-8910"]
+      }
+    ]
+  })"_padded;
+
+  dom::parser parser;
+  dom::element parsed_json = parser.parse(json_string);
+  std::vector<dom::element> values;
+
+  // Fetch all fields in the address object
+  auto error = parsed_json.at_path_with_wildcard("$.address.*").get(values);
+  if(error) {
+    // do something
+  }
+  for (auto &value : values) {
+    std::string_view field;
+    error = value.get(field);
+    if(error) {
+      // do something
+    }
+    std::cout << field << std::endl;
+  }
+
+  // Fetch all phone numbers
+  error = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
+  if(error) {
+    // do something
+  }
+  for (auto &value : values) {
+    std::string_view number;
+    error = value.get(number);
+    if(error) {
+      // do something
+    }
+    std::cout << number << std::endl;
+  }
+}
+
 void basics_dom_1() {
   auto cars_json = R"( [
     { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
