@@ -93,7 +93,7 @@ int main() {}
 
   CPMAddPackage(
       NAME nlohmann_json
-      URL https://github.com/nlohmann/json/archive/refs/tags/v3.10.5.zip
+      URL https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
   )
 
   set_property(TARGET nlohmann_json APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS SIMDJSON_COMPETITION_NLOHMANN_JSON)

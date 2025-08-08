@@ -334,7 +334,8 @@ bool json_path_with_wildcard() {
   })"_padded;
 
   dom::parser parser;
-  dom::element parsed_json = parser.parse(json_string);
+  dom::element parsed_json;
+  ASSERT_SUCCESS(parser.parse(json_string).get(parsed_json));
   std::vector<dom::element> values;
 
 

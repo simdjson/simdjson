@@ -160,16 +160,15 @@ inline void object::process_json_path_of_child_elements(std::vector<element>::it
   simdjson_result<std::vector<element>> result;
 
   for (auto it = current; it != end; ++it) {
-    result = it->at_path_with_wildcard(path_suffix);
-
-    if (!result.error()) {
-      std::vector<element> child_result = result.value();
-
-      accumulator.reserve(accumulator.size() + child_result.size());
-      accumulator.insert(accumulator.end(),
-                         std::make_move_iterator(child_result.begin()),
-                         std::make_move_iterator(child_result.end()));
+    std::vector<element> child_result;
+    auto error = it->at_path_with_wildcard(path_suffix).get(child_result);
+    if(error) {
+      continue;
     }
+    accumulator.reserve(accumulator.size() + child_result.size());
+    accumulator.insert(accumulator.end(),
+                        std::make_move_iterator(child_result.begin()),
+                        std::make_move_iterator(child_result.end()));
   }
 }
 
@@ -213,10 +212,11 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       if (key == "*") {
         get_values(child_values);
       } else {
-        auto pointer_result = at_pointer("/" + std::string(key));
+        element pointer_result;
+        auto error = at_pointer("/" + std::string(key)).get(pointer_result);
 
-        if (!pointer_result.error()) {
-          child_values.emplace_back(pointer_result.value());
+        if (!error) {
+          child_values.emplace_back(pointer_result);
         }
       }
 
@@ -234,12 +234,12 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
       return INVALID_JSON_POINTER;
     }
   } else {
-    auto at_path_result = this->at_path(json_path);
-    if (at_path_result.error()) {
-      return at_path_result.error();
+    element result;
+    auto error = this->at_path(json_path).get(result);
+    if (error) {
+      return error;
     }
-    std::vector<element> result{std::move(at_path_result.value())};
-    return result;
+    return std::vector<element>{std::move(result)};
   }
 }
 
