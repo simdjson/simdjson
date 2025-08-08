@@ -5,8 +5,6 @@
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 
-#include <utility>
-
 namespace simdjson {
 
 /**
@@ -74,7 +72,12 @@ protected:
   // implementation details (subject to change)
   /** Backing buffer **/
   struct vector_with_small_buffer {
+    vector_with_small_buffer() = default;
     ~vector_with_small_buffer() { free_buffer(); }
+
+    vector_with_small_buffer(const vector_with_small_buffer &) = delete;
+    vector_with_small_buffer &
+    operator=(const vector_with_small_buffer &) = delete;
 
     void clear() {
       size = 0;
