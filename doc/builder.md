@@ -165,7 +165,7 @@ automatically. In most cases, it should work automatically:
 
 In some instances, you might want to create a string directly from your own data type.
 You can create a string directly, without an explicit `string_builder` instance
-with the `simdjson::builder::to_json_string` function.
+with the `simdjson::to_json` template function.
 (Under the hood a `string_builder` instance may still be created.)
 
 ```cpp
@@ -178,12 +178,12 @@ with the `simdjson::builder::to_json_string` function.
 
     void f() {
         Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-        std::string json = simdjson::builder::to_json_string(c);
+        std::string json = simdjson::to_json(c);
     }
 ```
 
 If you know the output size, in bytes, of your JSON string, you may
-pass it as a second parameter (e.g., `simdjson::builder::to_json_string(c, 31123)`).
+pass it as a second parameter (e.g., `simdjson::to_json(c, 31123)`).
 
 
 
@@ -194,7 +194,7 @@ pattern:
 
 ```cpp
   std::string json;
-  if(simdjson::builder::to_json_string(c).get(json)) {
+  if(simdjson::to(c).get(json)) {
     // there was an error
   } else {
     // json contain the serialized JSON

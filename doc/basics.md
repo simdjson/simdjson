@@ -1346,6 +1346,34 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, std::list<Car>& car) {
 With this code, deserializing an `std::list<Car>` instance would capture only the cars
 that are not made by Toyota.
 
+
+
+For even more convenience, you can do it directly without a parser instance like so:
+
+```cpp
+Car car = simdjson::from(json);
+```
+
+You can also use C++20 ranges to iterate over an array:
+
+```cpp
+  simdjson::padded_string json_cars =
+      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+        "tire_pressure": [ 40.1, 39.9 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012,
+        "tire_pressure": [ 30.1, 31.0 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999,
+        "tire_pressure": [ 29.8, 30.0 ] }
+  ])"_padded;
+
+  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
+    if (car.year < 1998) {
+      return false;
+    }
+  }
+```
+
+
 ### 3. Using static reflection (C++26)
 
 If you have a C++26 compatible compiler, you can compile
@@ -1365,6 +1393,31 @@ std::string json =  R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
 simdjson::ondemand::parser parser;
 simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json));
 Car c = doc.get<Car>();
+```
+
+Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
+
+```cpp
+Car car = simdjson::from(json);
+```
+
+Similarly, you can also use C++20 ranges to iterate over an array:
+
+```cpp
+  simdjson::padded_string json_cars =
+      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+        "tire_pressure": [ 40.1, 39.9 ] },
+    { "make": "Kia",    "model": "Soul",   "year": 2012,
+        "tire_pressure": [ 30.1, 31.0 ] },
+    { "make": "Toyota", "model": "Tercel", "year": 1999,
+        "tire_pressure": [ 29.8, 30.0 ] }
+  ])"_padded;
+
+  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
+    if (car.year < 1998) {
+      return false;
+    }
+  }
 ```
 
 You can also automatically serialize the `Car` instance to a JSON string, see
