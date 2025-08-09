@@ -104,6 +104,9 @@ wc -l github_legacy.cpp github_modern.cpp
 ```bash
 # The script handles everything - building cpr, compiling, and running
 ./conference_demo.sh
+
+# For the extended demo with serialization:
+./conference_demo_serialization.sh
 ```
 
 **Option 2: Manual compilation**
