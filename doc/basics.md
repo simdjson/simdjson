@@ -1362,6 +1362,15 @@ of a parser instance like so:
 Car car = simdjson::from(json);
 ```
 
+Standard STL types are supported:
+
+
+```cpp
+simdjson::ondemand::parser parser;
+std::map<std::string, std::string> obj =
+simdjson::from(parser, R"({"key": "value"})"_padded);
+```
+
 You can also use C++20 ranges to iterate over an array:
 
 ```cpp

@@ -266,7 +266,14 @@ struct [[nodiscard]] to_adaptor {
   }
 
   /**
-   * Parse input string into any object if possible.
+   * Parse input string into any object if possible. This function call
+   * will return an auto_parser that can be used to extract the desired
+   * object from the input string. The ondemand::parser instance is created
+   * internally.
+   *
+   * *WARNING*: This function call will create a new parser instance each time
+   * it is called. This has performance implications. We strongly recommend
+   * that you create a parser instance once and reuse it many times.
    */
   auto operator()(padded_string_view const str) const noexcept {
     return auto_parser{str};
@@ -274,6 +281,9 @@ struct [[nodiscard]] to_adaptor {
 
   /**
    * Parse the input using the specified parser into any object if possible.
+   * This function call will return an auto_parser that can be used to extract
+   * the desired object from the input string. The provided ondemand::parser instance
+   * handles memory allocations and indexing, and it can be reused from call to call.
    */
   auto operator()(ondemand::parser &parser,
                             padded_string_view const str) const noexcept {
@@ -283,6 +293,22 @@ struct [[nodiscard]] to_adaptor {
 
 template <typename T> static constexpr to_adaptor<T> to{};
 
+/**
+ * The `from` instance is a utility adaptor for parsing JSON strings into objects.
+ * It provides a convenient way to convert JSON data into C++ objects using the `auto_parser`.
+ *
+ * Example usage:
+ *
+ * ```cpp
+ * simdjson::ondemand::parser parser;
+ * std::map<std::string, std::string> obj =
+ *   simdjson::from(parser, R"({"key": "value"})"_padded);
+ * ```
+ *
+ * This will parse the JSON string and return an object representation. The `ondemand::parser`
+ * instance can be reused. It is also possible to omit the parser instance, in which case a parser
+ * instance will be created internally, although this can have negative performance consequences.
+ */
 static constexpr to_adaptor<> from{};
 
 template <typename T = void>
