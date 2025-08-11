@@ -180,6 +180,18 @@ auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
+If you prefer not to create your own `ondemand::parser` instance, you can access
+a thread-local version by calling `ondemand::parser.get_parser()`.
+
+
+```c++
+ondemand::document doc = ondemand::parser.get_parser().iterate(json);
+```
+
+However, you should be careful because a parser instance can only be used for one
+document at a time, thus it is only applicable when you are only parsing one
+document per thread at any one time.
+
 You can also create a padded string---and call `iterate()`:
 
 ```c++
