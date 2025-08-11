@@ -363,16 +363,32 @@ public:
    * Get a unique parser instance corresponding to the current thread.
    * This instance can be safely used within the current thread, but it should
    * not be passed to other threads.
+   *
+   * A parser should only be used for one document at a time.
+   *
+   * Our simdjson::from functions use this parser instance.
+   *
+   * You can free the related parser by calling release_parser().
    */
   static simdjson_inline simdjson_warn_unused ondemand::parser& get_parser();
+  /**
+   * Release the parser instance initialized by get_parser() and all the
+   * associated resources (memory). Returns true if a parser instance
+   * was released.
+   */
+  static simdjson_inline bool release_parser();
 
 private:
+  friend bool release_parser();
+  friend ondemand::parser& get_parser();
+  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser> & get_parser_instance();
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   std::unique_ptr<uint8_t[]> string_buf{};
+
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
 #endif

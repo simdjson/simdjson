@@ -271,9 +271,8 @@ struct [[nodiscard]] to_adaptor {
    * object from the input string. The ondemand::parser instance is created
    * internally.
    *
-   * *WARNING*: This function call will create a new parser instance each time
-   * it is called. This has performance implications. We strongly recommend
-   * that you create a parser instance once and reuse it many times.
+   * This function uses the simdjson::ondemand::parser::get_parser() instance.
+   * A parser should only be used for one document at a time.
    */
   auto operator()(padded_string_view const str) const noexcept {
     return auto_parser{str};
@@ -300,14 +299,22 @@ template <typename T> static constexpr to_adaptor<T> to{};
  * Example usage:
  *
  * ```cpp
+ * std::map<std::string, std::string> obj =
+ *   simdjson::from(R"({"key": "value"})"_padded);
+ * ```
+ *
+ * This will parse the JSON string and return an object representation. By default, we
+ * use the simdjson::ondemand::parser::get_parser() instance. A parser instance should
+ * be used for just one document at a time.
+ *
+ * You can also pass you own parser instance:
+ * ```cpp
  * simdjson::ondemand::parser parser;
  * std::map<std::string, std::string> obj =
  *   simdjson::from(parser, R"({"key": "value"})"_padded);
  * ```
+ * The parser instance can be reused.
  *
- * This will parse the JSON string and return an object representation. The `ondemand::parser`
- * instance can be reused. It is also possible to omit the parser instance, in which case a parser
- * instance will be created internally, although this can have negative performance consequences.
  */
 static constexpr to_adaptor<> from{};
 

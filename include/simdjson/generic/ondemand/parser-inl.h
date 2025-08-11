@@ -190,6 +190,20 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::u
 }
 
 simdjson_inline simdjson_warn_unused ondemand::parser& parser::get_parser() {
+  return *parser::get_parser_instance();
+}
+
+simdjson_inline bool release_parser() {
+  auto &parser_instance = parser::get_parser_instance();
+  if (parser_instance) {
+    parser_instance.reset();
+    return true;
+  }
+  return false;
+}
+
+
+simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser> & parser::get_parser_instance() {
   thread_local std::unique_ptr<ondemand::parser> parser_instance = nullptr;
 
   // Si l'instance n'existe pas encore, on la crée
@@ -197,8 +211,10 @@ simdjson_inline simdjson_warn_unused ondemand::parser& parser::get_parser() {
       parser_instance = std::make_unique<ondemand::parser>();
   }
 
-  return *parser_instance;
+  return parser_instance;
 }
+
+
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
