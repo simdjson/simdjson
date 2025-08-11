@@ -224,6 +224,17 @@ bool test_basic_adaptor() {
   TEST_SUCCEED();
 }
 
+bool test_basic_adaptor_with_parser() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (Car car : simdjson::from(parser, json_cars) | simdjson::as<Car>()) {
+    if (car.year < 1998) {
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool test_no_errors() {
   TEST_START();
   auto cars = simdjson::from(json_cars) | simdjson::no_errors;

@@ -1348,7 +1348,15 @@ that are not made by Toyota.
 
 
 
-For even more convenience, you can do it directly without a parser instance like so:
+For even more convenience, you can do it directly without a document instance like so:
+
+```cpp
+  simdjson::ondemand::parser parser;
+  Car car = simdjson::from(parser, json_car);
+```
+
+We strongly encourage you to rely on an parser instance (`simdjson::ondemand::parser`) which you reuse. However, if performance is not a concern, you can omit the declaration
+of a parser instance like so:
 
 ```cpp
 Car car = simdjson::from(json);
@@ -1366,6 +1374,17 @@ You can also use C++20 ranges to iterate over an array:
         "tire_pressure": [ 29.8, 30.0 ] }
   ])"_padded;
 
+  simdjson::ondemand::parser parser;
+  for (Car car : simdjson::from(parser, json_cars) | simdjson::as<Car>()) {
+    if (car.year < 1998) {
+      return false;
+    }
+  }
+```
+
+Again, if performance is not a concern, you can omit the parser instance.
+
+```cpp
   for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
     if (car.year < 1998) {
       return false;
@@ -1398,7 +1417,8 @@ Car c = doc.get<Car>();
 Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
 
 ```cpp
-Car car = simdjson::from(json);
+simdjson::ondemand::parser parser;
+Car car = simdjson::from(parser, json);
 ```
 
 Similarly, you can also use C++20 ranges to iterate over an array:
@@ -1412,13 +1432,17 @@ Similarly, you can also use C++20 ranges to iterate over an array:
     { "make": "Toyota", "model": "Tercel", "year": 1999,
         "tire_pressure": [ 29.8, 30.0 ] }
   ])"_padded;
-
-  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
+  simdjson::ondemand::parser parser;
+  for (Car car : simdjson::from(, parserjson_cars) | simdjson::as<Car>()) {
     if (car.year < 1998) {
       return false;
     }
   }
 ```
+
+When using the `simdjson::from` syntax, you can also omit the parser instance,
+for more convenience. However, we strongly encourage you to create a single parser
+instance that is reused, as it leads to better performance.
 
 You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).
