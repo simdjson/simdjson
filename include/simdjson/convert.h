@@ -69,7 +69,7 @@ public:
   }
 };
 
-template <typename ParserType = ondemand::parser>
+template <typename ParserType = ondemand::parser*>
 struct [[nodiscard]] auto_parser
 #if __cpp_lib_ranges
     : std::ranges::view_interface<auto_parser<ParserType>>
@@ -111,10 +111,6 @@ public:
     m_error = m_parser.iterate(str).get(m_doc);
   }
 
-  explicit auto_parser(padded_string_view const str) noexcept
-    requires(!std::is_pointer_v<ParserType>)
-      : auto_parser{ParserType{}, str} {}
-
   // pointer constructors:
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        ondemand::document &&doc) noexcept
@@ -127,6 +123,10 @@ public:
       : m_parser{&parser}, m_doc{}, m_error{SUCCESS} {
     m_error = m_parser->iterate(str).get(m_doc);
   }
+
+  explicit auto_parser(padded_string_view const str) noexcept
+    requires(std::is_pointer_v<ParserType>)
+      : auto_parser{ondemand::parser::get_parser(), str} {}
 
   explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)

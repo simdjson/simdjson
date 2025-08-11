@@ -7,6 +7,7 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <memory>
+#include <thread>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -357,6 +358,13 @@ public:
    */
   bool string_buffer_overflow(const uint8_t *string_buf_loc) const noexcept;
 #endif
+
+  /**
+   * Get a unique parser instance corresponding to the current thread.
+   * This instance can be safely used within the current thread, but it should
+   * not be passed to other threads.
+   */
+  static simdjson_inline simdjson_warn_unused ondemand::parser& get_parser();
 
 private:
   /** @private [for benchmarking access] The implementation to use */

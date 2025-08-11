@@ -1351,14 +1351,6 @@ that are not made by Toyota.
 For even more convenience, you can do it directly without a document instance like so:
 
 ```cpp
-  simdjson::ondemand::parser parser;
-  Car car = simdjson::from(parser, json_car);
-```
-
-We strongly encourage you to rely on an parser instance (`simdjson::ondemand::parser`) which you reuse. However, if performance is not a concern, you can omit the declaration
-of a parser instance like so:
-
-```cpp
 Car car = simdjson::from(json);
 ```
 
@@ -1366,9 +1358,8 @@ Standard STL types are supported:
 
 
 ```cpp
-simdjson::ondemand::parser parser;
 std::map<std::string, std::string> obj =
-simdjson::from(parser, R"({"key": "value"})"_padded);
+       simdjson::from(R"({"key": "value"})"_padded);
 ```
 
 You can also use C++20 ranges to iterate over an array:
@@ -1383,17 +1374,6 @@ You can also use C++20 ranges to iterate over an array:
         "tire_pressure": [ 29.8, 30.0 ] }
   ])"_padded;
 
-  simdjson::ondemand::parser parser;
-  for (Car car : simdjson::from(parser, json_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
-```
-
-Again, if performance is not a concern, you can omit the parser instance.
-
-```cpp
   for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
     if (car.year < 1998) {
       return false;
@@ -1426,8 +1406,7 @@ Car c = doc.get<Car>();
 Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
 
 ```cpp
-simdjson::ondemand::parser parser;
-Car car = simdjson::from(parser, json);
+Car car = simdjson::from(json);
 ```
 
 Similarly, you can also use C++20 ranges to iterate over an array:
@@ -1441,8 +1420,7 @@ Similarly, you can also use C++20 ranges to iterate over an array:
     { "make": "Toyota", "model": "Tercel", "year": 1999,
         "tire_pressure": [ 29.8, 30.0 ] }
   ])"_padded;
-  simdjson::ondemand::parser parser;
-  for (Car car : simdjson::from(, parserjson_cars) | simdjson::as<Car>()) {
+  for (Car car : simdjson::from(parserjson_cars) | simdjson::as<Car>()) {
     if (car.year < 1998) {
       return false;
     }

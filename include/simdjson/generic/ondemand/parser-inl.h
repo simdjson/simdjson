@@ -189,6 +189,17 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::u
   return result;
 }
 
+simdjson_inline simdjson_warn_unused ondemand::parser& parser::get_parser() {
+  thread_local std::unique_ptr<ondemand::parser> parser_instance = nullptr;
+
+  // Si l'instance n'existe pas encore, on la crée
+  if (!parser_instance) {
+      parser_instance = std::make_unique<ondemand::parser>();
+  }
+
+  return *parser_instance;
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
