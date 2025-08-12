@@ -165,6 +165,7 @@ bool to_array() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool to_array_shortcut() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -223,6 +224,7 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool test_basic_adaptor() {
   TEST_START();
   int64_t sum_year = 0;
@@ -237,6 +239,7 @@ bool test_basic_adaptor() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool test_basic_adaptor_with_parser() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -251,6 +254,7 @@ bool test_basic_adaptor_with_parser() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool test_no_errors() {
   TEST_START();
   int64_t sum_year = 0;
@@ -267,6 +271,7 @@ bool test_no_errors() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool to_clean_array() {
   TEST_START();
   int64_t sum_year = 0;
@@ -282,6 +287,7 @@ bool to_clean_array() {
   TEST_SUCCEED();
 }
 
+// EXPERIMENTAL
 bool test_to_adaptor_basic() {
   TEST_START();
   // Test 1: Basic usage of to<T> with a value reference

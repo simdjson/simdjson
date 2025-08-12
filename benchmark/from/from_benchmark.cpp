@@ -62,8 +62,8 @@ void run_array_benchmarks() {
                }));
 
 
-  // Benchmark simdjson::from() without parser
-  pretty_print_array("simdjson::from<Car>() (no parser)", json.size(), N,
+  // Benchmark simdjson::from() without parser (EXPERIMENTAL)
+  pretty_print_array("simdjson::from<Car>() (experimental, no parser)", json.size(), N,
                bench([&json, &dummy]() {
                 dummy = 0;
                 for(Car car : simdjson::from(json) | simdjson::as<Car>()) {
@@ -71,8 +71,8 @@ void run_array_benchmarks() {
                 }
                }));
 
-  // Benchmark simdjson::from() with parser
-  pretty_print_array("simdjson::from<Car>() (with parser)", json.size(), N,
+  // Benchmark simdjson::from() with parser (EXPERIMENTAL)
+  pretty_print_array("simdjson::from<Car>() (experimental, with parser)", json.size(), N,
                bench([&json, &dummy, &parser]() {
                 dummy = 0;
                 for(Car car : simdjson::from(parser, json) | simdjson::as<Car>()) {

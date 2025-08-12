@@ -52,13 +52,14 @@ public:
   reference operator*() const noexcept { return m_storage->m_value; }
   reference operator*() noexcept { return m_storage->m_value; }
 
-
-
+  // Experimental, might perform poorly.
   simdjson_really_inline auto_iterator &operator++() noexcept {
     ++m_storage->m_iter;
     m_storage->buffer_value();
     return *this;
   }
+
+  // Experimental, might perform poorly.
   simdjson_really_inline auto_iterator operator++(int) noexcept {
     auto_iterator const tmp = *this;
     operator++();
@@ -75,6 +76,8 @@ public:
   }
 };
 
+// Users should not depend on the exact nature of auto_parser.
+// C++20 ranges support is experimental and may perform poorly.
 template <typename ParserType = ondemand::parser*>
 struct auto_parser
 #if __cpp_lib_ranges
@@ -211,6 +214,7 @@ public:
     return {std::move(value)};
   }
 
+  // C++20 ranges support is experimental and may perform poorly.
   simdjson_inline auto_iterator begin() noexcept {
     if (m_error != SUCCESS) {
       // Create an iterator with the error
@@ -230,10 +234,16 @@ public:
     return auto_iterator{iter_storage};
   }
 
+  // C++20 ranges support is experimental and may perform poorly.
   simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
 #ifdef __cpp_lib_ranges
+
+/****
+ * C++20 ranges support is currently experimental. It may change in the future.
+ * It may result in poor performance.
+ */
 
 // For C++20, we implement our own pipe operator since range_adaptor_closure is C++23
 static constexpr struct no_errors_adaptor {
@@ -313,6 +323,8 @@ template <typename T> static constexpr to_adaptor<T> to{};
  * ```
  * The parser instance can be reused.
  *
+ * You can also use the result of a simdjson::from as a C++20 ranges, however, it comes
+ * with a significant penalty. We consider C++20 ranges support to be experimental.
  */
 static constexpr to_adaptor<> from{};
 
