@@ -11,7 +11,4 @@ if(SIMDJSON_SUPPORTS_MARCH_NATIVE)
   target_compile_options(from_benchmark PRIVATE -march=native)
 endif()
 
-# Link simdjson
-target_link_libraries(from_benchmark PRIVATE simdjson::simdjson)
-
 target_include_directories(from_benchmark PRIVATE ${CMAKE_CURRENT_LIST_DIR}/..)
