@@ -69,7 +69,7 @@ public:
   }
 };
 
-template <typename ParserType = ondemand::parser*>
+template <typename ParserType = ondemand::parser*, typename DocumentType = ondemand::document>
 struct [[nodiscard]] auto_parser
 #if __cpp_lib_ranges
     : std::ranges::view_interface<auto_parser<ParserType>>
@@ -87,48 +87,62 @@ struct [[nodiscard]] auto_parser
 
 private:
   ParserType m_parser;
-  ondemand::document m_doc;
+  DocumentType m_doc;
   error_code m_error{SUCCESS};
 
   // Caching the iterator here:
   iterator::auto_iterator_storage iter_storage{};
 
   template <typename T>
-  static constexpr bool is_nothrow_gettable = requires(ondemand::document doc) {
-    { doc.get<T>() } noexcept;
+  static constexpr bool is_nothrow_gettable = requires(DocumentType doc) {
+    { doc.template get<T>() } noexcept;
   };
 
 public:
   // non-pointer constructors:
-  explicit auto_parser(ParserType &&parser, ondemand::document &&doc) noexcept
+
+  explicit auto_parser(ParserType &&parser, DocumentType &&doc) noexcept
     requires(!std::is_pointer_v<ParserType>)
       : m_parser{std::move(parser)}, m_doc{std::move(doc)} {}
+
 
   explicit auto_parser(ParserType &&parser,
                        padded_string_view const str) noexcept
     requires(!std::is_pointer_v<ParserType>)
       : m_parser{std::move(parser)}, m_doc{}, m_error{SUCCESS} {
-    m_error = m_parser.iterate(str).get(m_doc);
+    if constexpr (std::is_same_v<DocumentType, ondemand::document_reference>) {
+      m_error = m_parser.iterate_many(str).get(m_doc);
+    } else {
+      m_error = m_parser.iterate(str).get(m_doc);
+    }
   }
 
   // pointer constructors:
+
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
-                       ondemand::document &&doc) noexcept
+                       DocumentType &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
       : m_parser{&parser}, m_doc{std::move(doc)} {}
+
 
   explicit auto_parser(std::remove_pointer_t<ParserType> &parser,
                        padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
       : m_parser{&parser}, m_doc{}, m_error{SUCCESS} {
-    m_error = m_parser->iterate(str).get(m_doc);
+    if constexpr (std::is_same_v<DocumentType, ondemand::document_reference>) {
+      m_error = m_parser->iterate_many(str).get(m_doc);
+    } else {
+      m_error = m_parser->iterate(str).get(m_doc);
+    }
   }
+
 
   explicit auto_parser(padded_string_view const str) noexcept
     requires(std::is_pointer_v<ParserType>)
       : auto_parser{ondemand::parser::get_parser(), str} {}
 
-  explicit auto_parser(ParserType parser, ondemand::document &&doc) noexcept
+
+  explicit auto_parser(ParserType parser, DocumentType &&doc) noexcept
     requires(std::is_pointer_v<ParserType>)
       : auto_parser{*parser, std::move(doc)} {}
 
@@ -154,7 +168,7 @@ public:
       return m_error;
     }
     // For array and object types, we need to be at the start of the document
-    return m_doc.get<T>();
+  return m_doc.template get<T>();
   }
 
   [[nodiscard]] simdjson_inline simdjson_result<ondemand::array>
@@ -183,7 +197,7 @@ public:
     if (m_error != SUCCESS) {
       throw simdjson_error(m_error);
     }
-    return m_doc.get<T>();
+    return m_doc.template get<T>();
   }
 
   // We can't have "operator std::optional<T>" because it would create an
@@ -199,7 +213,7 @@ public:
     }
     T value;
     // For std::optional<T>
-    if (m_doc.get<T>().get(value)) [[unlikely]] {
+    if (m_doc.template get<T>().get(value)) [[unlikely]] {
       return std::nullopt;
     }
     return {std::move(value)};
@@ -250,7 +264,7 @@ static constexpr struct [[nodiscard]] no_errors_adaptor {
   }
 } no_errors;
 
-template <typename T = void>
+template <typename T = void, typename DocumentType = ondemand::document>
 struct [[nodiscard]] to_adaptor {
 
   /// Convert to T
@@ -275,7 +289,7 @@ struct [[nodiscard]] to_adaptor {
    * A parser should only be used for one document at a time.
    */
   auto operator()(padded_string_view const str) const noexcept {
-    return auto_parser{str};
+    return auto_parser<ondemand::parser*, DocumentType>{str};
   }
 
   /**
@@ -286,11 +300,12 @@ struct [[nodiscard]] to_adaptor {
    */
   auto operator()(ondemand::parser &parser,
                             padded_string_view const str) const noexcept {
-    return auto_parser<ondemand::parser *>{parser, str};
+    return auto_parser<ondemand::parser *, DocumentType>{parser, str};
   }
 };
 
-template <typename T> static constexpr to_adaptor<T> to{};
+template <typename T, typename DocumentType = ondemand::document>
+static constexpr to_adaptor<T, DocumentType> to{};
 
 /**
  * The `from` instance is a utility adaptor for parsing JSON strings into objects.
@@ -317,6 +332,7 @@ template <typename T> static constexpr to_adaptor<T> to{};
  *
  */
 static constexpr to_adaptor<> from{};
+static constexpr to_adaptor< void, ondemand::document_reference > from_many{};
 
 template <typename T = void>
 using as = to_adaptor<T>;
