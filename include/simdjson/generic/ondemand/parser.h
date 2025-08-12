@@ -381,7 +381,10 @@ public:
 private:
   friend bool release_parser();
   friend ondemand::parser& get_parser();
-  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser> & get_parser_instance();
+  /** Get the thread-local parser instance, allocates it if needed */
+  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
+  /** Get the thread-local parser instance, it might be null */
+  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};

@@ -194,7 +194,7 @@ simdjson_inline simdjson_warn_unused ondemand::parser& parser::get_parser() {
 }
 
 simdjson_inline bool release_parser() {
-  auto &parser_instance = parser::get_parser_instance();
+  auto &parser_instance = parser::get_threadlocal_parser_if_exists();
   if (parser_instance) {
     parser_instance.reset();
     return true;
@@ -202,18 +202,19 @@ simdjson_inline bool release_parser() {
   return false;
 }
 
-
-simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser> & parser::get_parser_instance() {
-  thread_local std::unique_ptr<ondemand::parser> parser_instance = nullptr;
-
-  // Si l'instance n'existe pas encore, on la crée
+simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& parser::get_parser_instance() {
+  std::unique_ptr<ondemand::parser>& parser_instance = get_threadlocal_parser_if_exists();
   if (!parser_instance) {
-      parser_instance = std::make_unique<ondemand::parser>();
+    parser_instance.reset(new ondemand::parser());
   }
-
   return parser_instance;
 }
 
+simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& parser::get_threadlocal_parser_if_exists() {
+  // @the-moisrex points out that this could be implemented with std::optional (C++17).
+  thread_local std::unique_ptr<ondemand::parser> parser_instance = nullptr;
+  return parser_instance;
+}
 
 
 } // namespace ondemand
