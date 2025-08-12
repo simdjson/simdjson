@@ -409,9 +409,9 @@ using std::operator<<;
 #endif
 
 #if nssv_HAVE_NODISCARD
-# define nssv_nodiscard  [[nodiscard]]
+# define nssv_nodiscard  simdjson_warn_unused
 #else
-# define nssv_nodiscard  /*[[nodiscard]]*/
+# define nssv_nodiscard  /*simdjson_warn_unused*/
 #endif
 
 // Additional includes:

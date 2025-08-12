@@ -10,13 +10,13 @@
 
 namespace simdjson {
 
-struct [[nodiscard]] auto_iterator_end {};
+struct auto_iterator_end {};
 
 /**
  * A Wrapper for simdjson_result<ondemand::array_iterator> in order to make it
  * compatible with ranges (to satisfy std::ranges::input_range).
  */
-struct [[nodiscard]] auto_iterator {
+struct auto_iterator {
   using iterator_category = std::forward_iterator_tag;
   using type = simdjson_result<ondemand::array_iterator>;
   using value_type = simdjson_result<ondemand::value>; // type::value_type
@@ -27,7 +27,7 @@ struct [[nodiscard]] auto_iterator {
   struct auto_iterator_storage {
     type m_iter{};
     mutable value_type m_value{};
-    void buffer_value() noexcept {
+    simdjson_really_inline void buffer_value() noexcept {
       if(m_iter.at_end() || m_iter.error() != SUCCESS) {
         m_value = {};
       } else {
@@ -54,29 +54,29 @@ public:
 
 
 
-  auto_iterator &operator++() noexcept {
+  simdjson_really_inline auto_iterator &operator++() noexcept {
     ++m_storage->m_iter;
     m_storage->buffer_value();
     return *this;
   }
-  auto_iterator operator++(int) noexcept {
+  simdjson_really_inline auto_iterator operator++(int) noexcept {
     auto_iterator const tmp = *this;
     operator++();
     return tmp;
   }
 
-  [[nodiscard]] bool operator==(auto_iterator const &other) const noexcept {
+  simdjson_warn_unused simdjson_really_inline bool operator==(auto_iterator const &other) const noexcept {
     return m_storage == other.m_storage &&
            m_storage->m_iter == other.m_storage->m_iter;
   }
 
-  [[nodiscard]] bool operator==(auto_iterator_end) const noexcept {
+  simdjson_warn_unused simdjson_really_inline bool operator==(auto_iterator_end) const noexcept {
     return m_storage != nullptr && m_storage->m_iter.at_end();
   }
 };
 
 template <typename ParserType = ondemand::parser*>
-struct [[nodiscard]] auto_parser
+struct auto_parser
 #if __cpp_lib_ranges
     : std::ranges::view_interface<auto_parser<ParserType>>
 #endif
@@ -145,7 +145,7 @@ public:
   ~auto_parser() = default;
 
   /// Get the parser
-  [[nodiscard]] std::remove_pointer_t<ParserType> &parser() noexcept {
+  simdjson_warn_unused std::remove_pointer_t<ParserType> &parser() noexcept {
     if constexpr (std::is_pointer_v<ParserType>) {
       return *m_parser;
     } else {
@@ -154,7 +154,7 @@ public:
   }
 
   template <typename T>
-  [[nodiscard]] simdjson_inline simdjson_result<T>
+  simdjson_warn_unused simdjson_inline simdjson_result<T>
   result() noexcept(is_nothrow_gettable<T>) {
     if (m_error != SUCCESS) {
       return m_error;
@@ -163,29 +163,29 @@ public:
     return m_doc.get<T>();
   }
 
-  [[nodiscard]] simdjson_inline simdjson_result<ondemand::array>
+  simdjson_warn_unused simdjson_inline simdjson_result<ondemand::array>
   array() noexcept {
     return result<ondemand::array>();
   }
 
-  [[nodiscard]] simdjson_inline simdjson_result<ondemand::object>
+  simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object>
   object() noexcept {
     return result<ondemand::object>();
   }
 
-  [[nodiscard]] simdjson_inline simdjson_result<ondemand::number>
+  simdjson_warn_unused simdjson_inline simdjson_result<ondemand::number>
   number() noexcept {
     return result<ondemand::number>();
   }
 
   template <typename T>
-  [[nodiscard]] simdjson_inline explicit(false)
+  simdjson_warn_unused simdjson_inline explicit(false)
   operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
     return result<T>();
   }
 
   template <typename T>
-  [[nodiscard]] simdjson_inline explicit(false) operator T() noexcept(false) {
+  simdjson_warn_unused simdjson_inline explicit(false) operator T() noexcept(false) {
     if (m_error != SUCCESS) {
       throw simdjson_error(m_error);
     }
@@ -198,7 +198,7 @@ public:
   // We also cannot have "operator T&" without manual memory management either.
 
   template <typename T>
-  [[nodiscard]] simdjson_inline std::optional<T>
+  simdjson_warn_unused simdjson_inline std::optional<T>
   optional() noexcept(is_nothrow_gettable<T>) {
     if (m_error != SUCCESS) {
       return std::nullopt;
@@ -236,9 +236,9 @@ public:
 #ifdef __cpp_lib_ranges
 
 // For C++20, we implement our own pipe operator since range_adaptor_closure is C++23
-static constexpr struct [[nodiscard]] no_errors_adaptor {
+static constexpr struct no_errors_adaptor {
 
-  [[nodiscard]] bool
+  simdjson_warn_unused bool
   operator()(simdjson_result<ondemand::value> const &val) const noexcept {
     return val.error() == SUCCESS;
   }
@@ -250,11 +250,10 @@ static constexpr struct [[nodiscard]] no_errors_adaptor {
 } no_errors;
 
 template <typename T = void>
-struct [[nodiscard]] to_adaptor {
+struct to_adaptor {
 
   /// Convert to T
-  [[nodiscard]] T
-  operator()(simdjson_result<ondemand::value> &val) const noexcept {
+  T operator()(simdjson_result<ondemand::value> &val) const noexcept {
     return val.get<T>();
   }
 
