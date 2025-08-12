@@ -1374,7 +1374,9 @@ std::map<std::string, std::string> obj =
        simdjson::from(R"({"key": "value"})"_padded);
 ```
 
-You can also use C++20 ranges to iterate over an array:
+You can also use C++20 ranges to iterate over an array.  The usage
+of C++20 ranges may come with a performance penalty (e.g., 20%) and it should
+only be used if convenience is a primary concern.
 
 ```cpp
   simdjson::padded_string json_cars =
@@ -1421,7 +1423,9 @@ Just like when using `tag_invoke` for custom types (but without the `tag_invoke`
 Car car = simdjson::from(json);
 ```
 
-Similarly, you can also use C++20 ranges to iterate over an array:
+Similarly, you can also use C++20 ranges to iterate over an array. The usage
+of C++20 ranges may come with a performance penalty (e.g., 20%) and it should
+only be used if convenience is a primary concern.
 
 ```cpp
   simdjson::padded_string json_cars =
@@ -1438,10 +1442,6 @@ Similarly, you can also use C++20 ranges to iterate over an array:
     }
   }
 ```
-
-When using the `simdjson::from` syntax, you can also omit the parser instance,
-for more convenience. However, we strongly encourage you to create a single parser
-instance that is reused, as it leads to better performance.
 
 You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).

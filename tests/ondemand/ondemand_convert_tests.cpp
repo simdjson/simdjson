@@ -225,46 +225,60 @@ bool to_bad_array() {
 
 bool test_basic_adaptor() {
   TEST_START();
+  int64_t sum_year = 0;
   for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
+    printf("Car: %s %s %d\n", car.make.c_str(), car.model.c_str(), car.year);
     if (car.year < 1998) {
       return false;
     }
+    sum_year += car.year;
   }
+  ASSERT_EQUAL(sum_year, 2018 + 2012 + 1999);
   TEST_SUCCEED();
 }
 
 bool test_basic_adaptor_with_parser() {
   TEST_START();
   simdjson::ondemand::parser parser;
+  int64_t sum_year = 0;
   for (Car car : simdjson::from(parser, json_cars) | simdjson::as<Car>()) {
     if (car.year < 1998) {
       return false;
     }
+    sum_year += car.year;
   }
+  ASSERT_EQUAL(sum_year, 2018 + 2012 + 1999);
   TEST_SUCCEED();
 }
 
 bool test_no_errors() {
   TEST_START();
+  int64_t sum_year = 0;
   auto cars = simdjson::from(json_cars) | simdjson::no_errors;
   for (auto val : cars) {
     Car car = val.get<Car>();
     if (car.year < 1998) {
       return false;
     }
+    printf("-- year: %d\n", car.year);
+    sum_year += car.year;
   }
+  ASSERT_EQUAL(sum_year, 2018 + 2012 + 1999);
   TEST_SUCCEED();
 }
 
 bool to_clean_array() {
   TEST_START();
+  int64_t sum_year = 0;
   for (auto val : simdjson::from(json_cars) | simdjson::no_errors) {
     Car car = val.get<Car>();
     if (car.year < 1998) {
       std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
       return false;
     }
+    sum_year += car.year;
   }
+  ASSERT_EQUAL(sum_year, 2018 + 2012 + 1999);
   TEST_SUCCEED();
 }
 

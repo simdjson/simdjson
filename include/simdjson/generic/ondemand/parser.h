@@ -214,13 +214,6 @@ public:
    * Setting batch_size to excessively large or excessively small values may impact negatively the
    * performance.
    *
-   * ### REQUIRED: Buffer Padding
-   *
-   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
-   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
-   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
-   * SIMDJSON_PADDING bytes to avoid runtime warnings.
-   *
    * ### Threads
    *
    * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
@@ -249,6 +242,8 @@ public:
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
   inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(padded_string_view json, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
