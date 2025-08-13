@@ -55,6 +55,8 @@ We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux syste
 pre-release version of a compiler, do not report it as a bug to simdjson. However, we always
 invite contributions either in the form an analysis or of a code contribution.
 
+Under Windows, we support Visual Studio (both with LLVM and without) as well as msys2. *We do not support MinGW and other alternate compiler systems. MinGW has outstanding unresolved bugs.*
+
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 
 If you plan to contribute to simdjson, please read our guide:
