@@ -1366,6 +1366,14 @@ For even more convenience, you can do it directly without a document instance li
 Car car = simdjson::from(json);
 ```
 
+You can also use the `simdjson::from` syntax to iterate over an array.
+
+```cpp
+for(auto val : simdjson::from(json).array()) {
+  Car c = val.get<Car>(); // ...
+}
+```
+
 Standard STL types are supported:
 
 
@@ -1399,6 +1407,14 @@ Just like when using `tag_invoke` for custom types (but without the `tag_invoke`
 
 ```cpp
 Car car = simdjson::from(json);
+```
+
+You can also use the `simdjson::from` syntax to iterate over an array.
+
+```cpp
+for(auto val : simdjson::from(json).array()) {
+  Car c = val.get<Car>(); // ...
+}
 ```
 
 You can also automatically serialize the `Car` instance to a JSON string, see
