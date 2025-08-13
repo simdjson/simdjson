@@ -145,6 +145,13 @@ inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf,
   if(allow_comma_separated && batch_size < len) { batch_size = len; }
   return document_stream(*this, buf, len, batch_size, allow_comma_separated);
 }
+
+inline simdjson_result<document_stream> parser::iterate_many(padded_string_view json, size_t batch_size, bool allow_comma_separated) noexcept {
+  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
+  if(allow_comma_separated && batch_size < json.length()) { batch_size = json.length(); }
+  return iterate_many(json.data(), json.length(), batch_size, allow_comma_separated);
+}
+
 inline simdjson_result<document_stream> parser::iterate_many(const char *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
   return iterate_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, allow_comma_separated);
 }
@@ -188,6 +195,34 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::u
   dst = end;
   return result;
 }
+
+simdjson_inline simdjson_warn_unused ondemand::parser& parser::get_parser() {
+  return *parser::get_parser_instance();
+}
+
+simdjson_inline bool release_parser() {
+  auto &parser_instance = parser::get_threadlocal_parser_if_exists();
+  if (parser_instance) {
+    parser_instance.reset();
+    return true;
+  }
+  return false;
+}
+
+simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& parser::get_parser_instance() {
+  std::unique_ptr<ondemand::parser>& parser_instance = get_threadlocal_parser_if_exists();
+  if (!parser_instance) {
+    parser_instance.reset(new ondemand::parser());
+  }
+  return parser_instance;
+}
+
+simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& parser::get_threadlocal_parser_if_exists() {
+  // @the-moisrex points out that this could be implemented with std::optional (C++17).
+  thread_local std::unique_ptr<ondemand::parser> parser_instance = nullptr;
+  return parser_instance;
+}
+
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

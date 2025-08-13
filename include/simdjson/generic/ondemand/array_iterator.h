@@ -62,7 +62,7 @@ public:
   /**
    * Check if the array is at the end.
    */
-  [[nodiscard]] simdjson_inline bool at_end() const noexcept;
+  simdjson_warn_unused simdjson_inline bool at_end() const noexcept;
 
 private:
   value_iterator iter{};
@@ -95,7 +95,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : publ
   simdjson_inline bool operator!=(const simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &) const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> &operator++() noexcept;
 
-  [[nodiscard]] simdjson_inline bool at_end() const noexcept;
+  simdjson_warn_unused simdjson_inline bool at_end() const noexcept;
 };
 
 } // namespace simdjson

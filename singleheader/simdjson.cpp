@@ -1,4 +1,4 @@
-/* auto-generated on 2025-08-05 16:29:59 +0000. version 4.0.0 Do not edit! */
+/* auto-generated on 2025-08-12 19:38:50 -0400. version 4.0.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -1039,9 +1039,9 @@ using std::operator<<;
 #endif
 
 #if nssv_HAVE_NODISCARD
-# define nssv_nodiscard  [[nodiscard]]
+# define nssv_nodiscard  simdjson_warn_unused
 #else
-# define nssv_nodiscard  /*[[nodiscard]]*/
+# define nssv_nodiscard  /*simdjson_warn_unused*/
 #endif
 
 // Additional includes:
