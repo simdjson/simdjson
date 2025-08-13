@@ -633,7 +633,7 @@ simdjson_inline string_builder::operator std::string() const noexcept(false) {
 }
 
 simdjson_inline string_builder::operator std::string_view() const
-    noexcept(false) {
+    noexcept(false) simdjson_lifetime_bound {
   return view();
 }
 #endif

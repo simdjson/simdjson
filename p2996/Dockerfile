@@ -8,7 +8,11 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates gnupg \
            build-essential cmake make python3 zlib1g wget subversion unzip ninja-build git linux-perf && \
     rm -rf /var/lib/apt/lists/*
-RUN git clone --depth=1 --branch p2996  https://github.com/bloomberg/clang-p2996.git /tmp/clang-source
+ARG CLANG_COMMIT=d77eff1cbd78fd065668acf93b1f5f400d39134d
+RUN git clone --depth=1 https://github.com/bloomberg/clang-p2996.git /tmp/clang-source && \
+    cd /tmp/clang-source && \
+    git fetch origin $CLANG_COMMIT --depth=1 && \
+    git checkout $CLANG_COMMIT
 RUN cmake -S /tmp/clang-source/llvm -B /tmp/clang-source/build-llvm -DCMAKE_BUILD_TYPE=Release \
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DLLVM_UNREACHABLE_OPTIMIZE=ON \

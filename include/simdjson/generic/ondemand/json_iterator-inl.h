@@ -218,6 +218,8 @@ simdjson_inline void json_iterator::assert_valid_position(token_position positio
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
   SIMDJSON_ASSUME( position >= &parser->implementation->structural_indexes[0] );
   SIMDJSON_ASSUME( position < &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] );
+#else
+  (void)position; // Suppress unused parameter warning
 #endif
 }
 
