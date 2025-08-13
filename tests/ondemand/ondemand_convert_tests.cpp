@@ -61,27 +61,6 @@ struct Car {
 static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
               "It should be deserializable");
 
-static_assert(std::input_or_output_iterator<simdjson::auto_iterator>,
-              "Must be a valid input iterator");
-static_assert(std::semiregular<simdjson::auto_iterator>,
-              "Should be kinda regular");
-// static_assert(std::ranges::__access::__member_end<simdjson::auto_parser<>>,
-//               "Must be a valid input iterator");
-// static_assert(std::ranges::views::__adaptor::__is_range_adaptor_closure<
-//                   simdjson::auto_parser<>>,
-//               "Parser need to be range adaptor closure.");
-// static_assert(std::ranges::views::__adaptor::__adaptor_invocable<
-//                   decltype(simdjson::to<Car>()),
-//                   simdjson::auto_parser<>>,
-//               "I don't even know!");
-static_assert(std::ranges::range<simdjson::auto_parser<>>,
-              "Parser need to be a range.");
-static_assert(std::ranges::forward_range<simdjson::auto_parser<>>,
-              "Parser need to be an input range.");
-static_assert(
-    requires(simdjson::auto_parser<> &parser) {
-      { parser.begin() } -> std::input_or_output_iterator;
-    }, "Must be valid iterator.");
 
 simdjson::padded_string json_car =
     R"( {
@@ -165,24 +144,6 @@ bool to_array() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
-bool to_array_shortcut() {
-  TEST_START();
-  simdjson::ondemand::parser parser;
-  for (auto val : simdjson::from(parser, json_cars)) {
-    Car car{};
-    if (auto const error = val.get(car)) {
-      std::cerr << simdjson::error_message(error) << std::endl;
-      return false;
-    }
-    if (car.year < 1998) {
-      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
-      return false;
-    }
-  }
-  TEST_SUCCEED();
-}
-
 bool to_bad_array() {
   TEST_START();
   auto parser = simdjson::from(json_car);
@@ -224,7 +185,25 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
+#if SIMDJSON_SUPPORTS_RANGES
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
+bool to_array_shortcut() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (auto val : simdjson::from(parser, json_cars)) {
+    Car car{};
+    if (auto const error = val.get(car)) {
+      std::cerr << simdjson::error_message(error) << std::endl;
+      return false;
+    }
+    if (car.year < 1998) {
+      std::cerr << car.make << " " << car.model << " " << car.year << std::endl;
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
 bool test_basic_adaptor() {
   TEST_START();
   int64_t sum_year = 0;
@@ -239,7 +218,7 @@ bool test_basic_adaptor() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
 bool test_basic_adaptor_with_parser() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -254,7 +233,7 @@ bool test_basic_adaptor_with_parser() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
 bool test_no_errors() {
   TEST_START();
   int64_t sum_year = 0;
@@ -271,7 +250,7 @@ bool test_no_errors() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
 bool to_clean_array() {
   TEST_START();
   int64_t sum_year = 0;
@@ -287,7 +266,7 @@ bool to_clean_array() {
   TEST_SUCCEED();
 }
 
-// EXPERIMENTAL
+// currently not active (SIMDJSON_SUPPORTS_RANGES)
 bool test_to_adaptor_basic() {
   TEST_START();
   // Test 1: Basic usage of to<T> with a value reference
@@ -306,6 +285,8 @@ bool test_to_adaptor_basic() {
   }
   TEST_SUCCEED();
 }
+
+#endif // SIMDJSON_SUPPORTS_RANGES
 
 bool test_to_adaptor_with_single_value() {
   TEST_START();
@@ -358,12 +339,15 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
-      test_basic_adaptor() && broken() && simple() && simple_optional() && with_parser() && to_array() &&
-      to_array_shortcut() && to_bad_array() && test_no_errors() &&
-      to_clean_array() && test_to_adaptor_basic() &&
+      broken() && simple() && simple_optional() && with_parser() && to_array() &&
+      to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
-      test_basic_adaptor_with_parser() && example_with_parser() &&
-#endif // SIMDJSON_EXCEPTIONS
+      example_with_parser() &&
+#if SIMDJSON_SUPPORTS_RANGES
+      test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
+      && test_to_adaptor_basic() && to_clean_array() && to_array_shortcut() &&
+#endif // SIMDJSON_SUPPORTS_RANGES
+#endif // SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
       true;
 }
 

@@ -41,7 +41,6 @@ void run_benchmarks() {
                }));
 }
 
-
 void run_array_benchmarks() {
   printf("Running benchmarks on large array...\n");
   size_t N = 1'000'000;
@@ -51,40 +50,52 @@ void run_array_benchmarks() {
 
   // Classic On-Demand
   pretty_print_array("simdjson classic", json.size(), N,
-               bench([&json, &dummy, &parser]() {
-                dummy = 0;
-                 ondemand::document doc = parser.iterate(json);
-                 ondemand::array array = doc.get_array();
-                 for(auto value : array) {
-                    Car car = value.get<Car>();
-                    dummy = dummy + car.year;
-                 }
-               }));
+                     bench([&json, &dummy, &parser]() {
+                       dummy = 0;
+                       ondemand::document doc = parser.iterate(json);
+                       ondemand::array array = doc.get_array();
+                       for (auto value : array) {
+                         Car car = value.get<Car>();
+                         dummy = dummy + car.year;
+                       }
+                     }));
 
+  // from with array
+  pretty_print_array("simdjson::from(json).array()", json.size(), N,
+                     bench([&json, &dummy, &parser]() {
+                       dummy = 0;
 
+                       for (auto value : simdjson::from(json).array()) {
+                         Car car = value.get<Car>();
+                         dummy = dummy + car.year;
+                       }
+                     }));
+#if SIMDJSON_SUPPORTS_RANGES
   // Benchmark simdjson::from() without parser (EXPERIMENTAL)
-  pretty_print_array("simdjson::from<Car>() (experimental, no parser)", json.size(), N,
-               bench([&json, &dummy]() {
-                dummy = 0;
-                for(Car car : simdjson::from(json) | simdjson::as<Car>()) {
-                    dummy = dummy + car.year;
-                }
-               }));
+  pretty_print_array("simdjson::from<Car>() (experimental, no parser)",
+                     json.size(), N, bench([&json, &dummy]() {
+                       dummy = 0;
+                       for (Car car :
+                            simdjson::from(json) | simdjson::as<Car>()) {
+                         dummy = dummy + car.year;
+                       }
+                     }));
 
   // Benchmark simdjson::from() with parser (EXPERIMENTAL)
-  pretty_print_array("simdjson::from<Car>() (experimental, with parser)", json.size(), N,
-               bench([&json, &dummy, &parser]() {
-                dummy = 0;
-                for(Car car : simdjson::from(parser, json) | simdjson::as<Car>()) {
-                    dummy = dummy + car.year;
-                }
-               }));
-
+  pretty_print_array("simdjson::from<Car>() (experimental, with parser)",
+                     json.size(), N, bench([&json, &dummy, &parser]() {
+                       dummy = 0;
+                       for (Car car : simdjson::from(parser, json) |
+                                          simdjson::as<Car>()) {
+                         dummy = dummy + car.year;
+                       }
+                     }));
+#endif // SIMDJSON_SUPPORTS_RANGES
 }
 
 void run_stream_benchmarks() {
   printf("Running stream benchmarks...\n");
-  std::string json = generate_car_json_stream(1'000'000);
+  simdjson::padded_string json = generate_car_json_stream(1'000'000);
   volatile size_t dummy = 0;
   ondemand::parser parser;
 

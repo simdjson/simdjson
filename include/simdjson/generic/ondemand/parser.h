@@ -219,6 +219,15 @@ public:
    * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
    * hood to do some lookahead.
    *
+   * ### REQUIRED: Buffer Padding
+   *
+   * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
+   * those bytes are initialized to, as long as they are allocated. These bytes will be read: if you
+   * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
+   * SIMDJSON_PADDING bytes to avoid runtime warnings.
+   *
+   * ### Threads
+   *
    * ### Parser Capacity
    *
    * If the parser's current capacity is less than batch_size, it will allocate enough capacity

@@ -4,85 +4,11 @@
 
 #include "simdjson/ondemand.h"
 #include <optional>
-#ifdef __cpp_lib_ranges
-#include <ranges>
-#endif
 
 namespace simdjson {
 
-struct auto_iterator_end {};
-
-/**
- * A Wrapper for simdjson_result<ondemand::array_iterator> in order to make it
- * compatible with ranges (to satisfy std::ranges::input_range).
- */
-struct auto_iterator {
-  using iterator_category = std::forward_iterator_tag;
-  using type = simdjson_result<ondemand::array_iterator>;
-  using value_type = simdjson_result<ondemand::value>; // type::value_type
-  using reference = value_type &;
-  using const_reference = const value_type &;
-  using difference_type = std::ptrdiff_t;
-
-  struct auto_iterator_storage {
-    type m_iter{};
-    mutable value_type m_value{};
-    simdjson_really_inline void buffer_value() noexcept {
-      if(m_iter.at_end() || m_iter.error() != SUCCESS) {
-        m_value = {};
-      } else {
-        m_value = *m_iter;
-      }
-    }
-  };
-
-private:
-  auto_iterator_storage *m_storage = nullptr;
-
-public:
-  constexpr auto_iterator() noexcept = default;
-  explicit auto_iterator(auto_iterator_storage &storage) noexcept
-      : m_storage{&storage} {};
-  auto_iterator(auto_iterator const &) = default;
-  auto_iterator(auto_iterator &&) = default;
-  auto_iterator &operator=(auto_iterator const &) = default;
-  auto_iterator &operator=(auto_iterator &&) noexcept = default;
-  ~auto_iterator() = default;
-
-  reference operator*() const noexcept { return m_storage->m_value; }
-  reference operator*() noexcept { return m_storage->m_value; }
-
-  // Experimental, might perform poorly.
-  simdjson_really_inline auto_iterator &operator++() noexcept {
-    ++m_storage->m_iter;
-    m_storage->buffer_value();
-    return *this;
-  }
-
-  // Experimental, might perform poorly.
-  simdjson_really_inline auto_iterator operator++(int) noexcept {
-    auto_iterator const tmp = *this;
-    operator++();
-    return tmp;
-  }
-
-  simdjson_warn_unused simdjson_really_inline bool operator==(auto_iterator const &other) const noexcept {
-    return m_storage == other.m_storage &&
-           m_storage->m_iter == other.m_storage->m_iter;
-  }
-
-  simdjson_warn_unused simdjson_really_inline bool operator==(auto_iterator_end) const noexcept {
-    return m_storage != nullptr && m_storage->m_iter.at_end();
-  }
-};
-
-// Users should not depend on the exact nature of auto_parser.
-// C++20 ranges support is experimental and may perform poorly.
 template <typename ParserType = ondemand::parser*>
 struct auto_parser
-#if __cpp_lib_ranges
-    : std::ranges::view_interface<auto_parser<ParserType>>
-#endif
 {
   using value_type = simdjson_result<ondemand::value>;
   using size_type = size_t;
@@ -91,16 +17,11 @@ struct auto_parser
   using const_pointer = const value_type *;
   using reference = value_type &;
   using const_reference = const value_type &;
-  using iterator = auto_iterator;
-  using const_iterator = auto_iterator; // auto_iterator is already const
 
 private:
   ParserType m_parser;
   ondemand::document m_doc;
   error_code m_error{SUCCESS};
-
-  // Caching the iterator here:
-  iterator::auto_iterator_storage iter_storage{};
 
   template <typename T>
   static constexpr bool is_nothrow_gettable = requires(ondemand::document doc) {
@@ -213,51 +134,9 @@ public:
     }
     return {std::move(value)};
   }
-
-  // C++20 ranges support is experimental and may perform poorly.
-  simdjson_inline auto_iterator begin() noexcept {
-    if (m_error != SUCCESS) {
-      // Create an iterator with the error
-      iter_storage.m_iter = iterator::type(m_error);
-      iter_storage.m_value = value_type{};
-      return auto_iterator{iter_storage};
-    }
-    ondemand::array arr;
-    if(auto error = m_doc.get_array().get(arr); error == SUCCESS) {
-      iter_storage = {iterator::type{arr.begin()},value_type{}};
-      iter_storage.buffer_value();
-    } else {
-      // If it's not an array, create an error iterator
-      iter_storage.m_iter = iterator::type(error);
-      iter_storage.m_value = value_type{};
-    }
-    return auto_iterator{iter_storage};
-  }
-
-  // C++20 ranges support is experimental and may perform poorly.
-  simdjson_inline auto_iterator_end end() noexcept { return {}; }
 };
 
-#ifdef __cpp_lib_ranges
 
-/****
- * C++20 ranges support is currently experimental. It may change in the future.
- * It may result in poor performance.
- */
-
-// For C++20, we implement our own pipe operator since range_adaptor_closure is C++23
-static constexpr struct no_errors_adaptor {
-
-  simdjson_warn_unused bool
-  operator()(simdjson_result<ondemand::value> const &val) const noexcept {
-    return val.error() == SUCCESS;
-  }
-
-  template <std::ranges::range Range>
-  auto operator()(Range &&rng) const noexcept {
-    return std::forward<Range>(rng) | std::views::filter(*this);
-  }
-} no_errors;
 
 template <typename T = void>
 struct to_adaptor {
@@ -266,13 +145,6 @@ struct to_adaptor {
   T operator()(simdjson_result<ondemand::value> &val) const noexcept {
     return val.get<T>();
   }
-
-  /// Make it an adaptor
-  template <std::ranges::range Range>
-  auto operator()(Range &&rng) const noexcept {
-    return std::forward<Range>(rng) | no_errors | std::views::transform(*this);
-  }
-
   /**
    * Parse input string into any object if possible. This function call
    * will return an auto_parser that can be used to extract the desired
@@ -323,26 +195,8 @@ template <typename T> static constexpr to_adaptor<T> to{};
  * ```
  * The parser instance can be reused.
  *
- * You can also use the result of a simdjson::from as a C++20 ranges, however, it comes
- * with a significant penalty. We consider C++20 ranges support to be experimental.
  */
 static constexpr to_adaptor<> from{};
-
-template <typename T = void>
-using as = to_adaptor<T>;
-
-// For C++20 ranges without range_adaptor_closure, we need to define pipe operators
-template <std::ranges::range Range>
-inline auto operator|(Range&& range, const no_errors_adaptor& adaptor) {
-  return adaptor(std::forward<Range>(range));
-}
-
-template <std::ranges::range Range, typename T>
-inline auto operator|(Range&& range, const to_adaptor<T>& adaptor) {
-  return adaptor(std::forward<Range>(range));
-}
-
-#endif // __cpp_lib_ranges
 
 } // namespace simdjson
 
