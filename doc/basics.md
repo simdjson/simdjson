@@ -700,7 +700,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
       }
       break;
     case ondemand::json_type::unknown:
-      cout << "unknown";
+      cout << "unknown"; // indicates an error
       break;
     }
   }
