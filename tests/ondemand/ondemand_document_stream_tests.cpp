@@ -840,10 +840,10 @@ namespace document_stream_tests {
           if(doc.get_bool().get(b) == SUCCESS) { bool_count +=b; }
           // If we don't access the document at all, other than get_bool(),
           // then some simdjson kernels will allow you to iterate through
-          // 3 'documents'. By asking for the type, we make the iteration
+          // 3 'documents'. By trying to access the content, we make the iteration
           // terminate after the first 'document'.
-          ondemand::json_type t;
-          if(doc.type().get(t) != SUCCESS) { break; }
+          std::string_view document_string;
+          if(doc.get_string().get(document_string) != SUCCESS) { break; }
         }
         return (bool_count == 0) && (total_count == 1);
     }
