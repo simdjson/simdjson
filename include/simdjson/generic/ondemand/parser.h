@@ -7,6 +7,7 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <memory>
+#include <thread>
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -125,7 +126,9 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept
+      The string instance might be have its capacity extended. Note that this can still
+      result in AddressSanitizer: container-overflow in some cases. */
   simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
   /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
   simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
@@ -213,6 +216,11 @@ public:
    * Setting batch_size to excessively large or excessively small values may impact negatively the
    * performance.
    *
+   * ### Threads
+   *
+   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
+   * hood to do some lookahead.
+   *
    * ### REQUIRED: Buffer Padding
    *
    * The buffer must have at least SIMDJSON_PADDING extra allocated bytes. It does not matter what
@@ -220,10 +228,10 @@ public:
    * using a sanitizer that verifies that no uninitialized byte is read, then you should initialize the
    * SIMDJSON_PADDING bytes to avoid runtime warnings.
    *
-   * ### Threads
+   * This is checked automatically with all iterate_many function calls, except for the two
+   * that take pointers (const char* or const uint8_t*).
    *
-   * When compiled with SIMDJSON_THREADS_ENABLED, this method will use a single thread under the
-   * hood to do some lookahead.
+   * ### Threads
    *
    * ### Parser Capacity
    *
@@ -249,14 +257,16 @@ public:
    */
   inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  inline simdjson_result<document_stream> iterate_many(padded_string_view json, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size, bool allow_comma_separated = false) = delete;// unsafe
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size)
+    the string might be automatically padded with up to SIMDJSON_PADDING whitespace characters */
+  inline simdjson_result<document_stream> iterate_many(std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size, bool allow_comma_separated = false) = delete;// unsafe
-
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
@@ -358,13 +368,39 @@ public:
   bool string_buffer_overflow(const uint8_t *string_buf_loc) const noexcept;
 #endif
 
+  /**
+   * Get a unique parser instance corresponding to the current thread.
+   * This instance can be safely used within the current thread, but it should
+   * not be passed to other threads.
+   *
+   * A parser should only be used for one document at a time.
+   *
+   * Our simdjson::from functions use this parser instance.
+   *
+   * You can free the related parser by calling release_parser().
+   */
+  static simdjson_inline simdjson_warn_unused ondemand::parser& get_parser();
+  /**
+   * Release the parser instance initialized by get_parser() and all the
+   * associated resources (memory). Returns true if a parser instance
+   * was released.
+   */
+  static simdjson_inline bool release_parser();
+
 private:
+  friend bool release_parser();
+  friend ondemand::parser& get_parser();
+  /** Get the thread-local parser instance, allocates it if needed */
+  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
+  /** Get the thread-local parser instance, it might be null */
+  static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   std::unique_ptr<uint8_t[]> string_buf{};
+
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
 #endif

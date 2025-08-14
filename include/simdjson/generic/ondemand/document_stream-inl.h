@@ -182,8 +182,17 @@ simdjson_inline document_stream::iterator& document_stream::iterator::operator++
   return *this;
 }
 
+simdjson_inline bool document_stream::iterator::at_end() const noexcept {
+  return finished;
+}
+
+
 simdjson_inline bool document_stream::iterator::operator!=(const document_stream::iterator &other) const noexcept {
   return finished != other.finished;
+}
+
+simdjson_inline bool document_stream::iterator::operator==(const document_stream::iterator &other) const noexcept {
+  return finished == other.finished;
 }
 
 simdjson_inline document_stream::iterator document_stream::begin() noexcept {

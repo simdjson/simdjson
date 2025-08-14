@@ -180,6 +180,18 @@ auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
+If you prefer not to create your own `ondemand::parser` instance, you can access
+a thread-local version by calling `ondemand::parser.get_parser()`.
+
+
+```c++
+ondemand::document doc = ondemand::parser.get_parser().iterate(json);
+```
+
+However, you should be careful because a parser instance can only be used for one
+document at a time, thus it is only applicable when you are only parsing one
+document per thread at any one time.
+
 You can also create a padded string---and call `iterate()`:
 
 ```c++
@@ -1350,56 +1362,24 @@ that are not made by Toyota.
 For even more convenience, you can do it directly without a document instance like so:
 
 ```cpp
-  simdjson::ondemand::parser parser;
-  Car car = simdjson::from(parser, json_car);
+Car car = simdjson::from(json);
 ```
 
-We strongly encourage you to rely on an parser instance (`simdjson::ondemand::parser`) which you reuse. However, if performance is not a concern, you can omit the declaration
-of a parser instance like so:
+You can also use the `simdjson::from` syntax to iterate over an array.
 
 ```cpp
-Car car = simdjson::from(json);
+for(auto val : simdjson::from(json).array()) {
+  Car c = val.get<Car>(); // ...
+}
 ```
 
 Standard STL types are supported:
 
 
 ```cpp
-simdjson::ondemand::parser parser;
 std::map<std::string, std::string> obj =
-simdjson::from(parser, R"({"key": "value"})"_padded);
+       simdjson::from(R"({"key": "value"})"_padded);
 ```
-
-You can also use C++20 ranges to iterate over an array:
-
-```cpp
-  simdjson::padded_string json_cars =
-      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-        "tire_pressure": [ 40.1, 39.9 ] },
-    { "make": "Kia",    "model": "Soul",   "year": 2012,
-        "tire_pressure": [ 30.1, 31.0 ] },
-    { "make": "Toyota", "model": "Tercel", "year": 1999,
-        "tire_pressure": [ 29.8, 30.0 ] }
-  ])"_padded;
-
-  simdjson::ondemand::parser parser;
-  for (Car car : simdjson::from(parser, json_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
-```
-
-Again, if performance is not a concern, you can omit the parser instance.
-
-```cpp
-  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
-```
-
 
 ### 3. Using static reflection (C++26)
 
@@ -1425,32 +1405,16 @@ Car c = doc.get<Car>();
 Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
 
 ```cpp
-simdjson::ondemand::parser parser;
-Car car = simdjson::from(parser, json);
+Car car = simdjson::from(json);
 ```
 
-Similarly, you can also use C++20 ranges to iterate over an array:
+You can also use the `simdjson::from` syntax to iterate over an array.
 
 ```cpp
-  simdjson::padded_string json_cars =
-      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-        "tire_pressure": [ 40.1, 39.9 ] },
-    { "make": "Kia",    "model": "Soul",   "year": 2012,
-        "tire_pressure": [ 30.1, 31.0 ] },
-    { "make": "Toyota", "model": "Tercel", "year": 1999,
-        "tire_pressure": [ 29.8, 30.0 ] }
-  ])"_padded;
-  simdjson::ondemand::parser parser;
-  for (Car car : simdjson::from(, parserjson_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
+for(auto val : simdjson::from(json).array()) {
+  Car c = val.get<Car>(); // ...
+}
 ```
-
-When using the `simdjson::from` syntax, you can also omit the parser instance,
-for more convenience. However, we strongly encourage you to create a single parser
-instance that is reused, as it leads to better performance.
 
 You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).

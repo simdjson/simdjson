@@ -58,6 +58,9 @@ public:
   /** The number of allocated bytes. */
   inline size_t capacity() const noexcept;
 
+  /** check that the view has sufficient padding */
+  inline bool has_sufficient_padding() const noexcept;
+
   /**
    * Remove the UTF-8 Byte Order Mark (BOM) if it exists.
    *
@@ -84,14 +87,24 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 #endif
 
 /**
- * Create a padded_string_view from a string. The string will be padded with SIMDJSON_PADDING
+ * Create a padded_string_view from a string. The string will be padded with up to SIMDJSON_PADDING
  * space characters. The resulting padded_string_view will have a length equal to the original
- * string.
+ * string, except maybe for trailing white space characters.
  *
  * @param s The string.
  * @return The padded string.
  */
 inline padded_string_view pad(std::string& s) noexcept;
+
+/**
+ * Create a padded_string_view from a string. The capacity of the string will be padded with SIMDJSON_PADDING
+ * characters. The resulting padded_string_view will have a length equal to the original
+ * string.
+ *
+ * @param s The string.
+ * @return The padded string.
+ */
+inline padded_string_view pad_with_reserve(std::string& s) noexcept;
 } // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_VIEW_H

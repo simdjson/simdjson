@@ -38,3 +38,10 @@ endif()
 if(SIMDJSON_STATIC_REFLECTION)
   add_subdirectory(static_reflect)
 endif(SIMDJSON_STATIC_REFLECTION)
+
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++20" SIMDJSON_COMPILER_SUPPORTS_CXX20)
+if(SIMDJSON_EXCEPTIONS AND SIMDJSON_COMPILER_SUPPORTS_CXX20)
+  add_subdirectory(from)
+endif()
