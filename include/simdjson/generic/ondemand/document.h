@@ -485,7 +485,10 @@ public:
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
    * let it throw an exception).
    *
-   * @error TAPE_ERROR when the JSON value is a bad token like "}" "," or "alse".
+   * Prior to simdjson 4.0, this function would return an error given a bad token.
+   * Starting with simdjson 4.0, it will return simdjson::ondemand::json_type::unknown.
+   * This allows you to identify a case such as {"key": NaN} and identify the NaN value.
+   * The simdjson::ondemand::json_type::unknown value should only happen with non-valid JSON.
    */
   simdjson_inline simdjson_result<json_type> type() noexcept;
 

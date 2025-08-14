@@ -388,11 +388,11 @@ namespace error_tests {
 
   bool invalid_type() {
     TEST_START();
-    ONDEMAND_SUBTEST("]", "]", doc.type().error() != SUCCESS);
-    ONDEMAND_SUBTEST("}", "}", doc.type().error() != SUCCESS);
-    ONDEMAND_SUBTEST(":", ":", doc.type().error() != SUCCESS);
-    ONDEMAND_SUBTEST(",", ",", doc.type().error() != SUCCESS);
-    ONDEMAND_SUBTEST("+", "+", doc.type().error() != SUCCESS);
+    ONDEMAND_SUBTEST("]", "]", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("}", "}", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(":", ":", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(",", ",", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("+", "+", doc.type() == ondemand::json_type::unknown);
     TEST_SUCCEED();
   }
 

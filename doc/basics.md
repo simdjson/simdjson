@@ -373,7 +373,7 @@ array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`
 an array or an object. Both generic types (`simdjson::ondemand::document` and
 `simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing the
 value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
-`json_type::boolean`, `json_type::null`). A generic value (`simdjson::ondemand::value`)
+`json_type::boolean`, `json_type::null`). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens such as the `NaN` token in `{"key":NaN}`. A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
 is only valid temporarily, as soon as you access other values, other keys in objects, etc.
 it becomes invalid: you should therefore consume the value immediately by converting it to a
 scalar type, an array or an object.
@@ -698,6 +698,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
       if (element.is_null()) {
         cout << "null";
       }
+      break;
+    case ondemand::json_type::unknown:
+      cout << "unknown";
       break;
     }
   }
