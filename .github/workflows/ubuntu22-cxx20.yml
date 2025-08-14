@@ -31,6 +31,10 @@ jobs:
         run: |
           CXX=g++-12 cmake -DSIMDJSON_CXX_STANDARD=20 -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination -B build
 
+      - name: Compile Release Build
+        run: |
+          cmake --build build
+
       - name: Test Release Build
         run: |
           ctest --output-on-failure -LE explicitonly -j --test-dir build
