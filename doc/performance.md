@@ -173,8 +173,6 @@ Recent versions of Microsoft Visual Studio on Windows provides support for the L
 
 We recommend Visual Studio users prefer LLVM (clang-cl). It compiles to faster release binaries. Furthermore, it compilers faster in release mode.
 
-Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows is excellent (on par with Linux).
-
 
 Power Usage and Downclocking
 --------------
