@@ -37,8 +37,8 @@ namespace document_stream_tests {
             // it does not do UTF-8 validation in stage one, but it will do
             // so when we access the document.
             if(err == SUCCESS) {
-                ondemand::json_type t;
-                err = doc.type().get(t);
+                std::string_view document_string;
+                err = doc.get_string().get(document_string);
             }
             if((err == SUCCESS) && (document_index != 1)) {
               std::cerr << "Only the first document should be valid." << std::endl;
