@@ -239,7 +239,6 @@ Consider reusing the same buffers and limiting memory allocations.
 
 By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error handling](#error-handling) for details.
 
-
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
 
 * [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
@@ -2269,7 +2268,8 @@ The simdjson library supports parsing valid numbers inside strings which makes i
 three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to note that these methods are not substitute to the regular
 `get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these
 methods appropriately. In particular, a valid JSON number has no leading and no trailing whitespaces, and the strings `"nan"`, `"1e"` and `"infinity"` will not be accepted as valid
-numbers. As an example, suppose we have the following JSON text:
+numbers (although you have access to the raw string with the `raw_json_token()` method,  see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
+). As an example, suppose we have the following JSON text:
 
 ```c++
 auto json =
@@ -2588,9 +2588,35 @@ The `raw_json_token()` should be fast and free of allocation.
 Given a quote-deliminated string, you find the string sequence inside the quote with a
 single line of code:
 
-```C++
+```cpp
 std::string_view noquote(std::string_view v) { return {v.data()+1, v.find_last_of('"')-1}; }
 ```
+
+
+The `raw_json_token()` method can enable you to provide fallbacks when parsing fails.
+Consider the following example.
+
+```cpp
+    padded_string json = "{\"key\": NaN}"_padded;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(json);
+    simdjson::ondemand::object object = doc.get_object();
+    simdjson::ondemand::value val = object["key"];
+    simdjson::ondemand::json_type type = val.type();
+    // type == simdjson::ondemand::json_type::unknown
+    try {
+      double num = val.get_double();
+    } catch (const simdjson::simdjson_error& e) {
+      // e == simdjson::error_code::INCORRECT_TYPE
+      std::string_view str = val.raw_json_token();
+      // str == "NaN"
+    }
+```
+
+The NaN is not supported in JSON. However, in the On-Demand API, you can check
+the string corresponding to the JSON token and determine how to handle it.
+
+### Raw JSON string for objects and arrays
 
 If your value is an array or an object, `raw_json_token()` returns effectively a single
 character (`[`) or (`}`) which is not very useful. For arrays and objects, we have another

@@ -1057,7 +1057,7 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
     default:
-      return TAPE_ERROR;
+      return json_type::unknown;
   }
 }
 

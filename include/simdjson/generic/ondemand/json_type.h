@@ -15,6 +15,7 @@ namespace ondemand {
  * The type of a JSON value.
  */
 enum class json_type {
+    unknown=0,
     // Start at 1 to catch uninitialized / default values more easily
     array=1, ///< A JSON array   ( [ 1, 2, 3 ... ] )
     object,  ///< A JSON object  ( { "a": 1, "b" 2, ... } )
