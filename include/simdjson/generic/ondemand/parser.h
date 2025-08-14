@@ -267,8 +267,6 @@ public:
   inline simdjson_result<document_stream> iterate_many(std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
-  inline simdjson_result<document_stream> iterate_many(padded_string_view s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
 
