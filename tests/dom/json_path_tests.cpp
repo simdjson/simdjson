@@ -294,6 +294,158 @@ bool json_path_invalidation() {
   }
   TEST_SUCCEED();
 }
+
+bool json_path_with_wildcard() {
+  TEST_START();
+
+  simdjson::padded_string json_string = R"(
+  {
+    "firstName": "John",
+    "lastName" : "doe",
+    "age"      : 26,
+    "address"  : {
+      "streetAddress": "naist street",
+      "city"         : "Nara",
+      "postalCode"   : "630-0192"
+    },
+    "phoneNumbers": [
+      {
+        "type"  : "iPhone",
+        "numbers": [
+          "0123-4567-8888",
+          "0123-4567-8788",
+          "0123-4567-8887"
+        ]
+      },
+      {
+        "type"  : "home",
+        "numbers": [
+          "0123-4567-8910",
+          "0123-4267-8910",
+          "0103-4567-8910"
+        ]
+      },
+      { },
+      {
+        "type": "office",
+        "numbers": [ ]
+      }
+    ],
+    "empty_object": { },
+    "empty_array": [ ]
+  })"_padded;
+
+  dom::parser parser;
+  dom::element parsed_json;
+  ASSERT_SUCCESS(parser.parse(json_string).get(parsed_json));
+  std::vector<dom::element> values;
+
+
+  std::string_view string_value;
+  std::uint64_t num_value;
+  dom::object obj;
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("1").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("2").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("a").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$2").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$a").error(), INVALID_JSON_POINTER);
+  // $.*
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.*").get(values));
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $[*]
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$[*]").get(values));
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "John");
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, "doe");
+
+  ASSERT_SUCCESS(values[2].get(num_value));
+  ASSERT_EQUAL(num_value, 26);
+
+  ASSERT_SUCCESS(values[3].get(obj));
+  ASSERT_SUCCESS(obj["streetAddress"].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  ASSERT_SUCCESS(obj["city"].get(string_value));
+  ASSERT_EQUAL(string_value, "Nara");
+
+  // $.address.*
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.address.*").get(values));
+
+  std::vector<std::string> expected = {"naist street", "Nara", "630-0192"};
+  for (int i = 0; i < 3; i++) {
+    ASSERT_SUCCESS(values[i].get(string_value));
+    ASSERT_EQUAL(string_value, expected[i]);
+  }
+
+  // $.*.streetAddress
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.*.streetAddress").get(values));
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, "naist street");
+
+  // $.phoneNumbers[*].numbers[*]
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values));
+
+  std::vector<std::string> expected_numbers = {
+    "0123-4567-8888",
+    "0123-4567-8788",
+    "0123-4567-8887",
+    "0123-4567-8910",
+    "0123-4267-8910",
+    "0103-4567-8910"
+  };
+
+  for (int i = 0; i < 6; i++) {
+    ASSERT_SUCCESS(values[i].get(string_value));
+    ASSERT_EQUAL(string_value, expected_numbers[i]);
+  }
+
+  // $.phoneNumbers[*].numbers[1]
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[1]").get(values));
+
+  ASSERT_SUCCESS(values[0].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[1]);
+
+  ASSERT_SUCCESS(values[1].get(string_value));
+  ASSERT_EQUAL(string_value, expected_numbers[4]);
+
+  // $.empty_object.*
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.empty_object.*").get(values));
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.empty_array.*
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.empty_array.*").get(values));
+  ASSERT_EQUAL(values.size(), 0);
+
+  // $.phoneNumbers.*.numbers[3]
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers.*.numbers[3]").get(values));
+
+  ASSERT_EQUAL(values.size(), 0);
+
+  TEST_SUCCEED();
+}
+
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
 #if SIMDJSON_EXCEPTIONS
@@ -316,7 +468,7 @@ bool modern_support() {
 }
 
 int main() {
-  if (true && demo() && modern_support() &&
+  if (true && json_path_with_wildcard() && demo() && modern_support() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&

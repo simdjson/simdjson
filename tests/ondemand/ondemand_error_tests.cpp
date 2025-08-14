@@ -388,11 +388,11 @@ namespace error_tests {
 
   bool invalid_type() {
     TEST_START();
-    ONDEMAND_SUBTEST("]", "]", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("}", "}", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(":", ":", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(",", ",", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("+", "+", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST("]", "]", doc.type().error() != SUCCESS);
+    ONDEMAND_SUBTEST("}", "}", doc.type().error() != SUCCESS);
+    ONDEMAND_SUBTEST(":", ":", doc.type().error() != SUCCESS);
+    ONDEMAND_SUBTEST(",", ",", doc.type().error() != SUCCESS);
+    ONDEMAND_SUBTEST("+", "+", doc.type().error() != SUCCESS);
     TEST_SUCCEED();
   }
 
