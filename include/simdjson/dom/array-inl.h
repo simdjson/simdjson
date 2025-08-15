@@ -193,7 +193,7 @@ inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::s
         get_values(child_values);
       } else {
         element pointer_result;
-        std::string json_pointer = "/" + std::string(key);
+        std::string json_pointer = std::string("/") + std::string(key);
         auto error = at_pointer(json_pointer).get(pointer_result);
 
         if (!error) {

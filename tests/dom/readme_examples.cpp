@@ -222,6 +222,9 @@ namespace ondemand_treewalk {
         cout << "null";
       }
       break;
+    case ondemand::json_type::unknown:
+      cout << "unknown"; // indicates an error
+      break;
     }
   }
 

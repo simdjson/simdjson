@@ -58,7 +58,7 @@ jobs:
       - name: Configure Find Tests
         run: |
           cd tests/installation_tests/find && \
-          cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination -B build
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../destination -B build
 
       - name: Compile Find Tests
         run: |

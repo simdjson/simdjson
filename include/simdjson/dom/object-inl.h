@@ -213,7 +213,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
         get_values(child_values);
       } else {
         element pointer_result;
-        auto error = at_pointer("/" + std::string(key)).get(pointer_result);
+        auto error = at_pointer(std::string("/") + std::string(key)).get(pointer_result);
 
         if (!error) {
           child_values.emplace_back(pointer_result);
