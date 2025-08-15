@@ -303,13 +303,15 @@ bool test_to_adaptor_with_single_value() {
   if (obj_result.error()) {
     return false;
   }
-  simdjson::ondemand::object obj = std::move(obj_result.value());
+/*  simdjson::ondemand::object obj = std::move(obj_result.value());
 
+  // We deliberately omit this part because simdjson::to has been removed.
   auto year_val = obj["year"];
   int64_t year = simdjson::to<int64_t>(year_val);
   if (year != 2018) {
     return false;
   }
+*/
 
   TEST_SUCCEED();
 }
