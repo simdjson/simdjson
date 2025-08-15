@@ -1,12 +1,12 @@
 
 #ifndef SIMDJSON_CONVERT_H
 #define SIMDJSON_CONVERT_H
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
 
 #include "simdjson/ondemand.h"
 #include <optional>
 
-#include "simdjson/convert-inl.h"
+#if SIMDJSON_SUPPORTS_DESERIALIZATION
+
 
 namespace simdjson {
 namespace convert {
@@ -77,6 +77,8 @@ struct to_adaptor {
 } // namespace convert
 
 /**
+ * The simdjson::from instance is EXPERIMENTAL AND SUBJECT TO CHANGES.
+ *
  * The `from` instance is a utility adaptor for parsing JSON strings into objects.
  * It provides a convenient way to convert JSON data into C++ objects using the `auto_parser`.
  *
