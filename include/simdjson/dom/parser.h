@@ -102,8 +102,8 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> load(const std::string &path) & noexcept;
-  inline simdjson_result<element> load(const std::string &path) &&  = delete ;
+  inline simdjson_result<element> load(std::string_view path) & noexcept;
+  inline simdjson_result<element> load(std::string_view path) &&  = delete ;
 
   /**
    * Load a JSON document from a file into a provide document instance and return a temporary reference to it.
@@ -148,8 +148,8 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> load_into_document(document& doc, const std::string &path) & noexcept;
-  inline simdjson_result<element> load_into_document(document& doc, const std::string &path) && =delete;
+  inline simdjson_result<element> load_into_document(document& doc, std::string_view path) & noexcept;
+  inline simdjson_result<element> load_into_document(document& doc, std::string_view path) && =delete;
 
   /**
    * Parse a JSON document and return a temporary reference to it.
@@ -386,7 +386,7 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<document_stream> load_many(const std::string &path, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> load_many(std::string_view path, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -657,7 +657,7 @@ private:
   inline error_code ensure_capacity(document& doc, size_t desired_capacity) noexcept;
 
   /** Read the file into loaded_bytes */
-  inline simdjson_result<size_t> read_file(const std::string &path) noexcept;
+  inline simdjson_result<size_t> read_file(std::string_view path) noexcept;
 
   friend class parser::Iterator;
   friend class document_stream;
