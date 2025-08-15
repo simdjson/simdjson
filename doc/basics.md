@@ -5,47 +5,47 @@ An overview of what you need to know to use simdjson to parse JSON documents, wi
 [Our documentation regarding the generation (serialization) of JSON documents is in a
 separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
 
-- [The Basics](#the-basics)
-  * [Requirements](#requirements)
-  * [Including simdjson](#including-simdjson)
-  * [Using simdjson with package managers](#using-simdjson-with-package-managers)
-  * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
-  * [Versions](#versions)
-  * [The basics: loading and parsing JSON documents](#the-basics--loading-and-parsing-json-documents)
-  * [Documents are iterators](#documents-are-iterators)
-    + [Parser, document and JSON scope](#parser--document-and-json-scope)
-  * [string_view](#string-view)
-  * [Avoiding pitfalls: enable development checks](#avoiding-pitfalls--enable-development-checks)
-  * [Using the parsed JSON](#using-the-parsed-json)
-    + [Using the parsed JSON: additional examples](#using-the-parsed-json--additional-examples)
-  * [Adding support for custom types](#adding-support-for-custom-types)
-    + [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize--simdjson--ondemand--value--get--to-get-custom-types--pre-c--20-)
-    + [2. Use `tag_invoke` for custom types (C++20)](#2-use--tag-invoke--for-custom-types--c--20-)
-    + [3. Using static reflection (C++26)](#3-using-static-reflection--c--26-)
-  * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
-  * [UTF-8 validation (alone)](#utf-8-validation--alone-)
-  * [JSON Pointer](#json-pointer)
-  * [JSONPath](#jsonpath)
-  * [Error handling](#error-handling)
-    + [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
-    + [Disabling exceptions](#disabling-exceptions)
-    + [Exceptions](#exceptions)
-    + [Current location in document](#current-location-in-document)
-    + [Checking for trailing content](#checking-for-trailing-content)
-  * [Rewinding](#rewinding)
-  * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json--ndjson--and-json-lines)
-  * [Parsing numbers inside strings](#parsing-numbers-inside-strings)
-  * [Dynamic Number Types](#dynamic-number-types)
-  * [Raw strings from keys](#raw-strings-from-keys)
-  * [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
-  * [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
-  * [Thread safety](#thread-safety)
-  * [Standard compliance](#standard-compliance)
-  * [Backwards compatibility](#backwards-compatibility)
-  * [Examples](#examples)
-  * [Performance tips](#performance-tips)
-  * [Further reading](#further-reading)
-
+- [Requirements](#requirements)
+- [Including simdjson](#including-simdjson)
+- [Using simdjson with package managers](#using-simdjson-with-package-managers)
+- [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
+- [Versions](#versions)
+- [The basics: loading and parsing JSON documents](#the-basics-loading-and-parsing-json-documents)
+- [Documents are iterators](#documents-are-iterators)
+  * [Parser, document and JSON scope](#parser-document-and-json-scope)
+- [string_view](#string_view)
+- [Avoiding pitfalls: enable development checks](#avoiding-pitfalls-enable-development-checks)
+- [Using the parsed JSON](#using-the-parsed-json)
+  * [Using the parsed JSON: additional examples](#using-the-parsed-json-additional-examples)
+- [Adding support for custom types](#adding-support-for-custom-types)
+  * [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize-simdjsonondemandvalueget-to-get-custom-types-pre-c20)
+  * [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
+  * [3. Using static reflection (C++26)](#3-using-static-reflection-c26)
+  * [The simdjson::from shortcut (experimental, C++20)](#the-simdjsonfrom-shortcut-experimental-c20)
+- [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
+- [UTF-8 validation (alone)](#utf-8-validation-alone)
+- [JSON Pointer](#json-pointer)
+- [JSONPath](#jsonpath)
+- [Error handling](#error-handling)
+  * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
+  * [Disabling exceptions](#disabling-exceptions)
+  * [Exceptions](#exceptions)
+  * [Current location in document](#current-location-in-document)
+  * [Checking for trailing content](#checking-for-trailing-content)
+- [Rewinding](#rewinding)
+- [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
+- [Parsing numbers inside strings](#parsing-numbers-inside-strings)
+- [Dynamic Number Types](#dynamic-number-types)
+- [Raw strings from keys](#raw-strings-from-keys)
+- [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
+  * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
+- [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
+- [Thread safety](#thread-safety)
+- [Standard compliance](#standard-compliance)
+- [Backwards compatibility](#backwards-compatibility)
+- [Examples](#examples)
+- [Performance tips](#performance-tips)
+- [Further reading](#further-reading)
 
 Requirements
 ------------------
@@ -1362,27 +1362,6 @@ that are not made by Toyota.
 
 
 
-For even more convenience, you can do it directly without a document instance like so:
-
-```cpp
-Car car = simdjson::from(json);
-```
-
-You can also use the `simdjson::from` syntax to iterate over an array.
-
-```cpp
-for(auto val : simdjson::from(json).array()) {
-  Car c = val.get<Car>(); // ...
-}
-```
-
-Standard STL types are supported:
-
-
-```cpp
-std::map<std::string, std::string> obj =
-       simdjson::from(R"({"key": "value"})"_padded);
-```
 
 ### 3. Using static reflection (C++26)
 
@@ -1405,7 +1384,17 @@ simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json));
 Car c = doc.get<Car>();
 ```
 
-Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
+
+You can also automatically serialize the `Car` instance to a JSON string, see
+our [Builder documentation](builder.md).
+
+
+
+### The simdjson::from shortcut (experimental, C++20)
+
+
+For even more convenience, you can parse a JSON document directly to a supported
+type without a document instance like so:
 
 ```cpp
 Car car = simdjson::from(json);
@@ -1419,9 +1408,16 @@ for(auto val : simdjson::from(json).array()) {
 }
 ```
 
-You can also automatically serialize the `Car` instance to a JSON string, see
-our [Builder documentation](builder.md).
+Standard STL types are supported:
 
+
+```cpp
+std::map<std::string, std::string> obj =
+       simdjson::from(R"({"key": "value"})"_padded);
+```
+
+
+The `simdjson::from` construction is EXPERIMENTAL and subject to changes.
 
 Minifying JSON strings without parsing
 ----------------------
