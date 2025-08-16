@@ -28,16 +28,46 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
   return error;
 }
 
+#if !__cpp_concepts
+// SFINAE helpers for C++11/14/17
+template <typename Res, typename Out>
+auto try_get(int) -> decltype(std::declval<Res&>().get(std::declval<Out&>()), std::true_type{});
+template <typename, typename>
+std::false_type try_get(...);
+
+template <typename Res, typename Out>
+struct has_get : decltype(try_get<Res, Out>(0)) {};
+
+// If get(out) is available
+template <typename Res, typename Out>
+typename std::enable_if<has_get<Res, Out>::value, void>::type
+call_get_or_assign(Res& res, Out& out) {
+  res.get(out);
+}
+
+// If get(out) is not available
+template <typename Res, typename Out>
+typename std::enable_if<!has_get<Res, Out>::value, void>::type
+call_get_or_assign(Res& res, Out& out) {
+  out = std::forward<Res>(res).value_unsafe();
+}
+#endif
 template<typename T> template <typename OutT> simdjson_inline simdjson_result<T>& implementation_simdjson_result_base<T>::operator>>(OutT &out) {
   auto& self = static_cast<simdjson_result<T>&>(*this);
   if (error()) { return self; } // ignore errors, don't even throw
+#if __cpp_concepts
   if constexpr (requires (simdjson_result<T>& res) {res.get(out);}) {
     self.get(out);
   } else {
-    out = std::forward<implementation_simdjson_result_base>(*this).first;
+    out = std::forward<implementation_simdjson_result_base<T>>(*this).first;
   }
+#else
+  // C++11/14/17 fallback: use SFINAE to detect get(out)
+  call_get_or_assign(self, out);
+#endif
   return self;
 }
+
 
 template <typename T> simdjson_inline simdjson_result<T>& implementation_simdjson_result_base<T>::operator>>(error_code &out) noexcept {
   auto& self = static_cast<simdjson_result<T>&>(*this);
