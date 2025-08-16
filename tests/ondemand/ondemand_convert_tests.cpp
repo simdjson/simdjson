@@ -19,7 +19,7 @@ struct Car {
 
   friend error_code tag_invoke(simdjson::deserialize_tag, auto &val, Car &car) {
     simdjson::ondemand::object obj;
-    error_code error;
+    error_code error{};
     val.get_object() >> obj >> error;
     if (error) {
       return error;
