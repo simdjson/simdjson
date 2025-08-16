@@ -28,6 +28,23 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
   return error;
 }
 
+template<typename T> template <typename OutT> simdjson_inline simdjson_result<T>& implementation_simdjson_result_base<T>::operator>>(OutT &out) {
+  auto& self = static_cast<simdjson_result<T>&>(*this);
+  if (error()) { return self; } // ignore errors, don't even throw
+  if constexpr (requires (simdjson_result<T>& res) {res.get(out);}) {
+    self.get(out);
+  } else {
+    out = std::forward<implementation_simdjson_result_base>(*this).first;
+  }
+  return self;
+}
+
+template <typename T> simdjson_inline simdjson_result<T>& implementation_simdjson_result_base<T>::operator>>(error_code &out) noexcept {
+  auto& self = static_cast<simdjson_result<T>&>(*this);
+  if (error()) { out = error(); }
+  return self;
+}
+
 template<typename T>
 simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;

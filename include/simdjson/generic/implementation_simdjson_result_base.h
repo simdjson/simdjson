@@ -69,6 +69,10 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code get(T &value) && noexcept;
 
+
+  template<typename OutT> simdjson_inline simdjson_result<T>& operator>>(OutT &out);
+  simdjson_inline simdjson_result<T>& operator>>(error_code&) noexcept;
+
   /**
    * The error.
    */
