@@ -203,12 +203,42 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
   /**
    * Get the result value. This function is safe if and only
    * the error() method returns a value that evaluates to false.
+   * We discourage the use of value_unsafe().
+   *
+   * The recommended pattern is:
+   *
+   * T value; // where T is the type
+   * auto error = result.get(value);
+   * if (error) {
+   *   // handle error
+   * }
+   *
+   * Or you may call 'value()' which will raise an exception
+   * in case of error:
+   *
+   * T value = result.value();
    */
   simdjson_inline const T& value_unsafe() const& noexcept;
 
   /**
    * Take the result value (move it). This function is safe if and only
    * the error() method returns a value that evaluates to false.
+   * We discourage the use of value_unsafe().
+   *
+   * The recommended pattern is:
+   *
+   * T value; // where T is the type
+   * auto error = result.get(value);
+   * if (error) {
+   *   // handle error, return, exit, abort
+   * } else {
+   *   // use value here.
+   * }
+   *
+   * Or you may call 'value()' which will raise an exception
+   * in case of error:
+   *
+   * T value = result.value();
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
