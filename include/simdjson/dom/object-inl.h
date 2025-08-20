@@ -375,13 +375,13 @@ inline key_value_pair::key_value_pair(std::string_view _key, element _value) noe
 
 } // namespace simdjson
 
-#if defined(__cpp_lib_ranges)
+#if SIMDJSON_SUPPORTS_RANGES
 static_assert(std::ranges::view<simdjson::dom::object>);
 static_assert(std::ranges::sized_range<simdjson::dom::object>);
 #if SIMDJSON_EXCEPTIONS
 static_assert(std::ranges::view<simdjson::simdjson_result<simdjson::dom::object>>);
 static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::object>>);
 #endif // SIMDJSON_EXCEPTIONS
-#endif // defined(__cpp_lib_ranges)
+#endif // SIMDJSON_SUPPORTS_RANGES
 
 #endif // SIMDJSON_OBJECT_INL_H

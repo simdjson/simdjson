@@ -10,10 +10,10 @@
 
 using namespace simdjson;
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 
 int main(void) {
-  printf("This test is only relevant when SIMDJSON_SUPPORTS_DESERIALIZATION is true (C++20)\n");
+  printf("This test is only relevant when SIMDJSON_SUPPORTS_CONCEPTS is true (C++20)\n");
   return EXIT_SUCCESS;
 }
 #else
@@ -370,4 +370,4 @@ bool run() { return car_deserialize_with_map()
 int main(int argc, char *argv[]) {
   return test_main(argc, argv, car_error_tests::run);
 }
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS

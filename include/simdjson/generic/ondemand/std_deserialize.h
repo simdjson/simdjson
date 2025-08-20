@@ -1,4 +1,4 @@
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 
 #ifndef SIMDJSON_ONDEMAND_DESERIALIZE_H
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -582,4 +582,4 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int> &out) noe
 } // namespace simdjson
 
 #endif // SIMDJSON_ONDEMAND_DESERIALIZE_H
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS

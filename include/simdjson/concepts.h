@@ -1,6 +1,6 @@
 #ifndef SIMDJSON_CONCEPTS_H
 #define SIMDJSON_CONCEPTS_H
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 
 #include <concepts>
 #include <type_traits>
@@ -32,7 +32,9 @@ SIMDJSON_IMPL_CONCEPT(op_append, operator+=)
 #undef SIMDJSON_IMPL_CONCEPT
 } // namespace details
 
-
+template <typename T>
+concept is_pair = requires { typename T::first_type; typename T::second_type; } &&
+                  std::same_as<T, std::pair<typename T::first_type, typename T::second_type>>;
 template <typename T>
 concept string_view_like = std::is_convertible_v<T, std::string_view> &&
                            !std::is_convertible_v<T, const char*>;
@@ -126,5 +128,5 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 
 } // namespace concepts
 } // namespace simdjson
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONCEPTS_H

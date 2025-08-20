@@ -3,7 +3,7 @@
 #define SIMDJSON_CONVERT_INL_H
 
 #include "simdjson/convert.h"
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 namespace simdjson {
 namespace convert {
 namespace internal {
@@ -119,5 +119,5 @@ inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_vi
 } // namespace internal
 } // namespace convert
 } // namespace simdjson
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONVERT_INL_H

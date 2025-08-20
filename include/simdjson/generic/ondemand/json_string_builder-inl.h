@@ -509,6 +509,70 @@ simdjson_inline void string_builder::append_raw(const char *str,
     position += len;
   }
 }
+#if SIMDJSON_SUPPORTS_CONCEPTS
+// Support for optional types (std::optional, etc.)
+template <concepts::optional_type T>
+simdjson_inline void string_builder::append(const T &opt) {
+  if (opt) {
+    append(*opt);
+  } else {
+    append_null();
+  }
+}
+template <typename T>
+requires(std::is_convertible<T, std::string_view>::value ||
+std::is_same<T, const char*>::value )
+simdjson_inline void string_builder::append(const T &value) {
+  escape_and_append_with_quotes(value);
+}
+#endif
+
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  // Support for range-based appending (std::ranges::view, etc.)
+template <std::ranges::range R>
+requires (!std::is_convertible<R, std::string_view>::value)
+simdjson_inline void string_builder::append(const R &range) noexcept {
+  auto it = std::ranges::begin(range);
+  auto end = std::ranges::end(range);
+  if constexpr (concepts::is_pair<typename R::value_type>) {
+    start_object();
+
+    if (it == end) {
+      end_object();
+      return; // Handle empty range
+    }
+    // Append first item without leading comma
+    append_key_value(it->first, it->second);
+    ++it;
+
+    // Append remaining items with preceding commas
+    for (; it != end; ++it) {
+        append_comma();
+        append_key_value(it->first, it->second);
+    }
+    end_object();
+  } else {
+    start_array();
+    if (it == end) {
+      end_array();
+      return; // Handle empty range
+    }
+
+    // Append first item without leading comma
+    append(*it);
+    ++it;
+
+    // Append remaining items with preceding commas
+    for (; it != end; ++it) {
+        append_comma();
+        append(*it);
+    }
+    end_array();
+
+  }
+}
+
+#endif
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline string_builder::operator std::string() const noexcept(false) {
@@ -584,13 +648,6 @@ simdjson_inline void string_builder::append_colon()  noexcept {
 
 template<typename key_type, typename value_type>
 simdjson_inline void string_builder::append_key_value(key_type key, value_type value) noexcept {
-  static_assert(
-    std::is_arithmetic<value_type>::value ||
-    std::is_same<value_type, char>::value ||
-    std::is_same<value_type, const char*>::value ||
-    std::is_convertible<value_type, std::string_view>::value ||
-    std::is_same<value_type, std::nullptr_t>::value,
-    "Unsupported value type");
   static_assert(
     std::is_same<key_type, const char*>::value ||
     std::is_convertible<key_type, std::string_view>::value,

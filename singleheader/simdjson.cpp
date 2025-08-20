@@ -1,4 +1,4 @@
-/* auto-generated on 2025-08-12 19:38:50 -0400. version 4.0.0 Do not edit! */
+/* auto-generated on 2025-08-19 16:10:38 -0400. version 4.0.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -108,24 +108,38 @@
 #endif
 #endif
 
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L
+#include <ranges>
+#define SIMDJSON_SUPPORTS_RANGES 1
+#else
+#define SIMDJSON_SUPPORTS_RANGES 0
+#endif
 
 #if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #if __cpp_concepts >= 201907L
 #include <utility>
+#define SIMDJSON_SUPPORTS_CONCEPTS 1
+#else
+#define SIMDJSON_SUPPORTS_CONCEPTS 0
+#endif
+#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+#define SIMDJSON_SUPPORTS_CONCEPTS 0
+#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
+// copy SIMDJSON_SUPPORTS_CONCEPTS to SIMDJSON_SUPPORTS_DESERIALIZATION.
+#if SIMDJSON_SUPPORTS_CONCEPTS
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 1
 #else
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif
-#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
-#define SIMDJSON_SUPPORTS_DESERIALIZATION 0
-#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
 
 #if !defined(SIMDJSON_CONSTEVAL)
-#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #define SIMDJSON_CONSTEVAL 1
 #else
 #define SIMDJSON_CONSTEVAL 0
-#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // !defined(SIMDJSON_CONSTEVAL)
 
 #endif // SIMDJSON_COMPILER_CHECK_H
@@ -2655,12 +2669,42 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
   /**
    * Get the result value. This function is safe if and only
    * the error() method returns a value that evaluates to false.
+   * We discourage the use of value_unsafe().
+   *
+   * The recommended pattern is:
+   *
+   * T value; // where T is the type
+   * auto error = result.get(value);
+   * if (error) {
+   *   // handle error
+   * }
+   *
+   * Or you may call 'value()' which will raise an exception
+   * in case of error:
+   *
+   * T value = result.value();
    */
   simdjson_inline const T& value_unsafe() const& noexcept;
 
   /**
    * Take the result value (move it). This function is safe if and only
    * the error() method returns a value that evaluates to false.
+   * We discourage the use of value_unsafe().
+   *
+   * The recommended pattern is:
+   *
+   * T value; // where T is the type
+   * auto error = result.get(value);
+   * if (error) {
+   *   // handle error, return, exit, abort
+   * } else {
+   *   // use value here.
+   * }
+   *
+   * Or you may call 'value()' which will raise an exception
+   * in case of error:
+   *
+   * T value = result.value();
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
@@ -2713,9 +2757,9 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
   simdjson_warn_unused simdjson_inline error_code get(std::string &value) && noexcept
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
   requires (!std::is_same_v<T, std::string>)
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
   ;
   /**
    * The error.
@@ -2794,7 +2838,7 @@ inline const std::string error_message(int error) noexcept;
 /* begin file simdjson/concepts.h */
 #ifndef SIMDJSON_CONCEPTS_H
 #define SIMDJSON_CONCEPTS_H
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 
 #include <concepts>
 #include <type_traits>
@@ -2826,7 +2870,9 @@ SIMDJSON_IMPL_CONCEPT(op_append, operator+=)
 #undef SIMDJSON_IMPL_CONCEPT
 } // namespace details
 
-
+template <typename T>
+concept is_pair = requires { typename T::first_type; typename T::second_type; } &&
+                  std::same_as<T, std::pair<typename T::first_type, typename T::second_type>>;
 template <typename T>
 concept string_view_like = std::is_convertible_v<T, std::string_view> &&
                            !std::is_convertible_v<T, const char*>;
@@ -2920,7 +2966,7 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 
 } // namespace concepts
 } // namespace simdjson
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONCEPTS_H
 /* end file simdjson/concepts.h */
 
@@ -4718,9 +4764,9 @@ simdjson_warn_unused simdjson_inline error_code simdjson_result<T>::get(T &value
 template<typename T>
 simdjson_warn_unused simdjson_inline error_code
 simdjson_result<T>::get(std::string &value) && noexcept
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 requires (!std::is_same_v<T, std::string>)
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 {
   // SFINAE : n'active que pour T = std::string_view
   static_assert(std::is_same<T, std::string_view>::value, "simdjson_result<T>::get(std::string&) n'est disponible que pour T = std::string_view");

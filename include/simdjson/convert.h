@@ -5,7 +5,7 @@
 #include "simdjson/ondemand.h"
 #include <optional>
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 
 
 namespace simdjson {
@@ -107,5 +107,5 @@ static constexpr convert::internal::to_adaptor<> from{};
 
 } // namespace simdjson
 
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONVERT_H

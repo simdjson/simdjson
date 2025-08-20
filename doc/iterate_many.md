@@ -309,7 +309,7 @@ The first argument is usually a tag type (often an empty struct) that uniquely i
 
 
 You can deserialize you own data structures conveniently if your system supports C++20.
-When it is the case, the macro `SIMDJSON_SUPPORTS_DESERIALIZATION` will be set to 1 by
+When it is the case, the macro `SIMDJSON_SUPPORTS_CONCEPTS` will be set to 1 by
 the simdjson library.
 
 Consider a custom class `Car`:

@@ -135,9 +135,9 @@ simdjson_warn_unused simdjson_inline error_code simdjson_result<T>::get(T &value
 template<typename T>
 simdjson_warn_unused simdjson_inline error_code
 simdjson_result<T>::get(std::string &value) && noexcept
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 requires (!std::is_same_v<T, std::string>)
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 {
   // SFINAE : n'active que pour T = std::string_view
   static_assert(std::is_same<T, std::string_view>::value, "simdjson_result<T>::get(std::string&) n'est disponible que pour T = std::string_view");

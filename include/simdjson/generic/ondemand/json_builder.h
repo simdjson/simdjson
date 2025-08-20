@@ -302,6 +302,7 @@ simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024)
   return SIMDJSON_IMPLEMENTATION::builder::to_json_string(z, initial_capacity);
 }
 } // namespace simdjson
+
 #endif // SIMDJSON_STATIC_REFLECTION
 
 #endif

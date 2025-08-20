@@ -10,7 +10,7 @@
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 struct Car {
   std::string make{};
   std::string model{};
@@ -185,8 +185,8 @@ bool to_bad_array() {
   TEST_SUCCEED();
 }
 
-#if SIMDJSON_SUPPORTS_RANGES
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+#if SIMDJSON_SUPPORTS_RANGES_FROM
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool to_array_shortcut() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -203,7 +203,7 @@ bool to_array_shortcut() {
   }
   TEST_SUCCEED();
 }
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool test_basic_adaptor() {
   TEST_START();
   int64_t sum_year = 0;
@@ -218,7 +218,7 @@ bool test_basic_adaptor() {
   TEST_SUCCEED();
 }
 
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool test_basic_adaptor_with_parser() {
   TEST_START();
   simdjson::ondemand::parser parser;
@@ -233,7 +233,7 @@ bool test_basic_adaptor_with_parser() {
   TEST_SUCCEED();
 }
 
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool test_no_errors() {
   TEST_START();
   int64_t sum_year = 0;
@@ -250,7 +250,7 @@ bool test_no_errors() {
   TEST_SUCCEED();
 }
 
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool to_clean_array() {
   TEST_START();
   int64_t sum_year = 0;
@@ -266,7 +266,7 @@ bool to_clean_array() {
   TEST_SUCCEED();
 }
 
-// currently not active (SIMDJSON_SUPPORTS_RANGES)
+// currently not active (SIMDJSON_SUPPORTS_RANGES_FROM)
 bool test_to_adaptor_basic() {
   TEST_START();
   // Test 1: Basic usage of to<T> with a value reference
@@ -286,7 +286,7 @@ bool test_to_adaptor_basic() {
   TEST_SUCCEED();
 }
 
-#endif // SIMDJSON_SUPPORTS_RANGES
+#endif // SIMDJSON_SUPPORTS_RANGES_FROM
 
 bool test_to_adaptor_with_single_value() {
   TEST_START();
@@ -340,16 +340,16 @@ bool test_to_vs_from_equivalence() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
       example_with_parser() &&
-#if SIMDJSON_SUPPORTS_RANGES
+#if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
       && test_to_adaptor_basic() && to_clean_array() && to_array_shortcut() &&
-#endif // SIMDJSON_SUPPORTS_RANGES
-#endif // SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_RANGES_FROM
+#endif // SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       true;
 }
 
