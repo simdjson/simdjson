@@ -885,13 +885,13 @@ type:
 
 We may do so by providing additional template definitions to the `ondemand::value` type.
 We may start by providing a definition for `std::vector<double>` as follows. Observe
-how we guard the code with `#if !SIMDJSON_SUPPORTS_DESERIALIZATION`: that is because the necessary code
+how we guard the code with `#if !SIMDJSON_SUPPORTS_CONCEPTS`: that is because the necessary code
 is automatically provided by simdjson if C++20 (and concepts) are available.
 See [Use `tag_invoke` for custom types](#2-use-tag_invoke-for-custom-types-c20) if you have
 C++20 support.
 
 ```c++
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // The code is unnecessary with C++20:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -947,7 +947,7 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -1048,7 +1048,7 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -1143,7 +1143,7 @@ The first argument is usually a tag type (often an empty struct) that uniquely i
 
 If your system supports C++20, we recommend that you adopt the `tag_invoke` approach
 instead to deserialize custom types. It may prove to be considerably simpler. When
-simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_DESERIALIZATION` macro
+simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_CONCEPTS` macro
 to 1, otherwise it is set to 0.
 
 Consider a custom class `Car`:

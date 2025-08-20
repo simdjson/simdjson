@@ -183,7 +183,7 @@ public:
    */
   template <typename T>
   simdjson_inline simdjson_result<T> get() &
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
     noexcept
@@ -206,7 +206,7 @@ public:
    */
   template<typename T>
   simdjson_inline simdjson_result<T> get() &&
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
     noexcept
@@ -229,13 +229,13 @@ public:
    */
   template<typename T>
   simdjson_inline error_code get(T &out) &
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
     noexcept
 #endif
   {
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     if constexpr (custom_deserializable<T, document>) {
         return deserialize(*this, out);
     } else {
@@ -247,7 +247,7 @@ public:
       static_cast<void>(out); // to get rid of unused errors
       return UNINITIALIZED;
     }
-#else // SIMDJSON_SUPPORTS_DESERIALIZATION
+#else // SIMDJSON_SUPPORTS_CONCEPTS
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -257,7 +257,7 @@ public:
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors
     return UNINITIALIZED;
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
   }
 
   /** @overload template<typename T> error_code get(T &out) & noexcept */
@@ -791,7 +791,7 @@ public:
   simdjson_inline simdjson_result<bool> is_null() noexcept;
   template <typename T>
   simdjson_inline simdjson_result<T> get() &
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
     noexcept
@@ -804,7 +804,7 @@ public:
   }
   template<typename T>
   simdjson_inline simdjson_result<T> get() &&
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
     noexcept
@@ -827,13 +827,13 @@ public:
    */
   template<typename T>
   simdjson_inline error_code get(T &out) &
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document_reference> : true)
 #else
     noexcept
 #endif
   {
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     if constexpr (custom_deserializable<T, document_reference>) {
         return deserialize(*this, out);
     } else {
@@ -845,7 +845,7 @@ public:
       static_cast<void>(out); // to get rid of unused errors
       return UNINITIALIZED;
     }
-#else // SIMDJSON_SUPPORTS_DESERIALIZATION
+#else // SIMDJSON_SUPPORTS_CONCEPTS
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -855,7 +855,7 @@ public:
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors
     return UNINITIALIZED;
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
   }
 
   /** @overload template<typename T> error_code get(T &out) & noexcept */

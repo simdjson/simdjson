@@ -132,7 +132,7 @@ public:
    */
   simdjson_inline simdjson_result<value> at(size_t index) noexcept;
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
   /**
    * Get this array as the given type.
    *
@@ -161,7 +161,7 @@ public:
     SIMDJSON_TRY(get<T>(out));
     return out;
   }
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 protected:
   /**
    * Go to the end of the array, no matter where you are right now.
@@ -240,7 +240,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
   // TODO: move this code into object-inl.h
 
   template<typename T>
@@ -261,7 +261,7 @@ public:
     }
     return SUCCESS;
   }
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 };
 
 } // namespace simdjson

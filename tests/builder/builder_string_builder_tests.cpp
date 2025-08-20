@@ -1,6 +1,8 @@
 #include "simdjson.h"
 #include "test_builder.h"
 #include <string_view>
+#include <string>
+#include <map>
 
 using namespace simdjson;
 
@@ -307,6 +309,7 @@ namespace builder_tests {
         builder.end_object();
     }
 
+
     bool car_test() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -318,6 +321,120 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
         TEST_SUCCEED();
     }
+    #if SIMDJSON_SUPPORTS_CONCEPTS
+    bool serialize_optional() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        std::optional<std::string> optional_string = "Hello, World!";
+        sb.append(optional_string);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "\"Hello, World!\"");
+        sb.clear();
+        std::optional<std::string> optional_string_null = std::nullopt;
+        sb.append(optional_string_null);
+        result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "null");
+        TEST_SUCCEED();
+    }
+    #endif
+
+    #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+    void serialize_car_simple(const Car& car, simdjson::builder::string_builder& builder) {
+        builder.start_object();
+        builder.append_key_value("make", car.make);
+        builder.append_comma();
+        builder.append_key_value("model", car.model);
+        builder.append_comma();
+        builder.append_key_value("year", car.year);
+        builder.append_comma();
+        builder.append_key_value("tire_pressure", car.tire_pressure);
+        builder.end_object();
+    }
+    bool car_test_simple() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        serialize_car(c, sb);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+
+    bool car_test_simple_complete() {
+        TEST_START();
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        simdjson::builder::string_builder sb;
+        sb.start_object();
+        sb.append_key_value("make", c.make);
+        sb.append_comma();
+        sb.append_key_value("model", c.model);
+        sb.append_comma();
+        sb.append_key_value("year", c.year);
+        sb.append_comma();
+        sb.append_key_value("tire_pressure", c.tire_pressure);
+        sb.end_object();
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+
+    bool map_test() {
+        TEST_START();
+        std::map<std::string,double> c = {{"key1", 1}, {"key2", 1}};
+        simdjson::builder::string_builder sb;
+        sb.append(c);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"key1\":1.0,\"key2\":1.0}");
+                std::string s;
+
+        ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+        ASSERT_EQUAL(s, "{\"key1\":1.0,\"key2\":1.0}");
+        TEST_SUCCEED();
+    }
+    bool double_double_test() {
+        TEST_START();
+        std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
+        simdjson::builder::string_builder sb;
+        sb.append(c);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "[[1.0,2.0],[3.0,4.0]]");
+        std::string s;
+        ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+        ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
+        TEST_SUCCEED();
+    }
+    #if SIMDJSON_EXCEPTIONS
+    bool car_test_simple_complete_exceptions() {
+        TEST_START();
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        simdjson::builder::string_builder sb;
+        sb.start_object();
+        sb.append_key_value("make", c.make);
+        sb.append_comma();
+        sb.append_key_value("model", c.model);
+        sb.append_comma();
+        sb.append_key_value("year", c.year);
+        sb.append_comma();
+        sb.append_key_value("tire_pressure", c.tire_pressure);
+        sb.end_object();
+        std::string_view p = sb.view();
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
+    #endif // SIMDJSON_EXCEPTIONS
+    #endif // SIMDJSONS_SUPPORT_RANGES
+
 
     #if SIMDJSON_EXCEPTIONS
     bool car_test_exception() {
@@ -339,6 +456,18 @@ namespace builder_tests {
     #if SIMDJSON_EXCEPTIONS
             car_test_exception() &&
             string_convertion_except() &&
+    #endif
+    #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+            map_test() &&
+            double_double_test() &&
+            car_test_simple() &&
+            car_test_simple_complete() &&
+        #if SIMDJSON_EXCEPTIONS
+            car_test_simple_complete_exceptions() &&
+        #endif
+    #endif
+    #if SIMDJSON_SUPPORTS_CONCEPTS
+           serialize_optional() &&
     #endif
             append_char() &&
             append_integer() &&

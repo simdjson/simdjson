@@ -290,13 +290,13 @@ inline bool array::iterator::operator>(const array::iterator& other) const noexc
 
 #include "simdjson/dom/element-inl.h"
 
-#if defined(__cpp_lib_ranges)
+#if SIMDJSON_SUPPORTS_RANGES
 static_assert(std::ranges::view<simdjson::dom::array>);
 static_assert(std::ranges::sized_range<simdjson::dom::array>);
 #if SIMDJSON_EXCEPTIONS
 static_assert(std::ranges::view<simdjson::simdjson_result<simdjson::dom::array>>);
 static_assert(std::ranges::sized_range<simdjson::simdjson_result<simdjson::dom::array>>);
 #endif // SIMDJSON_EXCEPTIONS
-#endif // defined(__cpp_lib_ranges)
+#endif // SIMDJSON_SUPPORTS_RANGES
 
 #endif // SIMDJSON_ARRAY_INL_H

@@ -27,7 +27,7 @@ std::ostream &operator<<(std::ostream &os, const Car &c) {
   return os;
 }
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>

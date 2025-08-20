@@ -297,9 +297,7 @@ public:
 
 } // namespace simdjson
 
-#if defined(__cpp_lib_ranges)
-#include <ranges>
-
+#if SIMDJSON_SUPPORTS_RANGES
 namespace std {
 namespace ranges {
 template<>
@@ -310,6 +308,6 @@ inline constexpr bool enable_view<simdjson::simdjson_result<simdjson::dom::objec
 #endif // SIMDJSON_EXCEPTIONS
 } // namespace ranges
 } // namespace std
-#endif // defined(__cpp_lib_ranges)
+#endif // SIMDJSON_SUPPORTS_RANGES
 
 #endif // SIMDJSON_DOM_OBJECT_H

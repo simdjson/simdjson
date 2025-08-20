@@ -70,7 +70,7 @@ void run_array_benchmarks() {
                          dummy = dummy + car.year;
                        }
                      }));
-#if SIMDJSON_SUPPORTS_RANGES
+#if SIMDJSON_SUPPORTS_RANGES_FROM
   // Benchmark simdjson::from() without parser (EXPERIMENTAL)
   pretty_print_array("simdjson::from<Car>() (experimental, no parser)",
                      json.size(), N, bench([&json, &dummy]() {
@@ -90,7 +90,7 @@ void run_array_benchmarks() {
                          dummy = dummy + car.year;
                        }
                      }));
-#endif // SIMDJSON_SUPPORTS_RANGES
+#endif // SIMDJSON_SUPPORTS_RANGES_FROM
 }
 
 void run_stream_benchmarks() {
