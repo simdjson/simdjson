@@ -236,7 +236,8 @@ simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024)
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
   std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
+  auto e = b.view().get(s);
+  if(e) { return e; }
   return std::string(s);
 }
 #endif

@@ -97,13 +97,12 @@ template <concepts::appendable_containers T, typename ValT>
   requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
-  /*static_assert(
+  static_assert(
       deserializable<value_type, ValT>,
-      "The specified type inside the container must itself be deserializable");*/
+      "The specified type inside the container must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<value_type>,
       "The specified type inside the container must default constructible.");
-
   SIMDJSON_IMPLEMENTATION::ondemand::array arr;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
     arr = val;

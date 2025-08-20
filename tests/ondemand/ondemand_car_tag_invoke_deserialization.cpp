@@ -192,6 +192,7 @@ bool vector_car_deserialize() {
 
 bool list_car_deserialize() {
   TEST_START();
+  static_assert(concepts::appendable_containers<std::list<Car>>, "std::list<Car> should be appendable");
   padded_string json =
       R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
        "tire_pressure": [ 40.1, 39.9 ] },
@@ -356,9 +357,9 @@ bool car_unique_ptr_deserialize() {
   TEST_SUCCEED();
 }
 
-bool run() { return car_deserialize_with_map()
+bool run() { return list_car_deserialize()
+                    && car_deserialize_with_map()
                     && car_deserialize_to_map()
-                    && list_car_deserialize()
                     && optional_car_deserialize()
                     && car_unique_ptr_deserialize()
                     && vector_car_deserialize()
