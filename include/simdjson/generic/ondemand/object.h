@@ -202,7 +202,7 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
   /**
    * Get this object as the given type.
    *
@@ -231,7 +231,7 @@ public:
     SIMDJSON_TRY(get<T>(out));
     return out;
   }
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 protected:
   /**
    * Go to the end of the object, no matter where you are right now.
@@ -279,7 +279,7 @@ public:
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;
   inline simdjson_result<std::string_view> raw_json() noexcept;
-  #if SIMDJSON_SUPPORTS_DESERIALIZATION
+  #if SIMDJSON_SUPPORTS_CONCEPTS
   // TODO: move this code into object-inl.h
 
   template<typename T>
@@ -300,7 +300,7 @@ public:
     }
     return SUCCESS;
   }
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 };
 
 } // namespace simdjson

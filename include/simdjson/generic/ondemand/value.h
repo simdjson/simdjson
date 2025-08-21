@@ -34,14 +34,14 @@ public:
    *
    * You may use get_double(), get_bool(), get_uint64(), get_int64(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
-   * When SIMDJSON_SUPPORTS_DESERIALIZATION is set, custom types are also supported.
+   * When SIMDJSON_SUPPORTS_CONCEPTS is set, custom types are also supported.
    *
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
   template <typename T>
   simdjson_inline simdjson_result<T> get()
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
@@ -58,7 +58,7 @@ public:
    * Get this value as the given type.
    *
    * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
-   * If the macro SIMDJSON_SUPPORTS_DESERIALIZATION is set, then custom types are also supported.
+   * If the macro SIMDJSON_SUPPORTS_CONCEPTS is set, then custom types are also supported.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
    * @returns INCORRECT_TYPE If the JSON value is not an object.
@@ -66,13 +66,13 @@ public:
    */
   template <typename T>
   simdjson_inline error_code get(T &out)
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
 #else
     noexcept
 #endif
  {
-  #if SIMDJSON_SUPPORTS_DESERIALIZATION
+  #if SIMDJSON_SUPPORTS_CONCEPTS
   if constexpr (custom_deserializable<T, value>) {
       return deserialize(*this, out);
   } else if constexpr (concepts::optional_type<T>) {
@@ -97,7 +97,7 @@ public:
     static_cast<void>(out); // to get rid of unused errors
     return UNINITIALIZED;
   }
-#else // SIMDJSON_SUPPORTS_DESERIALIZATION
+#else // SIMDJSON_SUPPORTS_CONCEPTS
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -817,7 +817,22 @@ public:
   simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](int) noexcept = delete;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
+   *
+   * Given a valid JSON document, the answer can be one of
+   * simdjson::ondemand::json_type::object,
+   * simdjson::ondemand::json_type::array,
+   * simdjson::ondemand::json_type::string,
+   * simdjson::ondemand::json_type::number,
+   * simdjson::ondemand::json_type::boolean,
+   * simdjson::ondemand::json_type::null.
+   *
+   * Starting with simdjson 4.0, this function will return simdjson::ondemand::json_type::unknown
+   * given a bad token.
+   * This allows you to identify a case such as {"key": NaN} and identify the NaN value.
+   * The simdjson::ondemand::json_type::unknown value should only happen with non-valid JSON.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just

@@ -385,16 +385,17 @@ namespace error_tests {
     }));
     TEST_SUCCEED();
   }
-
+#if SIMDJSON_EXCEPTIONS
   bool invalid_type() {
     TEST_START();
-    ONDEMAND_SUBTEST("]", "]", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("}", "}", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(":", ":", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(",", ",", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("+", "+", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST("]", "]", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("}", "}", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(":", ":", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(",", ",", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("+", "+", doc.type() == ondemand::json_type::unknown);
     TEST_SUCCEED();
   }
+#endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
     return
@@ -414,9 +415,9 @@ namespace error_tests {
            parser_max_capacity() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
-           invalid_type() &&
            simple_error_example() &&
 #if SIMDJSON_EXCEPTIONS
+           invalid_type() &&
            simple_error_example_except() &&
 #endif
            true;

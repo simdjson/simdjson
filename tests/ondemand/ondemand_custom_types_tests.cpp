@@ -6,7 +6,7 @@
 
 
 namespace custom_types_tests {
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 struct Car {
   std::string make{};
   std::string model{};
@@ -180,7 +180,7 @@ bool custom_no_except() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       custom_test() &&
       custom_uniqueptr_test() &&
       custom_no_except() &&

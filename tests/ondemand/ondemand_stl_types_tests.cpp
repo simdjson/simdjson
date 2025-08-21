@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <optional>
 
-#if SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_SUPPORTS_CONCEPTS
 class Array : public std::vector<float> {};
 static_assert(simdjson::concepts::appendable_containers<Array>, "Array must be appendable_containers");
 static_assert(!simdjson::require_custom_serialization<Array>);
@@ -34,10 +34,10 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
 } // namespace simdjson
 
 // require_custom_serialization
-#endif // SIMDJSON_SUPPORTS_DESERIALIZATION
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 namespace stl_types {
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 
 bool basic_general_madness() {
   TEST_START();
@@ -187,7 +187,7 @@ bool basic_general_madness_container() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_DESERIALIZATION
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&
       basic_general_madness_vector() &&
       basic_general_madness_list() &&

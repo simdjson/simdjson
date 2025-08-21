@@ -608,6 +608,9 @@ bool recursive_print_json(ondemand::value element) {
       cout << "null";
     }
     break;
+  case ondemand::json_type::unknown:
+    cout << "undefined";
+    break;
   }
   TEST_SUCCEED();
 }
@@ -695,6 +698,9 @@ bool recursive_print_json_breakline(ondemand::value element) {
     if(element.is_null()) {
       cout << "null";
     }
+    break;
+  case ondemand::json_type::unknown:
+    cout << "undefined";
     break;
   }
   TEST_SUCCEED();

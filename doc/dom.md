@@ -354,6 +354,74 @@ if(error) { /*won't happen*/ }
 ```
 
 
+## Using `at_path_with_wildcard` for JSONPath Queries
+
+The `at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.
+
+The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level.  You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the function returns an empty result. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield an empty set.
+
+### Example Usage
+
+Here is an example demonstrating the use of `at_path_with_wildcard`:
+
+```cpp
+simdjson::padded_string json_string = R"(
+{
+  "firstName": "John",
+  "lastName": "doe",
+  "age": 26,
+  "address": {
+    "streetAddress": "naist street",
+    "city": "Nara",
+    "postalCode": "630-0192"
+  },
+  "phoneNumbers": [
+    {
+      "type": "iPhone",
+      "numbers": ["0123-4567-8888", "0123-4567-8788"]
+    },
+    {
+      "type": "home",
+      "numbers": ["0123-4567-8910"]
+    }
+  ]
+})"_padded;
+
+dom::parser parser;
+dom::element parsed_json = parser.parse(json_string);
+std::vector<dom::element> values;
+
+// Fetch all fields in the address object
+auto error = parsed_json.at_path_with_wildcard("$.address.*").get(values);
+if(error) {
+  // do something
+}
+for (auto &value : values) {
+  std::string_view field;
+  error = value.get(field);
+  if(error) {
+    // do something
+  }
+  std::cout << field << std::endl;
+}
+
+// Fetch all phone numbers
+error = parsed_json.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
+if(error) {
+  // do something
+}
+for (auto &value : values) {
+  std::string_view number;
+  error = value.get(number);
+  if(error) {
+    // do something
+  }
+  std::cout << number << std::endl;
+}
+```
+
+This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.
+
 Error Handling
 --------------
 

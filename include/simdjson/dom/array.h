@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_DOM_ARRAY_H
 #define SIMDJSON_DOM_ARRAY_H
 
+#include <vector>
+
 #include "simdjson/dom/base.h"
 #include "simdjson/internal/tape_ref.h"
 
@@ -109,6 +111,17 @@ public:
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
   /**
+   * Recursive function which processes the json path of each child element
+   */
+  inline void process_json_path_of_child_elements(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) const noexcept;
+
+
+  /**
+   * Adds support for JSONPath expression with wildcards '*'
+   */
+  inline simdjson_result<std::vector<element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
+
+  /**
    * Get the value associated with the given JSONPath expression. We only support
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
@@ -142,6 +155,15 @@ public:
   inline simdjson_result<element> at(size_t index) const noexcept;
 
   /**
+   * Gets the values of items in an array element
+   * This function has linear-time complexity: the values are checked one by one.
+   *
+   * @return The child elements of an array
+   */
+
+  inline std::vector<element>& get_values(std::vector<element>& out) const noexcept;
+
+  /**
    * Implicitly convert object to element
    */
   inline operator element() const noexcept;
@@ -167,8 +189,11 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
+  inline void process_json_path_of_child_elements(std::vector<dom::element>::iterator& current, std::vector<dom::element>::iterator& end, const std::string_view& path_suffix, std::vector<dom::element>& accumulator) const noexcept;
+  inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
   inline simdjson_result<dom::element> at(size_t index) const noexcept;
+  inline std::vector<dom::element>& get_values(std::vector<dom::element>& out) const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);
@@ -181,9 +206,7 @@ public:
 
 } // namespace simdjson
 
-#if defined(__cpp_lib_ranges)
-#include <ranges>
-
+#if SIMDJSON_SUPPORTS_RANGES
 namespace std {
 namespace ranges {
 template<>
@@ -194,6 +217,6 @@ inline constexpr bool enable_view<simdjson::simdjson_result<simdjson::dom::array
 #endif // SIMDJSON_EXCEPTIONS
 } // namespace ranges
 } // namespace std
-#endif // defined(__cpp_lib_ranges)
+#endif // SIMDJSON_SUPPORTS_RANGES
 
 #endif // SIMDJSON_DOM_ARRAY_H

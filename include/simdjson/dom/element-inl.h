@@ -128,6 +128,12 @@ simdjson_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
   return at_pointer(json_pointer);
 }
+
+simdjson_inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::element>::at_path_with_wildcard(const std::string_view json_path) const noexcept {
+  if (error()) { return error(); }
+  return first.at_path_with_wildcard(json_path);
+}
+
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 [[deprecated("For standard compliance, use at_pointer instead, and prefix your pointers with a slash '/', see RFC6901 ")]]
 simdjson_inline simdjson_result<dom::element> simdjson_result<dom::element>::at(const std::string_view json_pointer) const noexcept {
@@ -418,6 +424,20 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
     }
   }
 }
+
+inline simdjson_result<std::vector<element>> element::at_path_with_wildcard(std::string_view json_path) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
+
+  switch (tape.tape_ref_type()) {
+    case internal::tape_type::START_OBJECT:
+      return object(tape).at_path_with_wildcard(json_path);
+    case internal::tape_type::START_ARRAY:
+      return array(tape).at_path_with_wildcard(json_path);
+    default:
+      return std::vector<element>{};
+  }
+}
+
 inline simdjson_result<element> element::at_path(std::string_view json_path) const noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }

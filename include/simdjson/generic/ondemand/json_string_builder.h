@@ -118,6 +118,23 @@ public:
    */
    template<typename key_type, typename value_type>
   simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  // Support for optional types (std::optional, etc.)
+  template <concepts::optional_type T>
+  simdjson_inline void append(const T &opt);
+
+  // Support for string-like types
+  template <typename T>
+  requires(std::is_convertible<T, std::string_view>::value ||
+  std::is_same<T, const char*>::value )
+  simdjson_inline void append(const T &value);
+#endif
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  // Support for range-based appending (std::ranges::view, etc.)
+  template <std::ranges::range R>
+requires (!std::is_convertible<R, std::string_view>::value)
+  simdjson_inline void append(const R &range) noexcept;
+#endif
   /**
    * Append the std::string_view directly, without escaping.
    * There is no UTF-8 validation.
@@ -210,6 +227,22 @@ private:
 
 }
 }
+
+
+#if !SIMDJSON_STATIC_REFLECTION
+// fallback implementation until we have static reflection
+template <class Z>
+simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  b.append(z);
+  std::string_view s;
+  auto e = b.view().get(s);
+  if(e) { return e; }
+  return std::string(s);
+}
+#endif
+
+
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_STRING_BUILDER_H

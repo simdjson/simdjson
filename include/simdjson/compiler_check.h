@@ -81,24 +81,38 @@
 #endif
 #endif
 
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 201911L
+#include <ranges>
+#define SIMDJSON_SUPPORTS_RANGES 1
+#else
+#define SIMDJSON_SUPPORTS_RANGES 0
+#endif
 
 #if defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
 #if __cpp_concepts >= 201907L
 #include <utility>
+#define SIMDJSON_SUPPORTS_CONCEPTS 1
+#else
+#define SIMDJSON_SUPPORTS_CONCEPTS 0
+#endif
+#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+#define SIMDJSON_SUPPORTS_CONCEPTS 0
+#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
+// copy SIMDJSON_SUPPORTS_CONCEPTS to SIMDJSON_SUPPORTS_DESERIALIZATION.
+#if SIMDJSON_SUPPORTS_CONCEPTS
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 1
 #else
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif
-#else // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
-#define SIMDJSON_SUPPORTS_DESERIALIZATION 0
-#endif // defined(__cpp_concepts) && !defined(SIMDJSON_CONCEPT_DISABLED)
+
 
 #if !defined(SIMDJSON_CONSTEVAL)
-#if defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #define SIMDJSON_CONSTEVAL 1
 #else
 #define SIMDJSON_CONSTEVAL 0
-#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // !defined(SIMDJSON_CONSTEVAL)
 
 #endif // SIMDJSON_COMPILER_CHECK_H

@@ -5,47 +5,47 @@ An overview of what you need to know to use simdjson to parse JSON documents, wi
 [Our documentation regarding the generation (serialization) of JSON documents is in a
 separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
 
-- [The Basics](#the-basics)
-  * [Requirements](#requirements)
-  * [Including simdjson](#including-simdjson)
-  * [Using simdjson with package managers](#using-simdjson-with-package-managers)
-  * [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
-  * [Versions](#versions)
-  * [The basics: loading and parsing JSON documents](#the-basics--loading-and-parsing-json-documents)
-  * [Documents are iterators](#documents-are-iterators)
-    + [Parser, document and JSON scope](#parser--document-and-json-scope)
-  * [string_view](#string-view)
-  * [Avoiding pitfalls: enable development checks](#avoiding-pitfalls--enable-development-checks)
-  * [Using the parsed JSON](#using-the-parsed-json)
-    + [Using the parsed JSON: additional examples](#using-the-parsed-json--additional-examples)
-  * [Adding support for custom types](#adding-support-for-custom-types)
-    + [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize--simdjson--ondemand--value--get--to-get-custom-types--pre-c--20-)
-    + [2. Use `tag_invoke` for custom types (C++20)](#2-use--tag-invoke--for-custom-types--c--20-)
-    + [3. Using static reflection (C++26)](#3-using-static-reflection--c--26-)
-  * [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
-  * [UTF-8 validation (alone)](#utf-8-validation--alone-)
-  * [JSON Pointer](#json-pointer)
-  * [JSONPath](#jsonpath)
-  * [Error handling](#error-handling)
-    + [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
-    + [Disabling exceptions](#disabling-exceptions)
-    + [Exceptions](#exceptions)
-    + [Current location in document](#current-location-in-document)
-    + [Checking for trailing content](#checking-for-trailing-content)
-  * [Rewinding](#rewinding)
-  * [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json--ndjson--and-json-lines)
-  * [Parsing numbers inside strings](#parsing-numbers-inside-strings)
-  * [Dynamic Number Types](#dynamic-number-types)
-  * [Raw strings from keys](#raw-strings-from-keys)
-  * [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
-  * [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
-  * [Thread safety](#thread-safety)
-  * [Standard compliance](#standard-compliance)
-  * [Backwards compatibility](#backwards-compatibility)
-  * [Examples](#examples)
-  * [Performance tips](#performance-tips)
-  * [Further reading](#further-reading)
-
+- [Requirements](#requirements)
+- [Including simdjson](#including-simdjson)
+- [Using simdjson with package managers](#using-simdjson-with-package-managers)
+- [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
+- [Versions](#versions)
+- [The basics: loading and parsing JSON documents](#the-basics-loading-and-parsing-json-documents)
+- [Documents are iterators](#documents-are-iterators)
+  * [Parser, document and JSON scope](#parser-document-and-json-scope)
+- [string_view](#string_view)
+- [Avoiding pitfalls: enable development checks](#avoiding-pitfalls-enable-development-checks)
+- [Using the parsed JSON](#using-the-parsed-json)
+  * [Using the parsed JSON: additional examples](#using-the-parsed-json-additional-examples)
+- [Adding support for custom types](#adding-support-for-custom-types)
+  * [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize-simdjsonondemandvalueget-to-get-custom-types-pre-c20)
+  * [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
+  * [3. Using static reflection (C++26)](#3-using-static-reflection-c26)
+  * [The simdjson::from shortcut (experimental, C++20)](#the-simdjsonfrom-shortcut-experimental-c20)
+- [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
+- [UTF-8 validation (alone)](#utf-8-validation-alone)
+- [JSON Pointer](#json-pointer)
+- [JSONPath](#jsonpath)
+- [Error handling](#error-handling)
+  * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
+  * [Disabling exceptions](#disabling-exceptions)
+  * [Exceptions](#exceptions)
+  * [Current location in document](#current-location-in-document)
+  * [Checking for trailing content](#checking-for-trailing-content)
+- [Rewinding](#rewinding)
+- [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
+- [Parsing numbers inside strings](#parsing-numbers-inside-strings)
+- [Dynamic Number Types](#dynamic-number-types)
+- [Raw strings from keys](#raw-strings-from-keys)
+- [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
+  * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
+- [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
+- [Thread safety](#thread-safety)
+- [Standard compliance](#standard-compliance)
+- [Backwards compatibility](#backwards-compatibility)
+- [Examples](#examples)
+- [Performance tips](#performance-tips)
+- [Further reading](#further-reading)
 
 Requirements
 ------------------
@@ -54,7 +54,7 @@ The simdjson library is widely deployed in popular systems such as the Node.js r
 environment.
 
 - A recent compiler (LLVM clang 6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on POSIX systems such as macOS, FreeBSD or Linux. We require that the compiler supports the C++11 standard or better. We test the library on a big-endian system (IBM s390x with Linux).
-- Visual Studio 2017 or better. We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We also support MinGW 64-bit under Windows.
+- Visual Studio 2017 or better. We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We discourage against using GCC under Windows: there [is a long-running bug with GCC under Windows](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better, AMD Zen 4 or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
 
@@ -180,6 +180,18 @@ auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
+If you prefer not to create your own `ondemand::parser` instance, you can access
+a thread-local version by calling `ondemand::parser.get_parser()`.
+
+
+```c++
+ondemand::document doc = ondemand::parser.get_parser().iterate(json);
+```
+
+However, you should be careful because a parser instance can only be used for one
+document at a time, thus it is only applicable when you are only parsing one
+document per thread at any one time.
+
 You can also create a padded string---and call `iterate()`:
 
 ```c++
@@ -238,7 +250,6 @@ We recommend against creating many `std::string` or many `std::padding_string` i
 Consider reusing the same buffers and limiting memory allocations.
 
 By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error handling](#error-handling) for details.
-
 
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
 
@@ -362,7 +373,7 @@ array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`
 an array or an object. Both generic types (`simdjson::ondemand::document` and
 `simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing the
 value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
-`json_type::boolean`, `json_type::null`). A generic value (`simdjson::ondemand::value`)
+`json_type::boolean`, `json_type::null`). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens such as the `NaN` token in `{"key":NaN}`. A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
 is only valid temporarily, as soon as you access other values, other keys in objects, etc.
 it becomes invalid: you should therefore consume the value immediately by converting it to a
 scalar type, an array or an object.
@@ -688,6 +699,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         cout << "null";
       }
       break;
+    case ondemand::json_type::unknown:
+      cout << "unknown"; // indicates an error
+      break;
     }
   }
   void basics_treewalk() {
@@ -871,13 +885,13 @@ type:
 
 We may do so by providing additional template definitions to the `ondemand::value` type.
 We may start by providing a definition for `std::vector<double>` as follows. Observe
-how we guard the code with `#if !SIMDJSON_SUPPORTS_DESERIALIZATION`: that is because the necessary code
+how we guard the code with `#if !SIMDJSON_SUPPORTS_CONCEPTS`: that is because the necessary code
 is automatically provided by simdjson if C++20 (and concepts) are available.
 See [Use `tag_invoke` for custom types](#2-use-tag_invoke-for-custom-types-c20) if you have
 C++20 support.
 
 ```c++
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // The code is unnecessary with C++20:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -933,7 +947,7 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -1034,7 +1048,7 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
-#if !SIMDJSON_SUPPORTS_DESERIALIZATION
+#if !SIMDJSON_SUPPORTS_CONCEPTS
 // This code is not necessary if you have a C++20 compliant system:
 template <>
 simdjson_inline simdjson_result<std::vector<double>>
@@ -1129,7 +1143,7 @@ The first argument is usually a tag type (often an empty struct) that uniquely i
 
 If your system supports C++20, we recommend that you adopt the `tag_invoke` approach
 instead to deserialize custom types. It may prove to be considerably simpler. When
-simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_DESERIALIZATION` macro
+simdjson detects the necessary support, it sets the `SIMDJSON_SUPPORTS_CONCEPTS` macro
 to 1, otherwise it is set to 0.
 
 Consider a custom class `Car`:
@@ -1348,31 +1362,6 @@ that are not made by Toyota.
 
 
 
-For even more convenience, you can do it directly without a parser instance like so:
-
-```cpp
-Car car = simdjson::from(json);
-```
-
-You can also use C++20 ranges to iterate over an array:
-
-```cpp
-  simdjson::padded_string json_cars =
-      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-        "tire_pressure": [ 40.1, 39.9 ] },
-    { "make": "Kia",    "model": "Soul",   "year": 2012,
-        "tire_pressure": [ 30.1, 31.0 ] },
-    { "make": "Toyota", "model": "Tercel", "year": 1999,
-        "tire_pressure": [ 29.8, 30.0 ] }
-  ])"_padded;
-
-  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
-```
-
 
 ### 3. Using static reflection (C++26)
 
@@ -1395,34 +1384,40 @@ simdjson::ondemand::document doc = parser.iterate(simdjson::pad(json));
 Car c = doc.get<Car>();
 ```
 
-Just like when using `tag_invoke` for custom types (but without the `tag_invoke` code), you can parse a class instance directly without a parser instance:
+
+You can also automatically serialize the `Car` instance to a JSON string, see
+our [Builder documentation](builder.md).
+
+
+
+### The simdjson::from shortcut (experimental, C++20)
+
+
+For even more convenience, you can parse a JSON document directly to a supported
+type without a document instance like so:
 
 ```cpp
 Car car = simdjson::from(json);
 ```
 
-Similarly, you can also use C++20 ranges to iterate over an array:
+You can also use the `simdjson::from` syntax to iterate over an array.
 
 ```cpp
-  simdjson::padded_string json_cars =
-      R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-        "tire_pressure": [ 40.1, 39.9 ] },
-    { "make": "Kia",    "model": "Soul",   "year": 2012,
-        "tire_pressure": [ 30.1, 31.0 ] },
-    { "make": "Toyota", "model": "Tercel", "year": 1999,
-        "tire_pressure": [ 29.8, 30.0 ] }
-  ])"_padded;
-
-  for (Car car : simdjson::from(json_cars) | simdjson::as<Car>()) {
-    if (car.year < 1998) {
-      return false;
-    }
-  }
+for(auto val : simdjson::from(json).array()) {
+  Car c = val.get<Car>(); // ...
+}
 ```
 
-You can also automatically serialize the `Car` instance to a JSON string, see
-our [Builder documentation](builder.md).
+Standard STL types are supported:
 
+
+```cpp
+std::map<std::string, std::string> obj =
+       simdjson::from(R"({"key": "value"})"_padded);
+```
+
+
+The `simdjson::from` construction is EXPERIMENTAL and subject to changes.
 
 Minifying JSON strings without parsing
 ----------------------
@@ -2236,7 +2231,8 @@ The simdjson library supports parsing valid numbers inside strings which makes i
 three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to note that these methods are not substitute to the regular
 `get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these
 methods appropriately. In particular, a valid JSON number has no leading and no trailing whitespaces, and the strings `"nan"`, `"1e"` and `"infinity"` will not be accepted as valid
-numbers. As an example, suppose we have the following JSON text:
+numbers (although you have access to the raw string with the `raw_json_token()` method,  see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
+). As an example, suppose we have the following JSON text:
 
 ```c++
 auto json =
@@ -2555,9 +2551,35 @@ The `raw_json_token()` should be fast and free of allocation.
 Given a quote-deliminated string, you find the string sequence inside the quote with a
 single line of code:
 
-```C++
+```cpp
 std::string_view noquote(std::string_view v) { return {v.data()+1, v.find_last_of('"')-1}; }
 ```
+
+
+The `raw_json_token()` method can enable you to provide fallbacks when parsing fails.
+Consider the following example.
+
+```cpp
+    padded_string json = "{\"key\": NaN}"_padded;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(json);
+    simdjson::ondemand::object object = doc.get_object();
+    simdjson::ondemand::value val = object["key"];
+    simdjson::ondemand::json_type type = val.type();
+    // type == simdjson::ondemand::json_type::unknown
+    try {
+      double num = val.get_double();
+    } catch (const simdjson::simdjson_error& e) {
+      // e == simdjson::error_code::INCORRECT_TYPE
+      std::string_view str = val.raw_json_token();
+      // str == "NaN"
+    }
+```
+
+The NaN is not supported in JSON. However, in the On-Demand API, you can check
+the string corresponding to the JSON token and determine how to handle it.
+
+### Raw JSON string for objects and arrays
 
 If your value is an array or an object, `raw_json_token()` returns effectively a single
 character (`[`) or (`}`) which is not very useful. For arrays and objects, we have another
