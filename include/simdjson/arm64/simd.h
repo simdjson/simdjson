@@ -434,54 +434,45 @@ namespace {
     simd8x64() = delete; // no default constructor allowed
 
     simdjson_inline simd8x64(const simd8<T> chunk0, const simd8<T> chunk1, const simd8<T> chunk2, const simd8<T> chunk3) : chunks{chunk0, chunk1, chunk2, chunk3} {}
-    simdjson_inline simd8x64(const T ptr[64]) : chunks{simd8<T>::load(ptr), simd8<T>::load(ptr+16), simd8<T>::load(ptr+32), simd8<T>::load(ptr+48)} {}
+
+    simdjson_inline simd8x64(const T ptr[64]) : chunks(vld4q_u8(ptr)) {}
 
     simdjson_inline void store(T ptr[64]) const {
-      this->chunks[0].store(ptr+sizeof(simd8<T>)*0);
-      this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
-      this->chunks[2].store(ptr+sizeof(simd8<T>)*2);
-      this->chunks[3].store(ptr+sizeof(simd8<T>)*3);
+      vst4q_u8(ptr, this->chunks);
     }
 
     simdjson_inline simd8<T> reduce_or() const {
       return (this->chunks[0] | this->chunks[1]) | (this->chunks[2] | this->chunks[3]);
     }
 
-
     simdjson_inline uint64_t compress(uint64_t mask, T * output) const {
+      using internal::interleaved_thintable_epi8;
       uint64_t popcounts = vget_lane_u64(vreinterpret_u64_u8(vcnt_u8(vcreate_u8(~mask))), 0);
       // compute the prefix sum of the popcounts of each byte
       uint64_t offsets = popcounts * 0x0101010101010101;
-      this->chunks[0].compress_halves(uint16_t(mask), output, &output[popcounts & 0xFF]);
-      this->chunks[1].compress_halves(uint16_t(mask >> 16), &output[(offsets >> 8) & 0xFF], &output[(offsets >> 16) & 0xFF]);
-      this->chunks[2].compress_halves(uint16_t(mask >> 32), &output[(offsets >> 24) & 0xFF], &output[(offsets >> 32) & 0xFF]);
-      this->chunks[3].compress_halves(uint16_t(mask >> 48), &output[(offsets >> 40) & 0xFF], &output[(offsets >> 48) & 0xFF]);
+
+      for (uint64_t i = 0; i < 8; i++) { // TODO Investigate: Can `vst1_u8` turn into `str`? Should it?
+        vst1_u8((uint8_t*)output[(offsets >> (8*i)) & 0xFF], vqtbl4_u8(
+            {{ this->chunks[0], this->chunks[1], this->chunks[2], this->chunks[3] }},
+            vqadd_u8(vcreate_u8(interleaved_thintable_epi8[(mask >> (8*i)) & 0xFF]), vdup_n_u8(2*i))
+        ));
+      }
+
       return offsets >> 56;
     }
 
     simdjson_inline uint64_t to_bitmask() const {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-      const uint8x16_t bit_mask = simdjson_make_uint8x16_t(
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
-      );
-#else
-      const uint8x16_t bit_mask = {
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
-        0x01, 0x02, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80
-      };
-#endif
-      // Add each of the elements next to each other, successively, to stuff each 8 byte mask into one.
-      uint8x16_t sum0 = vpaddq_u8(this->chunks[0] & bit_mask, this->chunks[1] & bit_mask);
-      uint8x16_t sum1 = vpaddq_u8(this->chunks[2] & bit_mask, this->chunks[3] & bit_mask);
-      sum0 = vpaddq_u8(sum0, sum1);
-      sum0 = vpaddq_u8(sum0, sum0);
-      return vgetq_lane_u64(vreinterpretq_u64_u8(sum0), 0);
+      uint8x16_t t0 = vsriq_n_u8(this->chunks[1], this->chunks[0], 1);
+      uint8x16_t t1 = vsriq_n_u8(this->chunks[3], this->chunks[2], 1);
+      uint8x16_t t2 = vsriq_n_u8(t1, t0, 2);
+      uint8x16_t t3 = vsriq_n_u8(t2, t2, 4);
+      uint8x8_t t4 = vshrn_n_u16(t3, 4);
+      return vget_lane_u64(vreinterpret_u64_u8(t4), 0);
     }
 
     simdjson_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return  simd8x64<bool>(
+      return simd8x64<bool>(
         this->chunks[0] == mask,
         this->chunks[1] == mask,
         this->chunks[2] == mask,
@@ -491,7 +482,7 @@ namespace {
 
     simdjson_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return  simd8x64<bool>(
+      return simd8x64<bool>(
         this->chunks[0] <= mask,
         this->chunks[1] <= mask,
         this->chunks[2] <= mask,
