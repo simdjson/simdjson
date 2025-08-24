@@ -16,6 +16,66 @@ struct Car {
 namespace builder_tests {
   using namespace std;
 
+    bool allchar_test() {
+        TEST_START();
+        auto get_utf8_codepoints = []() -> std::string {
+            std::string result;
+            for (char32_t cp = 0; cp <= 0x10FFFF; ++cp) {
+                if ((cp >= 0xD800 && cp <= 0xDFFF) || cp > 0x10FFFF) {
+                    continue; // Skip surrogate pairs and invalid codepoints
+                }
+                if (cp < 0x80) {
+                    result += static_cast<char>(cp);
+                } else if (cp < 0x800) {
+                    result += static_cast<char>(0xC0 | (cp >> 6));
+                    result += static_cast<char>(0x80 | (cp & 0x3F));
+                } else if (cp < 0x10000) {
+                    result += static_cast<char>(0xE0 | (cp >> 12));
+                    result += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+                    result += static_cast<char>(0x80 | (cp & 0x3F));
+                } else {
+                    result += static_cast<char>(0xF0 | (cp >> 18));
+                    result += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+                    result += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+                    result += static_cast<char>(0x80 | (cp & 0x3F));
+                }
+            }
+            return result;
+        };
+        auto allutf8 = get_utf8_codepoints();
+        simdjson::builder::string_builder sb;
+        sb.start_object();
+        sb.append_key_value("input", allutf8);
+        sb.end_object();
+        std::string_view p;
+        ASSERT_TRUE(sb.validate_unicode());
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        simdjson::padded_string output = p;
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(output).get(doc));
+        std::string_view recovered;
+        ASSERT_SUCCESS(doc["input"].get(recovered));
+        ASSERT_EQUAL(recovered, allutf8);
+        simdjson::dom::parser domparser;
+        simdjson::dom::element elem;
+        ASSERT_SUCCESS(domparser.parse(output).get(elem));
+        ASSERT_SUCCESS(elem["input"].get(recovered));
+        ASSERT_EQUAL(recovered, allutf8);
+        TEST_SUCCEED();
+    }
+
+    bool bad_utf8_test() {
+        TEST_START();
+        std::string bad_utf8 = "\xFF";
+        simdjson::builder::string_builder sb;
+        sb.start_object();
+        sb.append_key_value("input", bad_utf8);
+        sb.end_object();
+        ASSERT_FALSE(sb.validate_unicode())
+        TEST_SUCCEED();
+    }
     #if SIMDJSON_EXCEPTIONS
     bool string_convertion_except() {
         TEST_START();
@@ -449,6 +509,8 @@ namespace builder_tests {
     #endif
     bool run() {
         return
+            allchar_test() &&
+            bad_utf8_test() &&
             various_integers() &&
             various_unsigned_integers() &&
             car_test_long() &&
