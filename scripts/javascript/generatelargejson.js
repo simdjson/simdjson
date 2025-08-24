@@ -1,5 +1,5 @@
 
-var fs = require('fs');
+var fs = require('node:fs');
 
 var faker = require('faker');
 
