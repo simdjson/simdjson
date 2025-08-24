@@ -46,7 +46,7 @@ After writting the content, if you have reasons to believe that the content migh
 - `validate_unicode()`: Checks if the content in the JSON buffer is valid UTF-8. Returns: true if the content is valid UTF-8, false otherwise.
 
 You might need to do unicode validation if you have strings in your data structures containing
-malformed UTF-8.
+malformed UTF-8. Note that we do not automatically call `validate_unicode()`.
 
 Once you are satisfied, you can recover the string as follows:
 
@@ -54,7 +54,7 @@ Once you are satisfied, you can recover the string as follows:
 - `operator std::string_view()`: Converts the JSON buffer to an std::string_view.  (Might throw if an error occurred.)
 - `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>`.
 
-The later method (`view()`) is recommended.
+The later method (`view()`) is recommended.  For performance reasons, we expect you to explicitly call `validate_unicode()` as needed (e.g., prior to calling `view()`).
 
 Example: string_builder
 ---------------------------
