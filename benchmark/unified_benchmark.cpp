@@ -170,13 +170,13 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
     std::vector<BenchmarkResult> results;
     const int iterations = 1000;
     
-    // 1. simdjson - Manual (with parser reuse as designed)
+    // 1. simdjson - Manual (conservative approach - fresh parser each iteration)
     {
-        padded_string padded(json); // Create once, reuse
-        ondemand::parser parser;    // Create once, reuse
+        padded_string padded(json); // Create once
         
         auto benchmark = [&]() -> bool {
             try {
+                ondemand::parser parser; // Fresh parser each iteration
                 TwitterData data;
                 auto doc = parser.iterate(padded);
                 
@@ -216,13 +216,13 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
         results.push_back(run_benchmark("simdjson (manual)", json, iterations, benchmark));
     }
     
-    // 2. simdjson - Reflection (with parser reuse)
+    // 2. simdjson - Reflection (conservative approach)
     {
-        padded_string padded(json); // Create once, reuse
-        ondemand::parser parser;    // Create once, reuse
+        padded_string padded(json); // Create once
         
         auto benchmark = [&]() -> bool {
             try {
+                ondemand::parser parser; // Fresh parser each iteration
                 TwitterData data;
                 auto doc = parser.iterate(padded);
                 return doc.get(data) == SUCCESS;
@@ -351,13 +351,13 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
     std::vector<BenchmarkResult> results;
     const int iterations = 500;
     
-    // 1. simdjson - Manual (with parser reuse)
+    // 1. simdjson - Manual (conservative approach)
     {
-        padded_string padded(json); // Create once, reuse
-        ondemand::parser parser;    // Create once, reuse
+        padded_string padded(json); // Create once
         
         auto benchmark = [&]() -> bool {
             try {
+                ondemand::parser parser; // Fresh parser each iteration
                 CITMCatalog catalog;
                 auto doc = parser.iterate(padded);
                 
@@ -421,13 +421,13 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
         results.push_back(run_benchmark("simdjson (manual)", json, iterations, benchmark));
     }
     
-    // 2. simdjson - Reflection
+    // 2. simdjson - Reflection (conservative approach)
     {
-        padded_string padded(json); // Create once, reuse
-        ondemand::parser parser;    // Create once, reuse
+        padded_string padded(json); // Create once
         
         auto benchmark = [&]() -> bool {
             try {
+                ondemand::parser parser; // Fresh parser each iteration
                 CITMCatalog catalog;
                 auto doc = parser.iterate(padded);
                 return doc.get(catalog) == SUCCESS;
@@ -705,7 +705,7 @@ int main() {
     
     std::cout << "\n=== Summary ===\n";
     std::cout << "All benchmarks use full field extraction for fair comparison.\n";
-    std::cout << "simdjson uses parser reuse pattern (as designed for optimal performance).\n";
+    std::cout << "Conservative approach: Fresh parser instance for each iteration (realistic performance).\n";
     
     return 0;
 }
