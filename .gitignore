@@ -107,3 +107,10 @@ objs
 
 # clangd
 .cache
+
+# Ablation study results
+ablation/results/*.csv
+ablation/results/*.txt
+
+# Unified benchmark binary
+benchmark/unified_benchmark
