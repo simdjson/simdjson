@@ -12,7 +12,8 @@
 set -e
 
 # Configuration
-ROOT_DIR="/Users/random_person/Desktop/simdjson"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$ROOT_DIR/build"
 ABLATION_DIR="$ROOT_DIR/ablation"
 RESULTS_DIR="$ABLATION_DIR/results"
