@@ -74,6 +74,24 @@ template <class T> void bench_simdjson_static_reflection(T &data) {
                }));
 }
 
+#if SIMDJSON_STATIC_REFLECTION
+template <class T> void bench_simdjson_to(T &data) {
+  std::string output = simdjson::to_json_string(data);
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(sizeof(data), output_volume, "bench_simdjson_to",
+               bench([&data, &measured_volume, &output_volume]() {
+                 std::string output = simdjson::to_json_string(data);
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif
+
 void bench_nlohmann(TwitterData &data) {
   std::string output = nlohmann_serialize(data);
   size_t output_volume = output.size();
@@ -109,9 +127,24 @@ std::string read_file(std::string filename) {
   return out;
 }
 
-// Function to check if benchmark name contains filter substring
+// Function to check if benchmark name matches any of the comma-separated filters
 bool matches_filter(const std::string& benchmark_name, const std::string& filter) {
-  return filter.empty() || benchmark_name.find(filter) != std::string::npos;
+  if (filter.empty()) return true;
+  
+  // Split filter by comma
+  size_t start = 0;
+  size_t end = filter.find(',');
+  while (end != std::string::npos) {
+    std::string token = filter.substr(start, end - start);
+    if (benchmark_name.find(token) != std::string::npos) {
+      return true;
+    }
+    start = end + 1;
+    end = filter.find(',', start);
+  }
+  // Check last token
+  std::string token = filter.substr(start);
+  return benchmark_name.find(token) != std::string::npos;
 }
 
 int main(int argc, char* argv[]) {
@@ -151,9 +184,14 @@ int main(int argc, char* argv[]) {
   if (matches_filter("simdjson_static_reflection", filter)) {
     bench_simdjson_static_reflection(my_struct);
   }
+#if SIMDJSON_STATIC_REFLECTION
+  if (matches_filter("simdjson_to", filter)) {
+    bench_simdjson_to(my_struct);
+  }
+#endif
 #ifdef SIMDJSON_RUST_VERSION
   if (matches_filter("rust", filter)) {
-    printf("# WARNING: The Rust benchmark may not be directly comparable since it does not use an equivalent data structure.\n");
+    printf("# Note: Rust/Serde structures updated to closely match C++ (indices field remains as array).\n");
     serde_benchmark::TwitterData * td = serde_benchmark::twitter_from_str(json_str.c_str(), json_str.size());
     bench_rust(td);
     serde_benchmark::free_twitter(td);

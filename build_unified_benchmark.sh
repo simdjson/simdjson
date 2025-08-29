@@ -8,19 +8,40 @@ echo "Building Unified JSON Benchmark..."
 # Check for dependencies directories
 NLOHMANN_PATH=""
 RAPIDJSON_PATH=""
+SERDE_PATH=""
 
-if [ -d "build20/_deps/nlohmann_json-src/include" ]; then
-    NLOHMANN_PATH="-I./build20/_deps/nlohmann_json-src/include -DHAS_NLOHMANN"
-    echo "✓ Found nlohmann/json"
-else
+# Try multiple possible locations for dependencies
+for dir in build build20 build26; do
+    if [ -d "$dir/_deps/nlohmann_json-src/include" ]; then
+        NLOHMANN_PATH="-I./$dir/_deps/nlohmann_json-src/include -DHAS_NLOHMANN"
+        echo "✓ Found nlohmann/json in $dir"
+        break
+    fi
+done
+
+if [ -z "$NLOHMANN_PATH" ]; then
     echo "✗ nlohmann/json not found"
 fi
 
-if [ -d "build20/_deps/rapidjson-src/include" ]; then
-    RAPIDJSON_PATH="-I./build20/_deps/rapidjson-src/include -DHAS_RAPIDJSON"
-    echo "✓ Found RapidJSON"
-else
+for dir in build build20 build26; do
+    if [ -d "$dir/_deps/rapidjson-src/include" ]; then
+        RAPIDJSON_PATH="-I./$dir/_deps/rapidjson-src/include -DHAS_RAPIDJSON"
+        echo "✓ Found RapidJSON in $dir"
+        break
+    fi
+done
+
+if [ -z "$RAPIDJSON_PATH" ]; then
     echo "✗ RapidJSON not found"
+fi
+
+# Check for Serde benchmark library (.so or .a)
+if [ -f "benchmark/static_reflect/serde-benchmark/target/release/libserde_benchmark.so" ] || [ -f "benchmark/static_reflect/serde-benchmark/target/release/libserde_benchmark.a" ]; then
+    SERDE_PATH="-L./benchmark/static_reflect/serde-benchmark/target/release -lserde_benchmark -ldl -lpthread -DHAS_SERDE"
+    echo "✓ Found Serde benchmark library"
+else
+    echo "✗ Serde benchmark library not found"
+    echo "  To build it: cd benchmark/static_reflect/serde-benchmark && cargo build --release"
 fi
 
 # Compile the benchmark
@@ -28,18 +49,19 @@ clang++ -std=c++26 \
     -freflection \
     -DSIMDJSON_STATIC_REFLECTION=1 \
     -DSIMDJSON_EXCEPTIONS=1 \
-    -DSIMDJSON_ABLATION_NO_CONSTEVAL \
     -I./include \
+    -I./benchmark/static_reflect/serde-benchmark \
     $NLOHMANN_PATH \
     $RAPIDJSON_PATH \
     -O3 \
-    benchmark_comparison_unified.cpp \
+    benchmark/unified_benchmark.cpp \
     singleheader/simdjson.cpp \
-    -o benchmark_comparison_unified
+    $SERDE_PATH \
+    -o benchmark/unified_benchmark
 
 if [ $? -eq 0 ]; then
     echo ""
-    echo "Build successful! Run with: ./benchmark_comparison_unified"
+    echo "Build successful! Run with: ./benchmark/unified_benchmark"
     echo ""
     echo "The benchmark will test:"
     echo "  - Twitter dataset (631KB)"
@@ -54,6 +76,9 @@ if [ $? -eq 0 ]; then
     fi
     if [ ! -z "$RAPIDJSON_PATH" ]; then
         echo "  - RapidJSON"
+    fi
+    if [ ! -z "$SERDE_PATH" ]; then
+        echo "  - Serde (Rust)"
     fi
 else
     echo "Build failed!"

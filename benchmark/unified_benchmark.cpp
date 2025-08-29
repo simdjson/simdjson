@@ -29,6 +29,10 @@
 #include "rapidjson/stringbuffer.h"
 #endif
 
+#ifdef HAS_SERDE
+#include "serde_benchmark.h"
+#endif
+
 using namespace simdjson;
 
 // Twitter data structures
@@ -343,6 +347,22 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
     }
 #endif
     
+#ifdef HAS_SERDE
+    // 6. Serde (Rust) - with full extraction
+    {
+        auto benchmark = [&]() -> bool {
+            serde_benchmark::TwitterData* td = serde_benchmark::twitter_from_str(json.c_str(), json.size());
+            if (td) {
+                serde_benchmark::free_twitter(td);
+                return true;
+            }
+            return false;
+        };
+        
+        results.push_back(run_benchmark("Serde (Rust)", json, iterations, benchmark));
+    }
+#endif
+    
     return results;
 }
 
@@ -584,6 +604,22 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
         };
         
         results.push_back(run_benchmark("RapidJSON (extraction)", json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_SERDE
+    // 6. Serde (Rust) - with full extraction
+    {
+        auto benchmark = [&]() -> bool {
+            serde_benchmark::CitmCatalog* catalog = serde_benchmark::citm_from_str(json.c_str(), json.size());
+            if (catalog) {
+                serde_benchmark::free_citm(catalog);
+                return true;
+            }
+            return false;
+        };
+        
+        results.push_back(run_benchmark("Serde (Rust)", json, iterations, benchmark));
     }
 #endif
     
