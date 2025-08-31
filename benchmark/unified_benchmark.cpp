@@ -807,13 +807,21 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                     catalog.events[key] = std::move(event);
                 }
                 
-                // Parse performances
+                // Parse performances (full extraction like simdjson)
                 for (auto& perf_json : j["performances"]) {
                     CITMPerformance perf;
                     perf.id = perf_json["id"].get<uint64_t>();
                     perf.eventId = perf_json["eventId"].get<uint64_t>();
                     perf.start = perf_json["start"].get<uint64_t>();
                     perf.venueCode = perf_json["venueCode"].get<std::string>();
+                    
+                    if (!perf_json["logo"].is_null()) {
+                        perf.logo = perf_json["logo"].get<std::string>();
+                    }
+                    
+                    if (!perf_json["name"].is_null()) {
+                        perf.name = perf_json["name"].get<std::string>();
+                    }
                     
                     if (perf_json.contains("prices")) {
                         for (auto& price_json : perf_json["prices"]) {
@@ -825,7 +833,65 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         }
                     }
                     
+                    // Parse seatCategories with nested areas and blockIds
+                    if (perf_json.contains("seatCategories")) {
+                        for (auto& sc_json : perf_json["seatCategories"]) {
+                            CITMSeatCategory seatCat;
+                            seatCat.seatCategoryId = sc_json["seatCategoryId"].get<uint64_t>();
+                            
+                            if (sc_json.contains("areas")) {
+                                for (auto& area_json : sc_json["areas"]) {
+                                    CITMArea area;
+                                    area.areaId = area_json["areaId"].get<uint64_t>();
+                                    
+                                    if (area_json.contains("blockIds")) {
+                                        for (auto& blockId : area_json["blockIds"]) {
+                                            area.blockIds.push_back(blockId.get<uint64_t>());
+                                        }
+                                    }
+                                    
+                                    seatCat.areas.push_back(std::move(area));
+                                }
+                            }
+                            
+                            perf.seatCategories.push_back(std::move(seatCat));
+                        }
+                    }
+                    
+                    if (!perf_json["seatMapImage"].is_null()) {
+                        perf.seatMapImage = perf_json["seatMapImage"].get<std::string>();
+                    }
+                    
                     catalog.performances.push_back(std::move(perf));
+                }
+                
+                // Parse all name mappings (like simdjson does)
+                for (auto& [key, val] : j["seatCategoryNames"].items()) {
+                    catalog.seatCategoryNames[key] = val.get<std::string>();
+                }
+                
+                for (auto& [key, val] : j["subTopicNames"].items()) {
+                    catalog.subTopicNames[key] = val.get<std::string>();
+                }
+                
+                for (auto& [key, val] : j["subjectNames"].items()) {
+                    catalog.subjectNames[key] = val.get<std::string>();
+                }
+                
+                for (auto& [key, val] : j["topicNames"].items()) {
+                    catalog.topicNames[key] = val.get<std::string>();
+                }
+                
+                for (auto& [key, val] : j["topicSubTopics"].items()) {
+                    std::vector<uint64_t> ids;
+                    for (auto& id : val) {
+                        ids.push_back(id.get<uint64_t>());
+                    }
+                    catalog.topicSubTopics[key] = std::move(ids);
+                }
+                
+                for (auto& [key, val] : j["venueNames"].items()) {
+                    catalog.venueNames[key] = val.get<std::string>();
                 }
                 
                 return true;
@@ -874,7 +940,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                     catalog.events[it->name.GetString()] = std::move(event);
                 }
                 
-                // Parse performances
+                // Parse performances (full extraction like simdjson)
                 const auto& performances = d["performances"];
                 for (rapidjson::SizeType i = 0; i < performances.Size(); i++) {
                     const auto& perf_json = performances[i];
@@ -884,6 +950,14 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                     perf.eventId = perf_json["eventId"].GetUint64();
                     perf.start = perf_json["start"].GetUint64();
                     perf.venueCode = std::string(perf_json["venueCode"].GetString());
+                    
+                    if (perf_json.HasMember("logo") && !perf_json["logo"].IsNull()) {
+                        perf.logo = std::string(perf_json["logo"].GetString());
+                    }
+                    
+                    if (perf_json.HasMember("name") && !perf_json["name"].IsNull()) {
+                        perf.name = std::string(perf_json["name"].GetString());
+                    }
                     
                     if (perf_json.HasMember("prices")) {
                         const auto& prices = perf_json["prices"];
@@ -897,7 +971,77 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         }
                     }
                     
+                    // Parse seatCategories with nested areas and blockIds
+                    if (perf_json.HasMember("seatCategories")) {
+                        const auto& seatCategories = perf_json["seatCategories"];
+                        for (rapidjson::SizeType j = 0; j < seatCategories.Size(); j++) {
+                            const auto& sc_json = seatCategories[j];
+                            CITMSeatCategory seatCat;
+                            seatCat.seatCategoryId = sc_json["seatCategoryId"].GetUint64();
+                            
+                            if (sc_json.HasMember("areas")) {
+                                const auto& areas = sc_json["areas"];
+                                for (rapidjson::SizeType k = 0; k < areas.Size(); k++) {
+                                    const auto& area_json = areas[k];
+                                    CITMArea area;
+                                    area.areaId = area_json["areaId"].GetUint64();
+                                    
+                                    if (area_json.HasMember("blockIds")) {
+                                        const auto& blockIds = area_json["blockIds"];
+                                        for (rapidjson::SizeType l = 0; l < blockIds.Size(); l++) {
+                                            area.blockIds.push_back(blockIds[l].GetUint64());
+                                        }
+                                    }
+                                    
+                                    seatCat.areas.push_back(std::move(area));
+                                }
+                            }
+                            
+                            perf.seatCategories.push_back(std::move(seatCat));
+                        }
+                    }
+                    
+                    if (perf_json.HasMember("seatMapImage") && !perf_json["seatMapImage"].IsNull()) {
+                        perf.seatMapImage = std::string(perf_json["seatMapImage"].GetString());
+                    }
+                    
                     catalog.performances.push_back(std::move(perf));
+                }
+                
+                // Parse all name mappings (like simdjson does)
+                const auto& seatCategoryNames = d["seatCategoryNames"];
+                for (auto it = seatCategoryNames.MemberBegin(); it != seatCategoryNames.MemberEnd(); ++it) {
+                    catalog.seatCategoryNames[it->name.GetString()] = std::string(it->value.GetString());
+                }
+                
+                const auto& subTopicNames = d["subTopicNames"];
+                for (auto it = subTopicNames.MemberBegin(); it != subTopicNames.MemberEnd(); ++it) {
+                    catalog.subTopicNames[it->name.GetString()] = std::string(it->value.GetString());
+                }
+                
+                const auto& subjectNames = d["subjectNames"];
+                for (auto it = subjectNames.MemberBegin(); it != subjectNames.MemberEnd(); ++it) {
+                    catalog.subjectNames[it->name.GetString()] = std::string(it->value.GetString());
+                }
+                
+                const auto& topicNames = d["topicNames"];
+                for (auto it = topicNames.MemberBegin(); it != topicNames.MemberEnd(); ++it) {
+                    catalog.topicNames[it->name.GetString()] = std::string(it->value.GetString());
+                }
+                
+                const auto& topicSubTopics = d["topicSubTopics"];
+                for (auto it = topicSubTopics.MemberBegin(); it != topicSubTopics.MemberEnd(); ++it) {
+                    std::vector<uint64_t> ids;
+                    const auto& arr = it->value;
+                    for (rapidjson::SizeType i = 0; i < arr.Size(); i++) {
+                        ids.push_back(arr[i].GetUint64());
+                    }
+                    catalog.topicSubTopics[it->name.GetString()] = std::move(ids);
+                }
+                
+                const auto& venueNames = d["venueNames"];
+                for (auto it = venueNames.MemberBegin(); it != venueNames.MemberEnd(); ++it) {
+                    catalog.venueNames[it->name.GetString()] = std::string(it->value.GetString());
                 }
                 
                 return true;

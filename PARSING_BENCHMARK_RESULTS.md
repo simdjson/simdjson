@@ -15,37 +15,38 @@ Comprehensive benchmarks comparing JSON parsing performance across multiple libr
 
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **simdjson (manual)** | 3.89 GB/s | 154.71 μs | Hand-written parsing code |
-| **simdjson (reflection)** | 3.72 GB/s | 162.03 μs | C++26 static reflection |
-| **simdjson::from()** | 3.71 GB/s | 162.52 μs | High-level API |
-| **yyjson** | 3.14 GB/s | 191.93 μs | C library |
-| **Serde (Rust)** | 1.73 GB/s | 348.95 μs | Via FFI |
-| **RapidJSON** | 662 MB/s | 909.38 μs | SAX parsing |
-| **nlohmann/json** | 172 MB/s | 3500.96 μs | Full extraction |
+| **simdjson (manual)** | 3.83 GB/s | 157.43 μs | Hand-written parsing code |
+| **simdjson (reflection)** | 3.62 GB/s | 166.30 μs | C++26 static reflection |
+| **simdjson::from()** | 3.61 GB/s | 166.93 μs | High-level API |
+| **yyjson** | 3.15 GB/s | 191.07 μs | C library |
+| **Serde (Rust)** | 1.71 GB/s | 352.45 μs | Via FFI |
+| **RapidJSON** | 659 MB/s | 913.41 μs | Full extraction |
+| **nlohmann/json** | 172 MB/s | 3507.81 μs | Full extraction |
 
 ## CITM Catalog Results (1.7MB)
 
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **yyjson** | 2.68 GB/s | 614.48 μs | Full extraction (fair comparison) |
-| **simdjson::from()** | 2.15 GB/s | 766.65 μs | Convenient API |
-| **simdjson (reflection)** | 2.14 GB/s | 767.97 μs | Reflection-based |
-| **simdjson (manual)** | 1.92 GB/s | 858.46 μs | Manual parsing |
-| **RapidJSON** | 1.37 GB/s | 1200.20 μs | DOM parsing |
-| **Serde (Rust)** | 577 MB/s | 2854.99 μs | Cross-language overhead |
-| **nlohmann/json** | 198 MB/s | 8329.62 μs | Slowest |
+| **yyjson** | 2.67 GB/s | 616.14 μs | Full extraction |
+| **simdjson (reflection)** | 2.19 GB/s | 753.16 μs | Reflection-based |
+| **simdjson::from()** | 2.14 GB/s | 769.66 μs | Convenient API |
+| **simdjson (manual)** | 1.89 GB/s | 873.39 μs | Manual parsing |
+| **RapidJSON** | 1.17 GB/s | 1409.37 μs | Full extraction |
+| **Serde (Rust)** | 590 MB/s | 2793.82 μs | Cross-language overhead |
+| **nlohmann/json** | 187 MB/s | 8815.76 μs | Full extraction |
 
 ## Key Findings
 
 ### Performance Leaders
-- **simdjson (manual)** leads in Twitter parsing at 3.89 GB/s
-- **yyjson** leads in CITM parsing at 2.68 GB/s (with full extraction)
+- **simdjson (manual)** leads in Twitter parsing at 3.83 GB/s
+- **yyjson** leads in CITM parsing at 2.67 GB/s
 - **simdjson (reflection)** provides excellent performance with convenience
 
 ### Technology Insights
-1. **C++26 Reflection**: simdjson's reflection approach achieves 98% of manual performance on Twitter
+1. **C++26 Reflection**: simdjson's reflection approach achieves 95% of manual performance on Twitter
 2. **Native Performance**: C/C++ libraries significantly outperform cross-language solutions
-3. **API Trade-offs**: High-level APIs (simdjson::from) have minimal overhead (<1% on Twitter)
+3. **API Trade-offs**: High-level APIs (simdjson::from) have minimal overhead (<1% vs reflection)
+4. **Fair Comparison**: All libraries now extract complete data structures including nested objects
 
 ## Methodology
 - 1000 iterations for Twitter dataset
