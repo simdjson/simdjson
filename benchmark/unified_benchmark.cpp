@@ -29,6 +29,18 @@
 #include "rapidjson/stringbuffer.h"
 #endif
 
+// reflect-cpp disabled due to complex linking requirements
+// #ifdef HAS_REFLECTCPP
+// #include <rfl.hpp>
+// #include <rfl/json.hpp>
+// #endif
+
+#ifdef HAS_YYJSON
+extern "C" {
+#include <yyjson.h>
+}
+#endif
+
 #ifdef HAS_SERDE
 #include "serde_benchmark.h"
 #endif
@@ -47,6 +59,12 @@ struct TwitterUser {
     uint64_t friends_count;
     uint64_t statuses_count;
     bool operator==(const TwitterUser&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TwitterUser, id, screen_name, name, location, 
+                                   description, verified, followers_count, 
+                                   friends_count, statuses_count)
+#endif
 };
 
 struct TwitterTweet {
@@ -58,11 +76,21 @@ struct TwitterTweet {
     uint64_t retweet_count;
     uint64_t favorite_count;
     bool operator==(const TwitterTweet&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TwitterTweet, created_at, id, text, 
+                                   in_reply_to_status_id, user, retweet_count, 
+                                   favorite_count)
+#endif
 };
 
 struct TwitterData {
     std::vector<TwitterTweet> statuses;
     bool operator==(const TwitterData&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(TwitterData, statuses)
+#endif
 };
 
 // CITM data structures
@@ -71,18 +99,30 @@ struct CITMPrice {
     uint64_t audienceSubCategoryId;
     uint64_t seatCategoryId;
     bool operator==(const CITMPrice&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMPrice, amount, audienceSubCategoryId, seatCategoryId)
+#endif
 };
 
 struct CITMArea {
     uint64_t areaId;
     std::vector<uint64_t> blockIds;
     bool operator==(const CITMArea&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMArea, areaId, blockIds)
+#endif
 };
 
 struct CITMSeatCategory {
     uint64_t seatCategoryId;
     std::vector<CITMArea> areas;
     bool operator==(const CITMSeatCategory&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMSeatCategory, seatCategoryId, areas)
+#endif
 };
 
 struct CITMPerformance {
@@ -96,6 +136,11 @@ struct CITMPerformance {
     uint64_t start;
     std::string venueCode;
     bool operator==(const CITMPerformance&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMPerformance, id, eventId, logo, name, prices, 
+                                   seatCategories, seatMapImage, start, venueCode)
+#endif
 };
 
 struct CITMEvent {
@@ -108,12 +153,33 @@ struct CITMEvent {
     std::optional<std::string> subtitle;
     std::vector<uint64_t> topicIds;
     bool operator==(const CITMEvent&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMEvent, id, name, description, logo, 
+                                   subTopicIds, subjectCode, subtitle, topicIds)
+#endif
 };
 
 struct CITMCatalog {
+    std::map<std::string, std::string> areaNames;
+    std::map<std::string, std::string> audienceSubCategoryNames;
+    std::map<std::string, std::string> blockNames;
     std::map<std::string, CITMEvent> events;
     std::vector<CITMPerformance> performances;
+    std::map<std::string, std::string> seatCategoryNames;
+    std::map<std::string, std::string> subTopicNames;
+    std::map<std::string, std::string> subjectNames;
+    std::map<std::string, std::string> topicNames;
+    std::map<std::string, std::vector<uint64_t>> topicSubTopics;
+    std::map<std::string, std::string> venueNames;
     bool operator==(const CITMCatalog&) const = default;
+    
+#ifdef HAS_NLOHMANN
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CITMCatalog, areaNames, audienceSubCategoryNames, 
+                                   blockNames, events, performances, seatCategoryNames,
+                                   subTopicNames, subjectNames, topicNames, 
+                                   topicSubTopics, venueNames)
+#endif
 };
 
 // Benchmark result structure
@@ -362,6 +428,103 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
         results.push_back(run_benchmark("Serde (Rust)", json, iterations, benchmark));
     }
 #endif
+
+#ifdef HAS_REFLECTCPP
+    // 7. reflect-cpp - with full extraction
+    {
+        auto benchmark = [&]() -> bool {
+            auto result = rfl::json::read<TwitterData>(json);
+            if (result) {
+                TwitterData data = result.value();
+                return true;
+            }
+            return false;
+        };
+        
+        results.push_back(run_benchmark("reflect-cpp", json, iterations, benchmark));
+    }
+#endif
+
+#ifdef HAS_YYJSON
+    // 8. yyjson - with full extraction
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                TwitterData data;
+                yyjson_doc *doc = yyjson_read(json.c_str(), json.size(), 0);
+                if (!doc) return false;
+                
+                yyjson_val *root = yyjson_doc_get_root(doc);
+                yyjson_val *statuses = yyjson_obj_get(root, "statuses");
+                
+                size_t idx, max;
+                yyjson_val *tweet_val;
+                yyjson_arr_foreach(statuses, idx, max, tweet_val) {
+                    TwitterTweet tweet;
+                    
+                    yyjson_val *val = yyjson_obj_get(tweet_val, "created_at");
+                    if (val) tweet.created_at = yyjson_get_str(val);
+                    
+                    val = yyjson_obj_get(tweet_val, "id");
+                    if (val) tweet.id = yyjson_get_uint(val);
+                    
+                    val = yyjson_obj_get(tweet_val, "text");
+                    if (val) tweet.text = yyjson_get_str(val);
+                    
+                    val = yyjson_obj_get(tweet_val, "in_reply_to_status_id");
+                    if (val && !yyjson_is_null(val)) {
+                        tweet.in_reply_to_status_id = yyjson_get_uint(val);
+                    }
+                    
+                    yyjson_val *user_val = yyjson_obj_get(tweet_val, "user");
+                    if (user_val) {
+                        val = yyjson_obj_get(user_val, "id");
+                        if (val) tweet.user.id = yyjson_get_uint(val);
+                        
+                        val = yyjson_obj_get(user_val, "screen_name");
+                        if (val) tweet.user.screen_name = yyjson_get_str(val);
+                        
+                        val = yyjson_obj_get(user_val, "name");
+                        if (val) tweet.user.name = yyjson_get_str(val);
+                        
+                        val = yyjson_obj_get(user_val, "location");
+                        if (val) tweet.user.location = yyjson_get_str(val);
+                        
+                        val = yyjson_obj_get(user_val, "description");
+                        if (val) tweet.user.description = yyjson_get_str(val);
+                        
+                        val = yyjson_obj_get(user_val, "verified");
+                        if (val) tweet.user.verified = yyjson_get_bool(val);
+                        
+                        val = yyjson_obj_get(user_val, "followers_count");
+                        if (val) tweet.user.followers_count = yyjson_get_uint(val);
+                        
+                        val = yyjson_obj_get(user_val, "friends_count");
+                        if (val) tweet.user.friends_count = yyjson_get_uint(val);
+                        
+                        val = yyjson_obj_get(user_val, "statuses_count");
+                        if (val) tweet.user.statuses_count = yyjson_get_uint(val);
+                    }
+                    
+                    val = yyjson_obj_get(tweet_val, "retweet_count");
+                    if (val) tweet.retweet_count = yyjson_get_uint(val);
+                    
+                    val = yyjson_obj_get(tweet_val, "favorite_count");
+                    if (val) tweet.favorite_count = yyjson_get_uint(val);
+                    
+                    data.statuses.push_back(std::move(tweet));
+                }
+                
+                yyjson_doc_free(doc);
+                return true;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("yyjson", json, iterations, benchmark));
+    }
+#endif
     
     return results;
 }
@@ -381,6 +544,34 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                 CITMCatalog catalog;
                 auto doc = parser.iterate(padded);
                 
+                // Parse all name mappings
+                auto areaNames = doc["areaNames"];
+                if (!areaNames.error()) {
+                    for (auto field : areaNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.areaNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto audienceSubCategoryNames = doc["audienceSubCategoryNames"];
+                if (!audienceSubCategoryNames.error()) {
+                    for (auto field : audienceSubCategoryNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.audienceSubCategoryNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto blockNames = doc["blockNames"];
+                if (!blockNames.error()) {
+                    for (auto field : blockNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.blockNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
                 // Parse events
                 for (auto field : doc["events"].get_object()) {
                     CITMEvent event;
@@ -398,6 +589,16 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         event.logo = std::string(std::string_view(logo));
                     }
                     
+                    auto subjectCode = event_obj["subjectCode"];
+                    if (!subjectCode.is_null()) {
+                        event.subjectCode = std::string(std::string_view(subjectCode));
+                    }
+                    
+                    auto subtitle = event_obj["subtitle"];
+                    if (!subtitle.is_null()) {
+                        event.subtitle = std::string(std::string_view(subtitle));
+                    }
+                    
                     for (uint64_t id : event_obj["subTopicIds"]) {
                         event.subTopicIds.push_back(id);
                     }
@@ -410,13 +611,28 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                     catalog.events[std::string(key)] = std::move(event);
                 }
                 
-                // Parse performances (simplified - add full parsing as needed)
+                // Parse performances - complete
                 for (auto perf_obj : doc["performances"]) {
                     CITMPerformance perf;
                     perf.id = uint64_t(perf_obj["id"]);
                     perf.eventId = uint64_t(perf_obj["eventId"]);
                     perf.start = uint64_t(perf_obj["start"]);
                     perf.venueCode = std::string(std::string_view(perf_obj["venueCode"]));
+                    
+                    auto logo = perf_obj["logo"];
+                    if (!logo.is_null()) {
+                        perf.logo = std::string(std::string_view(logo));
+                    }
+                    
+                    auto name = perf_obj["name"];
+                    if (!name.is_null()) {
+                        perf.name = std::string(std::string_view(name));
+                    }
+                    
+                    auto seatMapImage = perf_obj["seatMapImage"];
+                    if (!seatMapImage.is_null()) {
+                        perf.seatMapImage = std::string(std::string_view(seatMapImage));
+                    }
                     
                     // Parse prices
                     auto prices = perf_obj["prices"];
@@ -430,8 +646,95 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         }
                     }
                     
+                    // Parse seat categories
+                    auto seatCategories = perf_obj["seatCategories"];
+                    if (!seatCategories.error()) {
+                        for (auto seatCat_obj : seatCategories) {
+                            CITMSeatCategory seatCat;
+                            seatCat.seatCategoryId = uint64_t(seatCat_obj["seatCategoryId"]);
+                            
+                            auto areas = seatCat_obj["areas"];
+                            if (!areas.error()) {
+                                for (auto area_obj : areas) {
+                                    CITMArea area;
+                                    area.areaId = uint64_t(area_obj["areaId"]);
+                                    
+                                    auto blockIds = area_obj["blockIds"];
+                                    if (!blockIds.error()) {
+                                        for (uint64_t blockId : blockIds) {
+                                            area.blockIds.push_back(blockId);
+                                        }
+                                    }
+                                    
+                                    seatCat.areas.push_back(std::move(area));
+                                }
+                            }
+                            
+                            perf.seatCategories.push_back(std::move(seatCat));
+                        }
+                    }
+                    
                     catalog.performances.push_back(std::move(perf));
                 }
+                
+                // Parse remaining name mappings
+                auto seatCategoryNames = doc["seatCategoryNames"];
+                if (!seatCategoryNames.error()) {
+                    for (auto field : seatCategoryNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.seatCategoryNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto subTopicNames = doc["subTopicNames"];
+                if (!subTopicNames.error()) {
+                    for (auto field : subTopicNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.subTopicNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto subjectNames = doc["subjectNames"];
+                if (!subjectNames.error()) {
+                    for (auto field : subjectNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.subjectNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto topicNames = doc["topicNames"];
+                if (!topicNames.error()) {
+                    for (auto field : topicNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.topicNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
+                auto topicSubTopics = doc["topicSubTopics"];
+                if (!topicSubTopics.error()) {
+                    for (auto field : topicSubTopics.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::vector<uint64_t> ids;
+                        for (uint64_t id : field.value()) {
+                            ids.push_back(id);
+                        }
+                        catalog.topicSubTopics[std::string(key)] = std::move(ids);
+                    }
+                }
+                
+                auto venueNames = doc["venueNames"];
+                if (!venueNames.error()) {
+                    for (auto field : venueNames.get_object()) {
+                        std::string_view key = field.unescaped_key().value();
+                        std::string_view val = field.value();
+                        catalog.venueNames[std::string(key)] = std::string(val);
+                    }
+                }
+                
                 return true;
             } catch (...) {
                 return false;
@@ -622,6 +925,1292 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
         results.push_back(run_benchmark("Serde (Rust)", json, iterations, benchmark));
     }
 #endif
+
+#ifdef HAS_REFLECTCPP
+    // 7. reflect-cpp - with full extraction
+    {
+        auto benchmark = [&]() -> bool {
+            auto result = rfl::json::read<CITMCatalog>(json);
+            if (result) {
+                CITMCatalog data = result.value();
+                return true;
+            }
+            return false;
+        };
+        
+        results.push_back(run_benchmark("reflect-cpp", json, iterations, benchmark));
+    }
+#endif
+
+#ifdef HAS_YYJSON
+    // 8. yyjson - with full extraction for CITM
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                CITMCatalog catalog;
+                yyjson_doc *doc = yyjson_read(json.c_str(), json.size(), 0);
+                if (!doc) return false;
+                
+                yyjson_val *root = yyjson_doc_get_root(doc);
+                
+                // Parse events
+                yyjson_val *events = yyjson_obj_get(root, "events");
+                if (events) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(events, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        CITMEvent event;
+                        
+                        yyjson_val *v = yyjson_obj_get(val, "id");
+                        if (v) event.id = yyjson_get_uint(v);
+                        
+                        v = yyjson_obj_get(val, "name");
+                        if (v) event.name = yyjson_get_str(v);
+                        
+                        v = yyjson_obj_get(val, "description");
+                        if (v && !yyjson_is_null(v)) event.description = yyjson_get_str(v);
+                        
+                        v = yyjson_obj_get(val, "logo");
+                        if (v && !yyjson_is_null(v)) event.logo = yyjson_get_str(v);
+                        
+                        v = yyjson_obj_get(val, "subTopicIds");
+                        if (v) {
+                            size_t arr_idx, arr_max;
+                            yyjson_val *arr_val;
+                            yyjson_arr_foreach(v, arr_idx, arr_max, arr_val) {
+                                event.subTopicIds.push_back(yyjson_get_uint(arr_val));
+                            }
+                        }
+                        
+                        v = yyjson_obj_get(val, "topicIds");
+                        if (v) {
+                            size_t arr_idx, arr_max;
+                            yyjson_val *arr_val;
+                            yyjson_arr_foreach(v, arr_idx, arr_max, arr_val) {
+                                event.topicIds.push_back(yyjson_get_uint(arr_val));
+                            }
+                        }
+                        
+                        if (key_str) catalog.events[key_str] = std::move(event);
+                    }
+                }
+                
+                // Parse performances (simplified)
+                yyjson_val *performances = yyjson_obj_get(root, "performances");
+                if (performances) {
+                    size_t idx, max;
+                    yyjson_val *perf_val;
+                    yyjson_arr_foreach(performances, idx, max, perf_val) {
+                        CITMPerformance perf;
+                        
+                        yyjson_val *v = yyjson_obj_get(perf_val, "id");
+                        if (v) perf.id = yyjson_get_uint(v);
+                        
+                        v = yyjson_obj_get(perf_val, "eventId");
+                        if (v) perf.eventId = yyjson_get_uint(v);
+                        
+                        v = yyjson_obj_get(perf_val, "start");
+                        if (v) perf.start = yyjson_get_uint(v);
+                        
+                        v = yyjson_obj_get(perf_val, "venueCode");
+                        if (v) perf.venueCode = yyjson_get_str(v);
+                        
+                        catalog.performances.push_back(std::move(perf));
+                    }
+                }
+                
+                yyjson_doc_free(doc);
+                return true;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("yyjson", json, iterations, benchmark));
+    }
+#endif
+    
+    return results;
+}
+
+// Twitter serialization benchmarks
+std::vector<BenchmarkResult> benchmark_twitter_serialization(const TwitterData& data) {
+    std::vector<BenchmarkResult> results;
+    const int iterations = 1000;
+    
+    // Get a sample serialization size for throughput calculation
+    std::string sample_json;
+    
+    // 1. simdjson reflection-based serialization (with string_builder reuse)
+    {
+        simdjson::builder::string_builder sb;  // Create once, reuse
+        
+        auto benchmark = [&sb, &data, &sample_json]() -> bool {
+            try {
+                sb.clear();  // Clear for reuse
+                simdjson::builder::append(sb, data);
+                
+                std::string_view json_view;
+                sb.view().get(json_view);
+                
+                // Use this as sample if we don't have other libraries
+                if (sample_json.empty()) {
+                    sample_json = std::string(json_view);
+                }
+                
+                return json_view.size() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("simdjson (reflection)", sample_json, iterations, benchmark));
+    }
+    
+    // 2. simdjson manual DOM serialization (with string_builder reuse)
+    {
+        simdjson::builder::string_builder sb;  // Create once, reuse
+        
+        auto benchmark = [&sb, &data, &sample_json]() -> bool {
+            try {
+                sb.clear();  // Clear for reuse
+                sb.append("{\"statuses\":[");
+                
+                bool first = true;
+                for (const auto& tweet : data.statuses) {
+                    if (!first) sb.append(",");
+                    sb.append("{");
+                    
+                    sb.append("\"created_at\":\"");
+                    sb.append(tweet.created_at);
+                    sb.append("\",");
+                    
+                    sb.append("\"id\":");
+                    sb.append(tweet.id);
+                    sb.append(",");
+                    
+                    sb.append("\"text\":\"");
+                    sb.append(tweet.text);
+                    sb.append("\",");
+                    
+                    if (tweet.in_reply_to_status_id.has_value()) {
+                        sb.append("\"in_reply_to_status_id\":");
+                        sb.append(*tweet.in_reply_to_status_id);
+                        sb.append(",");
+                    }
+                    
+                    // User object
+                    sb.append("\"user\":{");
+                    sb.append("\"id\":");
+                    sb.append(tweet.user.id);
+                    sb.append(",");
+                    sb.append("\"screen_name\":\"");
+                    sb.append(tweet.user.screen_name);
+                    sb.append("\",");
+                    sb.append("\"name\":\"");
+                    sb.append(tweet.user.name);
+                    sb.append("\",");
+                    sb.append("\"location\":\"");
+                    sb.append(tweet.user.location);
+                    sb.append("\",");
+                    sb.append("\"description\":\"");
+                    sb.append(tweet.user.description);
+                    sb.append("\",");
+                    sb.append("\"verified\":");
+                    sb.append(tweet.user.verified ? "true" : "false");
+                    sb.append(",");
+                    sb.append("\"followers_count\":");
+                    sb.append(tweet.user.followers_count);
+                    sb.append(",");
+                    sb.append("\"friends_count\":");
+                    sb.append(tweet.user.friends_count);
+                    sb.append(",");
+                    sb.append("\"statuses_count\":");
+                    sb.append(tweet.user.statuses_count);
+                    sb.append("},");
+                    
+                    sb.append("\"retweet_count\":");
+                    sb.append(tweet.retweet_count);
+                    sb.append(",");
+                    sb.append("\"favorite_count\":");
+                    sb.append(tweet.favorite_count);
+                    
+                    sb.append("}");
+                    first = false;
+                }
+                
+                sb.append("]}");
+                
+                std::string_view json_view;
+                sb.view().get(json_view);
+                
+                // Use this as sample if we don't have other libraries
+                if (sample_json.empty()) {
+                    sample_json = std::string(json_view);
+                }
+                
+                return json_view.size() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("simdjson (DOM)", sample_json, iterations, benchmark));
+    }
+    
+#ifdef HAS_NLOHMANN
+    // Update sample_json if not set
+    if (sample_json.empty()) {
+        nlohmann::json j = data;
+        sample_json = j.dump();
+    }
+    
+    // nlohmann::json
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                nlohmann::json j = data;
+                std::string json = j.dump();
+                return !json.empty();
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("nlohmann::json", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_RAPIDJSON
+    // 3. RapidJSON
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                rapidjson::Document doc;
+                doc.SetObject();
+                rapidjson::Document::AllocatorType& alloc = doc.GetAllocator();
+                
+                rapidjson::Value statuses(rapidjson::kArrayType);
+                for (const auto& tweet : data.statuses) {
+                    rapidjson::Value tweet_obj(rapidjson::kObjectType);
+                    
+                    rapidjson::Value created_at;
+                    created_at.SetString(tweet.created_at.c_str(), tweet.created_at.length(), alloc);
+                    tweet_obj.AddMember("created_at", created_at, alloc);
+                    
+                    tweet_obj.AddMember("id", tweet.id, alloc);
+                    
+                    rapidjson::Value text;
+                    text.SetString(tweet.text.c_str(), tweet.text.length(), alloc);
+                    tweet_obj.AddMember("text", text, alloc);
+                    
+                    if (tweet.in_reply_to_status_id.has_value()) {
+                        tweet_obj.AddMember("in_reply_to_status_id", tweet.in_reply_to_status_id.value(), alloc);
+                    } else {
+                        tweet_obj.AddMember("in_reply_to_status_id", rapidjson::Value(rapidjson::kNullType), alloc);
+                    }
+                    
+                    rapidjson::Value user_obj(rapidjson::kObjectType);
+                    user_obj.AddMember("id", tweet.user.id, alloc);
+                    
+                    rapidjson::Value screen_name;
+                    screen_name.SetString(tweet.user.screen_name.c_str(), tweet.user.screen_name.length(), alloc);
+                    user_obj.AddMember("screen_name", screen_name, alloc);
+                    
+                    rapidjson::Value name;
+                    name.SetString(tweet.user.name.c_str(), tweet.user.name.length(), alloc);
+                    user_obj.AddMember("name", name, alloc);
+                    
+                    rapidjson::Value location;
+                    location.SetString(tweet.user.location.c_str(), tweet.user.location.length(), alloc);
+                    user_obj.AddMember("location", location, alloc);
+                    
+                    rapidjson::Value description;
+                    description.SetString(tweet.user.description.c_str(), tweet.user.description.length(), alloc);
+                    user_obj.AddMember("description", description, alloc);
+                    
+                    user_obj.AddMember("verified", tweet.user.verified, alloc);
+                    user_obj.AddMember("followers_count", tweet.user.followers_count, alloc);
+                    user_obj.AddMember("friends_count", tweet.user.friends_count, alloc);
+                    user_obj.AddMember("statuses_count", tweet.user.statuses_count, alloc);
+                    
+                    tweet_obj.AddMember("user", user_obj, alloc);
+                    tweet_obj.AddMember("retweet_count", tweet.retweet_count, alloc);
+                    tweet_obj.AddMember("favorite_count", tweet.favorite_count, alloc);
+                    
+                    statuses.PushBack(tweet_obj, alloc);
+                }
+                
+                doc.AddMember("statuses", statuses, alloc);
+                
+                rapidjson::StringBuffer buffer;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                doc.Accept(writer);
+                
+                return buffer.GetSize() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("RapidJSON", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_YYJSON
+    // 4. yyjson
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+                yyjson_mut_val *root = yyjson_mut_obj(doc);
+                yyjson_mut_doc_set_root(doc, root);
+                
+                yyjson_mut_val *statuses = yyjson_mut_arr(doc);
+                
+                for (const auto& tweet : data.statuses) {
+                    yyjson_mut_val *tweet_obj = yyjson_mut_obj(doc);
+                    
+                    yyjson_mut_obj_add_str(doc, tweet_obj, "created_at", tweet.created_at.c_str());
+                    yyjson_mut_obj_add_int(doc, tweet_obj, "id", tweet.id);
+                    yyjson_mut_obj_add_str(doc, tweet_obj, "text", tweet.text.c_str());
+                    
+                    if (tweet.in_reply_to_status_id.has_value()) {
+                        yyjson_mut_obj_add_int(doc, tweet_obj, "in_reply_to_status_id", tweet.in_reply_to_status_id.value());
+                    } else {
+                        yyjson_mut_obj_add_null(doc, tweet_obj, "in_reply_to_status_id");
+                    }
+                    
+                    yyjson_mut_val *user_obj = yyjson_mut_obj(doc);
+                    yyjson_mut_obj_add_int(doc, user_obj, "id", tweet.user.id);
+                    yyjson_mut_obj_add_str(doc, user_obj, "screen_name", tweet.user.screen_name.c_str());
+                    yyjson_mut_obj_add_str(doc, user_obj, "name", tweet.user.name.c_str());
+                    yyjson_mut_obj_add_str(doc, user_obj, "location", tweet.user.location.c_str());
+                    yyjson_mut_obj_add_str(doc, user_obj, "description", tweet.user.description.c_str());
+                    yyjson_mut_obj_add_bool(doc, user_obj, "verified", tweet.user.verified);
+                    yyjson_mut_obj_add_int(doc, user_obj, "followers_count", tweet.user.followers_count);
+                    yyjson_mut_obj_add_int(doc, user_obj, "friends_count", tweet.user.friends_count);
+                    yyjson_mut_obj_add_int(doc, user_obj, "statuses_count", tweet.user.statuses_count);
+                    
+                    yyjson_mut_obj_add_val(doc, tweet_obj, "user", user_obj);
+                    yyjson_mut_obj_add_int(doc, tweet_obj, "retweet_count", tweet.retweet_count);
+                    yyjson_mut_obj_add_int(doc, tweet_obj, "favorite_count", tweet.favorite_count);
+                    
+                    yyjson_mut_arr_append(statuses, tweet_obj);
+                }
+                
+                yyjson_mut_obj_add_val(doc, root, "statuses", statuses);
+                
+                char *json_str = yyjson_mut_write(doc, 0, NULL);
+                bool success = (json_str != NULL);
+                if (json_str) free(json_str);
+                yyjson_mut_doc_free(doc);
+                
+                return success;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("yyjson", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_SERDE
+    // 5. Serde (Rust) serialization
+    {
+        // Parse the original JSON to get Serde's internal representation
+        // We need the original JSON, not our C++ serialized version
+        // Get the actual Twitter JSON file
+        std::string twitter_json_full;
+        {
+            std::ifstream file("jsonexamples/twitter.json", std::ios::binary);
+            if (!file) {
+                file.open("../jsonexamples/twitter.json", std::ios::binary);
+            }
+            if (!file) {
+                file.open("../../jsonexamples/twitter.json", std::ios::binary);
+            }
+            if (file) {
+                twitter_json_full = std::string((std::istreambuf_iterator<char>(file)),
+                                                std::istreambuf_iterator<char>());
+            }
+        }
+        
+        serde_benchmark::TwitterData* serde_data = nullptr;
+        if (!twitter_json_full.empty()) {
+            serde_data = serde_benchmark::twitter_from_str(
+                twitter_json_full.c_str(), twitter_json_full.size());
+        }
+        
+        if (serde_data) {
+            auto benchmark = [serde_data]() -> bool {
+                try {
+                    const char* json_str = serde_benchmark::str_from_twitter(serde_data);
+                    if (json_str) {
+                        serde_benchmark::free_string(json_str);
+                        return true;
+                    }
+                    return false;
+                } catch (...) {
+                    return false;
+                }
+            };
+            
+            results.push_back(run_benchmark("Serde (Rust)", sample_json, iterations, benchmark));
+            serde_benchmark::free_twitter(serde_data);
+        }
+    }
+#endif
+    
+#ifdef HAS_REFLECTCPP
+    // 6. reflect-cpp
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                std::string json = rfl::json::write(data);
+                return !json.empty();
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("reflect-cpp", sample_json, iterations, benchmark));
+    }
+#endif
+    
+    return results;
+}
+
+// CITM serialization benchmarks
+std::vector<BenchmarkResult> benchmark_citm_serialization(const CITMCatalog& data) {
+    std::vector<BenchmarkResult> results;
+    const int iterations = 500;
+    
+    // Get a sample serialization size for throughput calculation
+    std::string sample_json;
+    
+    // 1. simdjson reflection-based serialization (with string_builder reuse)
+    {
+        simdjson::builder::string_builder sb;  // Create once, reuse
+        
+        auto benchmark = [&sb, &data, &sample_json]() -> bool {
+            try {
+                sb.clear();  // Clear for reuse
+                simdjson::builder::append(sb, data);
+                
+                std::string_view json_view;
+                sb.view().get(json_view);
+                
+                // Use this as sample if we don't have other libraries
+                if (sample_json.empty()) {
+                    sample_json = std::string(json_view);
+                }
+                
+                return json_view.size() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("simdjson (reflection)", sample_json, iterations, benchmark));
+    }
+    
+    // 2. simdjson manual DOM serialization (with string_builder reuse)
+    {
+        simdjson::builder::string_builder sb;  // Create once, reuse
+        
+        auto benchmark = [&sb, &data, &sample_json]() -> bool {
+            try {
+                sb.clear();  // Clear for reuse
+                sb.append("{");
+                
+                // Serialize areaNames
+                sb.append("\"areaNames\":{");
+                bool first = true;
+                for (const auto& [key, value] : data.areaNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                // Serialize audienceSubCategoryNames
+                sb.append("\"audienceSubCategoryNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.audienceSubCategoryNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                // Serialize blockNames
+                sb.append("\"blockNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.blockNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                // Serialize events
+                sb.append("\"events\":{");
+                first = true;
+                for (const auto& [key, event] : data.events) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":{");
+                    sb.append("\"id\":");
+                    sb.append(event.id);
+                    sb.append(",");
+                    sb.append("\"name\":\"");
+                    sb.append(event.name);
+                    sb.append("\"");
+                    
+                    if (event.description.has_value()) {
+                        sb.append(",\"description\":\"");
+                        sb.append(*event.description);
+                        sb.append("\"");
+                    }
+                    if (event.logo.has_value()) {
+                        sb.append(",\"logo\":\"");
+                        sb.append(*event.logo);
+                        sb.append("\"");
+                    }
+                    
+                    sb.append(",\"subTopicIds\":[");
+                    bool first_id = true;
+                    for (uint64_t id : event.subTopicIds) {
+                        if (!first_id) sb.append(",");
+                        sb.append(id);
+                        first_id = false;
+                    }
+                    sb.append("]");
+                    
+                    if (event.subjectCode.has_value()) {
+                        sb.append(",\"subjectCode\":\"");
+                        sb.append(*event.subjectCode);
+                        sb.append("\"");
+                    }
+                    if (event.subtitle.has_value()) {
+                        sb.append(",\"subtitle\":\"");
+                        sb.append(*event.subtitle);
+                        sb.append("\"");
+                    }
+                    
+                    sb.append(",\"topicIds\":[");
+                    first_id = true;
+                    for (uint64_t id : event.topicIds) {
+                        if (!first_id) sb.append(",");
+                        sb.append(id);
+                        first_id = false;
+                    }
+                    sb.append("]");
+                    
+                    sb.append("}");
+                    first = false;
+                }
+                sb.append("},");
+                
+                // Serialize performances
+                sb.append("\"performances\":[");
+                first = true;
+                for (const auto& perf : data.performances) {
+                    if (!first) sb.append(",");
+                    sb.append("{");
+                    sb.append("\"id\":");
+                    sb.append(perf.id);
+                    sb.append(",");
+                    sb.append("\"eventId\":");
+                    sb.append(perf.eventId);
+                    sb.append(",");
+                    
+                    if (perf.logo.has_value()) {
+                        sb.append("\"logo\":\"");
+                        sb.append(*perf.logo);
+                        sb.append("\",");
+                    }
+                    if (perf.name.has_value()) {
+                        sb.append("\"name\":\"");
+                        sb.append(*perf.name);
+                        sb.append("\",");
+                    }
+                    
+                    // Prices
+                    sb.append("\"prices\":[");
+                    bool first_price = true;
+                    for (const auto& price : perf.prices) {
+                        if (!first_price) sb.append(",");
+                        sb.append("{");
+                        sb.append("\"amount\":");
+                        sb.append(price.amount);
+                        sb.append(",");
+                        sb.append("\"audienceSubCategoryId\":");
+                        sb.append(price.audienceSubCategoryId);
+                        sb.append(",");
+                        sb.append("\"seatCategoryId\":");
+                        sb.append(price.seatCategoryId);
+                        sb.append("}");
+                        first_price = false;
+                    }
+                    sb.append("],");
+                    
+                    // Seat categories
+                    sb.append("\"seatCategories\":[");
+                    bool first_sc = true;
+                    for (const auto& sc : perf.seatCategories) {
+                        if (!first_sc) sb.append(",");
+                        sb.append("{");
+                        sb.append("\"seatCategoryId\":");
+                        sb.append(sc.seatCategoryId);
+                        sb.append(",");
+                        sb.append("\"areas\":[");
+                        bool first_area = true;
+                        for (const auto& area : sc.areas) {
+                            if (!first_area) sb.append(",");
+                            sb.append("{");
+                            sb.append("\"areaId\":");
+                            sb.append(area.areaId);
+                            sb.append(",");
+                            sb.append("\"blockIds\":[");
+                            bool first_block = true;
+                            for (uint64_t blockId : area.blockIds) {
+                                if (!first_block) sb.append(",");
+                                sb.append(blockId);
+                                first_block = false;
+                            }
+                            sb.append("]");
+                            sb.append("}");
+                            first_area = false;
+                        }
+                        sb.append("]");
+                        sb.append("}");
+                        first_sc = false;
+                    }
+                    sb.append("],");
+                    
+                    if (perf.seatMapImage.has_value()) {
+                        sb.append("\"seatMapImage\":\"");
+                        sb.append(*perf.seatMapImage);
+                        sb.append("\",");
+                    }
+                    
+                    sb.append("\"start\":");
+                    sb.append(perf.start);
+                    sb.append(",");
+                    sb.append("\"venueCode\":\"");
+                    sb.append(perf.venueCode);
+                    sb.append("\"");
+                    sb.append("}");
+                    first = false;
+                }
+                sb.append("],");
+                
+                // Serialize remaining name mappings
+                sb.append("\"seatCategoryNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.seatCategoryNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                sb.append("\"subTopicNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.subTopicNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                sb.append("\"subjectNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.subjectNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                sb.append("\"topicNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.topicNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("},");
+                
+                sb.append("\"topicSubTopics\":{");
+                first = true;
+                for (const auto& [key, values] : data.topicSubTopics) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":[");
+                    bool first_val = true;
+                    for (uint64_t val : values) {
+                        if (!first_val) sb.append(",");
+                        sb.append(val);
+                        first_val = false;
+                    }
+                    sb.append("]");
+                    first = false;
+                }
+                sb.append("},");
+                
+                sb.append("\"venueNames\":{");
+                first = true;
+                for (const auto& [key, value] : data.venueNames) {
+                    if (!first) sb.append(",");
+                    sb.append("\"");
+                    sb.append(key);
+                    sb.append("\":\"");
+                    sb.append(value);
+                    sb.append("\"");
+                    first = false;
+                }
+                sb.append("}");
+                
+                sb.append("}");
+                
+                std::string_view json_view;
+                sb.view().get(json_view);
+                
+                // Use this as sample if we don't have nlohmann
+                if (sample_json.empty()) {
+                    sample_json = std::string(json_view);
+                }
+                
+                return json_view.size() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("simdjson (DOM)", sample_json, iterations, benchmark));
+    }
+    
+#ifdef HAS_NLOHMANN
+    // Update sample_json if not set
+    if (sample_json.empty()) {
+        nlohmann::json j = data;
+        sample_json = j.dump();
+    }
+    
+    // nlohmann::json
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                nlohmann::json j = data;
+                std::string json = j.dump();
+                return !json.empty();
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("nlohmann::json", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_RAPIDJSON
+    // 2. RapidJSON - complete implementation
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                rapidjson::Document doc;
+                doc.SetObject();
+                rapidjson::Document::AllocatorType& alloc = doc.GetAllocator();
+                
+                // Add all name mappings
+                rapidjson::Value areaNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.areaNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    areaNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("areaNames", areaNames_obj, alloc);
+                
+                rapidjson::Value audienceSubCategoryNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.audienceSubCategoryNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    audienceSubCategoryNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("audienceSubCategoryNames", audienceSubCategoryNames_obj, alloc);
+                
+                rapidjson::Value blockNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.blockNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    blockNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("blockNames", blockNames_obj, alloc);
+                
+                // Events object - complete
+                rapidjson::Value events_obj(rapidjson::kObjectType);
+                for (const auto& [key, event] : data.events) {
+                    rapidjson::Value event_obj(rapidjson::kObjectType);
+                    event_obj.AddMember("id", event.id, alloc);
+                    
+                    rapidjson::Value name_val;
+                    name_val.SetString(event.name.c_str(), event.name.length(), alloc);
+                    event_obj.AddMember("name", name_val, alloc);
+                    
+                    if (event.description.has_value()) {
+                        rapidjson::Value desc_val;
+                        desc_val.SetString(event.description->c_str(), event.description->length(), alloc);
+                        event_obj.AddMember("description", desc_val, alloc);
+                    }
+                    
+                    if (event.logo.has_value()) {
+                        rapidjson::Value logo_val;
+                        logo_val.SetString(event.logo->c_str(), event.logo->length(), alloc);
+                        event_obj.AddMember("logo", logo_val, alloc);
+                    }
+                    
+                    rapidjson::Value subTopicIds(rapidjson::kArrayType);
+                    for (uint64_t id : event.subTopicIds) {
+                        subTopicIds.PushBack(id, alloc);
+                    }
+                    event_obj.AddMember("subTopicIds", subTopicIds, alloc);
+                    
+                    if (event.subjectCode.has_value()) {
+                        rapidjson::Value subject_val;
+                        subject_val.SetString(event.subjectCode->c_str(), event.subjectCode->length(), alloc);
+                        event_obj.AddMember("subjectCode", subject_val, alloc);
+                    }
+                    
+                    if (event.subtitle.has_value()) {
+                        rapidjson::Value subtitle_val;
+                        subtitle_val.SetString(event.subtitle->c_str(), event.subtitle->length(), alloc);
+                        event_obj.AddMember("subtitle", subtitle_val, alloc);
+                    }
+                    
+                    rapidjson::Value topicIds(rapidjson::kArrayType);
+                    for (uint64_t id : event.topicIds) {
+                        topicIds.PushBack(id, alloc);
+                    }
+                    event_obj.AddMember("topicIds", topicIds, alloc);
+                    
+                    rapidjson::Value key_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    events_obj.AddMember(key_val, event_obj, alloc);
+                }
+                doc.AddMember("events", events_obj, alloc);
+                
+                // Performances array - complete
+                rapidjson::Value performances(rapidjson::kArrayType);
+                for (const auto& perf : data.performances) {
+                    rapidjson::Value perf_obj(rapidjson::kObjectType);
+                    perf_obj.AddMember("id", perf.id, alloc);
+                    perf_obj.AddMember("eventId", perf.eventId, alloc);
+                    
+                    if (perf.logo.has_value()) {
+                        rapidjson::Value logo_val;
+                        logo_val.SetString(perf.logo->c_str(), perf.logo->length(), alloc);
+                        perf_obj.AddMember("logo", logo_val, alloc);
+                    }
+                    
+                    if (perf.name.has_value()) {
+                        rapidjson::Value name_val;
+                        name_val.SetString(perf.name->c_str(), perf.name->length(), alloc);
+                        perf_obj.AddMember("name", name_val, alloc);
+                    }
+                    
+                    // Prices array
+                    rapidjson::Value prices(rapidjson::kArrayType);
+                    for (const auto& price : perf.prices) {
+                        rapidjson::Value price_obj(rapidjson::kObjectType);
+                        price_obj.AddMember("amount", price.amount, alloc);
+                        price_obj.AddMember("audienceSubCategoryId", price.audienceSubCategoryId, alloc);
+                        price_obj.AddMember("seatCategoryId", price.seatCategoryId, alloc);
+                        prices.PushBack(price_obj, alloc);
+                    }
+                    perf_obj.AddMember("prices", prices, alloc);
+                    
+                    // Seat categories array
+                    rapidjson::Value seatCategories(rapidjson::kArrayType);
+                    for (const auto& seatCat : perf.seatCategories) {
+                        rapidjson::Value seatCat_obj(rapidjson::kObjectType);
+                        seatCat_obj.AddMember("seatCategoryId", seatCat.seatCategoryId, alloc);
+                        
+                        rapidjson::Value areas(rapidjson::kArrayType);
+                        for (const auto& area : seatCat.areas) {
+                            rapidjson::Value area_obj(rapidjson::kObjectType);
+                            area_obj.AddMember("areaId", area.areaId, alloc);
+                            
+                            rapidjson::Value blockIds(rapidjson::kArrayType);
+                            for (uint64_t blockId : area.blockIds) {
+                                blockIds.PushBack(blockId, alloc);
+                            }
+                            area_obj.AddMember("blockIds", blockIds, alloc);
+                            
+                            areas.PushBack(area_obj, alloc);
+                        }
+                        seatCat_obj.AddMember("areas", areas, alloc);
+                        
+                        seatCategories.PushBack(seatCat_obj, alloc);
+                    }
+                    perf_obj.AddMember("seatCategories", seatCategories, alloc);
+                    
+                    if (perf.seatMapImage.has_value()) {
+                        rapidjson::Value seatMap_val;
+                        seatMap_val.SetString(perf.seatMapImage->c_str(), perf.seatMapImage->length(), alloc);
+                        perf_obj.AddMember("seatMapImage", seatMap_val, alloc);
+                    }
+                    
+                    perf_obj.AddMember("start", perf.start, alloc);
+                    
+                    rapidjson::Value venue_val;
+                    venue_val.SetString(perf.venueCode.c_str(), perf.venueCode.length(), alloc);
+                    perf_obj.AddMember("venueCode", venue_val, alloc);
+                    
+                    performances.PushBack(perf_obj, alloc);
+                }
+                doc.AddMember("performances", performances, alloc);
+                
+                // Add remaining name mappings
+                rapidjson::Value seatCategoryNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.seatCategoryNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    seatCategoryNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("seatCategoryNames", seatCategoryNames_obj, alloc);
+                
+                rapidjson::Value subTopicNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.subTopicNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    subTopicNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("subTopicNames", subTopicNames_obj, alloc);
+                
+                rapidjson::Value subjectNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.subjectNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    subjectNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("subjectNames", subjectNames_obj, alloc);
+                
+                rapidjson::Value topicNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.topicNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    topicNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("topicNames", topicNames_obj, alloc);
+                
+                rapidjson::Value topicSubTopics_obj(rapidjson::kObjectType);
+                for (const auto& [key, values] : data.topicSubTopics) {
+                    rapidjson::Value key_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    rapidjson::Value arr(rapidjson::kArrayType);
+                    for (uint64_t val : values) {
+                        arr.PushBack(val, alloc);
+                    }
+                    topicSubTopics_obj.AddMember(key_val, arr, alloc);
+                }
+                doc.AddMember("topicSubTopics", topicSubTopics_obj, alloc);
+                
+                rapidjson::Value venueNames_obj(rapidjson::kObjectType);
+                for (const auto& [key, value] : data.venueNames) {
+                    rapidjson::Value key_val, value_val;
+                    key_val.SetString(key.c_str(), key.length(), alloc);
+                    value_val.SetString(value.c_str(), value.length(), alloc);
+                    venueNames_obj.AddMember(key_val, value_val, alloc);
+                }
+                doc.AddMember("venueNames", venueNames_obj, alloc);
+                
+                rapidjson::StringBuffer buffer;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                doc.Accept(writer);
+                
+                return buffer.GetSize() > 0;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("RapidJSON", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_YYJSON
+    // 3. yyjson - complete implementation
+    {
+        auto benchmark = [&]() -> bool {
+            try {
+                yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+                yyjson_mut_val *root = yyjson_mut_obj(doc);
+                yyjson_mut_doc_set_root(doc, root);
+                
+                // Add all name mappings
+                yyjson_mut_val *areaNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.areaNames) {
+                    yyjson_mut_obj_add_str(doc, areaNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "areaNames", areaNames_obj);
+                
+                yyjson_mut_val *audienceSubCategoryNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.audienceSubCategoryNames) {
+                    yyjson_mut_obj_add_str(doc, audienceSubCategoryNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "audienceSubCategoryNames", audienceSubCategoryNames_obj);
+                
+                yyjson_mut_val *blockNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.blockNames) {
+                    yyjson_mut_obj_add_str(doc, blockNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "blockNames", blockNames_obj);
+                
+                // Events object - complete
+                yyjson_mut_val *events_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, event] : data.events) {
+                    yyjson_mut_val *event_obj = yyjson_mut_obj(doc);
+                    yyjson_mut_obj_add_int(doc, event_obj, "id", event.id);
+                    yyjson_mut_obj_add_str(doc, event_obj, "name", event.name.c_str());
+                    
+                    if (event.description.has_value()) {
+                        yyjson_mut_obj_add_str(doc, event_obj, "description", event.description->c_str());
+                    }
+                    
+                    if (event.logo.has_value()) {
+                        yyjson_mut_obj_add_str(doc, event_obj, "logo", event.logo->c_str());
+                    }
+                    
+                    yyjson_mut_val *subTopicIds = yyjson_mut_arr(doc);
+                    for (uint64_t id : event.subTopicIds) {
+                        yyjson_mut_arr_add_int(doc, subTopicIds, id);
+                    }
+                    yyjson_mut_obj_add_val(doc, event_obj, "subTopicIds", subTopicIds);
+                    
+                    if (event.subjectCode.has_value()) {
+                        yyjson_mut_obj_add_str(doc, event_obj, "subjectCode", event.subjectCode->c_str());
+                    }
+                    
+                    if (event.subtitle.has_value()) {
+                        yyjson_mut_obj_add_str(doc, event_obj, "subtitle", event.subtitle->c_str());
+                    }
+                    
+                    yyjson_mut_val *topicIds = yyjson_mut_arr(doc);
+                    for (uint64_t id : event.topicIds) {
+                        yyjson_mut_arr_add_int(doc, topicIds, id);
+                    }
+                    yyjson_mut_obj_add_val(doc, event_obj, "topicIds", topicIds);
+                    
+                    yyjson_mut_obj_add_val(doc, events_obj, key.c_str(), event_obj);
+                }
+                yyjson_mut_obj_add_val(doc, root, "events", events_obj);
+                
+                // Performances array - complete
+                yyjson_mut_val *performances = yyjson_mut_arr(doc);
+                for (const auto& perf : data.performances) {
+                    yyjson_mut_val *perf_obj = yyjson_mut_obj(doc);
+                    yyjson_mut_obj_add_int(doc, perf_obj, "id", perf.id);
+                    yyjson_mut_obj_add_int(doc, perf_obj, "eventId", perf.eventId);
+                    
+                    if (perf.logo.has_value()) {
+                        yyjson_mut_obj_add_str(doc, perf_obj, "logo", perf.logo->c_str());
+                    }
+                    
+                    if (perf.name.has_value()) {
+                        yyjson_mut_obj_add_str(doc, perf_obj, "name", perf.name->c_str());
+                    }
+                    
+                    // Prices array
+                    yyjson_mut_val *prices = yyjson_mut_arr(doc);
+                    for (const auto& price : perf.prices) {
+                        yyjson_mut_val *price_obj = yyjson_mut_obj(doc);
+                        yyjson_mut_obj_add_int(doc, price_obj, "amount", price.amount);
+                        yyjson_mut_obj_add_int(doc, price_obj, "audienceSubCategoryId", price.audienceSubCategoryId);
+                        yyjson_mut_obj_add_int(doc, price_obj, "seatCategoryId", price.seatCategoryId);
+                        yyjson_mut_arr_append(prices, price_obj);
+                    }
+                    yyjson_mut_obj_add_val(doc, perf_obj, "prices", prices);
+                    
+                    // Seat categories array
+                    yyjson_mut_val *seatCategories = yyjson_mut_arr(doc);
+                    for (const auto& seatCat : perf.seatCategories) {
+                        yyjson_mut_val *seatCat_obj = yyjson_mut_obj(doc);
+                        yyjson_mut_obj_add_int(doc, seatCat_obj, "seatCategoryId", seatCat.seatCategoryId);
+                        
+                        yyjson_mut_val *areas = yyjson_mut_arr(doc);
+                        for (const auto& area : seatCat.areas) {
+                            yyjson_mut_val *area_obj = yyjson_mut_obj(doc);
+                            yyjson_mut_obj_add_int(doc, area_obj, "areaId", area.areaId);
+                            
+                            yyjson_mut_val *blockIds = yyjson_mut_arr(doc);
+                            for (uint64_t blockId : area.blockIds) {
+                                yyjson_mut_arr_add_int(doc, blockIds, blockId);
+                            }
+                            yyjson_mut_obj_add_val(doc, area_obj, "blockIds", blockIds);
+                            
+                            yyjson_mut_arr_append(areas, area_obj);
+                        }
+                        yyjson_mut_obj_add_val(doc, seatCat_obj, "areas", areas);
+                        
+                        yyjson_mut_arr_append(seatCategories, seatCat_obj);
+                    }
+                    yyjson_mut_obj_add_val(doc, perf_obj, "seatCategories", seatCategories);
+                    
+                    if (perf.seatMapImage.has_value()) {
+                        yyjson_mut_obj_add_str(doc, perf_obj, "seatMapImage", perf.seatMapImage->c_str());
+                    }
+                    
+                    yyjson_mut_obj_add_int(doc, perf_obj, "start", perf.start);
+                    yyjson_mut_obj_add_str(doc, perf_obj, "venueCode", perf.venueCode.c_str());
+                    
+                    yyjson_mut_arr_append(performances, perf_obj);
+                }
+                yyjson_mut_obj_add_val(doc, root, "performances", performances);
+                
+                // Add remaining name mappings
+                yyjson_mut_val *seatCategoryNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.seatCategoryNames) {
+                    yyjson_mut_obj_add_str(doc, seatCategoryNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "seatCategoryNames", seatCategoryNames_obj);
+                
+                yyjson_mut_val *subTopicNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.subTopicNames) {
+                    yyjson_mut_obj_add_str(doc, subTopicNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "subTopicNames", subTopicNames_obj);
+                
+                yyjson_mut_val *subjectNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.subjectNames) {
+                    yyjson_mut_obj_add_str(doc, subjectNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "subjectNames", subjectNames_obj);
+                
+                yyjson_mut_val *topicNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.topicNames) {
+                    yyjson_mut_obj_add_str(doc, topicNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "topicNames", topicNames_obj);
+                
+                yyjson_mut_val *topicSubTopics_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, values] : data.topicSubTopics) {
+                    yyjson_mut_val *arr = yyjson_mut_arr(doc);
+                    for (uint64_t val : values) {
+                        yyjson_mut_arr_add_int(doc, arr, val);
+                    }
+                    yyjson_mut_obj_add_val(doc, topicSubTopics_obj, key.c_str(), arr);
+                }
+                yyjson_mut_obj_add_val(doc, root, "topicSubTopics", topicSubTopics_obj);
+                
+                yyjson_mut_val *venueNames_obj = yyjson_mut_obj(doc);
+                for (const auto& [key, value] : data.venueNames) {
+                    yyjson_mut_obj_add_str(doc, venueNames_obj, key.c_str(), value.c_str());
+                }
+                yyjson_mut_obj_add_val(doc, root, "venueNames", venueNames_obj);
+                
+                char *json_str = yyjson_mut_write(doc, 0, NULL);
+                bool success = (json_str != NULL);
+                if (json_str) free(json_str);
+                yyjson_mut_doc_free(doc);
+                
+                return success;
+            } catch (...) {
+                return false;
+            }
+        };
+        
+        results.push_back(run_benchmark("yyjson", sample_json, iterations, benchmark));
+    }
+#endif
+    
+#ifdef HAS_SERDE
+    // 4. Serde (Rust) serialization  
+    {
+        // Parse the original JSON to get Serde's internal representation
+        // Get the actual CITM JSON file
+        std::string citm_json_full;
+        {
+            std::ifstream file("jsonexamples/citm_catalog.json", std::ios::binary);
+            if (!file) {
+                file.open("../jsonexamples/citm_catalog.json", std::ios::binary);
+            }
+            if (!file) {
+                file.open("../../jsonexamples/citm_catalog.json", std::ios::binary);
+            }
+            if (file) {
+                citm_json_full = std::string((std::istreambuf_iterator<char>(file)),
+                                             std::istreambuf_iterator<char>());
+            }
+        }
+        
+        serde_benchmark::CitmCatalog* serde_data = nullptr;
+        if (!citm_json_full.empty()) {
+            serde_data = serde_benchmark::citm_from_str(
+                citm_json_full.c_str(), citm_json_full.size());
+        }
+        
+        if (serde_data) {
+            auto benchmark = [serde_data]() -> bool {
+                try {
+                    char* json_str = serde_benchmark::str_from_citm(serde_data);
+                    if (json_str) {
+                        serde_benchmark::free_str(json_str);
+                        return true;
+                    }
+                    return false;
+                } catch (...) {
+                    return false;
+                }
+            };
+            
+            results.push_back(run_benchmark("Serde (Rust)", sample_json, iterations, benchmark));
+            serde_benchmark::free_citm(serde_data);
+        }
+    }
+#endif
     
     return results;
 }
@@ -663,9 +2252,41 @@ void print_results_table(const std::string& title,
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    // Parse command-line arguments
+    bool run_parsing = true;
+    bool run_serialization = false;
+    
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--serialization" || arg == "-s") {
+            run_parsing = false;
+            run_serialization = true;
+        } else if (arg == "--parsing" || arg == "-p") {
+            run_parsing = true;
+            run_serialization = false;
+        } else if (arg == "--both" || arg == "-b") {
+            run_parsing = true;
+            run_serialization = true;
+        } else if (arg == "--help" || arg == "-h") {
+            std::cout << "Usage: " << argv[0] << " [OPTIONS]\n";
+            std::cout << "Options:\n";
+            std::cout << "  --parsing, -p       Run only parsing benchmarks (default)\n";
+            std::cout << "  --serialization, -s Run only serialization benchmarks\n";
+            std::cout << "  --both, -b          Run both parsing and serialization benchmarks\n";
+            std::cout << "  --help, -h          Show this help message\n";
+            return 0;
+        }
+    }
+    
     std::cout << "=== Unified JSON Performance Benchmark ===\n";
-    std::cout << "Comparing: simdjson (manual, reflection, from()) vs Other Libraries\n\n";
+    if (run_parsing && run_serialization) {
+        std::cout << "Mode: PARSING and SERIALIZATION\n\n";
+    } else if (run_serialization) {
+        std::cout << "Mode: SERIALIZATION ONLY (C++ structs → JSON)\n\n";
+    } else {
+        std::cout << "Mode: PARSING ONLY (JSON → C++ structs)\n\n";
+    }
     
     // Load Twitter test data - try multiple paths
     std::string twitter_json;
@@ -699,9 +2320,27 @@ int main() {
     
     std::cout << "Twitter JSON size: " << twitter_json.size() << " bytes\n";
     
-    // Run Twitter benchmarks
-    auto twitter_results = benchmark_twitter_parsing(twitter_json);
-    print_results_table("TWITTER PARSING PERFORMANCE", twitter_results);
+    // Parse Twitter data for serialization benchmarks
+    TwitterData twitter_data;
+    {
+        simdjson::ondemand::parser parser;
+        simdjson::padded_string padded(twitter_json);
+        simdjson::ondemand::document doc;
+        if (parser.iterate(padded).get(doc) == simdjson::SUCCESS) {
+            doc.get(twitter_data);
+        }
+    }
+    
+    // Run Twitter benchmarks based on mode
+    if (run_parsing) {
+        auto twitter_results = benchmark_twitter_parsing(twitter_json);
+        print_results_table("TWITTER PARSING PERFORMANCE", twitter_results);
+    }
+    
+    if (run_serialization) {
+        auto twitter_ser_results = benchmark_twitter_serialization(twitter_data);
+        print_results_table("TWITTER SERIALIZATION PERFORMANCE", twitter_ser_results);
+    }
     
     // Load CITM test data - try multiple paths
     std::string citm_json;
@@ -735,9 +2374,27 @@ int main() {
     
     std::cout << "CITM JSON size: " << citm_json.size() << " bytes\n";
     
-    // Run CITM benchmarks
-    auto citm_results = benchmark_citm_parsing(citm_json);
-    print_results_table("CITM CATALOG PARSING PERFORMANCE", citm_results);
+    // Parse CITM data for serialization benchmarks
+    CITMCatalog citm_data;
+    {
+        simdjson::ondemand::parser parser;
+        simdjson::padded_string padded(citm_json);
+        simdjson::ondemand::document doc;
+        if (parser.iterate(padded).get(doc) == simdjson::SUCCESS) {
+            doc.get(citm_data);
+        }
+    }
+    
+    // Run CITM benchmarks based on mode
+    if (run_parsing) {
+        auto citm_results = benchmark_citm_parsing(citm_json);
+        print_results_table("CITM CATALOG PARSING PERFORMANCE", citm_results);
+    }
+    
+    if (run_serialization) {
+        auto citm_ser_results = benchmark_citm_serialization(citm_data);
+        print_results_table("CITM CATALOG SERIALIZATION PERFORMANCE", citm_ser_results);
+    }
     
     std::cout << "\n=== Summary ===\n";
     std::cout << "All benchmarks use full field extraction for fair comparison.\n";

@@ -114,3 +114,11 @@ ablation/results/*.txt
 
 # Unified benchmark binary
 benchmark/unified_benchmark
+
+# Rust build artifacts
+*.rlib
+*.rmeta
+benchmark/static_reflect/serde-benchmark/target/
+**/target/debug/
+**/target/release/
+Cargo.lock

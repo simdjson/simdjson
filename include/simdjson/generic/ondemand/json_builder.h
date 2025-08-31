@@ -57,9 +57,8 @@ struct atom_struct_impl<T, true> {
       if (!first)
         b.append(',');
       first = false;
-      // Create a compile-time string using define_static_string
-      constexpr auto escaped_name = consteval_to_quoted_escaped(std::meta::identifier_of(dm));
-      constexpr const char* static_key = std::define_static_string(escaped_name);
+      // Use std::define_static_string directly with the consteval result
+      constexpr const char* static_key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
       b.append_raw(static_key);
       b.append(':');
       atom(b, t.[:dm:]);
@@ -68,6 +67,7 @@ struct atom_struct_impl<T, true> {
   }
 };
 #endif
+
 
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
@@ -145,8 +145,6 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char>)
 void atom(string_builder &b, const T &t) {
-
-  // Always use consteval optimization when available
 #if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
   atom_struct_impl<T, true>::serialize(b, t);
 #else

@@ -22,17 +22,34 @@ echo -e "${BLUE}   (JSON → C++ structs)${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
 
-# Check if unified benchmark exists
-UNIFIED_BENCH="benchmark/unified_benchmark"
+# Always rebuild unified benchmark to ensure it's up to date
+echo -e "${YELLOW}Building unified benchmark with all available libraries...${NC}"
 
-if [ ! -f "$UNIFIED_BENCH" ]; then
-    echo -e "${YELLOW}Unified benchmark not found. Building...${NC}"
-    ./build_unified_benchmark.sh
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}Failed to build unified benchmark${NC}"
-        exit 1
+# First check and build Serde if needed
+if [ ! -f "benchmark/static_reflect/serde-benchmark/target/release/libserde_benchmark.so" ] && \
+   [ ! -f "benchmark/static_reflect/serde-benchmark/target/release/libserde_benchmark.a" ]; then
+    echo -e "${YELLOW}Building Serde benchmark library...${NC}"
+    if [ -d "benchmark/static_reflect/serde-benchmark" ]; then
+        cd benchmark/static_reflect/serde-benchmark
+        cargo build --release
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ Serde benchmark built successfully${NC}"
+        else
+            echo -e "${YELLOW}⚠ Warning: Serde benchmark build failed - will skip Serde tests${NC}"
+        fi
+        cd ../../..
+    else
+        echo -e "${YELLOW}⚠ Serde benchmark directory not found - will skip Serde tests${NC}"
     fi
 fi
+
+# Build unified benchmark
+./build_unified_benchmark.sh
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to build unified benchmark${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Unified benchmark built successfully${NC}"
 
 # Parse command line arguments
 FILTER=""
@@ -87,7 +104,8 @@ if [ -f "benchmark/static_reflect/serde-benchmark/target/release/libserde_benchm
 fi
 
 # The unified benchmark handles both datasets internally
-./benchmark/unified_benchmark
+# Pass --parsing flag to run parsing benchmarks (this is the default)
+./benchmark/unified_benchmark --parsing
 
 echo ""
 echo -e "${BLUE}======================================${NC}"
