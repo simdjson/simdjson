@@ -179,7 +179,7 @@ void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
   // Compile-time optimization: pre-compute enum lookup table for faster runtime lookup
-  constexpr auto enum_values = std::meta::enumerators_of(^^T);
+  constexpr auto enum_values = std::define_static_array(std::meta::enumerators_of(^^T));
   constexpr size_t enum_count = enum_values.size();
 
   // Small enum optimization: use compile-time lookup for common small enums
