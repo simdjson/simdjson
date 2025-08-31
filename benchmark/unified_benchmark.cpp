@@ -997,7 +997,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                     }
                 }
                 
-                // Parse performances (simplified)
+                // Parse performances (full extraction like simdjson)
                 yyjson_val *performances = yyjson_obj_get(root, "performances");
                 if (performances) {
                     size_t idx, max;
@@ -1011,6 +1011,75 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         v = yyjson_obj_get(perf_val, "eventId");
                         if (v) perf.eventId = yyjson_get_uint(v);
                         
+                        v = yyjson_obj_get(perf_val, "logo");
+                        if (v && !yyjson_is_null(v)) perf.logo = yyjson_get_str(v);
+                        
+                        v = yyjson_obj_get(perf_val, "name");
+                        if (v && !yyjson_is_null(v)) perf.name = yyjson_get_str(v);
+                        
+                        // Parse prices array
+                        v = yyjson_obj_get(perf_val, "prices");
+                        if (v) {
+                            size_t price_idx, price_max;
+                            yyjson_val *price_val;
+                            yyjson_arr_foreach(v, price_idx, price_max, price_val) {
+                                CITMPrice price;
+                                yyjson_val *p = yyjson_obj_get(price_val, "amount");
+                                if (p) price.amount = yyjson_get_uint(p);
+                                
+                                p = yyjson_obj_get(price_val, "audienceSubCategoryId");
+                                if (p) price.audienceSubCategoryId = yyjson_get_uint(p);
+                                
+                                p = yyjson_obj_get(price_val, "seatCategoryId");
+                                if (p) price.seatCategoryId = yyjson_get_uint(p);
+                                
+                                perf.prices.push_back(std::move(price));
+                            }
+                        }
+                        
+                        // Parse seatCategories with nested areas and blockIds
+                        v = yyjson_obj_get(perf_val, "seatCategories");
+                        if (v) {
+                            size_t sc_idx, sc_max;
+                            yyjson_val *sc_val;
+                            yyjson_arr_foreach(v, sc_idx, sc_max, sc_val) {
+                                CITMSeatCategory seatCat;
+                                
+                                yyjson_val *sc = yyjson_obj_get(sc_val, "seatCategoryId");
+                                if (sc) seatCat.seatCategoryId = yyjson_get_uint(sc);
+                                
+                                // Parse areas array
+                                sc = yyjson_obj_get(sc_val, "areas");
+                                if (sc) {
+                                    size_t area_idx, area_max;
+                                    yyjson_val *area_val;
+                                    yyjson_arr_foreach(sc, area_idx, area_max, area_val) {
+                                        CITMArea area;
+                                        
+                                        yyjson_val *a = yyjson_obj_get(area_val, "areaId");
+                                        if (a) area.areaId = yyjson_get_uint(a);
+                                        
+                                        // Parse blockIds array
+                                        a = yyjson_obj_get(area_val, "blockIds");
+                                        if (a) {
+                                            size_t block_idx, block_max;
+                                            yyjson_val *block_val;
+                                            yyjson_arr_foreach(a, block_idx, block_max, block_val) {
+                                                area.blockIds.push_back(yyjson_get_uint(block_val));
+                                            }
+                                        }
+                                        
+                                        seatCat.areas.push_back(std::move(area));
+                                    }
+                                }
+                                
+                                perf.seatCategories.push_back(std::move(seatCat));
+                            }
+                        }
+                        
+                        v = yyjson_obj_get(perf_val, "seatMapImage");
+                        if (v && !yyjson_is_null(v)) perf.seatMapImage = yyjson_get_str(v);
+                        
                         v = yyjson_obj_get(perf_val, "start");
                         if (v) perf.start = yyjson_get_uint(v);
                         
@@ -1018,6 +1087,96 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         if (v) perf.venueCode = yyjson_get_str(v);
                         
                         catalog.performances.push_back(std::move(perf));
+                    }
+                }
+                
+                // Parse all name mappings (like simdjson does)
+                yyjson_val *seatCategoryNames = yyjson_obj_get(root, "seatCategoryNames");
+                if (seatCategoryNames) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(seatCategoryNames, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        const char *val_str = yyjson_get_str(val);
+                        if (key_str && val_str) {
+                            catalog.seatCategoryNames[key_str] = val_str;
+                        }
+                    }
+                }
+                
+                yyjson_val *subTopicNames = yyjson_obj_get(root, "subTopicNames");
+                if (subTopicNames) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(subTopicNames, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        const char *val_str = yyjson_get_str(val);
+                        if (key_str && val_str) {
+                            catalog.subTopicNames[key_str] = val_str;
+                        }
+                    }
+                }
+                
+                yyjson_val *subjectNames = yyjson_obj_get(root, "subjectNames");
+                if (subjectNames) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(subjectNames, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        const char *val_str = yyjson_get_str(val);
+                        if (key_str && val_str) {
+                            catalog.subjectNames[key_str] = val_str;
+                        }
+                    }
+                }
+                
+                yyjson_val *topicNames = yyjson_obj_get(root, "topicNames");
+                if (topicNames) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(topicNames, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        const char *val_str = yyjson_get_str(val);
+                        if (key_str && val_str) {
+                            catalog.topicNames[key_str] = val_str;
+                        }
+                    }
+                }
+                
+                yyjson_val *topicSubTopics = yyjson_obj_get(root, "topicSubTopics");
+                if (topicSubTopics) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(topicSubTopics, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        if (key_str) {
+                            std::vector<uint64_t> ids;
+                            size_t arr_idx, arr_max;
+                            yyjson_val *arr_val;
+                            yyjson_arr_foreach(val, arr_idx, arr_max, arr_val) {
+                                ids.push_back(yyjson_get_uint(arr_val));
+                            }
+                            catalog.topicSubTopics[key_str] = std::move(ids);
+                        }
+                    }
+                }
+                
+                yyjson_val *venueNames = yyjson_obj_get(root, "venueNames");
+                if (venueNames) {
+                    size_t idx, max;
+                    yyjson_val *key;
+                    yyjson_val *val;
+                    yyjson_obj_foreach(venueNames, idx, max, key, val) {
+                        const char *key_str = yyjson_get_str(key);
+                        const char *val_str = yyjson_get_str(val);
+                        if (key_str && val_str) {
+                            catalog.venueNames[key_str] = val_str;
+                        }
                     }
                 }
                 

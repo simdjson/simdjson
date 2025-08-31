@@ -15,29 +15,29 @@ Performance comparison of JSON serialization (C++ structs → JSON) across multi
 
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **simdjson (reflection)** | 3.49 GB/s | 23.18 μs | C++26 static reflection with consteval |
-| **yyjson** | 2.10 GB/s | 38.62 μs | C library |
-| **simdjson (DOM)** | 1.69 GB/s | 47.95 μs | Manual DOM serialization |
-| **Serde (Rust)** | 1.34 GB/s | 60.40 μs | Via FFI |
-| **RapidJSON** | 546 MB/s | 148.38 μs | DOM-based |
-| **nlohmann/json** | 242 MB/s | 334.10 μs | Slowest |
+| **simdjson (reflection)** | 3.47 GB/s | 23.32 μs | C++26 static reflection with consteval |
+| **yyjson** | 2.06 GB/s | 39.25 μs | C library |
+| **simdjson (DOM)** | 1.63 GB/s | 49.59 μs | Manual DOM serialization |
+| **Serde (Rust)** | 1.32 GB/s | 61.39 μs | Via FFI |
+| **RapidJSON** | 493 MB/s | 164.20 μs | DOM-based |
+| **nlohmann/json** | 243 MB/s | 333.23 μs | Slowest |
 
 ## CITM Catalog Results (1.7MB)
 
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **simdjson (reflection)** | 2.26 GB/s | 210.84 μs | Fastest with consteval optimization |
-| **yyjson** | 1.65 GB/s | 289.18 μs | C library |
-| **Serde (Rust)** | 1.19 GB/s | 400.57 μs | Strong performance |
-| **simdjson (DOM)** | 800 MB/s | 596.26 μs | Manual implementation |
-| **RapidJSON** | 567 MB/s | 841.96 μs | DOM-based |
-| **nlohmann/json** | 129 MB/s | 3695.05 μs | Slowest |
+| **simdjson (reflection)** | 2.25 GB/s | 212.09 μs | Fastest with consteval optimization |
+| **yyjson** | 1.69 GB/s | 283.10 μs | C library |
+| **Serde (Rust)** | 1.18 GB/s | 405.61 μs | Strong performance |
+| **simdjson (DOM)** | 786 MB/s | 607.35 μs | Manual implementation |
+| **RapidJSON** | 568 MB/s | 840.74 μs | DOM-based |
+| **nlohmann/json** | 130 MB/s | 3668.45 μs | Slowest |
 
 ## Key Findings
 
 ### Performance Leaders
-- **simdjson (reflection)** dominates with 3.49 GB/s on Twitter (best-in-class)
-- **simdjson (reflection)** achieves 2.26 GB/s on CITM (fastest overall)
+- **simdjson (reflection)** dominates with 3.47 GB/s on Twitter (best-in-class)
+- **simdjson (reflection)** achieves 2.25 GB/s on CITM (fastest overall)
 - **Consteval optimization** provides significant speedup by pre-computing JSON keys at compile-time
 
 ### Technology Insights
