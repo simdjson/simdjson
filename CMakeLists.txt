@@ -134,6 +134,13 @@ if(
   )
 endif()
 
+# ---- RISC-V V-extension auto-detect ----
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv")
+    set(_simdjson_can_use_rvv ON)
+else()
+    set(_simdjson_can_use_rvv OFF)
+endif()
+
 option(SIMDJSON_MINUS_ZERO_AS_FLOAT "Treat -0 as a floating-point value" OFF)
 
 if(SIMDJSON_MINUS_ZERO_AS_FLOAT)
