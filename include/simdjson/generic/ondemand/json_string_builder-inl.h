@@ -206,29 +206,6 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
   return out - initout;
 }
 
-#if SIMDJSON_CONSTEVAL
-// unoptimized, meant for compile-time execution
-consteval std::string consteval_to_quoted_escaped(std::string_view input) {
-  std::string out = "\"";
-  for (char c : input) {
-    if (json_quotable_character[uint8_t(c)]) {
-      if (c == '"') {
-        out.append("\\\"");
-      } else if (c == '\\') {
-        out.append("\\\\");
-      } else {
-        std::string_view v = control_chars[uint8_t(c)];
-        out.append(v);
-      }
-    } else {
-      out.push_back(c);
-    }
-  }
-  out.push_back('"');
-  return out;
-}
-#endif // SIMDJSON_CONSTEVAL
-
 simdjson_inline string_builder::string_builder(size_t initial_capacity)
     : buffer(new(std::nothrow) char[initial_capacity]), position(0),
       capacity(buffer.get() != nullptr ? initial_capacity : 0),

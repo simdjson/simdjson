@@ -275,32 +275,6 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T> && !require_custom_serialization<T>);
 
 
-// workaround from
-// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r10.html#back-and-forth
-// for missing expansion statements
-namespace __impl {
-  template<auto... vals>
-  struct replicator_type {
-    template<typename F>
-      constexpr void operator>>(F body) const {
-        (body.template operator()<vals>(), ...);
-      }
-  };
-
-  template<auto... vals>
-  replicator_type<vals...> replicator = {};
-}
-
-template<typename R>
-consteval auto expand(R range) {
-  std::vector<std::meta::info> args;
-  for (auto r : range) {
-    args.push_back(reflect_constant(r));
-  }
-  return substitute(^^__impl::replicator, args);
-}
-// end of workaround
-
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
@@ -311,9 +285,8 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
   error_code e = simdjson::SUCCESS;
-
-  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
-    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
       // Note: removed static assert as optional types are now handled generically
       // as long we are succesful or the field is not found, we continue
@@ -332,16 +305,14 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 #if SIMDJSON_STATIC_REFLECTION
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-
-  bool found = false;
-  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
-    if (!found && str == std::meta::identifier_of(enum_val)) {
+  template for (constexpr auto enum_val : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if (str == std::meta::identifier_of(enum_val)) {
       out = [:enum_val:];
-      found = true;
+      return SUCCESS;
     }
   };
 
-  return found ? SUCCESS : INCORRECT_TYPE;
+  return INCORRECT_TYPE;
 #else
   // Fallback: deserialize as integer if reflection not available
   std::underlying_type_t<T> int_val;
