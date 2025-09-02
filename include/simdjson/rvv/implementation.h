@@ -2,6 +2,7 @@
 #define SIMDJSON_RVV_IMPLEMENTATION_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#define SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/base.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/instruction_set.h"
