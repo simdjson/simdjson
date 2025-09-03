@@ -5,11 +5,11 @@
 #include "simdjson/base.h"
 #endif
 
-// 锁定当前实现
+
 #undef  SIMDJSON_IMPLEMENTATION
 #define SIMDJSON_IMPLEMENTATION rvv
 
-// 一次性包含 RVV 内部实现头（后续按需增删）
+// include RVV intrinsics and definitions
 #include "simdjson/rvv/intrinsics.h"
 #include "simdjson/rvv/bitmanipulation.h"
 #include "simdjson/rvv/bitmask.h"
