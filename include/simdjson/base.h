@@ -10,6 +10,7 @@
 #include "simdjson/error.h"
 #include "simdjson/portability.h"
 #include "simdjson/concepts.h"
+#include "simdjson/constevalutil.h"
 
 /**
  * @brief The top level simdjson namespace, containing everything the library provides.
