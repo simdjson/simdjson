@@ -305,7 +305,8 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 #if SIMDJSON_STATIC_REFLECTION
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  template for (constexpr auto enum_val : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+  constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
+  template for (constexpr auto enum_val : enumerators) {
     if (str == std::meta::identifier_of(enum_val)) {
       out = [:enum_val:];
       return SUCCESS;

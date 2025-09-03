@@ -140,7 +140,8 @@ template <typename T>
   requires(std::is_enum_v<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
-  template for (constexpr auto enum_val : std::define_static_array(std::meta::enumerators_of(^^T))) {
+  constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
+  template for (constexpr auto enum_val : enumerators) {
     constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
     if (e == [:enum_val:]) {
       b.append_raw(enum_str);
