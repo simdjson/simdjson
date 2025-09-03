@@ -22,6 +22,9 @@ rules = """
 
 We refer your to the HACKING.md file for more information on how the project is organized.
 
+If you are trying to add a new implementation, you need to edit the amalgamate.py script
+to add your implementation to the IMPLEMENTATIONS list.
+
 To help understand the error, here are the rules for including files in simdjson:
 
 All implementation-specific files, including arm64.h, arm64/implementation.h and
@@ -68,7 +71,7 @@ else:
 RelativeRoot = str # Literal['src','include'] # Literal not supported in Python 3.7 (CI)
 RELATIVE_ROOTS: List[RelativeRoot] = ['src', 'include' ]
 Implementation = str # Literal['arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere', 'lsx', 'lasx'] # Literal not supported in Python 3.7 (CI)
-IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'haswell', 'icelake', 'lasx', 'lsx', 'ppc64', 'westmere', 'fallback' ]
+IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'haswell', 'icelake', 'lasx', 'lsx', 'ppc64', 'westmere', 'fallback', 'rvv' ]
 GENERIC_INCLUDE = "simdjson/generic"
 GENERIC_SRC = "generic"
 BUILTIN = "simdjson/builtin"
@@ -355,7 +358,6 @@ class Amalgamator:
         self.include_stack.append(file)
 
         file.processed = False
-
         self.write(f"/* begin file {self.file_to_str(file)} */")
 
         if file == BUILTIN_BEGIN_H:
