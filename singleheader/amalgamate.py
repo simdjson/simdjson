@@ -22,6 +22,9 @@ rules = """
 
 We refer your to the HACKING.md file for more information on how the project is organized.
 
+If you are trying to add a new implementation, you need to edit the amalgamate.py script
+to add your implementation to the IMPLEMENTATIONS list.
+
 To help understand the error, here are the rules for including files in simdjson:
 
 All implementation-specific files, including arm64.h, arm64/implementation.h and
@@ -480,11 +483,42 @@ AMAL_C = os.path.join(AMALGAMATE_OUTPUT_PATH, "simdjson.cpp")
 DEMOCPP = os.path.join(AMALGAMATE_OUTPUT_PATH, "amalgamate_demo.cpp")
 README = os.path.join(AMALGAMATE_OUTPUT_PATH, "README.md")
 
+def validate_implementations():
+    """Scan include/simdjson/*/implementation.h and compare with IMPLEMENTATIONS list."""
+    include_simdjson_path = os.path.join(PROJECTPATH, 'include', 'simdjson')
+    found_implementations = set()
+
+    if os.path.exists(include_simdjson_path):
+        for item in os.listdir(include_simdjson_path):
+            item_path = os.path.join(include_simdjson_path, item)
+            if os.path.isdir(item_path):
+                impl_h_path = os.path.join(item_path, 'implementation.h')
+                if os.path.exists(impl_h_path) and item != 'builtin':  # Ignore builtin
+                    found_implementations.add(item)
+
+    expected_implementations = set(IMPLEMENTATIONS)
+    if found_implementations != expected_implementations:
+        missing = expected_implementations - found_implementations
+        extra = found_implementations - expected_implementations
+        warning = "Warning: IMPLEMENTATIONS list does not match found implementations.\n"
+        if missing:
+            warning += f"Missing in filesystem: {sorted(missing)}\n"
+        if extra:
+            warning += f"Extra in filesystem: {sorted(extra)}\n"
+        print(warning)
+        return False
+    return True
+
 def read_version():
     with open(os.path.join(PROJECTPATH, 'include/simdjson/simdjson_version.h')) as f:
         return re.search(r'\d+\.\d+\.\d+', f.read()).group(0)
 
 version = read_version()
+if not validate_implementations():
+    print("Validation failed. Please update IMPLEMENTATIONS list in amalgamate.py.")
+    sys.exit(1)
+else:
+    print("implementation validated")
 Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp, version).validate_all_files_used('include')
 Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp, version).validate_all_files_used('src')
 

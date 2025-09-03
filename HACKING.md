@@ -103,12 +103,9 @@ simdjson's source structure, from the top level, looks like this:
     * generic/stage2/*.h: `simdjson::<implementation>::stage2` namespace. Generic implementation of the tape creator, which consumes the index from stage 1 and actually parses numbers and string and such. Used for the DOM interface.
 
 Other important files and directories:
-* **.drone.yml:** Definitions for Drone CI.
-* **.appveyor.yml:** Definitions for Appveyor CI (Windows).
-* **.circleci:** Definitions for Circle CI.
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
-* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script).
+* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script). If you add a new implementation (e.g., rvv), you need to edit this file (IMPLEMENTATIONS).
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnecessary system calls. We recommend checking the performance as follows:
