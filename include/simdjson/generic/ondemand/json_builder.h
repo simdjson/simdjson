@@ -89,9 +89,6 @@ template<typename number_type,
 constexpr void atom(string_builder &b, const number_type t) {
   b.append(t);
 }
-#if SIMDJSON_CONSTEVAL
-consteval std::string consteval_to_quoted_escaped(std::string_view input);
-#endif
 
 template <class T>
   requires(std::is_class_v<T> && !container_but_not_string<T> &&
@@ -106,10 +103,10 @@ template <class T>
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
+  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
     if (i != 0)
       b.append(',');
-    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+    constexpr auto key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
     b.append_raw(key);
     b.append(':');
     atom(b, t.[:dm:]);
@@ -143,21 +140,16 @@ template <typename T>
   requires(std::is_enum_v<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
-  std::string_view result = "<unnamed>";
-  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+  constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
+  template for (constexpr auto enum_val : enumerators) {
+    constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
     if (e == [:enum_val:]) {
-      result = std::meta::identifier_of(enum_val);
+      b.append_raw(enum_str);
+      return;
     }
   };
-
-  if (result != "<unnamed>") {
-    b.append_raw("\"");
-    b.append_raw(result);
-    b.append_raw("\"");
-  } else {
-    // Fallback to integer if enum value not found
-    atom(b, static_cast<std::underlying_type_t<T>>(e));
-  }
+  // Fallback to integer if enum value not found
+  atom(b, static_cast<std::underlying_type_t<T>>(e));
 #else
   // Fallback: serialize as integer if reflection not available
   atom(b, static_cast<std::underlying_type_t<T>>(e));
@@ -241,10 +233,10 @@ template <class Z>
 void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
-  [:expand(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked())):] >> [&]<auto dm>() {
+  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked()))) {
     if (i != 0)
       b.append(',');
-    constexpr auto key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+    constexpr auto key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
     b.append_raw(key);
     b.append(':');
     atom(b, z.[:dm:]);

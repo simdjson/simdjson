@@ -131,6 +131,7 @@ namespace builder_tests {
 
     // Deserialize
     ondemand::parser parser;
+    std::cout << json << std::endl;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
 
