@@ -397,6 +397,25 @@ namespace error_tests {
   }
 #endif // SIMDJSON_EXCEPTIONS
 
+#if SIMDJSON_EXCEPTIONS
+  bool operator_tests() {
+    TEST_START();
+    ondemand::parser parser;
+
+    // Test successful case
+    auto json = R"({ "key": "value", "number": 42 })"_padded;
+    parser.iterate(json).value(); // Test operator*
+    *parser.iterate(json); // Test operator*
+    auto doc_result = parser.iterate(json);
+    ASSERT_SUCCESS(doc_result.error());
+
+    ASSERT_TRUE(doc_result.has_value());
+    double x = doc_result->find_field("number").get<double>();
+    ASSERT_EQUAL(x, 42.0);
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_EXCEPTIONS
+
   bool run() {
     return
            issue2120() &&
@@ -419,6 +438,7 @@ namespace error_tests {
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&
            simple_error_example_except() &&
+           operator_tests() &&
 #endif
            true;
   }

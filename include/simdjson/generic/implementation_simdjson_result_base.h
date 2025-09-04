@@ -74,6 +74,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -81,6 +86,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
