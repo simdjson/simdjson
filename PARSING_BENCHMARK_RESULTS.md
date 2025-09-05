@@ -15,9 +15,9 @@ Comprehensive benchmarks comparing JSON parsing performance across multiple libr
 ### Intel Ice Lake
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **simdjson (manual)** | 2.24 GB/s | 268.58 μs | Hand-written parsing code |
-| **simdjson (reflection)** | 2.06 GB/s | 290.68 μs | C++26 static reflection |
-| **simdjson::from()** | 2.07 GB/s | 284.19 μs | High-level API |
+| **simdjson (manual)** | 2.67 GB/s | 225.82 μs | Hand-written parsing code |
+| **simdjson (reflection)** | 3.75 GB/s | 160.60 μs | C++26 static reflection |
+| **simdjson::from()** | 3.90 GB/s | 154.59 μs  | High-level API |
 | **yyjson** | 1.82 GB/s | 330.94 μs  | C library |
 | **Serde (Rust)** | 1.09 GB/s | 551.83 μs    | Via FFI |
 | **RapidJSON** | 387 MB/s | 1557.00 μs  | Full extraction |
@@ -39,10 +39,10 @@ Comprehensive benchmarks comparing JSON parsing performance across multiple libr
 
 | Library/Method | Throughput | Time/iter | Notes |
 |----------------|------------|-----------|-------|
-| **yyjson** | 1.34 GB/s | 1229.51 μs  | Full extraction |
-| **simdjson (reflection)** | 1.43 GB/s | 1150.54 μs  | Reflection-based |
-| **simdjson::from()** | 1.37 GB/s | 1203.19 μs | Convenient API |
-| **simdjson (manual)** | 1.32 GB/s | 1247.85 μs  | Manual parsing |
+| **yyjson** | 1.46 GB/s | 1130.75 μs | Full extraction |
+| **simdjson (reflection)** | 1.85 GB/s | 890.34 μs  | Reflection-based |
+| **simdjson::from()** | 1.76 GB/s | 890.34 μs | Convenient API |
+| **simdjson (manual)** | 2.32 GB/s | 709.51 μs  | Manual parsing |
 | **RapidJSON** | 552 GB/s | 2986.10 μs | Full extraction |
 | **Serde (Rust)** | 279 MB/s | 5903.36 μs  | Cross-language overhead |
 | **nlohmann/json** | 107187 MB/s |  15378.63 μs  | Full extraction |
@@ -60,6 +60,8 @@ Comprehensive benchmarks comparing JSON parsing performance across multiple libr
 | **nlohmann/json** | 187 MB/s | 8815.76 μs | Full extraction |
 
 ## Key Findings
+
+Daniel: update the findings.
 
 ### Performance Leaders
 - **simdjson (manual)** leads in Twitter parsing at 3.83 GB/s
