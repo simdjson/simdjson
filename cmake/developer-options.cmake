@@ -32,7 +32,7 @@ undefined behavior.")
     link_libraries(
         -fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all
     )
-  else if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(-fsanitize=address)
     link_libraries(-fsanitize=address)
   else()
