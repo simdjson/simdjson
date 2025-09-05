@@ -1451,7 +1451,7 @@ bool simple_error_example() {
     simdjson::ondemand::document doc = parser.iterate(json);
 
     for(auto keyvalue : doc.get_object()) {
-        std::string_view key = keyvalue.escaped_key();
+        simdjson::ondemand::raw_json_string key = keyvalue.key();
         switch(key[0]) {
             case 'p': // price
                 if (key == "price") {
