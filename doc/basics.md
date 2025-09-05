@@ -453,7 +453,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
   scan through the object looking for the field with the matching string, doing a character-by-character
   comparison. It may generate the error `simdjson::NO_SUCH_FIELD` if there is no such key in the object, it may throw an exception (see [Error handling](#error-handling)). For efficiency reason, you should avoid looking up the same field repeatedly: e.g., do
-  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. For best performance, you should try to query the keys in the same order they appear in the document. If you need several keys and you cannot predict the order they will appear in, it is recommended to iterate through all keys `for(auto field : object) {...}`. Generally, you should not mix and match iterating through an object (`for(auto field : object) {...}`) and key accesses (`object["foo"]`): if you need to iterate through an object after a key access, you need to call `reset()` on the object. Whenever you call `reset()`, you need to keep in mind that though you can iterate over the array repeatedly, values should be consumedonly once (e.g., repeatedly calling `unescaped_key()` on the same  key is forbidden). Keep in mind that On-Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if (!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsibility as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
+  not do `object["foo"]` followed by `object["foo"]` with the same `object` instance. Generally, you should not mix and match iterating through an object (`for(auto field : object) {...}`) and key accesses (`object["foo"]`): if you need to iterate through an object after a key access, you need to call `reset()` on the object. Whenever you call `reset()`, you need to keep in mind that though you can iterate over the array repeatedly, values should be consumedonly once (e.g., repeatedly calling `unescaped_key()` on the same  key is forbidden). Keep in mind that On-Demand does not buffer or save the result of the parsing: if you repeatedly access `object["foo"]`, then it must repeatedly seek the key and parse the content. The library does not provide a distinct function to check if a key is present, instead we recommend you attempt to access the key: e.g., by doing `ondemand::value val{}; if (!object["foo"].get(val)) {...}`, you have that `val` contains the requested value inside the if clause.  It is your responsibility as a user to temporarily keep a reference to the value (`auto v = object["foo"]`), or to consume the content and store it in your own data structures. If you consume an
   object twice: `std::string_view(object["foo"]` followed by `std::string_view(object["foo"]` then your code
   is in error. Furthermore, you can only consume one field at a time, on the same object. The
   value instance you get from  `content["bids"]` becomes invalid when you call `content["asks"]`.
@@ -3102,7 +3102,42 @@ Performance tips
 - For release builds, we recommend setting `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.
 - Never seek to access a field twice (e.g., o["data"] and later again o["data"]). Instead capture once an ondemand::value and reuse it.
-- If you must access several different keys in an object, it might be preferable to iterate through all the fields in the object instead, and branch on the field keys.
+- If you must access several different keys in an object, it might be preferable to iterate through all the fields in the object instead, and branch on the field keys. Consider this example.
+  ```cpp
+
+    auto json = R"({"price": 123.456789, "volume": 9999,
+                    "timestamp": "2025-09-04T09:45:00Z",
+                    "symbol": "XYZ", "currency": "USD", "change": 1.23,
+                    "isActive": true})"_padded;
+
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(json);
+
+    for(auto keyvalue : doc.get_object()) {
+        std::string_view key = keyvalue.escaped_key();
+        switch(key[0]) {
+            case 'p': // price
+                if (key == "price") {
+                    std::string_view price_str = keyvalue.value().raw_json();
+                    std::cout << "Price: " << price_str << std::endl;
+                }
+                break;
+            case 'v': // volume
+                if (key == "volume") {
+                    std::string_view volume_str = keyvalue.value().raw_json();
+                    std::cout << "Volume: " << volume_str << std::endl;
+                }
+                break;
+            case 't': // timestamp
+                if (key == "timestamp") {
+                    std::string_view timestamp = keyvalue.value();
+                    std::cout << "Timestamp: " << timestamp << std::endl;
+                }
+                break;
+            default: break;
+        }
+    }
+  ```
 - If possible, refer to each object and array in your code once. For example, the following code repeatedly refers to the `"data"` key to create an object...
 	```C++
 	std::string_view make = o["data"]["make"];
