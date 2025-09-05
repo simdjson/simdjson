@@ -20,12 +20,54 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
 Build Quickstart
 ------------------------------
 
+For non-Windows system,
+
 ```bash
-mkdir build
-cd build
-cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
-cmake --build .
+cmake -B -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
 ```
+
+It is similar for Visual Studio users, please see the CMake or Visual Studio documentation.
+
+By default the library is built in Release mode.
+
+
+Assertions and development checks
+------------------------------
+
+We do not use conventional `assert` in simdjson. Instead we use the macro
+`SIMDJSON_ASSUME`:
+
+```cpp
+SIMDJSON_ASSUME(something_that_is_true());
+```
+
+Sometimes, you need to do a bit more work that a simple check.
+The `SIMDJSON_DEVELOPMENT_CHECKS` macro is true only in Debug mode unless manually set.
+It is acceptable to add checks that you would not do in Release mode as long as
+they are guarded:
+
+```cpp
+#if SIMDJSON_DEVELOPMENT_CHECKS
+// do sanity checks here
+````
+
+
+Working with sanitizers
+------------------------------
+
+The simdjson library must be memory-safe. We cannot allow buffer overruns.
+During development, if you system supports it, we recommend configuring
+the project with -D SIMDJSON_SANITIZE=ON`.
+
+
+```bash
+cmake -B -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
+```
+
 
 Design notes
 ------------------------------
