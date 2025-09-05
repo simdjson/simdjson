@@ -246,7 +246,7 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
 
         auto benchmark = [&]() -> bool {
             try {
-                ondemand::parser parser; // Fresh parser each iteration
+                auto &parser = ondemand::parser::get_parser();
                 TwitterData data;
                 auto doc = parser.iterate(padded);
 
@@ -292,7 +292,7 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
 
         auto benchmark = [&]() -> bool {
             try {
-                ondemand::parser parser; // Fresh parser each iteration
+                auto &parser = ondemand::parser::get_parser();
                 TwitterData data;
                 auto doc = parser.iterate(padded);
                 return doc.get(data) == SUCCESS;
@@ -466,20 +466,20 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
                     if (val) tweet.created_at = yyjson_get_str(val);
 
                     val = yyjson_obj_get(tweet_val, "id");
-                    if (val) tweet.id = yyjson_get_uint(val);
+                    if (val && yyjson_is_uint(val)) tweet.id = yyjson_get_uint(val);
 
                     val = yyjson_obj_get(tweet_val, "text");
                     if (val) tweet.text = yyjson_get_str(val);
 
                     val = yyjson_obj_get(tweet_val, "in_reply_to_status_id");
-                    if (val && !yyjson_is_null(val)) {
+                    if (val && yyjson_is_uint(val)) {
                         tweet.in_reply_to_status_id = yyjson_get_uint(val);
                     }
 
                     yyjson_val *user_val = yyjson_obj_get(tweet_val, "user");
                     if (user_val) {
                         val = yyjson_obj_get(user_val, "id");
-                        if (val) tweet.user.id = yyjson_get_uint(val);
+                        if (val && yyjson_is_uint(val)) tweet.user.id = yyjson_get_uint(val);
 
                         val = yyjson_obj_get(user_val, "screen_name");
                         if (val) tweet.user.screen_name = yyjson_get_str(val);
@@ -494,23 +494,23 @@ std::vector<BenchmarkResult> benchmark_twitter_parsing(const std::string& json) 
                         if (val) tweet.user.description = yyjson_get_str(val);
 
                         val = yyjson_obj_get(user_val, "verified");
-                        if (val) tweet.user.verified = yyjson_get_bool(val);
+                        if (val && yyjson_is_bool(val)) tweet.user.verified = yyjson_get_bool(val);
 
                         val = yyjson_obj_get(user_val, "followers_count");
-                        if (val) tweet.user.followers_count = yyjson_get_uint(val);
+                        if (val && yyjson_is_uint(val)) tweet.user.followers_count = yyjson_get_uint(val);
 
                         val = yyjson_obj_get(user_val, "friends_count");
-                        if (val) tweet.user.friends_count = yyjson_get_uint(val);
+                        if (val && yyjson_is_uint(val)) tweet.user.friends_count = yyjson_get_uint(val);
 
                         val = yyjson_obj_get(user_val, "statuses_count");
-                        if (val) tweet.user.statuses_count = yyjson_get_uint(val);
+                        if (val && yyjson_is_uint(val)) tweet.user.statuses_count = yyjson_get_uint(val);
                     }
 
                     val = yyjson_obj_get(tweet_val, "retweet_count");
-                    if (val) tweet.retweet_count = yyjson_get_uint(val);
+                    if (val && yyjson_is_uint(val)) tweet.retweet_count = yyjson_get_uint(val);
 
                     val = yyjson_obj_get(tweet_val, "favorite_count");
-                    if (val) tweet.favorite_count = yyjson_get_uint(val);
+                    if (val && yyjson_is_uint(val)) tweet.favorite_count = yyjson_get_uint(val);
 
                     data.statuses.push_back(std::move(tweet));
                 }
@@ -540,7 +540,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
 
         auto benchmark = [&]() -> bool {
             try {
-                ondemand::parser parser; // Fresh parser each iteration
+                auto &parser = ondemand::parser::get_parser();
                 CITMCatalog catalog;
                 auto doc = parser.iterate(padded);
 
@@ -751,7 +751,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
 
         auto benchmark = [&]() -> bool {
             try {
-                ondemand::parser parser; // Fresh parser each iteration
+                auto &parser = ondemand::parser::get_parser();
                 CITMCatalog catalog;
                 auto doc = parser.iterate(padded);
                 return doc.get(catalog) == SUCCESS;
@@ -1109,7 +1109,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         CITMEvent event;
 
                         yyjson_val *v = yyjson_obj_get(val, "id");
-                        if (v) event.id = yyjson_get_uint(v);
+                        if (v && yyjson_is_uint(v)) event.id = yyjson_get_uint(v);
 
                         v = yyjson_obj_get(val, "name");
                         if (v) event.name = yyjson_get_str(v);
@@ -1125,7 +1125,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                             size_t arr_idx, arr_max;
                             yyjson_val *arr_val;
                             yyjson_arr_foreach(v, arr_idx, arr_max, arr_val) {
-                                event.subTopicIds.push_back(yyjson_get_uint(arr_val));
+                                if (arr_val && yyjson_is_uint(arr_val)) event.subTopicIds.push_back(yyjson_get_uint(arr_val));
                             }
                         }
 
@@ -1134,7 +1134,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                             size_t arr_idx, arr_max;
                             yyjson_val *arr_val;
                             yyjson_arr_foreach(v, arr_idx, arr_max, arr_val) {
-                                event.topicIds.push_back(yyjson_get_uint(arr_val));
+                                if (arr_val && yyjson_is_uint(arr_val)) event.topicIds.push_back(yyjson_get_uint(arr_val));
                             }
                         }
 
@@ -1151,10 +1151,10 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         CITMPerformance perf;
 
                         yyjson_val *v = yyjson_obj_get(perf_val, "id");
-                        if (v) perf.id = yyjson_get_uint(v);
+                        if (v && yyjson_is_uint(v)) perf.id = yyjson_get_uint(v);
 
                         v = yyjson_obj_get(perf_val, "eventId");
-                        if (v) perf.eventId = yyjson_get_uint(v);
+                        if (v && yyjson_is_uint(v)) perf.eventId = yyjson_get_uint(v);
 
                         v = yyjson_obj_get(perf_val, "logo");
                         if (v && !yyjson_is_null(v)) perf.logo = yyjson_get_str(v);
@@ -1170,13 +1170,13 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                             yyjson_arr_foreach(v, price_idx, price_max, price_val) {
                                 CITMPrice price;
                                 yyjson_val *p = yyjson_obj_get(price_val, "amount");
-                                if (p) price.amount = yyjson_get_uint(p);
+                                if (p && yyjson_is_uint(p)) price.amount = yyjson_get_uint(p);
 
                                 p = yyjson_obj_get(price_val, "audienceSubCategoryId");
-                                if (p) price.audienceSubCategoryId = yyjson_get_uint(p);
+                                if (p && yyjson_is_uint(p)) price.audienceSubCategoryId = yyjson_get_uint(p);
 
                                 p = yyjson_obj_get(price_val, "seatCategoryId");
-                                if (p) price.seatCategoryId = yyjson_get_uint(p);
+                                if (p && yyjson_is_uint(p)) price.seatCategoryId = yyjson_get_uint(p);
 
                                 perf.prices.push_back(std::move(price));
                             }
@@ -1191,7 +1191,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                                 CITMSeatCategory seatCat;
 
                                 yyjson_val *sc = yyjson_obj_get(sc_val, "seatCategoryId");
-                                if (sc) seatCat.seatCategoryId = yyjson_get_uint(sc);
+                                if (sc && yyjson_is_uint(sc)) seatCat.seatCategoryId = yyjson_get_uint(sc);
 
                                 // Parse areas array
                                 sc = yyjson_obj_get(sc_val, "areas");
@@ -1202,7 +1202,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                                         CITMArea area;
 
                                         yyjson_val *a = yyjson_obj_get(area_val, "areaId");
-                                        if (a) area.areaId = yyjson_get_uint(a);
+                                        if (a && yyjson_is_uint(a)) area.areaId = yyjson_get_uint(a);
 
                                         // Parse blockIds array
                                         a = yyjson_obj_get(area_val, "blockIds");
@@ -1210,7 +1210,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                                             size_t block_idx, block_max;
                                             yyjson_val *block_val;
                                             yyjson_arr_foreach(a, block_idx, block_max, block_val) {
-                                                area.blockIds.push_back(yyjson_get_uint(block_val));
+                                                if (block_val && yyjson_is_uint(block_val)) area.blockIds.push_back(yyjson_get_uint(block_val));
                                             }
                                         }
 
@@ -1226,7 +1226,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                         if (v && !yyjson_is_null(v)) perf.seatMapImage = yyjson_get_str(v);
 
                         v = yyjson_obj_get(perf_val, "start");
-                        if (v) perf.start = yyjson_get_uint(v);
+                        if (v && yyjson_is_uint(v)) perf.start = yyjson_get_uint(v);
 
                         v = yyjson_obj_get(perf_val, "venueCode");
                         if (v) perf.venueCode = yyjson_get_str(v);
@@ -1304,7 +1304,7 @@ std::vector<BenchmarkResult> benchmark_citm_parsing(const std::string& json) {
                             size_t arr_idx, arr_max;
                             yyjson_val *arr_val;
                             yyjson_arr_foreach(val, arr_idx, arr_max, arr_val) {
-                                ids.push_back(yyjson_get_uint(arr_val));
+                                if (arr_val && yyjson_is_uint(arr_val)) ids.push_back(yyjson_get_uint(arr_val));
                             }
                             catalog.topicSubTopics[key_str] = std::move(ids);
                         }
@@ -2623,7 +2623,7 @@ int main(int argc, char* argv[]) {
     // Parse Twitter data for serialization benchmarks
     TwitterData twitter_data;
     {
-        simdjson::ondemand::parser parser;
+        auto &parser = simdjson::ondemand::parser::get_parser();
         simdjson::padded_string padded(twitter_json);
         simdjson::ondemand::document doc;
         if (parser.iterate(padded).get(doc) == simdjson::SUCCESS) {
@@ -2677,7 +2677,7 @@ int main(int argc, char* argv[]) {
     // Parse CITM data for serialization benchmarks
     CITMCatalog citm_data;
     {
-        simdjson::ondemand::parser parser;
+        auto &parser = simdjson::ondemand::parser::get_parser();
         simdjson::padded_string padded(citm_json);
         simdjson::ondemand::document doc;
         if (parser.iterate(padded).get(doc) == simdjson::SUCCESS) {
