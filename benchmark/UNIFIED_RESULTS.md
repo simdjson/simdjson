@@ -103,7 +103,7 @@ make benchmark_serialization_twitter benchmark_serialization_citm_catalog -j4
 # Run Twitter serialization benchmark (all libraries)
 ./benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter
 
-# Run CITM serialization benchmark (all libraries)  
+# Run CITM serialization benchmark (all libraries)
 ./benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
 
 # Run specific library comparison (comma-separated filters now supported!)
@@ -117,7 +117,7 @@ make benchmark_serialization_twitter benchmark_serialization_citm_catalog -j4
 
 **Twitter Dataset (631KB)**
 - simdjson (builder API): ~3.21 GB/s
-- simdjson::to API: ~2.85 GB/s  
+- simdjson::to API: ~2.85 GB/s
 - Serde (Rust): ~1.73 GB/s
 - reflect-cpp: ~1.49 GB/s
 - nlohmann: ~0.18 GB/s

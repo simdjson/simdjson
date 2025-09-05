@@ -71,11 +71,11 @@ if [ $? -eq 0 ]; then
     echo "Running benchmark..."
     echo "==================="
     echo ""
-    
+
     # Run the benchmark from the correct directory
     cd "$ROOT_DIR"
     "$SCRIPT_DIR/unified_benchmark"
-    
+
     if [ $? -eq 0 ]; then
         echo ""
         echo "✓ Benchmark completed successfully!"

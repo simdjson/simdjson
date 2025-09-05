@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Serialization Performance Ablation Study
-# 
+#
 # Tests the impact of various compiler optimizations on JSON serialization performance
 # using simdjson's C++26 reflection-based serialization.
 #
@@ -47,12 +47,12 @@ declare -A variants=(
 test_serialization_variant() {
     local variant_name=$1
     local flags=$2
-    
+
     echo -e "${YELLOW}Testing variant: $variant_name${NC}"
-    
+
     # Configure and build with CMake
     cd "$BUILD_DIR"
-    
+
     echo "  Configuring CMake..."
     rm -f CMakeCache.txt
     if ! env CXX=/usr/local/bin/clang++ CC=/usr/local/bin/clang cmake .. \
@@ -63,27 +63,27 @@ test_serialization_variant() {
         echo -e "  ${RED}ERROR: CMake configuration failed for $variant_name${NC}"
         return 1
     fi
-    
+
     echo "  Building serialization benchmarks..."
     if ! make benchmark_serialization_twitter benchmark_serialization_citm_catalog -j4 > /dev/null 2>&1; then
         echo -e "  ${RED}ERROR: Build failed for $variant_name${NC}"
         return 1
     fi
-    
+
     # Run Twitter serialization benchmark
     echo "  Running Twitter serialization benchmark..."
     twitter_output=$(./benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter -f simdjson_static_reflection 2>&1)
     twitter_result=$(echo "$twitter_output" | grep "bench_simdjson_static_reflection" | grep -o '[0-9]*\.[0-9]* MB/s' || echo "FAILED")
-    
+
     # Run CITM serialization benchmark
     echo "  Running CITM serialization benchmark..."
     citm_output=$(./benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog -f simdjson_static_reflection 2>&1)
     citm_result=$(echo "$citm_output" | grep "bench_simdjson_static_reflection" | grep -o '[0-9]*\.[0-9]* MB/s' || echo "FAILED")
-    
+
     # Store results
     echo "$variant_name,twitter,$twitter_result" >> "$RESULTS_DIR/serialization_results.csv"
     echo "$variant_name,citm,$citm_result" >> "$RESULTS_DIR/serialization_results.csv"
-    
+
     # Display results
     echo -e "  ${GREEN}Results:${NC}"
     echo "    Twitter: $twitter_result"

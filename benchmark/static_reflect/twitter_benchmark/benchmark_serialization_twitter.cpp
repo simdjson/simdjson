@@ -130,7 +130,7 @@ std::string read_file(std::string filename) {
 // Function to check if benchmark name matches any of the comma-separated filters
 bool matches_filter(const std::string& benchmark_name, const std::string& filter) {
   if (filter.empty()) return true;
-  
+
   // Split filter by comma
   size_t start = 0;
   size_t end = filter.find(',');

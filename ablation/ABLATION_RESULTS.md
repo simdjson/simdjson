@@ -66,7 +66,7 @@ The ablation study systematically disables individual optimizations to measure t
 ## Key Findings
 
 ### Parsing vs Serialization Impact
-1. **Consteval affects ONLY serialization**: 
+1. **Consteval affects ONLY serialization**:
    - Parsing: No impact (runtime data, can't be optimized at compile-time)
    - Serialization: 100-130% improvement (field names known at compile-time)
 
@@ -130,7 +130,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   const uint8_t* data = reinterpret_cast<const uint8_t*>(view.data());
   size_t len = view.length();
   size_t i = 0;
-  
+
   for (; i + 16 <= len; i += 16) {
     __m128i chunk = _mm_loadu_si128((__m128i*)(data + i));
     // Check for characters that need escaping: ", \, control chars

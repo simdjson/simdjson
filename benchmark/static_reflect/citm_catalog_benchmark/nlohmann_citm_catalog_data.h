@@ -48,7 +48,7 @@ inline void to_json(json &j, const CITMPerformance &p) {
     };
 }
 
-// ---- CITMEvent ----  
+// ---- CITMEvent ----
 inline void to_json(json &j, const CITMEvent &e) {
     j = json{
       {"id", e.id},
