@@ -51,7 +51,7 @@ they are guarded:
 ```cpp
 #if SIMDJSON_DEVELOPMENT_CHECKS
 // do sanity checks here
-````
+```
 
 
 Working with sanitizers
@@ -59,8 +59,7 @@ Working with sanitizers
 
 The simdjson library must be memory-safe. We cannot allow buffer overruns.
 During development, if you system supports it, we recommend configuring
-the project with -D SIMDJSON_SANITIZE=ON`.
-
+the project with `-D SIMDJSON_SANITIZE=ON`.
 
 ```bash
 cmake -B -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
