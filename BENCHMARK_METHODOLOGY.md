@@ -23,7 +23,7 @@ Tests were run on Linux (aarch64) with results measured in MB/s throughput.
 - **Characteristics**: String-heavy (92%), moderate integer content (15%), minimal floats (<0.05%)
 
 ### CITM Catalog Dataset
-- **File**: `jsonexamples/citm_catalog.json`  
+- **File**: `jsonexamples/citm_catalog.json`
 - **Size**: 1,727,204 bytes
 - **Content**: Event catalog with performances, venues, and pricing
 - **Characteristics**: Complex nested structure with maps and arrays
@@ -64,7 +64,7 @@ Tests were run on Linux (aarch64) with results measured in MB/s throughput.
 - No lazy evaluation or partial parsing
 - Validates that all expected fields are present
 
-### Serialization Benchmarks  
+### Serialization Benchmarks
 - Serializes complete C++ structures to JSON strings
 - Measures only the serialization time, not structure population
 - Output validation ensures correctness

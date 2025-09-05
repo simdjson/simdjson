@@ -17,18 +17,18 @@ double benchmark_twitter(int iterations = 1000) {
     for (int i = 0; i < 100; i++) {
         tweets.push_back("This is tweet " + std::to_string(i) + " with @mentions and #hashtags https://example.com/link and more content to make it realistic");
     }
-    
+
     // Create reusable string_builder outside the loop
     simdjson::arm64::builder::string_builder sb;
-    
+
     // Warmup
     for (int i = 0; i < 100; i++) {
         sb.clear();
         sb.append("{\"statuses\":[");
-        
+
         for (size_t j = 0; j < tweets.size(); j++) {
             if (j > 0) sb.append(',');
-            
+
             sb.append("{\"created_at\":\"Mon Sep 24 03:35:21 +0000 2012\",");
             sb.append("\"id\":");
             sb.append(uint64_t(505874924095815700ULL + j));
@@ -51,23 +51,23 @@ double benchmark_twitter(int iterations = 1000) {
             sb.append(uint64_t(j * 5));
             sb.append("}");
         }
-        
+
         sb.append("]}");
         std::string_view result;
         sb.view().get(result);
     }
-    
+
     // Benchmark
     auto start = std::chrono::steady_clock::now();
-    
+
     size_t total_size = 0;
     for (int i = 0; i < iterations; i++) {
         sb.clear();  // Clear and reuse the builder
         sb.append("{\"statuses\":[");
-        
+
         for (size_t j = 0; j < tweets.size(); j++) {
             if (j > 0) sb.append(',');
-            
+
             sb.append("{\"created_at\":\"Mon Sep 24 03:35:21 +0000 2012\",");
             sb.append("\"id\":");
             sb.append(uint64_t(505874924095815700ULL + j));
@@ -90,19 +90,19 @@ double benchmark_twitter(int iterations = 1000) {
             sb.append(uint64_t(j * 5));
             sb.append("}");
         }
-        
+
         sb.append("]}");
         std::string_view result;
         sb.view().get(result);
         total_size = result.size();
     }
-    
+
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    
+
     double seconds = duration.count() / 1000000.0;
     double mb_per_sec = (total_size * iterations / 1024.0 / 1024.0) / seconds;
-    
+
     return mb_per_sec;
 }
 
@@ -111,15 +111,15 @@ double benchmark_citm(int iterations = 500) {
     // Create CITM-like data with nested structures
     std::vector<std::string> names;
     std::vector<std::string> descriptions;
-    
+
     for (int i = 0; i < 200; i++) {
         names.push_back("Event " + std::to_string(i) + " - Concert Series");
         descriptions.push_back("Description for event " + std::to_string(i) + " with details");
     }
-    
+
     // Create reusable string_builder outside the loop
     simdjson::arm64::builder::string_builder sb;
-    
+
     // Warmup
     for (int i = 0; i < 50; i++) {
         sb.clear();
@@ -127,15 +127,15 @@ double benchmark_citm(int iterations = 500) {
         std::string_view result;
         sb.view().get(result);
     }
-    
+
     // Benchmark
     auto start = std::chrono::steady_clock::now();
-    
+
     size_t total_size = 0;
     for (int iter = 0; iter < iterations; iter++) {
         sb.clear();  // Clear and reuse the builder
         sb.append("{\"events\":[");
-        
+
         for (size_t i = 0; i < names.size(); i++) {
             if (i > 0) sb.append(',');
             sb.append("{\"id\":");
@@ -150,9 +150,9 @@ double benchmark_citm(int iterations = 500) {
             sb.append(uint64_t(107888604 + i));
             sb.append("]}");
         }
-        
+
         sb.append("],\"performances\":[");
-        
+
         for (int i = 0; i < 500; i++) {
             if (i > 0) sb.append(',');
             sb.append("{\"id\":");
@@ -165,9 +165,9 @@ double benchmark_citm(int iterations = 500) {
             sb.append(uint64_t(i % 10));
             sb.append("\"}");
         }
-        
+
         sb.append("],\"venues\":[");
-        
+
         for (int i = 0; i < 50; i++) {
             if (i > 0) sb.append(',');
             sb.append("{\"id\":");
@@ -178,19 +178,19 @@ double benchmark_citm(int iterations = 500) {
             sb.append(uint64_t(5000 + i * 100));
             sb.append("}");
         }
-        
+
         sb.append("]}");
         std::string_view result;
         sb.view().get(result);
         total_size = result.size();
     }
-    
+
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    
+
     double seconds = duration.count() / 1000000.0;
     double mb_per_sec = (total_size * iterations / 1024.0 / 1024.0) / seconds;
-    
+
     return mb_per_sec;
 }
 
@@ -199,9 +199,9 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage: " << argv[0] << " <twitter|citm>" << std::endl;
         return 1;
     }
-    
+
     std::string test_type = argv[1];
-    
+
     if (test_type == "twitter") {
         double mb_per_sec = benchmark_twitter();
         std::cout << mb_per_sec << std::endl;
@@ -212,6 +212,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unknown test type: " << test_type << std::endl;
         return 1;
     }
-    
+
     return 0;
 }
