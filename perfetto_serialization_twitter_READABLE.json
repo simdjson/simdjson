@@ -1,0 +1,5202 @@
+{
+  "traceEvents": [
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746885.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "simdjson::parse<TwitterData>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746895.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "simdjson::...arm64",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746905.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::parse<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746915.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::parse<TwitterTweet>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746925.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::...arm64",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746935.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::parse<TwitterUser>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746945.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...arm64",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614746955.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747902.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747912.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747922.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747932.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747942.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747952.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614747962.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748885.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748895.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748905.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748915.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748925.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748935.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748945.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748955.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748965.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614748975.0,
+      "dur": 350,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 9
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749885.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749895.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749905.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749915.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749925.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749935.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom<unsigned",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614749945.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750891.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750901.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750911.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750921.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750931.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750941.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750951.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::builder::atom<unsigned",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614750961.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751924.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751934.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614751944.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752924.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752934.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614752944.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753924.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753934.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753944.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614753954.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754888.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754898.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754908.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754918.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754928.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754938.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614754948.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755890.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755900.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755910.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755920.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755930.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755940.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755950.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614755960.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614756963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614757953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614758953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614759953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760924.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760934.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614760944.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614761953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614762963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614763963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614764963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614765953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom<unsigned",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614766943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614767943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614768963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614769963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterUser,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "simdjson::serialize",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770953.0,
+      "dur": 450,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 7
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614770963.0,
+      "dur": 400,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 8
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterData,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "simdjson::serialize<vector>",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "simdjson::builder::atom_struct_impl<TwitterTweet,",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771933.0,
+      "dur": 550,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 5
+      }
+    },
+    {
+      "name": "simdjson::...string_builder",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614771943.0,
+      "dur": 500,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 6
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614772883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614772893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614772903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614773883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614773893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614773903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614773913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614773923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614774883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614774893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614774903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614774913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614775883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614775893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614775903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614775913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614776883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614776893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614776903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614777883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614777893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614777903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614777913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614778883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614778893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614778903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614778913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614779889.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614779899.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614779909.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614779919.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614780883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614780893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614780903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614780913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614781887.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614781897.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614781907.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614782888.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614782898.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614782908.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614782918.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614782928.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614783885.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614783895.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614783905.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614783915.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614784884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614784894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614784904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614784914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614785884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614785894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614785904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614785914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614786883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614786893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614786903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614787883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614787893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614787903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614787913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614788883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614788893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614788903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614788913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614789883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614789893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614789903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614789913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614790883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614790893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614790903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614790913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614791884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614791894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614791904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614791914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614792884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614792894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614792904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614792914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614793887.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614793897.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614793907.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614793917.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614793927.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614794884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614794894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614794904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614794914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614795883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614795893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614795903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614795913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614796883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614796893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614796903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614796913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614797883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614797893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614797903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614797913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614797923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614798883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614798893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614798903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614798913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614799883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614799893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614799903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614800883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614800893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614800903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614801883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614801893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614801903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614801913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614802883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614802893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614802903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614802913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614803883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614803893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614803903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614803913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614804883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614804893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614804903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614804913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614805883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614805893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614805903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614805913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614806884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614806894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614806904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614806914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614807883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614807893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614807903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614807913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614808884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614808894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614808904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614808914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614809883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614809893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614809903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614810886.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614810896.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614810906.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614810916.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614811883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614811893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614811903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614811913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614812883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614812893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614812903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614812913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614812923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614813884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614813894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614813904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614813914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614814883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614814893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614814903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614814913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614815883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614815893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614815903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614815913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614816883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614816893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614816903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614816913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614816923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614817884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614817894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614817904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614818883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614818893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614818903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614818913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614819883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614819893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614819903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614819913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614820883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614820893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614820903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614820913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614821883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614821893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614821903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614821913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614822883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614822893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614822903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614822913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614823884.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614823894.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614823904.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614823914.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614824883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614824893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614824903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614824913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614824923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614825883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614825893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614825903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614825913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "memcpy",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614825923.0,
+      "dur": 600,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 4
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614826883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614826893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614826903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614826913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "main",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614827883.0,
+      "dur": 800,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 0
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614827893.0,
+      "dur": 750,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 1
+      }
+    },
+    {
+      "name": "benchmark_twitter_serialization(TwitterData",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614827903.0,
+      "dur": 700,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 2
+      }
+    },
+    {
+      "name": "simdjson::write_string_escaped",
+      "cat": "function",
+      "ph": "X",
+      "ts": 3768614827913.0,
+      "dur": 650,
+      "tid": 1,
+      "pid": 1,
+      "args": {
+        "depth": 3
+      }
+    },
+    {
+      "name": "process_name",
+      "ph": "M",
+      "pid": 1,
+      "tid": 1,
+      "args": {
+        "name": "simdjson Serialization - Twitter"
+      }
+    }
+  ],
+  "displayTimeUnit": "ms",
+  "metadata": {
+    "title": "simdjson Serialization - Twitter",
+    "samples": 82
+  }
+}
