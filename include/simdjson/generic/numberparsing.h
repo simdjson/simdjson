@@ -469,14 +469,6 @@ simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t d
 } // unnamed namespace
 
 /** @private */
-static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double* answer) {
-  if (parse_float_fallback(src, answer)) {
-    return SUCCESS;
-  }
-  return INVALID_NUMBER(src);
-}
-
-/** @private */
 template<typename W>
 simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
@@ -499,9 +491,9 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
     // picking it apart and putting into registers. i.e. if we pass it as reference,
     // it gets slow.
     double d;
-    error_code error = slow_float_parsing(src, &d);
-    writer.append_double(d);
-    return error;
+    if (!parse_float_fallback(src, &d)) { return INVALID_NUMBER(src); }
+    WRITE_DOUBLE(d, src, writer);
+    return SUCCESS;
   }
   // NOTE: it's weird that the simdjson_unlikely() only wraps half the if, but it seems to get slower any other
   // way we've tried: https://github.com/simdjson/simdjson/pull/990#discussion_r448497331
@@ -659,6 +651,96 @@ simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
 #endif
   }
   if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return INVALID_NUMBER(src); }
+  return SUCCESS;
+}
+
+template<typename W>
+simdjson_inline error_code parse_number(const uint8_t *const src, uint32_t *cnt, W &writer) {
+  const uint8_t *start = src;
+  //
+  // Check for minus sign
+  //
+  bool negative = (*src == '-');
+  const uint8_t *p = src + uint8_t(negative);
+
+  //
+  // Parse the integer part.
+  //
+  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  const uint8_t *const start_digits = p;
+  uint64_t i = 0;
+  while (parse_digit(*p, i)) { p++; }
+
+  // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
+  // Optimization note: size_t is expected to be unsigned.
+  size_t digit_count = size_t(p - start_digits);
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
+
+  //
+  // Handle floats if there is a . or e (or both)
+  //
+  int64_t exponent = 0;
+  bool is_float = false;
+  if ('.' == *p) {
+    is_float = true;
+    ++p;
+    SIMDJSON_TRY( parse_decimal_after_separator(src, p, i, exponent) );
+    digit_count = int(p - start_digits); // used later to guard against overflows
+  }
+  if (('e' == *p) || ('E' == *p)) {
+    is_float = true;
+    ++p;
+    SIMDJSON_TRY( parse_exponent(src, p, exponent) );
+  }
+  if (is_float) {
+    SIMDJSON_TRY( write_float(src, negative, i, start_digits, digit_count, exponent, writer) );
+    *cnt = static_cast<uint32_t>(p - start);
+    return SUCCESS;
+  }
+
+  // The longest negative 64-bit number is 19 digits.
+  // The longest positive 64-bit number is 20 digits.
+  // We do it this way so we don't trigger this branch unless we must.
+  size_t longest_digit_count = negative ? 19 : 20;
+  if (digit_count > longest_digit_count) { return BIGINT_NUMBER(src); }
+  if (digit_count == longest_digit_count) {
+    if (negative) {
+      // Anything negative above INT64_MAX+1 is invalid
+      if (i > uint64_t(INT64_MAX)+1) { return BIGINT_NUMBER(src);  }
+      WRITE_INTEGER(~i+1, src, writer);
+      *cnt = static_cast<uint32_t>(p - start);
+      return SUCCESS;
+    // Positive overflow check:
+    // - A 20 digit number starting with 2-9 is overflow, because 18,446,744,073,709,551,615 is the
+    //   biggest uint64_t.
+    // - A 20 digit number starting with 1 is overflow if it is less than INT64_MAX.
+    //   If we got here, it's a 20 digit number starting with the digit "1".
+    // - If a 20 digit number starting with 1 overflowed (i*10+digit), the result will be smaller
+    //   than 1,553,255,926,290,448,384.
+    // - That is smaller than the smallest possible 20-digit number the user could write:
+    //   10,000,000,000,000,000,000.
+    // - Therefore, if the number is positive and lower than that, it's overflow.
+    // - The value we are looking at is less than or equal to INT64_MAX.
+    //
+    }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
+  }
+
+  // Write unsigned if it does not fit in a signed integer.
+  if (i > uint64_t(INT64_MAX)) {
+    WRITE_UNSIGNED(i, src, writer);
+  } else {
+#if SIMDJSON_MINUS_ZERO_AS_FLOAT
+    if(i == 0 && negative) {
+      // We have to write -0.0 instead of 0
+      WRITE_DOUBLE(-0.0, src, writer);
+    } else {
+      WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
+    }
+#else
+  WRITE_INTEGER(negative ? (~i+1) : i, src, writer);
+#endif
+  }
+  *cnt = static_cast<uint32_t>(p - start);
   return SUCCESS;
 }
 

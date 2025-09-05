@@ -29,6 +29,25 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   return { src[0] };
 }
 
+struct string_block {
+public:
+  static constexpr uint32_t BYTES_PROCESSED = 1;
+  simdjson_inline static string_block copy_and_find(const uint8_t *src, uint8_t *dst);
+
+  simdjson_inline bool has_backslash() { return c == '\\'; }
+  simdjson_inline bool has_quote() { return c == '"'; }
+  simdjson_inline bool has_unescaped() { return c <= 0x1f; }
+  simdjson_inline int backslash_index() { return c == '\\' ? 0 : 1; }
+  simdjson_inline int quote_index() { return c == '"' ? 0 : 1; }
+
+  uint8_t c;
+};
+
+simdjson_inline string_block string_block::copy_and_find(const uint8_t *src, uint8_t *dst) {
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "string_block must process fewer than SIMDJSON_PADDING bytes");
+  dst[0] = src[0];
+  return { src[0] };
+}
 
 struct escaping {
   static constexpr uint32_t BYTES_PROCESSED = 1;

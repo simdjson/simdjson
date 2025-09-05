@@ -125,6 +125,8 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
       _loaded_bytes_capacity = len;
     }
     std::memcpy(static_cast<void *>(loaded_bytes.get()), buf, len);
+    // this can be removed when SIMDJSON_PADDING is removed from DOM parsing
+    std::memset(loaded_bytes.get() + len, 0, _loaded_bytes_capacity * sizeof(char) - len);
     buf = reinterpret_cast<const uint8_t*>(loaded_bytes.get());
   }
 

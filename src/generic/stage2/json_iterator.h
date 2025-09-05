@@ -12,12 +12,22 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace {
 namespace stage2 {
 
+#define repeat16(x) { x x x x x x x x x x x x x x x x }
+
+simdjson_inline bool byte_match_2(const uint8_t *buf, const char *pat) {
+  uint16_t u1, u2;
+  memcpy(&u1, buf, 2);
+  memcpy(&u2, pat, 2);
+  return u1 == u2;
+}
+
 class json_iterator {
 public:
   const uint8_t* const buf;
   uint32_t *next_structural;
   dom_parser_implementation &dom_parser;
   uint32_t depth{0};
+  uint64_t idx{0};
 
   /**
    * Walk the JSON document.
@@ -44,6 +54,8 @@ public:
    */
   template<bool STREAMING, typename V>
   simdjson_warn_unused simdjson_inline error_code walk_document(V &visitor) noexcept;
+  template<typename V>
+  simdjson_warn_unused simdjson_inline error_code parse(V &visitor) noexcept;
 
   /**
    * Create an iterator capable of walking a JSON document.
@@ -240,6 +252,297 @@ document_end:
   return SUCCESS;
 
 } // walk_document()
+
+// credit: based on code from yyjson (MIT Licensed)
+template<typename V>
+simdjson_warn_unused simdjson_inline error_code json_iterator::parse(V &visitor) noexcept {
+  logger::log_start();
+
+  if (dom_parser.len == 0) return EMPTY;
+
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+  }
+
+  log_start_value("document");
+  SIMDJSON_TRY( visitor.visit_document_start(*this) );
+
+  if (buf[idx] == '{') {
+    idx++;
+    if (buf[idx] == '\n') idx++;
+    goto object_begin;
+  } else if (buf[idx] == '[') {
+    idx++;
+    if (buf[idx] == '\n') idx++;
+    goto array_begin;
+  } else {
+    goto value_begin;
+  }
+
+array_begin:
+  log_start_value("array");
+  depth++;
+  if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+  dom_parser.is_array[depth] = true;
+  SIMDJSON_TRY( visitor.visit_array_start(*this) );
+
+array_value_begin:
+  while (true) repeat16({
+    if (simdjson_likely(byte_match_2(&buf[idx], "  "))) idx += 2;
+    else break;
+  })
+  if (buf[idx] == '{') {
+    idx++;
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    goto object_begin;
+  }
+  if (buf[idx] == '[') {
+    idx++;
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    goto array_begin;
+  }
+  if (jsoncharutils::char_is_number(buf[idx])) {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_number_(*this, &buf[idx]) ); goto array_value_end;
+  }
+  if (buf[idx] == '"') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_string_(*this, &buf[idx], false) ); goto array_value_end;
+  }
+  if (buf[idx] == 't') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_true(*this, &buf[idx]) ); goto array_value_end;
+  }
+  if (buf[idx] == 'f') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_false(*this, &buf[idx]) ); goto array_value_end;
+  }
+  if (buf[idx] == 'n') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_null(*this, &buf[idx]) ); goto array_value_end;
+  }
+  if (buf[idx] == ']') {
+    idx++;
+    if (dom_parser.open_containers[depth].count == 0) {
+      log_value("empty array");
+      SIMDJSON_TRY( visitor.visit_array_end(*this) );
+      goto array_end;
+    }
+    goto fail_trailing_comma;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto array_value_begin;
+  }
+  goto fail_value;
+
+array_value_end:
+  if (byte_match_2(&buf[idx], ",\n")) {
+    idx += 2;
+    goto array_value_begin;
+  }
+  if (buf[idx] == ',') {
+    idx++;
+    goto array_value_begin;
+  }
+  if (buf[idx] == ']') {
+    idx++;
+    log_end_value("array");
+    SIMDJSON_TRY( visitor.visit_array_end(*this) );
+    goto array_end;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto array_value_end;
+  }
+  goto fail_array_end;
+
+array_end:
+  if (buf[idx] == '\n') idx++;
+  depth--;
+  if (depth == 0) { goto document_end; }
+  if (dom_parser.is_array[depth]) { goto array_value_end; }
+  else { goto object_value_end; }
+
+object_begin:
+  log_start_value("object");
+  depth++;
+  if (depth >= dom_parser.max_depth()) { log_error("Exceeded max depth!"); return DEPTH_ERROR; }
+  dom_parser.is_array[depth] = false;
+  SIMDJSON_TRY( visitor.visit_object_start(*this) );
+
+object_key_begin:
+  while (true) repeat16({
+    if (simdjson_likely(byte_match_2(&buf[idx], "  "))) idx += 2;
+    else break;
+  })
+  if (buf[idx] == '"') {
+    SIMDJSON_TRY( visitor.visit_string_(*this, &buf[idx], true) ); goto object_key_end;
+  }
+  if (buf[idx] == '}') {
+    idx++;
+    if (dom_parser.open_containers[depth].count == 0) {
+      log_value("empty object");
+      SIMDJSON_TRY( visitor.visit_object_end(*this) );
+      goto object_end;
+    }
+    goto fail_trailing_comma;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto object_key_begin;
+  }
+  goto fail_object_key;
+
+object_key_end:
+  if (byte_match_2(&buf[idx], ": ")) {
+    idx += 2;
+    goto object_value_begin;
+  }
+  if (buf[idx] == ':') {
+    idx++;
+    goto object_value_begin;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto object_key_end;
+  }
+  goto fail_object_sep;
+
+object_value_begin:
+  if (buf[idx] == '{') {
+    idx++;
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    goto object_begin;
+  }
+  if (buf[idx] == '[') {
+    idx++;
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    goto array_begin;
+  }
+  if (jsoncharutils::char_is_number(buf[idx])) {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_number_(*this, &buf[idx]) ); goto object_value_end;
+  }
+  if (buf[idx] == '"') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_string_(*this, &buf[idx], false) ); goto object_value_end;
+  }
+  if (buf[idx] == 't') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_true(*this, &buf[idx]) ); goto object_value_end;
+  }
+  if (buf[idx] == 'f') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_false(*this, &buf[idx]) ); goto object_value_end;
+  }
+  if (buf[idx] == 'n') {
+    SIMDJSON_TRY( visitor.increment_count(*this) );
+    SIMDJSON_TRY( visitor.visit_null(*this, &buf[idx]) ); goto object_value_end;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto object_value_begin;
+  }
+  goto fail_value;
+
+object_value_end:
+  if (byte_match_2(&buf[idx], ",\n")) {
+    idx += 2;
+    goto object_key_begin;
+  }
+  if (buf[idx] == ',') {
+    idx++;
+    goto object_key_begin;
+  }
+  if (buf[idx] == '}') {
+    idx++;
+    log_end_value("object");
+    SIMDJSON_TRY( visitor.visit_object_end(*this) );
+    goto object_end;
+  }
+  if (jsoncharutils::char_is_space(buf[idx])) {
+    idx++;
+    while (jsoncharutils::char_is_space(buf[idx])) {
+      idx++;
+    }
+    goto object_value_end;
+  }
+  goto fail_object_end;
+
+object_end:
+  if (buf[idx] == '\n') idx++;
+  depth--;
+  if (depth == 0) { goto document_end; }
+  if (dom_parser.is_array[depth]) { goto array_value_end; }
+  else { goto object_value_end; }
+
+value_begin:
+  if (jsoncharutils::char_is_number(buf[idx])) {
+    SIMDJSON_TRY( visitor.visit_number_(*this, &buf[idx]) ); goto document_end;
+  }
+  if (buf[idx] == '"') {
+    SIMDJSON_TRY( visitor.visit_string_(*this, &buf[idx], false) ); goto document_end;
+  }
+  if (buf[idx] == 't') {
+    SIMDJSON_TRY( visitor.visit_true(*this, &buf[idx]) ); goto document_end;
+  }
+  if (buf[idx] == 'f') {
+    SIMDJSON_TRY( visitor.visit_false(*this, &buf[idx]) ); goto document_end;
+  }
+  if (buf[idx] == 'n') {
+    SIMDJSON_TRY( visitor.visit_null(*this, &buf[idx]) ); goto document_end;
+  }
+  goto fail_value;
+
+document_end:
+  if (idx < dom_parser.len) {
+    while (jsoncharutils::char_is_space(buf[idx])) idx++;
+    if (idx < dom_parser.len) goto fail_garbage;
+  }
+
+  log_end_value("document");
+  SIMDJSON_TRY( visitor.visit_document_end(*this) );
+
+  if (!simdjson::get_active_implementation()->validate_utf8((const char *)buf, dom_parser.len)) {
+    return UTF8_ERROR;
+  }
+
+  return SUCCESS;
+
+#define return_err(_msg) do { \
+  return TAPE_ERROR; \
+} while (false)
+
+fail_trailing_comma: return_err("error: trailing comma");
+fail_value:          return_err("error: reading value");
+fail_array_end:      return_err("error: reading array end");
+fail_object_key:     return_err("error: reading object key");
+fail_object_sep:     return_err("error: reading object separator");
+fail_object_end:     return_err("error: reading object end");
+fail_garbage:        return_err("error: garbage at the end of data");
+
+#undef return_err
+
+} // parse()
 
 simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_parser, size_t start_structural_index)
   : buf{_dom_parser.buf},
