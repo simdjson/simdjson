@@ -256,13 +256,18 @@ document_end:
 // credit: based on code from yyjson (MIT Licensed)
 template<typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::parse(V &visitor) noexcept {
+  if (!simdjson::get_active_implementation()->validate_utf8(reinterpret_cast<const char *>(buf), dom_parser.len)) {
+    return UTF8_ERROR;
+  }
+
   logger::log_start();
 
   if (dom_parser.len == 0) return EMPTY;
 
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
   }
@@ -270,13 +275,14 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::parse(V &visitor)
   log_start_value("document");
   SIMDJSON_TRY( visitor.visit_document_start(*this) );
 
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == '{') {
     idx++;
-    if (buf[idx] == '\n') idx++;
+    if (idx < dom_parser.len && buf[idx] == '\n') idx++;
     goto object_begin;
   } else if (buf[idx] == '[') {
     idx++;
-    if (buf[idx] == '\n') idx++;
+    if (idx < dom_parser.len && buf[idx] == '\n') idx++;
     goto array_begin;
   } else {
     goto value_begin;
@@ -291,9 +297,10 @@ array_begin:
 
 array_value_begin:
   while (true) repeat16({
-    if (simdjson_likely(byte_match_2(&buf[idx], "  "))) idx += 2;
+    if (simdjson_likely(idx + 2 < dom_parser.len && byte_match_2(&buf[idx], "  "))) idx += 2;
     else break;
   })
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == '{') {
     idx++;
     SIMDJSON_TRY( visitor.increment_count(*this) );
@@ -335,7 +342,7 @@ array_value_begin:
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto array_value_begin;
@@ -343,10 +350,11 @@ array_value_begin:
   goto fail_value;
 
 array_value_end:
-  if (byte_match_2(&buf[idx], ",\n")) {
+  if (idx + 2 < dom_parser.len && byte_match_2(&buf[idx], ",\n")) {
     idx += 2;
     goto array_value_begin;
   }
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == ',') {
     idx++;
     goto array_value_begin;
@@ -359,7 +367,7 @@ array_value_end:
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto array_value_end;
@@ -367,7 +375,7 @@ array_value_end:
   goto fail_array_end;
 
 array_end:
-  if (buf[idx] == '\n') idx++;
+  if (idx < dom_parser.len && buf[idx] == '\n') idx++;
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_value_end; }
@@ -382,9 +390,10 @@ object_begin:
 
 object_key_begin:
   while (true) repeat16({
-    if (simdjson_likely(byte_match_2(&buf[idx], "  "))) idx += 2;
+    if (simdjson_likely(idx + 2 < dom_parser.len && byte_match_2(&buf[idx], "  "))) idx += 2;
     else break;
   })
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == '"') {
     SIMDJSON_TRY( visitor.visit_string_(*this, &buf[idx], true) ); goto object_key_end;
   }
@@ -399,7 +408,7 @@ object_key_begin:
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto object_key_begin;
@@ -407,17 +416,18 @@ object_key_begin:
   goto fail_object_key;
 
 object_key_end:
-  if (byte_match_2(&buf[idx], ": ")) {
+  if (idx + 2 < dom_parser.len && byte_match_2(&buf[idx], ": ")) {
     idx += 2;
     goto object_value_begin;
   }
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == ':') {
     idx++;
     goto object_value_begin;
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto object_key_end;
@@ -425,6 +435,7 @@ object_key_end:
   goto fail_object_sep;
 
 object_value_begin:
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == '{') {
     idx++;
     SIMDJSON_TRY( visitor.increment_count(*this) );
@@ -457,7 +468,7 @@ object_value_begin:
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto object_value_begin;
@@ -465,10 +476,11 @@ object_value_begin:
   goto fail_value;
 
 object_value_end:
-  if (byte_match_2(&buf[idx], ",\n")) {
+  if (idx + 2 < dom_parser.len && byte_match_2(&buf[idx], ",\n")) {
     idx += 2;
     goto object_key_begin;
   }
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (buf[idx] == ',') {
     idx++;
     goto object_key_begin;
@@ -481,7 +493,7 @@ object_value_end:
   }
   if (jsoncharutils::char_is_space(buf[idx])) {
     idx++;
-    while (jsoncharutils::char_is_space(buf[idx])) {
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) {
       idx++;
     }
     goto object_value_end;
@@ -489,13 +501,14 @@ object_value_end:
   goto fail_object_end;
 
 object_end:
-  if (buf[idx] == '\n') idx++;
+  if (idx < dom_parser.len && buf[idx] == '\n') idx++;
   depth--;
   if (depth == 0) { goto document_end; }
   if (dom_parser.is_array[depth]) { goto array_value_end; }
   else { goto object_value_end; }
 
 value_begin:
+  if (idx >= dom_parser.len) { return TAPE_ERROR; }
   if (jsoncharutils::char_is_number(buf[idx])) {
     SIMDJSON_TRY( visitor.visit_number_(*this, &buf[idx]) ); goto document_end;
   }
@@ -515,16 +528,12 @@ value_begin:
 
 document_end:
   if (idx < dom_parser.len) {
-    while (jsoncharutils::char_is_space(buf[idx])) idx++;
+    while (idx < dom_parser.len && jsoncharutils::char_is_space(buf[idx])) idx++;
     if (idx < dom_parser.len) goto fail_garbage;
   }
 
   log_end_value("document");
   SIMDJSON_TRY( visitor.visit_document_end(*this) );
-
-  if (!simdjson::get_active_implementation()->validate_utf8((const char *)buf, dom_parser.len)) {
-    return UTF8_ERROR;
-  }
 
   return SUCCESS;
 
