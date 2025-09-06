@@ -46,6 +46,33 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   };
 }
 
+struct string_block {
+public:
+  static constexpr uint32_t BYTES_PROCESSED = 16;
+  simdjson_inline static string_block copy_and_find(const uint8_t *src, uint8_t *dst);
+
+  simdjson_inline bool has_backslash() { return ((quote_bits - 1) & backslash_bits) != 0; }
+  simdjson_inline bool has_quote() { return ((backslash_bits - 1) & quote_bits) != 0 && !has_unescaped(); }
+  simdjson_inline bool has_unescaped() { return ((quote_bits - 1) & unescaped_bits) != 0; }
+  simdjson_inline int backslash_index() { return trailing_zeroes(backslash_bits); }
+  simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
+
+  uint16_t backslash_bits;
+  uint16_t quote_bits;
+  uint16_t unescaped_bits;
+};
+
+simdjson_inline string_block string_block::copy_and_find(const uint8_t *src, uint8_t *dst) {
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "string_block must process fewer than SIMDJSON_PADDING bytes");
+  simd8<uint8_t> v(src);
+  v.store(dst);
+  return {
+    static_cast<uint16_t>((v == '\\').to_bitmask()),
+    static_cast<uint16_t>((v == '"').to_bitmask()),
+    static_cast<uint16_t>((v <= 0x1f).to_bitmask()),
+  };
+}
+
 struct escaping {
   static constexpr uint32_t BYTES_PROCESSED = 16;
   simdjson_inline static escaping copy_and_find(const uint8_t *src, uint8_t *dst);
