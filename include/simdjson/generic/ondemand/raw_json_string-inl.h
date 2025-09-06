@@ -15,8 +15,13 @@ namespace ondemand {
 
 simdjson_inline raw_json_string::raw_json_string(const uint8_t * _buf) noexcept : buf{_buf} {}
 
-simdjson_inline const char * raw_json_string::raw() const noexcept { return reinterpret_cast<const char *>(buf); }
+simdjson_inline const char * raw_json_string::raw() const noexcept {
+  return reinterpret_cast<const char *>(buf);
+}
 
+simdjson_inline char raw_json_string::operator[](size_t i) const noexcept {
+  return reinterpret_cast<const char *>(buf)[i];
+}
 
 simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_view target) noexcept {
   size_t pos{0};
@@ -192,6 +197,10 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_stri
 simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::raw() const noexcept {
   if (error()) { return error(); }
   return first.raw();
+}
+simdjson_inline char simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::operator[](size_t i) const noexcept {
+  if (error()) { return error(); }
+  return first[i];
 }
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string>::unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept {
   if (error()) { return error(); }

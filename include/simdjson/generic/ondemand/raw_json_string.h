@@ -59,6 +59,12 @@ public:
   simdjson_inline const char * raw() const noexcept;
 
   /**
+   * Get the character at index i. This is unchecked.
+   * [0] when the string is of length 0 returns the final quote (").
+   */
+  simdjson_inline char operator[](size_t i) const noexcept;
+
+  /**
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done) on target.size() characters,
    * and if the raw_json_string instance has a quote character at byte index target.size().
@@ -197,10 +203,10 @@ public:
   simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;
+  simdjson_inline char operator[](size_t) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter, bool allow_replacement) const noexcept;
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescape_wobbly(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &iter) const noexcept;
 };
-
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_RAW_JSON_STRING_H

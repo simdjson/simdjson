@@ -1795,6 +1795,18 @@ namespace validate_tests {
     return true;
   }
 
+  bool shall_not_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto test = "{\"joe\":\"\xf0\x8f\xbf\xbf\"}"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(test).get(doc);
+    if(error) {
+      return true; // expected
+    }
+    return false;
+  }
+
   bool test_validate() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
@@ -1860,6 +1872,7 @@ namespace validate_tests {
   }
   bool run() {
     return issue1187() &&
+           shall_not_parse() &&
            test_range() &&
            test_issue1169_long() &&
            test_issue1169() &&
