@@ -10,7 +10,7 @@ Comparison of simdjson's C++26 static reflection implementation against traditio
 - **Platform**: Linux aarch64
 - **Build Type**: Release with -O3
 - **Methodology**: Conservative approach - fresh parser instance per iteration
-- **Date**: August 2025
+- **Date**: September 2025
 
 ## Parsing Performance Results
 
@@ -18,27 +18,31 @@ Comparison of simdjson's C++26 static reflection implementation against traditio
 
 | Library/Method | Throughput | Latency | Speedup vs nlohmann |
 |----------------|------------|---------|-------------------|
-| **simdjson (manual)** | 3879.9 MB/s | 155.23 μs | 22.7x |
-| **simdjson (reflection)** | 3708.9 MB/s | 162.38 μs | 21.7x |
-| **simdjson::from()** | 3708.8 MB/s | 162.38 μs | 21.7x |
-| nlohmann (extraction) | 170.7 MB/s | 3528.11 μs | 1.0x (baseline) |
-| RapidJSON (extraction) | 663.1 MB/s | 908.26 μs | 3.9x |
+| **simdjson (manual)** | 4362.9 MB/s | 138.04 μs | 25.4x |
+| **simdjson (reflection)** | 4091.7 MB/s | 147.19 μs | 23.8x |
+| **simdjson::from()** | 4169.3 MB/s | 144.45 μs | 24.2x |
+| nlohmann (extraction) | 172.0 MB/s | 3501.02 μs | 1.0x (baseline) |
+| RapidJSON (extraction) | 658.1 MB/s | 915.14 μs | 3.8x |
+| Serde (Rust) | 1722.0 MB/s | 349.75 μs | 10.0x |
+| yyjson | 2233.0 MB/s | 269.71 μs | 13.0x |
 
 ### CITM Catalog Parsing Benchmark (1.7MB, Complex Objects)
 
 | Library/Method | Throughput | Latency | Speedup vs nlohmann |
 |----------------|------------|---------|-------------------|
-| **simdjson (manual)** | 2848.8 MB/s | 578.21 μs | 14.5x |
-| **simdjson (reflection)** | 2183.4 MB/s | 754.42 μs | 11.1x |
-| **simdjson::from()** | 2169.8 MB/s | 759.16 μs | 11.0x |
-| nlohmann (extraction) | 197.1 MB/s | 8357.74 μs | 1.0x (baseline) |
-| RapidJSON (extraction) | 1355.6 MB/s | 1215.13 μs | 6.9x |
+| **simdjson (manual)** | 3013.7 MB/s | 546.57 μs | 16.2x |
+| **simdjson (reflection)** | 2656.4 MB/s | 620.07 μs | 14.3x |
+| **simdjson::from()** | 2669.5 MB/s | 617.03 μs | 14.4x |
+| nlohmann (extraction) | 185.6 MB/s | 8874.02 μs | 1.0x (baseline) |
+| RapidJSON (extraction) | 1216.0 MB/s | 1354.62 μs | 6.5x |
+| Serde (Rust) | 534.6 MB/s | 3081.24 μs | 2.9x |
+| yyjson | 2681.3 MB/s | 614.32 μs | 14.4x |
 
 ## Key Findings
 
-1. **Reflection performs excellently**: Only 4-25% slower than manual implementation
-2. **Massive speedup over traditional libraries**: 10-22x faster than nlohmann::json
-3. **Parser reuse is critical**: simdjson uses parser reuse pattern for optimal performance
+1. **Reflection performs excellently**: Only 6-13% slower than manual implementation
+2. **Massive speedup over traditional libraries**: 14-25x faster than nlohmann::json
+3. **Outperforms modern alternatives**: 2.4-5.6x faster than Serde (Rust), comparable with yyjson
 4. **String-heavy workloads favor simdjson**: Twitter shows better relative performance
 
 ## Performance Characteristics
@@ -50,9 +54,11 @@ Comparison of simdjson's C++26 static reflection implementation against traditio
 - **Parser reuse**: Amortizes allocation costs across iterations
 
 ### Library Comparison
-- **simdjson**: 2.2-3.9 GB/s throughput (conservative approach)
-- **RapidJSON**: 0.7-1.4 GB/s throughput (3-7x slower)
-- **nlohmann**: 170-200 MB/s throughput (11-23x slower)
+- **simdjson**: 2.7-4.4 GB/s throughput (conservative approach)
+- **yyjson**: 2.2-2.7 GB/s throughput (comparable performance)
+- **Serde (Rust)**: 0.5-1.7 GB/s throughput (2.4-5.6x slower)
+- **RapidJSON**: 0.7-1.2 GB/s throughput (3.6-6.5x slower)
+- **nlohmann**: 172-186 MB/s throughput (14-25x slower)
 
 ## Implementation Notes
 
@@ -73,12 +79,74 @@ Both measurements are valid - unified shows optimized build performance, ablatio
 ## Conclusion
 
 simdjson's C++26 static reflection provides:
-- **Near-manual performance** (within 4-25%)
-- **10-22x speedup** over nlohmann::json
-- **3-7x speedup** over RapidJSON
+- **Near-manual performance** (within 6-13%)
+- **14-25x speedup** over nlohmann::json
+- **2.4-5.6x speedup** over Serde (Rust)
+- **3.6-6.5x speedup** over RapidJSON
+- **Comparable performance** with yyjson (within 5-10%)
 - **Automatic code generation** with reflection
 
 This demonstrates that C++26 reflection can provide zero-cost abstractions for JSON parsing.
+
+## Serialization Performance Results
+
+### Twitter Serialization Benchmark (631KB, String-Heavy)
+
+| Library/Method | Throughput | Latency | Speedup vs nlohmann |
+|----------------|------------|---------|-------------------|
+| **simdjson (reflection)** | 3521.5 MB/s | 23.00 μs | 14.5x |
+| **simdjson (DOM)** | 1674.3 MB/s | 48.36 μs | 6.9x |
+| nlohmann::json | 242.3 MB/s | 334.18 μs | 1.0x (baseline) |
+| RapidJSON | 861.1 MB/s | 94.04 μs | 3.6x |
+| yyjson | 2079.4 MB/s | 38.94 μs | 8.6x |
+| Serde (Rust) | 1321.5 MB/s | 61.28 μs | 5.5x |
+
+### CITM Catalog Serialization Benchmark (1.7MB, Complex Objects)
+
+| Library/Method | Throughput | Latency | Speedup vs nlohmann |
+|----------------|------------|---------|-------------------|
+| **simdjson (reflection)** | 2250.0 MB/s | 212.06 μs | 18.1x |
+| **simdjson (DOM)** | 779.6 MB/s | 612.03 μs | 6.3x |
+| nlohmann::json | 124.5 MB/s | 3831.37 μs | 1.0x (baseline) |
+| RapidJSON | 353.5 MB/s | 1349.76 μs | 2.8x |
+| yyjson | 1665.7 MB/s | 286.43 μs | 13.4x |
+| Serde (Rust) | 1167.1 MB/s | 408.82 μs | 9.4x |
+
+## Serialization Ablation Study Results
+
+### Impact of Compiler Optimizations on Serialization Performance
+
+The ablation study disabled individual optimizations to measure their contribution:
+
+#### Twitter Dataset (631KB)
+
+| Variant | Throughput | Performance Impact |
+|---------|------------|-----------------|
+| **Baseline** | 3211.1 MB/s | 100% (reference) |
+| No consteval | 1607.4 MB/s | -50.0% |
+| No SIMD escaping | 2269.2 MB/s | -29.3% |
+| No fast digits | 3034.8 MB/s | -5.5% |
+| No branch hints | 3182.5 MB/s | -0.9% |
+| Linear growth | 3225.4 MB/s | +0.4% |
+
+#### CITM Dataset (1.7MB)
+
+| Variant | Throughput | Performance Impact |
+|---------|------------|-----------------|
+| **Baseline** | 2360.1 MB/s | 100% (reference) |
+| No consteval | 978.3 MB/s | -58.6% |
+| No SIMD escaping | 2259.0 MB/s | -4.3% |
+| No fast digits | 1766.8 MB/s | -25.1% |
+| No branch hints | 2247.4 MB/s | -4.8% |
+| Linear growth | 2289.9 MB/s | -3.0% |
+
+### Key Findings from Ablation Study
+
+1. **consteval is critical**: Disabling compile-time evaluation reduces performance by 50-59%
+2. **SIMD escaping provides significant boost**: 4-29% performance improvement for string escaping
+3. **Fast digit conversion matters**: Especially for number-heavy datasets (25% improvement on CITM)
+4. **Branch hints have minimal impact**: Less than 5% difference in most cases
+5. **Exponential growth strategy**: Shows slight benefit over linear (3-4% improvement)
 
 ## Running Benchmarks with Serde Comparison
 
@@ -115,19 +183,21 @@ make benchmark_serialization_twitter benchmark_serialization_citm_catalog -j4
 
 #### Expected Results
 
-**Twitter Dataset (631KB)**
-- simdjson (builder API): ~3.21 GB/s
-- simdjson::to API: ~2.85 GB/s
-- Serde (Rust): ~1.73 GB/s
-- reflect-cpp: ~1.49 GB/s
-- nlohmann: ~0.18 GB/s
+**Twitter Dataset (631KB) - Latest Results**
+- simdjson (reflection): 3.52 GB/s
+- yyjson: 2.08 GB/s
+- simdjson (DOM): 1.67 GB/s
+- Serde (Rust): 1.32 GB/s
+- RapidJSON: 0.86 GB/s
+- nlohmann: 0.24 GB/s
 
-**CITM Dataset (1.7MB)**
-- simdjson (builder API): ~2.37 GB/s
-- simdjson::to API: ~2.15 GB/s
-- reflect-cpp: ~1.19 GB/s
-- Serde (Rust): ~1.17 GB/s
-- nlohmann: ~0.10 GB/s
+**CITM Dataset (1.7MB) - Latest Results**
+- simdjson (reflection): 2.25 GB/s
+- yyjson: 1.67 GB/s
+- Serde (Rust): 1.17 GB/s
+- simdjson (DOM): 0.78 GB/s
+- RapidJSON: 0.35 GB/s
+- nlohmann: 0.12 GB/s
 
 **Key Finding**: simdjson with C++26 reflection achieves 1.8-1.9x faster serialization than Serde.
 

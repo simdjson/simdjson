@@ -17,7 +17,7 @@ The ablation study systematically disables individual optimizations to measure t
 5. **no_branch_hints** - Disables CPU branch prediction hints
 6. **linear_growth** - Uses linear instead of exponential buffer growth
 
-## Current Results (August 2025)
+## Current Results (September 2025)
 
 ### Parsing Performance (JSON → C++ Structs)
 
@@ -43,25 +43,25 @@ The ablation study systematically disables individual optimizations to measure t
 
 ### Serialization Performance (C++ Structs → JSON)
 
-#### Twitter Serialization (631KB, String-Heavy)
+#### Twitter Serialization (631KB, String-Heavy) - Apple Silicon
 | Optimization | Throughput | Impact When Disabled | Contribution |
 |--------------|------------|---------------------|--------------|
-| **Baseline** | 3236 MB/s | - | All optimizations |
-| No Consteval | 1605 MB/s | -50.4% | **+102% performance** |
-| No SIMD Escaping | ~2270 MB/s | ~-30% | **+43% performance** |
-| No Fast Digits | ~3080 MB/s | ~-5% | +5% performance |
-| No Branch Hints | ~3180 MB/s | ~-2% | +2% performance |
-| Linear Growth | ~3140 MB/s | ~-3% | +3% performance |
+| **Baseline** | 3211 MB/s | - | All optimizations |
+| No Consteval | 1607 MB/s | -50.0% | **+100% performance** |
+| No SIMD Escaping | 2269 MB/s | -29.3% | **+42% performance** |
+| No Fast Digits | 3035 MB/s | -5.5% | +6% performance |
+| No Branch Hints | 3182 MB/s | -0.9% | +1% performance |
+| Linear Growth | 3225 MB/s | +0.4% | -0.4% performance |
 
-#### CITM Serialization (1.7MB, Complex Objects)
+#### CITM Serialization (1.7MB, Complex Objects) - Apple Silicon
 | Optimization | Throughput | Impact When Disabled | Contribution |
 |--------------|------------|---------------------|--------------|
-| **Baseline** | 2285 MB/s | - | All optimizations |
-| No Consteval | 984 MB/s | -57.0% | **+132% performance** |
-| No SIMD Escaping | ~1620 MB/s | ~-29% | **+41% performance** |
-| No Fast Digits | ~2170 MB/s | ~-5% | +5% performance |
-| No Branch Hints | ~2240 MB/s | ~-2% | +2% performance |
-| Linear Growth | ~2220 MB/s | ~-3% | +3% performance |
+| **Baseline** | 2360 MB/s | - | All optimizations |
+| No Consteval | 978 MB/s | -58.6% | **+141% performance** |
+| No SIMD Escaping | 2259 MB/s | -4.3% | +4% performance |
+| No Fast Digits | 1767 MB/s | -25.1% | **+34% performance** |
+| No Branch Hints | 2247 MB/s | -4.8% | +5% performance |
+| Linear Growth | 2290 MB/s | -3.0% | +3% performance |
 
 ## Key Findings
 
@@ -78,10 +78,10 @@ The ablation study systematically disables individual optimizations to measure t
    - Parsing is already near-optimal with simdjson's core SIMD algorithms
    - Serialization benefits from compile-time and runtime optimizations
 
-### Overall Performance
-- **Parsing**: 3.7 GB/s (Twitter), 2.2 GB/s (CITM) - consistent across variants
-- **Serialization**: 3.2 GB/s (Twitter), 2.3 GB/s (CITM) - heavily optimization-dependent
-- **Combined optimizations**: Provide 2x performance for serialization
+### Overall Performance (Apple Silicon)
+- **Parsing**: 4.1 GB/s (Twitter), 2.7 GB/s (CITM) - consistent across variants
+- **Serialization**: 3.2 GB/s (Twitter), 2.4 GB/s (CITM) - heavily optimization-dependent
+- **Combined optimizations**: Provide 2-2.4x performance for serialization
 
 ## Code Snippets for Each Optimization
 
