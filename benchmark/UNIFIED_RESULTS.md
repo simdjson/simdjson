@@ -42,7 +42,7 @@ Comparison of simdjson's C++26 static reflection implementation against traditio
 
 1. **Reflection performs excellently**: Only 6-13% slower than manual implementation
 2. **Massive speedup over traditional libraries**: 14-25x faster than nlohmann::json
-3. **Outperforms modern alternatives**: 2.4-5.6x faster than Serde (Rust), comparable with yyjson
+3. **Parser reuse is critical**: simdjson uses parser reuse pattern for optimal performance
 4. **String-heavy workloads favor simdjson**: Twitter shows better relative performance
 
 ## Performance Characteristics
@@ -83,7 +83,6 @@ simdjson's C++26 static reflection provides:
 - **14-25x speedup** over nlohmann::json
 - **2.4-5.6x speedup** over Serde (Rust)
 - **3.6-6.5x speedup** over RapidJSON
-- **Comparable performance** with yyjson (within 5-10%)
 - **Automatic code generation** with reflection
 
 This demonstrates that C++26 reflection can provide zero-cost abstractions for JSON parsing.
