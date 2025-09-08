@@ -87,6 +87,35 @@ bool simple() {
   TEST_SUCCEED();
 }
 
+
+  struct BadPlayer {
+      int username;  // Oops, should be string!
+      int level;
+      double health;
+  };
+#if SIMDJSON_STATIC_REFLECTION
+  bool bad_player() {
+    TEST_START();
+    // username is a string but we declared it as an int
+    std::string json = R"({"username":"Alice","level":42,"health":100.0})";
+    simdjson::padded_string padded(json);
+    BadPlayer p;
+    simdjson::ondemand::parser parser;
+    auto doc = parser.iterate(padded);
+    ASSERT_FAILURE(doc.get(p));
+    TEST_SUCCEED();
+  }
+  bool good_player() {
+    TEST_START();
+    std::string json = R"({"username":123,"level":42,"health":100.0})";
+    simdjson::padded_string padded(json);
+    BadPlayer p;
+    simdjson::ondemand::parser parser;
+    auto doc = parser.iterate(padded);
+    ASSERT_SUCCESS(doc.get(p));
+    TEST_SUCCEED();
+  }
+#endif
 bool broken() {
   TEST_START();
   simdjson::padded_string short_json_cars = R"( { "make )"_padded;
@@ -340,6 +369,9 @@ bool test_to_vs_from_equivalence() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
+#if SIMDJSON_STATIC_REFLECTION
+      bad_player() && good_player() &&
+#endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
