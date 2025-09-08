@@ -7,6 +7,39 @@
 #include <string>
 #include <vector>
 
+#if SIMDJSON_STATIC_REFLECTION
+
+class MyDate {
+public:
+    void assign(std::string_view str) {
+        date_str = str;
+    }
+    const std::string& to_string() const {
+        return date_str;
+    }
+private:
+    std::string date_str;
+};
+
+namespace simdjson {
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, MyDate& date) {
+    std::string_view str;
+    auto error = val.get_string().get(str);
+    if(error) { return error; }
+    date.assign(str);
+  return simdjson::SUCCESS;
+}
+} // namespace simdjson
+
+struct complicated_weather_data {
+    std::vector<MyDate> time;
+    std::vector<float> temperature;
+};
+
+
+#endif
+
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
@@ -111,7 +144,19 @@ bool simple() {
     simdjson::padded_string padded(json);
     BadPlayer p;
     simdjson::ondemand::parser parser;
-    auto doc = parser.iterate(padded);
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    ASSERT_SUCCESS(doc.get(p));
+    TEST_SUCCEED();
+  }
+  bool complicated_weather_test() {
+    TEST_START();
+    std::string json = R"({"time":["2023-03-15T12:00:00Z"],"temperature":[42]})";
+    simdjson::padded_string padded(json);
+    complicated_weather_data p;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
     ASSERT_SUCCESS(doc.get(p));
     TEST_SUCCEED();
   }
@@ -370,7 +415,7 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_STATIC_REFLECTION
-      bad_player() && good_player() &&
+      bad_player() && good_player() && complicated_weather_test() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&

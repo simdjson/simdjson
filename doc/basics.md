@@ -1385,6 +1385,82 @@ Car c = doc.get<Car>();
 ```
 
 
+We try to automate the parsing of any given structure or class
+by looking at its non-static public members. At compile-time,
+the library looks at a simple structre like `Car` and
+maps it to parsing code. We call the default constructor,
+and then assign values to the public members.
+
+
+```C++
+struct Car {
+  std::string make;
+  std::string model;
+  int year;
+  std::vector<float> tire_pressure;
+};
+```
+
+However, there are instances where the construction cannot
+be easily automated. Let us consider a class without any
+public member.
+
+```cpp
+
+class MyDate {
+public:
+    void assign(std::string_view str) {
+        date_str = str;
+    }
+    const std::string& to_string() const {
+        return date_str;
+    }
+private:
+    std::string date_str;
+};
+```
+
+This class has a default constructor, but it must be initialized
+with the `assign` method. We need to help the library with
+a `tag_invoke` function (just as in the C++20 case).
+
+
+```cpp
+namespace simdjson {
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, MyDate& date) {
+    std::string_view str;
+    auto error = val.get_string().get(str);
+    if(error) { return error; }
+    date.assign(str);
+  return simdjson::SUCCESS;
+}
+} // namespace simdjson
+```
+
+Once this is done, we can now automatically parse a custom type
+like `complicated_weather_data` containing `MyDate` values.
+
+
+```cpp
+struct complicated_weather_data {
+    std::vector<MyDate> time;
+    std::vector<float> temperature;
+};
+```
+
+The code might as simple as the following.
+
+```cpp
+auto padded = R"({"time":["2023-03-15T12:00:00Z"],"temperature":[42]})"_padded;
+simdjson::ondemand::parser parser;
+simdjson::ondemand::document doc = parser.iterate(padded);
+complicated_weather_data p = doc.get<>(complicated_weather_data);
+```
+
+Thus you can combine C++26 static reflection with custom deserialization
+functions.
+
 You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).
 
