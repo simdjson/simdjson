@@ -83,32 +83,31 @@ You can create a new docker shell at any time by running step 3 (bash script).
 You can import simdjson in your own CMake project. You can configure your project like so:
 
 ```
-add_compile_options(-freflection -fexpansion-statements
- $<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>
- $<$<COMPILE_LANGUAGE:CXX>:-std=c++26>)
-add_definitions(-DSIMDJSON_STATIC_REFLECTION=1)
-
-
 # Fetch simdjson from GitHub
+# Replace GIT_TAG by the commit you require.
 include(FetchContent)
 FetchContent_Declare(
     simdjson
     GIT_REPOSITORY https://github.com/simdjson/simdjson.git
     GIT_TAG 015daad6a95a4f67c08ed5980d24b57be221c38f
+    CMAKE_ARGS -DSIMDJSON_STATIC_REFLECTION=ON
 )
 FetchContent_MakeAvailable(simdjson)
 
-
-#CPMAddPackage(
+##########
+# You may also use CPM.
+# https://github.com/cpm-cmake/CPM.cmake
+# CPMAddPackage(
 #    NAME simdjson
 #    GITHUB_REPOSITORY simdjson/simdjson
 #    GIT_TAG 015daad6a95a4f67c08ed5980d24b57be221c38f
-#    OPTIONS "SIMDJSON_STATIC_REFLECTION=ON"
-#)
+#    OPTIONS "SIMDJSON_STATIC_REFLECTION ON"
+# )
 target_link_libraries(webservice PRIVATE simdjson::simdjson)
 ```
 
 Replace the `GIT_TAG` by the appropriate value.
 
 Once C++26 support will be officially available in mainstream compilers,
-we will simplify these instructions.
+we will simplify these instructions and it will no longer be needed
+to specify `SIMDJSON_STATIC_REFLECTION`.
