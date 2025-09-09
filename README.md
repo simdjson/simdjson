@@ -1,5 +1,3 @@
-
-[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
 [![][license img]][license] [![][licensemit img]][licensemit]
 
 
