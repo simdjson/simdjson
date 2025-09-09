@@ -54,7 +54,7 @@ The simdjson library is widely deployed in popular systems such as the Node.js r
 environment.
 
 - A recent compiler (LLVM clang 6 or better, GNU GCC 7.4 or better, Xcode 11 or better) on POSIX systems such as macOS, FreeBSD or Linux. We require that the compiler supports the C++11 standard or better. We test the library on a big-endian system (IBM s390x with Linux).
-- Visual Studio 2017 or better. We support the LLVM clang compiler under Visual Studio (clang-cl) as well as as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We discourage against using GCC under Windows: there [is a long-running bug with GCC under Windows](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
+- Visual Studio 2017 or better. We support the LLVM clang compiler under Visual Studio (clang-cl) as well as the regular Visual Studio compiler. For better release performance (both compile time and execution time), we recommend Visual Studio users adopt LLVM (clang-cl). We discourage using GCC under Windows: there [is a long-running bug with GCC under Windows](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better, AMD Zen 4 or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
 
@@ -78,14 +78,14 @@ c++ myproject.cpp simdjson.cpp
 ```
 
 Note:
-- We recommend that you use simdjson by copying the single-header `simdjson.h` file along with the source file `simdjson.cpp` directly in your project, as they are part of [every release](https://github.com/simdjson/simdjson/releases) as assets. In this manner, you only have to compile `simdjson.cpp` as any other source file: it works well in every development environment. However, you may also use simdjson as a git submodule ([example](https://github.com/simdjson/cmakedemo)), using FetchContent ([example](https://github.com/simdjson/cmake_demo_single_file)), with ExternalProject_Add ([example](https://github.com/simdjson/cmakedemo_externalproject)) or with CPM ([example](https://github.com/cpm-cmake/CPM.cmake/tree/master/examples/simdjson)).
+- We recommend that you use simdjson by copying the single-header `simdjson.h` file along with the source file `simdjson.cpp` directly into your project, as they are part of [every release](https://github.com/simdjson/simdjson/releases) as assets. In this manner, you only have to compile `simdjson.cpp` as any other source file: it works well in every development environment. However, you may also use simdjson as a git submodule ([example](https://github.com/simdjson/cmakedemo)), using FetchContent ([example](https://github.com/simdjson/cmake_demo_single_file)), with ExternalProject_Add ([example](https://github.com/simdjson/cmakedemo_externalproject)) or with CPM ([example](https://github.com/cpm-cmake/CPM.cmake/tree/master/examples/simdjson)).
 - Users on macOS and other platforms where default compilers do not provide C++11 compliant by default should request it with the appropriate flag (e.g., `c++ -std=c++11 myproject.cpp simdjson.cpp`).
 - The library relies on [runtime CPU detection](implementation-selection.md): avoid specifying an architecture at compile time (e.g., `-march-native`) if you want your binaries to run everywhere.
 
 Using simdjson with package managers
 ------------------
 
-You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. E.g., [we provide an complete example with vcpkg](https://github.com/simdjson/simdjson-vcpkg) that works under Windows. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
+You can install the simdjson library on your system or in your project using multiple package managers such as MSYS2, the conan package manager, vcpkg, brew, the apt package manager (debian-based Linux systems), the FreeBSD package manager (FreeBSD), and so on. E.g., [we provide a complete example with vcpkg](https://github.com/simdjson/simdjson-vcpkg) that works under Windows. [Visit our wiki for more details](https://github.com/simdjson/simdjson/wiki/Installing-simdjson-with-a-package-manager).
 
 
 
@@ -320,7 +320,7 @@ At the cost of some memory allocation, you may convert your `std::string_view` i
 For convenience, we also allow [storing an escaped string directly into an existing string instance](#storing-directly-into-an-existing-string-instance).
 
 The `std::string_view` class has become standard as part of C++17 but it is not always available
-on compilers which only supports C++11. When we detect that `string_view` is natively
+on compilers that only supports C++11. When we detect that `string_view` is natively
 available, we define the macro `SIMDJSON_HAS_STRING_VIEW`.
 
 When we detect that it is unavailable,
@@ -343,7 +343,7 @@ We recommend that you first compile and run your code in debug mode:
 
 The simdjson code will set `SIMDJSON_DEVELOPMENT_CHECKS=1` in debug mode. Because
 the C++ standard does not provide a direct way of checking for a debug build, and
-because you may want the checks while building with otimizations, you can set
+because you may want the checks while building with optimizations, you can set
 the  macro `SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including
 the `simdjson.h` header to enable these additional checks: just make sure you remove the
 definition once your code has been tested. When `SIMDJSON_DEVELOPMENT_CHECKS` is set to 1, the
@@ -371,9 +371,8 @@ and arrays (`simdjson::ondemand::array`).
 We also have a generic ephemeral type (`simdjson::ondemand::value`) which represents a potential
 array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside
 an array or an object. Both generic types (`simdjson::ondemand::document` and
-`simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing the
-value (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
-`json_type::boolean`, `json_type::null`). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens such as the `NaN` token in `{"key":NaN}`. A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
+`simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing indicating the type (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
+`json_type::boolean`, `json_type::null`, and `json_type::unknown` for unrecognized types). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens such as the `NaN` token in `{"key":NaN}`. A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
 is only valid temporarily, as soon as you access other values, other keys in objects, etc.
 it becomes invalid: you should therefore consume the value immediately by converting it to a
 scalar type, an array or an object.
@@ -406,7 +405,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
   `get_uint64()`, `get_int64()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
   the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for `ondemand::object` and `ondemand::array`. An exception may be thrown if
-  the cast is not possible: there error code is `simdjson::INCORRECT_TYPE` (see [Error handling](#error-handling)). Importantly, when getting an ondemand::object or ondemand::array instance, its content is
+  the cast is not possible: the error code is `simdjson::INCORRECT_TYPE` (see [Error handling](#error-handling)). Importantly, when getting an ondemand::object or ondemand::array instance, its content is
   not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
   for example, you could have an ondemand::object instance pointing at the invalid JSON `{ "this is not a valid object" }`: the validation occurs as you access the content.
   The `get_string()` returns a valid UTF-8 string, after
@@ -516,7 +515,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
   > ```
-* **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the JSON pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
+* **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the internal pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```C++
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
@@ -1536,9 +1535,9 @@ If you find yourself needing only fast Unicode functions, consider using the sim
 JSON Pointer
 ------------
 
-The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the `at_pointer()` method, letting you reach further down into the document in a single call. JSON pointer is supported by both the [DOM approach](https://github.com/simdjson/simdjson/blob/master/doc/dom.md#json-pointer) as well as the On-Demand approach.
+The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the `at_pointer()` method, letting you reach further down into the document in a single call. JSON Pointer is supported by both the [DOM approach](https://github.com/simdjson/simdjson/blob/master/doc/dom.md#json-pointer) as well as the On-Demand approach.
 
-**Note:** The On-Demand implementation of JSON pointer relies on `find_field` which implies that it does not unescape keys when matching.
+**Note:** The On-Demand implementation of JSON Pointer relies on `find_field` which implies that it does not unescape keys when matching.
 
 Consider the following example:
 
@@ -1558,7 +1557,7 @@ index allows you to select the indexed node. Within objects, the string value of
 select the value. If your keys contain the characters '/' or '~', they must be escaped as '~1' and
 '~0' respectively. An empty JSON Pointer Path refers to the whole document.
 
-For multiple JSON pointer queries on a document, one can call `at_pointer` multiple times.
+For multiple JSON Pointer queries on a document, one can call `at_pointer` multiple times.
 
 ```c++
 auto cars_json = R"( [
@@ -1713,7 +1712,7 @@ x = obj.at_path("$.d.foo2.a.2"); // 30
 Error handling
 --------------
 
-Error handing with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.
+Error handling with exception and a single try/catch clause makes the code simple, but it gives you little control over errors. For easier debugging or more robust error handling, you may want to consider our exception-free approach.
 
 The entire simdjson API is usable with and without exceptions. All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
 pair. You can retrieve the value with .get() without generating an exception, like so:
@@ -3175,7 +3174,7 @@ Performance tips
 - The On-Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind`, `reset` and similar methods.
 - If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
 - Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
-- For release builds, we recommend setting `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
+- For release builds, we recommend setting the `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.
 - Never seek to access a field twice (e.g., o["data"] and later again o["data"]). Instead capture once an ondemand::value and reuse it.
 - If you must access several different keys in an object, it might be preferable to iterate through all the fields in the object instead, and branch on the field keys. Consider this example.
