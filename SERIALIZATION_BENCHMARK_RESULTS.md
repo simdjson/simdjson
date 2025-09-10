@@ -7,9 +7,14 @@ Performance comparison of JSON serialization (C++ structs → JSON) across multi
 - **Date**: September 2025
 - **Compiler**: Clang 21.0.0 with C++26 support
 - **Platform**: Linux (aarch64 and x64)
-- **Optimization**: `-O3`
+- **Optimization**: `-O3` (we do not use `-march=native` or other flags)
 - **Datasets**: Twitter (631KB), CITM Catalog (1.7MB)
 - **Consteval**: Enabled with `std::define_static_string` for compile-time key generation
+
+**Software remarks**: The simdjson library makes little use of SIMD instructions when serializing.
+
+**Hardware remarks**: The Intel Ice Lake processor has powerful SIMD support (AVX-512, two 512-bit execution units). The Apple processor runs at higher frequency and cna retire more instructions per cycle, while having weaker SIMD support (ARM NEON, four 128-bit execution units).
+
 
 ## Twitter Dataset Results (631KB)
 
@@ -58,18 +63,21 @@ Performance comparison of JSON serialization (C++ structs → JSON) across multi
 ## Key Findings
 
 ### Performance Leaders
-- **simdjson (reflection)** dominates with 3.52 GB/s on Twitter Apple Silicon (best-in-class)
-- **simdjson (reflection)** achieves 2.25 GB/s on CITM Apple Silicon (fastest overall)
-- **Consteval optimization** provides significant speedup by pre-computing JSON keys at compile-time
+- **simdjson (reflection)**  leads across all tests, peaking at 3.52 GB/s on Twitter (Apple Silicon) and 2.25 GB/s on CITM (Apple Silicon), showcasing best-in-class serialization performance.
+- **yyjson** consistently ranks second, achieving 2.08 GB/s on Twitter (Apple Silicon) and 1.68 GB/s on CITM (Intel Ice Lake), competitive but trailing simdjson by 1.5-1.7x.
+- Traditional libraries (RapidJSON, nlohmann/json) lag significantly, with nlohmann/json being the slowest at 242-243 MB/s on Twitter and 125-127 MB/s on CITM, roughly 14-30x slower than simdjson (reflection).
 
 ### Technology Insights
-1. **Consteval Impact**: Pre-computing JSON keys at compile-time provides major performance gains
-2. **Reflection Performance**: C++26 reflection with consteval outperforms all alternatives
-3. **Memory Management**: String builder reuse + consteval keys = optimal performance
+
+1. **Consteval Impact**: Using `std::define_static_string` for compile-time JSON key generation significantly boosts performance, enabling simdjson (reflection) to achieve up to 3.52 GB/s on Twitter, a 1.7-2.1x improvement over non-consteval methods like yyjson.
+2. **Memory Management**: String builder reuse combined with consteval key generation optimizes memory allocation, contributing to simdjson (reflection)'s superior performance across datasets and platforms.
+3. **Platform Differences**: Apple Silicon slightly edges out Intel Ice Lake for simdjson (reflection) on both datasets (3.52 GB/s vs. 3.48 GB/s on Twitter, 2.25 GB/s vs. 2.10 GB/s on CITM), likely due to higher frequency and instruction retirement, despite weaker SIMD support (ARM NEON vs. AVX-512).
+4. **Serde (Rust)** trails C/C++ libraries by 1.8-3x.
+5. **Reflection Performance**: C++26 reflection with consteval outperforms all alternatives
+
 
 ## Methodology
-- 1000 iterations for Twitter dataset
-- 500 iterations for CITM dataset
+- 3000 iterations for Twitter and CITM dataset
 - String builder reuse for simdjson (realistic optimization)
 - Full serialization with proper JSON escaping
 - Warmup phase before timing
