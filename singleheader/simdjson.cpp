@@ -1,4 +1,4 @@
-/* auto-generated on 2025-08-19 20:53:13 -0400. version 4.0.0 Do not edit! */
+/* auto-generated on 2025-09-09 18:44:21 -0400. version 4.0.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -193,6 +193,22 @@ using std::size_t;
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__riscv) && __riscv_xlen == 64
 #define SIMDJSON_IS_RISCV64 1
+  #if __riscv_v_intrinsic >= 11000
+    #define SIMDJSON_HAS_RVV_INTRINSICS 1
+  #endif
+
+  #define SIMDJSON_HAS_ZVBB_INTRINSICS                                          \
+    0 // there is currently no way to detect this
+
+  #if SIMDJSON_HAS_RVV_INTRINSICS && __riscv_vector &&                          \
+      __riscv_v_min_vlen >= 128 && __riscv_v_elen >= 64
+    // RISC-V V extension
+    #define SIMDJSON_IS_RVV 1
+    #if SIMDJSON_HAS_ZVBB_INTRINSICS && __riscv_zvbb >= 1000000
+      // RISC-V Vector Basic Bit-manipulation
+      #define SIMDJSON_IS_ZVBB 1
+    #endif
+  #endif
 #elif defined(__loongarch_lp64)
 #define SIMDJSON_IS_LOONGARCH64 1
 #elif defined(__PPC64__) || defined(_M_PPC64)
@@ -2574,6 +2590,10 @@ namespace internal {
 /**
  * The result of a simdjson operation that could fail.
  *
+ * IMPORTANT: For the ondemand API, we use implementation_simdjson_result_base<T> as a base class
+ * to avoid some compilation issue. Thus, if you modify this class, please ensure that the ondemand
+ * implementation_simdjson_result_base<T> is also modified.
+ *
  * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
  *
  * This is a base class for implementations that want to add functions to the result type for
@@ -2634,7 +2654,26 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
 #if SIMDJSON_EXCEPTIONS
+
+  /**
+   * Dereference operator to access the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
 
   /**
    * Get the result value.
@@ -2719,6 +2758,7 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
  */
 template<typename T>
 struct simdjson_result : public internal::simdjson_result_base<T> {
+
   /**
    * @private Create a new empty result with error = UNINITIALIZED.
    */
@@ -2772,8 +2812,11 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline error_code error() const noexcept;
 
-#if SIMDJSON_EXCEPTIONS
 
+
+#if SIMDJSON_EXCEPTIONS
+  using internal::simdjson_result_base<T>::operator*;
+  using internal::simdjson_result_base<T>::operator->;
   /**
    * Get the result value.
    *
@@ -2975,6 +3018,62 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONCEPTS_H
 /* end file simdjson/concepts.h */
+/* including simdjson/constevalutil.h: #include "simdjson/constevalutil.h" */
+/* begin file simdjson/constevalutil.h */
+#ifndef SIMDJSON_CONSTEVALUTIL_H
+#define SIMDJSON_CONSTEVALUTIL_H
+
+#include <string>
+#include <string_view>
+#include <array>
+
+#if SIMDJSON_CONSTEVAL
+namespace simdjson {
+namespace constevalutil {
+
+constexpr static std::array<uint8_t, 256> json_quotable_character = {
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+constexpr static std::array<std::string_view, 32> control_chars = {
+    "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
+    "\\u0007", "\\b", "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
+    "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
+    "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
+    "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
+// unoptimized, meant for compile-time execution
+consteval std::string consteval_to_quoted_escaped(std::string_view input) {
+  std::string out = "\"";
+  for (char c : input) {
+    if (json_quotable_character[uint8_t(c)]) {
+      if (c == '"') {
+        out.append("\\\"");
+      } else if (c == '\\') {
+        out.append("\\\\");
+      } else {
+        std::string_view v = control_chars[uint8_t(c)];
+        out.append(v);
+      }
+    } else {
+      out.push_back(c);
+    }
+  }
+  out.push_back('"');
+  return out;
+}
+} // namespace constevalutil
+} // namespace simdjson
+#endif  // SIMDJSON_CONSTEVAL
+#endif // SIMDJSON_CONSTEVALUTIL_H
+/* end file simdjson/constevalutil.h */
 
 /**
  * @brief The top level simdjson namespace, containing everything the library provides.
@@ -4702,7 +4801,37 @@ simdjson_inline error_code simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+
+template<typename T>
+simdjson_inline T& simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<internal::simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& simdjson_result_base<T>::value() & noexcept(false) {
@@ -4727,6 +4856,7 @@ simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
 }
 
 #endif // SIMDJSON_EXCEPTIONS
+
 
 template<typename T>
 simdjson_inline const T& simdjson_result_base<T>::value_unsafe() const& noexcept {
@@ -9158,6 +9288,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -9165,6 +9300,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -10583,7 +10728,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -15598,6 +15772,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -15605,6 +15784,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -17023,7 +17212,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -21893,6 +22111,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -21900,6 +22123,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -23318,7 +23551,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -28345,6 +28607,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -28352,6 +28619,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -29770,7 +30047,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -35156,6 +35462,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -35163,6 +35474,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -36581,7 +36902,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -41789,6 +42139,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -41796,6 +42151,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -43214,7 +43579,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -47868,6 +48262,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -47875,6 +48274,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -49293,7 +49702,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
@@ -53539,6 +53977,11 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
+
 #if SIMDJSON_EXCEPTIONS
 
   /**
@@ -53546,6 +53989,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -54964,7 +55417,36 @@ simdjson_inline error_code implementation_simdjson_result_base<T>::error() const
   return this->second;
 }
 
+
+template<typename T>
+simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {
