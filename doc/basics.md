@@ -1400,7 +1400,7 @@ maps it to parsing code. We call the default constructor,
 and then assign values to the public members.
 
 
-#### Special cases 
+#### Special cases
 
 However, there are instances where the construction cannot
 be easily automated. Let us consider a class without any
