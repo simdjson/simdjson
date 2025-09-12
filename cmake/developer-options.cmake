@@ -4,7 +4,7 @@
 add_library(simdjson-internal-flags INTERFACE)
 if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
   # We default to ON for all targets, so that we can use the library in shared libraries.
-  set_target_properties(simdjson-internal-flags PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  set_target_properties(simdjson-internal-flags PROPERTIES INTERFACE_POSITION_INDEPENDENT_CODE ON)
 endif(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
 
 option(SIMDJSON_CHECK_EOF "Check for the end of the input buffer. The setting is unnecessary since we require padding of the inputs. You should expect tests to fail with this option turned on." OFF)
