@@ -119,6 +119,7 @@ Godbolt
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
 * [simdjson examples with errors handled through exceptions](https://godbolt.org/z/7G5qE4sr9)
 * [simdjson examples with errors without exceptions](https://godbolt.org/z/e9dWb9E4v)
+* [C++26 reflection example](https://godbolt.org/z/xK5TGKdPb)
 
 Performance results
 -------------------
