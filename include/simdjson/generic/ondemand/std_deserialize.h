@@ -254,7 +254,7 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 
   // Check if the value is null
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset(); // Set to nullopt
     return SUCCESS;
@@ -364,7 +364,7 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &
 ////////////////////////////////////////
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<bool> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -379,7 +379,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<bool> &out) no
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int64_t> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -394,7 +394,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int64_t> &out)
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<uint64_t> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -409,7 +409,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<uint64_t> &out
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<double> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -424,7 +424,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<double> &out) 
 
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string_view> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -443,7 +443,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string_vi
 ////////////////////////////////////////
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<bool> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -458,7 +458,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<bool> &out) no
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<int64_t> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -473,7 +473,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<int64_t> &out)
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<uint64_t> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -488,7 +488,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<uint64_t> &out
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<double> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -503,7 +503,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<double> &out) 
 
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_view> &out) noexcept {
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset();
     return SUCCESS;
@@ -527,7 +527,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string_vi
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string> &out) noexcept {
   // Check if the value is null
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset(); // Set to nullptr
     return SUCCESS;
@@ -545,7 +545,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<std::string> &
 error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string> &out) noexcept {
   // Check if the value is null
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset(); // Set to nullptr
     return SUCCESS;
@@ -563,7 +563,7 @@ error_code tag_invoke(deserialize_tag, auto &val, std::shared_ptr<std::string> &
 error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int> &out) noexcept {
   // Check if the value is null
   bool is_null_value;
-  SIMDJSON_TRY( is_null().get(is_null_value) );
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
   if (is_null_value) {
     out.reset(); // Set to nullptr
     return SUCCESS;
