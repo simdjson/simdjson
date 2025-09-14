@@ -41,6 +41,9 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #if SIMDJSON_IMPLEMENTATION_LASX
 #include <lasx.cpp>
 #endif
+#if SIMDJSON_IMPLEMENTATION_RVV
+#include <rvv.cpp>
+#endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 #include <fallback.cpp>
 #endif

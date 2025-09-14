@@ -21,6 +21,19 @@ bool implementation::supported_by_runtime_system() const {
 
 #define SIMDJSON_CONDITIONAL_INCLUDE
 
+#if SIMDJSON_IMPLEMENTATION_RVV
+#include <simdjson/rvv/implementation.h>
+namespace simdjson {
+namespace internal {
+static const rvv::implementation* get_rvv_singleton() {
+  static const rvv::implementation rvv_singleton{};
+  return &rvv_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif // SIMDJSON_IMPLEMENTATION_RVV
+
+
 #if SIMDJSON_IMPLEMENTATION_ARM64
 #include <simdjson/arm64/implementation.h>
 namespace simdjson {
@@ -130,6 +143,7 @@ namespace internal {
              + SIMDJSON_IMPLEMENTATION_HASWELL + SIMDJSON_IMPLEMENTATION_WESTMERE \
              + SIMDJSON_IMPLEMENTATION_ARM64 + SIMDJSON_IMPLEMENTATION_PPC64 \
              + SIMDJSON_IMPLEMENTATION_LSX + SIMDJSON_IMPLEMENTATION_LASX \
+             + SIMDJSON_IMPLEMENTATION_RVV \
              + SIMDJSON_IMPLEMENTATION_FALLBACK == 1)
 
 #if SIMDJSON_SINGLE_IMPLEMENTATION
@@ -155,6 +169,9 @@ namespace internal {
 #endif
 #if SIMDJSON_IMPLEMENTATION_LASX
     get_lasx_singleton();
+#endif
+#if SIMDJSON_IMPLEMENTATION_RVV
+    get_rvv_singleton();
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton();
@@ -215,6 +232,9 @@ static const std::initializer_list<const implementation *>& get_available_implem
 #endif
 #if SIMDJSON_IMPLEMENTATION_LASX
     get_lasx_singleton(),
+#endif
+#if SIMDJSON_IMPLEMENTATION_RVV
+    get_rvv_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton(),

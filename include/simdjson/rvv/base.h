@@ -1,0 +1,8 @@
+#ifndef SIMDJSON_RVV_BASE_H
+#define SIMDJSON_RVV_BASE_H
+
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include "simdjson/base.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
+
+#endif // SIMDJSON_RVV_BASE_H
