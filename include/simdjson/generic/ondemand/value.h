@@ -79,7 +79,9 @@ public:
       using value_type = typename std::remove_cvref_t<T>::value_type;
 
       // Check if the value is null
-      if (is_null()) {
+      bool is_null_value;
+      SIMDJSON_TRY( is_null().get(is_null_value) );
+      if (is_null_value) {
         out.reset(); // Set to nullopt
         return SUCCESS;
       }
