@@ -41,7 +41,7 @@ Parameters:
 - `append_raw(std::string_view input)`: Appends a string view directly to the JSON buffer without escaping.
 - `append_raw(const char *str, size_t len)`: Appends a specified number of characters from a C string directly to the JSON
 
-After writting the content, if you have reasons to believe that the content might violate UTF-8 conventions, you can check it as follows:
+After writing the content, if you have reasons to believe that the content might violate UTF-8 conventions, you can check it as follows:
 
 - `validate_unicode()`: Checks if the content in the JSON buffer is valid UTF-8. Returns: true if the content is valid UTF-8, false otherwise.
 
