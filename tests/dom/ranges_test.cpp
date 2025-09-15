@@ -8,7 +8,7 @@
 
 using namespace simdjson;
 namespace ranges_test {
-
+#if SIMDJSON_EXCEPTIONS
   bool printout() {
     TEST_START();
     auto cars_json = R"( [
@@ -43,6 +43,7 @@ namespace ranges_test {
     ASSERT_TRUE(std::ranges::equal(cars, expected));
     TEST_SUCCEED();
   }
+  #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
     return
