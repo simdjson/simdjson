@@ -1395,7 +1395,7 @@ Car c = doc.get<Car>();
 
 We try to automate the parsing of any given structure or class
 by looking at its non-static public members. At compile-time,
-the library looks at a simple structre like `Car` and
+the library looks at a simple structure like `Car` and
 maps it to parsing code. We call the default constructor,
 and then assign values to the public members.
 
@@ -1450,7 +1450,7 @@ struct complicated_weather_data {
 };
 ```
 
-The code might as simple as the following.
+The code might be as simple as the following.
 
 ```cpp
 auto padded = R"({"time":["2023-03-15T12:00:00Z"],"temperature":[42]})"_padded;
