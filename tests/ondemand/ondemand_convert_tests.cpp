@@ -2,6 +2,7 @@
 #include "simdjson/convert.h"
 #include "test_ondemand.h"
 
+#include <chrono>
 #include <map>
 #include <ranges>
 #include <string>
@@ -20,6 +21,24 @@ public:
 private:
     std::string date_str;
 };
+
+
+struct Meeting {
+    std::string title;
+    std::vector<std::string> attendees;
+    std::optional<std::string> location;
+    bool is_recurring;
+};
+
+
+struct MeetingTime {
+    std::string title;
+    std::chrono::system_clock::time_point start_time;
+    std::vector<std::string> attendees;
+    std::optional<std::string> location;
+    bool is_recurring;
+};
+
 
 namespace simdjson {
 template <typename simdjson_value>
@@ -160,6 +179,38 @@ bool simple() {
     ASSERT_SUCCESS(doc.get(p));
     TEST_SUCCEED();
   }
+
+
+  bool meeting_test() {
+    TEST_START();
+    std::string json = simdjson::to_json(Meeting{
+        .title = "CppCon Planning",
+        .attendees = {"Alice", "Bob", "Charlie"},
+        .location = "Denver",
+        .is_recurring = true
+    });
+    Meeting m2 = simdjson::from(json);
+    std::cout << m2.title << std::endl;
+    TEST_SUCCEED();
+  }
+  bool meeting_time_test() {
+    TEST_START();
+    auto start_time = std::chrono::system_clock::now();
+    std::string json = simdjson::to_json(MeetingTime{
+        .title = "CppCon Planning",
+        .start_time = start_time,
+        .attendees = {"Alice", "Bob", "Charlie"},
+        .location = "Denver",
+        .is_recurring = true
+    });
+    std::cout << json << std::endl;
+    MeetingTime m2 = simdjson::from(json);
+    //ASSERT_EQUAL(m2.start_time, start_time);
+    std::cout << m2.title << std::endl;
+    TEST_SUCCEED();
+  }
+
+
 #endif
 bool broken() {
   TEST_START();
@@ -415,7 +466,7 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_STATIC_REFLECTION
-      bad_player() && good_player() && complicated_weather_test() &&
+      meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
