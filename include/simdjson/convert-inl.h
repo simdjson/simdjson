@@ -116,6 +116,16 @@ template <typename T>
 inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_view const str) const noexcept {
   return auto_parser<ondemand::parser *>{parser, str};
 }
+
+template <typename T>
+inline auto to_adaptor<T>::operator()(std::string str) const noexcept {
+  return auto_parser{pad_with_reserve(str)};
+}
+
+template <typename T>
+inline auto to_adaptor<T>::operator()(ondemand::parser &parser, std::string str) const noexcept {
+  return auto_parser<ondemand::parser *>{parser, pad_with_reserve(str)};
+}
 } // namespace internal
 } // namespace convert
 } // namespace simdjson

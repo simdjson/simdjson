@@ -72,6 +72,11 @@ struct to_adaptor {
 	T operator()(simdjson_result<ondemand::value> &val) const noexcept;
 	auto operator()(padded_string_view const str) const noexcept;
 	auto operator()(ondemand::parser &parser, padded_string_view const str) const noexcept;
+	// The std::string is padded with reserve to ensure there is enough space for padding.
+	// Some sanitizers may not like this, so you can use simdjson::pad instead.
+	// simdjson::from(simdjson::pad(str))
+	auto operator()(std::string str) const noexcept;
+	auto operator()(ondemand::parser &parser, std::string str) const noexcept;
 };
 } // namespace internal
 } // namespace convert
