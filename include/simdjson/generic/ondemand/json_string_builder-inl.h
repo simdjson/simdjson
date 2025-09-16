@@ -332,7 +332,11 @@ simdjson_really_inline size_t digit_count(number_type v) noexcept {
   static_assert(sizeof(number_type) == 8 || sizeof(number_type) == 4 ||
                     sizeof(number_type) == 2 || sizeof(number_type) == 1,
                 "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
-  return fast_digit_count(v);
+  if (sizeof(number_type) <= 4) {
+    return fast_digit_count(static_cast<uint32_t>(v));
+  } else {
+    return fast_digit_count(static_cast<uint64_t>(v));
+  }
 }
 static const char decimal_table[200] = {
   0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
