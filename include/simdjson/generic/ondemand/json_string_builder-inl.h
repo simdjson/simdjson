@@ -333,7 +333,7 @@ simdjson_really_inline size_t digit_count(number_type v) noexcept {
   static_assert(sizeof(number_type) == 8 || sizeof(number_type) == 4 ||
                     sizeof(number_type) == 2 || sizeof(number_type) == 1,
                 "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
-  if constexpr (sizeof(number_type) <= 4) {
+  SIMDJSON_IF_CONSTEXPR(sizeof(number_type) <= 4) {
     return fast_digit_count_32(static_cast<uint32_t>(v));
   } else {
     return fast_digit_count_64(static_cast<uint64_t>(v));
