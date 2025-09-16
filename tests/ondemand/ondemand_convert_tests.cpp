@@ -69,10 +69,10 @@ struct Car {
   int year{};
   std::vector<double> tire_pressure{};
 
-  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val,
-                                         Car &car) {
+  friend error_code tag_invoke(simdjson::deserialize_tag, auto &val, Car &car) {
     simdjson::ondemand::object obj;
-    auto error = val.get_object().get(obj);
+    error_code error{};
+    val.get_object() >> obj >> error;
     if (error) {
       return error;
     }
@@ -80,30 +80,18 @@ struct Car {
     // which we expect to be faster.
     for (auto field : obj) {
       simdjson::ondemand::raw_json_string key;
-      error = field.key().get(key);
+      field.key() >> key >> error;
+      if (key == "make") {
+         field.value() >> car.make >> error;
+      } else if (key == "model") {
+        field.value() >> car.model >> error;
+      } else if (key == "year") {
+        field.value() >> car.year >> error;
+      } else if (key == "tire_pressure") {
+        field.value() >> car.tire_pressure >> error;
+      }
       if (error) {
         return error;
-      }
-      if (key == "make") {
-        error = field.value().get_string(car.make);
-        if (error) {
-          return error;
-        }
-      } else if (key == "model") {
-        error = field.value().get_string(car.model);
-        if (error) {
-          return error;
-        }
-      } else if (key == "year") {
-        error = field.value().get(car.year);
-        if (error) {
-          return error;
-        }
-      } else if (key == "tire_pressure") {
-        error = field.value().get(car.tire_pressure);
-        if (error) {
-          return error;
-        }
       }
     }
     return simdjson::SUCCESS;
