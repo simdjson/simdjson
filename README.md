@@ -120,7 +120,6 @@ Some users may want to browse code along with the compiled assembly. You want to
 * [C++26 reflection example](https://godbolt.org/z/K3Px64TqK)
 * [simdjson examples with errors handled through exceptions](https://godbolt.org/z/7G5qE4sr9)
 * [simdjson examples with errors without exceptions](https://godbolt.org/z/e9dWb9E4v)
- 
 
 Performance results
 -------------------
