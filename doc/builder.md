@@ -40,7 +40,7 @@ It has the following methods to add content to the string:
 - `append_raw(std::string_view input)`: Appends a string view directly to the JSON buffer without escaping.
 - `append_raw(const char *str, size_t len)`: Appends a specified number of characters from a C string directly to the JSON
 - `append_key_value(key,value)`: Appends a key and a value (`"json":somevalue`)
-- `append_key_value<"mykey">(value)`: Appends a key and a value (`"json":somevalue`), useful when the key is a compile-time constant.
+- `append_key_value<"mykey">(value)`: Appends a key and a value (`"json":somevalue`), useful when the key is a compile-time constant (C++20).
 
 After writing the content, if you have reasons to believe that the content might violate UTF-8 conventions, you can check it as follows:
 
@@ -53,7 +53,7 @@ Once you are satisfied, you can recover the string as follows:
 
 - `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.)
 - `operator std::string_view()`: Converts the JSON buffer to an std::string_view.  (Might throw if an error occurred.)
-- `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>`.
+- `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>` (C++20).
 
 The later method (`view()`) is recommended.  For performance reasons, we expect you to explicitly call `validate_unicode()` as needed (e.g., prior to calling `view()`).
 
@@ -73,19 +73,19 @@ void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
     builder.start_object();
 
     // "make"
-    builder.append_key_value<"make">(car.make);
+    builder.append_key_value("make", car.make);
     builder.append_comma();
 
     // "model"
-    builder.append_key_value<"model">(car.model);
+    builder.append_key_value("model", car.model);
     builder.append_comma();
 
     // "year"
-    builder.append_key_value<"year">(car.year);
+    builder.append_key_value("year", car.year);
     builder.append_comma();
 
     // "tire_pressure"
-    builder.escape_and_append_with_quotes<"tire_pressure">();
+    builder.escape_and_append_with_quotes("tire_pressure");
     builder.append_colon();
     builder.start_array();
     // vector tire_pressure
@@ -132,8 +132,8 @@ In all cases, the `std::string_view` instance depends the corresponding `string_
 
 
 
-If you have C++20, you can simplify the code, as the `std::vector<double>` is automatically
-supported.
+If you have C++20, you can simplify the code, as the `std::vector<double>` is automatically supported. Further, we can pass the keys (which are compile-time
+constant) as template parameter (for improved performance).
 
 ```cpp
     Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};

@@ -12,7 +12,7 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
-
+#if SIMDJSON_SUPPORTS_CONCEPTS
 // Helper to create string constants
 namespace internal {
 template <std::size_t N>
@@ -31,7 +31,7 @@ struct string_constant {
     static constexpr std::string_view value = str.view();
 };
 } // namespace internal
-
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -138,11 +138,10 @@ public:
    */
   template<typename key_type, typename value_type>
   simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
-
+#if SIMDJSON_SUPPORTS_CONCEPTS
   template<internal::fixed_string key, typename value_type>
   simdjson_inline void append_key_value(value_type value) noexcept;
 
-#if SIMDJSON_SUPPORTS_CONCEPTS
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
   simdjson_inline void append(const T &opt);
