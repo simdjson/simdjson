@@ -291,7 +291,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
       // Note: removed static assert as optional types are now handled generically
-      // as long we are succesful or the field is not found, we continue
+      // as long we are successful or the field is not found, we continue
       if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
         e = obj[key].get(out.[:mem:]);
       }
