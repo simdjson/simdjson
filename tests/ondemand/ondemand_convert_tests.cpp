@@ -62,6 +62,23 @@ struct complicated_weather_data {
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
+
+simdjson::padded_string json_car =
+    R"( {
+         "make": "Toyota",
+         "model": "Camry",
+         "year": 2018,
+         "tire_pressure": [ 40.1, 39.9 ]
+       } )"_padded;
+simdjson::padded_string json_cars =
+    R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+])"_padded;
+
 #if SIMDJSON_SUPPORTS_CONCEPTS
   bool simple_no_except() {
     TEST_START();
@@ -124,22 +141,6 @@ struct Car {
 static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
               "It should be deserializable");
 
-
-simdjson::padded_string json_car =
-    R"( {
-         "make": "Toyota",
-         "model": "Camry",
-         "year": 2018,
-         "tire_pressure": [ 40.1, 39.9 ]
-       } )"_padded;
-simdjson::padded_string json_cars =
-    R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
-       "tire_pressure": [ 40.1, 39.9 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012,
-       "tire_pressure": [ 30.1, 31.0 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999,
-       "tire_pressure": [ 29.8, 30.0 ] }
-])"_padded;
 
   bool simple() {
     TEST_START();
