@@ -80,6 +80,57 @@ simdjson::padded_string json_cars =
 ])"_padded;
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
+  struct Car {
+    std::string make{};
+    std::string model{};
+    int year{};
+    std::vector<double> tire_pressure{};
+
+    friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val,
+                                          Car &car) {
+      simdjson::ondemand::object obj;
+      auto error = val.get_object().get(obj);
+      if (error) {
+        return error;
+      }
+      // Instead of repeatedly obj["something"], we iterate through the object
+      // which we expect to be faster.
+      for (auto field : obj) {
+        simdjson::ondemand::raw_json_string key;
+        error = field.key().get(key);
+        if (error) {
+          return error;
+        }
+        if (key == "make") {
+          error = field.value().get_string(car.make);
+          if (error) {
+            return error;
+          }
+        } else if (key == "model") {
+          error = field.value().get_string(car.model);
+          if (error) {
+            return error;
+          }
+        } else if (key == "year") {
+          error = field.value().get(car.year);
+          if (error) {
+            return error;
+          }
+        } else if (key == "tire_pressure") {
+          error = field.value().get(car.tire_pressure);
+          if (error) {
+            return error;
+          }
+        }
+      }
+      return simdjson::SUCCESS;
+    }
+  };
+
+  static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
+                "It should be deserializable");
+
+
   bool simple_no_except() {
     TEST_START();
     Car car;
@@ -91,56 +142,6 @@ simdjson::padded_string json_cars =
   }
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
-struct Car {
-  std::string make{};
-  std::string model{};
-  int year{};
-  std::vector<double> tire_pressure{};
-
-  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val,
-                                         Car &car) {
-    simdjson::ondemand::object obj;
-    auto error = val.get_object().get(obj);
-    if (error) {
-      return error;
-    }
-    // Instead of repeatedly obj["something"], we iterate through the object
-    // which we expect to be faster.
-    for (auto field : obj) {
-      simdjson::ondemand::raw_json_string key;
-      error = field.key().get(key);
-      if (error) {
-        return error;
-      }
-      if (key == "make") {
-        error = field.value().get_string(car.make);
-        if (error) {
-          return error;
-        }
-      } else if (key == "model") {
-        error = field.value().get_string(car.model);
-        if (error) {
-          return error;
-        }
-      } else if (key == "year") {
-        error = field.value().get(car.year);
-        if (error) {
-          return error;
-        }
-      } else if (key == "tire_pressure") {
-        error = field.value().get(car.tire_pressure);
-        if (error) {
-          return error;
-        }
-      }
-    }
-    return simdjson::SUCCESS;
-  }
-};
-
-static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
-              "It should be deserializable");
-
 
   bool simple() {
     TEST_START();
