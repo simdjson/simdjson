@@ -367,7 +367,7 @@ namespace builder_tests {
         builder.end_object();
     }
 
-
+#if SIMDJSON_SUPPORTS_CONCEPTS
     void serialize_car_template(const Car& car, simdjson::builder::string_builder& builder) {
         // start of JSON
         builder.start_object();
@@ -403,7 +403,7 @@ namespace builder_tests {
         // end of object
         builder.end_object();
     }
-
+#endif
     bool car_test() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -415,7 +415,7 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
         TEST_SUCCEED();
     }
-
+#if SIMDJSON_SUPPORTS_CONCEPTS
     bool car_test_template() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -427,7 +427,6 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
         TEST_SUCCEED();
     }
-    #if SIMDJSON_SUPPORTS_CONCEPTS
     bool serialize_optional() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -445,7 +444,7 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "null");
         TEST_SUCCEED();
     }
-    #endif
+#endif
 
     #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
     void serialize_car_simple(const Car& car, simdjson::builder::string_builder& builder) {
@@ -560,7 +559,6 @@ namespace builder_tests {
             various_integers() &&
             various_unsigned_integers() &&
             car_test_long() &&
-            car_test_template() &&
             car_test() &&
     #if SIMDJSON_EXCEPTIONS
             car_test_exception() &&
@@ -576,7 +574,8 @@ namespace builder_tests {
         #endif
     #endif
     #if SIMDJSON_SUPPORTS_CONCEPTS
-           serialize_optional() &&
+            car_test_template() &&
+            serialize_optional() &&
     #endif
             append_char() &&
             append_integer() &&
