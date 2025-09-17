@@ -62,6 +62,17 @@ struct complicated_weather_data {
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  bool simple_no_except() {
+    TEST_START();
+    Car car;
+    ASSERT_SUCCESS(simdjson::from(json_car).get(car));
+    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+      return false;
+    }
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 struct Car {
   std::string make{};
@@ -133,16 +144,6 @@ simdjson::padded_string json_cars =
   bool simple() {
     TEST_START();
     Car car = simdjson::from(json_car);
-    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
-      return false;
-    }
-    TEST_SUCCEED();
-  }
-
-  bool simple_no_except() {
-    TEST_START();
-    Car car;
-    ASSERT_SUCCESS(simdjson::from(json_car).get(car));
     if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
       return false;
     }
