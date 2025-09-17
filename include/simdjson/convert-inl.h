@@ -59,6 +59,12 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
 }
 
 template <typename parser_type>
+template <typename T>
+simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) {
+  return result<T>().get(value);
+}
+
+template <typename parser_type>
 inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() noexcept {
   return result<ondemand::array>();
 }
@@ -71,12 +77,6 @@ inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() noex
 template <typename parser_type>
 inline simdjson_result<ondemand::number> auto_parser<parser_type>::number() noexcept {
   return result<ondemand::number>();
-}
-
-template <typename parser_type>
-template <typename T>
-inline auto_parser<parser_type>::operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
-  return result<T>();
 }
 
 template <typename parser_type>

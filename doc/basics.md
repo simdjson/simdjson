@@ -1477,6 +1477,12 @@ type without a document instance like so:
 Car car = simdjson::from(json);
 ```
 
+You can also use the `simdjson::from` syntax without exceptions, like so:
+```cpp
+Car car;
+simdjson::error_code err = simdjson::from(json_car).get(car);
+```
+
 You can also use the `simdjson::from` syntax to iterate over an array.
 
 ```cpp

@@ -130,15 +130,24 @@ simdjson::padded_string json_cars =
        "tire_pressure": [ 29.8, 30.0 ] }
 ])"_padded;
 
-bool simple() {
-  TEST_START();
-  Car car = simdjson::from(json_car);
-  if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
-    return false;
+  bool simple() {
+    TEST_START();
+    Car car = simdjson::from(json_car);
+    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+      return false;
+    }
+    TEST_SUCCEED();
   }
-  TEST_SUCCEED();
-}
 
+  bool simple_no_except() {
+    TEST_START();
+    Car car;
+    ASSERT_SUCCESS(simdjson::from(json_car).get(car));
+    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+      return false;
+    }
+    TEST_SUCCEED();
+  }
 
   struct BadPlayer {
       int username;  // Oops, should be string!
@@ -467,6 +476,9 @@ bool run() {
   return
 #if SIMDJSON_STATIC_REFLECTION
       meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
+#endif
+#if SIMDJSON_SUPPORTS_CONCEPTS
+      simple_no_except() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
