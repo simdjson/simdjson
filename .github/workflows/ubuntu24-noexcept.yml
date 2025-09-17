@@ -31,4 +31,4 @@ jobs:
           echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
           mkdir testfindpackage &&
           cd testfindpackage &&
-          echo -e 'cmake_minimum_required(VERSION 3.1)\nproject(simdjsontester)\nset(CMAKE_CXX_STANDARD 17)\nfind_package(simdjson REQUIRED)'> CMakeLists.txt && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../destination .. &&  cmake --build .
+          echo -e 'cmake_minimum_required(VERSION 3.14)\nproject(simdjsontester)\nset(CMAKE_CXX_STANDARD 17)\nfind_package(simdjson REQUIRED)'> CMakeLists.txt && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../destination .. &&  cmake --build .
