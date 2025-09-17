@@ -13,6 +13,25 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
+// Helper to create string constants
+namespace internal {
+template <std::size_t N>
+struct fixed_string {
+    constexpr fixed_string(const char (&str)[N]) {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = str[i];
+        }
+    }
+    char data[N];
+    constexpr std::string_view view() const { return {data, N - 1}; }
+};
+
+template <fixed_string str>
+struct string_constant {
+    static constexpr std::string_view value = str.view();
+};
+} // namespace internal
+
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -62,7 +81,8 @@ public:
    * There is no UTF-8 validation.
    */
   simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
-
+  template<internal::fixed_string key>
+  simdjson_inline void escape_and_append_with_quotes()  noexcept;
   /**
    * Append the character surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
@@ -116,8 +136,12 @@ public:
    * The key is escaped and surrounded by double quotes.
    * The value is escaped if it is a string.
    */
-   template<typename key_type, typename value_type>
+  template<typename key_type, typename value_type>
   simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
+
+  template<internal::fixed_string key, typename value_type>
+  simdjson_inline void append_key_value(value_type value) noexcept;
+
 #if SIMDJSON_SUPPORTS_CONCEPTS
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
