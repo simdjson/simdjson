@@ -81,8 +81,10 @@ public:
    * There is no UTF-8 validation.
    */
   simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
+#if SIMDJSON_SUPPORTS_CONCEPTS
   template<internal::fixed_string key>
   simdjson_inline void escape_and_append_with_quotes()  noexcept;
+#endif
   /**
    * Append the character surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
