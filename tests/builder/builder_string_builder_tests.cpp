@@ -519,6 +519,20 @@ namespace builder_tests {
         ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
         TEST_SUCCEED();
     }
+    bool double_double_test_to_string() {
+        TEST_START();
+        std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
+        simdjson::builder::string_builder sb;
+        sb.append(c);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "[[1.0,2.0],[3.0,4.0]]");
+        std::string s;
+        simdjson::simdjson_error ec = simdjson::to_json(c,s);
+        ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
+        TEST_SUCCEED();
+    }
     #if SIMDJSON_EXCEPTIONS
     bool car_test_simple_complete_exceptions() {
         TEST_START();
@@ -567,6 +581,7 @@ namespace builder_tests {
     #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
             map_test() &&
             double_double_test() &&
+            double_double_test_to_string() &&
             car_test_simple() &&
             car_test_simple_complete() &&
         #if SIMDJSON_EXCEPTIONS

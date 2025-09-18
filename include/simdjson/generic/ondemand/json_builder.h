@@ -263,7 +263,7 @@ void append(string_builder &b, const Z &z) {
 }
 
 template <class Z>
-simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = 1024) {
+simdjson_warn_unused simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   append(b, z);
   std::string_view s;
@@ -272,8 +272,8 @@ simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity 
 }
 
 template <class Z>
-simdjson_error to_json(const Z &z, std::string &s) {
-  string_builder b;
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
+  string_builder b(initial_capacity);
   append(b, z);
   std::string_view view;
   if(auto e = b.view().get(view); e) { return e; }
@@ -290,8 +290,12 @@ string_builder& operator<<(string_builder& b, const Z& z) {
 } // namespace SIMDJSON_IMPLEMENTATION
 // Alias the function template to 'to' in the global namespace
 template <class Z>
-simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   return SIMDJSON_IMPLEMENTATION::builder::to_json_string(z, initial_capacity);
+}
+template <class Z>
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  return SIMDJSON_IMPLEMENTATION::builder::to_json(z, s, initial_capacity);
 }
 } // namespace simdjson
 

@@ -43,7 +43,9 @@ struct string_constant {
  */
 class string_builder {
 public:
-  simdjson_inline string_builder(size_t initial_capacity = 1024);
+  simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+
+  static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
 
   /**
    * Append number (includes Booleans). Booleans are mapped to the strings
@@ -257,13 +259,23 @@ private:
 #if !SIMDJSON_STATIC_REFLECTION
 // fallback implementation until we have static reflection
 template <class Z>
-simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
   std::string_view s;
   auto e = b.view().get(s);
   if(e) { return e; }
   return std::string(s);
+}
+template <class Z>
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  b.append(z);
+  std::string_view sv;
+  auto e = b.view().get(sv);
+  if(e) { return e; }
+  s.assign(sv.data(), sv.size());
+  return simdjson::SUCCESS;
 }
 #endif
 
