@@ -34,12 +34,13 @@ It has the following methods to add content to the string:
 - `append_null()`: Appends the string "null" to the JSON buffer.
 - `clear()`: Clears the contents of the JSON buffer, resetting the position to 0 while retaining the allocated capacity.
 - `escape_and_append(std::string_view input)`: Appends a string view to the JSON buffer after escaping special characters (e.g., quotes, backslashes) as required by JSON.
-- `escape_and_append_with_quotes(std::string_view input)` Appends a string view surrounded by double quotes (e.g., "input") to the JSON buffer after escaping special characters.
-Parameters:
+- `escape_and_append_with_quotes(std::string_view input)` Appends a string view surrounded by double quotes (e.g., "input") to the JSON buffer after escaping special characters. For constant strings, you may also do `escape_and_append_with_quotes<"mystring">()`.
 - `escape_and_append_with_quotes(char input)`: Appends a single character surrounded by double quotes (e.g., "c") to the JSON buffer after escaping it if necessary.
 - `append_raw(const char *c)`: Appends a null-terminated C string directly to the JSON buffer without escaping.
 - `append_raw(std::string_view input)`: Appends a string view directly to the JSON buffer without escaping.
 - `append_raw(const char *str, size_t len)`: Appends a specified number of characters from a C string directly to the JSON
+- `append_key_value(key,value)`: Appends a key and a value (`"json":somevalue`)
+- `append_key_value<"mykey">(value)`: Appends a key and a value (`"json":somevalue`), useful when the key is a compile-time constant (C++20).
 
 After writing the content, if you have reasons to believe that the content might violate UTF-8 conventions, you can check it as follows:
 
@@ -52,7 +53,7 @@ Once you are satisfied, you can recover the string as follows:
 
 - `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.)
 - `operator std::string_view()`: Converts the JSON buffer to an std::string_view.  (Might throw if an error occurred.)
-- `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>`.
+- `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>` (C++20).
 
 The later method (`view()`) is recommended.  For performance reasons, we expect you to explicitly call `validate_unicode()` as needed (e.g., prior to calling `view()`).
 
@@ -131,20 +132,20 @@ In all cases, the `std::string_view` instance depends the corresponding `string_
 
 
 
-If you have C++20, you can simplify the code, as the `std::vector<double>` is automatically
-supported.
+If you have C++20, you can simplify the code, as the `std::vector<double>` is automatically supported. Further, we can pass the keys (which are compile-time
+constant) as template parameter (for improved performance).
 
 ```cpp
     Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
     simdjson::builder::string_builder sb;
     sb.start_object();
-    sb.append_key_value("make", c.make);
+    sb.append_key_value<"make">(c.make);
     sb.append_comma();
-    sb.append_key_value("model", c.model);
+    sb.append_key_value<"model">(c.model);
     sb.append_comma();
-    sb.append_key_value("year", c.year);
+    sb.append_key_value<"year">(c.year);
     sb.append_comma();
-    sb.append_key_value("tire_pressure", c.tire_pressure);
+    sb.append_key_value<"tire_pressure">(c.tire_pressure);
     sb.end_object();
     std::string_view p = sb.view();
 ```

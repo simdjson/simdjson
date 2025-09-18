@@ -331,8 +331,6 @@ namespace builder_tests {
         TEST_SUCCEED();
     }
 
-
-
     void serialize_car(const Car& car, simdjson::builder::string_builder& builder) {
         // start of JSON
         builder.start_object();
@@ -369,7 +367,43 @@ namespace builder_tests {
         builder.end_object();
     }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    void serialize_car_template(const Car& car, simdjson::builder::string_builder& builder) {
+        // start of JSON
+        builder.start_object();
 
+        // "make"
+        builder.append_key_value<"make">(car.make);
+        builder.append_comma();
+
+        // "model"
+        builder.append_key_value<"model">(car.model);
+
+        builder.append_comma();
+
+        // "year"
+        builder.append_key_value<"year">(car.year);
+
+        builder.append_comma();
+
+        // "tire_pressure"
+        builder.escape_and_append_with_quotes<"tire_pressure">();
+        builder.append_colon();
+        builder.start_array();
+        // vector tire_pressure
+        for (size_t i = 0; i < car.tire_pressure.size(); ++i) {
+            builder.append(car.tire_pressure[i]);
+            if (i < car.tire_pressure.size() - 1) {
+                builder.append_comma();
+            }
+        }
+        // end of array
+        builder.end_array();
+
+        // end of object
+        builder.end_object();
+    }
+#endif
     bool car_test() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -381,7 +415,18 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
         TEST_SUCCEED();
     }
-    #if SIMDJSON_SUPPORTS_CONCEPTS
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    bool car_test_template() {
+        TEST_START();
+        simdjson::builder::string_builder sb;
+        Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+        serialize_car_template(c, sb);
+        std::string_view p;
+        auto result = sb.view().get(p);
+        ASSERT_SUCCESS(result);
+        ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
+        TEST_SUCCEED();
+    }
     bool serialize_optional() {
         TEST_START();
         simdjson::builder::string_builder sb;
@@ -399,7 +444,7 @@ namespace builder_tests {
         ASSERT_EQUAL(p, "null");
         TEST_SUCCEED();
     }
-    #endif
+#endif
 
     #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
     void serialize_car_simple(const Car& car, simdjson::builder::string_builder& builder) {
@@ -529,7 +574,8 @@ namespace builder_tests {
         #endif
     #endif
     #if SIMDJSON_SUPPORTS_CONCEPTS
-           serialize_optional() &&
+            car_test_template() &&
+            serialize_optional() &&
     #endif
             append_char() &&
             append_integer() &&
