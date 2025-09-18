@@ -1,3 +1,5 @@
+#ifdef SIMDJSON_CONDITIONAL_INCLUDE
+
 #ifndef SIMDJSON_RVV_INTRINSICS_H
 #define SIMDJSON_RVV_INTRINSICS_H
 
@@ -23,3 +25,5 @@ static_assert(rvv_vlenb() * 4 <= simdjson::SIMDJSON_PADDING,
               "SIMDJSON_PADDING too small for RVV");
 
 #endif // SIMDJSON_RVV_INTRINSICS_H
+
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
