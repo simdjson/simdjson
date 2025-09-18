@@ -76,14 +76,20 @@ template <class T> void bench_simdjson_static_reflection(T &data) {
 
 #if SIMDJSON_STATIC_REFLECTION
 template <class T> void bench_simdjson_to(T &data) {
-  std::string output = simdjson::to_json_string(data);
+  // First run to determine size
+  std::string output;
+  simdjson::builder::to_json(data, output);
   size_t output_volume = output.size();
   printf("# output volume: %zu bytes\n", output_volume);
 
+  // Pre-allocate string with sufficient capacity to avoid reallocation
+  output.reserve(output_volume * 2);  // Reserve extra space to avoid any reallocation
+
   volatile size_t measured_volume = 0;
   pretty_print(sizeof(data), output_volume, "bench_simdjson_to",
-               bench([&data, &measured_volume, &output_volume]() {
-                 std::string output = simdjson::to_json_string(data);
+               bench([&data, &measured_volume, &output_volume, &output]() {
+                 // Reuse the pre-allocated string - avoids allocation
+                 simdjson::builder::to_json(data, output);
                  measured_volume = output.size();
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");

@@ -11,7 +11,7 @@
 #include <concepts>
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
-#include <meta>
+#include <experimental/meta>
 // #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 
@@ -312,13 +312,14 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   }
   error_code e = simdjson::SUCCESS;
 
-  [:expand(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked())):] >> [&]<auto mem>() {
+  constexpr auto members = std::meta::define_static_array(std::meta::nonstatic_data_members_of(^^T));
+  template for (constexpr auto mem : members) {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::meta::identifier_of(mem);
       // Note: removed static assert as optional types are now handled generically
       // as long we are succesful or the field is not found, we continue
       if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-        e = obj[key].get(out.[:mem:]);
+        e = obj[key].get(out.[: mem :]);
       }
     }
   };
@@ -334,9 +335,10 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   SIMDJSON_TRY(val.get_string().get(str));
 
   bool found = false;
-  [:expand(std::meta::enumerators_of(^^T)):] >> [&]<auto enum_val>{
+  constexpr auto enum_values = std::meta::define_static_array(std::meta::enumerators_of(^^T));
+  template for (constexpr auto enum_val : enum_values) {
     if (!found && str == std::meta::identifier_of(enum_val)) {
-      out = [:enum_val:];
+      out = [: enum_val :];
       found = true;
     }
   };
