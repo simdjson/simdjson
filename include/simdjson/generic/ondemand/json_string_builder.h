@@ -274,7 +274,7 @@ simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t i
   std::string_view sv;
   auto e = b.view().get(sv);
   if(e) { return e; }
-  s.assign(sv.begin(), sv.size());
+  s.assign(sv.data(), sv.size());
   return simdjson::SUCCESS;
 }
 #endif
