@@ -176,6 +176,17 @@ std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
 std::string json = simdjson::to_json(c);
 ```
 
+We also have an overload for when you want to reuse the same `std::string` instance:
+
+
+```cpp
+std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
+std::string json;
+auto error = simdjson::to_json(c, json);
+if(error) { /* there was an error */ }
+```
+
+
 We do recommend that you create and reuse the `string_builder` instance for performance
 reasons.
 
@@ -240,7 +251,17 @@ with the `simdjson::to_json` template function.
 If you know the output size, in bytes, of your JSON string, you may
 pass it as a second parameter (e.g., `simdjson::to_json(c, 31123)`).
 
+Sometimes you may want to reuse the same `std::string` instance. We
+have an overload for this purpose:
 
+```cpp
+Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
+std::string s;
+auto error = simdjson::to_json(c, s);
+if(error) { /* there was an error */ }
+```
+
+You can then also add a third parameter for the expected output size in bytes.
 
 ### Without `string_buffer` instance but with explicit error handling
 
@@ -249,7 +270,7 @@ pattern:
 
 ```cpp
   std::string json;
-  if(simdjson::to(c).get(json)) {
+  if(simdjson::to_json(c).get(json)) {
     // there was an error
   } else {
     // json contain the serialized JSON
