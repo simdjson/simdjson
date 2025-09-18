@@ -62,57 +62,6 @@ struct complicated_weather_data {
 #ifdef __cpp_lib_ranges
 
 namespace convert_tests {
-#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
-struct Car {
-  std::string make{};
-  std::string model{};
-  int year{};
-  std::vector<double> tire_pressure{};
-
-  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val,
-                                         Car &car) {
-    simdjson::ondemand::object obj;
-    auto error = val.get_object().get(obj);
-    if (error) {
-      return error;
-    }
-    // Instead of repeatedly obj["something"], we iterate through the object
-    // which we expect to be faster.
-    for (auto field : obj) {
-      simdjson::ondemand::raw_json_string key;
-      error = field.key().get(key);
-      if (error) {
-        return error;
-      }
-      if (key == "make") {
-        error = field.value().get_string(car.make);
-        if (error) {
-          return error;
-        }
-      } else if (key == "model") {
-        error = field.value().get_string(car.model);
-        if (error) {
-          return error;
-        }
-      } else if (key == "year") {
-        error = field.value().get(car.year);
-        if (error) {
-          return error;
-        }
-      } else if (key == "tire_pressure") {
-        error = field.value().get(car.tire_pressure);
-        if (error) {
-          return error;
-        }
-      }
-    }
-    return simdjson::SUCCESS;
-  }
-};
-
-static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
-              "It should be deserializable");
-
 
 simdjson::padded_string json_car =
     R"( {
@@ -130,15 +79,78 @@ simdjson::padded_string json_cars =
        "tire_pressure": [ 29.8, 30.0 ] }
 ])"_padded;
 
-bool simple() {
-  TEST_START();
-  Car car = simdjson::from(json_car);
-  if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
-    return false;
-  }
-  TEST_SUCCEED();
-}
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  struct Car {
+    std::string make{};
+    std::string model{};
+    int year{};
+    std::vector<double> tire_pressure{};
 
+    friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val,
+                                          Car &car) {
+      simdjson::ondemand::object obj;
+      auto error = val.get_object().get(obj);
+      if (error) {
+        return error;
+      }
+      // Instead of repeatedly obj["something"], we iterate through the object
+      // which we expect to be faster.
+      for (auto field : obj) {
+        simdjson::ondemand::raw_json_string key;
+        error = field.key().get(key);
+        if (error) {
+          return error;
+        }
+        if (key == "make") {
+          error = field.value().get_string(car.make);
+          if (error) {
+            return error;
+          }
+        } else if (key == "model") {
+          error = field.value().get_string(car.model);
+          if (error) {
+            return error;
+          }
+        } else if (key == "year") {
+          error = field.value().get(car.year);
+          if (error) {
+            return error;
+          }
+        } else if (key == "tire_pressure") {
+          error = field.value().get(car.tire_pressure);
+          if (error) {
+            return error;
+          }
+        }
+      }
+      return simdjson::SUCCESS;
+    }
+  };
+
+  static_assert(simdjson::custom_deserializable<std::unique_ptr<Car>>,
+                "It should be deserializable");
+
+
+  bool simple_no_except() {
+    TEST_START();
+    Car car;
+    ASSERT_SUCCESS(simdjson::from(json_car).get(car));
+    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+      return false;
+    }
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
+
+  bool simple() {
+    TEST_START();
+    Car car = simdjson::from(json_car);
+    if (car.make != "Toyota" || car.model != "Camry" || car.year != 2018) {
+      return false;
+    }
+    TEST_SUCCEED();
+  }
 
   struct BadPlayer {
       int username;  // Oops, should be string!
@@ -467,6 +479,9 @@ bool run() {
   return
 #if SIMDJSON_STATIC_REFLECTION
       meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
+#endif
+#if SIMDJSON_SUPPORTS_CONCEPTS
+      simple_no_except() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&

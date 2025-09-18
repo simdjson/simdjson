@@ -46,14 +46,16 @@ public:
 
 	template <typename T>
 	simdjson_warn_unused simdjson_inline simdjson_result<T> result() noexcept(is_nothrow_gettable<T>);
+	template <typename T>
+	simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept(is_nothrow_gettable<T>);
+
 
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::array> array() noexcept;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object> object() noexcept;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::number> number() noexcept;
 
-	template <typename T>
-	simdjson_warn_unused simdjson_inline explicit(false) operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>);
-
+	//template <typename T>
+	//simdjson_warn_unused simdjson_inline explicit(false) operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>);
 	template <typename T>
 	simdjson_warn_unused simdjson_inline explicit(false) operator T() noexcept(false);
 
