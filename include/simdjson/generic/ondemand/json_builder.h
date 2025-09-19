@@ -12,6 +12,7 @@
 #if SIMDJSON_STATIC_REFLECTION
 
 #include <charconv>
+#include <chrono>
 #include <cstring>
 #include <meta>
 #include <memory>
@@ -88,6 +89,20 @@ template<typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 constexpr void atom(string_builder &b, const number_type t) {
   b.append(t);
+}
+
+// Support for std::chrono::duration - serialize as milliseconds
+template <typename Rep, typename Period>
+void atom(string_builder &b, const std::chrono::duration<Rep, Period> &duration) {
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+  b.append(ms);
+}
+
+// Support for std::chrono::time_point - serialize as milliseconds since epoch
+template <typename Clock, typename Duration>
+void atom(string_builder &b, const std::chrono::time_point<Clock, Duration> &time_point) {
+  auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(time_point.time_since_epoch()).count();
+  b.append(ms_since_epoch);
 }
 
 template <class T>
