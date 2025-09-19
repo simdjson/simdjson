@@ -192,6 +192,55 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
   }
 }
 
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, uint32_t *cnt, bool allow_replacement) {
+  const uint8_t *start = src;
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto block = string_block::copy_and_find(src, dst);
+    if (block.has_unescaped()) {
+      return nullptr;
+    }
+    // If the next thing is the end quote, copy and return
+    if (block.has_quote()) {
+      *cnt = static_cast<uint32_t>(src + block.quote_index() - start);
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + block.quote_index();
+    }
+    if (block.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = block.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += string_block::BYTES_PROCESSED;
+      dst += string_block::BYTES_PROCESSED;
+    }
+  }
+}
+
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
