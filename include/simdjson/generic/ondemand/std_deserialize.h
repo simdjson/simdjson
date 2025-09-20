@@ -286,18 +286,26 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
-  error_code e = simdjson::SUCCESS;
   template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
     if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
-      // Note: removed static assert as optional types are now handled generically
-      // as long we are successful or the field is not found, we continue
-      if(e == simdjson::SUCCESS || e == simdjson::NO_SUCH_FIELD) {
-        e = obj[key].get(out.[:mem:]);
+      if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+        // for optional members, it's ok if the key is missing
+        auto error = obj[key].get(out.[:mem:]);
+        if (error && error != NO_SUCH_FIELD) {
+          if(error == NO_SUCH_FIELD) {
+            out.[:mem:].reset();
+            continue;
+          }
+          return error;
+        }
+      } else {
+        // for non-optional members, the key must be present
+        SIMDJSON_TRY(obj[key].get(out.[:mem:]));
       }
     }
   };
-  return e;
+  return simdjson::SUCCESS;
 }
 
 // Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
