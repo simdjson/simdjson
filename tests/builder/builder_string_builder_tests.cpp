@@ -86,7 +86,7 @@ bool string_convertion_except() {
   ASSERT_EQUAL(r, "a");
 
   // forcing call to `operator std::string()`
-  r = [](std::string r) { return r; }(sb);
+  r = [](std::string x) { return x; }(sb);
   ASSERT_EQUAL(r, "a");
 
   TEST_SUCCEED();
