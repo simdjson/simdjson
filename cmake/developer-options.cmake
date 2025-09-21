@@ -174,6 +174,10 @@ else()
       -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
       -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion
   )
+  if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
+    target_compile_options(simdjson-internal-flags INTERFACE -Wctad-maybe-unsupported)
+  endif()
+
 endif()
 
 option(SIMDJSON_GLIBCXX_ASSERTIONS "Set _GLIBCXX_ASSERTIONS" OFF)

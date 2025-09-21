@@ -1,4 +1,4 @@
-/* auto-generated on 2025-09-18 15:16:38 -0600. version 4.0.5 Do not edit! */
+/* auto-generated on 2025-09-20 22:23:09 -0600. version 4.0.6 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -3009,11 +3009,32 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
     } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
   };
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
+  { obj.reset() } noexcept -> std::same_as<void>;
 };
 
 
 
+
+
 } // namespace concepts
+
+
+/**
+ * We use tag_invoke as our customization point mechanism.
+ */
+template <typename Tag, typename... Args>
+concept tag_invocable = requires(Tag tag, Args... args) {
+  tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+};
+
+template <typename Tag, typename... Args>
+concept nothrow_tag_invocable =
+    tag_invocable<Tag, Args...> && requires(Tag tag, Args... args) {
+      {
+        tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)
+      } noexcept;
+    };
+
 } // namespace simdjson
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONCEPTS_H

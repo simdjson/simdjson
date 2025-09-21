@@ -54,10 +54,11 @@ public:
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object> object() noexcept;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::number> number() noexcept;
 
-	//template <typename T>
-	//simdjson_warn_unused simdjson_inline explicit(false) operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>);
+
+#if SIMDJSON_EXCEPTIONS
 	template <typename T>
 	simdjson_warn_unused simdjson_inline explicit(false) operator T() noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
 	template <typename T>
 	simdjson_warn_unused simdjson_inline std::optional<T> optional() noexcept(is_nothrow_gettable<T>);
@@ -80,6 +81,8 @@ struct to_adaptor {
 	auto operator()(std::string str) const noexcept;
 	auto operator()(ondemand::parser &parser, std::string str) const noexcept;
 };
+// deduction guide
+auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
 } // namespace internal
 } // namespace convert
 
