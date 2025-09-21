@@ -64,9 +64,6 @@ void tag_invoke(serialize_tag, builder_type &builder, const Car& car) {
   builder.end_object();
 }
 
-template <>
-constexpr bool require_custom_serialization<Car> = true;
-
 } // namespace simdjson
 namespace custom_tests {
 

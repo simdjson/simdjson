@@ -190,6 +190,38 @@ if(error) { /* there was an error */ }
 We do recommend that you create and reuse the `string_builder` instance for performance
 reasons.
 
+You can also add custom serialization functions using a `tag_invoke` function.
+For example, the following
+function will allow you to serialize instances of the type `Car`.
+
+```cpp
+#include <simdjson>
+
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<float> tire_pressure;
+};
+
+namespace simdjson {
+
+template <typename builder_type>
+void tag_invoke(serialize_tag, builder_type &builder, const Car& car) {
+  builder.start_object();
+  builder.append_key_value("make", car.make);
+  builder.append_comma();
+  builder.append_key_value("model", car.model);
+  builder.append_comma();
+  builder.append_key_value("year", car.year);
+  builder.append_comma();
+  builder.append_key_value("tire_pressure", car.tire_pressure);
+  builder.end_object();
+}
+
+} // namespace simdjson
+```
+
 C++26 static reflection
 ------------------------
 
@@ -275,4 +307,39 @@ pattern:
   } else {
     // json contain the serialized JSON
   }
+```
+
+### Customization
+
+If you want to serialize a value in a custome way, you can do it with a
+`tag_invoke` specialization like the following example which will map
+the year attribute to a string.
+
+
+```cpp
+#include <simdjson>
+
+struct Car {
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<float> tire_pressure;
+};
+
+namespace simdjson {
+
+template <typename builder_type>
+void tag_invoke(serialize_tag, builder_type &builder, const Car& car) {
+  builder.start_object();
+  builder.append_key_value("make", car.make);
+  builder.append_comma();
+  builder.append_key_value("model", car.model);
+  builder.append_comma();
+  builder.append_key_value("year", std::to_string(car.year));
+  builder.append_comma();
+  builder.append_key_value("tire_pressure", car.tire_pressure);
+  builder.end_object();
+}
+
+} // namespace simdjson
 ```
