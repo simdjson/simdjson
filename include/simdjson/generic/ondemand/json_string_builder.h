@@ -10,6 +10,38 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
+
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+
+namespace SIMDJSON_IMPLEMENTATION {
+namespace builder {
+  class string_builder;
+}}
+
+template <typename T, typename = void>
+struct has_custom_serialization : std::false_type {};
+
+inline constexpr struct serialize_tag {
+  template <typename T>
+    requires custom_deserializable<T>
+  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T& obj) const{
+    return tag_invoke(*this, b, obj);
+  }
+
+
+} serialize{};
+template <typename T>
+struct has_custom_serialization<T, std::void_t<
+    decltype(tag_invoke(serialize, std::declval<SIMDJSON_IMPLEMENTATION::builder::string_builder&>(), std::declval<T&>()))
+>> : std::true_type {};
+
+template <typename T>
+constexpr bool require_custom_serialization = has_custom_serialization<T>::value;
+#else
+struct has_custom_serialization : std::false_type {};
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 #if SIMDJSON_SUPPORTS_CONCEPTS
@@ -54,7 +86,7 @@ public:
    * represents the number.
    */
   template<typename number_type,
-         typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
+    typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
   /**
@@ -148,7 +180,12 @@ public:
 
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
   simdjson_inline void append(const T &opt);
+
+  template <typename T>
+  requires(require_custom_serialization<T>)
+  simdjson_inline void append(const T &val);
 
   // Support for string-like types
   template <typename T>
@@ -279,6 +316,8 @@ simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t i
 }
 #endif
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace simdjson
 

@@ -7,54 +7,7 @@
 #include "simdjson/generic/ondemand/array.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#include <concepts>
 namespace simdjson {
-
-namespace tag_invoke_fn_ns {
-void tag_invoke();
-
-struct tag_invoke_fn {
-  template <typename Tag, typename... Args>
-    requires requires(Tag tag, Args &&...args) {
-      tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
-    }
-  constexpr auto operator()(Tag tag, Args &&...args) const
-      noexcept(noexcept(tag_invoke(std::forward<Tag>(tag),
-                                   std::forward<Args>(args)...)))
-          -> decltype(tag_invoke(std::forward<Tag>(tag),
-                                 std::forward<Args>(args)...)) {
-    return tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
-  }
-};
-} // namespace tag_invoke_fn_ns
-
-inline namespace tag_invoke_ns {
-inline constexpr tag_invoke_fn_ns::tag_invoke_fn tag_invoke = {};
-} // namespace tag_invoke_ns
-
-template <typename Tag, typename... Args>
-concept tag_invocable = requires(Tag tag, Args... args) {
-  tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
-};
-
-template <typename Tag, typename... Args>
-concept nothrow_tag_invocable =
-    tag_invocable<Tag, Args...> && requires(Tag tag, Args... args) {
-      {
-        tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)
-      } noexcept;
-    };
-
-template <typename Tag, typename... Args>
-using tag_invoke_result =
-    std::invoke_result<decltype(tag_invoke), Tag, Args...>;
-
-template <typename Tag, typename... Args>
-using tag_invoke_result_t =
-    std::invoke_result_t<decltype(tag_invoke), Tag, Args...>;
-
-template <auto &Tag> using tag_t = std::decay_t<decltype(Tag)>;
-
 
 struct deserialize_tag;
 

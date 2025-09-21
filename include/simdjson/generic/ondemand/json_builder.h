@@ -38,7 +38,7 @@ concept container_but_not_string =
     !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char *>;
 
 template <class T>
-  requires(container_but_not_string<T>)
+  requires(container_but_not_string<T> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
   if (t.size() == 0) {
     b.append_raw("[]");
@@ -63,6 +63,7 @@ constexpr void atom(string_builder &b, const T &t) {
 }
 
 template <concepts::string_view_keyed_map T>
+  requires(!require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &m) {
   if (m.empty()) {
     b.append_raw("{}");
@@ -99,7 +100,7 @@ template <class T>
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char*> &&
-           !std::is_same_v<T, char>)
+           !std::is_same_v<T, char> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
   int i = 0;
   b.append('{');
@@ -117,6 +118,7 @@ constexpr void atom(string_builder &b, const T &t) {
 
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &opt) {
   if (opt) {
     atom(b, opt.value());
@@ -127,6 +129,7 @@ constexpr void atom(string_builder &b, const T &opt) {
 
 // Support for smart pointers (std::unique_ptr, std::shared_ptr, etc.)
 template <concepts::smart_pointer T>
+  requires(!require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &ptr) {
   if (ptr) {
     atom(b, *ptr);
@@ -137,7 +140,7 @@ constexpr void atom(string_builder &b, const T &ptr) {
 
 // Support for enums - serialize as string representation using expand approach from P2996R12
 template <typename T>
-  requires(std::is_enum_v<T>)
+  requires(std::is_enum_v<T> && !require_custom_serialization<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
@@ -161,7 +164,7 @@ template <concepts::appendable_containers T>
   requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &container) {
   if (container.empty()) {
     b.append_raw("[]");
@@ -196,11 +199,13 @@ void append(string_builder &b, const T &t) {
 }
 
 template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 template <concepts::smart_pointer T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
@@ -209,12 +214,13 @@ template <concepts::appendable_containers T>
   requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*> && !require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 template <concepts::string_view_keyed_map T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
@@ -229,7 +235,7 @@ template <class Z>
            !std::is_same_v<Z, std::string> &&
            !std::is_same_v<Z, std::string_view> &&
            !std::is_same_v<Z, const char*> &&
-           !std::is_same_v<Z, char>)
+           !std::is_same_v<Z, char> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
   int i = 0;
   b.append('{');
@@ -247,7 +253,7 @@ void append(string_builder &b, const Z &z) {
 
 // works for container
 template <class Z>
-  requires(container_but_not_string<Z>)
+  requires(container_but_not_string<Z> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
   if (z.size() == 0) {
     b.append_raw("[]");
@@ -261,6 +267,13 @@ void append(string_builder &b, const Z &z) {
   }
   b.append(']');
 }
+
+template <class Z>
+  requires (require_custom_serialization<Z>)
+void append(string_builder &b, const Z &z) {
+  b.append(z);
+}
+
 
 template <class Z>
 simdjson_warn_unused simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {

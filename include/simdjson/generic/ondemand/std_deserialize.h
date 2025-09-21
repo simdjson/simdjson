@@ -16,15 +16,12 @@
 #endif
 
 namespace simdjson {
-template <typename T>
-constexpr bool require_custom_serialization = false;
 
 //////////////////////////////
 // Number deserialization
 //////////////////////////////
 
 template <std::unsigned_integral T>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   using limits = std::numeric_limits<T>;
 
@@ -38,7 +35,6 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 }
 
 template <std::floating_point T>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   double x;
   SIMDJSON_TRY(val.get_double().get(x));
@@ -47,7 +43,6 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 }
 
 template <std::signed_integral T>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   using limits = std::numeric_limits<T>;
 
@@ -77,7 +72,6 @@ error_code tag_invoke(deserialize_tag, auto &val, char &out) noexcept {
 
 // any string-like type (can be constructed from std::string_view)
 template <concepts::constructible_from_string_view T, typename ValT>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
@@ -94,7 +88,6 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothr
  * doc.get<std::vector<int>>().
  */
 template <concepts::appendable_containers T, typename ValT>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
   static_assert(
@@ -140,7 +133,6 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
  * string-keyed types.
  */
  template <concepts::string_view_keyed_map T, typename ValT>
- requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::mapped_type;
   static_assert(
@@ -222,7 +214,6 @@ error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::docume
  * @return status of the conversion
  */
 template <concepts::smart_pointer T, typename ValT>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::element_type, ValT>) {
   using element_type = typename std::remove_cvref_t<T>::element_type;
 
@@ -248,7 +239,6 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
  * This CPO (Customization Point Object) will help deserialize into optional types.
  */
 template <concepts::optional_type T>
-  requires(!require_custom_serialization<T>)
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, decltype(val)>) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
 
@@ -274,7 +264,7 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 template <typename T>
 constexpr bool user_defined_type = (std::is_class_v<T>
 && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
-!concepts::appendable_containers<T> && !require_custom_serialization<T>);
+!concepts::appendable_containers<T>);
 
 
 template <typename T, typename ValT>
