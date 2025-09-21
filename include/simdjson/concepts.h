@@ -126,7 +126,50 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 
 
 
+
+
 } // namespace concepts
+
+
+/**
+ * We use tag_invoke as our customization point mechanism.
+ */
+
+namespace tag_invoke_fn_ns {
+void tag_invoke();
+
+struct tag_invoke_fn {
+  template <typename Tag, typename... Args>
+    requires requires(Tag tag, Args &&...args) {
+      tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+    }
+  constexpr auto operator()(Tag tag, Args &&...args) const
+      noexcept(noexcept(tag_invoke(std::forward<Tag>(tag),
+                                   std::forward<Args>(args)...)))
+          -> decltype(tag_invoke(std::forward<Tag>(tag),
+                                 std::forward<Args>(args)...)) {
+    return tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+  }
+};
+} // namespace tag_invoke_fn_ns
+
+inline namespace tag_invoke_ns {
+inline constexpr tag_invoke_fn_ns::tag_invoke_fn tag_invoke = {};
+} // namespace tag_invoke_ns
+
+template <typename Tag, typename... Args>
+concept tag_invocable = requires(Tag tag, Args... args) {
+  tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...);
+};
+
+template <typename Tag, typename... Args>
+concept nothrow_tag_invocable =
+    tag_invocable<Tag, Args...> && requires(Tag tag, Args... args) {
+      {
+        tag_invoke(std::forward<Tag>(tag), std::forward<Args>(args)...)
+      } noexcept;
+    };
+
 } // namespace simdjson
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #endif // SIMDJSON_CONCEPTS_H
