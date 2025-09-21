@@ -79,6 +79,7 @@ inline simdjson_result<ondemand::number> auto_parser<parser_type>::number() noex
   return result<ondemand::number>();
 }
 
+#if SIMDJSON_EXCEPTIONS
 template <typename parser_type>
 template <typename T>
 inline auto_parser<parser_type>::operator T() noexcept(false) {
@@ -87,6 +88,7 @@ inline auto_parser<parser_type>::operator T() noexcept(false) {
   }
   return m_doc.get<T>();
 }
+#endif // SIMDJSON_EXCEPTIONS
 
 template <typename parser_type>
 template <typename T>
@@ -109,7 +111,7 @@ inline T to_adaptor<T>::operator()(simdjson_result<ondemand::value> &val) const 
 
 template <typename T>
 inline auto to_adaptor<T>::operator()(padded_string_view const str) const noexcept {
-  return auto_parser{str};
+  return auto_parser<ondemand::parser *>{str};
 }
 
 template <typename T>
@@ -119,7 +121,7 @@ inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_vi
 
 template <typename T>
 inline auto to_adaptor<T>::operator()(std::string str) const noexcept {
-  return auto_parser{pad_with_reserve(str)};
+  return auto_parser<ondemand::parser *>{pad_with_reserve(str)};
 }
 
 template <typename T>
