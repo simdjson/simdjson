@@ -360,8 +360,8 @@ static const char decimal_table[200] = {
 };
 } // namespace internal
 
+
 template <typename number_type, typename>
-  requires(!require_custom_serialization<number_type>)
 simdjson_inline void string_builder::append(number_type v) noexcept {
   static_assert(std::is_same<number_type, bool>::value ||
                     std::is_integral<number_type>::value ||
@@ -521,7 +521,6 @@ requires(require_custom_serialization<T>)
 simdjson_inline void string_builder::append(const T &val) {
   serialize(*this, val);
 }
-
 
 template <typename T>
 requires(std::is_convertible<T, std::string_view>::value ||

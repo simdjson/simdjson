@@ -11,9 +11,35 @@
 
 namespace simdjson {
 
-#if SIMDJSON_SUPPORTS_CONCEPTS
-struct serialize_tag;
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+
+namespace SIMDJSON_IMPLEMENTATION {
+namespace builder {
+  class string_builder;
+}}
+
+template <typename T, typename = void>
+struct has_custom_serialization : std::false_type {};
+
+inline constexpr struct serialize_tag {
+  template <typename T>
+    requires custom_deserializable<T>
+  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T& obj) const{
+    return tag_invoke(*this, b, obj);
+  }
+
+
+} serialize{};
+template <typename T>
+struct has_custom_serialization<T, std::void_t<
+    decltype(tag_invoke(serialize, std::declval<SIMDJSON_IMPLEMENTATION::builder::string_builder&>(), std::declval<T&>()))
+>> : std::true_type {};
+
+template <typename T>
+constexpr bool require_custom_serialization = has_custom_serialization<T>::value;
+#else
+struct has_custom_serialization : std::false_type {};
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 namespace SIMDJSON_IMPLEMENTATION {
@@ -61,7 +87,6 @@ public:
    */
   template<typename number_type,
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
-  requires(!require_custom_serialization<number_type>)
   simdjson_inline void append(number_type v) noexcept;
 
   /**
@@ -292,15 +317,6 @@ simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t i
 #endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-inline constexpr struct serialize_tag {
-  template <typename T>
-    requires custom_deserializable<T>
-  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T& obj) const{
-    return simdjson::tag_invoke_ns::tag_invoke(*this, b, obj);
-  }
-
-
-} serialize{};
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace simdjson
