@@ -151,13 +151,42 @@ simdjson::padded_string json_cars =
     }
     TEST_SUCCEED();
   }
-
+  struct Player {
+      std::string username;
+      int level;
+      double health;
+  };
   struct BadPlayer {
       int username;  // Oops, should be string!
       int level;
       double health;
   };
+  struct OptionalPlayer {
+      std::string username;
+      std::optional<int> level;
+      double health;
+  };
 #if SIMDJSON_STATIC_REFLECTION
+  bool missing_key_player() {
+    TEST_START();
+    std::string json = R"({"username":"Alice","health":100.0})";
+    simdjson::padded_string padded(json);
+    Player p;
+    simdjson::ondemand::parser parser;
+    auto doc = parser.iterate(padded);
+    ASSERT_ERROR(doc.get(p), simdjson::NO_SUCH_FIELD);
+    TEST_SUCCEED();
+  }
+  bool missing_key_optional_player() {
+    TEST_START();
+    std::string json = R"({"username":"Alice","health":100.0})";
+    simdjson::padded_string padded(json);
+    OptionalPlayer p;
+    simdjson::ondemand::parser parser;
+    auto doc = parser.iterate(padded);
+    ASSERT_SUCCESS(doc.get(p));
+    TEST_SUCCEED();
+  }
   bool bad_player() {
     TEST_START();
     // username is a string but we declared it as an int
@@ -478,7 +507,7 @@ bool test_to_vs_from_equivalence() {
 bool run() {
   return
 #if SIMDJSON_STATIC_REFLECTION
-      meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
+      missing_key_optional_player() && missing_key_player() && meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
       simple_no_except() &&

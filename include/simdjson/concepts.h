@@ -122,6 +122,7 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
     } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
   };
   { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
+  { obj.reset() } noexcept -> std::same_as<void>;
 };
 
 

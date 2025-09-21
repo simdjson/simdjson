@@ -1400,6 +1400,9 @@ maps it to parsing code. We call the default constructor,
 and then assign values to the public members.
 
 
+If a key is missing in the JSON document, an error is generated (`NO_SUCH_FIELD`),
+except if the attribute is of a type like `std::optional` (`simdjson::concepts::optional_type`).
+
 #### Special cases
 
 However, there are instances where the construction cannot
