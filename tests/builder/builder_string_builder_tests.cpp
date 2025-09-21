@@ -84,6 +84,11 @@ bool string_convertion_except() {
   sb.append('a');
   std::string r(sb);
   ASSERT_EQUAL(r, "a");
+
+  // forcing call to `operator std::string()`
+  r = [](std::string r) { return r; }(sb);
+  ASSERT_EQUAL(r, "a");
+
   TEST_SUCCEED();
 }
 #endif

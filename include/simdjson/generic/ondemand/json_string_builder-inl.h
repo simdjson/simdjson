@@ -579,7 +579,7 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline string_builder::operator std::string() const noexcept(false) {
-  return std::string(std::string_view());
+  return std::string(operator std::string_view());
 }
 
 simdjson_inline string_builder::operator std::string_view() const
