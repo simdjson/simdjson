@@ -9,6 +9,14 @@
 # vim temp files
 .*.swp
 
+# Build directories
+build/
+build_*/
+buildreflect/
+
+# Ablation study results
+ablation/results/
+
 # XCode
 ^build/
 *.pbxuser

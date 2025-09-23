@@ -21,10 +21,12 @@ use serde::de::{self, Deserializer};
 //     iso_language_code: String,
 // }
 
+// Simplified Twitter structures for benchmarking
+// This matches the C++ struct that achieved 4.1+ GB/s performance
+
 #[derive(Serialize, Deserialize)]
 pub struct User {
     id: i64,
-    id_str: String,
     name: String,
     screen_name: String,
     location: String,
@@ -36,62 +38,13 @@ pub struct User {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Hashtag {
-    text: String,
-    indices: Vec<i64>,  // Array in JSON, not separate fields
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Url {
-    url: String,
-    expanded_url: String,
-    display_url: String,
-    indices: Vec<i64>,  // Array in JSON, not separate fields
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct UserMention {
-    id: i64,
-    name: String,
-    screen_name: String,
-    indices: Vec<i64>,  // Array in JSON, not separate fields
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Entities {
-    hashtags: Vec<Hashtag>,
-    urls: Vec<Url>,
-    user_mentions: Vec<UserMention>,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct Status {
     created_at: String,
     id: i64,
     text: String,
     user: User,
-    entities: Entities,
     retweet_count: i64,
     favorite_count: i64,
-    favorited: bool,
-    retweeted: bool,
-    // None of these are in the C++ equivalent:
-    /*
-    metadata: Metadata,
-    id_str: String,
-    source: String,
-    truncated: bool,
-    in_reply_to_status_id: Option<i64>,
-    in_reply_to_status_id_str: Option<String>,
-    in_reply_to_user_id: Option<i64>,
-    in_reply_to_user_id_str: Option<String>,
-    in_reply_to_screen_name: Option<String>,
-    geo: Option<String>,
-    coordinates: Option<String>,
-    place: Option<String>,
-    contributors: Option<String>,
-    lang: String,
-    */
 }
 
 #[derive(Serialize, Deserialize)]

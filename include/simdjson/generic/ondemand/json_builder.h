@@ -34,7 +34,7 @@ struct atom_struct_impl {
     // Runtime implementation - always use runtime string construction
     int i = 0;
     b.append('{');
-    constexpr auto members = std::meta::define_static_array(std::meta::nonstatic_data_members_of(^^T));
+    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T));
     template for (constexpr auto dm : members) {
       if (i++ != 0)
         b.append(',');
@@ -54,13 +54,13 @@ struct atom_struct_impl<T, true> {
   static void serialize(string_builder &b, const T &t) {
     b.append('{');
     bool first = true;
-    constexpr auto members = std::meta::define_static_array(std::meta::nonstatic_data_members_of(^^T));
+    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T));
     template for (constexpr auto dm : members) {
       if (!first)
         b.append(',');
       first = false;
       // Use std::meta::define_static_string directly with the consteval result
-      constexpr const char* static_key = std::meta::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+      constexpr const char* static_key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
       b.append_raw(static_key);
       b.append(':');
       atom(b, t.[: dm :]);
@@ -181,7 +181,7 @@ void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
   // Compile-time optimization: pre-compute enum lookup table for faster runtime lookup
-  constexpr auto enum_values = std::meta::define_static_array(std::meta::enumerators_of(^^T));
+  constexpr auto enum_values = std::define_static_array(std::meta::enumerators_of(^^T));
   constexpr size_t enum_count = enum_values.size();
 
   // Small enum optimization: use compile-time lookup for common small enums
@@ -202,7 +202,7 @@ void atom(string_builder &b, const T &e) {
   #endif
     // Standard implementation for larger enums
     std::string_view result = "<unnamed>";
-    constexpr auto enum_vals = std::meta::define_static_array(std::meta::enumerators_of(^^T));
+    constexpr auto enum_vals = std::define_static_array(std::meta::enumerators_of(^^T));
     template for (constexpr auto enum_val : enum_vals) {
       if (e == [: enum_val :]) {
         result = std::meta::identifier_of(enum_val);
