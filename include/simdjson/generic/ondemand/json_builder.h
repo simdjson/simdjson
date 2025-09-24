@@ -27,28 +27,30 @@ namespace builder {
 
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
+// Now uses iterator-based approach for broader container support
 template <typename T>
 concept container_but_not_string =
     requires(T a) {
-      { a.size() } -> std::convertible_to<std::size_t>;
-      {
-        a[std::declval<std::size_t>()]
-      }; // check if elements are accessible for the subscript operator
+      { a.begin() } -> std::input_or_output_iterator;
+      { a.end() } -> std::input_or_output_iterator;
     } && !std::is_same_v<T, std::string> &&
     !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char *>;
 
 template <class T>
   requires(container_but_not_string<T> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
-  if (t.size() == 0) {
+  auto it = t.begin();
+  auto end = t.end();
+  if (it == end) {
     b.append_raw("[]");
     return;
   }
   b.append('[');
-  atom(b, t[0]);
-  for (size_t i = 1; i < t.size(); ++i) {
+  atom(b, *it);
+  ++it;
+  for (; it != end; ++it) {
     b.append(',');
-    atom(b, t[i]);
+    atom(b, *it);
   }
   b.append(']');
 }
@@ -251,19 +253,22 @@ void append(string_builder &b, const Z &z) {
   b.append('}');
 }
 
-// works for container
+// works for container that have begin() and end() iterators
 template <class Z>
   requires(container_but_not_string<Z> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
-  if (z.size() == 0) {
+  auto it = z.begin();
+  auto end = z.end();
+  if (it == end) {
     b.append_raw("[]");
     return;
   }
   b.append('[');
-  atom(b, z[0]);
-  for (size_t i = 1; i < z.size(); ++i) {
+  atom(b, *it);
+  ++it;
+  for (; it != end; ++it) {
     b.append(',');
-    atom(b, z[i]);
+    atom(b, *it);
   }
   b.append(']');
 }
