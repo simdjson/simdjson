@@ -9,6 +9,10 @@
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value-inl.h"
+#if SIMDJSON_STATIC_REFLECTION
+#include "simdjson/generic/ondemand/json_string_builder.h"  // for internal::fixed_string
+#include <meta>
+#endif
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -194,6 +198,55 @@ simdjson_inline simdjson_result<bool> object::is_empty() & noexcept {
 simdjson_inline simdjson_result<bool> object::reset() & noexcept {
   return iter.reset_object();
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
+
+template<builder::internal::fixed_string... FieldNames, typename T>
+  requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+simdjson_inline error_code object::extract_into(T& out) & noexcept {
+  // Helper to check if a field name matches any of the requested fields
+  auto should_extract = [](std::string_view field_name) constexpr -> bool {
+    return ((FieldNames.view() == field_name) || ...);
+  };
+
+  // Iterate through all members of T using reflection
+  template for (constexpr auto mem : std::define_static_array(
+      std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+
+      // Only extract this field if it's in our list of requested fields
+      if constexpr (((builder::internal::string_constant<FieldNames>::value == key) || ...)) {
+        // Try to find and extract the field
+        if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+          // For optional fields, it's ok if they're missing
+          auto field_result = (*this)[key];
+          if (!field_result.error()) {
+            auto error = field_result.get(out.[:mem:]);
+            if (error && error != NO_SUCH_FIELD) {
+              return error;
+            }
+          } else if (field_result.error() != NO_SUCH_FIELD) {
+            return field_result.error();
+          } else {
+            out.[:mem:].reset();
+          }
+        } else {
+          // For required fields (in the requested list), fail if missing
+          auto error = (*this)[key].get(out.[:mem:]);
+          if (error) {
+            return error;
+          }
+        }
+      }
+    }
+  };
+
+  return SUCCESS;
+}
+
+#endif // SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

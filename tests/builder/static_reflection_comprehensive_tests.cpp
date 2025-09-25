@@ -215,13 +215,117 @@ namespace builder_tests {
     TEST_SUCCEED();
   }
 
+  bool test_extract_into() {
+    TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+    struct Car {
+      std::string make;
+      std::string model;
+      int year;
+      double price;
+      std::optional<std::string> color;
+    };
+
+    ondemand::parser parser;
+
+    // Test 1: Extract only specific fields
+    {
+      std::string json_str = R"({
+        "make": "Toyota",
+        "model": "Camry",
+        "year": 2024,
+        "price": 28999.99,
+        "color": "Blue",
+        "engine": "V6",
+        "transmission": "Automatic"
+      })";
+
+      auto padded = pad(json_str);
+      Car car{};
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      auto obj_result = doc.get_object().get(obj);
+      ASSERT_SUCCESS(obj_result);
+
+      // Extract only 'make' and 'model'
+      auto error = obj.extract_into<"make", "model">(car);
+      ASSERT_SUCCESS(error);
+
+      ASSERT_EQUAL(car.make, "Toyota");
+      ASSERT_EQUAL(car.model, "Camry");
+      ASSERT_EQUAL(car.year, 0);  // Not extracted
+      ASSERT_EQUAL(car.price, 0);  // Not extracted
+    }
+
+    // Test 2: Extract with optional field
+    {
+      std::string json_str = R"({
+        "make": "Honda",
+        "model": "Accord",
+        "year": 2023,
+        "price": 26999.99,
+        "color": "Red"
+      })";
+
+      auto padded = pad(json_str);
+      Car car{};
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      auto obj_result = doc.get_object().get(obj);
+      ASSERT_SUCCESS(obj_result);
+
+      // Extract including optional 'color'
+      auto error = obj.extract_into<"make", "model", "color">(car);
+      ASSERT_SUCCESS(error);
+
+      ASSERT_EQUAL(car.make, "Honda");
+      ASSERT_EQUAL(car.model, "Accord");
+      ASSERT_TRUE(car.color.has_value());
+      ASSERT_EQUAL(*car.color, "Red");
+    }
+
+    // Test 3: Extract with missing optional field
+    {
+      std::string json_str = R"({
+        "make": "Ford",
+        "model": "F-150",
+        "year": 2024,
+        "price": 35999.99
+      })";
+
+      auto padded = pad(json_str);
+      Car car{};
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      auto obj_result = doc.get_object().get(obj);
+      ASSERT_SUCCESS(obj_result);
+
+      // Try to extract including optional 'color' which doesn't exist
+      auto error = obj.extract_into<"make", "model", "color">(car);
+      ASSERT_SUCCESS(error);
+
+      ASSERT_EQUAL(car.make, "Ford");
+      ASSERT_EQUAL(car.model, "F-150");
+      ASSERT_FALSE(car.color.has_value());  // Should be empty
+    }
+#endif
+    TEST_SUCCEED();
+  }
+
 
   bool run() {
     return test_primitive_types() &&
            test_string_types() &&
            test_optional_types() &&
            test_smart_pointer_types() &&
-           test_container_types();
+           test_container_types() &&
+           test_extract_into();
   }
 
 } // namespace builder_tests
