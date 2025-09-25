@@ -12,6 +12,84 @@ using namespace simdjson;
 
 namespace builder_tests {
 
+#if SIMDJSON_STATIC_REFLECTION
+  // Custom type for testing tag_invoke with extract_into
+  struct Price {
+    double amount;
+    std::string currency;
+
+    // Custom deserializer that applies currency conversion
+    friend error_code tag_invoke(deserialize_tag,
+                                ondemand::value& val,
+                                Price& price) noexcept {
+      ondemand::object obj;
+      auto error = val.get_object().get(obj);
+      if (error) return error;
+
+      // Get the raw amount
+      error = obj["amount"].get(price.amount);
+      if (error) return error;
+
+      // Get the currency
+      std::string_view currency_sv;
+      error = obj["currency"].get(currency_sv);
+      if (error) return error;
+      price.currency = std::string(currency_sv);
+
+      // Custom logic: Convert EUR to USD for consistency
+      if (price.currency == "EUR") {
+        price.amount = price.amount * 1.1;  // Simplified conversion
+        price.currency = "USD";
+      }
+
+      return SUCCESS;
+    }
+  };
+
+  struct Product {
+    std::string name;
+    Price price;  // Custom deserializable type
+    int stock;
+  };
+
+  // Another custom type for testing
+  struct Dimensions {
+    double value;
+    std::string unit;
+
+    // Custom deserializer that converts to metric
+    friend error_code tag_invoke(deserialize_tag,
+                                ondemand::value& val,
+                                Dimensions& dim) noexcept {
+      ondemand::object obj;
+      auto error = val.get_object().get(obj);
+      if (error) return error;
+
+      error = obj["value"].get(dim.value);
+      if (error) return error;
+
+      std::string_view unit_sv;
+      error = obj["unit"].get(unit_sv);
+      if (error) return error;
+      dim.unit = std::string(unit_sv);
+
+      // Convert inches to cm
+      if (dim.unit == "inches") {
+        dim.value = dim.value * 2.54;
+        dim.unit = "cm";
+      }
+
+      return SUCCESS;
+    }
+  };
+
+  struct Package {
+    std::string id;
+    Dimensions weight;
+    Dimensions length;
+  };
+#endif
+
   bool test_primitive_types() {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
@@ -313,6 +391,80 @@ namespace builder_tests {
       ASSERT_EQUAL(car.make, "Ford");
       ASSERT_EQUAL(car.model, "F-150");
       ASSERT_FALSE(car.color.has_value());  // Should be empty
+    }
+
+    // Test 4: Extract with custom deserializable type using tag_invoke
+    {
+      // Test using the Price struct defined at namespace level
+
+      std::string json_str = R"({
+        "name": "Laptop",
+        "price": {
+          "amount": 1000,
+          "currency": "EUR"
+        },
+        "stock": 15,
+        "description": "High-end gaming laptop"
+      })";
+
+      auto padded = pad(json_str);
+      Product product{};
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      auto obj_result = doc.get_object().get(obj);
+      ASSERT_SUCCESS(obj_result);
+
+      // Extract including price field with custom deserializer
+      auto error = obj.extract_into<"name", "price">(product);
+      ASSERT_SUCCESS(error);
+
+      ASSERT_EQUAL(product.name, "Laptop");
+      // Verify custom deserializer was invoked: EUR should be converted to USD
+      ASSERT_EQUAL(product.price.currency, "USD");  // Should be converted from EUR
+      // Verify custom deserializer was invoked: amount should be 1100 (1000 * 1.1)
+      ASSERT_EQUAL(product.price.amount, 1100);  // Should be exactly 1100 after conversion
+      ASSERT_EQUAL(product.stock, 0);  // Not extracted
+    }
+
+    // Test 5: Extract with nested custom deserializable types
+    {
+      // Test using the Dimensions struct defined at namespace level
+
+      std::string json_str = R"({
+        "id": "PKG123",
+        "weight": {
+          "value": 10,
+          "unit": "pounds"
+        },
+        "length": {
+          "value": 12,
+          "unit": "inches"
+        },
+        "fragile": true
+      })";
+
+      auto padded = pad(json_str);
+      Package pkg{};
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      auto obj_result = doc.get_object().get(obj);
+      ASSERT_SUCCESS(obj_result);
+
+      // Extract only length (with custom deserializer), skip weight
+      auto error = obj.extract_into<"id", "length">(pkg);
+      ASSERT_SUCCESS(error);
+
+      ASSERT_EQUAL(pkg.id, "PKG123");
+      // Verify custom deserializer was invoked: inches should be converted to cm
+      ASSERT_EQUAL(pkg.length.unit, "cm");  // Should be converted from inches
+      // Verify exact conversion: 12 inches * 2.54 = 30.48 cm
+      ASSERT_EQUAL(pkg.length.value, 30.48);  // Should be exactly 30.48 after conversion
+      ASSERT_EQUAL(pkg.weight.unit, "");  // Weight not extracted
+      ASSERT_EQUAL(pkg.weight.value, 0);  // Weight value should remain at default
     }
 #endif
     TEST_SUCCEED();
