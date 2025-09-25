@@ -25,16 +25,19 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
+// Types we serialize as JSON strings (not as containers)
+template <typename T>
+concept string_like =
+  std::is_same_v<remove_cvref_t<T>, std::string> ||
+  std::is_same_v<remove_cvref_t<T>, std::string_view> ||
+  std::is_same_v<remove_cvref_t<T>, const char*> ||
+  std::is_same_v<remove_cvref_t<T>, char*>;
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
 // Now uses iterator-based approach for broader container support
 template <typename T>
 concept container_but_not_string =
-    requires(T a) {
-      { a.begin() } -> std::input_or_output_iterator;
-      { a.end() } -> std::input_or_output_iterator;
-    } && !std::is_same_v<T, std::string> &&
-    !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char *>;
+  std::ranges::input_range<T> && !string_like<T>;
 
 template <class T>
   requires(container_but_not_string<T> && !require_custom_serialization<T>)
