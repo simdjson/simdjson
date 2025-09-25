@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <list>
 #include <set>
 #include <map>
 #include <optional>
@@ -178,6 +179,7 @@ namespace builder_tests {
   bool test_container_types() {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
+    // Test basic container types
     struct ContainerTypes {
       std::vector<int> int_vector;
       std::set<std::string> string_set;
@@ -211,6 +213,46 @@ namespace builder_tests {
     ASSERT_EQUAL(deserialized.string_map.size(), 3);
     ASSERT_EQUAL(deserialized.int_vector[0], 1);
     ASSERT_EQUAL(deserialized.int_vector[4], 5);
+
+    // Test std::list with iterator-based serialization
+    struct ListContainer {
+      std::list<int> int_list;
+      std::list<std::string> string_list;
+    };
+
+    ListContainer list_test;
+    list_test.int_list = {10, 20, 30, 40, 50};
+    list_test.string_list = {"first", "second", "third"};
+
+    auto list_result = builder::to_json_string(list_test);
+    ASSERT_SUCCESS(list_result);
+
+    std::string list_json = list_result.value();
+    // Check that list serialization produces correct JSON array format
+    ASSERT_TRUE(list_json.find("\"int_list\":[10,20,30,40,50]") != std::string::npos);
+    ASSERT_TRUE(list_json.find("\"string_list\":[\"first\",\"second\",\"third\"]") != std::string::npos);
+
+    // Test list round-trip
+    auto list_doc_result = parser.iterate(pad(list_json));
+    ASSERT_SUCCESS(list_doc_result);
+
+    auto list_get_result = list_doc_result.value().get<ListContainer>();
+    ASSERT_SUCCESS(list_get_result);
+
+    ListContainer list_deserialized = std::move(list_get_result.value());
+    ASSERT_EQUAL(list_deserialized.int_list.size(), 5);
+    ASSERT_EQUAL(list_deserialized.string_list.size(), 3);
+
+    // Check list values
+    auto it = list_deserialized.int_list.begin();
+    ASSERT_EQUAL(*it, 10);
+    std::advance(it, 4);
+    ASSERT_EQUAL(*it, 50);
+
+    auto str_it = list_deserialized.string_list.begin();
+    ASSERT_EQUAL(*str_it, "first");
+    std::advance(str_it, 2);
+    ASSERT_EQUAL(*str_it, "third");
 #endif
     TEST_SUCCEED();
   }
