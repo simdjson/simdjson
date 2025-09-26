@@ -1,6 +1,7 @@
 #define SIMDJSON_IMPLEMENTATION rvv
 
 // include RVV intrinsics and definitions
+#include <riscv_vector.h>
 #include "simdjson/rvv/base.h"
 #include "simdjson/rvv/intrinsics.h"
 #include "simdjson/rvv/bitmanipulation.h"

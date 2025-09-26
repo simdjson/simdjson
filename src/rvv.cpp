@@ -1,36 +1,23 @@
 #ifndef SIMDJSON_SRC_RVV_CPP
 #define SIMDJSON_SRC_RVV_CPP
 
-#include "simdjson/rvv.h"
-#include "simdjson/rvv/implementation.h"
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include <base.h>
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
-#include "simdjson/rvv/begin.h"
-#include <generic/amalgamated.h>
-#include <generic/stage1/amalgamated.h>
-#include <generic/stage2/amalgamated.h>
 
-//
-// Stage 1
-//
+#include <simdjson/rvv.h>
+#include <simdjson/rvv/implementation.h>
+
+
+
 namespace simdjson {
 namespace rvv {
-
-simdjson_warn_unused error_code implementation::create_dom_parser_implementation(
-  size_t capacity,
-  size_t max_depth,
-  std::unique_ptr<internal::dom_parser_implementation>& dst
-) const noexcept {
-  dst.reset( new (std::nothrow) dom_parser_implementation() );
-  if (!dst) { return MEMALLOC; }
-  if (auto err = dst->set_capacity(capacity))
-    return err;
-  if (auto err = dst->set_max_depth(max_depth))
-    return err;
-  return SUCCESS;
+error_code implementation::create_dom_parser_implementation(
+    size_t, size_t,
+    std::unique_ptr<simdjson::internal::dom_parser_implementation>&) const noexcept {
+  return error_code::UNSUPPORTED_ARCHITECTURE;
 }
-
-
-
 } // namespace rvv
 } // namespace simdjson
 #endif // SIMDJSON_SRC_RVV_CPP
