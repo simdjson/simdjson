@@ -5,7 +5,7 @@
 #include "simdjson/rvv/base.h"
 #include "simdjson/rvv/intrinsics.h"
 #include "simdjson/internal/simdprune_tables.h"
-#endif
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace rvv {
