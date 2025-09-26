@@ -217,11 +217,11 @@ simdjson_inline error_code object::extract_into(T& out) & noexcept {
       constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
 
       // Only extract this field if it's in our list of requested fields
-      if constexpr (((builder::internal::string_constant<FieldNames>::value == key) || ...)) {
+      if constexpr (should_extract(key)) {
         // Try to find and extract the field
         if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
           // For optional fields, it's ok if they're missing
-          auto field_result = (*this)[key];
+          auto field_result = find_field_unordered(key);
           if (!field_result.error()) {
             auto error = field_result.get(out.[:mem:]);
             if (error && error != NO_SUCH_FIELD) {
@@ -234,10 +234,7 @@ simdjson_inline error_code object::extract_into(T& out) & noexcept {
           }
         } else {
           // For required fields (in the requested list), fail if missing
-          auto error = (*this)[key].get(out.[:mem:]);
-          if (error) {
-            return error;
-          }
+          SIMDJSON_TRY((*this)[key].get(out.[:mem:]));
         }
       }
     }
