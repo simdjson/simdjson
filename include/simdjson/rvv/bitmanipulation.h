@@ -3,7 +3,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/rvv/base.h"
-#endif
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace rvv {
