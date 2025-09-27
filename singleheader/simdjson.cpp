@@ -1,4 +1,4 @@
-/* auto-generated on 2025-09-26 21:04:53 -0400. version 4.0.6 Do not edit! */
+/* auto-generated on 2025-09-26 23:44:42 -0400. version 4.0.6 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -3062,9 +3062,9 @@ concept nothrow_tag_invocable =
 #include <string_view>
 #include <array>
 
-#if SIMDJSON_CONSTEVAL
 namespace simdjson {
 namespace constevalutil {
+#if SIMDJSON_CONSTEVAL
 
 constexpr static std::array<uint8_t, 256> json_quotable_character = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -3104,6 +3104,8 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+#endif  // SIMDJSON_CONSTEVAL
+
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <std::size_t N>
@@ -3127,7 +3129,6 @@ struct string_constant {
 
 } // namespace constevalutil
 } // namespace simdjson
-#endif  // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_CONSTEVALUTIL_H
 /* end file simdjson/constevalutil.h */
 
