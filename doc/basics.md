@@ -1409,7 +1409,8 @@ achieve this result with the `extract_into` method supported by both `object` an
 `document` instances. It returns an error code that evaluates to false when there
 is no error.
 
-Consider the following
+Consider the following example where you only want to parse the make and the model
+from the JSON:
 
 ```cpp
 struct car_type {
@@ -1431,7 +1432,7 @@ void f() {
   Car car{};
   auto error = doc.extract_into<"make","model">(car);
   if(error) { /** error handling */ }
-  //
+  // only car.make and car.
 }
 ```
 
