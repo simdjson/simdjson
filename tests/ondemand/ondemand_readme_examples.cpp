@@ -237,7 +237,7 @@ bool to_string_example() {
   ASSERT_EQUAL(name, "Daniel");
   TEST_SUCCEED();
 }
-
+#if SIMDJSON_STATIC_REFLECTION
 bool partial_car_extract() {
   TEST_START();
   auto json = R"( {
@@ -273,6 +273,7 @@ bool temperature_example() {
   ASSERT_EQUAL(p.temperature[0], 42);
   TEST_SUCCEED();
 }
+#endif // SIMDJSON_STATIC_REFLECTION
 
 bool gen_raw1() {
   TEST_START();
