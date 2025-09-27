@@ -335,7 +335,7 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<number> get_root_number(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_null(bool check_trailing) noexcept;
 
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
   simdjson_inline uint8_t *&string_buf_loc() noexcept;
   simdjson_inline const json_iterator &json_iter() const noexcept;
   simdjson_inline json_iterator &json_iter() noexcept;
@@ -419,8 +419,8 @@ protected:
   simdjson_inline const uint8_t *peek_non_root_scalar(const char *type) noexcept;
 
 
-  simdjson_inline error_code start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept;
-  simdjson_inline error_code end_container() noexcept;
+  simdjson_warn_unused simdjson_inline error_code start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept;
+  simdjson_warn_unused simdjson_inline error_code end_container() noexcept;
 
   /**
    * Advance to a place expecting a value (increasing depth).
@@ -430,8 +430,8 @@ protected:
    */
   simdjson_inline simdjson_result<const uint8_t *> advance_to_value() noexcept;
 
-  simdjson_inline error_code incorrect_type_error(const char *message) const noexcept;
-  simdjson_inline error_code error_unless_more_tokens(uint32_t tokens=1) const noexcept;
+  simdjson_warn_unused simdjson_inline error_code incorrect_type_error(const char *message) const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error_unless_more_tokens(uint32_t tokens=1) const noexcept;
 
   simdjson_inline bool is_at_start() const noexcept;
   /**
@@ -468,7 +468,7 @@ protected:
   /** @copydoc error_code json_iterator::end_position() const noexcept; */
   simdjson_inline token_position end_position() const noexcept;
   /** @copydoc error_code json_iterator::report_error(error_code error, const char *message) noexcept; */
-  simdjson_inline error_code report_error(error_code error, const char *message) noexcept;
+  simdjson_warn_unused simdjson_inline error_code report_error(error_code error, const char *message) noexcept;
 
   friend class document;
   friend class object;

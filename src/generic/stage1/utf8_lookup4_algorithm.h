@@ -195,7 +195,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 

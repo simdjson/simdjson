@@ -85,7 +85,7 @@ simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
 simdjson_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
-simdjson_inline error_code array::consume() noexcept {
+simdjson_warn_unused simdjson_warn_unused simdjson_inline error_code array::consume() noexcept {
   auto error = iter.json_iter().skip_child(iter.depth()-1);
   if(error) { iter.abandon(); }
   return error;

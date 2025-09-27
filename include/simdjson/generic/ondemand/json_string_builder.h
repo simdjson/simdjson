@@ -44,28 +44,6 @@ struct has_custom_serialization : std::false_type {};
 
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
-#if SIMDJSON_SUPPORTS_CONCEPTS
-// Helper to create string constants
-namespace internal {
-template <std::size_t N>
-struct fixed_string {
-    constexpr fixed_string(const char (&str)[N])  {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] = str[i];
-        }
-    }
-    char data[N];
-    constexpr std::string_view view() const { return {data, N - 1}; }
-};
-template <std::size_t N>
-fixed_string(const char (&)[N]) -> fixed_string<N>;
-
-template <fixed_string str>
-struct string_constant {
-    static constexpr std::string_view value = str.view();
-};
-} // namespace internal
-#endif // SIMDJSON_SUPPORTS_CONCEPTS
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -118,7 +96,7 @@ public:
    */
   simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
 #if SIMDJSON_SUPPORTS_CONCEPTS
-  template<internal::fixed_string key>
+  template<constevalutil::fixed_string key>
   simdjson_inline void escape_and_append_with_quotes()  noexcept;
 #endif
   /**
@@ -177,7 +155,7 @@ public:
   template<typename key_type, typename value_type>
   simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
 #if SIMDJSON_SUPPORTS_CONCEPTS
-  template<internal::fixed_string key, typename value_type>
+  template<constevalutil::fixed_string key, typename value_type>
   simdjson_inline void append_key_value(value_type value) noexcept;
 
   // Support for optional types (std::optional, etc.)

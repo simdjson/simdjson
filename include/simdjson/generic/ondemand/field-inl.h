@@ -114,7 +114,7 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
 }
 
 template<typename string_type>
-simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(string_type &receiver, bool allow_replacement) noexcept {
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(string_type &receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.unescaped_key(receiver, allow_replacement);
 }

@@ -10,7 +10,7 @@
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value-inl.h"
 #if SIMDJSON_STATIC_REFLECTION
-#include "simdjson/generic/ondemand/json_string_builder.h"  // for internal::fixed_string
+#include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
 #include <meta>
 #endif
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -70,7 +70,7 @@ simdjson_inline simdjson_result<object> object::start_root(value_iterator &iter)
   SIMDJSON_TRY( iter.start_root_object().error() );
   return object(iter);
 }
-simdjson_inline error_code object::consume() noexcept {
+simdjson_warn_unused simdjson_inline error_code object::consume() noexcept {
   if(iter.is_at_key()) {
     /**
      * whenever you are pointing at a key, calling skip_child() is
@@ -201,9 +201,9 @@ simdjson_inline simdjson_result<bool> object::reset() & noexcept {
 
 #if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 
-template<builder::internal::fixed_string... FieldNames, typename T>
+template<constevalutil::fixed_string... FieldNames, typename T>
   requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
-simdjson_inline error_code object::extract_into(T& out) & noexcept {
+simdjson_warn_unused simdjson_inline error_code object::extract_into(T& out) & noexcept {
   // Helper to check if a field name matches any of the requested fields
   auto should_extract = [](std::string_view field_name) constexpr -> bool {
     return ((FieldNames.view() == field_name) || ...);

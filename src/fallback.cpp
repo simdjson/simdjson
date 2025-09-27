@@ -209,7 +209,7 @@ simdjson_inline bool validate_string() {
 //
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
-simdjson_inline error_code scan() {
+simdjson_warn_unused simdjson_inline error_code scan() {
   bool unclosed_string = false;
   for (;idx<len;idx++) {
     do {

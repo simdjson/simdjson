@@ -141,7 +141,7 @@ public:
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
    */
   template <typename T>
-  simdjson_inline error_code get(T &out)
+  simdjson_warn_unused simdjson_inline error_code get(T &out)
      noexcept(custom_deserializable<T, array> ? nothrow_custom_deserializable<T, array> : true) {
     static_assert(custom_deserializable<T, array>);
     return deserialize(*this, out);
@@ -166,7 +166,7 @@ protected:
   /**
    * Go to the end of the array, no matter where you are right now.
    */
-  simdjson_inline error_code consume() noexcept;
+  simdjson_warn_unused simdjson_inline error_code consume() noexcept;
 
   /**
    * Begin array iteration.
@@ -252,7 +252,7 @@ public:
     return first.get<T>();
   }
   template<typename T>
-  simdjson_inline error_code get(T& out) noexcept {
+  simdjson_warn_unused simdjson_inline error_code get(T& out) noexcept {
     if (error()) { return error(); }
     if constexpr (std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
       out = first;

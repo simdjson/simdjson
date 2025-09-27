@@ -141,7 +141,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
