@@ -104,10 +104,8 @@ namespace builder_tests {
 
     PrimitiveTypes test{true, 'X', 42, 3.14159, 2.71f};
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"bool_val\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"char_val\":\"X\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"int_val\":42") != std::string::npos);
@@ -529,10 +527,8 @@ namespace builder_tests {
       Car car{"Tesla", "Model 3", 2023, 42000.0, true};
 
       // Extract only make and model
-      auto json_result = extract_from<"make", "model">(car);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"make", "model">(car).get(json)));
 
       // Parse back to verify correctness
       auto padded = pad(json);
@@ -569,10 +565,8 @@ namespace builder_tests {
       Car car{"Ford", "F-150", 2024, 55000.0, false};
 
       // Extract year and price
-      auto json_result = extract_from<"year", "price">(car);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"year", "price">(car).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -603,10 +597,8 @@ namespace builder_tests {
       Person person{"John Doe", 30, "john@example.com", std::nullopt};
 
       // Extract name and email
-      auto json_result = extract_from<"name", "email">(person);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "email">(person).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -633,10 +625,8 @@ namespace builder_tests {
       Person person{"Jane Smith", 25, "jane@example.com", "555-1234"};
 
       // Extract name, age, and phone
-      auto json_result = extract_from<"name", "age", "phone">(person);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "age", "phone">(person).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -670,10 +660,8 @@ namespace builder_tests {
       Product original{"P123", "Widget", 19.99, 100};
 
       // Extract specific fields to JSON
-      auto json_result = extract_from<"id", "name", "price">(original);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"id", "name", "price">(original).get(json)));
 
       // Parse and extract back
       Product restored{"", "", 0.0, 0};
@@ -684,8 +672,7 @@ namespace builder_tests {
 
       ondemand::object obj;
       ASSERT_SUCCESS(doc.get_object().get(obj));
-      auto extract_result = obj.extract_into<"id", "name", "price">(restored);
-      ASSERT_SUCCESS(extract_result);
+      ASSERT_SUCCESS((obj.extract_into<"id", "name", "price">(restored)));
 
       // Verify fields match
       ASSERT_EQUAL(restored.id, original.id);
@@ -711,10 +698,9 @@ namespace builder_tests {
       Company company{"TechCorp", {"123 Main St", "San Francisco", "94105"}, 500};
 
       // Extract name and employees only
-      auto json_result = extract_from<"name", "employees">(company);
-      ASSERT_SUCCESS(json_result.error());
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "employees">(company).get(json)));
 
-      std::string json = json_result.value();
 
       auto padded = pad(json);
       ondemand::parser parser;

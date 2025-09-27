@@ -295,6 +295,31 @@ if(error) { /* there was an error */ }
 
 You can then also add a third parameter for the expected output size in bytes.
 
+### Extracting just some fields
+
+In some instances, your class might have many fields that you do not want to serialize.
+You can achieve this result with the `simdjson::extract_from` template. In the following
+example, we serialize only the `year` and `price` fields on the `Car` instance.
+
+```cpp
+struct Car {
+    std::string make;
+    std::string model;
+    int year;
+    double price;
+    bool electric;
+};
+
+Car car{"Ford", "F-150", 2024, 55000.0, false};
+
+// Extract year and price
+std::string json_result = simdjson::extract_from<"year", "price">(car);
+// Alternatively:
+// std::string json_result;
+// auto error =  extract_from<"year", "price">(car).get(json_result);
+// if(error) { /* error handling */ }
+```
+
 ### Without `string_buffer` instance but with explicit error handling
 
 If prefer a version without exceptions and explicit error handling, you can use the following
