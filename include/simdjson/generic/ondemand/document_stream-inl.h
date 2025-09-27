@@ -312,7 +312,9 @@ inline void document_stream::next_document() noexcept {
   // Always set depth=1 at the start of document
   doc.iter._depth = 1;
   // consume comma if comma separated is allowed
-  if (allow_comma_separated) { doc.iter.consume_character(','); }
+  if (allow_comma_separated) {
+    (void) doc.iter.consume_character(','); // ignore error
+  }
   // Resets the string buffer at the beginning, thus invalidating the strings.
   doc.iter._string_buf_loc = parser->string_buf.get();
   doc.iter._root = doc.iter.position();

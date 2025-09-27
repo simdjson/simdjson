@@ -29,13 +29,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 

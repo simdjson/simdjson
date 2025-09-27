@@ -238,14 +238,14 @@ public:
    * @param error The error to report. Must not be SUCCESS, UNINITIALIZED, INCORRECT_TYPE, or NO_SUCH_FIELD.
    * @param message An error message to report with the error.
    */
-  simdjson_inline error_code report_error(error_code error, const char *message) noexcept;
+  simdjson_warn_unused simdjson_inline error_code report_error(error_code error, const char *message) noexcept;
 
   /**
    * Log error, but don't stop iteration.
    * @param error The error to report. Must be INCORRECT_TYPE, or NO_SUCH_FIELD.
    * @param message An error message to report with the error.
    */
-  simdjson_inline error_code optional_error(error_code error, const char *message) noexcept;
+  simdjson_warn_unused simdjson_inline error_code optional_error(error_code error, const char *message) noexcept;
 
   /**
    * Take an input in json containing max_len characters and attempt to copy it over to tmpbuf, a buffer with
@@ -265,7 +265,7 @@ public:
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
 
-  simdjson_inline error_code consume_character(char c) noexcept;
+  simdjson_warn_unused  simdjson_inline error_code consume_character(char c) noexcept;
 #if SIMDJSON_DEVELOPMENT_CHECKS
   simdjson_inline token_position start_position(depth_t depth) const noexcept;
   simdjson_inline void set_start_position(depth_t depth, token_position position) noexcept;

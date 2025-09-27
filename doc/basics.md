@@ -1403,6 +1403,38 @@ and then assign values to the public members.
 If a key is missing in the JSON document, an error is generated (`NO_SUCH_FIELD`),
 except if the attribute is of a type like `std::optional` (`simdjson::concepts::optional_type`).
 
+
+Sometimes you might want to only extract some attributes from the JSON. You can
+achieve this result with the `extract_into` method supported by both `object` and
+`document` instances. It returns an error code that evaluates to false when there
+is no error.
+
+Consider the following
+
+```cpp
+struct car_type {
+    std::string make;
+    std::string model;
+    uint64_t year;
+    std::vector<double> tire_pressure;
+};
+
+void f() {
+  auto json = R"( {
+         "make": "Toyota",
+         "model": "Camry",
+         "year": 2024,
+         "tire_pressure": [ 40.1, 39.9 ]
+       } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  Car car{};
+  auto error = doc.extract_into<"make","model">(car);
+  if(error) { /** error handling */ }
+  //
+}
+```
+
 #### Special cases
 
 However, there are instances where the construction cannot
@@ -1459,7 +1491,7 @@ The code might be as simple as the following.
 auto padded = R"({"time":["2023-03-15T12:00:00Z"],"temperature":[42]})"_padded;
 simdjson::ondemand::parser parser;
 simdjson::ondemand::document doc = parser.iterate(padded);
-complicated_weather_data p = doc.get<>(complicated_weather_data);
+complicated_weather_data p = doc.get<complicated_weather_data>();
 ```
 
 Thus you can combine C++26 static reflection with custom deserialization
@@ -2774,15 +2806,16 @@ a parameter a reference to a `std::string`.
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   std::string name;
-  doc["name"].get_string(name);
+  auto error = doc["name"].get_string(name);
+  if(error) { /* handle error */ }
 ```
 
 The same routine can be written without exceptions handling:
 
 ```C++
   std::string name;
-  auto err = doc["name"].get_string(name);
-  if (err) { /* handle error */ }
+  auto error = doc["name"].get_string(name);
+  if (error) { /* handle error */ }
 ```
 
 The `std::string` instance, once created, is independent. Unlike our `std::string_view` instances,

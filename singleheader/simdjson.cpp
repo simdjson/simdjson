@@ -1,4 +1,4 @@
-/* auto-generated on 2025-09-20 22:23:09 -0600. version 4.0.6 Do not edit! */
+/* auto-generated on 2025-09-26 01:29:33 -0700. version 4.0.6 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -3014,6 +3014,20 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 
 
 
+// Types we serialize as JSON strings (not as containers)
+template <typename T>
+concept string_like =
+  std::is_same_v<std::remove_cvref_t<T>, std::string> ||
+  std::is_same_v<std::remove_cvref_t<T>, std::string_view> ||
+  std::is_same_v<std::remove_cvref_t<T>, const char*> ||
+  std::is_same_v<std::remove_cvref_t<T>, char*>;
+
+// Concept that checks if a type is a container but not a string (because
+// strings handling must be handled differently)
+// Now uses iterator-based approach for broader container support
+template <typename T>
+concept container_but_not_string =
+  std::ranges::input_range<T> && !string_like<T> && !concepts::string_view_keyed_map<T>;
 
 
 } // namespace concepts
@@ -3090,6 +3104,27 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <std::size_t N>
+struct fixed_string {
+    constexpr fixed_string(const char (&str)[N])  {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = str[i];
+        }
+    }
+    char data[N];
+    constexpr std::string_view view() const { return {data, N - 1}; }
+};
+template <std::size_t N>
+fixed_string(const char (&)[N]) -> fixed_string<N>;
+
+template <fixed_string str>
+struct string_constant {
+    static constexpr std::string_view value = str.view();
+};
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 } // namespace constevalutil
 } // namespace simdjson
 #endif  // SIMDJSON_CONSTEVAL
@@ -8828,7 +8863,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -9302,17 +9337,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -9749,7 +9784,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -9777,7 +9812,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -9866,7 +9901,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -9929,13 +9964,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -9961,7 +9996,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -10745,13 +10780,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -11692,7 +11727,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -12454,7 +12489,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -12579,7 +12614,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -12627,7 +12662,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -12781,7 +12816,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -12791,7 +12826,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -13000,7 +13035,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -14005,7 +14040,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -14050,7 +14086,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -15320,7 +15357,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -15786,17 +15823,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -16233,7 +16270,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -16261,7 +16298,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -16350,7 +16387,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -16413,13 +16450,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -16445,7 +16482,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -17229,13 +17266,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -18043,7 +18080,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -18797,7 +18834,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -18922,7 +18959,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -18970,7 +19007,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -19124,7 +19161,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -19134,7 +19171,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -19343,7 +19380,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -20348,7 +20385,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -20393,7 +20431,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -21595,7 +21634,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -22125,17 +22164,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -22572,7 +22611,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -22600,7 +22639,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -22689,7 +22728,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -22752,13 +22791,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -22784,7 +22823,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -23568,13 +23607,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -24317,7 +24356,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -25135,7 +25174,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -25260,7 +25299,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -25308,7 +25347,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -25462,7 +25501,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -25472,7 +25511,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -25681,7 +25720,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -26686,7 +26725,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -26731,7 +26771,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -28135,7 +28176,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote
+  simdjson_inline backslash_and_quote
   copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() {
@@ -28621,17 +28662,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -29068,7 +29109,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -29096,7 +29137,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -29185,7 +29226,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -29248,13 +29289,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -29280,7 +29321,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -30064,13 +30105,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -30970,7 +31011,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote
+  simdjson_inline backslash_and_quote
   copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() {
@@ -31744,7 +31785,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -31869,7 +31910,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -31917,7 +31958,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -32071,7 +32112,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -32081,7 +32122,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -32290,7 +32331,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -33295,7 +33336,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -33340,7 +33382,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -35008,7 +35051,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -35476,17 +35519,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -35923,7 +35966,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -35951,7 +35994,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -36040,7 +36083,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -36103,13 +36146,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -36135,7 +36178,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -36919,13 +36962,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -38157,7 +38200,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -38913,7 +38956,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -39038,7 +39081,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -39086,7 +39129,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -39240,7 +39283,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -39250,7 +39293,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -39459,7 +39502,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -40464,7 +40507,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -40509,7 +40553,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -41680,7 +41725,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -42153,17 +42198,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -42600,7 +42645,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -42628,7 +42673,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -42717,7 +42762,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -42780,13 +42825,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -42812,7 +42857,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -43596,13 +43641,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -44299,7 +44344,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -45060,7 +45105,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -45185,7 +45230,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -45233,7 +45278,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -45387,7 +45432,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -45397,7 +45442,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -45606,7 +45651,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -46611,7 +46656,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -46656,7 +46702,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -47809,7 +47856,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -48276,17 +48323,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -48723,7 +48770,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -48751,7 +48798,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -48840,7 +48887,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -48903,13 +48950,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -48935,7 +48982,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -49719,13 +49766,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -50444,7 +50491,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -51199,7 +51246,7 @@ using namespace simd;
       }
     }
     // do not forget to call check_eof!
-    simdjson_inline error_code errors() {
+    simdjson_warn_unused simdjson_inline error_code errors() {
       return this->error.any_bits_set_anywhere() ? error_code::UTF8_ERROR : error_code::SUCCESS;
     }
 
@@ -51324,7 +51371,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -51372,7 +51419,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 
@@ -51526,7 +51573,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -51536,7 +51583,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;
@@ -51745,7 +51792,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block, size_t idx);
-  simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
+  simdjson_warn_unused simdjson_inline error_code finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial);
 
   json_scanner scanner{};
   utf8_checker checker{};
@@ -52750,7 +52797,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -52795,7 +52843,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -53451,7 +53500,7 @@ namespace {
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
   simdjson_inline bool has_backslash() { return c == '\\'; }
@@ -53991,17 +54040,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
 
   /**
    * Whether there is a value.
    */
-  simdjson_inline bool has_value() const noexcept;
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -54438,7 +54487,7 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
-simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
@@ -54466,7 +54515,7 @@ simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const u
   return SUCCESS;
 }
 
-simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
+simdjson_warn_unused simdjson_inline error_code parse_exponent(simdjson_unused const uint8_t *const src, const uint8_t *&p, int64_t &exponent) {
   // Exp Sign: -123.456e[-]78
   bool neg_exp = ('-' == *p);
   if (neg_exp || '+' == *p) { p++; } // Skip + as well
@@ -54555,7 +54604,7 @@ static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double
 
 /** @private */
 template<typename W>
-simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
+simdjson_warn_unused simdjson_inline error_code write_float(const uint8_t *const src, bool negative, uint64_t i, const uint8_t * start_digits, size_t digit_count, int64_t exponent, W &writer) {
   // If we frequently had to deal with long strings of digits,
   // we could extend our code by using a 128-bit integer instead
   // of a 64-bit integer. However, this is uncommon in practice.
@@ -54618,13 +54667,13 @@ simdjson_inline error_code write_float(const uint8_t *const src, bool negative, 
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer);
 
 // for performance analysis, it is sometimes  useful to skip parsing
 #ifdef SIMDJSON_SKIPNUMBERPARSING
 
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const, W &writer) {
   writer.append_s64(0);        // always write zero
   return SUCCESS;              // always succeeds
 }
@@ -54650,7 +54699,7 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 //
 // Our objective is accurate parsing (ULP of 0) at high speed.
 template<typename W>
-simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
+simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *const src, W &writer) {
   //
   // Check for minus sign
   //
@@ -55434,13 +55483,13 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
 
 template<typename T>
-simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
   return this->error() == SUCCESS;
 }
 
@@ -55668,7 +55717,7 @@ namespace {
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 1;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return c == '"'; }
   simdjson_inline bool has_backslash() { return c == '\\'; }
@@ -56061,7 +56110,8 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -56106,7 +56156,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -57203,7 +57254,7 @@ simdjson_inline bool validate_string() {
 //
 // Parse the entire input in STEP_SIZE-byte chunks.
 //
-simdjson_inline error_code scan() {
+simdjson_warn_unused simdjson_inline error_code scan() {
   bool unclosed_string = false;
   for (;idx<len;idx++) {
     do {

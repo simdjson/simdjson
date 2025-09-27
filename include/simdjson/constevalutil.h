@@ -47,6 +47,27 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <std::size_t N>
+struct fixed_string {
+    constexpr fixed_string(const char (&str)[N])  {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = str[i];
+        }
+    }
+    char data[N];
+    constexpr std::string_view view() const { return {data, N - 1}; }
+};
+template <std::size_t N>
+fixed_string(const char (&)[N]) -> fixed_string<N>;
+
+template <fixed_string str>
+struct string_constant {
+    static constexpr std::string_view value = str.view();
+};
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 } // namespace constevalutil
 } // namespace simdjson
 #endif  // SIMDJSON_CONSTEVAL
