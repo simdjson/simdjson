@@ -252,7 +252,7 @@ simdjson::padded_string json_cars =
   }
 
 
-#endif
+#endif // SIMDJSON_STATIC_REFLECTION
 bool broken() {
   TEST_START();
   simdjson::padded_string short_json_cars = R"( { "make )"_padded;
@@ -469,15 +469,6 @@ bool test_to_adaptor_with_single_value() {
   if (obj_result.error()) {
     return false;
   }
-/*  simdjson::ondemand::object obj = std::move(obj_result.value());
-
-  // We deliberately omit this part because simdjson::to has been removed.
-  auto year_val = obj["year"];
-  int64_t year = simdjson::to<int64_t>(year_val);
-  if (year != 2018) {
-    return false;
-  }
-*/
 
   TEST_SUCCEED();
 }
@@ -506,7 +497,7 @@ bool test_to_vs_from_equivalence() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
-#if SIMDJSON_STATIC_REFLECTION
+#if SIMDJSON_STATIC_REFLECTION && SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       missing_key_optional_player() && missing_key_player() && meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS

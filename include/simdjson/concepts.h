@@ -127,6 +127,20 @@ concept optional_type = requires(std::remove_cvref_t<T> obj) {
 
 
 
+// Types we serialize as JSON strings (not as containers)
+template <typename T>
+concept string_like =
+  std::is_same_v<std::remove_cvref_t<T>, std::string> ||
+  std::is_same_v<std::remove_cvref_t<T>, std::string_view> ||
+  std::is_same_v<std::remove_cvref_t<T>, const char*> ||
+  std::is_same_v<std::remove_cvref_t<T>, char*>;
+
+// Concept that checks if a type is a container but not a string (because
+// strings handling must be handled differently)
+// Now uses iterator-based approach for broader container support
+template <typename T>
+concept container_but_not_string =
+  std::ranges::input_range<T> && !string_like<T> && !concepts::string_view_keyed_map<T>;
 
 
 } // namespace concepts

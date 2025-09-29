@@ -5,9 +5,9 @@
 #include <string_view>
 #include <array>
 
-#if SIMDJSON_CONSTEVAL
 namespace simdjson {
 namespace constevalutil {
+#if SIMDJSON_CONSTEVAL
 
 constexpr static std::array<uint8_t, 256> json_quotable_character = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -47,7 +47,29 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+#endif  // SIMDJSON_CONSTEVAL
+
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <std::size_t N>
+struct fixed_string {
+    constexpr fixed_string(const char (&str)[N])  {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = str[i];
+        }
+    }
+    char data[N];
+    constexpr std::string_view view() const { return {data, N - 1}; }
+};
+template <std::size_t N>
+fixed_string(const char (&)[N]) -> fixed_string<N>;
+
+template <fixed_string str>
+struct string_constant {
+    static constexpr std::string_view value = str.view();
+};
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 } // namespace constevalutil
 } // namespace simdjson
-#endif  // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_CONSTEVALUTIL_H

@@ -41,7 +41,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->return_current_and_advance();
-    end_container();
+    SIMDJSON_TRY(end_container());
     return false;
   }
   return true;
@@ -895,7 +895,7 @@ simdjson_inline void value_iterator::advance_scalar(const char *type) noexcept {
   _json_iter->ascend_to(depth()-1);
 }
 
-simdjson_inline error_code value_iterator::start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept {
+simdjson_warn_unused simdjson_inline error_code value_iterator::start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept {
   logger::log_start_value(*_json_iter, start_position(), depth(), type);
   // If we're not at the position anymore, we don't want to advance the cursor.
   const uint8_t *json;

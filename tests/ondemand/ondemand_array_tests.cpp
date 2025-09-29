@@ -375,7 +375,7 @@ namespace array_tests {
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       std::vector<int64_t> container(i); // container of size 'i'.
 
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
       i = 0;
@@ -783,7 +783,7 @@ namespace array_tests {
       for (auto value : array) { (void) value; i++; }
       ASSERT_EQUAL(i, 0);
 
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
       i = 0;

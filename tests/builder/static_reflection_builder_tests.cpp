@@ -50,9 +50,8 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     Car c = {"Toyota", "Corolla", 2017, {30.0,30.2,30.513,30.79}};
-    auto result = builder::to_json_string(c);
-    ASSERT_SUCCESS(result);
-    std::string pstr = result.value();
+    std::string pstr;
+    ASSERT_SUCCESS(builder::to_json_string(c).get(pstr));
     ASSERT_EQUAL(pstr, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document doc;

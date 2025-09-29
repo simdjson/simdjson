@@ -485,7 +485,7 @@ namespace object_tests {
         i++;
       }
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       i = 0;
