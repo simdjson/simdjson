@@ -348,8 +348,8 @@ namespace builder_tests {
       ondemand::object obj;
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
-      // Extract only 'make' and 'model'
-      ASSERT_SUCCESS( (obj.extract_into<"make","model">(car)) );
+            // Extract only 'make' and 'model'
+      ASSERT_SUCCESS(obj.extract_into<"make","model">(car));
 
       ASSERT_EQUAL(car.make, "Toyota");
       ASSERT_EQUAL(car.model, "Camry");
@@ -359,7 +359,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
       // Extract only 'make' and 'model'
-      ASSERT_SUCCESS( (doc.extract_into<"make", "model">(car)) );
+      ASSERT_SUCCESS(doc.extract_into<"make", "model">(car));
 
       ASSERT_EQUAL(car.make, "Toyota");
       ASSERT_EQUAL(car.model, "Camry");
@@ -385,7 +385,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract including optional 'color'
-      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
+      ASSERT_SUCCESS(obj.extract_into<"make", "model", "color">(car));
 
       ASSERT_EQUAL(car.make, "Honda");
       ASSERT_EQUAL(car.model, "Accord");
@@ -410,7 +410,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Try to extract including optional 'color' which doesn't exist
-      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
+      ASSERT_SUCCESS(obj.extract_into<"make", "model", "color">(car));
 
       ASSERT_EQUAL(car.make, "Ford");
       ASSERT_EQUAL(car.model, "F-150");
@@ -440,8 +440,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(obj_result);
 
       // Extract including price field with custom deserializer
-      auto error = obj.extract_into<"name", "price">(product);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS(obj.extract_into<"name", "price">(product));
 
       ASSERT_EQUAL(product.name, "Laptop");
       // Verify custom deserializer was invoked: EUR should be converted to USD
@@ -476,7 +475,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract only length (with custom deserializer), skip weight
-      ASSERT_SUCCESS( (obj.extract_into<"id", "length">(pkg)) );
+      ASSERT_SUCCESS(obj.extract_into<"id", "length">(pkg));
 
       ASSERT_EQUAL(pkg.id, "PKG123");
       // Verify custom deserializer was invoked: inches should be converted to cm
@@ -507,10 +506,8 @@ namespace builder_tests {
       Car car{"Tesla", "Model 3", 2023, 42000.0, true};
 
       // Extract only make and model
-      auto json_result = extract_from<"make", "model">(car);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"make", "model">(car).get(json)));
 
       // Parse back to verify correctness
       auto padded = pad(json);
@@ -547,10 +544,8 @@ namespace builder_tests {
       Car car{"Ford", "F-150", 2024, 55000.0, false};
 
       // Extract year and price
-      auto json_result = extract_from<"year", "price">(car);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"year", "price">(car).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -581,10 +576,8 @@ namespace builder_tests {
       Person person{"John Doe", 30, "john@example.com", std::nullopt};
 
       // Extract name and email
-      auto json_result = extract_from<"name", "email">(person);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "email">(person).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -611,10 +604,8 @@ namespace builder_tests {
       Person person{"Jane Smith", 25, "jane@example.com", "555-1234"};
 
       // Extract name, age, and phone
-      auto json_result = extract_from<"name", "age", "phone">(person);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "age", "phone">(person).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
@@ -648,10 +639,8 @@ namespace builder_tests {
       Product original{"P123", "Widget", 19.99, 100};
 
       // Extract specific fields to JSON
-      auto json_result = extract_from<"id", "name", "price">(original);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"id", "name", "price">(original).get(json)));
 
       // Parse and extract back
       Product restored{"", "", 0.0, 0};
@@ -689,10 +678,8 @@ namespace builder_tests {
       Company company{"TechCorp", {"123 Main St", "San Francisco", "94105"}, 500};
 
       // Extract name and employees only
-      auto json_result = extract_from<"name", "employees">(company);
-      ASSERT_SUCCESS(json_result.error());
-
-      std::string json = json_result.value();
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "employees">(company).get(json)));
 
       auto padded = pad(json);
       ondemand::parser parser;
