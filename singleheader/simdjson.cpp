@@ -1,4 +1,4 @@
-/* auto-generated on 2025-09-29 03:23:02 -0700. version 4.0.6 Do not edit! */
+/* auto-generated on 2025-09-29 23:16:33 +0800. version 4.0.6 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -41776,7 +41776,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
   simd8<bool> is_backslash = (v == '\\');
   simd8<bool> is_control = (v < 32);
   return {
-    (is_backslash | is_quote | is_control).to_bitmask()
+    static_cast<uint64_t>((is_backslash | is_quote | is_control).to_bitmask())
   };
 }
 
@@ -44395,7 +44395,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
   simd8<bool> is_backslash = (v == '\\');
   simd8<bool> is_control = (v < 32);
   return {
-    (is_backslash | is_quote | is_control).to_bitmask()
+    static_cast<uint64_t>((is_backslash | is_quote | is_control).to_bitmask())
   };
 }
 
