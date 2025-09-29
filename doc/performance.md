@@ -253,7 +253,7 @@ long page_size() {
 // page boundary.
 bool need_allocation(const char *buf, size_t len) {
   return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
-    + simdjson::SIMDJSON_PADDING > static_cast<uintptr_t>(page_size()));
+    + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size()));
 }
 
 simdjson::padded_string_view
