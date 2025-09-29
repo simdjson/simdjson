@@ -344,7 +344,7 @@ simdjson_inline uint8_t *&json_iterator::string_buf_loc() noexcept {
   return _string_buf_loc;
 }
 
-simdjson_inline error_code json_iterator::report_error(error_code _error, const char *message) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::report_error(error_code _error, const char *message) noexcept {
   SIMDJSON_ASSUME(_error != SUCCESS && _error != UNINITIALIZED && _error != INCORRECT_TYPE && _error != NO_SUCH_FIELD);
   logger::log_error(*this, message);
   error = _error;
@@ -388,7 +388,7 @@ simdjson_inline void json_iterator::reenter_child(token_position position, depth
   _depth = child_depth;
 }
 
-simdjson_inline error_code json_iterator::consume_character(char c) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::consume_character(char c) noexcept {
   if (*peek() == c) {
     return_current_and_advance();
     return SUCCESS;
@@ -411,7 +411,7 @@ simdjson_inline void json_iterator::set_start_position(depth_t depth, token_posi
 #endif
 
 
-simdjson_inline error_code json_iterator::optional_error(error_code _error, const char *message) noexcept {
+simdjson_warn_unused simdjson_inline error_code json_iterator::optional_error(error_code _error, const char *message) noexcept {
   SIMDJSON_ASSUME(_error == INCORRECT_TYPE || _error == NO_SUCH_FIELD);
   logger::log_error(*this, message);
   return _error;

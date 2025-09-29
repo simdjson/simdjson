@@ -21,26 +21,21 @@ namespace builder_tests {
     };
 
     EnumStruct test{Color::Red, 42};
-
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     // Enum should be serialized as string (Red)
     ASSERT_TRUE(json.find("\"color\":\"Red\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"value\":42") != std::string::npos);
 
     // Test different enum values
     test.color = Color::Green;
-    auto result2 = builder::to_json_string(test);
-    ASSERT_SUCCESS(result2);
-    std::string json2 = result2.value();
+    std::string json2;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json2));
     ASSERT_TRUE(json2.find("\"color\":\"Green\"") != std::string::npos);
 
     test.color = Color::Blue;
-    auto result3 = builder::to_json_string(test);
-    ASSERT_SUCCESS(result3);
-    std::string json3 = result3.value();
+    std::string json3;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json3));
     ASSERT_TRUE(json3.find("\"color\":\"Blue\"") != std::string::npos);
 #endif
     TEST_SUCCEED();
@@ -61,41 +56,37 @@ namespace builder_tests {
     };
 
     // Test deserialization of different enum values with string representation
-    std::string json1 = "{\"status\":\"Active\",\"name\":\"test1\"}";
+    auto json1 = R"({"status":"Active","name":"test1"})"_padded;
     ondemand::parser parser1;
-    auto doc_result1 = parser1.iterate(pad(json1));
-    ASSERT_SUCCESS(doc_result1);
+    ondemand::document doc_result1;
+    ASSERT_SUCCESS(parser1.iterate(json1).get(doc_result1));
+    StatusStruct deserialized1;
+    ASSERT_SUCCESS(doc_result1.get<StatusStruct>().get(deserialized1));
 
-    auto get_result1 = doc_result1.value().get<StatusStruct>();
-    ASSERT_SUCCESS(get_result1);
-
-    StatusStruct deserialized1 = std::move(get_result1.value());
     ASSERT_TRUE(deserialized1.status == Status::Active);
     ASSERT_EQUAL(deserialized1.name, "test1");
 
     // Test Status::Inactive
-    std::string json2 = "{\"status\":\"Inactive\",\"name\":\"test2\"}";
+    auto json2 = R"({"status":"Inactive","name":"test2"})"_padded;
     ondemand::parser parser2;
-    auto doc_result2 = parser2.iterate(pad(json2));
-    ASSERT_SUCCESS(doc_result2);
+    ondemand::document doc_result2;
+    ASSERT_SUCCESS(parser2.iterate(json2).get(doc_result2));
 
-    auto get_result2 = doc_result2.value().get<StatusStruct>();
-    ASSERT_SUCCESS(get_result2);
+    StatusStruct deserialized2;
+    ASSERT_SUCCESS(doc_result2.get<StatusStruct>().get(deserialized2));
 
-    StatusStruct deserialized2 = std::move(get_result2.value());
     ASSERT_TRUE(deserialized2.status == Status::Inactive);
     ASSERT_EQUAL(deserialized2.name, "test2");
 
     // Test Status::Pending
     std::string json3 = "{\"status\":\"Pending\",\"name\":\"test3\"}";
     ondemand::parser parser3;
-    auto doc_result3 = parser3.iterate(pad(json3));
-    ASSERT_SUCCESS(doc_result3);
+    ondemand::document doc_result3;
+    ASSERT_SUCCESS(parser3.iterate(pad(json3)).get(doc_result3));
 
-    auto get_result3 = doc_result3.value().get<StatusStruct>();
-    ASSERT_SUCCESS(get_result3);
+    StatusStruct deserialized3;
+    ASSERT_SUCCESS(doc_result3.get<StatusStruct>().get(deserialized3));
 
-    StatusStruct deserialized3 = std::move(get_result3.value());
     ASSERT_TRUE(deserialized3.status == Status::Pending);
     ASSERT_EQUAL(deserialized3.name, "test3");
 #endif
@@ -121,10 +112,8 @@ namespace builder_tests {
     Task original{Priority::High, "Important task", 123};
 
     // Serialize
-    auto serialize_result = builder::to_json_string(original);
-    ASSERT_SUCCESS(serialize_result);
-
-    std::string json = serialize_result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(original).get(json));
     ASSERT_TRUE(json.find("\"priority\":\"High\"") != std::string::npos); // High as string
     ASSERT_TRUE(json.find("\"description\":\"Important task\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"id\":123") != std::string::npos);
@@ -132,13 +121,12 @@ namespace builder_tests {
     // Deserialize
     ondemand::parser parser;
     std::cout << json << std::endl;
-    auto doc_result = parser.iterate(pad(json));
-    ASSERT_SUCCESS(doc_result);
+    ondemand::document doc_result;
+    ASSERT_SUCCESS(parser.iterate(pad(json)).get(doc_result));
 
-    auto get_result = doc_result.value().get<Task>();
-    ASSERT_SUCCESS(get_result);
+    Task deserialized;
+    ASSERT_SUCCESS(doc_result.get<Task>().get(deserialized));
 
-    Task deserialized = std::move(get_result.value());
     ASSERT_TRUE(deserialized.priority == Priority::High);
     ASSERT_EQUAL(deserialized.description, "Important task");
     ASSERT_EQUAL(deserialized.id, 123);
@@ -162,22 +150,18 @@ namespace builder_tests {
 
     Response test{ErrorCode::NotFound, "Resource not found"};
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"error\":\"NotFound\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"message\":\"Resource not found\"") != std::string::npos);
 
     // Test round-trip
     ondemand::parser parser;
-    auto doc_result = parser.iterate(pad(json));
-    ASSERT_SUCCESS(doc_result);
+    ondemand::document doc_result;
+    ASSERT_SUCCESS(parser.iterate(pad(json)).get(doc_result));
+    Response deserialized;
+    ASSERT_SUCCESS(doc_result.get<Response>().get(deserialized));
 
-    auto get_result = doc_result.value().get<Response>();
-    ASSERT_SUCCESS(get_result);
-
-    Response deserialized = std::move(get_result.value());
     ASSERT_TRUE(deserialized.error == ErrorCode::NotFound);
     ASSERT_EQUAL(deserialized.message, "Resource not found");
 #endif
@@ -220,10 +204,8 @@ namespace builder_tests {
 
     Date test{Day::Friday, Month::July, 2024};
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"day\":\"Friday\"") != std::string::npos);      // Friday as string
     ASSERT_TRUE(json.find("\"month\":\"July\"") != std::string::npos);    // July as string
     ASSERT_TRUE(json.find("\"year\":2024") != std::string::npos);
@@ -232,11 +214,8 @@ namespace builder_tests {
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-
-    auto get_result = doc_result.value().get<Date>();
-    ASSERT_SUCCESS(get_result);
-
-    Date deserialized = std::move(get_result.value());
+    Date deserialized;
+    ASSERT_SUCCESS(doc_result.get<Date>().get(deserialized));
     ASSERT_TRUE(deserialized.day == Day::Friday);
     ASSERT_TRUE(deserialized.month == Month::July);
     ASSERT_EQUAL(deserialized.year, 2024);

@@ -29,7 +29,7 @@ private:
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block_buf, buf_block_reader<STEP_SIZE> &reader) noexcept;
   simdjson_inline void next(const simd::simd8x64<uint8_t>& in, const json_block& block);
-  simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
+  simdjson_warn_unused simdjson_inline error_code finish(uint8_t *dst_start, size_t &dst_len);
   json_scanner scanner{};
   uint8_t *dst;
 };
@@ -39,7 +39,7 @@ simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, cons
   dst += in.compress(mask, dst);
 }
 
-simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
+simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
   error_code error = scanner.finish();
   if (error) { dst_len = 0; return error; }
   dst_len = dst - dst_start;

@@ -104,10 +104,9 @@ namespace builder_tests {
 
     PrimitiveTypes test{true, 'X', 42, 3.14159, 2.71f};
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
 
-    std::string json = result.value();
     ASSERT_TRUE(json.find("\"bool_val\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"char_val\":\"X\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"int_val\":42") != std::string::npos);
@@ -118,10 +117,9 @@ namespace builder_tests {
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
 
-    auto get_result = doc_result.value().get<PrimitiveTypes>();
-    ASSERT_SUCCESS(get_result);
+    PrimitiveTypes deserialized;
+    ASSERT_SUCCESS(doc_result.get<PrimitiveTypes>().get(deserialized));
 
-    PrimitiveTypes deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.bool_val, test.bool_val);
     ASSERT_EQUAL(deserialized.char_val, test.char_val);
     ASSERT_EQUAL(deserialized.int_val, test.int_val);
@@ -139,11 +137,9 @@ namespace builder_tests {
     };
 
     StringTypes test{"hello world", "test_view"};
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
     ASSERT_TRUE(json.find("\"string_val\":\"hello world\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_view_val\":\"test_view\"") != std::string::npos);
 
@@ -151,11 +147,9 @@ namespace builder_tests {
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
+    StringTypes deserialized;
+    ASSERT_SUCCESS(doc_result.get<StringTypes>().get(deserialized));
 
-    auto get_result = doc_result.value().get<StringTypes>();
-    ASSERT_SUCCESS(get_result);
-
-    StringTypes deserialized = std::move(get_result.value());
     ASSERT_EQUAL(deserialized.string_val, test.string_val);
 #endif
     TEST_SUCCEED();
@@ -177,10 +171,8 @@ namespace builder_tests {
     test.opt_int_null = std::nullopt;
     test.opt_string_null = std::nullopt;
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"opt_int_with_value\":42") != std::string::npos);
     ASSERT_TRUE(json.find("\"opt_string_with_value\":\"optional_test\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"opt_int_null\":null") != std::string::npos);
@@ -191,10 +183,9 @@ namespace builder_tests {
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
 
-    auto get_result = doc_result.value().get<OptionalTypes>();
-    ASSERT_SUCCESS(get_result);
+    OptionalTypes deserialized;
+    ASSERT_SUCCESS(doc_result.get<OptionalTypes>().get(deserialized));
 
-    OptionalTypes deserialized = std::move(get_result.value());
     ASSERT_TRUE(deserialized.opt_int_with_value.has_value());
     ASSERT_EQUAL(*deserialized.opt_int_with_value, 42);
     ASSERT_TRUE(deserialized.opt_string_with_value.has_value());
@@ -223,10 +214,8 @@ namespace builder_tests {
     test.unique_int_null = nullptr;
     test.shared_string_null = nullptr;
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"unique_int_with_value\":123") != std::string::npos);
     ASSERT_TRUE(json.find("\"shared_string_with_value\":\"shared_test\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"unique_bool_with_value\":true") != std::string::npos);
@@ -236,12 +225,9 @@ namespace builder_tests {
     // Test round-trip
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
-    ASSERT_SUCCESS(doc_result);
 
-    auto get_result = doc_result.value().get<SmartPointerTypes>();
-    ASSERT_SUCCESS(get_result);
-
-    SmartPointerTypes deserialized = std::move(get_result.value());
+    SmartPointerTypes deserialized;
+    ASSERT_SUCCESS(doc_result.get<SmartPointerTypes>().get(deserialized));
     ASSERT_TRUE(deserialized.unique_int_with_value != nullptr);
     ASSERT_EQUAL(*deserialized.unique_int_with_value, 123);
     ASSERT_TRUE(deserialized.shared_string_with_value != nullptr);
@@ -272,7 +258,8 @@ namespace builder_tests {
     auto result = builder::to_json_string(test);
     ASSERT_SUCCESS(result);
 
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"int_vector\":[1,2,3,4,5]") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_set\":[") != std::string::npos);
     ASSERT_TRUE(json.find("\"string_map\":{") != std::string::npos);
@@ -281,11 +268,8 @@ namespace builder_tests {
     ondemand::parser parser;
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
-
-    auto get_result = doc_result.value().get<ContainerTypes>();
-    ASSERT_SUCCESS(get_result);
-
-    ContainerTypes deserialized = std::move(get_result.value());
+    ContainerTypes deserialized;
+    ASSERT_SUCCESS(doc_result.get<ContainerTypes>().get(deserialized));
     ASSERT_EQUAL(deserialized.int_vector.size(), 5);
     ASSERT_EQUAL(deserialized.string_set.size(), 3);
     ASSERT_EQUAL(deserialized.string_map.size(), 3);
@@ -302,22 +286,19 @@ namespace builder_tests {
     list_test.int_list = {10, 20, 30, 40, 50};
     list_test.string_list = {"first", "second", "third"};
 
-    auto list_result = builder::to_json_string(list_test);
-    ASSERT_SUCCESS(list_result);
+    std::string list_result;
+    ASSERT_SUCCESS( builder::to_json_string(list_test).get(list_result));
 
-    std::string list_json = list_result.value();
     // Check that list serialization produces correct JSON array format
-    ASSERT_TRUE(list_json.find("\"int_list\":[10,20,30,40,50]") != std::string::npos);
-    ASSERT_TRUE(list_json.find("\"string_list\":[\"first\",\"second\",\"third\"]") != std::string::npos);
+    ASSERT_TRUE(list_result.find("\"int_list\":[10,20,30,40,50]") != std::string::npos);
+    ASSERT_TRUE(list_result.find("\"string_list\":[\"first\",\"second\",\"third\"]") != std::string::npos);
 
     // Test list round-trip
-    auto list_doc_result = parser.iterate(pad(list_json));
+    auto list_doc_result = parser.iterate(pad(list_result));
     ASSERT_SUCCESS(list_doc_result);
 
-    auto list_get_result = list_doc_result.value().get<ListContainer>();
-    ASSERT_SUCCESS(list_get_result);
-
-    ListContainer list_deserialized = std::move(list_get_result.value());
+    ListContainer list_deserialized;
+    ASSERT_SUCCESS(list_doc_result.get<ListContainer>().get(list_deserialized));
     ASSERT_EQUAL(list_deserialized.int_list.size(), 5);
     ASSERT_EQUAL(list_deserialized.string_list.size(), 3);
 
@@ -350,7 +331,7 @@ namespace builder_tests {
 
     // Test 1: Extract only specific fields
     {
-      std::string json_str = R"({
+      auto padded = R"({
         "make": "Toyota",
         "model": "Camry",
         "year": 2024,
@@ -358,20 +339,27 @@ namespace builder_tests {
         "color": "Blue",
         "engine": "V6",
         "transmission": "Automatic"
-      })";
+      })"_padded;
 
-      auto padded = pad(json_str);
       Car car{};
-      auto doc = parser.iterate(padded);
-      ASSERT_SUCCESS(doc);
+      ondemand::document doc;
+      ASSERT_SUCCESS( parser.iterate(padded).get(doc) );
 
       ondemand::object obj;
-      auto obj_result = doc.get_object().get(obj);
-      ASSERT_SUCCESS(obj_result);
+      ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract only 'make' and 'model'
-      auto error = obj.extract_into<"make", "model">(car);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS( (obj.extract_into<"make","model">(car)) );
+
+      ASSERT_EQUAL(car.make, "Toyota");
+      ASSERT_EQUAL(car.model, "Camry");
+      ASSERT_EQUAL(car.year, 0);  // Not extracted
+      ASSERT_EQUAL(car.price, 0);  // Not extracted
+
+      ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+
+      // Extract only 'make' and 'model'
+      ASSERT_SUCCESS( (doc.extract_into<"make", "model">(car)) );
 
       ASSERT_EQUAL(car.make, "Toyota");
       ASSERT_EQUAL(car.model, "Camry");
@@ -381,26 +369,23 @@ namespace builder_tests {
 
     // Test 2: Extract with optional field
     {
-      std::string json_str = R"({
+      auto padded = R"({
         "make": "Honda",
         "model": "Accord",
         "year": 2023,
         "price": 26999.99,
         "color": "Red"
-      })";
+      })"_padded;
 
-      auto padded = pad(json_str);
       Car car{};
-      auto doc = parser.iterate(padded);
-      ASSERT_SUCCESS(doc);
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
       ondemand::object obj;
-      auto obj_result = doc.get_object().get(obj);
-      ASSERT_SUCCESS(obj_result);
+      ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract including optional 'color'
-      auto error = obj.extract_into<"make", "model", "color">(car);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
 
       ASSERT_EQUAL(car.make, "Honda");
       ASSERT_EQUAL(car.model, "Accord");
@@ -410,25 +395,22 @@ namespace builder_tests {
 
     // Test 3: Extract with missing optional field
     {
-      std::string json_str = R"({
+      auto padded = R"({
         "make": "Ford",
         "model": "F-150",
         "year": 2024,
         "price": 35999.99
-      })";
+      })"_padded;
 
-      auto padded = pad(json_str);
       Car car{};
-      auto doc = parser.iterate(padded);
-      ASSERT_SUCCESS(doc);
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
       ondemand::object obj;
-      auto obj_result = doc.get_object().get(obj);
-      ASSERT_SUCCESS(obj_result);
+      ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Try to extract including optional 'color' which doesn't exist
-      auto error = obj.extract_into<"make", "model", "color">(car);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
 
       ASSERT_EQUAL(car.make, "Ford");
       ASSERT_EQUAL(car.model, "F-150");
@@ -439,7 +421,7 @@ namespace builder_tests {
     {
       // Test using the Price struct defined at namespace level
 
-      std::string json_str = R"({
+      auto padded = R"({
         "name": "Laptop",
         "price": {
           "amount": 1000,
@@ -447,9 +429,8 @@ namespace builder_tests {
         },
         "stock": 15,
         "description": "High-end gaming laptop"
-      })";
+      })"_padded;
 
-      auto padded = pad(json_str);
       Product product{};
       auto doc = parser.iterate(padded);
       ASSERT_SUCCESS(doc);
@@ -474,7 +455,7 @@ namespace builder_tests {
     {
       // Test using the Dimensions struct defined at namespace level
 
-      std::string json_str = R"({
+      auto padded = R"({
         "id": "PKG123",
         "weight": {
           "value": 10,
@@ -485,20 +466,17 @@ namespace builder_tests {
           "unit": "inches"
         },
         "fragile": true
-      })";
+      })"_padded;
 
-      auto padded = pad(json_str);
       Package pkg{};
-      auto doc = parser.iterate(padded);
-      ASSERT_SUCCESS(doc);
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
       ondemand::object obj;
-      auto obj_result = doc.get_object().get(obj);
-      ASSERT_SUCCESS(obj_result);
+      ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract only length (with custom deserializer), skip weight
-      auto error = obj.extract_into<"id", "length">(pkg);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS( (obj.extract_into<"id", "length">(pkg)) );
 
       ASSERT_EQUAL(pkg.id, "PKG123");
       // Verify custom deserializer was invoked: inches should be converted to cm
