@@ -348,8 +348,8 @@ namespace builder_tests {
       ondemand::object obj;
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
-      // Extract only 'make' and 'model'
-      ASSERT_SUCCESS( (obj.extract_into<"make","model">(car)) );
+            // Extract only 'make' and 'model'
+      ASSERT_SUCCESS(obj.extract_into<"make","model">(car));
 
       ASSERT_EQUAL(car.make, "Toyota");
       ASSERT_EQUAL(car.model, "Camry");
@@ -359,7 +359,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
       // Extract only 'make' and 'model'
-      ASSERT_SUCCESS( (doc.extract_into<"make", "model">(car)) );
+      ASSERT_SUCCESS(doc.extract_into<"make", "model">(car));
 
       ASSERT_EQUAL(car.make, "Toyota");
       ASSERT_EQUAL(car.model, "Camry");
@@ -385,7 +385,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract including optional 'color'
-      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
+      ASSERT_SUCCESS(obj.extract_into<"make", "model", "color">(car));
 
       ASSERT_EQUAL(car.make, "Honda");
       ASSERT_EQUAL(car.model, "Accord");
@@ -410,7 +410,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Try to extract including optional 'color' which doesn't exist
-      ASSERT_SUCCESS( (obj.extract_into<"make", "model", "color">(car)) );
+      ASSERT_SUCCESS(obj.extract_into<"make", "model", "color">(car));
 
       ASSERT_EQUAL(car.make, "Ford");
       ASSERT_EQUAL(car.model, "F-150");
@@ -440,8 +440,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(obj_result);
 
       // Extract including price field with custom deserializer
-      auto error = obj.extract_into<"name", "price">(product);
-      ASSERT_SUCCESS(error);
+      ASSERT_SUCCESS(obj.extract_into<"name", "price">(product));
 
       ASSERT_EQUAL(product.name, "Laptop");
       // Verify custom deserializer was invoked: EUR should be converted to USD
@@ -476,7 +475,7 @@ namespace builder_tests {
       ASSERT_SUCCESS(doc.get_object().get(obj));
 
       // Extract only length (with custom deserializer), skip weight
-      ASSERT_SUCCESS( (obj.extract_into<"id", "length">(pkg)) );
+      ASSERT_SUCCESS(obj.extract_into<"id", "length">(pkg));
 
       ASSERT_EQUAL(pkg.id, "PKG123");
       // Verify custom deserializer was invoked: inches should be converted to cm
@@ -491,13 +490,225 @@ namespace builder_tests {
   }
 
 
+  bool test_extract_from() {
+    TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+    // Test 1: Extract specific fields from Car struct
+    {
+      struct Car {
+        std::string make;
+        std::string model;
+        int year;
+        double price;
+        bool electric;
+      };
+
+      Car car{"Tesla", "Model 3", 2023, 42000.0, true};
+
+      // Extract only make and model
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"make", "model">(car).get(json)));
+
+      // Parse back to verify correctness
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      std::string_view make;
+      std::string_view model;
+      ASSERT_SUCCESS(doc["make"].get(make));
+      ASSERT_SUCCESS(doc["model"].get(model));
+      ASSERT_EQUAL(make, "Tesla");
+      ASSERT_EQUAL(model, "Model 3");
+
+      // Verify excluded fields are not present
+      auto year_result = doc["year"];
+      ASSERT_ERROR(year_result.error(), NO_SUCH_FIELD);
+      auto price_result = doc["price"];
+      ASSERT_ERROR(price_result.error(), NO_SUCH_FIELD);
+      auto electric_result = doc["electric"];
+      ASSERT_ERROR(electric_result.error(), NO_SUCH_FIELD);
+    }
+
+    // Test 2: Extract different field combination
+    {
+      struct Car {
+        std::string make;
+        std::string model;
+        int year;
+        double price;
+        bool electric;
+      };
+
+      Car car{"Ford", "F-150", 2024, 55000.0, false};
+
+      // Extract year and price
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"year", "price">(car).get(json)));
+
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      int64_t year;
+      double price;
+      ASSERT_SUCCESS(doc["year"].get(year));
+      ASSERT_SUCCESS(doc["price"].get(price));
+      ASSERT_EQUAL(year, 2024);
+      ASSERT_EQUAL(price, 55000.0);
+
+      // Verify excluded fields
+      auto make_result = doc["make"];
+      ASSERT_ERROR(make_result.error(), NO_SUCH_FIELD);
+    }
+
+    // Test 3: Extract from struct with optional fields
+    {
+      struct Person {
+        std::string name;
+        int age;
+        std::optional<std::string> email;
+        std::optional<std::string> phone;
+      };
+
+      Person person{"John Doe", 30, "john@example.com", std::nullopt};
+
+      // Extract name and email
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "email">(person).get(json)));
+
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      std::string_view name;
+      std::string_view email;
+      ASSERT_SUCCESS(doc["name"].get(name));
+      ASSERT_SUCCESS(doc["email"].get(email));
+      ASSERT_EQUAL(name, "John Doe");
+      ASSERT_EQUAL(email, "john@example.com");
+    }
+
+    // Test 4: Extract with optional that has value
+    {
+      struct Person {
+        std::string name;
+        int age;
+        std::optional<std::string> email;
+        std::optional<std::string> phone;
+      };
+
+      Person person{"Jane Smith", 25, "jane@example.com", "555-1234"};
+
+      // Extract name, age, and phone
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "age", "phone">(person).get(json)));
+
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      std::string_view name;
+      int64_t age;
+      std::string_view phone;
+      ASSERT_SUCCESS(doc["name"].get(name));
+      ASSERT_SUCCESS(doc["age"].get(age));
+      ASSERT_SUCCESS(doc["phone"].get(phone));
+      ASSERT_EQUAL(name, "Jane Smith");
+      ASSERT_EQUAL(age, 25);
+      ASSERT_EQUAL(phone, "555-1234");
+
+      // Email should not be present
+      auto email_result = doc["email"];
+      ASSERT_ERROR(email_result.error(), NO_SUCH_FIELD);
+    }
+
+    // Test 5: Round-trip test - serialize with extract_from, deserialize with extract_into
+    {
+      struct Product {
+        std::string id;
+        std::string name;
+        double price;
+        int stock;
+      };
+
+      Product original{"P123", "Widget", 19.99, 100};
+
+      // Extract specific fields to JSON
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"id", "name", "price">(original).get(json)));
+
+      // Parse and extract back
+      Product restored{"", "", 0.0, 0};
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc.get_object().get(obj));
+      auto extract_result = obj.extract_into<"id", "name", "price">(restored);
+      ASSERT_SUCCESS(extract_result);
+
+      // Verify fields match
+      ASSERT_EQUAL(restored.id, original.id);
+      ASSERT_EQUAL(restored.name, original.name);
+      ASSERT_EQUAL(restored.price, original.price);
+      ASSERT_EQUAL(restored.stock, 0);  // Stock should remain at default
+    }
+
+    // Test 6: Extract from nested structs
+    {
+      struct Address {
+        std::string street;
+        std::string city;
+        std::string zip;
+      };
+
+      struct Company {
+        std::string name;
+        Address headquarters;
+        int employees;
+      };
+
+      Company company{"TechCorp", {"123 Main St", "San Francisco", "94105"}, 500};
+
+      // Extract name and employees only
+      std::string json;
+      ASSERT_SUCCESS((extract_from<"name", "employees">(company).get(json)));
+
+      auto padded = pad(json);
+      ondemand::parser parser;
+      auto doc = parser.iterate(padded);
+      ASSERT_SUCCESS(doc);
+
+      std::string_view name;
+      int64_t employees;
+      ASSERT_SUCCESS(doc["name"].get(name));
+      ASSERT_SUCCESS(doc["employees"].get(employees));
+      ASSERT_EQUAL(name, "TechCorp");
+      ASSERT_EQUAL(employees, 500);
+
+      // headquarters should not be present
+      auto hq_result = doc["headquarters"];
+      ASSERT_ERROR(hq_result.error(), NO_SUCH_FIELD);
+    }
+#endif
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return test_primitive_types() &&
            test_string_types() &&
            test_optional_types() &&
            test_smart_pointer_types() &&
            test_container_types() &&
-           test_extract_into();
+           test_extract_into() &&
+           test_extract_from();
   }
 
 } // namespace builder_tests
