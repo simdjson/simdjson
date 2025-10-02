@@ -1,12 +1,12 @@
 /**
- * Compile-time JSON Path accessor using C++26 reflection
- * This file provides functionality to pre-compile JSON paths at compile time
- * and generate accessor code using reflection.
+ * Compile-time JSON Path and JSON Pointer accessors using C++26 reflection
+ * This file provides functionality to pre-compile JSON paths and pointers at compile time
+ * and generate optimized accessor code using reflection.
  */
-#ifndef SIMDJSON_GENERIC_ONDEMAND_JSON_PATH_ACCESSOR_H
+#ifndef SIMDJSON_GENERIC_ONDEMAND_COMPILE_TIME_ACCESSORS_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_ONDEMAND_JSON_PATH_ACCESSOR_H
+#define SIMDJSON_GENERIC_ONDEMAND_COMPILE_TIME_ACCESSORS_H
 
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -550,12 +550,214 @@ inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_
   return accessor::access(doc_or_val);
 }
 
+// ============================================================================
+// JSON Pointer Compile-Time Support (RFC 6901)
+// ============================================================================
+
+// JSON Pointer parser - simpler syntax than JSON Path
+// Format: /field/0/nested  (slash-separated, numeric for arrays)
+template<constevalutil::fixed_string Pointer>
+struct json_pointer_parser {
+  static constexpr std::string_view pointer_str = Pointer.view();
+
+  // Unescape JSON Pointer token: ~0 -> ~, ~1 -> /
+  static consteval void unescape_token(std::string_view src, char* dest, std::size_t& out_len) {
+    out_len = 0;
+    for (std::size_t i = 0; i < src.size(); ++i) {
+      if (src[i] == '~' && i + 1 < src.size()) {
+        if (src[i + 1] == '0') {
+          dest[out_len++] = '~';
+          ++i;
+        } else if (src[i + 1] == '1') {
+          dest[out_len++] = '/';
+          ++i;
+        } else {
+          dest[out_len++] = src[i];
+        }
+      } else {
+        dest[out_len++] = src[i];
+      }
+    }
+  }
+
+  // Check if token is numeric (array index)
+  static consteval bool is_numeric(std::string_view token) {
+    if (token.empty()) return false;
+    if (token[0] == '0' && token.size() > 1) return false; // Leading zeros not allowed
+    for (char c : token) {
+      if (c < '0' || c > '9') return false;
+    }
+    return true;
+  }
+
+  // Parse numeric token to index
+  static consteval std::size_t parse_index(std::string_view token) {
+    std::size_t result = 0;
+    for (char c : token) {
+      result = result * 10 + (c - '0');
+    }
+    return result;
+  }
+
+  // Count number of tokens (path segments)
+  static consteval std::size_t count_tokens() {
+    if (pointer_str.empty() || pointer_str == "/") return 0;
+
+    std::size_t count = 0;
+    std::size_t pos = pointer_str[0] == '/' ? 1 : 0;
+
+    while (pos < pointer_str.size()) {
+      ++count;
+      std::size_t next_slash = pointer_str.find('/', pos);
+      if (next_slash == std::string_view::npos) break;
+      pos = next_slash + 1;
+    }
+
+    return count;
+  }
+
+  // Get the Nth token at compile time
+  static consteval std::string_view get_token(std::size_t token_index) {
+    std::size_t pos = pointer_str[0] == '/' ? 1 : 0;
+    std::size_t current_token = 0;
+
+    while (current_token < token_index) {
+      std::size_t next_slash = pointer_str.find('/', pos);
+      pos = next_slash + 1;
+      ++current_token;
+    }
+
+    std::size_t token_end = pointer_str.find('/', pos);
+    if (token_end == std::string_view::npos) token_end = pointer_str.size();
+
+    return pointer_str.substr(pos, token_end - pos);
+  }
+};
+
+// JSON Pointer accessor - similar to path_accessor but for JSON Pointer syntax
+template<typename T, constevalutil::fixed_string Pointer>
+struct pointer_accessor {
+  using parser = json_pointer_parser<Pointer>;
+  static constexpr std::string_view pointer_view = Pointer.view();
+  static constexpr std::size_t token_count = parser::count_tokens();
+
+  // Validate JSON Pointer against struct definition
+  static consteval bool validate_pointer() {
+#if SIMDJSON_STATIC_REFLECTION
+    if constexpr (!std::is_class_v<T>) {
+      return true;
+    }
+
+    auto current_type = ^^T;
+    std::size_t pos = pointer_view[0] == '/' ? 1 : 0;
+
+    while (pos < pointer_view.size()) {
+      // Extract token up to next /
+      std::size_t token_end = pointer_view.find('/', pos);
+      if (token_end == std::string_view::npos) token_end = pointer_view.size();
+
+      std::string_view token = pointer_view.substr(pos, token_end - pos);
+
+      // Check if it's an array index
+      if (parser::is_numeric(token)) {
+        // Validate current type is array-like
+        if (!path_accessor<T, Pointer>::is_array_like_reflected(current_type)) {
+          return false;
+        }
+        current_type = path_accessor<T, Pointer>::get_element_type_reflected(current_type);
+      } else {
+        // Field access - validate member exists
+        bool found = false;
+        auto members = std::meta::nonstatic_data_members_of(
+          current_type, std::meta::access_context::unchecked()
+        );
+
+        for (auto mem : members) {
+          if (std::meta::identifier_of(mem) == token) {
+            current_type = std::meta::type_of(mem);
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) return false;
+      }
+
+      pos = token_end + 1;
+    }
+
+    return true;
+#endif
+    return false;
+  }
+
+  // Recursive accessor implementation
+  template<std::size_t TokenIndex>
+  static inline simdjson_result<value> access_impl(simdjson_result<value> current) noexcept {
+    if constexpr (TokenIndex >= token_count) {
+      return current;
+    } else {
+      // Get token at compile time
+      constexpr std::string_view token = parser::get_token(TokenIndex);
+
+      if constexpr (parser::is_numeric(token)) {
+        // Array index access
+        constexpr std::size_t index = parser::parse_index(token);
+        auto arr = current.get_array().value_unsafe();
+        auto next_value = arr.at(index);
+        return access_impl<TokenIndex + 1>(next_value);
+      } else {
+        // Field access
+        auto obj = current.get_object().value_unsafe();
+        auto next_value = obj.find_field_unordered(token);
+        return access_impl<TokenIndex + 1>(next_value);
+      }
+    }
+  }
+
+  // Main entry point
+  template<typename DocOrValue>
+  static inline simdjson_result<value> access(DocOrValue& doc_or_val) noexcept {
+    if constexpr (std::is_class_v<T>) {
+      constexpr bool pointer_valid = validate_pointer();
+      static_assert(pointer_valid, "JSON Pointer does not match struct definition");
+    }
+
+    if (pointer_view.empty() || pointer_view == "/") {
+      // Root pointer
+      if constexpr (requires { doc_or_val.get_value(); }) {
+        return doc_or_val.get_value();
+      } else {
+        return doc_or_val;
+      }
+    }
+
+    simdjson_result<value> current = doc_or_val.get_value();
+    return access_impl<0>(current);
+  }
+};
+
+// User-facing API: compile-time JSON Pointer accessor with validation
+// Example: at_pointer_compiled<User, "/name">(doc)
+template<typename T, constevalutil::fixed_string Pointer, typename DocOrValue>
+inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer_compiled(DocOrValue& doc_or_val) noexcept {
+  using accessor = pointer_accessor<T, Pointer>;
+  return accessor::access(doc_or_val);
+}
+
+// Convenience overload without type parameter (no validation)
+// Example: at_pointer_compiled<"/name">(doc)
+template<constevalutil::fixed_string Pointer, typename DocOrValue>
+inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer_compiled(DocOrValue& doc_or_val) noexcept {
+  using accessor = pointer_accessor<void, Pointer>;
+  return accessor::access(doc_or_val);
+}
+
 } // namespace json_path
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 #endif // SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
-#endif // SIMDJSON_GENERIC_ONDEMAND_JSON_PATH_ACCESSOR_H
-// Updated: Clean concept-based implementation
+#endif // SIMDJSON_GENERIC_ONDEMAND_COMPILE_TIME_ACCESSORS_H
 
