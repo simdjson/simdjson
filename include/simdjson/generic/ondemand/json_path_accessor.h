@@ -83,7 +83,7 @@ consteval auto make_index_step(std::size_t idx) {
 struct parse_result {
   bool success;
   std::size_t pos;
-  const char* error_msg;
+  std::string_view error_msg;
 };
 
 // Compile-time JSON path parser
