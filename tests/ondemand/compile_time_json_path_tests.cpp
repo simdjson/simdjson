@@ -4,9 +4,6 @@
 
 #if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 
-// json_path_accessor.h is already included via simdjson.h -> amalgamated.h
-// No need to include it again
-
 using namespace simdjson;
 
 namespace compile_time_json_path_tests {
