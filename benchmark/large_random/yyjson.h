@@ -47,18 +47,26 @@ struct yyjson_base {
 
 struct yyjson : yyjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
-    return yyjson_base::run(yyjson_read(json.data(), json.size(), 0), result);
+    yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
+    bool b = yyjson_base::run(doc, result);
+    yyjson_doc_free(doc);
+    return b;
   }
 };
 BENCHMARK_TEMPLATE(large_random, yyjson)->UseManualTime();
+
 #if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct yyjson_insitu : yyjson_base {
   bool run(simdjson::padded_string &json, std::vector<point> &result) {
-    return yyjson_base::run(yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0), result);
+    yyjson_doc *doc = yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0);
+    bool b = yyjson_base::run(doc, result);
+    yyjson_doc_free(doc);
+    return b;
   }
 };
 BENCHMARK_TEMPLATE(large_random, yyjson_insitu)->UseManualTime();
 #endif // SIMDJSON_COMPETITION_ONDEMAND_INSITU
+
 } // namespace large_random
 
 #endif // SIMDJSON_COMPETITION_YYJSON
