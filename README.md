@@ -69,7 +69,6 @@ If you are planning to use simdjson in a product, please work from one of our re
 
 
 
-[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
 
 Quick Start
 -----------
@@ -230,6 +229,13 @@ Contributing to simdjson
 
 Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing to simdjson, and
 [HACKING.md](HACKING.md) for information on source, building, and architecture/design.
+
+
+Stars
+------
+
+[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
+
 
 License
 -------
