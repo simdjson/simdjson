@@ -67,6 +67,10 @@ Real-world usage
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
+
+
+[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
+
 Quick Start
 -----------
 
