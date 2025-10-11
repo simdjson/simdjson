@@ -52,3 +52,7 @@
 #include "simdjson/generic/ondemand/json_string_builder-inl.h"
 #include "simdjson/generic/ondemand/json_builder.h"
 
+// Compile-time JSON parsing (C++26 P2996 reflection)
+#include "simdjson/generic/ondemand/compile_time_json.h"
+#include "simdjson/generic/ondemand/compile_time_json-inl.h"
+

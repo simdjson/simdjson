@@ -53,6 +53,7 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <std::size_t N>
 struct fixed_string {
+    constexpr fixed_string() : data{} {}  // Default constructor for buffers
     constexpr fixed_string(const char (&str)[N])  {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] = str[i];
