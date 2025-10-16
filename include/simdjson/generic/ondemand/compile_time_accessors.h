@@ -1,5 +1,5 @@
 /**
- * Compile-time JSON Path and JSON Pointer accessors using C++26 reflection
+ * Compile-time JSONPath and JSON Pointer accessors using C++26 reflection
  * This file provides functionality to pre-compile JSON paths and pointers at compile time
  * and generate optimized accessor code using reflection.
  */
@@ -19,29 +19,14 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
+/***
+ * JSONPath implementation for compile-time access
+ * RFC 9535 JSONPath: Query Expressions for JSON, https://www.rfc-editor.org/rfc/rfc9535
+ */
 namespace json_path {
 
 // Note: value type must be fully defined before this header is included
 // This is ensured by including this in amalgamated.h after value-inl.h
-
-using ::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value;
-
-// Concept: Indexable container that is not a string or associative container
-// Accepts: std::vector, std::array, std::deque (have operator[], value_type, not string_like)
-// Rejects: std::string (string_like), std::list (no operator[]), std::map (has key_type)
-template<typename Container>
-concept indexable_container = requires {
-  typename Container::value_type;
-  requires !concepts::string_like<Container>;
-  requires !requires { typename Container::key_type; };  // Reject maps/sets
-  requires requires(Container& c, std::size_t i) {
-    { c[i] } -> std::convertible_to<typename Container::value_type>;
-  };
-};
-
-// Variable template to use with std::meta::substitute
-template<typename Container>
-constexpr bool indexable_container_v = indexable_container<Container>;
 
 // Path step types
 enum class step_type {
@@ -49,7 +34,7 @@ enum class step_type {
   array_index   // [index]
 };
 
-// Represents a single step in a JSON path
+// Represents a single step in a JSONPath expression
 template<std::size_t N>
 struct path_step {
   step_type type;
@@ -79,14 +64,14 @@ consteval auto make_index_step(std::size_t idx) {
   return path_step<1>(step_type::array_index, "", idx);
 }
 
-// Parse state for compile-time JSON path parsing
+// Parse state for compile-time JSONPath parsing
 struct parse_result {
   bool success;
   std::size_t pos;
   std::string_view error_msg;
 };
 
-// Compile-time JSON path parser
+// Compile-time JSONPath parser
 // Supports subset: .field, ["field"], [index], nested combinations
 template<constevalutil::fixed_string Path>
 struct json_path_parser {
@@ -189,7 +174,7 @@ struct path_accessor {
     // Validate path at compile time if T is a struct
     if constexpr (std::is_class_v<T>) {
       constexpr bool path_valid = validate_path();
-      static_assert(path_valid, "JSON path does not match struct definition");
+      static_assert(path_valid, "JSONPath does not match struct definition");
     }
 
     // Parse the path at compile time to build access steps
@@ -300,47 +285,41 @@ private:
     }
   }
 
-private:
   // Helper: Check if a type has a member with given name using reflection
   template<typename Type>
   static consteval bool has_member(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
     constexpr auto members = std::meta::nonstatic_data_members_of(
       ^^Type, std::meta::access_context::unchecked()
     );
 
     for (auto mem : members) {
-      std::string_view name = std::meta::identifier_of(mem);
-      if (name == member_name) {
+      if (std::meta::identifier_of(mem) == member_name) {
         return true;
       }
     }
-#endif
     return false;
   }
 
   // Helper: Get type of member by name using reflection
   template<typename Type>
   static consteval auto get_member_type(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
     constexpr auto members = std::meta::nonstatic_data_members_of(
       ^^Type, std::meta::access_context::unchecked()
     );
 
     for (auto mem : members) {
-      std::string_view name = std::meta::identifier_of(mem);
-      if (name == member_name) {
+      if (std::meta::identifier_of(mem) == member_name) {
         return std::meta::type_of(mem);
       }
     }
-#endif
     return ^^void; // Return void if not found
   }
 
+public:
   // Helper: Check if type represents a JSON array (indexable sequence container)
   //
   // Rationale:
-  // - We're validating JSON path semantics: path[index] requires subscript access
+  // - We're validating JSONPath semantics: path[index] requires subscript access
   // - JSON arrays are ordered sequences with numeric indexed access
   // - Runtime JSON parsing uses operator[] for array element access
   //
@@ -353,7 +332,6 @@ private:
   // Helper to check if a reflected type satisfies the indexable_container concept
   // We use std::meta::substitute to evaluate the concept against a reflected type
   static consteval bool is_array_like_reflected(std::meta::info type_reflection) {
-#if SIMDJSON_STATIC_REFLECTION
     // C-style arrays
     if (std::meta::is_array_type(type_reflection)) {
       return true;
@@ -361,17 +339,14 @@ private:
 
     // Test if the reflected type satisfies our indexable_container concept
     // substitute evaluates indexable_container_v<T> where T is the reflected type
-    if (std::meta::can_substitute(^^indexable_container_v, {type_reflection})) {
-      return std::meta::extract<bool>(std::meta::substitute(^^indexable_container_v, {type_reflection}));
+    if (std::meta::can_substitute(^^concepts::indexable_container_v, {type_reflection})) {
+      return std::meta::extract<bool>(std::meta::substitute(^^concepts::indexable_container_v, {type_reflection}));
     }
-    return false;
-#endif
     return false;
   }
 
   // Helper: Get element type from reflected array-like type
   static consteval std::meta::info get_element_type_reflected(std::meta::info type_reflection) {
-#if SIMDJSON_STATIC_REFLECTION
     // Check for C-style arrays first using reflection predicates
     if (std::meta::is_array_type(type_reflection)) {
       // For C-style arrays (e.g., int[10]), extract element type using std::meta::remove_extent
@@ -389,7 +364,6 @@ private:
         }
       }
     }
-#endif
     return ^^void;
   }
 
@@ -423,9 +397,9 @@ private:
     >
   >;
 
+public:
   // Validate that the path matches the struct definition using reflection
   static consteval bool validate_path() {
-#if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
       // If T is void or not a class, we can't validate - allow it
       return true;
@@ -527,9 +501,6 @@ private:
     }
 
     return true; // Path validated successfully
-#else
-    return true; // No reflection available, allow everything
-#endif
   }
 };
 
@@ -554,7 +525,7 @@ inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_
 // JSON Pointer Compile-Time Support (RFC 6901)
 // ============================================================================
 
-// JSON Pointer parser - simpler syntax than JSON Path
+// JSON Pointer parser - simpler syntax than JSONPath
 // Format: /field/0/nested  (slash-separated, numeric for arrays)
 template<constevalutil::fixed_string Pointer>
 struct json_pointer_parser {
@@ -643,7 +614,6 @@ struct pointer_accessor {
 
   // Validate JSON Pointer against struct definition
   static consteval bool validate_pointer() {
-#if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
       return true;
     }
@@ -687,8 +657,6 @@ struct pointer_accessor {
     }
 
     return true;
-#endif
-    return false;
   }
 
   // Recursive accessor implementation
