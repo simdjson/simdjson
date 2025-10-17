@@ -111,7 +111,7 @@ public:
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
   /**
-   * Recursive function which processes the json path of each child element
+   * Recursive function which processes the JSON path of each child element
    */
   inline void process_json_path_of_child_elements(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) const noexcept;
 

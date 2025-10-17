@@ -701,7 +701,7 @@ public:
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
    *
-   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   * https://www.rfc-editor.org/rfc/rfc9535 (RFC 9535)
    *
    * Key values are matched exactly, without unescaping or Unicode normalization.
    * We do a byte-by-byte comparison. E.g.

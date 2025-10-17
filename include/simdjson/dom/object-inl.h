@@ -186,7 +186,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   }
 
   if (i >= json_path.size() || (json_path[i] != '.' && json_path[i] != '[')) {
-    // expect json path to always start with $ but this isn't currently
+    // expect JSONPath expressions to always start with $ but this isn't currently
     // expected in jsonpathutil.h.
     return INVALID_JSON_POINTER;
   }
