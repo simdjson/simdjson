@@ -1,8 +1,13 @@
 var searchData=
 [
-  ['len_144',['len',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1dom__parser__implementation.html#a132a95e1147b80c2533d1632185a6a09',1,'simdjson::SIMDJSON_IMPLEMENTATION::dom_parser_implementation']]],
-  ['length_145',['length',['../structsimdjson_1_1padded__string.html#a863fded7b347718299190ad3f501d38c',1,'simdjson::padded_string']]],
-  ['load_146',['load',['../classsimdjson_1_1dom_1_1parser.html#ab3e5bbb1974a1932aead90ad63883a23',1,'simdjson::dom::parser::load()'],['../structsimdjson_1_1padded__string.html#aaf017ffe731c738da5eb31c63b987d3a',1,'simdjson::padded_string::load()']]],
-  ['load_5finto_5fdocument_147',['load_into_document',['../classsimdjson_1_1dom_1_1parser.html#ac7913230cb1f559bea4583bb743f9807',1,'simdjson::dom::parser']]],
-  ['load_5fmany_148',['load_many',['../classsimdjson_1_1dom_1_1parser.html#a5300851ba21d0a0273a11510fd1c378a',1,'simdjson::dom::parser']]]
+  ['handling_0',['handling',['../md_doc_2basics.html#autotoc_md22',1,'Error handling'],['../md_doc_2dom.html#autotoc_md60',1,'Error Handling'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md142',1,'Error Handling'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md146',1,'Error Handling'],['../md_doc_2builder.html#autotoc_md48',1,'Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error handling']]],
+  ['handling_20example_1',['Error Handling Example',['../md_doc_2dom.html#autotoc_md61',1,'']]],
+  ['handling_20examples_20without_20exceptions_2',['Error handling examples without exceptions',['../md_doc_2basics.html#autotoc_md23',1,'']]],
+  ['has_5fcustom_5fserialization_3',['has_custom_serialization',['../structsimdjson_1_1has__custom__serialization.html',1,'simdjson']]],
+  ['has_5fnext_5felement_4',['has_next_element',['../group__array.html#ga31b0a8ce8734db9413cce31c4d9c8c8d',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator']]],
+  ['has_5fnext_5ffield_5',['has_next_field',['../group__object.html#ga7956fe38cd8ecfbc8f709aa6f65c92b4',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator']]],
+  ['has_5fsufficient_5fpadding_6',['has_sufficient_padding',['../classsimdjson_1_1padded__string__view.html#ae4aff182e0ed84ed5056c2d634ff134a',1,'simdjson::padded_string_view']]],
+  ['has_5fvalue_7',['has_value',['../structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html#a5bf4c42c2cf080f5a3e52586e0a6686c',1,'simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base']]],
+  ['how_20it_20works_8',['how it works',['../md_doc_2iterate__many.html#autotoc_md77',1,'How it works'],['../md_doc_2parse__many.html#autotoc_md104',1,'How it works']]],
+  ['huge_20page_20support_9',['Large files and huge page support',['../md_doc_2performance.html#autotoc_md117',1,'']]]
 ];

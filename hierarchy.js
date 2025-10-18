@@ -15,23 +15,20 @@ var hierarchy =
     [ "std::exception", null, [
       [ "simdjson::simdjson_error", "structsimdjson_1_1simdjson__error.html", null ]
     ] ],
+    [ "std::false_type", null, [
+      [ "simdjson::has_custom_serialization", "structsimdjson_1_1has__custom__serialization.html", null ]
+    ] ],
     [ "simdjson::implementation", "classsimdjson_1_1implementation.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< T >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::array >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
       [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::array >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html", null ]
     ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::array_iterator >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::array_iterator >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array__iterator_01_4.html", null ]
-    ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::document >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::document >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document_01_4.html", null ]
-    ] ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::array_iterator >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::document >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::document_reference >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
       [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::document_reference >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html", null ]
     ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::document_stream >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::document_stream >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream_01_4.html", null ]
-    ] ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::document_stream >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::field >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
       [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::field >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field_01_4.html", null ]
     ] ],
@@ -44,15 +41,9 @@ var hierarchy =
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::object >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
       [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::object >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object_01_4.html", null ]
     ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::object_iterator >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::object_iterator >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__iterator_01_4.html", null ]
-    ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::parser >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::parser >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_01_4.html", null ]
-    ] ],
-    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
-      [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string_01_4.html", null ]
-    ] ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::object_iterator >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::parser >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::token_iterator >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
       [ "simdjson::simdjson_result< SIMDJSON_IMPLEMENTATION::ondemand::token_iterator >", "structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1token__iterator_01_4.html", null ]
     ] ],
@@ -74,26 +65,24 @@ var hierarchy =
     [ "simdjson::SIMDJSON_IMPLEMENTATION::open_container", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1open__container.html", null ],
     [ "simdjson::padded_string", "structsimdjson_1_1padded__string.html", null ],
     [ "std::pair", null, [
-      [ "simdjson::internal::simdjson_result_base< dom::element >", null, [
-        [ "simdjson::simdjson_result< dom::element >", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html", null ]
-      ] ],
       [ "simdjson::internal::simdjson_result_base< dom::array >", null, [
         [ "simdjson::simdjson_result< dom::array >", "structsimdjson_1_1simdjson__result_3_01dom_1_1array_01_4.html", null ]
-      ] ],
-      [ "simdjson::internal::simdjson_result_base< dom::object >", null, [
-        [ "simdjson::simdjson_result< dom::object >", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html", null ]
       ] ],
       [ "simdjson::internal::simdjson_result_base< dom::document_stream >", null, [
         [ "simdjson::simdjson_result< dom::document_stream >", "structsimdjson_1_1simdjson__result_3_01dom_1_1document__stream_01_4.html", null ]
       ] ],
-      [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html", null ],
-      [ "simdjson::internal::simdjson_result_base< T >", null, [
-        [ "simdjson::simdjson_result< T >", "structsimdjson_1_1simdjson__result.html", null ]
-      ] ]
+      [ "simdjson::internal::simdjson_result_base< dom::element >", null, [
+        [ "simdjson::simdjson_result< dom::element >", "structsimdjson_1_1simdjson__result_3_01dom_1_1element_01_4.html", null ]
+      ] ],
+      [ "simdjson::internal::simdjson_result_base< dom::object >", null, [
+        [ "simdjson::simdjson_result< dom::object >", "structsimdjson_1_1simdjson__result_3_01dom_1_1object_01_4.html", null ]
+      ] ],
+      [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::field", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1field.html", null ]
     ] ],
     [ "simdjson::dom::parser", "classsimdjson_1_1dom_1_1parser.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html", null ],
+    [ "simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html", null ],
     [ "string_view", null, [
       [ "simdjson::padded_string_view", "classsimdjson_1_1padded__string__view.html", null ]
