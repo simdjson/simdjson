@@ -2,7 +2,13 @@ name: Doxygen GitHub Pages
 
 on:
   release:
-    types: [created]
+    # Trigger when a release object is created and when it's published.
+    # Some GitHub flows create a release object then publish it later; include both.
+    types: [created, published]
+  # Also trigger on tag creation pushes so releasing via Git tags still runs the workflow
+  push:
+    tags:
+      - "v*"  # common release tag pattern like v1.2.3
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
