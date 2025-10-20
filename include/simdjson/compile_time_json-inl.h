@@ -8,20 +8,15 @@
 
 #ifndef SIMDJSON_GENERIC_COMPILE_TIME_JSON_INL_H
 
-#ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_COMPILE_TIME_JSON_INL_H
-#include "simdjson/generic/ondemand/compile_time_json.h"
-#endif // SIMDJSON_CONDITIONAL_INCLUDE
-
 #if SIMDJSON_STATIC_REFLECTION
 
 #include <meta>
 #include <array>
 #include <string_view>
 #include <cstdint>
+#include "simdjson/compile_time_json.h"
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace compile_time {
 
 /**
@@ -91,7 +86,6 @@ constexpr auto unescape_json_string(std::string_view escaped) {
 }
 
 } // namespace compile_time
-} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 #endif // SIMDJSON_STATIC_REFLECTION

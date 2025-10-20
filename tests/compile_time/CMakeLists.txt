@@ -1,0 +1,3 @@
+if(SIMDJSON_STATIC_REFLECTION)
+  add_cpp_test(compile_time_should_compile SOURCES compile_time_tests.cpp COMPILE_ONLY)
+endif(SIMDJSON_STATIC_REFLECTION)

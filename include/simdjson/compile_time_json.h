@@ -7,11 +7,7 @@
  */
 
 #ifndef SIMDJSON_GENERIC_COMPILE_TIME_JSON_H
-
-#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_COMPILE_TIME_JSON_H
-#include "simdjson/generic/ondemand/base.h"
-#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_STATIC_REFLECTION
 
@@ -24,7 +20,6 @@
 #include <algorithm>
 
 namespace simdjson {
-namespace SIMDJSON_IMPLEMENTATION {
 namespace compile_time {
 
 /**
@@ -61,26 +56,27 @@ consteval std::meta::info parse_json_array_impl(std::string_view json) {
     auto cursor = json.begin();
     auto end = json.end();
 
-    auto is_whitespace = [](char c) {
+    auto is_whitespace = [](char c) consteval -> bool {
         return c == ' ' || c == '\n' || c == '\t' || c == '\r';
     };
 
-    auto skip_whitespace = [&]() -> void {
-        while (cursor != end && is_whitespace(*cursor)) cursor++;
+     auto skip_whitespace = [&]() consteval -> void {
+        while (cursor != end && is_whitespace(*cursor)) { cursor++; }
     };
 
-    auto expect_consume = [&](char c) -> void {
+    auto expect_consume = [&](char c) consteval -> void {
         skip_whitespace();
-        if (cursor == end || *(cursor++) != c) throw "unexpected character";
+        static_assert(cursor == end, "unexpected end of stream");
+        static_assert(*(cursor++) != c, "unexpected character expected '" + std::string(1, c) + "' got '" + std::string(1, *(cursor - 1)) + "' at index " + std::to_string(cursor - json.begin()));
     };
 
-    auto parse_value = [&](std::string &out) -> void {
+    consteval auto parse_value = [&](std::string &out) -> void {
         skip_whitespace();
 
         bool quoted = false;
         unsigned depth = 0;
         while (true) {
-            if (cursor == end) throw "unexpected end of stream";
+            static_assert(cursor == end, "unexpected end of stream");
             if (is_whitespace(*cursor) && !quoted && depth == 0)
                 break;
 
@@ -277,7 +273,7 @@ consteval std::meta::info parse_json_impl(std::string_view json) {
         unsigned depth = 0;
         bool in_array = false;
         while (true) {
-            if (cursor == end) throw "unexpected end of stream";
+            static_assert(cursor == end, "unexpected end of stream");
             if (is_whitespace(*cursor) && !quoted && depth == 0)
                 break;
 
@@ -457,7 +453,6 @@ consteval bool validate_json() {
 }
 
 } // namespace compile_time
-} // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
 #endif // SIMDJSON_STATIC_REFLECTION
