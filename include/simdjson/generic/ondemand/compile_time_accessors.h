@@ -1,7 +1,43 @@
 /**
- * Compile-time JSON Path and JSON Pointer accessors using C++26 reflection
- * This file provides functionality to pre-compile JSON paths and pointers at compile time
- * and generate optimized accessor code using reflection.
+ * Compile-time JSON Path and JSON Pointer accessors using C++26 reflection (P2996)
+ *
+ * This file validates JSON paths/pointers against struct definitions at compile time
+ * and generates optimized accessor code with zero runtime overhead.
+ *
+ * ## How It Works
+ *
+ * **Compile Time**: Path is parsed, validated against struct, types are checked
+ * **Runtime**: Direct navigation with no parsing or validation overhead
+ *
+ * Example:
+ * ```cpp
+ * struct User { std::string name; std::vector<std::string> emails; };
+ *
+ * std::string email;
+ * path_accessor<User, ".emails[0]">::extract_field(doc, email);
+ *
+ * // Compile time validates:
+ * // 1. User has "emails" field
+ * // 2. "emails" is array-like
+ * // 3. Element type is std::string
+ * // 4. static_assert(^^std::string == ^^std::string)
+ *
+ * // Runtime just navigates:
+ * // doc.get_object().find_field("emails").get_array().at(0).get(email)
+ * ```
+ *
+ * ## Key Reflection APIs
+ *
+ * - `^^Type`: Reflect operator, converts type to std::meta::info
+ * - `std::meta::nonstatic_data_members_of(type)`: Get all fields of a struct
+ * - `std::meta::identifier_of(member)`: Get field name as string_view
+ * - `std::meta::type_of(member)`: Get reflected type of a field
+ * - `std::meta::is_array_type(type)`: Check if C-style array
+ * - `std::meta::remove_extent(array)`: Extract element type from array
+ * - `std::meta::members_of(type)`: Get all members including typedefs
+ * - `std::meta::is_type(member)`: Check if member is a type (vs field)
+ *
+ * All operations execute at compile time in consteval contexts.
  */
 #ifndef SIMDJSON_GENERIC_ONDEMAND_COMPILE_TIME_ACCESSORS_H
 
@@ -196,40 +232,231 @@ struct path_accessor {
     return access_impl<parser.skip_root()>(doc_or_val.get_value());
   }
 
-private:
-  // Recursive template to generate compile-time accessor code
-  // PathPos parameter is the position in the path string (compile-time constant)
-  template<std::size_t PathPos>
-  static inline simdjson_result<value> access_impl(simdjson_result<value> current) noexcept {
-    if (current.error()) return current;
+  // Extract value at path directly into target with compile-time type validation
+  // Example: std::string name; path_accessor<User, ".name">::extract_field(doc, name);
+  template<typename DocOrValue, typename FieldType>
+  static inline error_code extract_field(DocOrValue& doc_or_val, FieldType& target) noexcept {
+#if SIMDJSON_STATIC_REFLECTION
+    static_assert(std::is_class_v<T>, "extract_field requires T to be a struct type for validation");
 
-    // Base case: if we've consumed the entire path, return current value
+    // Validate path exists in struct definition
+    constexpr bool path_valid = validate_path();
+    static_assert(path_valid, "JSON path does not match struct definition");
+
+    // Get the type at the end of the path
+    constexpr auto final_type = get_final_type();
+
+    // Verify target type matches the field type
+    static_assert(final_type == ^^FieldType, "Target type does not match the field type at the path");
+
+    // All validation done at compile time - just navigate and extract
+    auto json_value = access_impl<parser.skip_root()>(doc_or_val.get_value());
+    if (json_value.error()) return json_value.error();
+
+    return json_value.get(target);
+#else
+    return NOT_SUPPORTED;
+#endif
+  }
+
+private:
+  // Get the final type by walking the path through the struct type
+  template<typename U = T>
+  static consteval std::enable_if_t<std::is_class_v<U>, std::meta::info> get_final_type() {
+#if SIMDJSON_STATIC_REFLECTION
+    auto current_type = ^^T;
+    std::size_t i = parser.skip_root();
+
+    while (i < path_view.size()) {
+      if (path_view[i] == '.') {
+        // .field syntax
+        ++i;
+        std::size_t field_start = i;
+        while (i < path_view.size() && path_view[i] != '.' && path_view[i] != '[') {
+          ++i;
+        }
+
+        std::string_view field_name = path_view.substr(field_start, i - field_start);
+
+        auto members = std::meta::nonstatic_data_members_of(
+          current_type, std::meta::access_context::unchecked()
+        );
+
+        for (auto mem : members) {
+          if (std::meta::identifier_of(mem) == field_name) {
+            current_type = std::meta::type_of(mem);
+            break;
+          }
+        }
+
+      } else if (path_view[i] == '[') {
+        ++i;
+        if (i >= path_view.size()) break;
+
+        if (path_view[i] == '"' || path_view[i] == '\'') {
+          // ["field"] syntax
+          char quote = path_view[i];
+          ++i;
+          std::size_t field_start = i;
+          while (i < path_view.size() && path_view[i] != quote) {
+            ++i;
+          }
+
+          std::string_view field_name = path_view.substr(field_start, i - field_start);
+          if (i < path_view.size()) ++i; // skip quote
+          if (i < path_view.size() && path_view[i] == ']') ++i;
+
+          auto members = std::meta::nonstatic_data_members_of(
+            current_type, std::meta::access_context::unchecked()
+          );
+
+          for (auto mem : members) {
+            if (std::meta::identifier_of(mem) == field_name) {
+              current_type = std::meta::type_of(mem);
+              break;
+            }
+          }
+
+        } else {
+          // [index] syntax - extract element type
+          while (i < path_view.size() && path_view[i] >= '0' && path_view[i] <= '9') {
+            ++i;
+          }
+          if (i < path_view.size() && path_view[i] == ']') ++i;
+
+          current_type = get_element_type_reflected(current_type);
+        }
+      } else {
+        ++i;
+      }
+    }
+
+    return current_type;
+#else
+    return ^^void;
+#endif
+  }
+
+private:
+  // Walk path and extract directly into final field using compile-time reflection
+  template<std::meta::info CurrentType, std::size_t PathPos, typename TargetType>
+  static inline error_code extract_with_reflection(simdjson_result<value> current, TargetType& target_ref) noexcept {
+#if SIMDJSON_STATIC_REFLECTION
+    if (current.error()) return current.error();
+
+    // Base case: end of path - extract into target
     if constexpr (PathPos >= path_view.size()) {
-      return current;
-    } else if constexpr (path_view[PathPos] == '.') {
-      // Field access - extract field name at compile time
+      return current.get(target_ref);
+    }
+    // Field access: .field_name
+    else if constexpr (path_view[PathPos] == '.') {
       constexpr auto field_info = parse_next_field(PathPos);
       constexpr std::string_view field_name = std::get<0>(field_info);
       constexpr std::size_t next_pos = std::get<1>(field_info);
 
-      // Generate field access code
+      constexpr auto member_info = find_member_by_name(CurrentType, field_name);
+      static_assert(member_info != ^^void, "Field not found in struct");
+
+      constexpr auto member_type = std::meta::type_of(member_info);
+
+      auto obj_result = current.get_object();
+      if (obj_result.error()) return obj_result.error();
+      auto obj = obj_result.value_unsafe();
+      auto field_value = obj.find_field_unordered(field_name);
+
+      if constexpr (next_pos >= path_view.size()) {
+        return field_value.get(target_ref);
+      } else {
+        return extract_with_reflection<member_type, next_pos>(field_value, target_ref);
+      }
+    }
+    // Bracket notation: [index] or ["field"]
+    else if constexpr (path_view[PathPos] == '[') {
+      constexpr auto bracket_info = parse_bracket(PathPos);
+      constexpr bool is_field = std::get<0>(bracket_info);
+      constexpr std::size_t next_pos = std::get<2>(bracket_info);
+
+      if constexpr (is_field) {
+        constexpr std::string_view field_name = std::get<1>(bracket_info);
+        constexpr auto member_info = find_member_by_name(CurrentType, field_name);
+        static_assert(member_info != ^^void, "Field not found in struct");
+        constexpr auto member_type = std::meta::type_of(member_info);
+
+        auto obj_result = current.get_object();
+        if (obj_result.error()) return obj_result.error();
+        auto obj = obj_result.value_unsafe();
+        auto field_value = obj.find_field_unordered(field_name);
+
+        if constexpr (next_pos >= path_view.size()) {
+          return field_value.get(target_ref);
+        } else {
+          return extract_with_reflection<member_type, next_pos>(field_value, target_ref);
+        }
+      } else {
+        constexpr std::size_t index = std::get<3>(bracket_info);
+        constexpr auto elem_type = get_element_type_reflected(CurrentType);
+        static_assert(elem_type != ^^void, "Could not determine array element type");
+
+        auto arr_result = current.get_array();
+        if (arr_result.error()) return arr_result.error();
+        auto arr = arr_result.value_unsafe();
+        auto elem_value = arr.at(index);
+
+        if constexpr (next_pos >= path_view.size()) {
+          return elem_value.get(target_ref);
+        } else {
+          return extract_with_reflection<elem_type, next_pos>(elem_value, target_ref);
+        }
+      }
+    }
+    // Skip unexpected characters and continue
+    else {
+      return extract_with_reflection<CurrentType, PathPos + 1>(current, target_ref);
+    }
+#else
+    return NOT_SUPPORTED;
+#endif
+  }
+
+  // Find member by name in reflected type
+  static consteval std::meta::info find_member_by_name(std::meta::info type_refl, std::string_view name) {
+#if SIMDJSON_STATIC_REFLECTION
+    auto members = std::meta::nonstatic_data_members_of(type_refl, std::meta::access_context::unchecked());
+    for (auto mem : members) {
+      if (std::meta::identifier_of(mem) == name) {
+        return mem;
+      }
+    }
+#endif
+    return ^^void;
+  }
+
+  // Generate compile-time accessor code by walking the path
+  template<std::size_t PathPos>
+  static inline simdjson_result<value> access_impl(simdjson_result<value> current) noexcept {
+    if (current.error()) return current;
+
+    if constexpr (PathPos >= path_view.size()) {
+      return current;
+    } else if constexpr (path_view[PathPos] == '.') {
+      constexpr auto field_info = parse_next_field(PathPos);
+      constexpr std::string_view field_name = std::get<0>(field_info);
+      constexpr std::size_t next_pos = std::get<1>(field_info);
+
       auto obj_result = current.get_object();
       if (obj_result.error()) return obj_result.error();
 
       auto obj = obj_result.value_unsafe();
       auto next_value = obj.find_field_unordered(field_name);
 
-      // Recursively process next step at compile time
       return access_impl<next_pos>(next_value);
 
     } else if constexpr (path_view[PathPos] == '[') {
-      // Array or bracket notation
       constexpr auto bracket_info = parse_bracket(PathPos);
       constexpr bool is_field = std::get<0>(bracket_info);
       constexpr std::size_t next_pos = std::get<2>(bracket_info);
 
       if constexpr (is_field) {
-        // Field access with bracket notation
         constexpr std::string_view field_name = std::get<1>(bracket_info);
 
         auto obj_result = current.get_object();
@@ -241,7 +468,6 @@ private:
         return access_impl<next_pos>(next_value);
 
       } else {
-        // Array index access
         constexpr std::size_t index = std::get<3>(bracket_info);
 
         auto arr_result = current.get_array();
@@ -253,14 +479,13 @@ private:
         return access_impl<next_pos>(next_value);
       }
     } else {
-      // Skip unexpected characters and continue
       return access_impl<PathPos + 1>(current);
     }
   }
 
-  // Helper: Parse next field name at compile time
+  // Parse next field name
   static consteval auto parse_next_field(std::size_t start) {
-    std::size_t i = start + 1; // skip '.'
+    std::size_t i = start + 1;
     std::size_t field_start = i;
     while (i < path_view.size() && path_view[i] != '.' && path_view[i] != '[') {
       ++i;
@@ -269,8 +494,7 @@ private:
     return std::make_tuple(field_name, i);
   }
 
-  // Helper: Parse bracket notation at compile time
-  // Returns: (is_field, field_name, next_pos, index)
+  // Parse bracket notation: returns (is_field, field_name, next_pos, index)
   static consteval auto parse_bracket(std::size_t start) {
     std::size_t i = start + 1; // skip '['
 
@@ -300,67 +524,16 @@ private:
     }
   }
 
-private:
-  // Helper: Check if a type has a member with given name using reflection
-  template<typename Type>
-  static consteval bool has_member(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
-    constexpr auto members = std::meta::nonstatic_data_members_of(
-      ^^Type, std::meta::access_context::unchecked()
-    );
-
-    for (auto mem : members) {
-      std::string_view name = std::meta::identifier_of(mem);
-      if (name == member_name) {
-        return true;
-      }
-    }
-#endif
-    return false;
-  }
-
-  // Helper: Get type of member by name using reflection
-  template<typename Type>
-  static consteval auto get_member_type(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
-    constexpr auto members = std::meta::nonstatic_data_members_of(
-      ^^Type, std::meta::access_context::unchecked()
-    );
-
-    for (auto mem : members) {
-      std::string_view name = std::meta::identifier_of(mem);
-      if (name == member_name) {
-        return std::meta::type_of(mem);
-      }
-    }
-#endif
-    return ^^void; // Return void if not found
-  }
-
-  // Helper: Check if type represents a JSON array (indexable sequence container)
-  //
-  // Rationale:
-  // - We're validating JSON path semantics: path[index] requires subscript access
-  // - JSON arrays are ordered sequences with numeric indexed access
-  // - Runtime JSON parsing uses operator[] for array element access
-  //
-  // Requirements:
-  // 1. Must support operator[](size_t) for indexed access
-  // 2. Must represent a sequence (have value_type)
-  // 3. Must NOT be a string (strings are JSON strings, not arrays)
-  // 4. Must NOT be associative (maps/sets have different JSON semantics)
-  //
-  // Helper to check if a reflected type satisfies the indexable_container concept
-  // We use std::meta::substitute to evaluate the concept against a reflected type
+public:
+  // Check if reflected type is array-like (C-style array or indexable container)
+  // Uses reflection to test: 1) std::meta::is_array_type() for C arrays
+  //                          2) std::meta::substitute() to test indexable_container concept
   static consteval bool is_array_like_reflected(std::meta::info type_reflection) {
 #if SIMDJSON_STATIC_REFLECTION
-    // C-style arrays
     if (std::meta::is_array_type(type_reflection)) {
       return true;
     }
 
-    // Test if the reflected type satisfies our indexable_container concept
-    // substitute evaluates indexable_container_v<T> where T is the reflected type
     if (std::meta::can_substitute(^^indexable_container_v, {type_reflection})) {
       return std::meta::extract<bool>(std::meta::substitute(^^indexable_container_v, {type_reflection}));
     }
@@ -369,22 +542,20 @@ private:
     return false;
   }
 
-  // Helper: Get element type from reflected array-like type
+  // Extract element type from reflected array or container
+  // For C arrays: uses std::meta::remove_extent()
+  // For containers: finds value_type member using std::meta::members_of()
   static consteval std::meta::info get_element_type_reflected(std::meta::info type_reflection) {
 #if SIMDJSON_STATIC_REFLECTION
-    // Check for C-style arrays first using reflection predicates
     if (std::meta::is_array_type(type_reflection)) {
-      // For C-style arrays (e.g., int[10]), extract element type using std::meta::remove_extent
       return std::meta::remove_extent(type_reflection);
     }
 
-    // Look for value_type member in the reflected type (standard containers)
     auto members = std::meta::members_of(type_reflection, std::meta::access_context::unchecked());
     for (auto mem : members) {
       if (std::meta::is_type(mem)) {
         auto name = std::meta::identifier_of(mem);
         if (name == "value_type") {
-          // Return the reflected type of value_type
           return mem;
         }
       }
@@ -393,25 +564,49 @@ private:
     return ^^void;
   }
 
-  // Helper: Check if a non-reflected type is array-like (for template metaprogramming)
+private:
+  // Check if type has member with given name
   template<typename Type>
-  static consteval bool is_container_type() {
-    using BaseType = std::remove_cvref_t<Type>;
-
-    // Has value_type (std::vector, std::array, std::list, etc.)
-    if constexpr (requires { typename BaseType::value_type; }) {
-      return true;
+  static consteval bool has_member(std::string_view member_name) {
+#if SIMDJSON_STATIC_REFLECTION
+    constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
+    for (auto mem : members) {
+      if (std::meta::identifier_of(mem) == member_name) {
+        return true;
+      }
     }
-
-    // C-style array
-    if constexpr (std::is_array_v<BaseType>) {
-      return true;
-    }
-
+#endif
     return false;
   }
 
-  // Helper: Extract element type from non-reflected container
+  // Get type of member by name
+  template<typename Type>
+  static consteval auto get_member_type(std::string_view member_name) {
+#if SIMDJSON_STATIC_REFLECTION
+    constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
+    for (auto mem : members) {
+      if (std::meta::identifier_of(mem) == member_name) {
+        return std::meta::type_of(mem);
+      }
+    }
+#endif
+    return ^^void;
+  }
+
+  // Check if non-reflected type is array-like
+  template<typename Type>
+  static consteval bool is_container_type() {
+    using BaseType = std::remove_cvref_t<Type>;
+    if constexpr (requires { typename BaseType::value_type; }) {
+      return true;
+    }
+    if constexpr (std::is_array_v<BaseType>) {
+      return true;
+    }
+    return false;
+  }
+
+  // Extract element type from non-reflected container
   template<typename Type>
   using extract_element_type = std::conditional_t<
     requires { typename std::remove_cvref_t<Type>::value_type; },
@@ -423,11 +618,10 @@ private:
     >
   >;
 
-  // Validate that the path matches the struct definition using reflection
+  // Validate path matches struct definition
   static consteval bool validate_path() {
 #if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
-      // If T is void or not a class, we can't validate - allow it
       return true;
     }
 
@@ -436,7 +630,6 @@ private:
 
     while (i < path_view.size()) {
       if (path_view[i] == '.') {
-        // Field access - validate member exists
         ++i;
         std::size_t field_start = i;
         while (i < path_view.size() && path_view[i] != '.' && path_view[i] != '[') {
@@ -445,11 +638,8 @@ private:
 
         std::string_view field_name = path_view.substr(field_start, i - field_start);
 
-        // Check if current type has this member
         bool found = false;
-        auto members = std::meta::nonstatic_data_members_of(
-          current_type, std::meta::access_context::unchecked()
-        );
+        auto members = std::meta::nonstatic_data_members_of(current_type, std::meta::access_context::unchecked());
 
         for (auto mem : members) {
           if (std::meta::identifier_of(mem) == field_name) {
@@ -460,7 +650,7 @@ private:
         }
 
         if (!found) {
-          return false; // Member not found
+          return false;
         }
 
       } else if (path_view[i] == '[') {
@@ -468,7 +658,6 @@ private:
         if (i >= path_view.size()) return false;
 
         if (path_view[i] == '"' || path_view[i] == '\'') {
-          // Field access with bracket notation
           char quote = path_view[i];
           ++i;
           std::size_t field_start = i;
@@ -477,14 +666,11 @@ private:
           }
 
           std::string_view field_name = path_view.substr(field_start, i - field_start);
-          if (i < path_view.size()) ++i; // skip closing quote
+          if (i < path_view.size()) ++i;
           if (i < path_view.size() && path_view[i] == ']') ++i;
 
-          // Check if current type has this member
           bool found = false;
-          auto members = std::meta::nonstatic_data_members_of(
-            current_type, std::meta::access_context::unchecked()
-          );
+          auto members = std::meta::nonstatic_data_members_of(current_type, std::meta::access_context::unchecked());
 
           for (auto mem : members) {
             if (std::meta::identifier_of(mem) == field_name) {
@@ -495,28 +681,24 @@ private:
           }
 
           if (!found) {
-            return false; // Member not found
+            return false;
           }
 
         } else {
-          // Array index - verify current type is array-like and extract element type
           while (i < path_view.size() && path_view[i] >= '0' && path_view[i] <= '9') {
             ++i;
           }
 
           if (i < path_view.size() && path_view[i] == ']') ++i;
 
-          // Check if current type is array-like
           if (!is_array_like_reflected(current_type)) {
-            return false; // Not an array/container type
+            return false;
           }
 
-          // Extract element type and continue validation
           auto new_type = get_element_type_reflected(current_type);
 
-          // If we couldn't extract element type (returns ^^void), fail validation
           if (new_type == ^^void) {
-            return false; // Could not determine element type
+            return false;
           }
 
           current_type = new_type;
@@ -526,24 +708,21 @@ private:
       }
     }
 
-    return true; // Path validated successfully
+    return true;
 #else
-    return true; // No reflection available, allow everything
+    return true;
 #endif
   }
 };
 
-// User-facing API: compile-time path accessor
-// When used with a struct type T, validates the path at compile time
-// Example: at_path_compiled<User, ".name">(doc)
+// Compile-time path accessor with validation
 template<typename T, constevalutil::fixed_string Path, typename DocOrValue>
 inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_path_compiled(DocOrValue& doc_or_val) noexcept {
   using accessor = path_accessor<T, Path>;
   return accessor::access(doc_or_val);
 }
 
-// Convenience overload without type parameter (no validation, just compile-time parsing)
-// Example: at_path_compiled<".name">(doc)
+// Overload without type parameter (no validation)
 template<constevalutil::fixed_string Path, typename DocOrValue>
 inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_path_compiled(DocOrValue& doc_or_val) noexcept {
   using accessor = path_accessor<void, Path>;
@@ -554,13 +733,12 @@ inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_
 // JSON Pointer Compile-Time Support (RFC 6901)
 // ============================================================================
 
-// JSON Pointer parser - simpler syntax than JSON Path
-// Format: /field/0/nested  (slash-separated, numeric for arrays)
+// JSON Pointer parser: /field/0/nested (slash-separated)
 template<constevalutil::fixed_string Pointer>
 struct json_pointer_parser {
   static constexpr std::string_view pointer_str = Pointer.view();
 
-  // Unescape JSON Pointer token: ~0 -> ~, ~1 -> /
+  // Unescape token: ~0 -> ~, ~1 -> /
   static consteval void unescape_token(std::string_view src, char* dest, std::size_t& out_len) {
     out_len = 0;
     for (std::size_t i = 0; i < src.size(); ++i) {
@@ -580,10 +758,10 @@ struct json_pointer_parser {
     }
   }
 
-  // Check if token is numeric (array index)
+  // Check if token is numeric
   static consteval bool is_numeric(std::string_view token) {
     if (token.empty()) return false;
-    if (token[0] == '0' && token.size() > 1) return false; // Leading zeros not allowed
+    if (token[0] == '0' && token.size() > 1) return false;
     for (char c : token) {
       if (c < '0' || c > '9') return false;
     }
@@ -599,7 +777,7 @@ struct json_pointer_parser {
     return result;
   }
 
-  // Count number of tokens (path segments)
+  // Count tokens in pointer
   static consteval std::size_t count_tokens() {
     if (pointer_str.empty() || pointer_str == "/") return 0;
 
@@ -616,7 +794,7 @@ struct json_pointer_parser {
     return count;
   }
 
-  // Get the Nth token at compile time
+  // Get Nth token
   static consteval std::string_view get_token(std::size_t token_index) {
     std::size_t pos = pointer_str[0] == '/' ? 1 : 0;
     std::size_t current_token = 0;
@@ -634,14 +812,14 @@ struct json_pointer_parser {
   }
 };
 
-// JSON Pointer accessor - similar to path_accessor but for JSON Pointer syntax
+// JSON Pointer accessor
 template<typename T, constevalutil::fixed_string Pointer>
 struct pointer_accessor {
   using parser = json_pointer_parser<Pointer>;
   static constexpr std::string_view pointer_view = Pointer.view();
   static constexpr std::size_t token_count = parser::count_tokens();
 
-  // Validate JSON Pointer against struct definition
+  // Validate pointer against struct definition
   static consteval bool validate_pointer() {
 #if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
@@ -658,19 +836,14 @@ struct pointer_accessor {
 
       std::string_view token = pointer_view.substr(pos, token_end - pos);
 
-      // Check if it's an array index
       if (parser::is_numeric(token)) {
-        // Validate current type is array-like
         if (!path_accessor<T, Pointer>::is_array_like_reflected(current_type)) {
           return false;
         }
         current_type = path_accessor<T, Pointer>::get_element_type_reflected(current_type);
       } else {
-        // Field access - validate member exists
         bool found = false;
-        auto members = std::meta::nonstatic_data_members_of(
-          current_type, std::meta::access_context::unchecked()
-        );
+        auto members = std::meta::nonstatic_data_members_of(current_type, std::meta::access_context::unchecked());
 
         for (auto mem : members) {
           if (std::meta::identifier_of(mem) == token) {
@@ -691,23 +864,20 @@ struct pointer_accessor {
     return false;
   }
 
-  // Recursive accessor implementation
+  // Recursive accessor
   template<std::size_t TokenIndex>
   static inline simdjson_result<value> access_impl(simdjson_result<value> current) noexcept {
     if constexpr (TokenIndex >= token_count) {
       return current;
     } else {
-      // Get token at compile time
       constexpr std::string_view token = parser::get_token(TokenIndex);
 
       if constexpr (parser::is_numeric(token)) {
-        // Array index access
         constexpr std::size_t index = parser::parse_index(token);
         auto arr = current.get_array().value_unsafe();
         auto next_value = arr.at(index);
         return access_impl<TokenIndex + 1>(next_value);
       } else {
-        // Field access
         auto obj = current.get_object().value_unsafe();
         auto next_value = obj.find_field_unordered(token);
         return access_impl<TokenIndex + 1>(next_value);
@@ -715,7 +885,7 @@ struct pointer_accessor {
     }
   }
 
-  // Main entry point
+  // Access JSON value at pointer
   template<typename DocOrValue>
   static inline simdjson_result<value> access(DocOrValue& doc_or_val) noexcept {
     if constexpr (std::is_class_v<T>) {
@@ -724,7 +894,6 @@ struct pointer_accessor {
     }
 
     if (pointer_view.empty() || pointer_view == "/") {
-      // Root pointer
       if constexpr (requires { doc_or_val.get_value(); }) {
         return doc_or_val.get_value();
       } else {
@@ -735,18 +904,74 @@ struct pointer_accessor {
     simdjson_result<value> current = doc_or_val.get_value();
     return access_impl<0>(current);
   }
+
+  // Extract value at pointer directly into target with type validation
+  template<typename DocOrValue, typename FieldType>
+  static inline error_code extract_field(DocOrValue& doc_or_val, FieldType& target) noexcept {
+#if SIMDJSON_STATIC_REFLECTION
+    static_assert(std::is_class_v<T>, "extract_field requires T to be a struct type for validation");
+
+    constexpr bool pointer_valid = validate_pointer();
+    static_assert(pointer_valid, "JSON Pointer does not match struct definition");
+
+    constexpr auto final_type = get_final_type();
+    static_assert(final_type == ^^FieldType, "Target type does not match the field type at the pointer");
+
+    simdjson_result<value> current_value = doc_or_val.get_value();
+    auto json_value = access_impl<0>(current_value);
+    if (json_value.error()) return json_value.error();
+
+    return json_value.get(target);
+#else
+    return NOT_SUPPORTED;
+#endif
+  }
+
+private:
+  // Get final type by walking pointer through struct
+  template<typename U = T>
+  static consteval std::enable_if_t<std::is_class_v<U>, std::meta::info> get_final_type() {
+#if SIMDJSON_STATIC_REFLECTION
+    auto current_type = ^^T;
+    std::size_t pos = pointer_view[0] == '/' ? 1 : 0;
+
+    while (pos < pointer_view.size()) {
+      std::size_t token_end = pointer_view.find('/', pos);
+      if (token_end == std::string_view::npos) token_end = pointer_view.size();
+
+      std::string_view token = pointer_view.substr(pos, token_end - pos);
+
+      if (parser::is_numeric(token)) {
+        current_type = path_accessor<T, "">::get_element_type_reflected(current_type);
+      } else {
+        auto members = std::meta::nonstatic_data_members_of(current_type, std::meta::access_context::unchecked());
+
+        for (auto mem : members) {
+          if (std::meta::identifier_of(mem) == token) {
+            current_type = std::meta::type_of(mem);
+            break;
+          }
+        }
+      }
+
+      pos = token_end + 1;
+    }
+
+    return current_type;
+#else
+    return ^^void;
+#endif
+  }
 };
 
-// User-facing API: compile-time JSON Pointer accessor with validation
-// Example: at_pointer_compiled<User, "/name">(doc)
+// Compile-time JSON Pointer accessor with validation
 template<typename T, constevalutil::fixed_string Pointer, typename DocOrValue>
 inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer_compiled(DocOrValue& doc_or_val) noexcept {
   using accessor = pointer_accessor<T, Pointer>;
   return accessor::access(doc_or_val);
 }
 
-// Convenience overload without type parameter (no validation)
-// Example: at_pointer_compiled<"/name">(doc)
+// Overload without type parameter (no validation)
 template<constevalutil::fixed_string Pointer, typename DocOrValue>
 inline simdjson_result<::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer_compiled(DocOrValue& doc_or_val) noexcept {
   using accessor = pointer_accessor<void, Pointer>;

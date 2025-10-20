@@ -22,6 +22,26 @@ struct Car {
   std::vector<double> tire_pressure;
 };
 
+// Nested struct types for testing deep nesting
+struct Location {
+  double latitude;
+  double longitude;
+};
+
+struct Address {
+  std::string street;
+  std::string city;
+  int zip;
+  Location location;  // Nested 2 levels deep
+};
+
+struct Person {
+  std::string name;
+  int age;
+  Address address;  // Nested struct
+  std::vector<std::string> emails;  // Array field
+};
+
 const padded_string TEST_USER_JSON = R"(
 {
   "name": "John Doe",
@@ -66,6 +86,23 @@ const padded_string TEST_ARRAY_JSON = R"(
   {"make": "Kia", "model": "Soul", "year": 2012, "tire_pressure": [30.1, 31.0, 28.6, 28.7]},
   {"make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [29.8, 30.0, 30.2, 30.5]}
 ]
+)"_padded;
+
+const padded_string TEST_PERSON_JSON = R"(
+{
+  "name": "Jane Smith",
+  "age": 28,
+  "address": {
+    "street": "123 Main St",
+    "city": "Springfield",
+    "zip": 12345,
+    "location": {
+      "latitude": 42.1234,
+      "longitude": -71.5678
+    }
+  },
+  "emails": ["jane@example.com", "jane.smith@work.com"]
+}
 )"_padded;
 
 // Test 1: Simple field access
@@ -333,6 +370,225 @@ bool test_root_array_first_field() {
   TEST_SUCCEED();
 }
 
+// ============================================================================
+// Tests for Nested Struct Type Validation with Reflection
+// ============================================================================
+
+// Test 16: Deep nested field access (3 levels: Person -> Address -> Location -> latitude)
+bool test_nested_struct_deep_pointer() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_PERSON_JSON).get(doc));
+
+  double latitude;
+  using accessor = ondemand::json_path::pointer_accessor<Person, "/address/location/latitude">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, latitude));
+  ASSERT_EQUAL(latitude, 42.1234);
+
+  TEST_SUCCEED();
+}
+
+// Test 17: Nested struct with int field (2 levels: Person -> Address -> zip)
+bool test_nested_struct_integer() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_PERSON_JSON).get(doc));
+
+  int zip;
+  using accessor = ondemand::json_path::pointer_accessor<Person, "/address/zip">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, zip));
+  ASSERT_EQUAL(zip, 12345);
+
+  TEST_SUCCEED();
+}
+
+// Test 18: Nested struct with double field (3 levels deep)
+bool test_nested_struct_longitude() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_PERSON_JSON).get(doc));
+
+  double longitude;
+  using accessor = ondemand::json_path::pointer_accessor<Person, "/address/location/longitude">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, longitude));
+  ASSERT_EQUAL(longitude, -71.5678);
+
+  TEST_SUCCEED();
+}
+
+// Test 19: Nested struct string field (2 levels)
+bool test_nested_struct_street() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_PERSON_JSON).get(doc));
+
+  std::string street;
+  using accessor = ondemand::json_path::pointer_accessor<Person, "/address/street">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, street));
+  ASSERT_EQUAL(street, "123 Main St");
+
+  TEST_SUCCEED();
+}
+
+// ============================================================================
+// Compile-Time Error Tests (Documentation Only - These Should NOT Compile)
+// ============================================================================
+//
+// These tests demonstrate compile-time safety. If you uncomment them, they will
+// fail to compile with clear error messages.
+//
+// Example 1: Type mismatch - trying to extract string into int
+// bool test_compile_error_type_mismatch() {
+//   ondemand::parser parser;
+//   ondemand::document doc;
+//   parser.iterate(TEST_USER_JSON).get(doc);
+//
+//   int name;  // ERROR: name is std::string, not int!
+//   using accessor = ondemand::json_path::pointer_accessor<User, "/name">;
+//   accessor::extract_field(doc, name);
+//   // Compile error: "Target type does not match the field type at the pointer"
+//   // static_assert fails: ^^std::string != ^^int
+// }
+//
+// Example 2: Non-existent field
+// bool test_compile_error_invalid_field() {
+//   ondemand::parser parser;
+//   ondemand::document doc;
+//   parser.iterate(TEST_USER_JSON).get(doc);
+//
+//   std::string foo;
+//   using accessor = ondemand::json_path::pointer_accessor<User, "/nonexistent">;
+//   accessor::extract_field(doc, foo);
+//   // Compile error: "JSON Pointer does not match struct definition"
+//   // Field "nonexistent" not found in User struct
+// }
+//
+// Example 3: Wrong nested path
+// bool test_compile_error_wrong_nested_path() {
+//   ondemand::parser parser;
+//   ondemand::document doc;
+//   parser.iterate(TEST_PERSON_JSON).get(doc);
+//
+//   std::string foo;
+//   using accessor = ondemand::json_path::pointer_accessor<Person, "/address/invalid/field">;
+//   accessor::extract_field(doc, foo);
+//   // Compile error: "JSON Pointer does not match struct definition"
+//   // Field "invalid" not found in Address struct
+// }
+//
+// Example 4: Array index on non-array field
+// bool test_compile_error_array_on_scalar() {
+//   ondemand::parser parser;
+//   ondemand::document doc;
+//   parser.iterate(TEST_USER_JSON).get(doc);
+//
+//   std::string foo;
+//   using accessor = ondemand::json_path::pointer_accessor<User, "/name/0">;
+//   accessor::extract_field(doc, foo);
+//   // Compile error: "JSON Pointer does not match struct definition"
+//   // Can't use array index on std::string field
+// }
+//
+// Example 5: Deep nesting type mismatch
+// bool test_compile_error_deep_nesting_type_mismatch() {
+//   ondemand::parser parser;
+//   ondemand::document doc;
+//   parser.iterate(TEST_PERSON_JSON).get(doc);
+//
+//   int latitude;  // ERROR: latitude is double, not int!
+//   using accessor = ondemand::json_path::pointer_accessor<Person, "/address/location/latitude">;
+//   accessor::extract_field(doc, latitude);
+//   // Compile error: "Target type does not match the field type at the pointer"
+//   // static_assert fails: ^^double != ^^int
+// }
+
+// ============================================================================
+// Tests for extract_field() - Reflection-based direct extraction
+// ============================================================================
+
+// ============================================================================
+// Tests for extract_field() with JSON Pointer - Reflection-based direct extraction
+// ============================================================================
+
+// Test 20: extract_field simple string field (JSON Pointer)
+bool test_extract_field_pointer_simple() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_USER_JSON).get(doc));
+
+  std::string name;
+  using accessor = ondemand::json_path::pointer_accessor<User, "/name">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, name));
+  ASSERT_EQUAL(name, "John Doe");
+
+  TEST_SUCCEED();
+}
+
+// Test 21: extract_field integer field (JSON Pointer)
+bool test_extract_field_pointer_integer() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_USER_JSON).get(doc));
+
+  int age;
+  using accessor = ondemand::json_path::pointer_accessor<User, "/age">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, age));
+  ASSERT_EQUAL(age, 30);
+
+  TEST_SUCCEED();
+}
+
+// Test 22: extract_field email field (JSON Pointer)
+bool test_extract_field_pointer_email() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_USER_JSON).get(doc));
+
+  std::string email;
+  using accessor = ondemand::json_path::pointer_accessor<User, "/email">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, email));
+  ASSERT_EQUAL(email, "john@example.com");
+
+  TEST_SUCCEED();
+}
+
+// Test 23: extract_field with Car struct (JSON Pointer)
+bool test_extract_field_pointer_car_make() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_CAR_JSON).get(doc));
+
+  std::string make;
+  using accessor = ondemand::json_path::pointer_accessor<Car, "/make">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, make));
+  ASSERT_EQUAL(make, "Toyota");
+
+  TEST_SUCCEED();
+}
+
+// Test 24: extract_field with year (int64_t) (JSON Pointer)
+bool test_extract_field_pointer_car_year() {
+  TEST_START();
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(TEST_CAR_JSON).get(doc));
+
+  int64_t year;
+  using accessor = ondemand::json_path::pointer_accessor<Car, "/year">;
+  ASSERT_SUCCESS(accessor::extract_field(doc, year));
+  ASSERT_EQUAL(year, 2018);
+
+  TEST_SUCCEED();
+}
+
 } // namespace compile_time_json_pointer_tests
 
 #endif // SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
@@ -358,6 +614,21 @@ int main(int argc, char *argv[]) {
   if (!compile_time_json_pointer_tests::test_last_array_element()) { return EXIT_FAILURE; }
   if (!compile_time_json_pointer_tests::test_second_user_email()) { return EXIT_FAILURE; }
   if (!compile_time_json_pointer_tests::test_root_array_first_field()) { return EXIT_FAILURE; }
+
+  // Test nested struct type validation with reflection (JSON Pointer syntax only)
+  std::cout << "\nRunning nested struct validation tests..." << std::endl;
+  if (!compile_time_json_pointer_tests::test_nested_struct_deep_pointer()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_nested_struct_integer()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_nested_struct_longitude()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_nested_struct_street()) { return EXIT_FAILURE; }
+
+  // Test extract_field() API with JSON Pointer
+  std::cout << "\nRunning extract_field() with JSON Pointer..." << std::endl;
+  if (!compile_time_json_pointer_tests::test_extract_field_pointer_simple()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_extract_field_pointer_integer()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_extract_field_pointer_email()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_extract_field_pointer_car_make()) { return EXIT_FAILURE; }
+  if (!compile_time_json_pointer_tests::test_extract_field_pointer_car_year()) { return EXIT_FAILURE; }
 
   std::cout << "All compile-time JSON Pointer tests passed!" << std::endl;
   return EXIT_SUCCESS;
