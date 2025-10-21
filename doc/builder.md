@@ -60,7 +60,7 @@ The later method (`view()`) is recommended.  For performance reasons, we expect 
 Example: string_builder
 ---------------------------
 
-```C++
+```cpp
 struct Car {
     std::string make;
     std::string model;

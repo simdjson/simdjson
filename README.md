@@ -67,6 +67,9 @@ Real-world usage
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
+
+
+
 Quick Start
 -----------
 
@@ -83,7 +86,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    ```
 2. Create `quickstart.cpp`:
 
-```c++
+```cpp
 #include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
@@ -226,6 +229,13 @@ Contributing to simdjson
 
 Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing to simdjson, and
 [HACKING.md](HACKING.md) for information on source, building, and architecture/design.
+
+
+Stars
+------
+
+[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
+
 
 License
 -------

@@ -184,7 +184,7 @@ You may also call the `source()` method to get a `std::string_view` instance on 
 Let us illustrate the idea with code:
 
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -225,7 +225,7 @@ Some users may need to work with truncated streams. The simdjson may truncate do
 
 Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;

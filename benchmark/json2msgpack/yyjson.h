@@ -100,6 +100,7 @@ struct yyjson : yyjson2msgpack {
            std::string_view &result) {
     yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
     result = to_msgpack(doc, reinterpret_cast<uint8_t*>(buffer));
+    yyjson_doc_free(doc);
     return true;
   }
 };
@@ -113,6 +114,7 @@ struct yyjson_insitu : yyjson2msgpack {
     yyjson_doc *doc =
         yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0);
     result = to_msgpack(doc, reinterpret_cast<uint8_t*>(buffer));
+    yyjson_doc_free(doc);
     return true;
   }
 };

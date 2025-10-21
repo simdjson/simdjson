@@ -407,7 +407,7 @@ public:
    * The following code reads z, then y, then x, and thus will not retrieve x or y if fed the
    * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
-   * ```c++
+   * ```cpp
    * simdjson::ondemand::parser parser;
    * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
    * double z = obj.find_field("z");
@@ -701,7 +701,7 @@ public:
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
    *
-   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   * https://www.rfc-editor.org/rfc/rfc9535 (RFC 9535)
    *
    * Key values are matched exactly, without unescaping or Unicode normalization.
    * We do a byte-by-byte comparison. E.g.
@@ -734,7 +734,7 @@ public:
    * potentially improving performance by skipping unwanted fields.
    *
    * Example:
-   * ```c++
+   * ```cpp
    * struct Car {
    *   std::string make;
    *   std::string model;
