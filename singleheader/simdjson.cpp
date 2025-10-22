@@ -5048,6 +5048,7 @@ namespace internal {
     { SCALAR_DOCUMENT_AS_VALUE, "SCALAR_DOCUMENT_AS_VALUE: A JSON document made of a scalar (number, Boolean, null or string) is treated as a value. Use get_bool(), get_double(), etc. on the document instead. "},
     { OUT_OF_BOUNDS, "OUT_OF_BOUNDS: Attempt to access location outside of document."},
     { TRAILING_CONTENT, "TRAILING_CONTENT: Unexpected trailing content in the JSON input."}
+    { OUT_OF_CAPACITY, "OUT_OF_CAPACITY: The capacity was exceeded, we cannot allocate enough memory."}
   }; // error_messages[]
 
 } // namespace internal
