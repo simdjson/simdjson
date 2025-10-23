@@ -8,6 +8,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <chrono>
 #include <concepts>
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
@@ -39,6 +40,25 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
   double x;
   SIMDJSON_TRY(val.get_double().get(x));
   out = static_cast<T>(x);
+  return SUCCESS;
+}
+
+// Support for std::chrono::duration - deserialize from milliseconds
+template <typename Rep, typename Period, typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val, std::chrono::duration<Rep, Period> &out) noexcept {
+  int64_t ms;
+  SIMDJSON_TRY(val.get_int64().get(ms));
+  out = std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(std::chrono::milliseconds(ms));
+  return SUCCESS;
+}
+
+// Support for std::chrono::time_point - deserialize from milliseconds since epoch
+template <typename Clock, typename Duration, typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val, std::chrono::time_point<Clock, Duration> &out) noexcept {
+  int64_t ms_since_epoch;
+  SIMDJSON_TRY(val.get_int64().get(ms_since_epoch));
+  auto duration = std::chrono::milliseconds(ms_since_epoch);
+  out = std::chrono::time_point<Clock, Duration>(std::chrono::duration_cast<Duration>(duration));
   return SUCCESS;
 }
 
