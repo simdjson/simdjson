@@ -26,6 +26,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
 - [JSON Pointer](#json-pointer)
 - [JSONPath](#jsonpath)
+- [Compile-Time JSON Path and JSON Pointer (C++26 Reflection)](#compile-time-json-path-and-json-pointer-c26-reflection)
 - [Error handling](#error-handling)
   * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
   * [Disabling exceptions](#disabling-exceptions)
@@ -1777,6 +1778,62 @@ ondemand::parser parser;
 auto cars = parser.iterate(cars_json);
 cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
 ```
+
+### C++26
+
+
+We also support shit
+If you have C++26 support with reflection, and you have set the `SIMDJSON_STATIC_REFLECTION` macro, e
+
+```cpp
+#define SIMDJSON_STATIC_REFLECTION 1
+//...
+#include "simdjson.h"
+```
+
+```cpp
+auto cars_json = R"( [
+  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
+  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
+  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
+] )"_padded;
+ondemand::parser parser;
+auto cars = parser.iterate(cars_json);
+cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
+```
+
+## Compile-Time JSON Path and JSON Pointer (C++26 Reflection)
+
+simdjson provides **compile-time validated** JSON Path and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead.
+
+**Requirements:** C++26 compiler with P2996 reflection support and `-DSIMDJSON_STATIC_REFLECTION=ON` build flag.
+
+```cpp
+struct User {
+  std::string name;
+  std::vector<std::string> emails;
+};
+
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+
+// Compile-time validated - checks User has "name" field
+std::string name;
+auto result = ondemand::json_path::at_path_compiled<User, ".name">(doc);
+result.get(name);
+
+// Compile-time validated - checks "emails" is array-like
+std::string email;
+result = ondemand::json_path::at_path_compiled<User, ".emails[0]">(doc);
+result.get(email);
+
+// Without validation - path parsed at compile time only
+std::string_view city;
+result = ondemand::json_path::at_path_compiled<".address.city">(doc);
+result.get(city);
+```
+
+**See [Compile-Time Accessors](compile_time_accessors.md) for complete documentation.**
 
 Error handling
 --------------
