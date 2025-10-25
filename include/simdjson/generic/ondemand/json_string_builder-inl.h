@@ -418,7 +418,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       size_t dc = internal::digit_count(pv);
       // by always writing the minus sign, we avoid the branch.
       buffer.get()[position] = '-';
-      negative += negative ? 1 : 0;
+      position += negative ? 1 : 0;
       char *write_pointer = buffer.get() + position + dc - 1;
       while (pv >= 100) {
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
