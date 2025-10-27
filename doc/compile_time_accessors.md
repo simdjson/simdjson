@@ -1,10 +1,10 @@
-# Compile-Time JSON Path and JSON Pointer Accessors
+# Compile-Time JSONPath and JSON Pointer Accessors
 
 **Note:** This feature requires C++26 Static Reflection support (P2996) and is currently only available with experimental compilers. You must enable it with `-DSIMDJSON_STATIC_REFLECTION=ON` when building.
 
 ## Overview
 
-simdjson provides compile-time JSON Path and JSON Pointer accessors that validate paths against struct definitions at compile time and generate optimized accessor code with zero runtime overhead. This combines the safety of compile-time type checking with the performance of pre-parsed, pre-validated access paths.
+simdjson provides compile-time JSONPath and JSON Pointer accessors that validate paths against struct definitions at compile time and generate optimized accessor code with zero runtime overhead. This combines the safety of compile-time type checking with the performance of pre-parsed, pre-validated access paths.
 
 ## Requirements
 
@@ -105,9 +105,9 @@ result.get(city); // city = "Boston"
 - Working with varied JSON schemas
 - Prototyping or exploratory parsing
 
-## JSON Path Syntax
+## JSONPath Syntax
 
-JSON Path uses dot notation and bracket notation for field access:
+JSONPath uses dot notation and bracket notation for field access:
 
 ### Supported Syntax
 
@@ -193,7 +193,7 @@ at_pointer_compiled<Car, "/">(doc)
 
 ## API Reference
 
-### JSON Path Functions
+### JSONPath Functions
 
 ```cpp
 // With type validation
@@ -222,7 +222,7 @@ simdjson_result<value> at_pointer_compiled(DocOrValue& doc_or_val);
 Extract values directly into variables with compile-time type checking:
 
 ```cpp
-// JSON Path
+// JSONPath
 template<typename T, constevalutil::fixed_string Path>
 struct path_accessor {
   template<typename DocOrValue, typename FieldType>

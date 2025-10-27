@@ -26,7 +26,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
 - [JSON Pointer](#json-pointer)
 - [JSONPath](#jsonpath)
-- [Compile-Time JSON Path and JSON Pointer (C++26 Reflection)](#compile-time-json-path-and-json-pointer-c26-reflection)
+- [Compile-Time JSONPath and JSON Pointer (C++26 Reflection)](#compile-time-jsonpath-and-json-pointer-c26-reflection)
 - [Error handling](#error-handling)
   * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
   * [Disabling exceptions](#disabling-exceptions)
@@ -1802,9 +1802,9 @@ auto cars = parser.iterate(cars_json);
 cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
 ```
 
-## Compile-Time JSON Path and JSON Pointer (C++26 Reflection)
+## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
-simdjson provides **compile-time validated** JSON Path and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead.
+simdjson provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead.
 
 **Requirements:** C++26 compiler with P2996 reflection support and `-DSIMDJSON_STATIC_REFLECTION=ON` build flag.
 
