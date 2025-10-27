@@ -46,6 +46,8 @@
 
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+// Arguably, we should just check SIMDJSON_STATIC_REFLECTION since it
+// is unlikely that we will have reflection support without concepts support.
 #if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 
 #include <string_view>
@@ -55,29 +57,16 @@
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
+/***
+ * JSONPath implementation for compile-time access
+ * RFC 9535 JSONPath: Query Expressions for JSON, https://www.rfc-editor.org/rfc/rfc9535
+ */
 namespace json_path {
 
 // Note: value type must be fully defined before this header is included
 // This is ensured by including this in amalgamated.h after value-inl.h
 
 using ::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value;
-
-// Concept: Indexable container that is not a string or associative container
-// Accepts: std::vector, std::array, std::deque (have operator[], value_type, not string_like)
-// Rejects: std::string (string_like), std::list (no operator[]), std::map (has key_type)
-template<typename Container>
-concept indexable_container = requires {
-  typename Container::value_type;
-  requires !concepts::string_like<Container>;
-  requires !requires { typename Container::key_type; };  // Reject maps/sets
-  requires requires(Container& c, std::size_t i) {
-    { c[i] } -> std::convertible_to<typename Container::value_type>;
-  };
-};
-
-// Variable template to use with std::meta::substitute
-template<typename Container>
-constexpr bool indexable_container_v = indexable_container<Container>;
 
 // Path step types
 enum class step_type {
@@ -236,7 +225,6 @@ struct path_accessor {
   // Example: std::string name; path_accessor<User, ".name">::extract_field(doc, name);
   template<typename DocOrValue, typename FieldType>
   static inline error_code extract_field(DocOrValue& doc_or_val, FieldType& target) noexcept {
-#if SIMDJSON_STATIC_REFLECTION
     static_assert(std::is_class_v<T>, "extract_field requires T to be a struct type for validation");
 
     // Validate path exists in struct definition
@@ -254,16 +242,12 @@ struct path_accessor {
     if (json_value.error()) return json_value.error();
 
     return json_value.get(target);
-#else
-    return NOT_SUPPORTED;
-#endif
   }
 
 private:
   // Get the final type by walking the path through the struct type
   template<typename U = T>
   static consteval std::enable_if_t<std::is_class_v<U>, std::meta::info> get_final_type() {
-#if SIMDJSON_STATIC_REFLECTION
     auto current_type = ^^T;
     std::size_t i = parser.skip_root();
 
@@ -332,16 +316,12 @@ private:
     }
 
     return current_type;
-#else
-    return ^^void;
-#endif
   }
 
 private:
   // Walk path and extract directly into final field using compile-time reflection
   template<std::meta::info CurrentType, std::size_t PathPos, typename TargetType>
   static inline error_code extract_with_reflection(simdjson_result<value> current, TargetType& target_ref) noexcept {
-#if SIMDJSON_STATIC_REFLECTION
     if (current.error()) return current.error();
 
     // Base case: end of path - extract into target
@@ -413,22 +393,16 @@ private:
     else {
       return extract_with_reflection<CurrentType, PathPos + 1>(current, target_ref);
     }
-#else
-    return NOT_SUPPORTED;
-#endif
   }
 
   // Find member by name in reflected type
   static consteval std::meta::info find_member_by_name(std::meta::info type_refl, std::string_view name) {
-#if SIMDJSON_STATIC_REFLECTION
     auto members = std::meta::nonstatic_data_members_of(type_refl, std::meta::access_context::unchecked());
     for (auto mem : members) {
       if (std::meta::identifier_of(mem) == name) {
         return mem;
       }
     }
-#endif
-    return ^^void;
   }
 
   // Generate compile-time accessor code by walking the path
@@ -527,18 +501,15 @@ private:
 public:
   // Check if reflected type is array-like (C-style array or indexable container)
   // Uses reflection to test: 1) std::meta::is_array_type() for C arrays
-  //                          2) std::meta::substitute() to test indexable_container concept
+  //                          2) std::meta::substitute() to test concepts::indexable_container concept
   static consteval bool is_array_like_reflected(std::meta::info type_reflection) {
-#if SIMDJSON_STATIC_REFLECTION
     if (std::meta::is_array_type(type_reflection)) {
       return true;
     }
 
-    if (std::meta::can_substitute(^^indexable_container_v, {type_reflection})) {
-      return std::meta::extract<bool>(std::meta::substitute(^^indexable_container_v, {type_reflection}));
+    if (std::meta::can_substitute(^^concepts::indexable_container_v, {type_reflection})) {
+      return std::meta::extract<bool>(std::meta::substitute(^^concepts::indexable_container_v, {type_reflection}));
     }
-    return false;
-#endif
     return false;
   }
 
@@ -546,7 +517,6 @@ public:
   // For C arrays: uses std::meta::remove_extent()
   // For containers: finds value_type member using std::meta::members_of()
   static consteval std::meta::info get_element_type_reflected(std::meta::info type_reflection) {
-#if SIMDJSON_STATIC_REFLECTION
     if (std::meta::is_array_type(type_reflection)) {
       return std::meta::remove_extent(type_reflection);
     }
@@ -560,7 +530,6 @@ public:
         }
       }
     }
-#endif
     return ^^void;
   }
 
@@ -568,28 +537,24 @@ private:
   // Check if type has member with given name
   template<typename Type>
   static consteval bool has_member(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
     constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
     for (auto mem : members) {
       if (std::meta::identifier_of(mem) == member_name) {
         return true;
       }
     }
-#endif
     return false;
   }
 
   // Get type of member by name
   template<typename Type>
   static consteval auto get_member_type(std::string_view member_name) {
-#if SIMDJSON_STATIC_REFLECTION
     constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
     for (auto mem : members) {
       if (std::meta::identifier_of(mem) == member_name) {
         return std::meta::type_of(mem);
       }
     }
-#endif
     return ^^void;
   }
 
@@ -620,7 +585,6 @@ private:
 
   // Validate path matches struct definition
   static consteval bool validate_path() {
-#if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
       return true;
     }
@@ -709,9 +673,6 @@ private:
     }
 
     return true;
-#else
-    return true;
-#endif
   }
 };
 
@@ -821,7 +782,6 @@ struct pointer_accessor {
 
   // Validate pointer against struct definition
   static consteval bool validate_pointer() {
-#if SIMDJSON_STATIC_REFLECTION
     if constexpr (!std::is_class_v<T>) {
       return true;
     }
@@ -860,8 +820,6 @@ struct pointer_accessor {
     }
 
     return true;
-#endif
-    return false;
   }
 
   // Recursive accessor
@@ -908,7 +866,6 @@ struct pointer_accessor {
   // Extract value at pointer directly into target with type validation
   template<typename DocOrValue, typename FieldType>
   static inline error_code extract_field(DocOrValue& doc_or_val, FieldType& target) noexcept {
-#if SIMDJSON_STATIC_REFLECTION
     static_assert(std::is_class_v<T>, "extract_field requires T to be a struct type for validation");
 
     constexpr bool pointer_valid = validate_pointer();
@@ -922,16 +879,12 @@ struct pointer_accessor {
     if (json_value.error()) return json_value.error();
 
     return json_value.get(target);
-#else
-    return NOT_SUPPORTED;
-#endif
   }
 
 private:
   // Get final type by walking pointer through struct
   template<typename U = T>
   static consteval std::enable_if_t<std::is_class_v<U>, std::meta::info> get_final_type() {
-#if SIMDJSON_STATIC_REFLECTION
     auto current_type = ^^T;
     std::size_t pos = pointer_view[0] == '/' ? 1 : 0;
 
@@ -958,9 +911,6 @@ private:
     }
 
     return current_type;
-#else
-    return ^^void;
-#endif
   }
 };
 

@@ -1804,34 +1804,22 @@ cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
 
 ## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
-simdjson provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead.
+simdjson provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
+is validated at compile-time.
 
 **Requirements:** C++26 compiler with P2996 reflection support and `-DSIMDJSON_STATIC_REFLECTION=ON` build flag.
 
 ```cpp
-struct User {
-  std::string name;
-  std::vector<std::string> emails;
-};
-
 ondemand::parser parser;
 auto doc = parser.iterate(json);
-
-// Compile-time validated - checks User has "name" field
-std::string name;
-auto result = ondemand::json_path::at_path_compiled<User, ".name">(doc);
-result.get(name);
-
-// Compile-time validated - checks "emails" is array-like
-std::string email;
-result = ondemand::json_path::at_path_compiled<User, ".emails[0]">(doc);
-result.get(email);
 
 // Without validation - path parsed at compile time only
 std::string_view city;
 result = ondemand::json_path::at_path_compiled<".address.city">(doc);
 result.get(city);
 ```
+
+We further provide type-validation so that you can check that the types are as you expect.
 
 **See [Compile-Time Accessors](compile_time_accessors.md) for complete documentation.**
 
