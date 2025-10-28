@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.0.7</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -107,8 +107,7 @@ $(document).ready(function(){initNavTree('md_doc_2ondemand__design.html',''); in
 <p>To achieve ease of use, we mimicked the <em>form</em> of a traditional DOM API: you can iterate over arrays, look up fields in objects, and extract native values like <code>double</code>, <code>uint64_t</code>, <code>string</code> and <code>bool</code>.</p>
 <p>To achieve performance, we introduced some key limitations that make the DOM API <em>streaming</em>: array/object iteration cannot be restarted, and string/number values can only be parsed once. If these limitations are acceptable to you, the On-Demand API could help you write maintainable applications with a computation efficiency that is difficult to surpass.</p>
 <p>A code example illustrates our API from a programmer's point of view:</p>
-<div class="fragment"><div class="line"> ++</div>
-<div class="line">ondemand::parser parser;</div>
+<div class="fragment"><div class="line">ondemand::parser parser;</div>
 <div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 <div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> tweet : doc[<span class="stringliteral">&quot;statuses&quot;</span>]) {</div>
 <div class="line">  std::string_view text        = tweet[<span class="stringliteral">&quot;text&quot;</span>];</div>
@@ -157,13 +156,12 @@ $(document).ready(function(){initNavTree('md_doc_2ondemand__design.html',''); in
 <li><b>Validate What You Use:</b> On-Demand deliberately validates the values you use and the structure leading to it, but nothing else. The goal is a guarantee that the value you asked for is the correct one and is not malformed: there must be no confusion over whether you got the right value.</li>
 </ul>
 <p>To understand why On-Demand is different, it is helpful to review the major approaches to parsing and parser APIs in use today.</p>
-<h2><a class="anchor" id="autotoc_md88"></a>
+<h2><a class="anchor" id="autotoc_md117"></a>
 DOM Parsers</h2>
 <p>Many of the most usable, popular JSON APIs (including simdjson) deserialize into a <b>DOM</b>: an intermediate tree of objects, arrays and values. In this model, we convert the input data all at once into a tree-like structure (the DOM). The DOM is then accessed by the programmer like any other in-memory data structure. The resulting API let you refer to each array or object separately, using familiar techniques like iteration (<code>for (auto value : array)</code>) or indexing (<code>object["key"]</code>). In some cases, the values are even deserialized directly into familiar C++ constructs like vectors and maps.</p>
 <p>The DOM approach is conceptually simple and "programmer friendly". Using the DOM tree is often easy enough that many users process the DOM as-is instead of creating their own custom data structures.</p>
 <p>The DOM approach was the only way to parse JSON documents up to version 0.6 of the simdjson library. Our DOM API looks similar to our On-Demand example, except it calls <code>parse</code> instead of <code>iterate</code>:</p>
-<div class="fragment"><div class="line"> ++</div>
-<div class="line">dom::parser parser;</div>
+<div class="fragment"><div class="line">dom::parser parser;</div>
 <div class="line"><span class="keyword">auto</span> doc = parser.parse(json);</div>
 <div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> tweet : doc[<span class="stringliteral">&quot;statuses&quot;</span>]) {</div>
 <div class="line">  std::string_view text        = tweet[<span class="stringliteral">&quot;text&quot;</span>];</div>
@@ -182,13 +180,12 @@ DOM Parsers</h2>
 <li>Performance drain from type blindness.</li>
 </ul>
 <p>What the simdjson library demonstrates is that a DOM API may be quite fast indeed: we can parse files at speeds of several gigabytes per second. However, in some instances, it may be possible to achieve even higher speeds.</p>
-<h2><a class="anchor" id="autotoc_md89"></a>
+<h2><a class="anchor" id="autotoc_md118"></a>
 Event-Based Parsers (SAX, SAJ, etc.)</h2>
 <p>The event-based model (originally from the "Streaming API for XML") uses streaming to eliminate the cost of parsing and storing the entire JSON. In the event-based model, a core JSON engine parses the JSON document piece by piece, but instead of stuffing values in a DOM tree, it passes each value to a callback function, letting the user decide for themselves how to handle it. In such a model, the programmer may need to provide functions for all possible events (a number, a string, a new object, a new array, the array ends, the object ends, and so on). This allows programmers to work with much larger files without running out of memory.</p>
 <p>The drawback is complexity: event-based APIs generally have you define a single callback for each type (e.g. <code>string_field(std::string_view key, std::string_view value)</code>). Because of this, the programmer suffers from context blindness: when they find a string they have to check where it is before they know what to do with it. Is this string the text of the tweet, the screen name, or something else? Are we even in a tweet right now, or is this from some other place in the document entirely? Though an event-based approach may allow superior performance, it is demanding of the programmer who must efficiently keep track of its current state within the JSON input.</p>
 <p>The following is event-based example of the Twitter problem we have reviewed in the DOM and On-Demand examples. To make it short enough to use as an example at all, it has heavily redacted: it only solves a part of the problem (does not get user.screen_name), it has bugs (it does not handle sub-objects in a tweet at all), and it uses a theoretical, simple event-based API that minimizes ceremony.</p>
-<div class="fragment"><div class="line"> ++</div>
-<div class="line"><span class="keyword">struct </span>twitter_callbacks {</div>
+<div class="fragment"><div class="line"><span class="keyword">struct </span>twitter_callbacks {</div>
 <div class="line">  <span class="keywordtype">bool</span> in_statuses;</div>
 <div class="line">  <span class="keywordtype">bool</span> in_tweet;</div>
 <div class="line">  std::string_view text;</div>
@@ -232,7 +229,7 @@ Event-Based Parsers (SAX, SAJ, etc.)</h2>
 <li>Lacks the safety of DOM: malformed documents could be ingested.</li>
 </ul>
 <p>Though an event-based approach might have its niche uses, we believe that it is rarely ideally suited. We suspect that it is mostly used when performance and memory is a concern, and no other option (except DOM) is readily available.</p>
-<h2><a class="anchor" id="autotoc_md90"></a>
+<h2><a class="anchor" id="autotoc_md119"></a>
 Schema-Based Parser Generators</h2>
 <p>In a schema-based model, the programmer provides a description of a data structure, and the parser constructs the data structure in question during parsing. These parsers take a schema&ndash;a description of your JSON, with field names, types, everything&ndash;and generate classes/structs in your language of choice, as well as a parser to deserialize the JSON into those structs. Some such parsers let you define your own data structures (<code>struct</code>) and they let a preprocessor inspects it and generates a custom JSON parser for it. Though not all of these schema-based parser generators generate a parser or even optimize for streaming, but they are <em>able</em> to in principle. Unlike the DOM and the event-based models, a schema-based approach assumes that the structure of the document is known at compile-time.</p>
 <p>Pros of the schema-based approach:</p><ul>
@@ -246,14 +243,14 @@ Schema-Based Parser Generators</h2>
 <li>It is less flexible than the DOM or event-based approaches, sometimes limited to a deserialization-to-objects scenario.</li>
 <li>The structure of the data must be fully known at compile-time.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md91"></a>
+<h2><a class="anchor" id="autotoc_md120"></a>
 Type Blindness and Branch Misprediction</h2>
 <p>The DOM and event-based parsing model suffer from <b>type blindness</b>: even when the programmer knows exactly what fields and what types are in the JSON document, the parser does not. This means it has to look at each value blind with a big "switch" statement, asking "is this a number? A string? A boolean? An array? An object?"</p>
 <p>In modern processors, this kind of switch statement can make your program run slower than it needs to because of the high cost of branch misprediction. Indeed, modern processor cores rely on speculative execution for speed. They "read ahead" in your program, predicting which instructions to run as soon as the data is available. A single-threaded program can execute 2, 3 or even more instructions per cycle&ndash;largely because of speculative execution.</p>
 <p>Unfortunately, when the processor mispredicts the instructions, typically due to a mispredicted branch, all of the work done from the misprediction has be discarded and started anew. The processor may have been executing 3 or 4 instructions per cycle, and consuming the corresponding power, but all of the work may have been wasteful.</p>
 <p>Type blindness means that the processor has to guess, for every JSON value, whether it will be an array, an object, number, string or boolean since these correspond to distinct code paths. Though some JSON files have predictable content, we find in practice that many JSON files stress the branch prediction. Though branch predictors improve with each new generation of processors, the cost of branch mispredictions also tends to increase as pipelines expand, and the processors become able to schedule longer streams of instructions.</p>
 <p>On-Demand parsing is tailor-made to solve this problem at the source, parsing values only after the user declares their type by asking for a <code>double</code>, an <code>int</code>, a <code>string</code>, etc. It attempts to do so while preserving most of the flexibility of DOM parsing.</p>
-<h1><a class="anchor" id="autotoc_md92"></a>
+<h1><a class="anchor" id="autotoc_md121"></a>
 Algorithm</h1>
 <p>To help visualize the algorithm, we'll walk through the example C++ given at the top, for this JSON:</p>
 <div class="fragment"><div class="line">{</div>
@@ -263,17 +260,15 @@ Algorithm</h1>
 <div class="line">  ],</div>
 <div class="line">  &quot;search_metadata&quot;: { &quot;count&quot;: 2 }</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md93"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md122"></a>
 Starting the iteration</h2>
 <ol type="1">
 <li><p class="startli">First, we declare a parser object that keeps internal buffers necessary for parsing. This can be reused to parse multiple JSON files, so you do not pay the high cost of allocating memory every time (and so it can stay in cache!).</p>
 <p class="startli">This declaration does not allocate any memory; that will happen in the next step.</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">  ondemand::parser parser;</div>
+<div class="fragment"><div class="line">ondemand::parser parser;</div>
 </div><!-- fragment --></li>
 <li><p class="startli">We then start iterating the JSON document by allocating internal parser buffers, preprocessing the JSON, and initializing the iterator.</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">  <span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 </div><!-- fragment --><p class="startli">Since this is the first time this parser has been used, <code>iterate()</code> first allocates internal parser buffers if this is the first time through. When reusing an existing parser, allocation only happens if the new document is bigger than internal buffers can handle. The On-Demand API only ever allocates memory in the <code>iterate()</code> function call.</p>
 <p class="startli">The simdjson library then preprocesses the JSON text at high speed, finding all tokens (i.e. the starting position of any JSON value, as well as any important operators like <code>,</code>, <code>:</code>, <code>]</code> or <code>}</code>).</p>
 <p class="startli">Finally, a <code>document</code> iterator is created, initialized at the position of the first value in the <code>json</code> text input. The document iterator is bumped forward by array / object iterators and object[] lookup, and must be kept around until iteration is complete.</p>
@@ -295,36 +290,34 @@ Starting the iteration</h2>
 <div class="line">}</div>
 </div><!-- fragment --><ol type="1">
 <li><p class="startli">We iterate over the "statuses" field using a typical C++ iterator, reading past the initial <code>{ "statuses": [ {</code>.</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">  <span class="keywordflow">for</span> (ondemand::object tweet : doc[<span class="stringliteral">&quot;statuses&quot;</span>]) {</div>
+<div class="fragment"><div class="line"><span class="keywordflow">for</span> (ondemand::object tweet : doc[<span class="stringliteral">&quot;statuses&quot;</span>]) {</div>
 </div><!-- fragment --><p class="startli">This shorthand does a lot, and it is helpful to see what it expands to. Comments in front of each one explain what's going on:</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">  <span class="comment">// Validate that the top-level value is an object: check for {. Increase depth to 2 (root &gt; field).</span></div>
-<div class="line">  ondemand::object top = doc.get_object();</div>
+<div class="fragment"><div class="line"><span class="comment">// Validate that the top-level value is an object: check for {. Increase depth to 2 (root &gt; field).</span></div>
+<div class="line">ondemand::object top = doc.get_object();</div>
 <div class="line"> </div>
-<div class="line">  <span class="comment">// Find the field statuses by:</span></div>
-<div class="line">  <span class="comment">// 1. Check whether the object is empty (check for }). (We do not really need to do this unless</span></div>
-<div class="line">  <span class="comment">//    the key lookup fails!)</span></div>
-<div class="line">  <span class="comment">// 2. Check if we&#39;re at the field by looking for the string &quot;statuses&quot; using byte-by-byte comparison.</span></div>
-<div class="line">  <span class="comment">// 3. Validate that there is a `:` after it.</span></div>
-<div class="line">  <span class="keyword">auto</span> tweets_field = top[<span class="stringliteral">&quot;statuses&quot;</span>];</div>
+<div class="line"><span class="comment">// Find the field statuses by:</span></div>
+<div class="line"><span class="comment">// 1. Check whether the object is empty (check for }). (We do not really need to do this unless</span></div>
+<div class="line"><span class="comment">//    the key lookup fails!)</span></div>
+<div class="line"><span class="comment">// 2. Check if we&#39;re at the field by looking for the string &quot;statuses&quot; using byte-by-byte comparison.</span></div>
+<div class="line"><span class="comment">// 3. Validate that there is a `:` after it.</span></div>
+<div class="line"><span class="keyword">auto</span> tweets_field = top[<span class="stringliteral">&quot;statuses&quot;</span>];</div>
 <div class="line"> </div>
-<div class="line">  <span class="comment">// - Validate that the field value is an array: check for [</span></div>
-<div class="line">  <span class="comment">// - If the array is empty (if there is a ] next), decrease depth back to 0.</span></div>
-<div class="line">  <span class="comment">// - If not, increase depth to 3 (root &gt; statuses &gt; tweet).</span></div>
-<div class="line">  ondemand::array tweets = tweets_field.get_array();</div>
-<div class="line">  <span class="comment">// These three method calls do nothing substantial (the real checking happens in get_array() and ++)</span></div>
-<div class="line">  <span class="comment">// != checks whether the array is finished (if we found a ] and decreased depth back to 0).</span></div>
-<div class="line">  ondemand::array_iterator tweets_iter = tweets.begin();</div>
-<div class="line">  <span class="keywordflow">while</span> (tweets_iter != tweets.end()) {</div>
-<div class="line">    <span class="keyword">auto</span> tweet_value = *tweets_iter;</div>
+<div class="line"><span class="comment">// - Validate that the field value is an array: check for [</span></div>
+<div class="line"><span class="comment">// - If the array is empty (if there is a ] next), decrease depth back to 0.</span></div>
+<div class="line"><span class="comment">// - If not, increase depth to 3 (root &gt; statuses &gt; tweet).</span></div>
+<div class="line">ondemand::array tweets = tweets_field.get_array();</div>
+<div class="line"><span class="comment">// These three method calls do nothing substantial (the real checking happens in get_array() and ++)</span></div>
+<div class="line"><span class="comment">// != checks whether the array is finished (if we found a ] and decreased depth back to 0).</span></div>
+<div class="line">ondemand::array_iterator tweets_iter = tweets.begin();</div>
+<div class="line"><span class="keywordflow">while</span> (tweets_iter != tweets.end()) {</div>
+<div class="line">  <span class="keyword">auto</span> tweet_value = *tweets_iter;</div>
 <div class="line"> </div>
-<div class="line">    <span class="comment">// - Validate that the array element is an object: check for {</span></div>
-<div class="line">    <span class="comment">// - If the object is empty (if there is a } next), decrease depth back to 1.</span></div>
-<div class="line">    <span class="comment">// - If not, increase depth to 4 (root &gt; statuses &gt; tweet &gt; field).</span></div>
-<div class="line">    ondemand::object tweet = tweet_value.get_object();</div>
-<div class="line">    ...</div>
-<div class="line">  }</div>
+<div class="line">  <span class="comment">// - Validate that the array element is an object: check for {</span></div>
+<div class="line">  <span class="comment">// - If the object is empty (if there is a } next), decrease depth back to 1.</span></div>
+<div class="line">  <span class="comment">// - If not, increase depth to 4 (root &gt; statuses &gt; tweet &gt; field).</span></div>
+<div class="line">  ondemand::object tweet = tweet_value.get_object();</div>
+<div class="line">  ...</div>
+<div class="line">}</div>
 </div><!-- fragment --></li>
 </ol>
 <blockquote class="doxtable">
@@ -341,8 +334,7 @@ Starting the iteration</h2>
 <div class="line">}</div>
 </div><!-- fragment --><ol type="1">
 <li><p class="startli">We get the <code>"text"</code> field as a string.</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">  std::string_view text        = tweet[<span class="stringliteral">&quot;text&quot;</span>];</div>
+<div class="fragment"><div class="line">std::string_view text        = tweet[<span class="stringliteral">&quot;text&quot;</span>];</div>
 </div><!-- fragment --><p class="startli">First, <code>["text"]</code> skips the <code>"id"</code> field because it does not match: skips the key, <code>:</code> and value (<code>1</code>). We then check whether there are more fields by looking for either <code>,</code> or <code>}</code>.</p>
 <p class="startli">The second field is matched (<code>"text"</code>), so we validate the <code>:</code> and move to the actual value.</p>
 </li>
@@ -374,7 +366,7 @@ Starting the iteration</h2>
 
 4. We get the &lt;tt&gt;"screen_name"&lt;/tt&gt; from the &lt;tt&gt;"user"&lt;/tt&gt; object.
 
-   @icode{c} ++
+   @icode{cpp} 
       ondemand::object user        = tweet["user"];
       screen_name                  = user["screen_name"];
    @endicode 
@@ -408,7 +400,7 @@ Starting the iteration</h2>
 
 5. We get &lt;tt&gt;"retweet_count"&lt;/tt&gt; as an unsigned integer.
 
-   @icode{c} ++
+   @icode{cpp} 
    uint64_t         retweets    = tweet["retweet_count"];
    @endicode 
 
@@ -452,7 +444,7 @@ Starting the iteration</h2>
 
 6. We loop to the next tweet.
 
-   @icode{c} ++
+   @icode{cpp} 
    for (ondemand::object tweet : doc["statuses"]) {
      ...
    }
@@ -460,7 +452,7 @@ Starting the iteration</h2>
 
    The relevant parts of the loop  are:
 
-   @icode{c} ++
+   @icode{cpp} 
    while (iter != statuses.end()) {
      ondemand::object tweet = *iter;
      ...
@@ -505,7 +497,7 @@ Starting the iteration</h2>
 
 8. The loop ends. Recall the relevant parts of the statuses loop:
 
-   @icode{c} ++
+   @icode{cpp} 
    while (iter != statuses.end()) {
      ondemand::object tweet = *iter;
      ...
@@ -540,16 +532,16 @@ Starting the iteration</h2>
    values you do use, however, as well as the objects and arrays that lead to them, so that you can
    be sure you get the information you need.
 
-@section autotoc_md94 Design Features
+@section autotoc_md123 Design Features
 
 
-@subsection autotoc_md95 String Parsing
+@subsection autotoc_md124 String Parsing
 
 When the user requests strings, we unescape them to a single string buffer much like the DOM parser
 so that users enjoy the same string performance as the core simdjson. We do not write the length to the
 string buffer, however; that is stored in the &lt;tt&gt;string_view&lt;/tt&gt; instance we return to the user.
 
-@icode{C} ++
+@icode{cpp} 
   ondemand::parser parser;
   auto doc = parser.iterate(json);
   std::set&lt;std::string_view&gt; default_users;
@@ -575,12 +567,11 @@ direct raw ASCII comparisons: &lt;tt&gt;key().raw()&lt;/tt&gt; provides direct a
 You can compare &lt;tt&gt;key()&lt;/tt&gt; with unescaped C strings (e.g., &lt;tt&gt;key()=="test"&lt;/tt&gt;). It is expected
 that the provided string is a valid JSON string. Importantly,
 the C string must not contain an unescaped quote character (&lt;tt&gt;"</code>). For speed, the comparison is done byte-by-byte without handling the escaped characters. If you occasionally need to access and store the unescaped key values, you may use the <code>unescaped_key()</code> method. Once you have called <code>unescaped_key()</code> method, neither the <code>key()</code> nor the <code>unescaped_key()</code> methods should be called: the current field instance has no longer a key (that is by design). Like other strings, the resulting <code>std::string_view</code> generated from the <code>unescaped_key()</code> method has a lifecycle tied to the <code>parser</code> instance: once the parser is destroyed or reused with another document, the <code>std::string_view</code> instance becomes invalid.</p>
-<div class="fragment"><div class="line"> ++</div>
-<div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 <div class="line"><span class="keywordflow">for</span>(<span class="keyword">auto</span> field : doc.get_object())  {</div>
 <div class="line">      std::string_view keyv = field.unescaped_key();</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md96"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md125"></a>
 Iteration Safety</h2>
 <p>The On-Demand API is powerful. To compensate, we add some safeguards to ensure that it can be used without fear in production systems:</p>
 <ul>
@@ -589,41 +580,39 @@ Iteration Safety</h2>
 <li>Guaranteed Iteration: If you discard a value without using it&ndash;perhaps you just wanted to know if it was <code>nullptr</code> but did not care what the actual value was&ndash;it will iterate. The destructor automates the iteration.</li>
 </ul>
 <p>Some care is needed when using the On-Demand API in scenarios where you need to access several sibling arrays or objects because only one object or array can be active at any one time. Let us consider the following example:</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">   ondemand::parser parser;</div>
-<div class="line">   <span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral">   </span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
-<div class="line">   ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
-<div class="line">   <span class="comment">// parent owns the focus</span></div>
-<div class="line">   ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>
-<div class="line">   <span class="comment">// c1 owns the focus</span></div>
-<div class="line">   <span class="comment">//</span></div>
-<div class="line">   <span class="keywordflow">if</span> (std::string_view(c1[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;John&quot;</span>) { ... }</div>
-<div class="line">   <span class="comment">// c2 attempts to grab the focus from parent but fails</span></div>
-<div class="line">   ondemand::object c2 = parent[<span class="stringliteral">&quot;child2&quot;</span>];</div>
-<div class="line">   <span class="comment">// c2 is now in an unsafe state and the following line would be unsafe</span></div>
-<div class="line">   <span class="comment">// if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</span></div>
+<div class="fragment"><div class="line">ondemand::parser parser;</div>
+<div class="line"><span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="line">ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
+<div class="line"><span class="comment">// parent owns the focus</span></div>
+<div class="line">ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>
+<div class="line"><span class="comment">// c1 owns the focus</span></div>
+<div class="line"><span class="comment">//</span></div>
+<div class="line"><span class="keywordflow">if</span> (std::string_view(c1[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;John&quot;</span>) { ... }</div>
+<div class="line"><span class="comment">// c2 attempts to grab the focus from parent but fails</span></div>
+<div class="line">ondemand::object c2 = parent[<span class="stringliteral">&quot;child2&quot;</span>];</div>
+<div class="line"><span class="comment">// c2 is now in an unsafe state and the following line would be unsafe</span></div>
+<div class="line"><span class="comment">// if (std::string_view(c2[&quot;name&quot;]) != &quot;Daniel&quot;) { return false; }</span></div>
 </div><!-- fragment --><p>A correct usage is given by the following example:</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line">   ondemand::parser parser;</div>
-<div class="line">   <span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral">   </span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
-<div class="line">   ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
-<div class="line">   <span class="comment">// At this point, parent owns the focus</span></div>
-<div class="line">   {</div>
-<div class="line">     ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>
-<div class="line">     <span class="comment">// c1 grabbed the focus from parent</span></div>
-<div class="line">     <span class="keywordflow">if</span> (std::string_view(c1[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;John&quot;</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
-<div class="line">   }</div>
-<div class="line">   <span class="comment">// c1 went out of scope, so its destructor was called and the focus</span></div>
-<div class="line">   <span class="comment">// was handed back to parent.</span></div>
-<div class="line">   {</div>
-<div class="line">     ondemand::object c2 = parent[<span class="stringliteral">&quot;child2&quot;</span>];</div>
-<div class="line">     <span class="comment">// c2 grabbed the focus from parent</span></div>
-<div class="line">     <span class="comment">// the following is safe:</span></div>
-<div class="line">     <span class="keywordflow">if</span> (std::string_view(c2[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;Daniel&quot;</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
-<div class="line">   }</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md97"></a>
+<div class="fragment"><div class="line">ondemand::parser parser;</div>
+<div class="line"><span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="line">ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
+<div class="line"><span class="comment">// At this point, parent owns the focus</span></div>
+<div class="line">{</div>
+<div class="line">  ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>
+<div class="line">  <span class="comment">// c1 grabbed the focus from parent</span></div>
+<div class="line">  <span class="keywordflow">if</span> (std::string_view(c1[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;John&quot;</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// c1 went out of scope, so its destructor was called and the focus</span></div>
+<div class="line"><span class="comment">// was handed back to parent.</span></div>
+<div class="line">{</div>
+<div class="line">  ondemand::object c2 = parent[<span class="stringliteral">&quot;child2&quot;</span>];</div>
+<div class="line">  <span class="comment">// c2 grabbed the focus from parent</span></div>
+<div class="line">  <span class="comment">// the following is safe:</span></div>
+<div class="line">  <span class="keywordflow">if</span> (std::string_view(c2[<span class="stringliteral">&quot;name&quot;</span>]) != <span class="stringliteral">&quot;Daniel&quot;</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">}</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md126"></a>
 Benefits of the On-Demand Approach</h2>
 <p>We expect that the On-Demand approach has many of the performance benefits of the schema-based approach, while providing a flexibility that is similar to that of the DOM-based approach.</p>
 <ul>
@@ -631,7 +620,7 @@ Benefits of the On-Demand Approach</h2>
 <li>Straightforward, programmer-friendly interface (arrays and objects).</li>
 <li>Highly expressive, beyond deserialization and pointer queries: many tasks can be accomplished with little code.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md98"></a>
+<h2><a class="anchor" id="autotoc_md127"></a>
 Limitations of the On-Demand Approach</h2>
 <p>The On-Demand approach has some limitations:</p>
 <ul>
@@ -643,7 +632,7 @@ Limitations of the On-Demand Approach</h2>
 <li>The simdjson library offers runtime dispatching which allows you to compile one binary and have it run at full speed on different processors, taking advantage of the specific features of the processor. The On-Demand API has limited runtime dispatch support. Under x64 systems, to fully benefit from the On-Demand API, we recommend that you compile your code for a specific processor. E.g., if your processor supports AVX2 instructions, you should compile your binary executable with AVX2 instruction support (by using your compiler's commands). If you are sufficiently technically proficient, you can implement runtime dispatching within your application, by compiling your On-Demand code for different processors.</li>
 <li>There is an initial phase which scans the entire document quickly, irrespective of the size of the document. We plan to break this phase into distinct steps for large files in a future release as we have done with other components of our API (e.g., <code>parse_many</code>).</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md99"></a>
+<h2><a class="anchor" id="autotoc_md128"></a>
 Applicability of the On-Demand Approach</h2>
 <p>At this time we recommend the On-Demand API in the following cases:</p>
 <ol type="1">
@@ -658,14 +647,13 @@ Applicability of the On-Demand Approach</h2>
 <li>Both the generation and the consumption of JSON data is within your system. Your team controls both the software that produces the JSON and the software the parses it, your team knows and control the hardware. Thus you can fully test your system.</li>
 <li>You are working with stable JSON APIs which have a consistent layout and JSON dialect.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md100"></a>
+<h1><a class="anchor" id="autotoc_md129"></a>
 Checking Your CPU Selection (x64 systems)</h1>
 <p>The On-Demand API uses advanced architecture-specific code for many common processors to make JSON preprocessing and string parsing faster. By default, however, most c++ compilers will compile to the least common denominator (since the program could theoretically be run anywhere). Since On-Demand is inlined into your own code, it cannot always use these advanced versions unless the compiler is told to target them.</p>
 <p>On relevant systems, the On-Demand API provides some support for runtime dispatching: that is, it will attempt to detect, at runtime, the instructions that your processor supports and optimize the code accordingly. However, it cannot always make full use of the features of your processor.</p>
 <p>Some users wish to run at the best possible speed. Under recent Intel and AMD processors, these users should take additional steps to verify that their code is well optimized.</p>
 <p>Given that the On-Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: <code>icelake</code> (AVX512 x64 processors), <code>haswell</code> (AVX2 x64 processors), <code>westmere</code> (SSE4 x64 processors), <code>arm64</code> (64-bit ARM), <code>ppc64</code> (64-bit POWER), <code>lasx</code> (LoongArch), <code>lsx</code> (LoongArch), <code>fallback</code> (others). Under x64 processors, many programmers will want to target <code>haswell</code> whereas under ARM, most programmers will want to target <code>arm64</code> (and it should do so automatically). The <code>fallback</code> is probably only good for testing purposes, not for deployment.</p>
-<div class="fragment"><div class="line">++</div>
-<div class="line"> std::cout &lt;&lt; <a class="code hl_function" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">simdjson::builtin_implementation</a>()-&gt;<a class="code hl_function" href="classsimdjson_1_1implementation.html#aa1d1e04f5471283ab9b2071ea36adf00">name</a>() &lt;&lt; std::endl;</div>
+<div class="fragment"><div class="line">std::cout &lt;&lt; <a class="code hl_function" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">simdjson::builtin_implementation</a>()-&gt;<a class="code hl_function" href="classsimdjson_1_1implementation.html#aa1d1e04f5471283ab9b2071ea36adf00">name</a>() &lt;&lt; std::endl;</div>
 <div class="ttc" id="aclasssimdjson_1_1implementation_html_aa1d1e04f5471283ab9b2071ea36adf00"><div class="ttname"><a href="classsimdjson_1_1implementation.html#aa1d1e04f5471283ab9b2071ea36adf00">simdjson::implementation::name</a></div><div class="ttdeci">virtual std::string name() const</div><div class="ttdoc">The name of this implementation.</div><div class="ttdef"><b>Definition</b> <a href="implementation_8h_source.html#l00056">implementation.h:56</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a27d0ec4db7cb0197fa90096703a13e25"><div class="ttname"><a href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">simdjson::builtin_implementation</a></div><div class="ttdeci">const implementation * builtin_implementation()</div><div class="ttdoc">Function which returns a pointer to an implementation matching the &quot;builtin&quot; implementation.</div></div>
 </div><!-- fragment --><p>If the <code><a class="el" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25" title="Function which returns a pointer to an implementation matching the &quot;builtin&quot; implementation.">simdjson::builtin_implementation()</a>-&gt;name()</code> call does not return the architecture you wish to target, you may need to pass flags to your compiler.</p>

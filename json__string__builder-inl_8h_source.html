@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.0.7</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -509,9 +509,9 @@ $(document).ready(function(){initNavTree('json__string__builder-inl_8h_source.ht
 <div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>        pv = 0 - pv; <span class="comment">// the 0 is for Microsoft</span></div>
 <div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>      }</div>
 <div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>      <span class="keywordtype">size_t</span> dc = internal::digit_count(pv);</div>
-<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>      <span class="keywordflow">if</span> (negative) {</div>
-<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>        buffer.get()[position++] = <span class="charliteral">&#39;-&#39;</span>;</div>
-<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>      }</div>
+<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>      <span class="comment">// by always writing the minus sign, we avoid the branch.</span></div>
+<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>      buffer.get()[position] = <span class="charliteral">&#39;-&#39;</span>;</div>
+<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>      position += negative ? 1 : 0;</div>
 <div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>      <span class="keywordtype">char</span> *write_pointer = buffer.get() + position + dc - 1;</div>
 <div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>      <span class="keywordflow">while</span> (pv &gt;= 100) {</div>
 <div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span>        memcpy(write_pointer - 1, &amp;internal::decimal_table[(pv % 100) * 2], 2);</div>

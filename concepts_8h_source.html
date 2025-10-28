@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.0.7</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -241,25 +241,44 @@ $(document).ready(function(){initNavTree('concepts_8h_source.html',''); initResi
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  std::ranges::input_range&lt;T&gt; &amp;&amp; !string_like&lt;T&gt; &amp;&amp; !concepts::string_view_keyed_map&lt;T&gt;;</div>
 <div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span> </div>
 <div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span> </div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>} <span class="comment">// namespace concepts</span></div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tag, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span><span class="keyword">concept </span>tag_invocable = <span class="keyword">requires</span>(Tag tag, Args... args) {</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  tag_invoke(std::forward&lt;Tag&gt;(tag), std::forward&lt;Args&gt;(args)...);</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>};</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tag, <span class="keyword">typename</span>... Args&gt;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span><span class="keyword">concept </span>nothrow_tag_invocable =</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    tag_invocable&lt;Tag, Args...&gt; &amp;&amp; <span class="keyword">requires</span>(Tag tag, Args... args) {</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>      {</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>        tag_invoke(std::forward&lt;Tag&gt;(tag), std::forward&lt;Args&gt;(args)...)</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>      } <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    };</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span> </div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span><span class="comment">// Concept: Indexable container that is not a string or associative container</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span><span class="comment">// Accepts: std::vector, std::array, std::deque (have operator[], value_type, not string_like)</span></div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span><span class="comment">// Rejects: std::string (string_like), std::list (no operator[]), std::map (has key_type)</span></div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container&gt;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span><span class="keyword">concept </span>indexable_container = <span class="keyword">requires</span> {</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keyword">typename</span> Container::value_type;</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  <span class="keyword">requires</span> !concepts::string_like&lt;Container&gt;;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="keyword">requires</span> !<span class="keyword">requires</span> { <span class="keyword">typename</span> Container::key_type; };  <span class="comment">// Reject maps/sets</span></div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keyword">requires</span> <span class="keyword">requires</span>(Container&amp; c, std::size_t i) {</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    { c[i] } -&gt; std::convertible_to&lt;typename Container::value_type&gt;;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  };</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>};</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span> </div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span><span class="comment">// Variable template to use with std::meta::substitute</span></div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container&gt;</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span><span class="keyword">constexpr</span> <span class="keywordtype">bool</span> indexable_container_v = indexable_container&lt;Container&gt;;</div>
 <div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_SUPPORTS_CONCEPTS</span></div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CONCEPTS_H</span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>} <span class="comment">// namespace concepts</span></div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span> </div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tag, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span><span class="keyword">concept </span>tag_invocable = <span class="keyword">requires</span>(Tag tag, Args... args) {</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  tag_invoke(std::forward&lt;Tag&gt;(tag), std::forward&lt;Args&gt;(args)...);</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>};</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tag, <span class="keyword">typename</span>... Args&gt;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span><span class="keyword">concept </span>nothrow_tag_invocable =</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>    tag_invocable&lt;Tag, Args...&gt; &amp;&amp; <span class="keyword">requires</span>(Tag tag, Args... args) {</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      {</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>        tag_invoke(std::forward&lt;Tag&gt;(tag), std::forward&lt;Args&gt;(args)...)</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>      } <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    };</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_SUPPORTS_CONCEPTS</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CONCEPTS_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

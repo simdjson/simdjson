@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.0.7</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -131,11 +131,11 @@ $(document).ready(function(){initNavTree('dom_2serialization-inl_8h_source.html'
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>}</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
 <div class="foldopen" id="foldopen00029" data-start="{" data-end="}">
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#abdab607221c423b08344548fa442a45a">   29</a></span><span class="keyword">inline</span> std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">operator&lt;&lt;</a>(std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a>,</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#abdab607221c423b08344548fa442a45a">   29</a></span><span class="keyword">inline</span> std::ostream &amp;operator&lt;&lt;(std::ostream &amp;out,</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                                <a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> value) {</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  simdjson::internal::string_builder&lt;&gt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.append(value);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordflow">return</span> (<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a> &lt;&lt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.str());</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>  simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  sb.append(value);</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
 <div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>}</div>
 </div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
@@ -149,10 +149,10 @@ $(document).ready(function(){initNavTree('dom_2serialization-inl_8h_source.html'
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>}</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#endif</span></div>
 <div class="foldopen" id="foldopen00045" data-start="{" data-end="}">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#a34e6f2a4920f4dcb683f5730f8d8601b">   45</a></span><span class="keyword">inline</span> std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">operator&lt;&lt;</a>(std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a>, <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value) {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  simdjson::internal::string_builder&lt;&gt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.append(value);</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">return</span> (<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a> &lt;&lt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.str());</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#a34e6f2a4920f4dcb683f5730f8d8601b">   45</a></span><span class="keyword">inline</span> std::ostream &amp;operator&lt;&lt;(std::ostream &amp;out, <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> value) {</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>  sb.append(value);</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>}</div>
 </div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
@@ -166,11 +166,11 @@ $(document).ready(function(){initNavTree('dom_2serialization-inl_8h_source.html'
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>}</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="preprocessor">#endif</span></div>
 <div class="foldopen" id="foldopen00060" data-start="{" data-end="}">
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#a1c26d3ab6fcbbb3ecb69add4236f0a4d">   60</a></span><span class="keyword">inline</span> std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">operator&lt;&lt;</a>(std::ostream &amp;<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a>,</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="namespacesimdjson_1_1dom.html#a1c26d3ab6fcbbb3ecb69add4236f0a4d">   60</a></span><span class="keyword">inline</span> std::ostream &amp;operator&lt;&lt;(std::ostream &amp;out,</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>                                <a class="code hl_class" href="classsimdjson_1_1dom_1_1object.html">simdjson::dom::object</a> value) {</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  simdjson::internal::string_builder&lt;&gt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.append(value);</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">return</span> (<a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">out</a> &lt;&lt; <a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">sb</a>.str());</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  simdjson::internal::string_builder&lt;&gt; sb;</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  sb.append(value);</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keywordflow">return</span> (out &lt;&lt; sb.str());</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>}</div>
 </div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>

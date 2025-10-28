@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['simdjson_0',['simdjson',['../index.html',1,'simdjson'],['../md_doc_2tape.html',1,'Tape structure in simdjson']]],
-  ['specific_20implementations_1',['CPU Architecture-Specific Implementations',['../md_doc_2implementation-selection.html',1,'']]],
-  ['structure_20in_20simdjson_2',['Tape structure in simdjson',['../md_doc_2tape.html',1,'']]]
+  ['parse_20documents_0',['A Better Way to Parse Documents?',['../md_doc_2ondemand__design.html',1,'']]],
+  ['parse_5fmany_1',['parse_many',['../md_doc_2parse__many.html',1,'']]],
+  ['performance_20notes_2',['Performance Notes',['../md_doc_2performance.html',1,'']]],
+  ['pointer_20accessors_3',['Compile-Time JSONPath and JSON Pointer Accessors',['../md_doc_2compile__time__accessors.html',1,'']]]
 ];

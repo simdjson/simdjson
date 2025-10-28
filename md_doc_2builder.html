@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.0.7</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -110,7 +110,7 @@ $(document).ready(function(){initNavTree('md_doc_2builder.html',''); initResizab
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md42"></a>
+<h1><a class="anchor" id="autotoc_md45"></a>
 Overview: string_builder</h1>
 <p>The string_builder class is a low-level utility for constructing JSON strings representing documents. It is optimized for performance, potentially leveraging kernel-specific features like SIMD instructions for tasks such as string escaping. This class supports atomic types (e.g., booleans, numbers, strings) but does not handle composed types directly (like arrays or objects). Note that JSON strings are always encoded as UTF-8.</p>
 <p>An <code>string_builder</code> is created with an initial buffer capacity (e.g., 1kB). The memory is reallocated when needed. The efficiency of <code>string_builder</code> stems from its internal use of a resizable array or buffer. When you append data, it adds the characters to this buffer, resizing it only when necessary, typically in a way that minimizes reallocations. This approach contrasts with regular string concatenation, where each operation creates a new string, copying all previous content, leading to quadratic time complexity for repeated concatenations.</p>
@@ -141,10 +141,9 @@ Overview: string_builder</h1>
 <li><code>view()</code>: Returns a view of the written JSON buffer as a <code>simdjson_result&lt;std::string_view&gt;</code> (C++20).</li>
 </ul>
 <p>The later method (<code>view()</code>) is recommended. For performance reasons, we expect you to explicitly call <code>validate_unicode()</code> as needed (e.g., prior to calling <code>view()</code>).</p>
-<h1><a class="anchor" id="autotoc_md43"></a>
+<h1><a class="anchor" id="autotoc_md46"></a>
 Example: string_builder</h1>
-<div class="fragment"><div class="line"> ++</div>
-<div class="line"><span class="keyword">struct </span>Car {</div>
+<div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">    std::string make;</div>
 <div class="line">    std::string model;</div>
 <div class="line">    int64_t year;</div>
@@ -198,7 +197,7 @@ Example: string_builder</h1>
 <div class="line">    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// there was an error</span></div>
 <div class="line">}</div>
 </div><!-- fragment --><p>In all cases, the <code>std::string_view</code> instance depends the corresponding <code>string_builder</code> instance.</p>
-<h2><a class="anchor" id="autotoc_md44"></a>
+<h2><a class="anchor" id="autotoc_md47"></a>
 C++20</h2>
 <p>If you have C++20, you can simplify the code, as the <code>std::vector&lt;double&gt;</code> is automatically supported. Further, we can pass the keys (which are compile-time constant) as template parameter (for improved performance).</p>
 <div class="fragment"><div class="line">Car c = {<span class="stringliteral">&quot;Toyota&quot;</span>, <span class="stringliteral">&quot;Corolla&quot;</span>, 2017, {30.0,30.2,30.513,30.79}};</div>
@@ -259,7 +258,7 @@ C++20</h2>
 <div class="line"> </div>
 <div class="line">} <span class="comment">// namespace simdjson</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md45"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md48"></a>
 C++26 static reflection</h1>
 <p>Static reflection (or compile-time reflection) in C++26 introduces a powerful compile-time mechanism that allows a program to inspect and manipulate its own structure, such as types, variables, functions, and other program elements, during compilation. Unlike runtime reflection in languages like Java or Python, C++26’s static reflection operates entirely at compile time, aligning with C++’s emphasis on zero-overhead abstractions and high performance. It means that you can delegate much of the work to the library. If you have a compiler with support C++26 static reflection, you can compile your code with the <code>SIMDJSON_STATIC_REFLECTION</code> macro set:</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#define SIMDJSON_STATIC_REFLECTION 1</span></div>
@@ -283,7 +282,7 @@ C++26 static reflection</h1>
 <div class="line">    <span class="comment">// &quot;{\&quot;make\&quot;:\&quot;Toyota\&quot;,\&quot;model\&quot;:\&quot;Corolla\&quot;,\&quot;year\&quot;:2017,\&quot;tire_pressure\&quot;:[30.0,30.2,30.513,30.79]}&quot;</span></div>
 <div class="line">    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md46"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md49"></a>
 Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance</h2>
 <p>In some instances, you might want to create a string directly from your own data type. You can create a string directly, without an explicit <code>string_builder</code> instance with the <code>simdjson::to_json</code> template function. (Under the hood a <code>string_builder</code> instance may still be created.)</p>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
@@ -304,7 +303,7 @@ Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance</h2>
 <div class="line"><span class="keyword">auto</span> error = simdjson::to_json(c, s);</div>
 <div class="line"><span class="keywordflow">if</span>(error) { <span class="comment">/* there was an error */</span> }</div>
 </div><!-- fragment --><p>You can then also add a third parameter for the expected output size in bytes.</p>
-<h2><a class="anchor" id="autotoc_md47"></a>
+<h2><a class="anchor" id="autotoc_md50"></a>
 Extracting just some fields</h2>
 <p>In some instances, your class might have many fields that you do not want to serialize. You can achieve this result with the <code>simdjson::extract_from</code> template. In the following example, we serialize only the <code>year</code> and <code>price</code> fields on the <code>Car</code> instance. </p><div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">    std::string make;</div>
@@ -320,7 +319,7 @@ Extracting just some fields</h2>
 <div class="line"><span class="comment">// std::string json_result;</span></div>
 <div class="line"><span class="comment">// auto error =  extract_from&lt;&quot;year&quot;, &quot;price&quot;&gt;(car).get(json_result);</span></div>
 <div class="line"><span class="comment">// if(error) { /* error handling */ }</span></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md48"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md51"></a>
 Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error handling</h2>
 <p>If prefer a version without exceptions and explicit error handling, you can use the following pattern:</p>
 <div class="fragment"><div class="line">std::string json;</div>
@@ -329,7 +328,7 @@ Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error hand
 <div class="line">} <span class="keywordflow">else</span> {</div>
 <div class="line">  <span class="comment">// json contain the serialized JSON</span></div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md49"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md52"></a>
 Customization</h2>
 <p>If you want to serialize a value in a custome way, you can do it with a <code>tag_invoke</code> specialization like the following example which will map the year attribute to a string.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;simdjson&gt;</span></div>
