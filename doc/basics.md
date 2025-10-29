@@ -21,6 +21,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize-simdjsonondemandvalueget-to-get-custom-types-pre-c20)
   * [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
   * [3. Using static reflection (C++26)](#3-using-static-reflection-c26)
+    + [Special cases](#special-cases)
   * [The simdjson::from shortcut (experimental, C++20)](#the-simdjsonfrom-shortcut-experimental-c20)
 - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
