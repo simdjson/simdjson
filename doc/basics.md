@@ -1754,57 +1754,9 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 ```
 
-
-
-### C++26
-
-
-We also support shit
-If you have C++26 support with reflection, and you have set the `SIMDJSON_STATIC_REFLECTION` macro, e
-
-```cpp
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "simdjson.h"
-```
-
-```cpp
-auto cars_json = R"( [
-  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
-ondemand::parser parser;
-auto cars = parser.iterate(cars_json);
-cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
-```
-
-### C++26
-
-
-We also support shit
-If you have C++26 support with reflection, and you have set the `SIMDJSON_STATIC_REFLECTION` macro, e
-
-```cpp
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "simdjson.h"
-```
-
-```cpp
-auto cars_json = R"( [
-  { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
-  { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
-  { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
-] )"_padded;
-ondemand::parser parser;
-auto cars = parser.iterate(cars_json);
-cout << cars.at_path("[0].tire_pressure[1]") << endl; // Prints 39.9
-```
-
 ## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
-simdjson provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
+The simdjson library provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
 is validated at compile-time.
 
 **Requirements:** C++26 compiler with P2996 reflection support and `-DSIMDJSON_STATIC_REFLECTION=ON` build flag.
