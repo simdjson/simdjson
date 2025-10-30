@@ -9,6 +9,7 @@
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value-inl.h"
+#include "simdjson/jsonpathutil.h"
 #if SIMDJSON_STATIC_REFLECTION
 #include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
 #include <meta>
@@ -176,6 +177,50 @@ inline simdjson_result<value> object::at_path(std::string_view json_path) noexce
   return at_pointer(json_pointer);
 }
 
+inline simdjson_result<std::vector<value>> object::at_path_with_wildcard(std::string_view json_path) noexcept {
+  std::vector<value> result;
+
+  auto result_pair = get_next_key_and_json_path(json_path);
+  std::string_view key = result_pair.first;
+  std::string_view remaining_path = result_pair.second;
+  // Handle when its the case for wildcard
+  if (key == "*") {
+    // Loop through each field in the object
+    for (auto field : *this) {
+      value val;
+      SIMDJSON_TRY(field.value().get(val));
+
+      if (remaining_path.empty()) {
+        result.push_back(std::move(val));
+      } else {
+        auto nested_result = val.at_path_with_wildcard(remaining_path);
+
+        if (nested_result.error()) {
+          return nested_result.error();
+        }
+        // Extract and append all nested matches to our result
+        std::vector<value> nested_vec;
+        SIMDJSON_TRY(std::move(nested_result).get(nested_vec));
+
+        result.insert(result.end(),
+                     std::make_move_iterator(nested_vec.begin()),
+                     std::make_move_iterator(nested_vec.end()));
+      }
+    }
+    return result;
+  } else {
+    value val;
+    SIMDJSON_TRY(find_field(key).get(val));
+
+    if (remaining_path.empty()) {
+      result.push_back(std::move(val));
+      return result;
+    } else {
+      return val.at_path_with_wildcard(remaining_path);
+    }
+  }
+}
+
 simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
   size_t count{0};
   // Important: we do not consume any of the values.
@@ -300,6 +345,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
     return error();
   }
   return first.at_path(json_path);
+}
+
+simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_path_with_wildcard(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path_with_wildcard(json_path);
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {
