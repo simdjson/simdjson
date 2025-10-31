@@ -4,9 +4,19 @@
 #include <string>
 #include <string_view>
 #include <array>
+#include <type_traits>
 
 namespace simdjson {
 namespace constevalutil {
+
+constexpr bool cpp20_and_is_constant_evaluated() {
+#if SIMDJSON_CPLUSPLUS20
+  return std::is_constant_evaluated();
+#else
+  return false;
+#endif
+}
+
 #if SIMDJSON_CONSTEVAL
 
 constexpr static std::array<uint8_t, 256> json_quotable_character = {
@@ -51,7 +61,7 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
 
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-template <std::size_t N>
+template <size_t N>
 struct fixed_string {
     constexpr fixed_string() : data{} {}  // Default constructor for buffers
     constexpr fixed_string(const char (&str)[N])  {
@@ -61,6 +71,29 @@ struct fixed_string {
     }
     char data[N];
     constexpr std::string_view view() const { return {data, N - 1}; }
+    constexpr size_t size() const { return N ; }
+    constexpr operator std::string_view() const { return view(); }
+    constexpr char operator[](std::size_t index) const { return data[index]; }
+    constexpr bool operator==(const fixed_string& other) const {
+        if (N != other.size()) {
+            return false;
+        }
+        for (std::size_t i = 0; i < N; ++i) {
+            if (data[i] != other.data[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    constexpr bool operator!=(const fixed_string& other) const {
+        return !(*this == other);
+    }
+    constexpr bool operator=(const fixed_string& other) {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = other.data[i];
+        }
+        return true;
+    }
 };
 template <std::size_t N>
 fixed_string(const char (&)[N]) -> fixed_string<N>;
