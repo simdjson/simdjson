@@ -51,3 +51,7 @@
 // JSON builder inline definitions
 #include "simdjson/generic/ondemand/json_string_builder-inl.h"
 #include "simdjson/generic/ondemand/json_builder.h"
+
+// JSON path accessor (compile-time) - must be after inline definitions
+#include "simdjson/generic/ondemand/compile_time_accessors.h"
+

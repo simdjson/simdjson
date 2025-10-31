@@ -23,7 +23,7 @@ applications with a computation efficiency that is difficult to surpass.
 
 A code example illustrates our API from a programmer's point of view:
 
-```c++
+```cpp
 ondemand::parser parser;
 auto doc = parser.iterate(json);
 for (auto tweet : doc["statuses"]) {
@@ -109,7 +109,7 @@ The DOM approach was the only way to parse JSON documents up to version 0.6 of t
 Our DOM API looks similar to our On-Demand example, except
 it calls `parse` instead of `iterate`:
 
-```c++
+```cpp
 dom::parser parser;
 auto doc = parser.parse(json);
 for (auto tweet : doc["statuses"]) {
@@ -157,7 +157,7 @@ examples. To make it short enough to use as an example at all, it has heavily re
 a part of the problem (does not get user.screen_name), it has bugs (it does not handle sub-objects
 in a tweet at all), and it uses a theoretical, simple event-based API that minimizes ceremony.
 
-```c++
+```cpp
 struct twitter_callbacks {
   bool in_statuses;
   bool in_tweet;
@@ -284,14 +284,14 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    This declaration does not allocate any memory; that will happen in the next step.
 
-   ```c++
+   ```cpp
    ondemand::parser parser;
    ```
 
 2. We then start iterating the JSON document by allocating internal parser buffers, preprocessing
    the JSON, and initializing the iterator.
 
-   ```c++
+   ```cpp
    auto doc = parser.iterate(json);
    ```
 
@@ -337,14 +337,14 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 3. We iterate over the "statuses" field using a typical C++ iterator, reading past the initial
    `{ "statuses": [ {`.
 
-   ```c++
+   ```cpp
    for (ondemand::object tweet : doc["statuses"]) {
    ```
 
    This shorthand does a lot, and it is helpful to see what it expands to.
    Comments in front of each one explain what's going on:
 
-   ```c++
+   ```cpp
    // Validate that the top-level value is an object: check for {. Increase depth to 2 (root > field).
    ondemand::object top = doc.get_object();
 
@@ -396,7 +396,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
 4. We get the `"text"` field as a string.
 
-   ```c++
+   ```cpp
    std::string_view text        = tweet["text"];
    ```
 
@@ -435,7 +435,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
 4. We get the `"screen_name"` from the `"user"` object.
 
-   ```c++
+   ```cpp
       ondemand::object user        = tweet["user"];
       screen_name                  = user["screen_name"];
    ```
@@ -469,7 +469,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
 5. We get `"retweet_count"` as an unsigned integer.
 
-   ```c++
+   ```cpp
    uint64_t         retweets    = tweet["retweet_count"];
    ```
 
@@ -513,7 +513,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
 6. We loop to the next tweet.
 
-   ```c++
+   ```cpp
    for (ondemand::object tweet : doc["statuses"]) {
      ...
    }
@@ -521,7 +521,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
    The relevant parts of the loop  are:
 
-   ```c++
+   ```cpp
    while (iter != statuses.end()) {
      ondemand::object tweet = *iter;
      ...
@@ -566,7 +566,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
 
 8. The loop ends. Recall the relevant parts of the statuses loop:
 
-   ```c++
+   ```cpp
    while (iter != statuses.end()) {
      ondemand::object tweet = *iter;
      ...
@@ -610,7 +610,7 @@ When the user requests strings, we unescape them to a single string buffer much 
 so that users enjoy the same string performance as the core simdjson. We do not write the length to the
 string buffer, however; that is stored in the `string_view` instance we return to the user.
 
-```C++
+```cpp
   ondemand::parser parser;
   auto doc = parser.iterate(json);
   std::set<std::string_view> default_users;
@@ -645,7 +645,7 @@ from the `unescaped_key()` method has a lifecycle tied to the `parser` instance:
 is destroyed or reused with another document, the `std::string_view` instance becomes invalid.
 
 
-```C++
+```cpp
 auto doc = parser.iterate(json);
 for(auto field : doc.get_object())  {
       std::string_view keyv = field.unescaped_key();
@@ -670,7 +670,7 @@ in production systems:
   Some care is needed when using the On-Demand API in scenarios where you need to access several sibling arrays or objects because
   only one object or array can be active at any one time. Let us consider the following example:
 
-```C++
+```cpp
     ondemand::parser parser;
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
     auto doc = parser.iterate(json);
@@ -688,7 +688,7 @@ in production systems:
 
 A correct usage is given by the following example:
 
-```C++
+```cpp
     ondemand::parser parser;
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
     auto doc = parser.iterate(json);
@@ -754,7 +754,7 @@ Some users wish to run at the best possible speed. Under recent Intel and AMD pr
 
 Given that the On-Demand API offer limited runtime dispatching, it matters that your code is compiled against a specific CPU target. You should verify that the code is compiled against the target you expect. Thankfully, the simdjson library will tell you exactly what it detects as an implementation: `icelake` (AVX512 x64 processors), `haswell` (AVX2 x64 processors), `westmere` (SSE4 x64 processors), `arm64` (64-bit ARM), `ppc64` (64-bit POWER), `lasx` (LoongArch), `lsx` (LoongArch),  `fallback` (others). Under x64 processors, many programmers will want to target `haswell` whereas under ARM, most programmers will want to target `arm64` (and it should do so automatically). The `fallback` is probably only good for testing purposes, not for deployment.
 
-```C++
+```cpp
   std::cout << simdjson::builtin_implementation()->name() << std::endl;
 ```
 
