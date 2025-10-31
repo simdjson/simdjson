@@ -125,7 +125,9 @@ We have a few limitations which trigger compile-time errors if violated.
     { "name": "Bob", "age": 25 },
     { "name": "Charlie", "age": 35 }
   ]
+  ```
   but the following is not:
+  ```json
   [
     { "name": "Alice", "age": 30 },
     "Just a string",
