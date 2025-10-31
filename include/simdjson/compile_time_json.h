@@ -21,9 +21,9 @@
 
 #define simdjson_consteval_error(...) { std::abort(); }
 
+
 namespace simdjson {
 namespace compile_time {
-
 
 namespace number_parsing {
 
@@ -98,9 +98,9 @@ consteval bool compute_float_64(int64_t power, uint64_t i, bool negative, double
   int lz = leading_zeroes(i);
   i <<= lz;
   const uint32_t index = 2 * uint32_t(power - simdjson::internal::smallest_power);
-  value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+  value128 firstproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index]);
   if((firstproduct.high & 0x1FF) == 0x1FF) {
-    value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+    value128 secondproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
   }
@@ -300,14 +300,35 @@ parse_number(std::string_view json,
   if (json[0] == '+') {
     simdjson_consteval_error("Invalid number: leading '+' sign is not allowed");
   }
- /* auto is_digit_or_sign = [](char c) {
-    return (c >= '0' && c <= '9') || c == '-';
-  };*/
-//  auto it = std::find_if_not(json.begin(), json.end(), is_digit_or_sign);
+  // Compute the range and determine the type.
+  auto it = json.begin();
+  if(it != json.end() && (*it == '-')) {
+    it++;
+  }
+  while (it != json.end() &&  (*it >= '0' && *it <= '9')) {
+    it++;
+  }
   bool is_float = false;
-  /*if (it != json.end() && (*it == '.' || *it == 'e' || *it == 'E')) {
+  if (it != json.end() && (*it == '.' || *it == 'e' || *it == 'E')) {
     is_float = true;
-  }*/
+    if(*it == '.') {
+      it++;
+      while (it != json.end() && (*it >= '0' && *it <= '9')) {
+        it++;
+      }
+    }
+    if (it != json.end() && (*it == 'e' || *it == 'E')) {
+      it++;
+      if (it != json.end() && (*it == '+' || *it == '-')) {
+        it++;
+      }
+      while (it != json.end() && (*it >= '0' && *it <= '9')) {
+        it++;
+      }
+    }
+  }
+  size_t scope = it - json.begin();
+
   bool is_negative = json[0] == '-';
   // Note that we consider -0 to be an integer unless it has a decimal point or
   // exponent.
@@ -315,6 +336,9 @@ parse_number(std::string_view json,
     // It would be cool to use std::from_chars in a consteval context, but it is not
     // supported yet for floating point types. :-(
     auto [value, offset] = number_parsing::parse_double(json.data(), json.data() + json.size());
+    if(offset != scope) {
+      simdjson_consteval_error("Internal error: cannot agree on the character range of the float");
+    }
     out = value;
     return offset;
   } else if (is_negative) {
@@ -323,6 +347,9 @@ parse_number(std::string_view json,
         std::from_chars(json.data(), json.data() + json.size(), int_value);
     if (res.ec == std::errc()) {
       out = int_value;
+      if((res.ptr - json.data()) != scope) {
+         simdjson_consteval_error("Internal error: cannot agree on the character range of the float");
+      }
       return (res.ptr - json.data());
     } else {
       simdjson_consteval_error("Invalid integer value");
@@ -333,6 +360,9 @@ parse_number(std::string_view json,
         std::from_chars(json.data(), json.data() + json.size(), uint_value);
     if (res.ec == std::errc()) {
       out = uint_value;
+      if((res.ptr - json.data()) != scope) {
+         simdjson_consteval_error("Internal error: cannot agree on the character range of the float");
+      }
       return (res.ptr - json.data());
     } else {
       simdjson_consteval_error("Invalid unsigned integer value");
@@ -677,13 +707,15 @@ parse_json_array_impl(std::string_view &json) {
     if (!expect_consume(']')) {
         simdjson_consteval_error("Expected ']'");
     }
-    skip_whitespace();
     // Empty array - use int as placeholder type since void doesn't work
     auto array_type = std::meta::substitute(
         ^^std::array, {
                           ^^int, std::meta::reflect_constant(0uz)});
     values[0] = array_type;
     consumed = size_t(cursor - json.begin());
+    if(json[consumed -1] != ']') {
+      simdjson_consteval_error("Expected ']'");
+    }
     return {std::meta::substitute(^^construct_from, values), consumed};
   }
   while (cursor != end && *cursor != ']') {
@@ -695,7 +727,6 @@ parse_json_array_impl(std::string_view &json) {
             if (*(cursor + object_size - 1) != '}') {
           simdjson_consteval_error("Expected '}'");
       }
-
       values.push_back(parsed);
       cursor += object_size;
       break;
@@ -858,11 +889,10 @@ parse_json_object_impl(std::string_view json) {
     case '{': {
       std::string_view value(cursor, end);
       auto [parsed, object_size] = parse_json_object_impl(value);
+      if (*(cursor + object_size - 1) != '}') {
+          simdjson_consteval_error("Expected '}'");
+      }
       cursor += object_size;
-      //if (*(cursor + object_size - 1) != '}') {
-      //    simdjson_consteval_error("Expected '}'");
-     // }
-     //shit
       auto dms = std::meta::data_member_spec(std::meta::type_of(parsed),
                                              {.name = field_name});
       members.push_back(std::meta::reflect_constant(dms));
@@ -877,11 +907,10 @@ parse_json_object_impl(std::string_view json) {
                                              {.name = field_name});
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(parsed);
-      cursor += array_size;
-
       if (*(cursor + array_size - 1) != ']') {
           simdjson_consteval_error("Expected ']'");
       }
+      cursor += array_size;
 
       break;
     }
@@ -990,6 +1019,7 @@ parse_json_object_impl(std::string_view json) {
       ++cursor;
       skip_whitespace();
     } else if (*cursor != '}') {
+      bad_char(*cursor);
         simdjson_consteval_error("Expected '}'");
     }
   }

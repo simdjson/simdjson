@@ -13,7 +13,6 @@ using namespace std::string_view_literals;
 
 namespace compile_time_json_tests {
 
-#ifdef FUCK
 /**
  * Test 1: Basic object with primitives
  */
@@ -360,7 +359,6 @@ bool test_complex_mixed() {
     TEST_SUCCEED();
 }
 
-#endif // FUCK
 
 bool test_simple_object_int() {
     TEST_START();
@@ -429,7 +427,7 @@ bool test_empty_arrays() {
 }
 
 bool run() {
-    return /*test_basic_object() &&
+    return test_basic_object() &&
            test_nested_objects() &&
            test_deeply_nested_objects() &&
            test_empty_object() &&
@@ -441,7 +439,7 @@ bool run() {
            test_arrays_primitives() &&
            test_arrays_of_objects() &&
            test_nested_arrays() &&
-           test_complex_mixed() &&*/
+           test_complex_mixed() &&
            test_simple_object_str() &&
            test_simple_object_int() &&
            test_simple_object_str_with_obj() &&
