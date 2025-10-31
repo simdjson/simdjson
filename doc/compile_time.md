@@ -11,14 +11,14 @@ Maybe you have a single code base but many different possible configurations, al
 different software. For example, you might be programming robots, using the same software, but
 different robot configurations.
 
-To achieve the desire result, you have a few options. You may start the software and parser a
+To achieve the desired result, you have a few options. You may start the software and parser a
 JSON file at runtime. Or you might convert your JSON data into C++ code that you can compile with
 your software.
 
 With C++26, there is another way: parse the JSON file along with your C++ code. In this manner,
 the JSON data becomes native C++ data.
 
-The simdjson library support parsing JSON documents at compile time if you have C++26 support. To
+The simdjson library supports parsing JSON documents at compile time if you have C++26 support. To
 activate C++26 reflection support, you can compile
 your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
 
@@ -113,7 +113,7 @@ We have a few limitations which trigger compile-time errors if violated.
 
 - Only JSON objects and arrays are supported at the top level (no primitives).
   We will lift this limitation in the future.
-- Strings are represented using the const char * in UTF-8, but they must not
+- Strings are represented using the `const char*` in UTF-8, but they must not
   contain embedded nulls. We would prefer to represent them as std::string or
   std::string_view, and hope to do so in the future.
 - Heterogeneous arrays are not supported yet. E.g., you need to have arrays of
@@ -135,9 +135,9 @@ We have a few limitations which trigger compile-time errors if violated.
     { "name": "Charlie", "age": 35 }
   ]
   ```
-  We may support it Heterogeneous in the future with std::variant types.
+  We may support heterogeneous arrays in the future with std::variant types.
 - We parse the first JSON document encountered in the string. Trailing
-  characters are ignored. Thus if you JSON begins with {"a":1}, everything
+  characters are ignored. Thus if your JSON begins with {"a":1}, everything
   after the closing brace is ignored. This limitation will be lifted in the future,
   reporting an error.
 
@@ -145,3 +145,5 @@ These limitations are safe in the sense that they result in compile-time errors.
 Thus you will not get truncated strings or imprecise floats silently.
 
 
+Although we are committed to maintaining the functionality in the long run, the
+`compile_time::parse_json` function is subject to change.

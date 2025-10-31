@@ -49,16 +49,16 @@ namespace compile_time {
  *     { "name": "Charlie", "age": 35 }
  *   ]
  *
- *    We may support it Heterogeneous in the future with std::variant types.
+ *    We may support heterogeneous arrays in the future with std::variant types.
  * - We parse the first JSON document encountered in the string. Trailing
- *   characters are ignored. Thus if you JSON begins with {"a":1}, everything
+ *   characters are ignored. Thus if your JSON begins with {"a":1}, everything
  *   after the closing } is ignored. This limitation will be lifted in the future,
  *   reporting an error.
  *
  * These limitations are safe in the sense that they result in compile-time errors.
  * Thus you will not get truncated strings or imprecise floats silently.
  *
- *
+ * This function is subject to change in the future.
  */
 template <constevalutil::fixed_string json_str> consteval auto parse_json();
 
