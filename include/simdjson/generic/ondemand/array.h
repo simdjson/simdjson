@@ -117,11 +117,11 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
   */
   inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
-  
+
   /**
    * Get all values matching the given JSONPath expression with wildcard support.
    * Supports wildcard patterns like "[*]" to match all array elements.
-   * 
+   *
    * @param json_path JSONPath expression with wildcards
    * @return Vector of values matching the wildcard pattern
   */
