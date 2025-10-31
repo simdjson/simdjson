@@ -12,7 +12,6 @@ using namespace simdjson;
 using namespace std::string_view_literals;
 
 namespace compile_time_json_tests {
-
 /**
  * Test 1: Basic object with primitives
  */
@@ -359,7 +358,26 @@ bool test_complex_mixed() {
     TEST_SUCCEED();
 }
 
+/**
+ * Test 15: Empty arrays
+ */
+bool test_empty_arrays() {
+    TEST_START();
 
+    constexpr auto data = simdjson::compile_time::parse_json<R"({
+        "empty": []
+    })">();
+
+    static_assert(data.empty.size() == 0);
+
+    ASSERT_EQUAL(data.empty.size(), 0);
+
+    TEST_SUCCEED();
+}
+
+/**
+ * Test 16: Simple object with string values
+ */
 bool test_simple_object_int() {
     TEST_START();
 
@@ -377,6 +395,9 @@ bool test_simple_object_int() {
     TEST_SUCCEED();
 }
 
+/**
+ * Test 17: Simple object with string values
+ */
 bool test_simple_object_str() {
     TEST_START();
 
@@ -393,6 +414,9 @@ bool test_simple_object_str() {
     TEST_SUCCEED();
 }
 
+/**
+ * Test 18: Simple object with string values and nested object
+ */
 bool test_simple_object_str_with_obj() {
     TEST_START();
     constexpr auto config = simdjson::compile_time::parse_json<R"({"master": {
@@ -409,20 +433,49 @@ bool test_simple_object_str_with_obj() {
 
     TEST_SUCCEED();
 }
+
 /**
- * Test 15: Empty arrays
+ * Test 19: Simple array
  */
-bool test_empty_arrays() {
+bool simple_array() {
     TEST_START();
+    constexpr auto config = simdjson::compile_time::parse_json<R"(
 
-    constexpr auto data = simdjson::compile_time::parse_json<R"({
-        "empty": []
-    })">();
+    [ 1, 2, 3, 4, 5, 6 ]
 
-    static_assert(data.empty.size() == 0);
+    )">();
+    std::print("Array size: {}\n",
+        config.size()
+    );
+    static_assert(config.size() == 6);
+    static_assert(config[0] == 1);
+    static_assert(config[5] == 6);
+    TEST_SUCCEED();
+}
 
-    ASSERT_EQUAL(data.empty.size(), 0);
 
+/**
+ * Test 20: Array of objects
+ */
+bool array_of_objects() {
+    TEST_START();
+    constexpr auto config = simdjson::compile_time::parse_json<R"(
+
+    [
+      { "name": "Alice", "age": 30 },
+      { "name": "Bob", "age": 25 },
+      { "name": "Charlie", "age": 35 }
+    ]
+
+    )">();
+    std::print("Array size: {}\n",
+        config.size()
+    );
+    static_assert(config.size() == 3);
+    static_assert(std::string_view(config[0].name) == "Alice");
+    static_assert(config[1].age == 25);
+    static_assert(std::string_view(config[2].name) == "Charlie");
+    static_assert(config[2].age == 35);
     TEST_SUCCEED();
 }
 
@@ -443,7 +496,9 @@ bool run() {
            test_simple_object_str() &&
            test_simple_object_int() &&
            test_simple_object_str_with_obj() &&
-           test_empty_arrays();
+           test_empty_arrays() &&
+           simple_array() &&
+           array_of_objects();
 }
 
 } // namespace compile_time_json_tests

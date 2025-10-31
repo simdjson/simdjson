@@ -85,15 +85,6 @@ struct fixed_string {
         }
         return true;
     }
-    constexpr bool operator!=(const fixed_string& other) const {
-        return !(*this == other);
-    }
-    constexpr bool operator=(const fixed_string& other) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] = other.data[i];
-        }
-        return true;
-    }
 };
 template <std::size_t N>
 fixed_string(const char (&)[N]) -> fixed_string<N>;
