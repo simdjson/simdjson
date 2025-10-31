@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include <vector>
 #if SIMDJSON_STATIC_REFLECTION && SIMDJSON_SUPPORTS_CONCEPTS
 #include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
 #endif
@@ -161,6 +162,15 @@ public:
   inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
 
   /**
+   * Get all values matching the given JSONPath expression with wildcard support.
+   * Supports wildcard patterns like ".*" to match all object fields.
+   *
+   * @param json_path JSONPath expression with wildcards
+   * @return Vector of values matching the wildcard pattern
+  */
+  inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
+
+  /**
    * Reset the iterator so that we are pointing back at the
    * beginning of the object. You should still consume values only once even if you
    * can iterate through the object more than once. If you unescape a string or a key
@@ -308,6 +318,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
   inline simdjson_result<bool> reset() noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;

@@ -6,6 +6,7 @@
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/deserialize.h"
+#include <vector>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <type_traits>
@@ -671,6 +672,14 @@ public:
    */
   simdjson_inline simdjson_result<value> at_path(std::string_view at_path) noexcept;
 
+  /**
+   * Get all values matching the given JSONPath expression with wildcard support.
+   * Supports wildcard character (*) for arrays or ".*" for objects.
+   *
+   * @param json_path JSONPath expression with wildcards
+   * @return Vector of values matching the wildcard pattern
+   */
+  simdjson_inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 
 protected:
   /**
@@ -858,6 +867,7 @@ public:
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 };
 
 } // namespace simdjson

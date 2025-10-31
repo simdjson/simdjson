@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include <vector>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -116,6 +117,15 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
   */
   inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
+
+  /**
+   * Get all values matching the given JSONPath expression with wildcard support.
+   * Supports wildcard patterns like "[*]" to match all array elements.
+   *
+   * @param json_path JSONPath expression with wildcards
+   * @return Vector of values matching the wildcard pattern
+  */
+  inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 
   /**
    * Consumes the array and returns a string_view instance corresponding to the
@@ -239,6 +249,7 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at(size_t index) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 #if SIMDJSON_SUPPORTS_CONCEPTS
   // TODO: move this code into object-inl.h
