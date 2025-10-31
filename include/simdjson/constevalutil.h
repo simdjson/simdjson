@@ -4,19 +4,9 @@
 #include <string>
 #include <string_view>
 #include <array>
-#include <type_traits>
 
 namespace simdjson {
 namespace constevalutil {
-
-constexpr bool cpp20_and_is_constant_evaluated() {
-#if SIMDJSON_CPLUSPLUS20
-  return std::is_constant_evaluated();
-#else
-  return false;
-#endif
-}
-
 #if SIMDJSON_CONSTEVAL
 
 constexpr static std::array<uint8_t, 256> json_quotable_character = {
@@ -63,7 +53,6 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <size_t N>
 struct fixed_string {
-    constexpr fixed_string() : data{} {}  // Default constructor for buffers
     constexpr fixed_string(const char (&str)[N])  {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] = str[i];

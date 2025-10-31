@@ -1,8 +1,0 @@
-{
-  "system_name": "RealTimeController",
-  "version": "2.1.0",
-  "control_loop_hz": 1000,
-  "max_latency_us": 500,
-  "enable_diagnostics": true,
-  "log_level": "INFO"
-}
