@@ -53,6 +53,7 @@ extern SIMDJSON_DLLIMPORTEXPORT const double power_of_ten[];
 // The mantissa is truncated to 128 bits, and
 // never rounded up. Uses about 10KB.
 // We use the template trick to allow inclusion in multiple translation units.
+#if SIMDJSON_CPLUSPLUS17
 template <typename unused = void>  struct powers_template {
 constexpr static uint64_t power_of_five_128[651*2]= {
         0xeef453d6923bd65a,0x113faa2906a13b3f,
@@ -707,6 +708,9 @@ constexpr static uint64_t power_of_five_128[651*2]= {
         0xe3d8f9e563a198e5,0x58180fddd97723a6,
         0x8e679c2f5e44ff8f,0x570f09eaa7ea7648,};
 };
+#else
+extern SIMDJSON_DLLIMPORTEXPORT const uint64_t power_of_five_128[651*2];
+#endif
 } // namespace internal
 } // namespace simdjson
 
