@@ -21,18 +21,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.books[*].title");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> titles;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.books[*].title").get(titles));
 
-    std::vector<ondemand::value> titles = result.value_unsafe();
     ASSERT_EQUAL(titles.size(), 3);
 
-    ASSERT_EQUAL(titles[0].get_string().value_unsafe(), "Book A");
-    ASSERT_EQUAL(titles[1].get_string().value_unsafe(), "Book B");
-    ASSERT_EQUAL(titles[2].get_string().value_unsafe(), "Book C");
+    std::string_view title;
+    ASSERT_SUCCESS(titles[0].get_string().get(title));
+    ASSERT_EQUAL(title, "Book A");
+    ASSERT_SUCCESS(titles[1].get_string().get(title));
+    ASSERT_EQUAL(title, "Book B");
+    ASSERT_SUCCESS(titles[2].get_string().get(title));
+    ASSERT_EQUAL(title, "Book C");
 
     TEST_SUCCEED();
   }
@@ -46,18 +46,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.prices[*]");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> prices;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.prices[*]").get(prices));
 
-    std::vector<ondemand::value> prices = result.value_unsafe();
     ASSERT_EQUAL(prices.size(), 5);
 
-    ASSERT_EQUAL(prices[0].get_uint64().value_unsafe(), 10);
-    ASSERT_EQUAL(prices[2].get_uint64().value_unsafe(), 30);
-    ASSERT_EQUAL(prices[4].get_uint64().value_unsafe(), 50);
+    uint64_t price;
+    ASSERT_SUCCESS(prices[0].get_uint64().get(price));
+    ASSERT_EQUAL(price, 10);
+    ASSERT_SUCCESS(prices[2].get_uint64().get(price));
+    ASSERT_EQUAL(price, 30);
+    ASSERT_SUCCESS(prices[4].get_uint64().get(price));
+    ASSERT_EQUAL(price, 50);
 
     TEST_SUCCEED();
   }
@@ -75,19 +75,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.users.*.name");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> names;
+    auto error = doc.at_path_with_wildcard("$.users.*.name").get(names);
+    ASSERT_SUCCESS(error);
 
-    std::vector<ondemand::value> names = result.value_unsafe();
     ASSERT_EQUAL(names.size(), 3);
 
     // Verify we got all three names (order may vary)
     std::set<std::string_view> name_set;
     for (auto& name : names) {
-      name_set.insert(name.get_string().value_unsafe());
+      std::string_view view;
+      ASSERT_SUCCESS(name.get_string().get(view));
+      name_set.insert(view);
     }
     ASSERT_TRUE(name_set.count("Alice") > 0);
     ASSERT_TRUE(name_set.count("Bob") > 0);
@@ -118,19 +117,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.departments.*.employees[*].salary");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> salaries;
+    auto error = doc.at_path_with_wildcard("$.departments.*.employees[*].salary").get(salaries);
+    ASSERT_SUCCESS(error);
 
-    std::vector<ondemand::value> salaries = result.value_unsafe();
     ASSERT_EQUAL(salaries.size(), 4);
 
     // Check sum of all salaries
     uint64_t total = 0;
     for (auto& salary : salaries) {
-      total += salary.get_uint64().value_unsafe();
+      uint64_t value;
+      ASSERT_SUCCESS(salary.get_uint64().get(value));
+      total += value;
     }
     ASSERT_EQUAL(total, 360000);
 
@@ -144,13 +142,10 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.items[*].name");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> items;
+    auto error = doc.at_path_with_wildcard("$.items[*].name").get(items);
+    ASSERT_SUCCESS(error);
 
-    std::vector<ondemand::value> items = result.value_unsafe();
     ASSERT_EQUAL(items.size(), 0);
 
     TEST_SUCCEED();
@@ -163,13 +158,10 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.users.*.name");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> names;
+    auto error = doc.at_path_with_wildcard("$.users.*.name").get(names);
+    ASSERT_SUCCESS(error);
 
-    std::vector<ondemand::value> names = result.value_unsafe();
     ASSERT_EQUAL(names.size(), 0);
 
     TEST_SUCCEED();
@@ -183,8 +175,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     // Can't use array wildcard on scalar
-    auto result = doc.at_path_with_wildcard("$.data[*]");
-    ASSERT_ERROR(result.error(), INVALID_JSON_POINTER);
+    std::vector<ondemand::value> values;
+    auto error = doc.at_path_with_wildcard("$.data[*]").get(values);
+    ASSERT_ERROR(error, INVALID_JSON_POINTER);
 
     TEST_SUCCEED();
   }
@@ -203,13 +196,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     // Get all nested arrays
-    auto result = doc.at_path_with_wildcard("$.matrix[*]");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> arrays;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.matrix[*]").get(arrays));
 
-    std::vector<ondemand::value> arrays = result.value_unsafe();
     // Verify we got 3 arrays
     ASSERT_EQUAL(arrays.size(), 3);
 
@@ -229,18 +218,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.data[*].info.status");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> statuses;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.data[*].info.status").get(statuses));
 
-    std::vector<ondemand::value> statuses = result.value_unsafe();
     ASSERT_EQUAL(statuses.size(), 3);
 
-    ASSERT_EQUAL(statuses[0].get_string().value_unsafe(), "active");
-    ASSERT_EQUAL(statuses[1].get_string().value_unsafe(), "inactive");
-    ASSERT_EQUAL(statuses[2].get_string().value_unsafe(), "active");
+    std::string_view status;
+    ASSERT_SUCCESS(statuses[0].get_string().get(status));
+    ASSERT_EQUAL(status, "active");
+    ASSERT_SUCCESS(statuses[1].get_string().get(status));
+    ASSERT_EQUAL(status, "inactive");
+    ASSERT_SUCCESS(statuses[2].get_string().get(status));
+    ASSERT_EQUAL(status, "active");
 
     TEST_SUCCEED();
   }
@@ -261,13 +250,9 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$.mixed[*]");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> values;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.mixed[*]").get(values));
 
-    std::vector<ondemand::value> values = result.value_unsafe();
     // Just verify we got all 6 elements
     ASSERT_EQUAL(values.size(), 6);
 
@@ -290,15 +275,15 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     // Third element doesn't have "name" field
-    auto result = doc.at_path_with_wildcard("$.data[*].name");
+    std::vector<ondemand::value> names;
+    auto error = doc.at_path_with_wildcard("$.data[*].name").get(names);
 
     // This might error or return partial results
-    if (result.error()) {
+    if (error) {
       // If it errors, that's acceptable
       TEST_SUCCEED();
     }
 
-    std::vector<ondemand::value> names = result.value_unsafe();
     // Should have at least 2 results
     ASSERT_TRUE(names.size() >= 2);
 
@@ -316,18 +301,18 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    auto result = doc.at_path_with_wildcard("$[*].name");
-    if (result.error()) {
-      std::cerr << "Error: " << result.error() << std::endl;
-      return false;
-    }
+    std::vector<ondemand::value> names;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$[*].name").get(names));
 
-    std::vector<ondemand::value> names = result.value_unsafe();
     ASSERT_EQUAL(names.size(), 3);
 
-    ASSERT_EQUAL(names[0].get_string().value_unsafe(), "Item 1");
-    ASSERT_EQUAL(names[1].get_string().value_unsafe(), "Item 2");
-    ASSERT_EQUAL(names[2].get_string().value_unsafe(), "Item 3");
+    std::string_view name;
+    ASSERT_SUCCESS(names[0].get_string().get(name));
+    ASSERT_EQUAL(name, "Item 1");
+    ASSERT_SUCCESS(names[1].get_string().get(name));
+    ASSERT_EQUAL(name, "Item 2");
+    ASSERT_SUCCESS(names[2].get_string().get(name));
+    ASSERT_EQUAL(name, "Item 3");
 
     TEST_SUCCEED();
   }

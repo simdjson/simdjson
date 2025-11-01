@@ -1755,6 +1755,68 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 ```
 
+## Using `at_path_with_wildcard` for JSONPath Queries (On-Demand)
+
+The `at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.
+
+The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level. You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the function returns an empty result. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield an empty set.
+
+### Example Usage
+
+Here is an example demonstrating the use of `at_path_with_wildcard`:
+
+```cpp
+simdjson::padded_string json_string = R"(
+{
+  "firstName": "John",
+  "lastName": "doe",
+  "age": 26,
+  "address": {
+    "streetAddress": "naist street",
+    "city": "Nara",
+    "postalCode": "630-0192"
+  },
+  "phoneNumbers": [
+    {
+      "type": "iPhone",
+      "numbers": ["0123-4567-8888", "0123-4567-8788"]
+    },
+    {
+      "type": "home",
+      "numbers": ["0123-4567-8910"]
+    }
+  ]
+})"_padded;
+
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json_string);
+
+// Fetch all fields in the address object
+std::vector<ondemand::value> values;
+auto error = doc.at_path_with_wildcard("$.address.*").get(values);
+if (!error) {
+  for (auto value : values) {
+    std::string_view field;
+    if (value.get(field) == SUCCESS) {
+      std::cout << field << std::endl;
+    }
+  }
+}
+
+// Fetch all phone numbers
+error = doc.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
+if (!error) {
+  for (auto value : values) {
+    std::string_view number;
+    if (value.get(number) == SUCCESS) {
+      std::cout << number << std::endl;
+    }
+  }
+}
+```
+
+This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.
+
 ## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
 The simdjson library provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
