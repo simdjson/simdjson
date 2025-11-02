@@ -167,7 +167,12 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
+#if SIMDJSON_CPLUSPLUS26
+  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index]);
+#else
   simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
+#endif
+
   // Both i and power_of_five_128[index] have their most significant bit set to 1 which
   // implies that the either the most or the second most significant bit of the product
   // is 1. We pack values in this manner for efficiency reasons: it maximizes the use
@@ -200,7 +205,11 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
+#if SIMDJSON_CPLUSPLUS26
+    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index + 1]);
+#else
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
+#endif
     firstproduct.low += secondproduct.high;
     if(secondproduct.high > firstproduct.low) { firstproduct.high++; }
     // As it has been proven by Noble Mushtak and Daniel Lemire in "Fast Number Parsing Without
