@@ -672,7 +672,9 @@ in production systems:
 
 ```cpp
     ondemand::parser parser;
+    //  R"( ... )" is a C++ raw string literal.
     const padded_string json = R"({ "parent": {"child1": {"name": "John"} , "child2": {"name": "Daniel"}} })"_padded;
+    // _padded returns an simdjson padded_string instance
     auto doc = parser.iterate(json);
     ondemand::object parent = doc["parent"];
     // parent owns the focus

@@ -53,15 +53,22 @@ Suppose you want to parse the following JSON document:
 }
 ```
 
+**Reminder**: In C++, `R"( )"` allows us to write multi-line strings with unescaped quotes.
+
+
 You can do so, at compile-time, as follows:
 
 
 ```cpp
-constexpr auto cfg = simdjson::compile_time::parse_json<R"({
+constexpr auto cfg = R"(
+
+{
     "port": 8080,
     "host": "localhost",
     "debug": true
-})">();
+}
+
+)"_json;
 
 // cfg.port == 8080
 // std::string_view(cfg.host) == "localhost"
@@ -71,12 +78,16 @@ constexpr auto cfg = simdjson::compile_time::parse_json<R"({
 You can nest objects and arrays:
 
 ```cpp
-constexpr auto data = simdjson::compile_time::parse_json<R"({
+constexpr auto data = R"(
+
+{
     "servers": [
         {"host": "s1", "port": 3000},
         {"host": "s2", "port": 3001}
     ]
-})">();
+}
+
+)"_json;
 
 
 // data.servers.size() == 2
@@ -86,7 +97,11 @@ constexpr auto data = simdjson::compile_time::parse_json<R"({
 Top-level arrays are allowed:
 
 ```cpp
-constexpr auto arr = simdjson::compile_time::parse_json<R"([1, 2, 3])">();
+constexpr auto arr = R"(
+
+[1, 2, 3]
+
+)"_json;
 static_assert(arr.size() == 3);
 static_assert(arr[1] == 2);
 ```

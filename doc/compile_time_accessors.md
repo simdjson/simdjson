@@ -40,6 +40,7 @@ struct User {
   std::vector<std::string> emails;
 };
 
+//  R"( ... )" is a C++ raw string literal.
 const padded_string json = R"({
   "name": "Alice",
   "age": 30,

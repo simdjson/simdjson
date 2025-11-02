@@ -8,8 +8,8 @@
 
 #include <print>
 
-using namespace simdjson;
 using namespace std::string_view_literals;
+using namespace simdjson;
 
 namespace compile_time_json_tests {
 /**
@@ -479,6 +479,124 @@ bool array_of_objects() {
     TEST_SUCCEED();
 }
 
+
+bool test_complex_mixed_str() {
+    TEST_START();
+    auto f= "fds"_padded;
+
+    constexpr auto config = R"(
+    {
+        "app": "myapp",
+        "version": 1.0,
+        "config": {
+            "ports": [8080, 8081, 8082],
+            "enabled": true
+        },
+        "servers": [
+            {"host": "server1", "port": 3000},
+            {"host": "server2", "port": 3001}
+        ]
+    }
+
+    )"_json;
+
+    static_assert(std::string_view(config.app) == "myapp");
+    static_assert(config.version == 1.0);
+    static_assert(config.config.ports[0] == 8080);
+    static_assert(config.config.enabled == true);
+    static_assert(std::string_view(config.servers[0].host) == "server1");
+    static_assert(config.servers[1].port == 3001);
+
+    ASSERT_EQUAL(std::string_view(config.app), "myapp"sv);
+    ASSERT_EQUAL(config.config.ports[0], 8080);
+    ASSERT_EQUAL(std::string_view(config.servers[0].host), "server1"sv);
+    ASSERT_EQUAL(config.servers[1].port, 3001);
+
+    TEST_SUCCEED();
+}
+
+/**
+ * Test: User config example - basic object with primitives
+ */
+bool test_user_config_example() {
+    TEST_START();
+
+    constexpr auto cfg = R"(
+
+    {
+        "port": 8080,
+        "host": "localhost",
+        "debug": true
+    }
+
+    )"_json;
+
+    static_assert(cfg.port == 8080);
+    static_assert(std::string_view(cfg.host) == "localhost");
+    static_assert(cfg.debug == true);
+
+    ASSERT_EQUAL(cfg.port, 8080);
+    ASSERT_EQUAL(std::string_view(cfg.host), "localhost"sv);
+    ASSERT_TRUE(cfg.debug);
+
+    TEST_SUCCEED();
+}
+
+/**
+ * Test: Nested objects and arrays example
+ */
+bool test_nested_servers_example() {
+    TEST_START();
+
+    constexpr auto data = R"(
+
+    {
+        "servers": [
+            {"host": "s1", "port": 3000},
+            {"host": "s2", "port": 3001}
+        ]
+    }
+
+    )"_json;
+
+    static_assert(data.servers.size() == 2);
+    static_assert(std::string_view(data.servers[0].host) == "s1");
+    static_assert(data.servers[0].port == 3000);
+    static_assert(std::string_view(data.servers[1].host) == "s2");
+    static_assert(data.servers[1].port == 3001);
+
+    ASSERT_EQUAL(data.servers.size(), 2);
+    ASSERT_EQUAL(std::string_view(data.servers[0].host), "s1"sv);
+    ASSERT_EQUAL(data.servers[0].port, 3000);
+    ASSERT_EQUAL(std::string_view(data.servers[1].host), "s2"sv);
+    ASSERT_EQUAL(data.servers[1].port, 3001);
+
+    TEST_SUCCEED();
+}
+
+/**
+ * Test: Top-level array example
+ */
+bool test_top_level_array_example() {
+    TEST_START();
+
+    constexpr auto arr = R"(
+          [1, 2, 3]
+   )"_json;
+
+    static_assert(arr.size() == 3);
+    static_assert(arr[0] == 1);
+    static_assert(arr[1] == 2);
+    static_assert(arr[2] == 3);
+
+    ASSERT_EQUAL(arr.size(), 3);
+    ASSERT_EQUAL(arr[0], 1);
+    ASSERT_EQUAL(arr[1], 2);
+    ASSERT_EQUAL(arr[2], 3);
+
+    TEST_SUCCEED();
+}
+
 bool run() {
     return test_basic_object() &&
            test_nested_objects() &&
@@ -498,7 +616,11 @@ bool run() {
            test_simple_object_str_with_obj() &&
            test_empty_arrays() &&
            simple_array() &&
-           array_of_objects();
+           test_complex_mixed_str() &&
+           array_of_objects() &&
+           test_user_config_example() &&
+           test_nested_servers_example() &&
+           test_top_level_array_example();
 }
 
 } // namespace compile_time_json_tests

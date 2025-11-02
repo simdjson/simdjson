@@ -1,6 +1,7 @@
 The Basics
 ==========
 
+
 An overview of what you need to know to use simdjson to parse JSON documents, with examples.
 [Our documentation regarding the generation (serialization) of JSON documents is in a
 separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
@@ -477,7 +478,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > unlike `key()`, it has to determine the location of the final quote character.
   >
   > ```cpp
-  > auto json = R"({"k\u0065y": 1})"_padded;
+  > auto json = R"({"k\u0065y": 1})"_padded; // R"( ... )" is a C++ raw string literal.
   > ondemand::parser parser;
   > auto doc = parser.iterate(json);
   > ondemand::object object = doc.get_object();
@@ -502,7 +503,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   >
   > ```cpp
   > ondemand::parser parser;
-  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded; //  R"( ... )" is a C++ raw string literal.
   > auto doc = parser.iterate(json);
   > double y = doc.find_field("y"); // The cursor is now after the 2 (at })
   > double x = doc.find_field("x"); // This fails, because there are no more fields after "y"

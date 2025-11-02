@@ -119,6 +119,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
   ```cpp
   simdjson::error_code error;
+  // _padded returns an simdjson::padded_string instance
   simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
   simdjson::dom::parser parser;
   double value; // variable where we store the value to be parsed
@@ -153,6 +154,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 The following code illustrates all of the above:
 
 ```cpp
+//  R"( ... )" is a C++ raw string literal.
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },

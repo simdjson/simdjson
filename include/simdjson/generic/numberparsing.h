@@ -167,7 +167,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   // with a returned value of type value128 with a "low component" corresponding to the
   // 64-bit least significant bits of the product and with a "high component" corresponding
   // to the 64-bit most significant bits of the product.
-#if SIMDJSON_CPLUSPLUS26
+#if SIMDJSON_STATIC_REFLECTION
   simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index]);
 #else
   simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);
@@ -205,7 +205,7 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
     // with a returned value of type value128 with a "low component" corresponding to the
     // 64-bit least significant bits of the product and with a "high component" corresponding
     // to the 64-bit most significant bits of the product.
-#if SIMDJSON_CPLUSPLUS26
+#if SIMDJSON_STATIC_REFLECTION
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::powers_template<>::power_of_five_128[index + 1]);
 #else
     simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);
