@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -118,7 +118,10 @@ $(document).ready(function(){initNavTree('md_doc_2basics.html',''); initResizabl
 <li>Adding support for custom types<ul>
 <li>1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)</li>
 <li>2. Use `tag_invoke` for custom types (C++20)</li>
-<li>3. Using static reflection (C++26)</li>
+<li>3. Using static reflection (C++26)<ul>
+<li>Special cases</li>
+</ul>
+</li>
 <li>The simdjson::from shortcut (experimental, C++20)</li>
 </ul>
 </li>
@@ -1247,49 +1250,51 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 @endicode 
 
+@section autotoc_md22 Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)
 
+The &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (&lt;tt&gt;*&lt;/tt&gt;) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use &lt;tt&gt;\$.address.*&lt;/tt&gt; to fetch all fields within the &lt;tt&gt;address&lt;/tt&gt; object or &lt;tt&gt;\$.phoneNumbers[*].numbers[*]&lt;/tt&gt; to retrieve all phone numbers across multiple objects in an array.
 
-@subsection autotoc_md22 C++26
+The &lt;tt&gt;*&lt;/tt&gt; wildcard matches all elements at a specific level. For instance, &lt;tt&gt;\$.address.*&lt;/tt&gt; retrieves all key-value pairs in the &lt;tt&gt;address&lt;/tt&gt; object, while &lt;tt&gt;\$.*.streetAddress&lt;/tt&gt; fetches all &lt;tt&gt;streetAddress&lt;/tt&gt; fields across objects at the root level. You can combine wildcards with array indexing. For example, &lt;tt&gt;\$.phoneNumbers[*].numbers[1]&lt;/tt&gt; retrieves the second number from each &lt;tt&gt;numbers&lt;/tt&gt; array in the &lt;tt&gt;phoneNumbers&lt;/tt&gt; array. If no elements match the wildcard query, the function returns an empty result. For instance, querying &lt;tt&gt;\$.empty_object.*&lt;/tt&gt; or &lt;tt&gt;\$.empty_array.*&lt;/tt&gt; will yield an empty set.
 
+@subsection autotoc_md23 Example Usage
 
-We also support shit
-If you have C++26 support with reflection, and you have set the &lt;tt&gt;SIMDJSON_STATIC_REFLECTION&lt;/tt&gt; macro, e
-
-@icode{cpp} 
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "<a class="el" href="simdjson_8h.html">simdjson.h</a>"
-@endicode 
+Here is an example demonstrating the use of &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt;:
 
 @icode{cpp} 
-auto cars_json = R"( [ { "make": "Toyota", "model": "Camry", "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] }, { "make": "Kia", "model": "Soul", "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] }, { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] } ] )"_padded;
+simdjson::padded_string json_string = R"( { "firstName": "John", "lastName": "doe", "age": 26, "address": { "streetAddress": "naist street", "city": "Nara", "postalCode": "630-0192" }, "phoneNumbers": [ { "type": "iPhone", "numbers": ["0123-4567-8888", "0123-4567-8788"] }, { "type": "home", "numbers": ["0123-4567-8910"] } ] })"_padded;
+
 ondemand::parser parser;
-auto cars = parser.iterate(cars_json);
-cout &lt;&lt; cars.at_path("[0].tire_pressure[1]") &lt;&lt; endl; // Prints 39.9
+ondemand::document doc = parser.iterate(json_string);
+
+// Fetch all fields in the address object
+std::vector&lt;ondemand::value&gt; values;
+auto error = doc.at_path_with_wildcard("$.address.*").get(values);
+if (!error) {
+  for (auto value : values) {
+    std::string_view field;
+    if (value.get(field) == SUCCESS) {
+      std::cout &lt;&lt; field &lt;&lt; std::endl;
+    }
+  }
+}
+
+// Fetch all phone numbers
+error = doc.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
+if (!error) {
+  for (auto value : values) {
+    std::string_view number;
+    if (value.get(number) == SUCCESS) {
+      std::cout &lt;&lt; number &lt;&lt; std::endl;
+    }
+  }
+}
 @endicode 
 
-@subsection autotoc_md23 C++26
-
-
-We also support shit
-If you have C++26 support with reflection, and you have set the &lt;tt&gt;SIMDJSON_STATIC_REFLECTION&lt;/tt&gt; macro, e
-
-@icode{cpp} 
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "<a class="el" href="simdjson_8h.html">simdjson.h</a>"
-@endicode 
-
-@icode{cpp} 
-auto cars_json = R"( [ { "make": "Toyota", "model": "Camry", "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] }, { "make": "Kia", "model": "Soul", "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] }, { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] } ] )"_padded;
-ondemand::parser parser;
-auto cars = parser.iterate(cars_json);
-cout &lt;&lt; cars.at_path("[0].tire_pressure[1]") &lt;&lt; endl; // Prints 39.9
-@endicode 
+This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.
 
 @section autotoc_md24 Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
-simdjson provides &lt;strong&gt;compile-time validated&lt;/strong&gt; JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
+The simdjson library provides &lt;strong&gt;compile-time validated&lt;/strong&gt; JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
 is validated at compile-time.
 
 &lt;strong&gt;Requirements:&lt;/strong&gt; C++26 compiler with P2996 reflection support and &lt;tt&gt;-DSIMDJSON_STATIC_REFLECTION=ON&lt;/tt&gt; build flag.

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -238,6 +238,8 @@ template&lt;typename T &gt; </td></tr>
 <tr class="separator:a8645c724ff217f11d09a69a3eb32355b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3376bfa954029256f1482657eacfc4db" id="r_a3376bfa954029256f1482657eacfc4db"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html#a3376bfa954029256f1482657eacfc4db">at_path</a> (std::string_view json_path) noexcept</td></tr>
 <tr class="separator:a3376bfa954029256f1482657eacfc4db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01a521bcc99ca34e839e8ff243e709db" id="r_a01a521bcc99ca34e839e8ff243e709db"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html#a01a521bcc99ca34e839e8ff243e709db">at_path_with_wildcard</a> (std::string_view json_path) noexcept</td></tr>
+<tr class="separator:a01a521bcc99ca34e839e8ff243e709db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9cc92b5d044ec8efc732e78460934b9" id="r_aa9cc92b5d044ec8efc732e78460934b9"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
 <tr class="memitem:aa9cc92b5d044ec8efc732e78460934b9"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array.html">array</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html#aa9cc92b5d044ec8efc732e78460934b9">get</a> () &amp;noexcept</td></tr>
 <tr class="separator:aa9cc92b5d044ec8efc732e78460934b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -270,7 +272,7 @@ template&lt;typename T &gt; </td></tr>
 <div class="textblock"><p>A <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> is a thin wrapper around a document reference instance. </p>
 <p>The <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a> instances are used primarily/solely for streams of JSON documents. They differ from document instances when parsing a scalar value (a document that is not an array or an object). In the case of a document, we expect the document to be fully consumed. In the case of a <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html" title="A document_reference is a thin wrapper around a document reference instance.">document_reference</a>, we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00798">798</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00816">816</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af7ac8c3602f1562a4b135d76ebfd3cdb" name="af7ac8c3602f1562a4b135d76ebfd3cdb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af7ac8c3602f1562a4b135d76ebfd3cdb">&#9670;&#160;</a></span>document_reference() <span class="overload">[1/2]</span></h2>
@@ -295,7 +297,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00691">691</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00711">711</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -323,7 +325,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00692">692</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00712">712</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -352,7 +354,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00748">748</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00768">768</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -380,7 +382,35 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00768">768</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00788">788</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a01a521bcc99ca34e839e8ff243e709db" name="a01a521bcc99ca34e839e8ff243e709db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a01a521bcc99ca34e839e8ff243e709db">&#9670;&#160;</a></span>at_path_with_wildcard()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_reference::at_path_with_wildcard </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00789">789</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -408,7 +438,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00767">767</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00787">787</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -435,7 +465,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00749">749</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00769">769</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -462,7 +492,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00746">746</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00766">766</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -489,7 +519,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00747">747</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00767">767</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -516,7 +546,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00761">761</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00781">781</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -543,7 +573,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00760">760</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00780">780</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -570,7 +600,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00750">750</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00770">770</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -598,7 +628,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00752">752</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00772">772</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -626,7 +656,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00751">751</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00771">771</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -654,7 +684,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00756">756</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00776">776</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -682,7 +712,7 @@ template&lt;typename T &gt; </td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00755">755</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00775">775</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -711,7 +741,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00836">836</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00854">854</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -740,7 +770,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00724">724</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00744">744</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -769,7 +799,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00725">725</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00745">745</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -798,7 +828,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00726">726</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00746">746</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -827,7 +857,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00727">727</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00747">747</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -856,7 +886,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00728">728</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00748">748</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -885,7 +915,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00729">729</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00749">749</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -914,7 +944,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00730">730</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00750">750</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -943,7 +973,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00731">731</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00751">751</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -972,7 +1002,7 @@ template&lt;&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00732">732</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00752">752</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1001,7 +1031,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00823">823</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00841">841</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -1044,7 +1074,7 @@ template&lt;typename T &gt; </div>
 <dd>
 SUCCESS If the parse succeeded and the out parameter was set to the value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00859">859</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00877">877</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -1071,7 +1101,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00694">694</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00714">714</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1098,7 +1128,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00721">721</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00741">741</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1125,7 +1155,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00714">714</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00734">734</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1152,7 +1182,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00715">715</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00735">735</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1179,7 +1209,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00712">712</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00732">732</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1206,7 +1236,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00713">713</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00733">733</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1233,7 +1263,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00765">765</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00785">785</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1260,7 +1290,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00764">764</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00784">784</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1287,7 +1317,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00695">695</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00715">715</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1314,7 +1344,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00720">720</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00740">740</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1342,7 +1372,7 @@ SUCCESS If the parse succeeded and the out parameter was set to the value. </dd>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00716">716</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00736">736</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1382,7 +1412,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00718">718</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00738">738</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1414,7 +1444,7 @@ template&lt;typename string_type &gt; </div>
 <p>However, for streams of JSON documents, we want to be able to start from "321" "321" "321" and parse it successfully as a stream of JSON documents, calling get_uint64_in_string() successfully each time.</p>
 <p>To achieve this result, we pass a 'false' to a get_root_value_iterator() method: this indicates that we allow trailing content. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00710">710</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00730">730</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1441,7 +1471,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00711">711</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00731">731</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1468,7 +1498,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00722">722</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00742">742</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1495,7 +1525,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00719">719</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00739">739</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1522,7 +1552,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00763">763</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00783">783</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1549,7 +1579,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00762">762</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00782">782</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1576,7 +1606,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00723">723</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00743">743</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1603,7 +1633,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00758">758</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00778">778</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1630,7 +1660,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00759">759</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00779">779</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1649,7 +1679,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00736">736</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00756">756</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1668,7 +1698,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00743">743</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00763">763</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1695,7 +1725,7 @@ template&lt;typename string_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00770">770</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00791">791</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1714,7 +1744,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00740">740</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00760">760</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1733,7 +1763,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00739">739</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00759">759</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1752,7 +1782,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00737">737</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00757">757</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1771,7 +1801,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00742">742</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00762">762</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1790,7 +1820,7 @@ template&lt;typename string_type &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00741">741</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00761">761</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1819,7 +1849,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00735">735</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00755">755</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1838,7 +1868,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00738">738</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00758">758</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1857,7 +1887,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00744">744</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00764">764</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1885,7 +1915,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00754">754</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00774">774</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1913,7 +1943,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00753">753</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00773">773</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1940,7 +1970,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00769">769</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00790">790</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1967,7 +1997,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00766">766</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00786">786</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1994,7 +2024,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00693">693</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00713">713</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -2021,7 +2051,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00757">757</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00777">777</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.1.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -302,6 +302,9 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a87b1fb46555fdf69761966e49ffaa9d7" id="r_a87b1fb46555fdf69761966e49ffaa9d7"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a87b1fb46555fdf69761966e49ffaa9d7">at_path</a> (std::string_view json_path) noexcept</td></tr>
 <tr class="memdesc:a87b1fb46555fdf69761966e49ffaa9d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <br /></td></tr>
 <tr class="separator:a87b1fb46555fdf69761966e49ffaa9d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9738c1ee09d8a7b930cbfb99f1bf72f2" id="r_a9738c1ee09d8a7b930cbfb99f1bf72f2"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a9738c1ee09d8a7b930cbfb99f1bf72f2">at_path_with_wildcard</a> (std::string_view json_path) noexcept</td></tr>
+<tr class="memdesc:a9738c1ee09d8a7b930cbfb99f1bf72f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get all values matching the given JSONPath expression with wildcard support.  <br /></td></tr>
+<tr class="separator:a9738c1ee09d8a7b930cbfb99f1bf72f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa3a27654a19c386ad0c775cff258cf0c" id="r_aa3a27654a19c386ad0c775cff258cf0c"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#aa3a27654a19c386ad0c775cff258cf0c">raw_json</a> () noexcept</td></tr>
 <tr class="memdesc:aa3a27654a19c386ad0c775cff258cf0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Consumes the document and returns a string_view instance corresponding to the document as represented in JSON.  <br /></td></tr>
 <tr class="separator:aa3a27654a19c386ad0c775cff258cf0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -421,7 +424,7 @@ Static Protected Attributes</h2></td></tr>
 <p>Used by tokens to get text, and string buffer location.</p>
 <p>You must keep the document around during iteration. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00023">23</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00024">24</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a54cd729a715a09bc9e706b7640233427" name="a54cd729a715a09bc9e706b7640233427"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a54cd729a715a09bc9e706b7640233427">&#9670;&#160;</a></span>document() <span class="overload">[1/2]</span></h2>
@@ -583,6 +586,51 @@ Static Protected Attributes</h2></td></tr>
 </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00333">333</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a9738c1ee09d8a7b930cbfb99f1bf72f2" name="a9738c1ee09d8a7b930cbfb99f1bf72f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9738c1ee09d8a7b930cbfb99f1bf72f2">&#9670;&#160;</a></span>at_path_with_wildcard()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document::at_path_with_wildcard </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get all values matching the given JSONPath expression with wildcard support. </p>
+<p>Supports wildcard patterns like "$.array[*]" or "$.object.*" to match multiple elements.</p>
+<p>This method materializes all matching values into a vector. The document will be consumed after this call.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">json_path</td><td>JSONPath expression with wildcards </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Vector of values matching the wildcard pattern, or:<ul>
+<li>INVALID_JSON_POINTER if the JSONPath cannot be parsed</li>
+<li>NO_SUCH_FIELD if a field does not exist</li>
+<li>INDEX_OUT_OF_BOUNDS if an array index is out of bounds</li>
+<li>INCORRECT_TYPE if path traversal encounters wrong type </li>
+</ul>
+</dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document-inl_8h_source.html#l00350">350</a> of file <a class="el" href="generic_2ondemand_2document-inl_8h_source.html">document-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1214,7 +1262,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00208">208</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00209">209</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -1511,7 +1559,7 @@ template&lt;typename T &gt; </div>
 <dd>
 INCORRECT_TYPE If the JSON value is not the given type. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00185">185</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00186">186</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -1764,7 +1812,7 @@ template&lt;typename T &gt; </div>
 <dd>
 SUCCESS If the parse succeeded and the out parameter was set to the value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00231">231</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00232">232</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -3230,7 +3278,7 @@ template&lt;class T &gt; </div>
 
 <p>document depth is always 0 </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00776">776</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00794">794</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>
@@ -3256,7 +3304,7 @@ template&lt;class T &gt; </div>
 
 <p>Current position in the document. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00775">775</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document_8h_source.html#l00793">793</a> of file <a class="el" href="generic_2ondemand_2document_8h_source.html">document.h</a>.</p>
 
 </div>
 </div>

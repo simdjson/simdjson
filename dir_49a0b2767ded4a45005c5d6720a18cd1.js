@@ -17,6 +17,8 @@ var dir_49a0b2767ded4a45005c5d6720a18cd1 =
     [ "base.h", "base_8h_source.html", null ],
     [ "builtin.h", "builtin_8h_source.html", null ],
     [ "common_defs.h", "common__defs_8h_source.html", null ],
+    [ "compile_time_json-inl.h", "compile__time__json-inl_8h.html", null ],
+    [ "compile_time_json.h", "compile__time__json_8h.html", null ],
     [ "compiler_check.h", "compiler__check_8h_source.html", null ],
     [ "concepts.h", "concepts_8h_source.html", null ],
     [ "constevalutil.h", "constevalutil_8h_source.html", null ],

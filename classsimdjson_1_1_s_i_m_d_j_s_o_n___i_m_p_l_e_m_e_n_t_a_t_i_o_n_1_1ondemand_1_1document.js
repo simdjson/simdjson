@@ -4,6 +4,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_
     [ "at", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a01c6bde0574654dc22ea219c3b3dbf51", null ],
     [ "at_end", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#ae896ac465551b036763e4465b3a16c7b", null ],
     [ "at_path", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a87b1fb46555fdf69761966e49ffaa9d7", null ],
+    [ "at_path_with_wildcard", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a9738c1ee09d8a7b930cbfb99f1bf72f2", null ],
     [ "at_pointer", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a74484485f4a3d8dce5943b0cb60ac815", null ],
     [ "begin", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a1a450826deb3ba982c9f0ec6208cb246", null ],
     [ "consume", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a15159e4995ec7c9dd9e4eb295699c593", null ],
