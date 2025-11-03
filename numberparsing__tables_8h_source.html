@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -127,7 +127,7 @@ $(document).ready(function(){initNavTree('numberparsing__tables_8h_source.html',
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">// The mantissa is truncated to 128 bits, and</span></div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span><span class="comment">// never rounded up. Uses about 10KB.</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="comment">// We use the template trick to allow inclusion in multiple translation units.</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">#if SIMDJSON_CPLUSPLUS26</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">#if SIMDJSON_STATIC_REFLECTION</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> unused = <span class="keywordtype">void</span>&gt;  <span class="keyword">struct </span>powers_template {</div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keyword">constexpr</span> <span class="keyword">static</span> uint64_t power_of_five_128[651*2]= {</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        0xeef453d6923bd65a,0x113faa2906a13b3f,</div>
@@ -782,7 +782,7 @@ $(document).ready(function(){initNavTree('numberparsing__tables_8h_source.html',
 <div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>        0xe3d8f9e563a198e5,0x58180fddd97723a6,</div>
 <div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>        0x8e679c2f5e44ff8f,0x570f09eaa7ea7648,};</div>
 <div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>};</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CPLUSPLUS26</span></div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_STATIC_REFLECTION</span></div>
 <div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span> </div>
 <div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span><span class="keyword">extern</span> SIMDJSON_DLLIMPORTEXPORT <span class="keyword">const</span> uint64_t power_of_five_128[651*2];</div>
 <div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>} <span class="comment">// namespace internal</span></div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -581,8 +581,10 @@ Iteration Safety</h2>
 </ul>
 <p>Some care is needed when using the On-Demand API in scenarios where you need to access several sibling arrays or objects because only one object or array can be active at any one time. Let us consider the following example:</p>
 <div class="fragment"><div class="line">ondemand::parser parser;</div>
+<div class="line"><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
 <div class="line"><span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({ &quot;parent&quot;: {&quot;child1&quot;: {&quot;name&quot;: &quot;John&quot;} , &quot;child2&quot;: {&quot;name&quot;: &quot;Daniel&quot;}} })&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="line"><span class="stringliteral"></span><span class="comment">// _padded returns an simdjson padded_string instance</span></div>
+<div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 <div class="line">ondemand::object parent = doc[<span class="stringliteral">&quot;parent&quot;</span>];</div>
 <div class="line"><span class="comment">// parent owns the focus</span></div>
 <div class="line">ondemand::object c1 = parent[<span class="stringliteral">&quot;child1&quot;</span>];</div>

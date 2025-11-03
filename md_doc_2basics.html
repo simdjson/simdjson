@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -321,9 +321,9 @@ Using the parsed JSON</h1>
 </ul>
 <blockquote class="doxtable">
 <p>&zwj;NOTE: JSON allows you to escape characters in keys. E.g., the key <code>"date"</code> may be written as <code>"\u0064\u0061\u0074\u0065"</code>. By default, simdjson does <em>not</em> unescape keys when matching. Thus if you search for the key <code>"date"</code> and the JSON document uses <code>"\u0064\u0061\u0074\u0065"</code> as a key, it will not be recognized. This is not generally a problem. Nevertheless, if you do need to support escaped keys, the method <code>unescaped_key()</code> provides the desired unescaped keys by parsing and writing out the unescaped keys to a string buffer and returning a <code>std::string_view</code> instance. The <code>unescaped_key</code> takes an optional Boolean value: passing it true will decode invalid Unicode sequences with replacement, meaning that the decoding always succeeds but bogus Unicode replacement characters are inserted. In general, you should expect a performance penalty when using <code>unescaped_key()</code> compared to <code>key()</code> because of the string processing: the <code>key()</code> function just points inside the source JSON document. As a compromise, you may use <code>escaped_key()</code><code> which returns a</code>std::string_view<code>instance pointing directly in the document, like</code>key()<code>, although, unlike</code>key()`, it has to determine the location of the final quote character.</p>
-<div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;k\u0065y&quot;: 1})&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;k\u0065y&quot;: 1})&quot;_padded; </span><span class="comment">// R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 <div class="line">ondemand::object <span class="keywordtype">object</span> = doc.get_object();</div>
 <div class="line"><span class="keywordflow">for</span>(<span class="keyword">auto</span> field : object) {</div>
 <div class="line">   <span class="comment">// parses and writes out the key, after unescaping it,</span></div>
@@ -337,8 +337,8 @@ Using the parsed JSON</h1>
 </div><!-- fragment --><p>By default, field lookup is order-insensitive, so you can look up values in any order. However, we still encourage you to look up fields in the order you expect them in the JSON, as it is still faster.</p>
 <p>If you want to enforce finding fields in order, you can use <code>object.find_field("foo")</code> instead. This will only look forward, and will fail to find fields in the wrong order: for example, this will fail:</p>
 <div class="fragment"><div class="line">ondemand::parser parser;</div>
-<div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;(  { &quot;x&quot;: 1, &quot;y&quot;: 2 }  )&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = parser.iterate(json);</div>
+<div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;(  { &quot;x&quot;: 1, &quot;y&quot;: 2 }  )&quot;_padded; </span><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
+<div class="line"><span class="keyword">auto</span> doc = parser.iterate(json);</div>
 <div class="line"><span class="keywordtype">double</span> y = doc.find_field(<span class="stringliteral">&quot;y&quot;</span>); <span class="comment">// The cursor is now after the 2 (at })</span></div>
 <div class="line"><span class="keywordtype">double</span> x = doc.find_field(<span class="stringliteral">&quot;x&quot;</span>); <span class="comment">// This fails, because there are no more fields after &quot;y&quot;</span></div>
 </div><!-- fragment --><p>By contrast, using the default (order-insensitive) lookup succeeds:</p>

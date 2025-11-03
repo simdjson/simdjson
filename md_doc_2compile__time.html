@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -138,29 +138,42 @@ Example</h1>
 <div class="line">    <span class="stringliteral">&quot;host&quot;</span>: <span class="stringliteral">&quot;localhost&quot;</span>,</div>
 <div class="line">    <span class="stringliteral">&quot;debug&quot;</span>: <span class="keyword">true</span></div>
 <div class="line">}</div>
-</div><!-- fragment --><p>You can do so, at compile-time, as follows:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> cfg = simdjson::compile_time::parse_json&lt;R<span class="stringliteral">&quot;({</span></div>
+</div><!-- fragment --><p><b>Reminder</b>: In C++, <code>R"( )"</code> allows us to write multi-line strings with unescaped quotes.</p>
+<p>You can do so, at compile-time, as follows:</p>
+<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> cfg = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">{</span></div>
 <div class="line"><span class="stringliteral">    &quot;port&quot;: 8080,</span></div>
 <div class="line"><span class="stringliteral">    &quot;host&quot;: &quot;localhost&quot;,</span></div>
 <div class="line"><span class="stringliteral">    &quot;debug&quot;: true</span></div>
-<div class="line"><span class="stringliteral">})&quot;&gt;();</span></div>
+<div class="line"><span class="stringliteral">}</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral"></span><span class="comment">// cfg.port == 8080</span></div>
 <div class="line"><span class="comment">// std::string_view(cfg.host) == &quot;localhost&quot;</span></div>
 <div class="line"><span class="comment">// cfg.debug == true</span></div>
 </div><!-- fragment --><p>You can nest objects and arrays:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> data = simdjson::compile_time::parse_json&lt;R<span class="stringliteral">&quot;({</span></div>
+<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> data = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">{</span></div>
 <div class="line"><span class="stringliteral">    &quot;servers&quot;: [</span></div>
 <div class="line"><span class="stringliteral">        {&quot;host&quot;: &quot;s1&quot;, &quot;port&quot;: 3000},</span></div>
 <div class="line"><span class="stringliteral">        {&quot;host&quot;: &quot;s2&quot;, &quot;port&quot;: 3001}</span></div>
 <div class="line"><span class="stringliteral">    ]</span></div>
-<div class="line"><span class="stringliteral">})&quot;&gt;();</span></div>
+<div class="line"><span class="stringliteral">}</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral"></span><span class="comment">// data.servers.size() == 2</span></div>
 <div class="line"><span class="comment">// std::string_view(data.servers[0].host) == &quot;s1&quot;</span></div>
 </div><!-- fragment --><p>Top-level arrays are allowed:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> arr = simdjson::compile_time::parse_json&lt;R<span class="stringliteral">&quot;([1, 2, 3])&quot;&gt;();</span></div>
+<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> arr = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">[1, 2, 3]</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
 <div class="line"><span class="stringliteral"></span><span class="keyword">static_assert</span>(arr.size() == 3);</div>
 <div class="line"><span class="keyword">static_assert</span>(arr[1] == 2);</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md56"></a>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -312,7 +312,7 @@ $(document).ready(function(){initNavTree('padded__string-inl_8h_source.html','')
 <div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>}</div>
 <div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span><span class="preprocessor">#ifdef __cpp_char8_t</span></div>
 <div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span><span class="keyword">inline</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> <span class="keyword">operator</span> <span class="stringliteral">&quot;&quot;</span>_padded(<span class="keyword">const</span> <span class="keywordtype">char8_t</span> *str, <span class="keywordtype">size_t</span> len) {</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char8_t</span> *<span class="keyword">&gt;</span>(str), len);</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(str), len);</div>
 <div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>}</div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_PADDED_STRING_INL_H</span></div>

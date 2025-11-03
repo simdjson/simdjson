@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -159,6 +159,7 @@ Using the Parsed JSON</h1>
 <ul>
 <li><b>Extracting Values (with exceptions):</b> You can cast a JSON element to a native type: <code>double(element)</code> or <code>double x = json_element</code>. This works for double, uint64_t, int64_t, bool, dom::object and dom::array. An exception (<code><a class="el" href="structsimdjson_1_1simdjson__error.html" title="Exception thrown when an exception-supporting simdjson method is called.">simdjson::simdjson_error</a></code>) is thrown if the cast is not possible.</li>
 <li><b>Extracting Values (without exceptions):</b> You can use a variant usage of <code>get()</code> with error codes to avoid exceptions. You first declare the variable of the appropriate type (<code>double</code>, <code>uint64_t</code>, <code>int64_t</code>, <code>bool</code>, <code>std::string_view</code>, <code>dom::object</code> and <code>dom::array</code>) and pass it by reference to <code>get()</code> which gives you back an error code: e.g., <div class="fragment"><div class="line"><a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a> error;</div>
+<div class="line"><span class="comment">// _padded returns an simdjson::padded_string instance</span></div>
 <div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> numberstring = <span class="stringliteral">&quot;1.2&quot;</span>_padded; <span class="comment">// our JSON input (&quot;1.2&quot;)</span></div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
 <div class="line"><span class="keywordtype">double</span> value; <span class="comment">// variable where we store the value to be parsed</span></div>
@@ -181,7 +182,8 @@ Using the Parsed JSON</h1>
 <h2><a class="anchor" id="autotoc_md87"></a>
 Examples</h2>
 <p>The following code illustrates all of the above:</p>
-<div class="fragment"><div class="line"><span class="keyword">auto</span> cars_json = R<span class="stringliteral">&quot;( [</span></div>
+<div class="fragment"><div class="line"><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
+<div class="line"><span class="keyword">auto</span> cars_json = R<span class="stringliteral">&quot;( [</span></div>
 <div class="line"><span class="stringliteral">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9, 37.7, 40.4 ] },</span></div>
 <div class="line"><span class="stringliteral">  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012, &quot;tire_pressure&quot;: [ 30.1, 31.0, 28.6, 28.7 ] },</span></div>
 <div class="line"><span class="stringliteral">  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999, &quot;tire_pressure&quot;: [ 29.8, 30.0, 30.2, 30.5 ] }</span></div>

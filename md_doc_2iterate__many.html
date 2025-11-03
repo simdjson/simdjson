@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -166,10 +166,12 @@ Support</h1>
 <h1><a class="anchor" id="autotoc_md116"></a>
 API</h1>
 <p>Example:</p>
-<div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({ &quot;foo&quot;: 1 } { &quot;foo&quot;: 2 } { &quot;foo&quot;: 3 } )&quot;_padded;</span></div>
-<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
-<div class="line"><span class="stringliteral">ondemand::document_stream docs = parser.iterate_many(json);</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : docs) {</div>
+<div class="fragment"><div class="line"><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
+<div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({ &quot;foo&quot;: 1 } { &quot;foo&quot;: 2 } { &quot;foo&quot;: 3 } )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="comment">// _padded returns an simdjson::padded_string instance</span></div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line">ondemand::document_stream docs = parser.iterate_many(json);</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : docs) {</div>
 <div class="line">  std::cout &lt;&lt; doc[<span class="stringliteral">&quot;foo&quot;</span>] &lt;&lt; std::endl;</div>
 <div class="line">}</div>
 <div class="line"><span class="comment">// Prints 1 2 3</span></div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -271,7 +271,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  <span class="comment">// with a returned value of type value128 with a &quot;low component&quot; corresponding to the</span></div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="comment">// 64-bit least significant bits of the product and with a &quot;high component&quot; corresponding</span></div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  <span class="comment">// to the 64-bit most significant bits of the product.</span></div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span><span class="preprocessor">#if SIMDJSON_CPLUSPLUS26</span></div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span><span class="preprocessor">#if SIMDJSON_STATIC_REFLECTION</span></div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::powers_template&lt;&gt;::power_of_five_128[index]);</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span><span class="preprocessor">#else</span></div>
 <div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  simdjson::internal::value128 firstproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index]);</div>
@@ -309,7 +309,7 @@ $(document).ready(function(){initNavTree('numberparsing_8h_source.html',''); ini
 <div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    <span class="comment">// with a returned value of type value128 with a &quot;low component&quot; corresponding to the</span></div>
 <div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    <span class="comment">// 64-bit least significant bits of the product and with a &quot;high component&quot; corresponding</span></div>
 <div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    <span class="comment">// to the 64-bit most significant bits of the product.</span></div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="preprocessor">#if SIMDJSON_CPLUSPLUS26</span></div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span><span class="preprocessor">#if SIMDJSON_STATIC_REFLECTION</span></div>
 <div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::powers_template&lt;&gt;::power_of_five_128[index + 1]);</div>
 <div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span><span class="preprocessor">#else</span></div>
 <div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>    simdjson::internal::value128 secondproduct = full_multiplication(i, simdjson::internal::power_of_five_128[index + 1]);</div>
