@@ -1,6 +1,12 @@
 #ifndef SIMDJSON_PADDED_STRING_INL_H
 #define SIMDJSON_PADDED_STRING_INL_H
 
+#ifdef _WIN32
+  #ifndef NOMINMAX
+    #define NOMINMAX
+  #endif
+#endif
+
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string_view.h"
 
@@ -184,6 +190,57 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
   return s;
 }
+
+#if defined(_WIN32) && __cplusplus >= 201703L
+  #include <windows.h>
+
+  inline std::string utf16_to_utf8(std::wstring_view wstr) noexcept {
+    if(wstr.empty()){
+      return {};
+    }
+
+    int size_needed = WideCharToMultiByte(
+      CP_UTF8,
+      0,
+      wstr.data(),
+      static_cast<int>(wstr.size()),
+      nullptr,
+      0,
+      nullptr,
+      nullptr
+    );
+
+    if(size_needed<=0){
+      return {};
+    }
+
+    std::string utf8_str(size_needed,0);
+
+    int bytes_written = WideCharToMultiByte(
+      CP_UTF8,
+      0,
+      wstr.data(),
+      static_cast<int>(wstr.size()),
+      utf8_str.data(),
+      size_needed,
+      nullptr,
+      nullptr
+    );
+
+    if(bytes_written <=0 ){
+      return {};
+    }
+
+    return utf8_str;
+  }
+inline simdjson_result<padded_string> padded_string::load(std::wstring_view filename) noexcept {
+  std::string utf8_filename = utf16_to_utf8(filename);
+  if(utf8_filename.empty() && !filename.empty()){
+    return IO_ERROR;
+  }
+  return padded_string::load(utf8_filename);
+}
+#endif
 
 } // namespace simdjson
 
