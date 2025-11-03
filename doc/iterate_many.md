@@ -141,7 +141,9 @@ API
 Example:
 
 ```cpp
+//  R"( ... )" is a C++ raw string literal.
 auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+// _padded returns an simdjson::padded_string instance
 ondemand::parser parser;
 ondemand::document_stream docs = parser.iterate_many(json);
 for (auto doc : docs) {

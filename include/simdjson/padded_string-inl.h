@@ -192,7 +192,7 @@ inline simdjson::padded_string operator ""_padded(const char *str, size_t len) {
 }
 #ifdef __cpp_char8_t
 inline simdjson::padded_string operator ""_padded(const char8_t *str, size_t len) {
-  return simdjson::padded_string(reinterpret_cast<const char8_t *>(str), len);
+  return simdjson::padded_string(reinterpret_cast<const char *>(str), len);
 }
 #endif
 #endif // SIMDJSON_PADDED_STRING_INL_H
