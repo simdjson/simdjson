@@ -11,7 +11,7 @@
 
 #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
   #ifndef NOMINMAX
-    # define NOMINMAX
+    #define NOMINMAX
   #endif
   #include <windows.h>
 #endif
