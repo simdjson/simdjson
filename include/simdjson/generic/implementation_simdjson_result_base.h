@@ -138,6 +138,9 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
+  using value_type = T;
+  using error_type = error_code;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/

@@ -265,6 +265,8 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
+  using value_type = T;
+  using error_type = error_code;
 }; // struct simdjson_result_base
 
 } // namespace internal
@@ -376,6 +378,8 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
+  using value_type = T;
+  using error_type = error_code;
 }; // struct simdjson_result
 
 #if SIMDJSON_EXCEPTIONS

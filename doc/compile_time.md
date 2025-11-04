@@ -1,6 +1,7 @@
 # Parse json at compile time
    * [Introduction](#introduction)
    * [Example](#example)
+   * [Concepts](#concepts)
    * [Loading from disk](#loading-from-disk)
    * [Limitations (compile-time errors)](#limitations-compile-time-errors)
 
@@ -105,6 +106,68 @@ constexpr auto arr = R"(
 static_assert(arr.size() == 3);
 static_assert(arr[1] == 2);
 ```
+
+
+## Concepts
+
+Given that the parsed data is made of structures that depend on the JSON input, you might
+want to check that it conforms to your expectation. You can do so with concepts.
+
+Let us consider this example:
+
+```cpp
+    constexpr auto config = R"(
+
+    [
+      { "name": "Alice", "age": 30 },
+      { "name": "Bob", "age": 25 },
+      { "name": "Charlie", "age": 35 }
+    ]
+
+    )"_json;
+```
+
+You might want to ensure that the result is an array of persons. You can define your
+expection with concepts like so:
+
+```cpp
+template <typename T>
+concept person = requires(T p) {
+    std::string_view(p.name);  // has name field convertible to string_view
+    p.age;                     // has age field
+    requires std::is_integral_v<decltype(p.age)>;  // age is integral
+};
+
+/**
+ * Concept to validate that a type is an array of person objects
+ */
+template <typename T>
+concept array_of_person = requires(T arr) {
+    arr.size();                    // has size method
+    arr[0];                        // can access elements with []
+    requires person<decltype(arr[0])>;  // elements satisfy person concept
+};
+```
+
+And then a simple static assert with `decltype` is sufficient to check that the expectation is met:
+
+```cpp
+  constexpr auto config = R"(
+
+  [
+    { "name": "Alice", "age": 30 },
+    { "name": "Bob", "age": 25 },
+    { "name": "Charlie", "age": 35 }
+  ]
+
+  )"_json;
+
+
+  // Validate that the array satisfies the array_of_person concept
+  static_assert(array_of_person<decltype(config)>);
+```
+
+
 
 ## Loading from disk
 
