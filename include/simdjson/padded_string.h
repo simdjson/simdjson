@@ -127,7 +127,7 @@ struct padded_string final {
    **/
   inline static simdjson_result<padded_string> load(std::string_view path) noexcept;
 
-    #if defined(_WIN32) && __cplusplus >= 201703L
+    #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
   /**
    * This function accepts a wide string path (UTF-16) and converts it to
    * UTF-8 before loading the file. This allows windows users to work
