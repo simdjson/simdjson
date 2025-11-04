@@ -10,10 +10,7 @@
 #include <climits>
 
 #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
-  #ifndef NOMINMAX
-    #define NOMINMAX
-  #endif
-  #include <windows.h>
+  #include <wchar.h>
 #endif
 namespace simdjson {
 namespace internal {
