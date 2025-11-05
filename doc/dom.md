@@ -54,6 +54,22 @@ dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance
 ```
 
+You can also load a `padded_string` from a file.
+
+
+```cpp
+auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json'.
+dom::element doc = parser.parse(json);
+```
+
+(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`.)
+
+
+(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`.)
+
+
 You can copy your data directly on a `simdjson::padded_string` as follows:
 
 ```cpp

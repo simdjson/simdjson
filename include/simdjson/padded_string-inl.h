@@ -8,10 +8,8 @@
 #include "simdjson/padded_string_view-inl.h"
 
 #include <climits>
+#include <cwchar>
 
-#if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
-  #include <wchar.h>
-#endif
 namespace simdjson {
 namespace internal {
 
