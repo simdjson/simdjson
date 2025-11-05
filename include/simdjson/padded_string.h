@@ -127,6 +127,19 @@ struct padded_string final {
    **/
   inline static simdjson_result<padded_string> load(std::string_view path) noexcept;
 
+    #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
+  /**
+   * This function accepts a wide string path (UTF-16) and converts it to
+   * UTF-8 before loading the file. This allows windows users to work
+   * with unicode file paths without manually converting the paths everytime.
+   *
+   * @return IO_ERROR on error, including conversion failures.
+   *
+   * @param path the path to the file as a wide string.
+  **/
+    inline static simdjson_result<padded_string> load(std::wstring_view path) noexcept;
+  #endif
+
 private:
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
