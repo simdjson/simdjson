@@ -183,6 +183,9 @@ auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json
 ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
 ```
 
+(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`.)
+
 If you prefer not to create your own `ondemand::parser` instance, you can access
 a thread-local version by calling `ondemand::parser.get_parser()`.
 
