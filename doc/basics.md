@@ -452,7 +452,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   When you are iterating through an object, you are advancing through its keys and values. You should not also access the object or other objects. E.g. within a loop over `myobject`, you should not be accessing `myobject`. The following is an anti-pattern: `for(auto value: myobject) {myobject["mykey"]}`.
 
   You should never reset an object as you are iterating through it. The following is an anti-pattern: `for(auto value: myobject) {myobject.reset()}`.
-* **Array Index:** Because it is forward-only, you cannot look up an array element by index by index. Instead,
+* **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,
   you should iterate through the array and keep an index yourself. Exceptionally, if need a single value
   out of the array, you may use an array access (e.g., `array[1]`). You should never reset an array as you are iterating through it. The following is an anti-pattern: `for(auto value: myarray) {myarray.reset()}`.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`. This will
@@ -527,13 +527,13 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << simdjson::to_json_string(doc["test"]) << std::endl; // Requires simdjson 1.0 or better
-  >````
+  > ```
   > ```cpp
   > // retrieves an unescaped string value as a string_view instance
   > auto silly_json = R"( { "test": "result"  }  )"_padded;
   > ondemand::document doc = parser.iterate(silly_json);
   > std::cout << std::string_view(doc["test"]) << std::endl;
-  >````
+  > ```
   You can use `to_json_string` to efficiently extract components of a JSON document to reconstruct a new JSON document, as in the following example:
   > ```cpp
   > auto cars_json = R"( [
@@ -562,7 +562,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > oss << "]";
   > auto json_string = oss.str();
   > // json_string == "[[ 40.1, 39.9, 37.7, 40.4 ],[ 30.1, 31.0, 28.6, 28.7 ]]"
-  >````
+  > ```
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error
   codes to avoid exceptions. You first declare the variable of the appropriate type (`double`,
   `uint64_t`, `int64_t`, `bool`, `ondemand::object` and `ondemand::array`) and pass it by reference

@@ -843,7 +843,7 @@ memcpy(padded_json_copy.get(), json, json_len);
 memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
 simdjson::dom::parser parser;
 simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
-````
+```
 
 Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.
 

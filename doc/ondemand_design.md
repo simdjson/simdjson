@@ -545,7 +545,7 @@ To help visualize the algorithm, we'll walk through the example C++ given at the
      "statuses": [
        { "id": 1, "text": "first!", "user": { "screen_name": "lemire", "name": "Daniel" }, "retweet_count": 40 },
        { "id": 2, "text": "second!", "user": { "screen_name": "jkeiser2", "name": "John" }, "retweet_count": 3 }
-                                                                                                               ^ (depth 3 - root > statuses > tweet)
+         ^ (depth 4 - root > statuses > tweet > field)
      ],
      "search_metadata": { "count": 2 }
    }
