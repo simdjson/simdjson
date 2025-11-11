@@ -538,7 +538,7 @@ template <std::ranges::range R>
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);
-  if constexpr (concepts::is_pair<typename R::value_type>) {
+  if constexpr (concepts::is_pair<std::ranges::range_value_t<R>>) {
     start_object();
 
     if (it == end) {

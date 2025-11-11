@@ -8,7 +8,7 @@ library provides high-speed access to files or streams containing multiple small
 {"text":"a"}
 {"text":"b"}
 {"text":"c"}
-...
+"..."
 ```
 ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.
 
