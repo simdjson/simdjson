@@ -94,143 +94,144 @@ var NAVTREE =
     [ "Parse json at compile time", "md_doc_2compile__time.html", [
       [ "Introduction", "md_doc_2compile__time.html#autotoc_md54", null ],
       [ "Example", "md_doc_2compile__time.html#autotoc_md55", null ],
-      [ "Loading from disk", "md_doc_2compile__time.html#autotoc_md56", null ],
-      [ "Limitations (compile-time errors)", "md_doc_2compile__time.html#autotoc_md57", null ]
+      [ "Concepts", "md_doc_2compile__time.html#autotoc_md56", null ],
+      [ "Loading from disk", "md_doc_2compile__time.html#autotoc_md57", null ],
+      [ "Limitations (compile-time errors)", "md_doc_2compile__time.html#autotoc_md58", null ]
     ] ],
     [ "Compile-Time JSONPath and JSON Pointer Accessors", "md_doc_2compile__time__accessors.html", [
-      [ "Overview", "md_doc_2compile__time__accessors.html#autotoc_md59", null ],
-      [ "Requirements", "md_doc_2compile__time__accessors.html#autotoc_md60", null ],
-      [ "How It Works", "md_doc_2compile__time__accessors.html#autotoc_md61", null ],
-      [ "Two Usage Modes", "md_doc_2compile__time__accessors.html#autotoc_md62", [
-        [ "Mode 1: With Type Validation (Recommended)", "md_doc_2compile__time__accessors.html#autotoc_md63", null ],
-        [ "Mode 2: Without Validation", "md_doc_2compile__time__accessors.html#autotoc_md64", null ]
+      [ "Overview", "md_doc_2compile__time__accessors.html#autotoc_md60", null ],
+      [ "Requirements", "md_doc_2compile__time__accessors.html#autotoc_md61", null ],
+      [ "How It Works", "md_doc_2compile__time__accessors.html#autotoc_md62", null ],
+      [ "Two Usage Modes", "md_doc_2compile__time__accessors.html#autotoc_md63", [
+        [ "Mode 1: With Type Validation (Recommended)", "md_doc_2compile__time__accessors.html#autotoc_md64", null ],
+        [ "Mode 2: Without Validation", "md_doc_2compile__time__accessors.html#autotoc_md65", null ]
       ] ],
-      [ "JSONPath Syntax", "md_doc_2compile__time__accessors.html#autotoc_md65", [
-        [ "Supported Syntax", "md_doc_2compile__time__accessors.html#autotoc_md66", null ],
-        [ "Examples", "md_doc_2compile__time__accessors.html#autotoc_md67", null ]
+      [ "JSONPath Syntax", "md_doc_2compile__time__accessors.html#autotoc_md66", [
+        [ "Supported Syntax", "md_doc_2compile__time__accessors.html#autotoc_md67", null ],
+        [ "Examples", "md_doc_2compile__time__accessors.html#autotoc_md68", null ]
       ] ],
-      [ "JSON Pointer Syntax", "md_doc_2compile__time__accessors.html#autotoc_md68", [
-        [ "Supported Syntax", "md_doc_2compile__time__accessors.html#autotoc_md69", null ],
-        [ "Examples", "md_doc_2compile__time__accessors.html#autotoc_md70", null ]
+      [ "JSON Pointer Syntax", "md_doc_2compile__time__accessors.html#autotoc_md69", [
+        [ "Supported Syntax", "md_doc_2compile__time__accessors.html#autotoc_md70", null ],
+        [ "Examples", "md_doc_2compile__time__accessors.html#autotoc_md71", null ]
       ] ],
-      [ "API Reference", "md_doc_2compile__time__accessors.html#autotoc_md71", [
-        [ "JSONPath Functions", "md_doc_2compile__time__accessors.html#autotoc_md72", null ],
-        [ "JSON Pointer Functions", "md_doc_2compile__time__accessors.html#autotoc_md73", null ],
-        [ "Direct Field Extraction", "md_doc_2compile__time__accessors.html#autotoc_md74", null ]
+      [ "API Reference", "md_doc_2compile__time__accessors.html#autotoc_md72", [
+        [ "JSONPath Functions", "md_doc_2compile__time__accessors.html#autotoc_md73", null ],
+        [ "JSON Pointer Functions", "md_doc_2compile__time__accessors.html#autotoc_md74", null ],
+        [ "Direct Field Extraction", "md_doc_2compile__time__accessors.html#autotoc_md75", null ]
       ] ],
-      [ "Complete Examples", "md_doc_2compile__time__accessors.html#autotoc_md75", [
-        [ "Example 1: Validated Access", "md_doc_2compile__time__accessors.html#autotoc_md76", null ],
-        [ "Example 2: Non-Validated Access", "md_doc_2compile__time__accessors.html#autotoc_md77", null ],
-        [ "Example 3: Direct Extraction", "md_doc_2compile__time__accessors.html#autotoc_md78", null ]
+      [ "Complete Examples", "md_doc_2compile__time__accessors.html#autotoc_md76", [
+        [ "Example 1: Validated Access", "md_doc_2compile__time__accessors.html#autotoc_md77", null ],
+        [ "Example 2: Non-Validated Access", "md_doc_2compile__time__accessors.html#autotoc_md78", null ],
+        [ "Example 3: Direct Extraction", "md_doc_2compile__time__accessors.html#autotoc_md79", null ]
       ] ],
-      [ "Error Handling", "md_doc_2compile__time__accessors.html#autotoc_md79", null ],
-      [ "Performance", "md_doc_2compile__time__accessors.html#autotoc_md80", null ],
-      [ "Limitations", "md_doc_2compile__time__accessors.html#autotoc_md81", null ],
-      [ "When to Use", "md_doc_2compile__time__accessors.html#autotoc_md82", null ],
-      [ "See Also", "md_doc_2compile__time__accessors.html#autotoc_md83", null ]
+      [ "Error Handling", "md_doc_2compile__time__accessors.html#autotoc_md80", null ],
+      [ "Performance", "md_doc_2compile__time__accessors.html#autotoc_md81", null ],
+      [ "Limitations", "md_doc_2compile__time__accessors.html#autotoc_md82", null ],
+      [ "When to Use", "md_doc_2compile__time__accessors.html#autotoc_md83", null ],
+      [ "See Also", "md_doc_2compile__time__accessors.html#autotoc_md84", null ]
     ] ],
     [ "The Document-Object-Model (DOM) front-end", "md_doc_2dom.html", [
-      [ "DOM vs On-Demand", "md_doc_2dom.html#autotoc_md84", null ],
-      [ "The Basics: Loading and Parsing JSON Documents using the DOM front-end", "md_doc_2dom.html#autotoc_md85", null ],
-      [ "Using the Parsed JSON", "md_doc_2dom.html#autotoc_md86", [
-        [ "Examples", "md_doc_2dom.html#autotoc_md87", null ]
+      [ "DOM vs On-Demand", "md_doc_2dom.html#autotoc_md85", null ],
+      [ "The Basics: Loading and Parsing JSON Documents using the DOM front-end", "md_doc_2dom.html#autotoc_md86", null ],
+      [ "Using the Parsed JSON", "md_doc_2dom.html#autotoc_md87", [
+        [ "Examples", "md_doc_2dom.html#autotoc_md88", null ]
       ] ],
-      [ "C++17 Support", "md_doc_2dom.html#autotoc_md88", null ],
-      [ "C++20 Support", "md_doc_2dom.html#autotoc_md89", null ],
-      [ "JSON Pointer", "md_doc_2dom.html#autotoc_md90", null ],
-      [ "JSONPath", "md_doc_2dom.html#autotoc_md91", null ],
-      [ "Using <tt>at_path_with_wildcard</tt> for JSONPath Queries", "md_doc_2dom.html#autotoc_md92", [
-        [ "Example Usage", "md_doc_2dom.html#autotoc_md93", null ]
+      [ "C++17 Support", "md_doc_2dom.html#autotoc_md89", null ],
+      [ "C++20 Support", "md_doc_2dom.html#autotoc_md90", null ],
+      [ "JSON Pointer", "md_doc_2dom.html#autotoc_md91", null ],
+      [ "JSONPath", "md_doc_2dom.html#autotoc_md92", null ],
+      [ "Using <tt>at_path_with_wildcard</tt> for JSONPath Queries", "md_doc_2dom.html#autotoc_md93", [
+        [ "Example Usage", "md_doc_2dom.html#autotoc_md94", null ]
       ] ],
-      [ "Error Handling", "md_doc_2dom.html#autotoc_md94", [
-        [ "Error Handling Example", "md_doc_2dom.html#autotoc_md95", null ],
-        [ "Exceptions", "md_doc_2dom.html#autotoc_md96", null ]
+      [ "Error Handling", "md_doc_2dom.html#autotoc_md95", [
+        [ "Error Handling Example", "md_doc_2dom.html#autotoc_md96", null ],
+        [ "Exceptions", "md_doc_2dom.html#autotoc_md97", null ]
       ] ],
-      [ "Tree Walking and JSON Element Types", "md_doc_2dom.html#autotoc_md97", null ],
-      [ "Reusing the parser for maximum efficiency", "md_doc_2dom.html#autotoc_md98", null ],
-      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2dom.html#autotoc_md99", null ],
-      [ "Best Use of the DOM API", "md_doc_2dom.html#autotoc_md100", null ],
-      [ "Padding and Temporary Copies", "md_doc_2dom.html#autotoc_md101", null ],
-      [ "Performance Tips", "md_doc_2dom.html#autotoc_md102", null ]
+      [ "Tree Walking and JSON Element Types", "md_doc_2dom.html#autotoc_md98", null ],
+      [ "Reusing the parser for maximum efficiency", "md_doc_2dom.html#autotoc_md99", null ],
+      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2dom.html#autotoc_md100", null ],
+      [ "Best Use of the DOM API", "md_doc_2dom.html#autotoc_md101", null ],
+      [ "Padding and Temporary Copies", "md_doc_2dom.html#autotoc_md102", null ],
+      [ "Performance Tips", "md_doc_2dom.html#autotoc_md103", null ]
     ] ],
     [ "CPU Architecture-Specific Implementations", "md_doc_2implementation-selection.html", [
-      [ "Overview", "md_doc_2implementation-selection.html#autotoc_md103", null ],
-      [ "Runtime CPU Detection", "md_doc_2implementation-selection.html#autotoc_md104", null ],
-      [ "Inspecting the Detected Implementation", "md_doc_2implementation-selection.html#autotoc_md105", null ],
-      [ "Querying Available Implementations", "md_doc_2implementation-selection.html#autotoc_md106", null ],
-      [ "Manually Selecting the Implementation", "md_doc_2implementation-selection.html#autotoc_md107", null ],
-      [ "Checking that an Implementation can Run on your System", "md_doc_2implementation-selection.html#autotoc_md108", null ]
+      [ "Overview", "md_doc_2implementation-selection.html#autotoc_md104", null ],
+      [ "Runtime CPU Detection", "md_doc_2implementation-selection.html#autotoc_md105", null ],
+      [ "Inspecting the Detected Implementation", "md_doc_2implementation-selection.html#autotoc_md106", null ],
+      [ "Querying Available Implementations", "md_doc_2implementation-selection.html#autotoc_md107", null ],
+      [ "Manually Selecting the Implementation", "md_doc_2implementation-selection.html#autotoc_md108", null ],
+      [ "Checking that an Implementation can Run on your System", "md_doc_2implementation-selection.html#autotoc_md109", null ]
     ] ],
     [ "iterate_many", "md_doc_2iterate__many.html", [
-      [ "Contents", "md_doc_2iterate__many.html#autotoc_md109", null ],
-      [ "Motivation", "md_doc_2iterate__many.html#autotoc_md110", null ],
-      [ "How it works", "md_doc_2iterate__many.html#autotoc_md111", [
-        [ "Context", "md_doc_2iterate__many.html#autotoc_md112", null ],
-        [ "Design", "md_doc_2iterate__many.html#autotoc_md113", null ],
-        [ "Threads", "md_doc_2iterate__many.html#autotoc_md114", null ]
+      [ "Contents", "md_doc_2iterate__many.html#autotoc_md110", null ],
+      [ "Motivation", "md_doc_2iterate__many.html#autotoc_md111", null ],
+      [ "How it works", "md_doc_2iterate__many.html#autotoc_md112", [
+        [ "Context", "md_doc_2iterate__many.html#autotoc_md113", null ],
+        [ "Design", "md_doc_2iterate__many.html#autotoc_md114", null ],
+        [ "Threads", "md_doc_2iterate__many.html#autotoc_md115", null ]
       ] ],
-      [ "Support", "md_doc_2iterate__many.html#autotoc_md115", null ],
-      [ "API", "md_doc_2iterate__many.html#autotoc_md116", null ],
-      [ "Use cases", "md_doc_2iterate__many.html#autotoc_md117", null ],
-      [ "Tracking your position", "md_doc_2iterate__many.html#autotoc_md118", null ],
-      [ "Incomplete streams", "md_doc_2iterate__many.html#autotoc_md119", null ],
-      [ "Comma-separated documents", "md_doc_2iterate__many.html#autotoc_md120", null ],
-      [ "C++20 features", "md_doc_2iterate__many.html#autotoc_md121", null ]
+      [ "Support", "md_doc_2iterate__many.html#autotoc_md116", null ],
+      [ "API", "md_doc_2iterate__many.html#autotoc_md117", null ],
+      [ "Use cases", "md_doc_2iterate__many.html#autotoc_md118", null ],
+      [ "Tracking your position", "md_doc_2iterate__many.html#autotoc_md119", null ],
+      [ "Incomplete streams", "md_doc_2iterate__many.html#autotoc_md120", null ],
+      [ "Comma-separated documents", "md_doc_2iterate__many.html#autotoc_md121", null ],
+      [ "C++20 features", "md_doc_2iterate__many.html#autotoc_md122", null ]
     ] ],
     [ "A Better Way to Parse Documents?", "md_doc_2ondemand__design.html", [
-      [ "Algorithm", "md_doc_2ondemand__design.html#autotoc_md126", [
-        [ "DOM Parsers", "md_doc_2ondemand__design.html#autotoc_md122", null ],
-        [ "Event-Based Parsers (SAX, SAJ, etc.)", "md_doc_2ondemand__design.html#autotoc_md123", null ],
-        [ "Schema-Based Parser Generators", "md_doc_2ondemand__design.html#autotoc_md124", null ],
-        [ "Type Blindness and Branch Misprediction", "md_doc_2ondemand__design.html#autotoc_md125", null ],
-        [ "Starting the iteration", "md_doc_2ondemand__design.html#autotoc_md127", null ]
+      [ "Algorithm", "md_doc_2ondemand__design.html#autotoc_md127", [
+        [ "DOM Parsers", "md_doc_2ondemand__design.html#autotoc_md123", null ],
+        [ "Event-Based Parsers (SAX, SAJ, etc.)", "md_doc_2ondemand__design.html#autotoc_md124", null ],
+        [ "Schema-Based Parser Generators", "md_doc_2ondemand__design.html#autotoc_md125", null ],
+        [ "Type Blindness and Branch Misprediction", "md_doc_2ondemand__design.html#autotoc_md126", null ],
+        [ "Starting the iteration", "md_doc_2ondemand__design.html#autotoc_md128", null ]
       ] ],
-      [ "Design Features", "md_doc_2ondemand__design.html#autotoc_md128", [
-        [ "String Parsing", "md_doc_2ondemand__design.html#autotoc_md129", null ],
-        [ "Iteration Safety", "md_doc_2ondemand__design.html#autotoc_md130", null ],
-        [ "Benefits of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md131", null ],
-        [ "Limitations of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md132", null ],
-        [ "Applicability of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md133", null ]
+      [ "Design Features", "md_doc_2ondemand__design.html#autotoc_md129", [
+        [ "String Parsing", "md_doc_2ondemand__design.html#autotoc_md130", null ],
+        [ "Iteration Safety", "md_doc_2ondemand__design.html#autotoc_md131", null ],
+        [ "Benefits of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md132", null ],
+        [ "Limitations of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md133", null ],
+        [ "Applicability of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md134", null ]
       ] ],
-      [ "Checking Your CPU Selection (x64 systems)", "md_doc_2ondemand__design.html#autotoc_md134", null ]
+      [ "Checking Your CPU Selection (x64 systems)", "md_doc_2ondemand__design.html#autotoc_md135", null ]
     ] ],
     [ "parse_many", "md_doc_2parse__many.html", [
-      [ "Contents", "md_doc_2parse__many.html#autotoc_md135", null ],
-      [ "Motivation", "md_doc_2parse__many.html#autotoc_md136", null ],
-      [ "Performance", "md_doc_2parse__many.html#autotoc_md137", null ],
-      [ "How it works", "md_doc_2parse__many.html#autotoc_md138", [
-        [ "Context", "md_doc_2parse__many.html#autotoc_md139", null ],
-        [ "Design", "md_doc_2parse__many.html#autotoc_md140", null ],
-        [ "Threads", "md_doc_2parse__many.html#autotoc_md141", null ]
+      [ "Contents", "md_doc_2parse__many.html#autotoc_md136", null ],
+      [ "Motivation", "md_doc_2parse__many.html#autotoc_md137", null ],
+      [ "Performance", "md_doc_2parse__many.html#autotoc_md138", null ],
+      [ "How it works", "md_doc_2parse__many.html#autotoc_md139", [
+        [ "Context", "md_doc_2parse__many.html#autotoc_md140", null ],
+        [ "Design", "md_doc_2parse__many.html#autotoc_md141", null ],
+        [ "Threads", "md_doc_2parse__many.html#autotoc_md142", null ]
       ] ],
-      [ "Support", "md_doc_2parse__many.html#autotoc_md142", null ],
-      [ "API", "md_doc_2parse__many.html#autotoc_md143", null ],
-      [ "Use cases", "md_doc_2parse__many.html#autotoc_md144", null ],
-      [ "Tracking your position", "md_doc_2parse__many.html#autotoc_md145", null ],
-      [ "Incomplete streams", "md_doc_2parse__many.html#autotoc_md146", null ]
+      [ "Support", "md_doc_2parse__many.html#autotoc_md143", null ],
+      [ "API", "md_doc_2parse__many.html#autotoc_md144", null ],
+      [ "Use cases", "md_doc_2parse__many.html#autotoc_md145", null ],
+      [ "Tracking your position", "md_doc_2parse__many.html#autotoc_md146", null ],
+      [ "Incomplete streams", "md_doc_2parse__many.html#autotoc_md147", null ]
     ] ],
     [ "Performance Notes", "md_doc_2performance.html", [
-      [ "NDEBUG macro", "md_doc_2performance.html#autotoc_md147", null ],
-      [ "Reusing the parser for maximum efficiency", "md_doc_2performance.html#autotoc_md148", null ],
-      [ "Reusing string buffers", "md_doc_2performance.html#autotoc_md149", null ],
-      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2performance.html#autotoc_md150", null ],
-      [ "Large files and huge page support", "md_doc_2performance.html#autotoc_md151", null ],
-      [ "Number parsing", "md_doc_2performance.html#autotoc_md152", null ],
-      [ "Visual Studio", "md_doc_2performance.html#autotoc_md153", null ],
-      [ "Power Usage and Downclocking", "md_doc_2performance.html#autotoc_md154", null ],
-      [ "Free Padding", "md_doc_2performance.html#autotoc_md155", null ]
+      [ "NDEBUG macro", "md_doc_2performance.html#autotoc_md148", null ],
+      [ "Reusing the parser for maximum efficiency", "md_doc_2performance.html#autotoc_md149", null ],
+      [ "Reusing string buffers", "md_doc_2performance.html#autotoc_md150", null ],
+      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2performance.html#autotoc_md151", null ],
+      [ "Large files and huge page support", "md_doc_2performance.html#autotoc_md152", null ],
+      [ "Number parsing", "md_doc_2performance.html#autotoc_md153", null ],
+      [ "Visual Studio", "md_doc_2performance.html#autotoc_md154", null ],
+      [ "Power Usage and Downclocking", "md_doc_2performance.html#autotoc_md155", null ],
+      [ "Free Padding", "md_doc_2performance.html#autotoc_md156", null ]
     ] ],
     [ "Tape structure in simdjson", "md_doc_2tape.html", [
-      [ "Example", "md_doc_2tape.html#autotoc_md157", [
-        [ "The Tape", "md_doc_2tape.html#autotoc_md158", null ]
+      [ "Example", "md_doc_2tape.html#autotoc_md158", [
+        [ "The Tape", "md_doc_2tape.html#autotoc_md159", null ]
       ] ],
-      [ "General formal of the tape elements", "md_doc_2tape.html#autotoc_md159", null ],
-      [ "Simple JSON values", "md_doc_2tape.html#autotoc_md160", null ],
-      [ "Integer and Double values", "md_doc_2tape.html#autotoc_md161", null ],
-      [ "Root node", "md_doc_2tape.html#autotoc_md162", null ],
-      [ "Strings", "md_doc_2tape.html#autotoc_md163", null ],
-      [ "Arrays", "md_doc_2tape.html#autotoc_md164", null ],
-      [ "Objects", "md_doc_2tape.html#autotoc_md165", null ]
+      [ "General formal of the tape elements", "md_doc_2tape.html#autotoc_md160", null ],
+      [ "Simple JSON values", "md_doc_2tape.html#autotoc_md161", null ],
+      [ "Integer and Double values", "md_doc_2tape.html#autotoc_md162", null ],
+      [ "Root node", "md_doc_2tape.html#autotoc_md163", null ],
+      [ "Strings", "md_doc_2tape.html#autotoc_md164", null ],
+      [ "Arrays", "md_doc_2tape.html#autotoc_md165", null ],
+      [ "Objects", "md_doc_2tape.html#autotoc_md166", null ]
     ] ],
     [ "Deprecated List", "deprecated.html", null ],
     [ "Topics", "topics.html", "topics" ],
@@ -267,7 +268,7 @@ var NAVTREEINDEX =
 "classsimdjson_1_1dom_1_1array.html#a1ad9d74fd73844ca1ebcaaa88025860a",
 "classsimdjson_1_1implementation.html",
 "md_doc_2basics.html#autotoc_md14",
-"namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949"
+"namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

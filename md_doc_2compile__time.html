@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -100,6 +100,7 @@ $(document).ready(function(){initNavTree('md_doc_2compile__time.html',''); initR
 <div class="textblock"><p><a class="anchor" id="autotoc_md53"></a></p><ul>
 <li>Introduction</li>
 <li>Example</li>
+<li>Concepts</li>
 <li>Loading from disk</li>
 <li>Limitations (compile-time errors)</li>
 </ul>
@@ -177,6 +178,47 @@ Example</h1>
 <div class="line"><span class="stringliteral"></span><span class="keyword">static_assert</span>(arr.size() == 3);</div>
 <div class="line"><span class="keyword">static_assert</span>(arr[1] == 2);</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md56"></a>
+Concepts</h1>
+<p>Given that the parsed data is made of structures that depend on the JSON input, you might want to check that it conforms to your expectation. You can do so with concepts.</p>
+<p>Let us consider this example:</p>
+<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> config = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">[</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Alice&quot;, &quot;age&quot;: 30 },</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Bob&quot;, &quot;age&quot;: 25 },</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Charlie&quot;, &quot;age&quot;: 35 }</span></div>
+<div class="line"><span class="stringliteral">]</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
+</div><!-- fragment --><p>You might want to ensure that the result is an array of persons. You can define your expection with concepts like so:</p>
+<div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><span class="keyword">concept </span>person = <span class="keyword">requires</span>(T p) {</div>
+<div class="line">    std::string_view(p.name);  <span class="comment">// has name field convertible to string_view</span></div>
+<div class="line">    p.age;                     <span class="comment">// has age field</span></div>
+<div class="line">    <span class="keyword">requires</span> std::is_integral_v&lt;<span class="keyword">decltype</span>(p.age)&gt;;  <span class="comment">// age is integral</span></div>
+<div class="line">};</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><span class="keyword">concept </span>array_of_person = <span class="keyword">requires</span>(T arr) {</div>
+<div class="line">    arr.size();                    <span class="comment">// has size method</span></div>
+<div class="line">    arr[0];                        <span class="comment">// can access elements with []</span></div>
+<div class="line">    <span class="keyword">requires</span> person&lt;<span class="keyword">decltype</span>(arr[0])&gt;;  <span class="comment">// elements satisfy person concept</span></div>
+<div class="line">};</div>
+</div><!-- fragment --><p>And then a simple static assert with <code>decltype</code> is sufficient to check that the expectation is met:</p>
+<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> config = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">[</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Alice&quot;, &quot;age&quot;: 30 },</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Bob&quot;, &quot;age&quot;: 25 },</span></div>
+<div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Charlie&quot;, &quot;age&quot;: 35 }</span></div>
+<div class="line"><span class="stringliteral">]</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral"></span><span class="comment">// Validate that the array satisfies the array_of_person concept</span></div>
+<div class="line"><span class="keyword">static_assert</span>(array_of_person&lt;<span class="keyword">decltype</span>(config)&gt;);</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
 Loading from disk</h1>
 <p>In practice, you may have a JSON file, say <code>json_data</code> that you want to parse at compile time. You may do so as follows.</p>
 <div class="fragment"><div class="line"> ++</div>
@@ -186,7 +228,7 @@ Loading from disk</h1>
 <div class="line">};</div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> json = simdjson::compile_time::parse_json&lt;json_data&gt;();</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md58"></a>
 Limitations (compile-time errors)</h1>
 <p>We have a few limitations which trigger compile-time errors if violated.</p>
 <ul>

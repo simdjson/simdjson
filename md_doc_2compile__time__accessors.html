@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -97,11 +97,11 @@ $(document).ready(function(){initNavTree('md_doc_2compile__time__accessors.html'
   <div class="headertitle"><div class="title">Compile-Time JSONPath and JSON Pointer Accessors</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md58"></a> <b>Note:</b> This feature requires C++26 Static Reflection support (P2996) and is currently only available with experimental compilers. You must enable it with <code>-DSIMDJSON_STATIC_REFLECTION=ON</code> when building.</p>
-<h1><a class="anchor" id="autotoc_md59"></a>
+<div class="textblock"><p><a class="anchor" id="autotoc_md59"></a> <b>Note:</b> This feature requires C++26 Static Reflection support (P2996) and is currently only available with experimental compilers. You must enable it with <code>-DSIMDJSON_STATIC_REFLECTION=ON</code> when building.</p>
+<h1><a class="anchor" id="autotoc_md60"></a>
 Overview</h1>
 <p>simdjson provides compile-time JSONPath and JSON Pointer accessors that validate paths against struct definitions at compile time and generate optimized accessor code with zero runtime overhead. This combines the safety of compile-time type checking with the performance of pre-parsed, pre-validated access paths.</p>
-<h1><a class="anchor" id="autotoc_md60"></a>
+<h1><a class="anchor" id="autotoc_md61"></a>
 Requirements</h1>
 <ul>
 <li>C++26 compiler with Static Reflection support (P2996)</li>
@@ -111,7 +111,7 @@ Requirements</h1>
 </li>
 <li>Build configuration: <code>-DSIMDJSON_STATIC_REFLECTION=ON</code></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md61"></a>
+<h1><a class="anchor" id="autotoc_md62"></a>
 How It Works</h1>
 <p><b>Compile Time:</b></p><ol type="1">
 <li>Path string is parsed and converted to access steps</li>
@@ -125,9 +125,9 @@ How It Works</h1>
 <li>No string comparisons for path components</li>
 <li>Type-safe extraction</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md62"></a>
+<h1><a class="anchor" id="autotoc_md63"></a>
 Two Usage Modes</h1>
-<h2><a class="anchor" id="autotoc_md63"></a>
+<h2><a class="anchor" id="autotoc_md64"></a>
 Mode 1: With Type Validation (Recommended)</h2>
 <p>When you provide a struct type, the compiler validates the entire path at compile time:</p>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>User {</div>
@@ -166,7 +166,7 @@ Mode 1: With Type Validation (Recommended)</h2>
 <li>Array/container access validity</li>
 <li>Nested struct navigation</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md64"></a>
+<h2><a class="anchor" id="autotoc_md65"></a>
 Mode 2: Without Validation</h2>
 <p>When you omit the struct type, the path is parsed at compile time but not validated:</p>
 <div class="fragment"><div class="line"><span class="keyword">const</span> padded_string json = R<span class="stringliteral">&quot;({</span></div>
@@ -196,10 +196,10 @@ Mode 2: Without Validation</h2>
 <li>Working with varied JSON schemas</li>
 <li>Prototyping or exploratory parsing</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md65"></a>
+<h1><a class="anchor" id="autotoc_md66"></a>
 JSONPath Syntax</h1>
 <p>JSONPath uses dot notation and bracket notation for field access:</p>
-<h2><a class="anchor" id="autotoc_md66"></a>
+<h2><a class="anchor" id="autotoc_md67"></a>
 Supported Syntax</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -215,7 +215,7 @@ Supported Syntax</h2>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>$</code> prefix   </td><td class="markdownTableBodyNone">Optional root indicator   </td><td class="markdownTableBodyNone"><code>$.name</code>, <code>$["name"]</code>   </td></tr>
 </table>
-<h2><a class="anchor" id="autotoc_md67"></a>
+<h2><a class="anchor" id="autotoc_md68"></a>
 Examples</h2>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Address {</div>
 <div class="line">  std::string city;</div>
@@ -248,10 +248,10 @@ Examples</h2>
 <div class="line"><span class="comment">// With root indicator</span></div>
 <div class="line">at_path_compiled&lt;Person, <span class="stringliteral">&quot;$.name&quot;</span>&gt;(doc)</div>
 <div class="line">at_path_compiled&lt;Person, &quot;$.address.city&quot;&gt;(doc)</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md68"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md69"></a>
 JSON Pointer Syntax</h1>
 <p>JSON Pointer (RFC 6901) uses slash-separated paths:</p>
-<h2><a class="anchor" id="autotoc_md69"></a>
+<h2><a class="anchor" id="autotoc_md70"></a>
 Supported Syntax</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -265,7 +265,7 @@ Supported Syntax</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>~1</code>   </td><td class="markdownTableBodyNone">Escaped <code>/</code>   </td><td class="markdownTableBodyNone"><code>/field~1name</code> → field/name   </td></tr>
 </table>
-<h2><a class="anchor" id="autotoc_md70"></a>
+<h2><a class="anchor" id="autotoc_md71"></a>
 Examples</h2>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">  std::string make;</div>
@@ -285,9 +285,9 @@ Examples</h2>
 <div class="line"><span class="comment">// Root pointer (returns whole document)</span></div>
 <div class="line">at_pointer_compiled&lt;Car, <span class="stringliteral">&quot;&quot;</span>&gt;(doc)</div>
 <div class="line">at_pointer_compiled&lt;Car, &quot;/&quot;&gt;(doc)</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md71"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md72"></a>
 API Reference</h1>
-<h2><a class="anchor" id="autotoc_md72"></a>
+<h2><a class="anchor" id="autotoc_md73"></a>
 JSONPath Functions</h2>
 <div class="fragment"><div class="line"><span class="comment">// With type validation</span></div>
 <div class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, constevalutil::fixed_<span class="keywordtype">string</span> Path, <span class="keyword">typename</span> DocOrValue&gt;</div>
@@ -296,7 +296,7 @@ JSONPath Functions</h2>
 <div class="line"><span class="comment">// Without validation</span></div>
 <div class="line"><span class="keyword">template</span>&lt;constevalutil::fixed_<span class="keywordtype">string</span> Path, <span class="keyword">typename</span> DocOrValue&gt;</div>
 <div class="line">simdjson_result&lt;value&gt; at_path_compiled(DocOrValue&amp; doc_or_val);</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md73"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md74"></a>
 JSON Pointer Functions</h2>
 <div class="fragment"><div class="line"><span class="comment">// With type validation</span></div>
 <div class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, constevalutil::fixed_<span class="keywordtype">string</span> Po<span class="keywordtype">int</span>er, <span class="keyword">typename</span> DocOrValue&gt;</div>
@@ -305,7 +305,7 @@ JSON Pointer Functions</h2>
 <div class="line"><span class="comment">// Without validation</span></div>
 <div class="line"><span class="keyword">template</span>&lt;constevalutil::fixed_<span class="keywordtype">string</span> Po<span class="keywordtype">int</span>er, <span class="keyword">typename</span> DocOrValue&gt;</div>
 <div class="line">simdjson_result&lt;value&gt; at_pointer_compiled(DocOrValue&amp; doc_or_val);</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md74"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md75"></a>
 Direct Field Extraction</h2>
 <p>Extract values directly into variables with compile-time type checking:</p>
 <div class="fragment"><div class="line"><span class="comment">// JSONPath</span></div>
@@ -337,9 +337,9 @@ Direct Field Extraction</h2>
 <div class="line"><span class="keywordtype">int</span> age;</div>
 <div class="line">ondemand::json_path::pointer_accessor&lt;User, <span class="stringliteral">&quot;/age&quot;</span>&gt;::extract_field(doc, age);</div>
 </div><!-- fragment --><p>The compiler verifies that the target variable type matches the field type at the path.</p>
-<h1><a class="anchor" id="autotoc_md75"></a>
+<h1><a class="anchor" id="autotoc_md76"></a>
 Complete Examples</h1>
-<h2><a class="anchor" id="autotoc_md76"></a>
+<h2><a class="anchor" id="autotoc_md77"></a>
 Example 1: Validated Access</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
 <div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a>;</div>
@@ -377,7 +377,7 @@ Example 1: Validated Access</h2>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1padded__string_html"><div class="ttname"><a href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a></div><div class="ttdoc">String with extra allocation for ease of use with parser::parse()</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00023">padded_string.h:23</a></div></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md77"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md78"></a>
 Example 2: Non-Validated Access</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
 <div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a>;</div>
@@ -407,7 +407,7 @@ Example 2: Non-Validated Access</h2>
 <div class="line"> </div>
 <div class="line">  <span class="keywordflow">return</span> 0;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md78"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md79"></a>
 Example 3: Direct Extraction</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
 <div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a>;</div>
@@ -443,7 +443,7 @@ Example 3: Direct Extraction</h2>
 <div class="line"> </div>
 <div class="line">  <span class="keywordflow">return</span> 0;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md79"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md80"></a>
 Error Handling</h1>
 <p>Compile-time errors occur when:</p><ul>
 <li>Path doesn't exist in struct: <code>static_assert</code> failure</li>
@@ -472,7 +472,7 @@ Error Handling</h1>
 <div class="line"><span class="keywordflow">if</span> (result.get(name) != SUCCESS) {</div>
 <div class="line">  <span class="comment">// Handle error</span></div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md80"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md81"></a>
 Performance</h1>
 <p>Compile-time accessors provide:</p><ul>
 <li><b>Zero path parsing overhead</b> - paths parsed at compile time</li>
@@ -485,7 +485,7 @@ Performance</h1>
 <li>Eliminates runtime path validation</li>
 <li>Generates optimal code path directly</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md81"></a>
+<h1><a class="anchor" id="autotoc_md82"></a>
 Limitations</h1>
 <ul>
 <li>Requires C++26 compiler with P2996 support (experimental)</li>
@@ -494,7 +494,7 @@ Limitations</h1>
 <li>Limited to struct types that support reflection</li>
 <li>Array indices must be compile-time constants in the path</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md82"></a>
+<h1><a class="anchor" id="autotoc_md83"></a>
 When to Use</h1>
 <p><b>Use compile-time accessors when:</b></p><ul>
 <li>You have well-defined struct types</li>
@@ -508,7 +508,7 @@ When to Use</h1>
 <li>Working with C++20 or earlier</li>
 <li>Flexibility is more important than compile-time checks</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md83"></a>
+<h1><a class="anchor" id="autotoc_md84"></a>
 See Also</h1>
 <ul>
 <li><a href="basics.md#json-pointer">JSON Pointer</a> - Runtime JSON Pointer support</li>

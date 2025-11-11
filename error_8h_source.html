@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -208,74 +208,78 @@ $(document).ready(function(){initNavTree('error_8h_source.html',''); initResizab
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span> </div>
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>  simdjson_inline T&amp;&amp; value_unsafe() &amp;&amp; noexcept;</div>
 <div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>}; <span class="comment">// struct simdjson_result_base</span></div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>} <span class="comment">// namespace internal</span></div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  using value_type = T;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>  using error_type = <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>;</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>}; <span class="comment">// struct simdjson_result_base</span></div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>template&lt;typename T&gt;</div>
-<div class="foldopen" id="foldopen00278" data-start="{" data-end="};">
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result.html">  278</a></span>struct <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a> : public internal::simdjson_result_base&lt;T&gt; {</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>() <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(T &amp;&amp;value) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(T &amp;&amp;value, <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  simdjson_inline <span class="keywordtype">void</span> tie(T &amp;value, <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> &amp;error) &amp;&amp; <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  simdjson_warn_unused simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> get(T &amp;value) &amp;&amp; <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> U = T&gt;</div>
-<div class="foldopen" id="foldopen00318" data-start="{" data-end="}">
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">  318</a></span>  simdjson_warn_unused simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code hl_function" href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">get</a>(std::string &amp;value) &amp;&amp; <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    <span class="keyword">static_assert</span>(std::is_same&lt;U, std::string_view&gt;::value, <span class="stringliteral">&quot;SFINAE&quot;</span>);</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>    std::string_view v;</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>    <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error = std::forward&lt;simdjson_result&lt;T&gt;&gt;(*this).get(v);</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    <span class="keywordflow">if</span> (!error) {</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>      value.assign(v.data(), v.size());</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    }</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>    <span class="keywordflow">return</span> error;</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>  }</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>} <span class="comment">// namespace internal</span></div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>template&lt;typename T&gt;</div>
+<div class="foldopen" id="foldopen00280" data-start="{" data-end="};">
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result.html">  280</a></span>struct <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a> : public internal::simdjson_result_base&lt;T&gt; {</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(T &amp;&amp;value) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(<a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  simdjson_inline <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>(T &amp;&amp;value, <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  simdjson_inline <span class="keywordtype">void</span> tie(T &amp;value, <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> &amp;error) &amp;&amp; <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  simdjson_warn_unused simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> get(T &amp;value) &amp;&amp; <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span> </div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> U = T&gt;</div>
+<div class="foldopen" id="foldopen00320" data-start="{" data-end="}">
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno"><a class="line" href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">  320</a></span>  simdjson_warn_unused simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> <a class="code hl_function" href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">get</a>(std::string &amp;value) &amp;&amp; <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>    <span class="keyword">static_assert</span>(std::is_same&lt;U, std::string_view&gt;::value, <span class="stringliteral">&quot;SFINAE&quot;</span>);</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    std::string_view v;</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>    <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error = std::forward&lt;simdjson_result&lt;T&gt;&gt;(*this).get(v);</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    <span class="keywordflow">if</span> (!error) {</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>      value.assign(v.data(), v.size());</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>    }</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>    <span class="keywordflow">return</span> error;</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  }</div>
 </div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span> </div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error() const noexcept;</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span> </div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span> </div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span> </div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  simdjson_inline <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> error() const noexcept;</div>
 <div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  <span class="keyword">using </span>internal::simdjson_result_base&lt;T&gt;::operator*;</div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  <span class="keyword">using </span>internal::simdjson_result_base&lt;T&gt;::operator-&gt;;</div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>  simdjson_inline T&amp; value() &amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span> </div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>  simdjson_inline T&amp;&amp; value() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span> </div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>  simdjson_inline T&amp;&amp; take_value() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span> </div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  simdjson_inline <span class="keyword">operator</span> T&amp;&amp;() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span> </div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>  simdjson_inline <span class="keyword">const</span> T&amp; value_unsafe() const&amp; noexcept;</div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span> </div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>  simdjson_inline T&amp;&amp; value_unsafe() &amp;&amp; noexcept;</div>
-<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span> </div>
-<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>}; <span class="comment">// struct simdjson_result</span></div>
-</div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span> </div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span> </div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  <span class="keyword">using </span>internal::simdjson_result_base&lt;T&gt;::operator*;</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  <span class="keyword">using </span>internal::simdjson_result_base&lt;T&gt;::operator-&gt;;</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>  simdjson_inline T&amp; value() &amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span> </div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>  simdjson_inline T&amp;&amp; value() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span> </div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>  simdjson_inline T&amp;&amp; take_value() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span> </div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  simdjson_inline <span class="keyword">operator</span> T&amp;&amp;() &amp;&amp; <span class="keyword">noexcept</span>(<span class="keyword">false</span>);</div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span> </div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  simdjson_inline <span class="keyword">const</span> T&amp; value_unsafe() const&amp; noexcept;</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span> </div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>  simdjson_inline T&amp;&amp; value_unsafe() &amp;&amp; noexcept;</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span> </div>
-<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span> </div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span><span class="keyword">inline</span> std::ostream&amp; operator&lt;&lt;(std::ostream&amp; out, <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;T&gt;</a> value) { <span class="keywordflow">return</span> out &lt;&lt; value.value(); }</div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>  using value_type = T;</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  using error_type = <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>;</div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>}; <span class="comment">// struct simdjson_result</span></div>
+</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span> </div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
 <div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span> </div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span><span class="preprocessor">#ifndef SIMDJSON_DISABLE_DEPRECATED_API</span></div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a63b494af834917af13120dcd57719bdb">  391</a></span><span class="keyword">using </span><a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">ErrorValues</a> [[deprecated(<span class="stringliteral">&quot;This is an alias and will be removed, use error_code instead&quot;</span>)]] = <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>;</div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span> </div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>[[deprecated(<span class="stringliteral">&quot;Error codes should be stored and returned as `error_code`, use `error_message()` instead.&quot;</span>)]]</div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span><span class="keyword">inline</span> <span class="keyword">const</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">error_message</a>(<span class="keywordtype">int</span> error) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DISABLE_DEPRECATED_API</span></div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span> </div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ERROR_H</span></div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span><span class="keyword">inline</span> std::ostream&amp; operator&lt;&lt;(std::ostream&amp; out, <a class="code hl_struct" href="structsimdjson_1_1simdjson__result.html">simdjson_result&lt;T&gt;</a> value) { <span class="keywordflow">return</span> out &lt;&lt; value.value(); }</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_EXCEPTIONS</span></div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span> </div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span><span class="preprocessor">#ifndef SIMDJSON_DISABLE_DEPRECATED_API</span></div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a63b494af834917af13120dcd57719bdb">  395</a></span><span class="keyword">using </span><a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">ErrorValues</a> [[deprecated(<span class="stringliteral">&quot;This is an alias and will be removed, use error_code instead&quot;</span>)]] = <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>;</div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span> </div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>[[deprecated(<span class="stringliteral">&quot;Error codes should be stored and returned as `error_code`, use `error_message()` instead.&quot;</span>)]]</div>
+<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span><span class="keyword">inline</span> <span class="keyword">const</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">error_message</a>(<span class="keywordtype">int</span> error) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DISABLE_DEPRECATED_API</span></div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span> </div>
+<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_ERROR_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a65b00a7a7a9c8fafe9eb3b9b413a36fa"><div class="ttname"><a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">simdjson::error_message</a></div><div class="ttdeci">const char * error_message(error_code error) noexcept</div><div class="ttdoc">It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...</div><div class="ttdef"><b>Definition</b> <a href="error-inl_8h_source.html#l00025">error-inl.h:25</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
@@ -318,8 +322,8 @@ $(document).ready(function(){initNavTree('error_8h_source.html',''); initResizab
 <div class="ttc" id="astructsimdjson_1_1simdjson__error_html_a0bfb7b6beaf33fae13cc16dc9b5dc168"><div class="ttname"><a href="structsimdjson_1_1simdjson__error.html#a0bfb7b6beaf33fae13cc16dc9b5dc168">simdjson::simdjson_error::what</a></div><div class="ttdeci">const char * what() const noexcept override</div><div class="ttdoc">The error message.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00098">error.h:98</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1simdjson__error_html_aa8143615e5f6f02474f6ab165682ab6e"><div class="ttname"><a href="structsimdjson_1_1simdjson__error.html#aa8143615e5f6f02474f6ab165682ab6e">simdjson::simdjson_error::error</a></div><div class="ttdeci">error_code error() const noexcept</div><div class="ttdoc">The error code.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00100">error.h:100</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1simdjson__error_html_af5355b65f85b897251b3665086075f39"><div class="ttname"><a href="structsimdjson_1_1simdjson__error.html#af5355b65f85b897251b3665086075f39">simdjson::simdjson_error::simdjson_error</a></div><div class="ttdeci">simdjson_error(error_code error) noexcept</div><div class="ttdoc">Create an exception from a simdjson error code.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00096">error.h:96</a></div></div>
-<div class="ttc" id="astructsimdjson_1_1simdjson__result_html"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result</a></div><div class="ttdoc">The result of a simdjson operation that could fail.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00278">error.h:278</a></div></div>
-<div class="ttc" id="astructsimdjson_1_1simdjson__result_html_a0fd74413679274feb2557b412c057cea"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">simdjson::simdjson_result::get</a></div><div class="ttdeci">simdjson_warn_unused simdjson_inline error_code get(std::string &amp;value) &amp;&amp;noexcept</div><div class="ttdoc">Copy the value to a provided std::string, only enabled for std::string_view.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00318">error.h:318</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1simdjson__result_html"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html">simdjson::simdjson_result</a></div><div class="ttdoc">The result of a simdjson operation that could fail.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00280">error.h:280</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1simdjson__result_html_a0fd74413679274feb2557b412c057cea"><div class="ttname"><a href="structsimdjson_1_1simdjson__result.html#a0fd74413679274feb2557b412c057cea">simdjson::simdjson_result::get</a></div><div class="ttdeci">simdjson_warn_unused simdjson_inline error_code get(std::string &amp;value) &amp;&amp;noexcept</div><div class="ttdoc">Copy the value to a provided std::string, only enabled for std::string_view.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00320">error.h:320</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
