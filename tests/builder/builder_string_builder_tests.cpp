@@ -4,6 +4,10 @@
 #include <string>
 #include <string_view>
 
+#if SIMDJSON_SUPPORTS_RANGES
+#include <ranges>
+#endif
+
 using namespace simdjson;
 
 struct Car {
@@ -517,6 +521,24 @@ bool map_test() {
   ASSERT_EQUAL(s, "{\"key1\":1.0,\"key2\":1.0}");
   TEST_SUCCEED();
 }
+bool ranges_test() {
+  TEST_START();
+  struct Foo {
+    int a;
+    float b;
+  };
+  std::vector<Foo> c = {{1, 2.0f}, {3, 4.0f}, {5, 6.0f}, {7, 8.0f}};
+  simdjson::builder::string_builder sb;
+  sb.append(c | std::views::transform(&Foo::b));
+  std::string_view p;
+  auto result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "[2.0,4.0,6.0,8.0]");
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(c | std::views::transform(&Foo::b)).get(s));
+  ASSERT_EQUAL(s, "[2.0,4.0,6.0,8.0]");
+  TEST_SUCCEED();
+}
 bool double_double_test() {
   TEST_START();
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
@@ -586,8 +608,9 @@ bool run() {
          car_test_exception() && string_convertion_except() &&
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-         map_test() && double_double_test() && double_double_test_to_string() &&
-         car_test_simple() && car_test_simple_complete() &&
+         map_test() && ranges_test() && double_double_test() &&
+         double_double_test_to_string() && car_test_simple() &&
+         car_test_simple_complete() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_simple_complete_exceptions() &&
 #endif
