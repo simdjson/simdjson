@@ -176,7 +176,7 @@ public:
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value)
+requires (!std::is_convertible<R, std::string_view>::value && !require_custom_serialization<R>)
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
