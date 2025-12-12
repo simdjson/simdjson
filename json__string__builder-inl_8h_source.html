@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.3</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -642,7 +642,7 @@ $(document).ready(function(){initNavTree('json__string__builder-inl_8h_source.ht
 <div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span><span class="preprocessor">#if SIMDJSON_SUPPORTS_RANGES &amp;&amp; SIMDJSON_SUPPORTS_CONCEPTS</span></div>
 <div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span><span class="comment">// Support for range-based appending (std::ranges::view, etc.)</span></div>
 <div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span><span class="keyword">template</span> &lt;std::ranges::range R&gt;</div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>  <span class="keyword">requires</span>(!std::is_convertible&lt;R, std::string_view&gt;::value)</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>  <span class="keyword">requires</span>(!std::is_convertible&lt;R, std::string_view&gt;::value &amp;&amp; !require_custom_serialization&lt;R&gt;)</div>
 <div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>simdjson_inline <span class="keywordtype">void</span> string_builder::append(<span class="keyword">const</span> R &amp;range) <span class="keyword">noexcept</span> {</div>
 <div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  <span class="keyword">auto</span> it = std::ranges::begin(range);</div>
 <div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  <span class="keyword">auto</span> end = std::ranges::end(range);</div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.3</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -211,7 +211,7 @@ $(document).ready(function(){initNavTree('json__string__builder_8h_source.html',
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span><span class="preprocessor">#if SIMDJSON_SUPPORTS_RANGES &amp;&amp; SIMDJSON_SUPPORTS_CONCEPTS</span></div>
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  <span class="comment">// Support for range-based appending (std::ranges::view, etc.)</span></div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  <span class="keyword">template</span> &lt;std::ranges::range R&gt;</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span><span class="keyword">requires</span> (!std::is_convertible&lt;R, std::string_view&gt;::value)</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span><span class="keyword">requires</span> (!std::is_convertible&lt;R, std::string_view&gt;::value &amp;&amp; !require_custom_serialization&lt;R&gt;)</div>
 <div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  simdjson_inline <span class="keywordtype">void</span> <a class="code hl_function" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a3221a8b59ab2c9a08b6530026ad202b1">append</a>(<span class="keyword">const</span> R &amp;range) <span class="keyword">noexcept</span>;</div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  simdjson_inline <span class="keywordtype">void</span> <a class="code hl_function" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a8ef2d52b7d6099cff5c69165edd8a7ef">append_raw</a>(std::string_view input)  <span class="keyword">noexcept</span>;</div>

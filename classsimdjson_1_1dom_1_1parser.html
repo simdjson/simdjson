@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.3</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -854,8 +854,7 @@ REQUIRED: Buffer Padding</h3>
 <p>const char *json = R"({"key":"value"})"; const size_t json_len = std::strlen(json); std::unique_ptr&lt;char[]&gt; padded_json_copy{new char[json_len + SIMDJSON_PADDING]}; std::memcpy(padded_json_copy.get(), json, json_len); std::memset(padded_json_copy.get() + json_len, '\0', SIMDJSON_PADDING); <a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">simdjson::dom::parser</a> parser; <a class="el" href="classsimdjson_1_1dom_1_1element.html" title="A JSON element.">simdjson::dom::element</a> element = <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984" title="Parse a JSON document and return a temporary reference to it.">parser.parse</a>(padded_json_copy.get(), json_len, false);</p>
 <h3><a class="anchor" id="autotoc_md173"></a>
 std::string references</h3>
-<p>If you pass a mutable std::string reference (std::string&amp;), the parser will seek to extend its capacity to SIMDJSON_PADDING bytes beyond the end of the string.</p>
-<p>Whenever you pass an std::string reference, the parser will access the bytes beyond the end of the string but before the end of the allocated memory (std::string::capacity()). If you are using a sanitizer that checks for reading uninitialized bytes or std::string's container-overflow checks, you may encounter sanitizer warnings. You can safely ignore these warnings. Or you can call <a class="el" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16" title="Create a padded_string_view from a string.">simdjson::pad(std::string&amp;)</a> to pad the string with SIMDJSON_PADDING spaces: this function returns a simdjson::padding_string_view which can be be passed to the parser's parse function:</p>
+<p>Whenever you pass an std::string reference, the parser may access the bytes beyond the end of the string but before the end of the allocated memory (std::string::capacity()). If you are using a sanitizer that checks for reading uninitialized bytes or std::string's container-overflow checks, you may encounter sanitizer warnings. You can safely ignore these warnings. Or you can call <a class="el" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16" title="Create a padded_string_view from a string.">simdjson::pad(std::string&amp;)</a> to pad the string with SIMDJSON_PADDING spaces: this function returns a simdjson::padding_string_view which can be be passed to the parser's parse function:</p>
 <p>std::string json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"; element doc = parser.parse(simdjson::pad(json));</p>
 <h3><a class="anchor" id="autotoc_md174"></a>
 Parser Capacity</h3>
@@ -1344,7 +1343,7 @@ Parser Capacity</h3>
 
 <p>When SIMDJSON_THREADS_ENABLED is not defined, the parser instance cannot use threads. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2parser_8h_source.html#l00575">575</a> of file <a class="el" href="dom_2parser_8h_source.html">parser.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2parser_8h_source.html#l00572">572</a> of file <a class="el" href="dom_2parser_8h_source.html">parser.h</a>.</p>
 
 </div>
 </div>
