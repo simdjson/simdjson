@@ -204,7 +204,7 @@ public:
    *
    * ### std::string references
    *
-   * Whenever you pass an std::string reference, the parser will access the bytes beyond the end of
+   * Whenever you pass an std::string reference, the parser may access the bytes beyond the end of
    * the string but before the end of the allocated memory (std::string::capacity()).
    * If you are using a sanitizer that checks for reading uninitialized bytes or std::string's
    * container-overflow checks, you may encounter sanitizer warnings.
