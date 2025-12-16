@@ -28,10 +28,8 @@ namespace builder_tests {
     test.null_unique_ptr = nullptr;
     test.null_shared_ptr = nullptr;
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"empty_string\":\"\"") != std::string::npos);
     ASSERT_TRUE(json.find("\"empty_vector\":[]") != std::string::npos);
     ASSERT_TRUE(json.find("\"null_optional\":null") != std::string::npos);
@@ -43,10 +41,8 @@ namespace builder_tests {
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
 
-    auto get_result = doc_result.value().get<EmptyValues>();
-    ASSERT_SUCCESS(get_result);
-
-    EmptyValues deserialized = std::move(get_result.value());
+    EmptyValues deserialized;
+    ASSERT_SUCCESS(doc_result.get<EmptyValues>().get(deserialized));
     ASSERT_EQUAL(deserialized.empty_string, "");
     ASSERT_EQUAL(deserialized.empty_vector.size(), 0);
     ASSERT_FALSE(deserialized.null_optional.has_value());
@@ -74,10 +70,8 @@ namespace builder_tests {
     test.unicode = "Café résumé";
     test.null_char = '\0';
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     // Test that quotes are properly escaped
     ASSERT_TRUE(json.find("\\\"Hello\\\"") != std::string::npos);
     // Test that backslashes are properly escaped
@@ -100,17 +94,17 @@ namespace builder_tests {
     test_no_null.newlines = test.newlines;
     test_no_null.unicode = test.unicode;
 
-    auto result_no_null = builder::to_json_string(test_no_null);
-    ASSERT_SUCCESS(result_no_null);
+    std::string result_no_null;
+    ASSERT_SUCCESS(builder::to_json_string(test_no_null).get(result_no_null));
 
     ondemand::parser parser;
-    auto doc_result = parser.iterate(pad(result_no_null.value()));
-    ASSERT_SUCCESS(doc_result);
+    ondemand::document doc_result;
 
-    auto get_result = doc_result.value().get<SpecialCharsNoNull>();
-    ASSERT_SUCCESS(get_result);
+    ASSERT_SUCCESS(parser.iterate(pad(result_no_null)).get(doc_result));
 
-    SpecialCharsNoNull deserialized = std::move(get_result.value());
+    SpecialCharsNoNull deserialized;
+    ASSERT_SUCCESS(doc_result.get<SpecialCharsNoNull>().get(deserialized));
+
     ASSERT_EQUAL(deserialized.quotes, test.quotes);
     ASSERT_EQUAL(deserialized.backslashes, test.backslashes);
     ASSERT_EQUAL(deserialized.newlines, test.newlines);
@@ -139,22 +133,18 @@ namespace builder_tests {
     test.true_val = true;
     test.false_val = false;
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"true_val\":true") != std::string::npos);
     ASSERT_TRUE(json.find("\"false_val\":false") != std::string::npos);
 
     // Test round-trip
     ondemand::parser parser;
-    auto doc_result = parser.iterate(pad(json));
-    ASSERT_SUCCESS(doc_result);
+    ondemand::document doc_result;
 
-    auto get_result = doc_result.value().get<NumericLimits>();
-    ASSERT_SUCCESS(get_result);
-
-    NumericLimits deserialized = std::move(get_result.value());
+    ASSERT_SUCCESS(parser.iterate(pad(json)).get(doc_result));
+    NumericLimits deserialized;
+    ASSERT_SUCCESS(doc_result.get<NumericLimits>().get(deserialized));
     ASSERT_EQUAL(deserialized.max_int, test.max_int);
     ASSERT_EQUAL(deserialized.min_int, test.min_int);
     ASSERT_EQUAL(deserialized.true_val, true);
@@ -184,10 +174,8 @@ namespace builder_tests {
     test.optional_inner = Inner{99, "optional"};
     test.unique_inner = std::make_unique<Inner>(Inner{123, "unique"});
 
-    auto result = builder::to_json_string(test);
-    ASSERT_SUCCESS(result);
-
-    std::string json = result.value();
+    std::string json;
+    ASSERT_SUCCESS(builder::to_json_string(test).get(json));
     ASSERT_TRUE(json.find("\"inner_obj\":{") != std::string::npos);
     ASSERT_TRUE(json.find("\"inner_vector\":[") != std::string::npos);
     ASSERT_TRUE(json.find("\"optional_inner\":{") != std::string::npos);
@@ -198,10 +186,8 @@ namespace builder_tests {
     auto doc_result = parser.iterate(pad(json));
     ASSERT_SUCCESS(doc_result);
 
-    auto get_result = doc_result.value().get<Outer>();
-    ASSERT_SUCCESS(get_result);
-
-    Outer deserialized = std::move(get_result.value());
+    Outer deserialized;
+    ASSERT_SUCCESS(doc_result.get<Outer>().get(deserialized));
     ASSERT_EQUAL(deserialized.inner_obj.value, 42);
     ASSERT_EQUAL(deserialized.inner_obj.name, "inner");
     ASSERT_EQUAL(deserialized.inner_vector.size(), 2);

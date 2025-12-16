@@ -41,7 +41,7 @@ The Basics: Loading and Parsing JSON Documents using the DOM front-end
 The simdjson library offers a simple DOM tree API, which you can access by creating a
 `dom::parser` and calling the `load()` method:
 
-```c++
+```cpp
 dom::parser parser;
 dom::element doc = parser.load(filename); // load and parse a file
 ```
@@ -49,21 +49,37 @@ dom::element doc = parser.load(filename); // load and parse a file
 Or by creating a padded string (for efficiency reasons, simdjson requires a string with
 SIMDJSON_PADDING bytes at the end) and calling `parse()`:
 
-```c++
+```cpp
 dom::parser parser;
 dom::element doc = parser.parse("[1,2,3]"_padded); // parse a string, the _padded suffix creates a simdjson::padded_string instance
 ```
 
+You can also load a `padded_string` from a file.
+
+
+```cpp
+auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json'.
+dom::element doc = parser.parse(json);
+```
+
+(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`.)
+
+
+(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`.)
+
+
 You can copy your data directly on a `simdjson::padded_string` as follows:
 
-```c++
+```cpp
 const char * data = "my data"; // 7 bytes
 simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
 ```
 
 Or as follows...
 
-```c++
+```cpp
 std::string data = "my data";
 simdjson::padded_string my_padded_data(data); // copies to a padded buffer
 ```
@@ -83,7 +99,7 @@ container-overflow checks, you may encounter sanitizer warnings.
 You can safely ignore these warnings. Or you can call `simdjson::pad(std::string&)` to pad the
 string with `SIMDJSON_PADDING` spaces: this function returns a `simdjson::padding_string_view` which can be be passed to the parser's iterator function:
 
-```c++
+```cpp
 std::string json = "[1]";
 dom::element doc = parser.parse(simdjson::pad(json));
 ```
@@ -117,8 +133,9 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   dom::object and dom::array. An exception (`simdjson::simdjson_error`) is thrown if the cast is not possible.
 * **Extracting Values (without exceptions):** You can use a variant usage of `get()` with error codes to avoid exceptions. You first declare the variable of the appropriate type (`double`, `uint64_t`, `int64_t`, `bool`, `std::string_view`,
   `dom::object` and `dom::array`) and pass it by reference to `get()` which gives you back an error code: e.g.,
-  ```c++
+  ```cpp
   simdjson::error_code error;
+  // _padded returns an simdjson::padded_string instance
   simdjson::padded_string numberstring = "1.2"_padded; // our JSON input ("1.2")
   simdjson::dom::parser parser;
   double value; // variable where we store the value to be parsed
@@ -129,7 +146,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   The strings contain unescaped valid UTF-8 strings: no unmatched surrogate is allowed.
   Internally, numbers are stored as either 64-bit integers or 64-bit floating-point numbers.
   Thus it is possible to get the full 64-bit integer range (either signed or  unsigned).
-  By default, the string `-0` is parsed as the integer 0 as in Pytho or C++. If you set the macro
+  By default, the string `-0` is parsed as the integer 0 as in Python or C++. If you set the macro
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to `1` when building simdjson, you can get that `-0` is mapped to `-0.0`
   as in JavaScript. You can get the desired effect by building simdjson with cmake setting the
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to on: `cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON`.
@@ -152,7 +169,8 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 
 The following code illustrates all of the above:
 
-```c++
+```cpp
+//  R"( ... )" is a C++ raw string literal.
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -185,7 +203,7 @@ for (dom::object car : parser.parse(cars_json)) {
 
 Here is a different example illustrating the same ideas:
 
-```C++
+```cpp
 auto abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
@@ -207,7 +225,7 @@ for (dom::object obj : parser.parse(abstract_json)) {
 And another one:
 
 
-```C++
+```cpp
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
@@ -221,7 +239,7 @@ C++17 Support
 
 While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:
 
-```c++
+```cpp
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::parser parser;
 dom::object object; // invalid until the get() succeeds
@@ -234,7 +252,7 @@ for (auto [key, value] : object) {
 
 For comparison, here is the C++ 11 version of the same code:
 
-```c++
+```cpp
 // C++ 11 version for comparison
 padded_string json = R"(  { "foo": 1, "bar": 2 }  )"_padded;
 dom::parser parser;
@@ -251,7 +269,7 @@ C++20 Support
 
 simdjson library also supports some C++20 feature including `std::ranges`:
 
-```c++
+```cpp
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -270,7 +288,7 @@ JSON Pointer
 The simdjson library also supports [JSON pointer](https://tools.ietf.org/html/rfc6901) through the
 `at_pointer()` method, letting you reach further down into the document in a single call:
 
-```c++
+```cpp
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -291,7 +309,7 @@ You can apply a JSON Pointer expression to any node and the path gets interprete
 
 Consider the following example:
 
-```c++
+```cpp
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -313,11 +331,11 @@ JSONPath
 ------------
 
 
-The simdjson library supports a subset of [JSONPath](https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
 
 Consider the following example:
 
-```c++
+```cpp
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -336,7 +354,7 @@ cout << p << endl; // Prints 39.9
 
 We also support the `$` prefix. When you start a JSONPath expression with $, you are indicating that the path starts from the root of the JSON document. E.g.,
 
-```c++
+```cpp
 auto json = R"( { "c" :{ "foo": { "a": [ 10, 20, 30 ] }}, "d": { "foo2": { "a": [ 10, 20, 30 ] }} , "e": 120 })"_padded;
 dom::parser parser;
 dom::element doc;
@@ -428,7 +446,7 @@ Error Handling
 All simdjson APIs that can fail return `simdjson_result<T>`, which is a &lt;value, error_code&gt;
 pair. You can retrieve the value with .get(), like so:
 
-```c++
+```cpp
 dom::element doc;
 auto error = parser.parse(json).get(doc);
 if (error) { cerr << error << endl; exit(1); }
@@ -462,7 +480,7 @@ We can write a "quick start" example where we attempt to parse the following JSO
 Our program loads the file, selects value corresponding to key "search_metadata" which expected to be an object, and then
 it selects the key "count" within that object.
 
-```C++
+```cpp
 #include <iostream>
 #include "simdjson.h"
 
@@ -490,7 +508,7 @@ triggering exceptions. To do this, we use `["statuses"].at(0)["id"]`. We break t
 
 Observe how we use the `at` method when querying an index into an array, and not the bracket operator.
 
-```C++
+```cpp
 #include <iostream>
 #include "simdjson.h"
 
@@ -514,7 +532,7 @@ over the content of an array.
 
 This is how the example in "Using the Parsed JSON" could be written using only error code checking:
 
-```c++
+```cpp
 auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
@@ -561,7 +579,7 @@ for (dom::element car_element : cars) {
 
 Here is another example:
 
-```C++
+```cpp
 auto abstract_json = R"( [
     {  "12345" : {"a":12.34, "b":56.78, "c": 9998877}   },
     {  "12545" : {"a":11.44, "b":12.78, "c": 11111111}  }
@@ -594,7 +612,7 @@ for (dom::element elem : array) {
 
 And another one:
 
-```C++
+```cpp
   auto abstract_json = R"(
     {  "str" : { "123" : {"abc" : 3.14 } } } )"_padded;
   dom::parser parser;
@@ -608,7 +626,7 @@ Notice how we can string several operations (`parser.parse(abstract_json)["str"]
 
 The next two functions will take as input a JSON document containing an array with a single element, either a string or a number. They return true upon success.
 
-```C++
+```cpp
 simdjson::dom::parser parser{};
 
 bool parse_double(const char *j, double &d) {
@@ -640,7 +658,7 @@ target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
 
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
 
-```c++
+```cpp
 dom::element doc = parser.parse(json); // Throws an exception if there was an error!
 ```
 
@@ -650,7 +668,7 @@ program from continuing if there was an error.
 
 If one is willing to trigger exceptions, it is possible to write simpler code:
 
-```C++
+```cpp
 #include <iostream>
 #include "simdjson.h"
 
@@ -671,7 +689,7 @@ inspect or walk over JSON elements. To do that, you can use iterators and the ty
 example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON
 (* ignoring nuances like trailing commas and escaping strings, for brevity's sake):
 
-```c++
+```cpp
 void print_json(dom::element element) {
   switch (element.type()) {
     case dom::element_type::ARRAY:
@@ -727,7 +745,7 @@ and reuse it. The simdjson library will allocate and retain internal buffers bet
 buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner,
 you can parse terabytes of JSON data without doing any new allocation.
 
-```c++
+```cpp
 dom::parser parser;
 
 // This initializes buffers and a document big enough to handle this JSON.
@@ -770,7 +788,7 @@ without bound:
 
 * You can set a *max capacity* when constructing a parser:
 
-  ```c++
+  ```cpp
   dom::parser parser(1000*1000); // Never grow past documents > 1MB
   for (web_request request : listen()) {
     dom::element doc;
@@ -786,7 +804,7 @@ without bound:
 * You can set a *fixed capacity* that never grows, as well, which can be excellent for
   predictability and reliability, since simdjson will never call malloc after startup!
 
-  ```c++
+  ```cpp
   dom::parser parser(0); // This parser will refuse to automatically grow capacity
   auto error = parser.allocate(1000*1000); // This allocates enough capacity to handle documents <= 1MB
   if (error) { cerr << error << endl; exit(1); }
@@ -817,7 +835,7 @@ When calling `parser.parse` on a pointer (e.g., `parser.parse(my_char_pointer, m
 Some users may not be able use our `padded_string` class or to load the data directly from disk (`parser.load`). They may need to pass data pointers to the library.  If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call `parser.parse` with the `realloc_if_needed` parameter set to false (e.g., `parser.parse(my_char_pointer, my_length_in_bytes, false)`). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:
 
 
-```C++
+```cpp
 const char *json      = R"({"key":"value"})";
 const size_t json_len = std::strlen(json);
 std::unique_ptr<char[]> padded_json_copy{new char[json_len + SIMDJSON_PADDING]};
@@ -825,7 +843,7 @@ memcpy(padded_json_copy.get(), json, json_len);
 memset(padded_json_copy.get() + json_len, 0, SIMDJSON_PADDING);
 simdjson::dom::parser parser;
 simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, false);
-````
+```
 
 Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.
 

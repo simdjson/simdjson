@@ -4,7 +4,7 @@
 add_library(simdjson-internal-flags INTERFACE)
 if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
   # We default to ON for all targets, so that we can use the library in shared libraries.
-  set_target_properties(simdjson-internal-flags PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  set_target_properties(simdjson-internal-flags PROPERTIES INTERFACE_POSITION_INDEPENDENT_CODE ON)
 endif(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
 
 option(SIMDJSON_CHECK_EOF "Check for the end of the input buffer. The setting is unnecessary since we require padding of the inputs. You should expect tests to fail with this option turned on." OFF)
@@ -32,6 +32,9 @@ undefined behavior.")
     link_libraries(
         -fsanitize=address -fno-omit-frame-pointer -fno-sanitize-recover=all
     )
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(-fsanitize=address)
+    link_libraries(-fsanitize=address)
   else()
     message(
         STATUS
@@ -171,6 +174,10 @@ else()
       -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
       -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion
   )
+  if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
+    target_compile_options(simdjson-internal-flags INTERFACE -Wctad-maybe-unsupported)
+  endif()
+
 endif()
 
 option(SIMDJSON_GLIBCXX_ASSERTIONS "Set _GLIBCXX_ASSERTIONS" OFF)

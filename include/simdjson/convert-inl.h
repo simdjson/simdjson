@@ -59,6 +59,12 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
 }
 
 template <typename parser_type>
+template <typename T>
+simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) {
+  return result<T>().get(value);
+}
+
+template <typename parser_type>
 inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() noexcept {
   return result<ondemand::array>();
 }
@@ -73,12 +79,7 @@ inline simdjson_result<ondemand::number> auto_parser<parser_type>::number() noex
   return result<ondemand::number>();
 }
 
-template <typename parser_type>
-template <typename T>
-inline auto_parser<parser_type>::operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>) {
-  return result<T>();
-}
-
+#if SIMDJSON_EXCEPTIONS
 template <typename parser_type>
 template <typename T>
 inline auto_parser<parser_type>::operator T() noexcept(false) {
@@ -87,6 +88,7 @@ inline auto_parser<parser_type>::operator T() noexcept(false) {
   }
   return m_doc.get<T>();
 }
+#endif // SIMDJSON_EXCEPTIONS
 
 template <typename parser_type>
 template <typename T>
@@ -109,12 +111,22 @@ inline T to_adaptor<T>::operator()(simdjson_result<ondemand::value> &val) const 
 
 template <typename T>
 inline auto to_adaptor<T>::operator()(padded_string_view const str) const noexcept {
-  return auto_parser{str};
+  return auto_parser<ondemand::parser *>{str};
 }
 
 template <typename T>
 inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_view const str) const noexcept {
   return auto_parser<ondemand::parser *>{parser, str};
+}
+
+template <typename T>
+inline auto to_adaptor<T>::operator()(std::string str) const noexcept {
+  return auto_parser<ondemand::parser *>{pad_with_reserve(str)};
+}
+
+template <typename T>
+inline auto to_adaptor<T>::operator()(ondemand::parser &parser, std::string str) const noexcept {
+  return auto_parser<ondemand::parser *>{parser, pad_with_reserve(str)};
 }
 } // namespace internal
 } // namespace convert

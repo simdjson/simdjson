@@ -42,24 +42,25 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
-static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256> json_quotable_character = {
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256>
+    json_quotable_character = {
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 /**
 
-A possible SWAR implementation of has_json_escapable_byte. It is not used because
-it is slower than the current implementation. It is kept here for reference (to show
-that we tried it).
+A possible SWAR implementation of has_json_escapable_byte. It is not used
+because it is slower than the current implementation. It is kept here for
+reference (to show that we tried it).
 
 inline bool has_json_escapable_byte(uint64_t x) {
   uint64_t is_ascii = 0x8080808080808080ULL & ~x;
@@ -76,7 +77,7 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool
 simple_needs_escaping(std::string_view v) {
   for (char c : v) {
     // a table lookup is faster than a series of comparisons
-    if(json_quotable_character[static_cast<uint8_t>(c)]) {
+    if (json_quotable_character[static_cast<uint8_t>(c)]) {
       return true;
     }
   }
@@ -155,8 +156,8 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
                                 _mm_setzero_si128()));
   }
   if (i < view.size()) {
-    __m128i word =
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(view.data() + view.length() - 16));
+    __m128i word = _mm_loadu_si128(
+        reinterpret_cast<const __m128i *>(view.data() + view.length() - 16));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
     running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
     running = _mm_or_si128(
@@ -171,7 +172,6 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 }
 #endif
 
-
 SIMDJSON_CONSTEXPR_LAMBDA inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -185,12 +185,17 @@ find_next_json_quotable_character(const std::string_view view,
 }
 
 SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
-    "\\x0000", "\\x0001", "\\x0002", "\\x0003", "\\x0004", "\\x0005", "\\x0006",
-    "\\x0007", "\\x0008", "\\t",     "\\n",     "\\x000b", "\\f",     "\\r",
-    "\\x000e", "\\x000f", "\\x0010", "\\x0011", "\\x0012", "\\x0013", "\\x0014",
-    "\\x0015", "\\x0016", "\\x0017", "\\x0018", "\\x0019", "\\x001a", "\\x001b",
-    "\\x001c", "\\x001d", "\\x001e", "\\x001f"};
+    "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
+    "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
+    "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
+    "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
+    "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
 
+// All Unicode characters may be placed within the quotation marks, except for
+// the characters that MUST be escaped: quotation mark, reverse solidus, and the
+// control characters (U+0000 through U+001F). There are two-character sequence
+// escape representations of some popular characters:
+// \", \\, \b, \f, \n, \r, \t.
 #ifdef SIMDJSON_ABLATION_NO_INLINE_OPTIMIZATIONS
 SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
   if (c == '"') {
@@ -273,29 +278,6 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
   }
   return out - initout;
 }
-
-#if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
-// unoptimized, meant for compile-time execution
-consteval std::string consteval_to_quoted_escaped(std::string_view input) {
-  std::string out = "\"";
-  for (char c : input) {
-    if (json_quotable_character[uint8_t(c)]) {
-      if (c == '"') {
-        out.append("\\\"");
-      } else if (c == '\\') {
-        out.append("\\\\");
-      } else {
-        std::string_view v = control_chars[uint8_t(c)];
-        out.append(v);
-      }
-    } else {
-      out.push_back(c);
-    }
-  }
-  out.push_back('"');
-  return out;
-}
-#endif // SIMDJSON_CONSTEVAL
 
 simdjson_inline string_builder::string_builder(size_t initial_capacity)
     : buffer(new(std::nothrow) char[initial_capacity]), position(0),
@@ -398,10 +380,13 @@ simdjson_inline void string_builder::clear() noexcept {
 
 namespace internal {
 
-// We could specialize further for 32-bit integers.
-simdjson_really_inline int int_log2(uint32_t x) { return (63 - leading_zeroes(x | 1)); }
+template <typename number_type, typename = typename std::enable_if<
+                                    std::is_unsigned<number_type>::value>::type>
+simdjson_really_inline int int_log2(number_type x) {
+  return 63 - leading_zeroes(uint64_t(x) | 1);
+}
 
-simdjson_really_inline int fast_digit_count(uint32_t x) {
+simdjson_really_inline int fast_digit_count_32(uint32_t x) {
   static uint64_t table[] = {
       4294967296,  8589934582,  8589934582,  8589934582,  12884901788,
       12884901788, 12884901788, 17179868184, 17179868184, 17179868184,
@@ -413,9 +398,7 @@ simdjson_really_inline int fast_digit_count(uint32_t x) {
   return uint32_t((x + table[int_log2(x)]) >> 32);
 }
 
-simdjson_really_inline int int_log2(uint64_t x) { return 63 - leading_zeroes(x | 1); }
-
-simdjson_really_inline int fast_digit_count(uint64_t x) {
+simdjson_really_inline int fast_digit_count_64(uint64_t x) {
   static uint64_t table[] = {9,
                              99,
                              999,
@@ -450,27 +433,32 @@ simdjson_really_inline size_t digit_count(number_type v) noexcept {
   // Fallback: use standard library conversion to count digits
   return std::to_string(v).length();
 #else
-  return fast_digit_count(v);
+  SIMDJSON_IF_CONSTEXPR(sizeof(number_type) <= 4) {
+    return fast_digit_count_32(static_cast<uint32_t>(v));
+  }
+  else {
+    return fast_digit_count_64(static_cast<uint64_t>(v));
+  }
 #endif
 }
 static const char decimal_table[200] = {
-  0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
-  0x30, 0x36, 0x30, 0x37, 0x30, 0x38, 0x30, 0x39, 0x31, 0x30, 0x31, 0x31,
-  0x31, 0x32, 0x31, 0x33, 0x31, 0x34, 0x31, 0x35, 0x31, 0x36, 0x31, 0x37,
-  0x31, 0x38, 0x31, 0x39, 0x32, 0x30, 0x32, 0x31, 0x32, 0x32, 0x32, 0x33,
-  0x32, 0x34, 0x32, 0x35, 0x32, 0x36, 0x32, 0x37, 0x32, 0x38, 0x32, 0x39,
-  0x33, 0x30, 0x33, 0x31, 0x33, 0x32, 0x33, 0x33, 0x33, 0x34, 0x33, 0x35,
-  0x33, 0x36, 0x33, 0x37, 0x33, 0x38, 0x33, 0x39, 0x34, 0x30, 0x34, 0x31,
-  0x34, 0x32, 0x34, 0x33, 0x34, 0x34, 0x34, 0x35, 0x34, 0x36, 0x34, 0x37,
-  0x34, 0x38, 0x34, 0x39, 0x35, 0x30, 0x35, 0x31, 0x35, 0x32, 0x35, 0x33,
-  0x35, 0x34, 0x35, 0x35, 0x35, 0x36, 0x35, 0x37, 0x35, 0x38, 0x35, 0x39,
-  0x36, 0x30, 0x36, 0x31, 0x36, 0x32, 0x36, 0x33, 0x36, 0x34, 0x36, 0x35,
-  0x36, 0x36, 0x36, 0x37, 0x36, 0x38, 0x36, 0x39, 0x37, 0x30, 0x37, 0x31,
-  0x37, 0x32, 0x37, 0x33, 0x37, 0x34, 0x37, 0x35, 0x37, 0x36, 0x37, 0x37,
-  0x37, 0x38, 0x37, 0x39, 0x38, 0x30, 0x38, 0x31, 0x38, 0x32, 0x38, 0x33,
-  0x38, 0x34, 0x38, 0x35, 0x38, 0x36, 0x38, 0x37, 0x38, 0x38, 0x38, 0x39,
-  0x39, 0x30, 0x39, 0x31, 0x39, 0x32, 0x39, 0x33, 0x39, 0x34, 0x39, 0x35,
-  0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
+    0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
+    0x30, 0x36, 0x30, 0x37, 0x30, 0x38, 0x30, 0x39, 0x31, 0x30, 0x31, 0x31,
+    0x31, 0x32, 0x31, 0x33, 0x31, 0x34, 0x31, 0x35, 0x31, 0x36, 0x31, 0x37,
+    0x31, 0x38, 0x31, 0x39, 0x32, 0x30, 0x32, 0x31, 0x32, 0x32, 0x32, 0x33,
+    0x32, 0x34, 0x32, 0x35, 0x32, 0x36, 0x32, 0x37, 0x32, 0x38, 0x32, 0x39,
+    0x33, 0x30, 0x33, 0x31, 0x33, 0x32, 0x33, 0x33, 0x33, 0x34, 0x33, 0x35,
+    0x33, 0x36, 0x33, 0x37, 0x33, 0x38, 0x33, 0x39, 0x34, 0x30, 0x34, 0x31,
+    0x34, 0x32, 0x34, 0x33, 0x34, 0x34, 0x34, 0x35, 0x34, 0x36, 0x34, 0x37,
+    0x34, 0x38, 0x34, 0x39, 0x35, 0x30, 0x35, 0x31, 0x35, 0x32, 0x35, 0x33,
+    0x35, 0x34, 0x35, 0x35, 0x35, 0x36, 0x35, 0x37, 0x35, 0x38, 0x35, 0x39,
+    0x36, 0x30, 0x36, 0x31, 0x36, 0x32, 0x36, 0x33, 0x36, 0x34, 0x36, 0x35,
+    0x36, 0x36, 0x36, 0x37, 0x36, 0x38, 0x36, 0x39, 0x37, 0x30, 0x37, 0x31,
+    0x37, 0x32, 0x37, 0x33, 0x37, 0x34, 0x37, 0x35, 0x37, 0x36, 0x37, 0x37,
+    0x37, 0x38, 0x37, 0x39, 0x38, 0x30, 0x38, 0x31, 0x38, 0x32, 0x38, 0x33,
+    0x38, 0x34, 0x38, 0x35, 0x38, 0x36, 0x38, 0x37, 0x38, 0x38, 0x38, 0x39,
+    0x39, 0x30, 0x39, 0x31, 0x39, 0x32, 0x39, 0x33, 0x39, 0x34, 0x39, 0x35,
+    0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
 };
 } // namespace internal
 
@@ -513,7 +501,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
 #else
-        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
+        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
         write_pointer -= 2;
         pv /= 100;
 #endif
@@ -536,9 +524,9 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         pv = 0 - pv; // the 0 is for Microsoft
       }
       size_t dc = internal::digit_count(pv);
-      if (negative) {
-        buffer.get()[position++] = '-';
-      }
+      // by always writing the minus sign, we avoid the branch.
+      buffer.get()[position] = '-';
+      position += negative ? 1 : 0;
       char *write_pointer = buffer.get() + position + dc - 1;
       while (pv >= 100) {
 #ifdef SIMDJSON_ABLATION_NO_LOOKUP_TABLES
@@ -548,7 +536,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
         *write_pointer-- = char('0' + (pv % 10));
         pv /= 10;
 #else
-        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100)*2], 2);
+        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
         write_pointer -= 2;
         pv /= 100;
 #endif
@@ -601,10 +589,17 @@ string_builder::escape_and_append_with_quotes(char input) noexcept {
   }
 }
 
-simdjson_inline void string_builder::escape_and_append_with_quotes(const char* input)  noexcept {
+simdjson_inline void
+string_builder::escape_and_append_with_quotes(const char *input) noexcept {
   std::string_view cinput(input);
   escape_and_append_with_quotes(cinput);
 }
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <constevalutil::fixed_string key>
+simdjson_inline void string_builder::escape_and_append_with_quotes() noexcept {
+  escape_and_append_with_quotes(constevalutil::string_constant<key>::value);
+}
+#endif
 
 simdjson_inline void string_builder::append_raw(const char *c) noexcept {
   size_t len = std::strlen(c);
@@ -629,6 +624,7 @@ simdjson_inline void string_builder::append_raw(const char *str,
 #if SIMDJSON_SUPPORTS_CONCEPTS
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
 simdjson_inline void string_builder::append(const T &opt) {
   if (opt) {
     append(*opt);
@@ -636,22 +632,29 @@ simdjson_inline void string_builder::append(const T &opt) {
     append_null();
   }
 }
+
 template <typename T>
-requires(std::is_convertible<T, std::string_view>::value ||
-std::is_same<T, const char*>::value )
+  requires(require_custom_serialization<T>)
+simdjson_inline void string_builder::append(const T &val) {
+  serialize(*this, val);
+}
+
+template <typename T>
+  requires(std::is_convertible<T, std::string_view>::value ||
+           std::is_same<T, const char *>::value)
 simdjson_inline void string_builder::append(const T &value) {
   escape_and_append_with_quotes(value);
 }
 #endif
 
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-  // Support for range-based appending (std::ranges::view, etc.)
+// Support for range-based appending (std::ranges::view, etc.)
 template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value)
+  requires(!std::is_convertible<R, std::string_view>::value && !require_custom_serialization<R>)
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);
-  if constexpr (concepts::is_pair<typename R::value_type>) {
+  if constexpr (concepts::is_pair<std::ranges::range_value_t<R>>) {
     start_object();
 
     if (it == end) {
@@ -664,8 +667,8 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
 
     // Append remaining items with preceding commas
     for (; it != end; ++it) {
-        append_comma();
-        append_key_value(it->first, it->second);
+      append_comma();
+      append_key_value(it->first, it->second);
     }
     end_object();
   } else {
@@ -681,11 +684,10 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
 
     // Append remaining items with preceding commas
     for (; it != end; ++it) {
-        append_comma();
-        append(*it);
+      append_comma();
+      append(*it);
     }
     end_array();
-
   }
 }
 
@@ -693,7 +695,7 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
 
 #if SIMDJSON_EXCEPTIONS
 simdjson_inline string_builder::operator std::string() const noexcept(false) {
-  return std::string(std::string_view());
+  return std::string(operator std::string_view());
 }
 
 simdjson_inline string_builder::operator std::string_view() const
@@ -722,67 +724,92 @@ simdjson_inline bool string_builder::validate_unicode() const noexcept {
   return simdjson::validate_utf8(buffer.get(), position);
 }
 
-simdjson_inline void string_builder::start_object()  noexcept {
+simdjson_inline void string_builder::start_object() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = '{';
   }
 }
 
-
-simdjson_inline void string_builder::end_object()  noexcept {
+simdjson_inline void string_builder::end_object() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = '}';
   }
 }
 
-
-simdjson_inline void string_builder::start_array()  noexcept {
+simdjson_inline void string_builder::start_array() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = '[';
   }
 }
 
-
-simdjson_inline void string_builder::end_array()  noexcept {
+simdjson_inline void string_builder::end_array() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = ']';
   }
 }
 
-
-simdjson_inline void string_builder::append_comma()  noexcept {
+simdjson_inline void string_builder::append_comma() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = ',';
   }
 }
 
-
-simdjson_inline void string_builder::append_colon()  noexcept {
+simdjson_inline void string_builder::append_colon() noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = ':';
   }
 }
 
-template<typename key_type, typename value_type>
-simdjson_inline void string_builder::append_key_value(key_type key, value_type value) noexcept {
-  static_assert(
-    std::is_same<key_type, const char*>::value ||
-    std::is_convertible<key_type, std::string_view>::value,
-    "Unsupported key type");
+template <typename key_type, typename value_type>
+simdjson_inline void
+string_builder::append_key_value(key_type key, value_type value) noexcept {
+  static_assert(std::is_same<key_type, const char *>::value ||
+                    std::is_convertible<key_type, std::string_view>::value,
+                "Unsupported key type");
   escape_and_append_with_quotes(key);
   append_colon();
   SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
     append_null();
-  } else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, char>::value) {
+  }
+  else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, char>::value) {
     escape_and_append_with_quotes(value);
-  } else SIMDJSON_IF_CONSTEXPR(std::is_convertible<value_type, std::string_view>::value) {
+  }
+  else SIMDJSON_IF_CONSTEXPR(
+      std::is_convertible<value_type, std::string_view>::value) {
     escape_and_append_with_quotes(value);
-  } else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, const char*>::value) {
+  }
+  else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, const char *>::value) {
     escape_and_append_with_quotes(value);
-  } else {
+  }
+  else {
     append(value);
   }
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <constevalutil::fixed_string key, typename value_type>
+simdjson_inline void
+string_builder::append_key_value(value_type value) noexcept {
+  escape_and_append_with_quotes<key>();
+  append_colon();
+  SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
+    append_null();
+  }
+  else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, char>::value) {
+    escape_and_append_with_quotes(value);
+  }
+  else SIMDJSON_IF_CONSTEXPR(
+      std::is_convertible<value_type, std::string_view>::value) {
+    escape_and_append_with_quotes(value);
+  }
+  else SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, const char *>::value) {
+    escape_and_append_with_quotes(value);
+  }
+  else {
+    append(value);
+  }
+}
+#endif
 
 } // namespace builder
 } // namespace SIMDJSON_IMPLEMENTATION

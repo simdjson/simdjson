@@ -20,12 +20,53 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
 Build Quickstart
 ------------------------------
 
+For non-Windows system,
+
 ```bash
-mkdir build
-cd build
-cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
-cmake --build .
+cmake -B -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
 ```
+
+It is similar for Visual Studio users, please see the CMake or Visual Studio documentation.
+
+By default the library is built in Release mode.
+
+
+Assertions and development checks
+------------------------------
+
+We do not use conventional `assert` in simdjson. Instead we use the macro
+`SIMDJSON_ASSUME`:
+
+```cpp
+SIMDJSON_ASSUME(something_that_is_true());
+```
+
+Sometimes, you need to do a bit more work that a simple check.
+The `SIMDJSON_DEVELOPMENT_CHECKS` macro is true only in Debug mode unless manually set.
+It is acceptable to add checks that you would not do in Release mode as long as
+they are guarded:
+
+```cpp
+#if SIMDJSON_DEVELOPMENT_CHECKS
+// do sanity checks here
+```
+
+
+Working with sanitizers
+------------------------------
+
+The simdjson library must be memory-safe. We cannot allow buffer overruns.
+During development, if you system supports it, we recommend configuring
+the project with `-D SIMDJSON_SANITIZE=ON`.
+
+```bash
+cmake -B -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
+```
+
 
 Design notes
 ------------------------------
@@ -103,12 +144,9 @@ simdjson's source structure, from the top level, looks like this:
     * generic/stage2/*.h: `simdjson::<implementation>::stage2` namespace. Generic implementation of the tape creator, which consumes the index from stage 1 and actually parses numbers and string and such. Used for the DOM interface.
 
 Other important files and directories:
-* **.drone.yml:** Definitions for Drone CI.
-* **.appveyor.yml:** Definitions for Appveyor CI (Windows).
-* **.circleci:** Definitions for Circle CI.
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
-* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script).
+* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script). If you add a new implementation (e.g., rvv), you need to edit this file (IMPLEMENTATIONS).
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnecessary system calls. We recommend checking the performance as follows:

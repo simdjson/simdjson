@@ -38,7 +38,7 @@ If we cannot reproduce the issue, then we cannot address it. Note that a stack t
 
 It should be possible to trigger the bug by using solely simdjson with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
 
-**simjson release**
+**simdjson release**
 
 Unless you plan to contribute to simdjson, you should only work from releases. Please be mindful that our main branch may have additional features, bugs and documentation items.
 

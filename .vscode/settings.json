@@ -3,6 +3,9 @@
         {"column": 95 },
         {"column": 120 }
     ],
+    "cmake.configureArgs": [
+        "-DSIMDJSON_DEVELOPER_MODE=ON"
+    ],
     "files.trimTrailingWhitespace": true,
     "files.associations": {
         ".clangd": "yaml",

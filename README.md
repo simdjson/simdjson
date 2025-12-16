@@ -1,5 +1,3 @@
-
-[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/simdjson.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:simdjson)
 [![][license img]][license] [![][licensemit img]][licensemit]
 
 
@@ -64,9 +62,13 @@ Real-world usage
 - [WasmEdge](https://wasmedge.org)
 - [RonDB](https://github.com/logicalclocks/rondb)
 - [GreptimeDB](https://github.com/GreptimeTeam/greptimedb)
+- [mamba](https://github.com/mamba-org/mamba)
 
 
 If you are planning to use simdjson in a product, please work from one of our releases.
+
+
+
 
 Quick Start
 -----------
@@ -84,7 +86,7 @@ The simdjson library is easily consumable with a single .h and .cpp file.
    ```
 2. Create `quickstart.cpp`:
 
-```c++
+```cpp
 #include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
@@ -114,11 +116,14 @@ Usage documentation is available:
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
 * [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
+* [Compile-Time Parsing](doc/compile_time.md) presents our compile-time parsing function (C++26 only).
+
 
 Godbolt
 -------------
 
 Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
+* [C++26 reflection example](https://godbolt.org/z/K3Px64TqK)
 * [simdjson examples with errors handled through exceptions](https://godbolt.org/z/7G5qE4sr9)
 * [simdjson examples with errors without exceptions](https://godbolt.org/z/e9dWb9E4v)
 
@@ -226,6 +231,13 @@ Contributing to simdjson
 
 Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing to simdjson, and
 [HACKING.md](HACKING.md) for information on source, building, and architecture/design.
+
+
+Stars
+------
+
+[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
+
 
 License
 -------

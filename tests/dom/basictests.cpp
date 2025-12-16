@@ -1795,6 +1795,18 @@ namespace validate_tests {
     return true;
   }
 
+  bool shall_not_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto test = "{\"joe\":\"\xf0\x8f\xbf\xbf\"}"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(test).get(doc);
+    if(error) {
+      return true; // expected
+    }
+    return false;
+  }
+
   bool test_validate() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
@@ -1860,6 +1872,7 @@ namespace validate_tests {
   }
   bool run() {
     return issue1187() &&
+           shall_not_parse() &&
            test_range() &&
            test_issue1169_long() &&
            test_issue1169() &&
@@ -1938,18 +1951,39 @@ namespace minify_tests {
     return false;
   }
 
+  bool test_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = "";
+    const std::string_view minified = "";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
+  bool test_two_quotes() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = R"("")";
+    const std::string_view minified = R"("")";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
+  bool test_number() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = R"(3.41)";
+    const std::string_view minified = R"(3.41)";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
   bool test_minify() {
     std::cout << "Running " << __func__ << std::endl;
-    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
-    const std::string minified(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
-    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+    const std::string_view test = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
+    const std::string_view minified = R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
   }
 
   bool test_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
-    std::string test("[ 1,    2,    3]");
-    std::string minified("[1,2,3]");
-    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+    std::string_view test("[ 1,    2,    3]");
+    std::string_view minified("[1,2,3]");
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
   }
 
   bool test_minify_object() {
@@ -1959,7 +1993,10 @@ namespace minify_tests {
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool run() {
-    return test_various_lengths2() &&
+    return test_two_quotes() &&
+           test_empty() &&
+           test_number() &&
+           test_various_lengths2() &&
            test_various_lengths() &&
            test_single_quote() &&
            test_minify() &&
@@ -2181,6 +2218,22 @@ namespace format_tests {
     s << minify(object);
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
+  bool print_minify_empty_string() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element e = parser.parse(R"("")"_padded);
+    ostringstream s;
+    s << minify(e);
+    return assert_minified(s, R"("")");
+  }
+  bool print_minify_number_string() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element e = parser.parse("3.41"_padded);
+    ostringstream s;
+    s << minify(e);
+    return assert_minified(s, "3.41");
+  }
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
@@ -2196,6 +2249,7 @@ namespace format_tests {
            print_element_exception() && print_minify_element_exception() &&
            print_array_exception() && print_minify_array_exception() &&
            print_object_exception() && print_minify_object_exception() &&
+           print_minify_empty_string() && print_minify_number_string() &&
 #endif
            true;
   }

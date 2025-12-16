@@ -46,16 +46,19 @@ public:
 
 	template <typename T>
 	simdjson_warn_unused simdjson_inline simdjson_result<T> result() noexcept(is_nothrow_gettable<T>);
+	template <typename T>
+	simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept(is_nothrow_gettable<T>);
+
 
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::array> array() noexcept;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object> object() noexcept;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::number> number() noexcept;
 
-	template <typename T>
-	simdjson_warn_unused simdjson_inline explicit(false) operator simdjson_result<T>() noexcept(is_nothrow_gettable<T>);
 
+#if SIMDJSON_EXCEPTIONS
 	template <typename T>
 	simdjson_warn_unused simdjson_inline explicit(false) operator T() noexcept(false);
+#endif // SIMDJSON_EXCEPTIONS
 
 	template <typename T>
 	simdjson_warn_unused simdjson_inline std::optional<T> optional() noexcept(is_nothrow_gettable<T>);
@@ -72,7 +75,14 @@ struct to_adaptor {
 	T operator()(simdjson_result<ondemand::value> &val) const noexcept;
 	auto operator()(padded_string_view const str) const noexcept;
 	auto operator()(ondemand::parser &parser, padded_string_view const str) const noexcept;
+	// The std::string is padded with reserve to ensure there is enough space for padding.
+	// Some sanitizers may not like this, so you can use simdjson::pad instead.
+	// simdjson::from(simdjson::pad(str))
+	auto operator()(std::string str) const noexcept;
+	auto operator()(ondemand::parser &parser, std::string str) const noexcept;
 };
+// deduction guide
+auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
 } // namespace internal
 } // namespace convert
 

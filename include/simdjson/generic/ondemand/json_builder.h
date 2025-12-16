@@ -14,7 +14,7 @@
 
 #include <charconv>
 #include <cstring>
-#include <experimental/meta>
+#include <meta>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -26,15 +26,14 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
 
-
 // Helper template to implement serialization with different strategies
 template<typename T, bool UseConsteval>
 struct atom_struct_impl {
-  static void serialize(string_builder &b, const T &t) {
+  static constexpr void serialize(string_builder &b, const T &t) {
     // Runtime implementation - always use runtime string construction
     int i = 0;
     b.append('{');
-    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T));
+    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()));
     template for (constexpr auto dm : members) {
       if (i++ != 0)
         b.append(',');
@@ -51,16 +50,16 @@ struct atom_struct_impl {
 // Specialization for consteval optimization
 template<typename T>
 struct atom_struct_impl<T, true> {
-  static void serialize(string_builder &b, const T &t) {
+  static constexpr void serialize(string_builder &b, const T &t) {
     b.append('{');
     bool first = true;
-    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T));
+    constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()));
     template for (constexpr auto dm : members) {
       if (!first)
         b.append(',');
       first = false;
       // Use std::meta::define_static_string directly with the consteval result
-      constexpr const char* static_key = std::define_static_string(consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
+      constexpr const char* static_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
       b.append_raw(static_key);
       b.append(':');
       atom(b, t.[: dm :]);
@@ -70,31 +69,21 @@ struct atom_struct_impl<T, true> {
 };
 #endif
 
-
-// Concept that checks if a type is a container but not a string (because
-// strings handling must be handled differently)
-template <typename T>
-concept container_but_not_string =
-    requires(T a) {
-      { a.size() } -> std::convertible_to<std::size_t>;
-      {
-        a[std::declval<std::size_t>()]
-      }; // check if elements are accessible for the subscript operator
-    } && !std::is_same_v<T, std::string> &&
-    !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char *>;
-
 template <class T>
-  requires(container_but_not_string<T>)
-void atom(string_builder &b, const T &t) {
-  if (t.size() == 0) {
+  requires(concepts::container_but_not_string<T> && !require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &t) {
+  auto it = t.begin();
+  auto end = t.end();
+  if (it == end) {
     b.append_raw("[]");
     return;
   }
   b.append('[');
-  atom(b, t[0]);
-  for (size_t i = 1; i < t.size(); ++i) {
+  atom(b, *it);
+  ++it;
+  for (; it != end; ++it) {
     b.append(',');
-    atom(b, t[i]);
+    atom(b, *it);
   }
   b.append(']');
 }
@@ -109,7 +98,8 @@ void atom(string_builder &b, const T &t) {
 }
 
 template <concepts::string_view_keyed_map T>
-void atom(string_builder &b, const T &m) {
+  requires(!require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &m) {
   if (m.empty()) {
     b.append_raw("{}");
     return;
@@ -137,7 +127,7 @@ void atom(string_builder &b, const number_type t) {
 }
 
 template <class T>
-  requires(std::is_class_v<T> && !container_but_not_string<T> &&
+  requires(std::is_class_v<T> && !concepts::container_but_not_string<T> &&
            !concepts::string_view_keyed_map<T> &&
            !concepts::optional_type<T> &&
            !concepts::smart_pointer<T> &&
@@ -145,8 +135,8 @@ template <class T>
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char*> &&
-           !std::is_same_v<T, char>)
-void atom(string_builder &b, const T &t) {
+           !std::is_same_v<T, char> && !require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &t) {
 #if SIMDJSON_CONSTEVAL && !defined(SIMDJSON_ABLATION_NO_CONSTEVAL)
   atom_struct_impl<T, true>::serialize(b, t);
 #else
@@ -156,7 +146,8 @@ void atom(string_builder &b, const T &t) {
 
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
-void atom(string_builder &b, const T &opt) {
+  requires(!require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &opt) {
   if (opt) {
     atom(b, opt.value());
   } else {
@@ -166,7 +157,8 @@ void atom(string_builder &b, const T &opt) {
 
 // Support for smart pointers (std::unique_ptr, std::shared_ptr, etc.)
 template <concepts::smart_pointer T>
-void atom(string_builder &b, const T &ptr) {
+  requires(!require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &ptr) {
   if (ptr) {
     atom(b, *ptr);
   } else {
@@ -176,7 +168,7 @@ void atom(string_builder &b, const T &ptr) {
 
 // Support for enums - serialize as string representation using expand approach from P2996R12
 template <typename T>
-  requires(std::is_enum_v<T>)
+  requires(std::is_enum_v<T> && !require_custom_serialization<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
@@ -189,10 +181,8 @@ void atom(string_builder &b, const T &e) {
     // Fast path for small enums with compile-time switch generation
     template for (constexpr auto enum_val : enum_values) {
       if (e == [: enum_val :]) {
-        constexpr auto name = std::meta::identifier_of(enum_val);
-        b.append_raw("\"");
-        b.append_raw(name);
-        b.append_raw("\"");
+        constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
+        b.append_raw(enum_str);
         return;
       }
     };
@@ -201,22 +191,16 @@ void atom(string_builder &b, const T &e) {
   } else {
   #endif
     // Standard implementation for larger enums
-    std::string_view result = "<unnamed>";
-    constexpr auto enum_vals = std::define_static_array(std::meta::enumerators_of(^^T));
-    template for (constexpr auto enum_val : enum_vals) {
-      if (e == [: enum_val :]) {
-        result = std::meta::identifier_of(enum_val);
+    constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
+    template for (constexpr auto enum_val : enumerators) {
+      constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
+      if (e == [:enum_val:]) {
+        b.append_raw(enum_str);
+        return;
       }
     };
-
-    if (result != "<unnamed>") {
-      b.append_raw("\"");
-      b.append_raw(result);
-      b.append_raw("\"");
-    } else {
-      // Fallback to integer if enum value not found
-      atom(b, static_cast<std::underlying_type_t<T>>(e));
-    }
+    // Fallback to integer if enum value not found
+    atom(b, static_cast<std::underlying_type_t<T>>(e));
   #ifndef SIMDJSON_ABLATION_NO_CONSTANT_FOLDING
   }
   #endif
@@ -228,11 +212,11 @@ void atom(string_builder &b, const T &e) {
 
 // Support for appendable containers that don't have operator[] (sets, etc.)
 template <concepts::appendable_containers T>
-  requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
+  requires(!concepts::container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
-void atom(string_builder &b, const T &container) {
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*> && !require_custom_serialization<T>)
+constexpr void atom(string_builder &b, const T &container) {
   if (container.empty()) {
     b.append_raw("[]");
     return;
@@ -266,32 +250,35 @@ void append(string_builder &b, const T &t) {
 }
 
 template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 template <concepts::smart_pointer T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 template <concepts::appendable_containers T>
-  requires(!container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
+  requires(!concepts::container_but_not_string<T> && !concepts::string_view_keyed_map<T> &&
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
-           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*>)
+           !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*> && !require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 template <concepts::string_view_keyed_map T>
+  requires(!require_custom_serialization<T>)
 void append(string_builder &b, const T &t) {
   atom(b, t);
 }
 
 // works for struct
 template <class Z>
-  requires(std::is_class_v<Z> && !container_but_not_string<Z> &&
+  requires(std::is_class_v<Z> && !concepts::container_but_not_string<Z> &&
            !concepts::string_view_keyed_map<Z> &&
            !concepts::optional_type<Z> &&
            !concepts::smart_pointer<Z> &&
@@ -299,31 +286,41 @@ template <class Z>
            !std::is_same_v<Z, std::string> &&
            !std::is_same_v<Z, std::string_view> &&
            !std::is_same_v<Z, const char*> &&
-           !std::is_same_v<Z, char>)
+           !std::is_same_v<Z, char> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
   // The atom function now handles both cases internally
   atom(b, z);
 }
 
-// works for container
+// works for container that have begin() and end() iterators
 template <class Z>
-  requires(container_but_not_string<Z>)
+  requires(concepts::container_but_not_string<Z> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
-  if (z.size() == 0) {
+  auto it = z.begin();
+  auto end = z.end();
+  if (it == end) {
     b.append_raw("[]");
     return;
   }
   b.append('[');
-  atom(b, z[0]);
-  for (size_t i = 1; i < z.size(); ++i) {
+  atom(b, *it);
+  ++it;
+  for (; it != end; ++it) {
     b.append(',');
-    atom(b, z[i]);
+    atom(b, *it);
   }
   b.append(']');
 }
 
 template <class Z>
-simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = 1024) {
+  requires (require_custom_serialization<Z>)
+void append(string_builder &b, const Z &z) {
+  b.append(z);
+}
+
+
+template <class Z>
+simdjson_warn_unused simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   append(b, z);
   std::string_view s;
@@ -332,8 +329,8 @@ simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity 
 }
 
 template <class Z>
-simdjson_error to_json(const Z &z, std::string &s) {
-  string_builder b;
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
+  string_builder b(initial_capacity);
   append(b, z);
   std::string_view view;
   if(auto e = b.view().get(view); e) { return e; }
@@ -346,13 +343,88 @@ string_builder& operator<<(string_builder& b, const Z& z) {
   append(b, z);
   return b;
 }
+
+// extract_from: Serialize only specific fields from a struct to JSON
+template<constevalutil::fixed_string... FieldNames, typename T>
+  requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+void extract_from(string_builder &b, const T &obj) {
+  // Helper to check if a field name matches any of the requested fields
+  auto should_extract = [](std::string_view field_name) constexpr -> bool {
+    return ((FieldNames.view() == field_name) || ...);
+  };
+
+  b.append('{');
+  bool first = true;
+
+  // Iterate through all members of T using reflection
+  template for (constexpr auto mem : std::define_static_array(
+      std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+
+    if constexpr (std::meta::is_public(mem)) {
+      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+
+      // Only serialize this field if it's in our list of requested fields
+      if constexpr (should_extract(key)) {
+        if (!first) {
+          b.append(',');
+        }
+        first = false;
+
+        // Serialize the key
+        constexpr auto quoted_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)));
+        b.append_raw(quoted_key);
+        b.append(':');
+
+        // Serialize the value
+        atom(b, obj.[:mem:]);
+      }
+    }
+  };
+
+  b.append('}');
+}
+
+template<constevalutil::fixed_string... FieldNames, typename T>
+  requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
+  string_builder b(initial_capacity);
+  extract_from<FieldNames...>(b, obj);
+  std::string_view s;
+  if(auto e = b.view().get(s); e) { return e; }
+  return std::string(s);
+}
+
 } // namespace builder
 } // namespace SIMDJSON_IMPLEMENTATION
 // Alias the function template to 'to' in the global namespace
 template <class Z>
-simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
-  return SIMDJSON_IMPLEMENTATION::builder::to_json_string(z, initial_capacity);
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  SIMDJSON_IMPLEMENTATION::builder::append(b, z);
+  std::string_view s;
+  if(auto e = b.view().get(s); e) { return e; }
+  return std::string(s);
 }
+template <class Z>
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  SIMDJSON_IMPLEMENTATION::builder::append(b, z);
+  std::string_view view;
+  if(auto e = b.view().get(view); e) { return e; }
+  s.assign(view);
+  return SUCCESS;
+}
+// Global namespace function for extract_from
+template<constevalutil::fixed_string... FieldNames, typename T>
+  requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  SIMDJSON_IMPLEMENTATION::builder::extract_from<FieldNames...>(b, obj);
+  std::string_view s;
+  if(auto e = b.view().get(s); e) { return e; }
+  return std::string(s);
+}
+
 } // namespace simdjson
 
 #endif // SIMDJSON_STATIC_REFLECTION

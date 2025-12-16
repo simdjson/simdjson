@@ -10,9 +10,40 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
+
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
+  class string_builder;
+}}
 
+template <typename T, typename = void>
+struct has_custom_serialization : std::false_type {};
+
+inline constexpr struct serialize_tag {
+  template <typename T>
+    requires custom_deserializable<T>
+  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T& obj) const{
+    return tag_invoke(*this, b, obj);
+  }
+
+
+} serialize{};
+template <typename T>
+struct has_custom_serialization<T, std::void_t<
+    decltype(tag_invoke(serialize, std::declval<SIMDJSON_IMPLEMENTATION::builder::string_builder&>(), std::declval<T&>()))
+>> : std::true_type {};
+
+template <typename T>
+constexpr bool require_custom_serialization = has_custom_serialization<T>::value;
+#else
+struct has_custom_serialization : std::false_type {};
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
+namespace SIMDJSON_IMPLEMENTATION {
+namespace builder {
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -24,7 +55,9 @@ namespace builder {
  */
 class string_builder {
 public:
-  simdjson_inline string_builder(size_t initial_capacity = 1024);
+  simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+
+  static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
 
   /**
    * Append number (includes Booleans). Booleans are mapped to the strings
@@ -33,7 +66,7 @@ public:
    * represents the number.
    */
   template<typename number_type,
-         typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
+    typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
   /**
@@ -62,7 +95,10 @@ public:
    * There is no UTF-8 validation.
    */
   simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
-
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  template<constevalutil::fixed_string key>
+  simdjson_inline void escape_and_append_with_quotes()  noexcept;
+#endif
   /**
    * Append the character surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
@@ -116,12 +152,20 @@ public:
    * The key is escaped and surrounded by double quotes.
    * The value is escaped if it is a string.
    */
-   template<typename key_type, typename value_type>
+  template<typename key_type, typename value_type>
   simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
 #if SIMDJSON_SUPPORTS_CONCEPTS
+  template<constevalutil::fixed_string key, typename value_type>
+  simdjson_inline void append_key_value(value_type value) noexcept;
+
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
+  requires(!require_custom_serialization<T>)
   simdjson_inline void append(const T &opt);
+
+  template <typename T>
+  requires(require_custom_serialization<T>)
+  simdjson_inline void append(const T &val);
 
   // Support for string-like types
   template <typename T>
@@ -132,7 +176,7 @@ public:
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value)
+requires (!std::is_convertible<R, std::string_view>::value && !require_custom_serialization<R>)
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
@@ -232,7 +276,7 @@ private:
 #if !SIMDJSON_STATIC_REFLECTION
 // fallback implementation until we have static reflection
 template <class Z>
-simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024) {
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
   std::string_view s;
@@ -240,8 +284,20 @@ simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = 1024)
   if(e) { return e; }
   return std::string(s);
 }
+template <class Z>
+simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  b.append(z);
+  std::string_view sv;
+  auto e = b.view().get(sv);
+  if(e) { return e; }
+  s.assign(sv.data(), sv.size());
+  return simdjson::SUCCESS;
+}
 #endif
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace simdjson
 

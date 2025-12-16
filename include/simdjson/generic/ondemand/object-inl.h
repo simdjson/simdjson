@@ -9,6 +9,11 @@
 #include "simdjson/generic/ondemand/raw_json_string.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value-inl.h"
+#include "simdjson/jsonpathutil.h"
+#if SIMDJSON_STATIC_REFLECTION
+#include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
+#include <meta>
+#endif
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -66,7 +71,7 @@ simdjson_inline simdjson_result<object> object::start_root(value_iterator &iter)
   SIMDJSON_TRY( iter.start_root_object().error() );
   return object(iter);
 }
-simdjson_inline error_code object::consume() noexcept {
+simdjson_warn_unused simdjson_inline error_code object::consume() noexcept {
   if(iter.is_at_key()) {
     /**
      * whenever you are pointing at a key, calling skip_child() is
@@ -172,6 +177,50 @@ inline simdjson_result<value> object::at_path(std::string_view json_path) noexce
   return at_pointer(json_pointer);
 }
 
+inline simdjson_result<std::vector<value>> object::at_path_with_wildcard(std::string_view json_path) noexcept {
+  std::vector<value> result;
+
+  auto result_pair = get_next_key_and_json_path(json_path);
+  std::string_view key = result_pair.first;
+  std::string_view remaining_path = result_pair.second;
+  // Handle when its the case for wildcard
+  if (key == "*") {
+    // Loop through each field in the object
+    for (auto field : *this) {
+      value val;
+      SIMDJSON_TRY(field.value().get(val));
+
+      if (remaining_path.empty()) {
+        result.push_back(std::move(val));
+      } else {
+        auto nested_result = val.at_path_with_wildcard(remaining_path);
+
+        if (nested_result.error()) {
+          return nested_result.error();
+        }
+        // Extract and append all nested matches to our result
+        std::vector<value> nested_vec;
+        SIMDJSON_TRY(std::move(nested_result).get(nested_vec));
+
+        result.insert(result.end(),
+                     std::make_move_iterator(nested_vec.begin()),
+                     std::make_move_iterator(nested_vec.end()));
+      }
+    }
+    return result;
+  } else {
+    value val;
+    SIMDJSON_TRY(find_field(key).get(val));
+
+    if (remaining_path.empty()) {
+      result.push_back(std::move(val));
+      return result;
+    } else {
+      return val.at_path_with_wildcard(remaining_path);
+    }
+  }
+}
+
 simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
   size_t count{0};
   // Important: we do not consume any of the values.
@@ -194,6 +243,52 @@ simdjson_inline simdjson_result<bool> object::is_empty() & noexcept {
 simdjson_inline simdjson_result<bool> object::reset() & noexcept {
   return iter.reset_object();
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
+
+template<constevalutil::fixed_string... FieldNames, typename T>
+  requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+simdjson_warn_unused simdjson_inline error_code object::extract_into(T& out) & noexcept {
+  // Helper to check if a field name matches any of the requested fields
+  auto should_extract = [](std::string_view field_name) constexpr -> bool {
+    return ((FieldNames.view() == field_name) || ...);
+  };
+
+  // Iterate through all members of T using reflection
+  template for (constexpr auto mem : std::define_static_array(
+      std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+
+      // Only extract this field if it's in our list of requested fields
+      if constexpr (should_extract(key)) {
+        // Try to find and extract the field
+        if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+          // For optional fields, it's ok if they're missing
+          auto field_result = find_field_unordered(key);
+          if (!field_result.error()) {
+            auto error = field_result.get(out.[:mem:]);
+            if (error && error != NO_SUCH_FIELD) {
+              return error;
+            }
+          } else if (field_result.error() != NO_SUCH_FIELD) {
+            return field_result.error();
+          } else {
+            out.[:mem:].reset();
+          }
+        } else {
+          // For required fields (in the requested list), fail if missing
+          SIMDJSON_TRY((*this)[key].get(out.[:mem:]));
+        }
+      }
+    }
+  };
+
+  return SUCCESS;
+}
+
+#endif // SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
@@ -250,6 +345,11 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
     return error();
   }
   return first.at_path(json_path);
+}
+
+simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_path_with_wildcard(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path_with_wildcard(json_path);
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {

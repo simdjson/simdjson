@@ -8,6 +8,7 @@
 #include "simdjson/padded_string_view-inl.h"
 
 #include <climits>
+#include <cwchar>
 
 namespace simdjson {
 namespace internal {
@@ -185,6 +186,62 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
   return s;
 }
 
+#if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
+inline simdjson_result<padded_string> padded_string::load(std::wstring_view filename) noexcept {
+  // Open the file using the wide characters
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
+  std::FILE *fp = _wfopen(filename.data(), L"rb");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
+  if (fp == nullptr) {
+    return IO_ERROR;
+  }
+
+  // Get the file size
+  int ret;
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
+  ret = _fseeki64(fp, 0, SEEK_END);
+#else
+  ret = std::fseek(fp, 0, SEEK_END);
+#endif // _WIN64
+  if(ret < 0) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+#if SIMDJSON_VISUAL_STUDIO && !SIMDJSON_IS_32BITS
+  __int64 llen = _ftelli64(fp);
+  if(llen == -1L) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+#else
+  long llen = std::ftell(fp);
+  if((llen < 0) || (llen == LONG_MAX)) {
+    std::fclose(fp);
+    return IO_ERROR;
+  }
+#endif
+
+  // Allocate the padded_string
+  size_t len = static_cast<size_t>(llen);
+  padded_string s(len);
+  if (s.data() == nullptr) {
+    std::fclose(fp);
+    return MEMALLOC;
+  }
+
+  // Read the padded_string
+  std::rewind(fp);
+  size_t bytes_read = std::fread(s.data(), 1, len, fp);
+  if (std::fclose(fp) != 0 || bytes_read != len) {
+    return IO_ERROR;
+  }
+
+  return s;
+}
+#endif
+
 } // namespace simdjson
 
 inline simdjson::padded_string operator ""_padded(const char *str, size_t len) {
@@ -192,7 +249,7 @@ inline simdjson::padded_string operator ""_padded(const char *str, size_t len) {
 }
 #ifdef __cpp_char8_t
 inline simdjson::padded_string operator ""_padded(const char8_t *str, size_t len) {
-  return simdjson::padded_string(reinterpret_cast<const char8_t *>(str), len);
+  return simdjson::padded_string(reinterpret_cast<const char *>(str), len);
 }
 #endif
 #endif // SIMDJSON_PADDED_STRING_INL_H

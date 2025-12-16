@@ -47,7 +47,7 @@ and reuse it. The simdjson library will allocate and retain internal buffers bet
 buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner,
 you can parse terabytes of JSON data without doing any new allocation.
 
-```c++
+```cpp
 ondemand::parser parser;
 
 // This initializes buffers  big enough to handle this JSON.
@@ -71,14 +71,14 @@ Reusing string buffers
 
 We recommend against creating many `std::string` or `simdjson::padded_string` instances to store the JSON content in your application. [Creating many non-trivial objects is convenient but often surprisingly slow](https://lemire.me/blog/2020/08/08/performance-tip-constructing-many-non-trivial-objects-is-slow/). Instead, as much as possible, you should allocate (once or a few times) reusable memory buffers where you write your JSON content. If you have a buffer `json_str` (of type `char*`) allocated for  `capacity` bytes and you store a JSON document spanning `length` bytes, you can pass it to simdjson as follows:
 
-```c++
+```cpp
  auto doc = parser.iterate(padded_string_view(json_str, length, capacity));
 ```
 
 or simply
 
 
-```c++
+```cpp
  auto doc = parser.iterate(json_str, length, capacity);
 ```
 
@@ -89,7 +89,7 @@ Server Loops: Long-Running Processes and Memory Capacity
 The On-Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On-Demand also lets you adjust the maximal capacity that the parser can process:
 
 * You can set an upper bound (*max_capacity*) when construction the parser:
-```C++
+```cpp
     ondemand::parser parser(1000*1000);  // Never grows past documents > 1 MB
     auto doc = parser.iterate(json);
     for (web_request request : listen()) {
@@ -105,7 +105,7 @@ The On-Demand approach also automatically expands its memory capacity when large
 The capacity will grow as the parser encounters larger documents up to 1 MB.
 
 * You can also allocate a *fixed capacity* that will never grow:
-```C++
+```cpp
     ondemand::parser parser(1000*1000);
     parser.allocate(1000*1000)  // Fix the capacity to 1 MB
     auto doc = parser.iterate(json);
@@ -253,7 +253,7 @@ long page_size() {
 // page boundary.
 bool need_allocation(const char *buf, size_t len) {
   return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
-    + simdjson::SIMDJSON_PADDING > static_cast<uintptr_t>(page_size()));
+    + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size()));
 }
 
 simdjson::padded_string_view

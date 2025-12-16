@@ -29,11 +29,40 @@ simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_b
 }
 
 template<typename T>
-simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
+simdjson_warn_unused simdjson_inline error_code implementation_simdjson_result_base<T>::error() const noexcept {
   return this->second;
 }
 
+
+template<typename T>
+simdjson_warn_unused simdjson_inline bool implementation_simdjson_result_base<T>::has_value() const noexcept {
+  return this->error() == SUCCESS;
+}
+
 #if SIMDJSON_EXCEPTIONS
+
+template<typename T>
+simdjson_inline T& implementation_simdjson_result_base<T>::operator*() &  noexcept(false) {
+  return this->value();
+}
+
+template<typename T>
+simdjson_inline T&& implementation_simdjson_result_base<T>::operator*() &&  noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).value();
+}
+
+template<typename T>
+simdjson_inline T* implementation_simdjson_result_base<T>::operator->() noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
+
+
+template<typename T>
+simdjson_inline const T* implementation_simdjson_result_base<T>::operator->() const noexcept(false) {
+  if (this->error()) { throw simdjson_error(this->error()); }
+  return &this->first;
+}
 
 template<typename T>
 simdjson_inline T& implementation_simdjson_result_base<T>::value() & noexcept(false) {

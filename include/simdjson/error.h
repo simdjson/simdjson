@@ -108,6 +108,10 @@ namespace internal {
 /**
  * The result of a simdjson operation that could fail.
  *
+ * IMPORTANT: For the ondemand API, we use implementation_simdjson_result_base<T> as a base class
+ * to avoid some compilation issue. Thus, if you modify this class, please ensure that the ondemand
+ * implementation_simdjson_result_base<T> is also modified.
+ *
  * Gives the option of reading error codes, or throwing an exception by casting to the desired result.
  *
  * This is a base class for implementations that want to add functions to the result type for
@@ -168,7 +172,26 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline error_code error() const noexcept;
 
+  /**
+   * Whether there is a value.
+   */
+  simdjson_inline bool has_value() const noexcept;
 #if SIMDJSON_EXCEPTIONS
+
+  /**
+   * Dereference operator to access the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
 
   /**
    * Get the result value.
@@ -242,6 +265,8 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
+  using value_type = T;
+  using error_type = error_code;
 }; // struct simdjson_result_base
 
 } // namespace internal
@@ -253,6 +278,7 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
  */
 template<typename T>
 struct simdjson_result : public internal::simdjson_result_base<T> {
+
   /**
    * @private Create a new empty result with error = UNINITIALIZED.
    */
@@ -306,8 +332,11 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline error_code error() const noexcept;
 
-#if SIMDJSON_EXCEPTIONS
 
+
+#if SIMDJSON_EXCEPTIONS
+  using internal::simdjson_result_base<T>::operator*;
+  using internal::simdjson_result_base<T>::operator->;
   /**
    * Get the result value.
    *
@@ -349,6 +378,8 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& value_unsafe() && noexcept;
 
+  using value_type = T;
+  using error_type = error_code;
 }; // struct simdjson_result
 
 #if SIMDJSON_EXCEPTIONS

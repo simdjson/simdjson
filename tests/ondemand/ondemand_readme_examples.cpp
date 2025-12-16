@@ -233,10 +233,47 @@ bool to_string_example() {
   ondemand::parser parser;
   ondemand::document doc = parser.iterate(json);
   std::string name;
-  doc["name"].get_string(name);
+  ASSERT_SUCCESS(doc["name"].get_string(name));
   ASSERT_EQUAL(name, "Daniel");
   TEST_SUCCEED();
 }
+#if SIMDJSON_STATIC_REFLECTION
+bool partial_car_extract() {
+  TEST_START();
+  auto json = R"( {
+         "make": "Toyota",
+         "model": "Camry",
+         "year": 2024,
+         "tire_pressure": [ 40.1, 39.9 ]
+       } )"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  Car car{};
+  ASSERT_SUCCESS( (doc.extract_into<"make","model">(car)) );
+  ASSERT_EQUAL(car.make, "Toyota");
+  ASSERT_EQUAL(car.model, "Camry");
+  ASSERT_EQUAL(car.year, 0);  // Not extracted
+  ASSERT_EQUAL(car.tire_pressure.size(), 0); // Not extracted
+  TEST_SUCCEED();
+}
+
+bool temperature_example() {
+  TEST_START();
+  struct complicated_weather_data {
+    std::vector<std::string> time;
+    std::vector<float> temperature;
+  };
+  auto padded = R"({"time":["2023-03-15T12:00:00Z"],"temperature":[42]})"_padded;
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc = parser.iterate(padded);
+  complicated_weather_data p = doc.get<complicated_weather_data>();
+  ASSERT_EQUAL(p.time.size(), 1);
+  ASSERT_EQUAL(p.time[0], "2023-03-15T12:00:00Z");
+  ASSERT_EQUAL(p.temperature.size(), 1);
+  ASSERT_EQUAL(p.temperature[0], 42);
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_STATIC_REFLECTION
 
 bool gen_raw1() {
   TEST_START();
@@ -1440,6 +1477,41 @@ bool simple_error_example() {
 
 #include "simdjson.h"
 #include <iostream>
+
+  void scan_json_object_keys() {
+    auto json = R"({"price": 123.456789, "volume": 9999,
+                    "timestamp": "2025-09-04T09:45:00Z",
+                    "symbol": "XYZ", "currency": "USD", "change": 1.23,
+                    "isActive": true})"_padded;
+
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc = parser.iterate(json);
+
+    for(auto keyvalue : doc.get_object()) {
+        simdjson::ondemand::raw_json_string key = keyvalue.key();
+        switch(key[0]) {
+            case 'p': // price
+                if (key == "price") {
+                    std::string_view price_str = keyvalue.value().raw_json();
+                    std::cout << "Price: " << price_str << std::endl;
+                }
+                break;
+            case 'v': // volume
+                if (key == "volume") {
+                    std::string_view volume_str = keyvalue.value().raw_json();
+                    std::cout << "Volume: " << volume_str << std::endl;
+                }
+                break;
+            case 't': // timestamp
+                if (key == "timestamp") {
+                    std::string_view timestamp = keyvalue.value();
+                    std::cout << "Timestamp: " << timestamp << std::endl;
+                }
+                break;
+            default: break;
+        }
+    }
+  }
 
   // prints the content of the array as hexadecimal 64-bit integers
   void f(simdjson::ondemand::array v) {

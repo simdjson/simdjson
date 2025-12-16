@@ -17,8 +17,9 @@ editing CMAKE_CXX_FLAGS")
     # /EHc used in conjection with /EHs indicates that extern "C" functions
     # never throw (terminate-on-throw)
     # Here, we disable both with the - argument negation operator
-    string(REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-
+    if(CMAKE_CXX_FLAGS)
+        string(REPLACE "/EHsc" "/EHs-c-" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    endif()
     # Because we cannot change the flag above on an individual target (yet), the
     # definition below must similarly be added globally
     add_definitions(-D_HAS_EXCEPTIONS=0)

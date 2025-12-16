@@ -20,8 +20,6 @@ SIMDJSON_DLLIMPORTEXPORT const double simdjson::internal::power_of_ten[] = {
  * exactly using the binary notation, only the powers of five
  * affect the binary significand.
  */
-
-
 // The truncated powers of five from 5^-342 all the way to 5^308
 // The mantissa is truncated to 128 bits, and
 // never rounded up. Uses about 10KB.
@@ -677,5 +675,6 @@ SIMDJSON_DLLIMPORTEXPORT const uint64_t simdjson::internal::power_of_five_128[]=
         0xb6472e511c81471d,0xe0133fe4adf8e952,
         0xe3d8f9e563a198e5,0x58180fddd97723a6,
         0x8e679c2f5e44ff8f,0x570f09eaa7ea7648,};
+
 
 #endif // SIMDJSON_SRC_NUMBERPARSING_TABLES_CPP

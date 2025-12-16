@@ -6,6 +6,7 @@
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/deserialize.h"
 #include "simdjson/generic/ondemand/value.h"
+#include <vector>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 
@@ -117,7 +118,7 @@ public:
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   /**
    * Cast this JSON value to a string.
    *
@@ -228,7 +229,7 @@ public:
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
    */
   template<typename T>
-  simdjson_inline error_code get(T &out) &
+  simdjson_warn_unused simdjson_inline error_code get(T &out) &
 #if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document> : true)
 #else
@@ -402,12 +403,14 @@ public:
   simdjson_inline simdjson_result<array_iterator> end() & noexcept;
 
   /**
-   * Look up a field by name on an object (order-sensitive).
+   * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
+   * fields must be accessed in the order they appear in the JSON text (although you can
+   * skip fields). See find_field_unordered() and operator[] for an order-insensitive version.
    *
    * The following code reads z, then y, then x, and thus will not retrieve x or y if fed the
    * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
-   * ```c++
+   * ```cpp
    * simdjson::ondemand::parser parser;
    * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
    * double z = obj.find_field("z");
@@ -446,7 +449,8 @@ public:
    * missing case has a non-cache-friendly bump and lots of extra scanning, especially if the object
    * in question is large. The fact that the extra code is there also bumps the executable size.
    *
-   * It is the default, however, because it would be highly surprising (and hard to debug) if the
+   * We default operator[] on find_field_unordered() for convenience.
+   * It is the default because it would be highly surprising (and hard to debug) if the
    * default behavior failed to look up a field just because it was in the wrong order--and many
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
@@ -701,7 +705,7 @@ public:
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
    *
-   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   * https://www.rfc-editor.org/rfc/rfc9535 (RFC 9535)
    *
    * Key values are matched exactly, without unescaping or Unicode normalization.
    * We do a byte-by-byte comparison. E.g.
@@ -720,16 +724,63 @@ public:
   simdjson_inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
 
   /**
+   * Get all values matching the given JSONPath expression with wildcard support.
+   *
+   * Supports wildcard patterns like "$.array[*]" or "$.object.*" to match multiple elements.
+   *
+   * This method materializes all matching values into a vector.
+   * The document will be consumed after this call.
+   *
+   * @param json_path JSONPath expression with wildcards
+   * @return Vector of values matching the wildcard pattern, or:
+   *         - INVALID_JSON_POINTER if the JSONPath cannot be parsed
+   *         - NO_SUCH_FIELD if a field does not exist
+   *         - INDEX_OUT_OF_BOUNDS if an array index is out of bounds
+   *         - INCORRECT_TYPE if path traversal encounters wrong type
+   */
+  simdjson_inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
+
+  /**
    * Consumes the document and returns a string_view instance corresponding to the
    * document as represented in JSON. It points inside the original byte array containing
    * the JSON document.
    */
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+
+#if SIMDJSON_STATIC_REFLECTION
+  /**
+   * Extract only specific fields from the JSON object into a struct.
+   *
+   * This allows selective deserialization of only the fields you need,
+   * potentially improving performance by skipping unwanted fields.
+   *
+   * Example:
+   * ```cpp
+   * struct Car {
+   *   std::string make;
+   *   std::string model;
+   *   int year;
+   *   double price;
+   * };
+   *
+   * Car car;
+   * doc.extract_into<"make", "model">(car);
+   * // Only 'make' and 'model' fields are extracted from JSON
+   * ```
+   *
+   * @tparam FieldNames Compile-time string literals specifying which fields to extract
+   * @param out The output struct to populate with selected fields
+   * @returns SUCCESS on success, or an error code if a required field is missing or has wrong type
+   */
+  template<constevalutil::fixed_string... FieldNames, typename T>
+    requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+  simdjson_warn_unused simdjson_inline error_code extract_into(T& out) & noexcept;
+#endif // SIMDJSON_STATIC_REFLECTION
 protected:
   /**
    * Consumes the document.
    */
-  simdjson_inline error_code consume() noexcept;
+  simdjson_warn_unused simdjson_inline error_code consume() noexcept;
 
   simdjson_inline document(ondemand::json_iterator &&iter) noexcept;
   simdjson_inline const uint8_t *text(uint32_t idx) const noexcept;
@@ -782,7 +833,7 @@ public:
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -826,7 +877,7 @@ public:
    * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
    */
   template<typename T>
-  simdjson_inline error_code get(T &out) &
+  simdjson_warn_unused simdjson_inline error_code get(T &out) &
 #if SIMDJSON_SUPPORTS_CONCEPTS
     noexcept(custom_deserializable<T, document> ? nothrow_custom_deserializable<T, document_reference> : true)
 #else
@@ -861,6 +912,11 @@ public:
   /** @overload template<typename T> error_code get(T &out) & noexcept */
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+#if SIMDJSON_STATIC_REFLECTION
+  template<constevalutil::fixed_string... FieldNames, typename T>
+    requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+  simdjson_warn_unused simdjson_inline error_code extract_into(T& out) & noexcept;
+#endif // SIMDJSON_STATIC_REFLECTION
   simdjson_inline operator document&() const noexcept;
 #if SIMDJSON_EXCEPTIONS
   template <class T>
@@ -901,6 +957,7 @@ public:
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 
 private:
   document *doc{nullptr};
@@ -929,7 +986,7 @@ public:
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -942,6 +999,9 @@ public:
   template<typename T> simdjson_inline error_code get(T &out) & noexcept;
   template<typename T> simdjson_inline error_code get(T &out) && noexcept;
 #if SIMDJSON_EXCEPTIONS
+
+  using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator*;
+  using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator->;
   template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
@@ -981,6 +1041,12 @@ public:
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
+#if SIMDJSON_STATIC_REFLECTION
+  template<constevalutil::fixed_string... FieldNames, typename T>
+    requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+  simdjson_warn_unused simdjson_inline error_code extract_into(T& out) & noexcept;
+#endif // SIMDJSON_STATIC_REFLECTION
 };
 
 
@@ -1007,7 +1073,7 @@ public:
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -1058,6 +1124,12 @@ public:
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
+#if SIMDJSON_STATIC_REFLECTION
+  template<constevalutil::fixed_string... FieldNames, typename T>
+    requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
+  simdjson_warn_unused simdjson_inline error_code extract_into(T& out) & noexcept;
+#endif // SIMDJSON_STATIC_REFLECTION
 };
 
 

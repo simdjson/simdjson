@@ -111,7 +111,7 @@ public:
   inline simdjson_result<element> at_pointer(std::string_view json_pointer) const noexcept;
 
   /**
-   * Recursive function which processes the json path of each child element
+   * Recursive function which processes the JSON path of each child element
    */
   inline void process_json_path_of_child_elements(std::vector<element>::iterator& current, std::vector<element>::iterator& end, const std::string_view& path_suffix, std::vector<element>& accumulator) const noexcept;
 
@@ -126,7 +126,7 @@ public:
    * JSONPath queries that trivially convertible to JSON Pointer queries: key
    * names and array indices.
    *
-   * https://datatracker.ietf.org/doc/html/draft-normington-jsonpath-00
+   * https://www.rfc-editor.org/rfc/rfc9535 (RFC 9535)
    *
    * @return The value associated with the given JSONPath expression, or:
    *         - INVALID_JSON_POINTER if the JSONPath to JSON Pointer conversion fails

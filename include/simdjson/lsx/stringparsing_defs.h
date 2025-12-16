@@ -17,7 +17,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return bs_bits != 0; }
@@ -67,7 +67,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
   simd8<bool> is_backslash = (v == '\\');
   simd8<bool> is_control = (v < 32);
   return {
-    (is_backslash | is_quote | is_control).to_bitmask()
+    static_cast<uint64_t>((is_backslash | is_quote | is_control).to_bitmask())
   };
 }
 

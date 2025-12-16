@@ -13,6 +13,11 @@
 #endif
 #endif
 
+// C++ 26
+#if !defined(SIMDJSON_CPLUSPLUS26) && (SIMDJSON_CPLUSPLUS >= 202402L) // update when the standard is finalized
+#define SIMDJSON_CPLUSPLUS26 1
+#endif
+
 // C++ 23
 #if !defined(SIMDJSON_CPLUSPLUS23) && (SIMDJSON_CPLUSPLUS >= 202302L)
 #define SIMDJSON_CPLUSPLUS23 1
