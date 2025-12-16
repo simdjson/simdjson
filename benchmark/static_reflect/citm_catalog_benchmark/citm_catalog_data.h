@@ -7,11 +7,11 @@
 #include <optional>
 #include <cstdint>
 
-// Price structure with simpler field names to avoid reflection issues
+// Price structure - field names must match JSON keys for reflection
 struct CITMPrice {
     uint64_t amount;
-    uint64_t audience;  // was audienceSubCategoryId
-    uint64_t seat;      // was seatCategoryId
+    uint64_t audienceSubCategoryId;
+    uint64_t seatCategoryId;
     bool operator==(const CITMPrice&) const = default;
 };
 

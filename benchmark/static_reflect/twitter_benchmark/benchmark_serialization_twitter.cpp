@@ -10,6 +10,9 @@
 #include "twitter_data.h"
 #include "nlohmann_twitter_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
+#ifdef SIMDJSON_COMPETITION_YYJSON
+#include "yyjson_twitter_data.h"
+#endif
 #if SIMDJSON_BENCH_CPP_REFLECT
 #include <rfl.hpp>
 #include <rfl/json.hpp>
@@ -114,6 +117,24 @@ void bench_nlohmann(TwitterData &data) {
                }));
 }
 
+#ifdef SIMDJSON_COMPETITION_YYJSON
+void bench_yyjson(TwitterData &data) {
+  std::string output = yyjson_serialize(data);
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(1, output_volume, "bench_yyjson",
+               bench([&data, &measured_volume, &output_volume]() {
+                 std::string output = yyjson_serialize(data);
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif
+
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   ((std::string *)userp)->append((char *)contents, size * nmemb);
   return size * nmemb;
@@ -187,6 +208,11 @@ int main(int argc, char* argv[]) {
   if (matches_filter("nlohmann", filter)) {
     bench_nlohmann(my_struct);
   }
+#ifdef SIMDJSON_COMPETITION_YYJSON
+  if (matches_filter("yyjson", filter)) {
+    bench_yyjson(my_struct);
+  }
+#endif
   if (matches_filter("simdjson_static_reflection", filter)) {
     bench_simdjson_static_reflection(my_struct);
   }

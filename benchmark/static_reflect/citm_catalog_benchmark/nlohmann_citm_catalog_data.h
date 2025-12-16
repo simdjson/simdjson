@@ -12,8 +12,8 @@ using json = nlohmann::json;
 inline void to_json(json &j, const CITMPrice &p) {
     j = json{
       {"amount", p.amount},
-      {"audienceSubCategoryId", p.audience},
-      {"seatCategoryId", p.seat}
+      {"audienceSubCategoryId", p.audienceSubCategoryId},
+      {"seatCategoryId", p.seatCategoryId}
     };
 }
 

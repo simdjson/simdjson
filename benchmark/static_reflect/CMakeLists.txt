@@ -8,7 +8,7 @@ CPMAddPackage(
 
 option(SIMDJSON_USE_RUST "Build the static_reflect benchmark" OFF)
 
-if(SIMDJSON_USER_RUST)
+if(SIMDJSON_USE_RUST)
   if(NOT WIN32)
   # We want the check whether Rust is available before trying to build a crate.
   CPMAddPackage(
@@ -39,9 +39,9 @@ if(SIMDJSON_USER_RUST)
       message(STATUS "curl https://sh.rustup.rs -sSf | sh")
     endif()
   endif()
-else(SIMDJSON_USER_RUST)
+else(SIMDJSON_USE_RUST)
   message(STATUS "We will not benchmark serde-benchmark." )
-endif(SIMDJSON_USER_RUST)
+endif(SIMDJSON_USE_RUST)
 
 # Add the benchmark executable targets
 add_subdirectory(twitter_benchmark)

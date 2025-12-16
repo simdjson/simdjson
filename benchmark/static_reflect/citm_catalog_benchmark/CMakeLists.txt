@@ -22,14 +22,14 @@ endif()
 
 target_link_libraries(benchmark_parsing_citm PRIVATE simdjson::simdjson nlohmann_json)
 
-if(SIMDJSON_COMPETITION_RAPIDJSON)
-    target_link_libraries(benchmark_parsing_citm PRIVATE RapidJSON::RapidJSON)
-    target_compile_definitions(benchmark_parsing_citm PRIVATE SIMDJSON_COMPETITION_RAPIDJSON=1)
+if(TARGET rapidjson)
+    target_link_libraries(benchmark_parsing_citm PRIVATE rapidjson)
+    target_compile_definitions(benchmark_parsing_citm PRIVATE SIMDJSON_COMPETITION_RAPIDJSON)
 endif()
 
-if(SIMDJSON_COMPETITION_YYJSON)
-    target_link_libraries(benchmark_parsing_citm PRIVATE yyjson::yyjson)
-    target_compile_definitions(benchmark_parsing_citm PRIVATE SIMDJSON_COMPETITION_YYJSON=1)
+if(TARGET yyjson)
+    target_link_libraries(benchmark_parsing_citm PRIVATE yyjson)
+    target_compile_definitions(benchmark_parsing_citm PRIVATE SIMDJSON_COMPETITION_YYJSON)
 endif()
 
 target_compile_definitions(benchmark_parsing_citm PRIVATE JSON_FILE="${BENCH_CITM_JSON}")
