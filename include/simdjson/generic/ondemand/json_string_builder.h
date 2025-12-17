@@ -24,9 +24,8 @@ struct has_custom_serialization : std::false_type {};
 
 inline constexpr struct serialize_tag {
   template <typename T>
-    requires custom_deserializable<T>
-  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T& obj) const{
-    return tag_invoke(*this, b, obj);
+  constexpr void operator()(SIMDJSON_IMPLEMENTATION::builder::string_builder& b, T&& obj) const{
+    return tag_invoke(*this, b, std::forward<T>(obj));
   }
 
 
@@ -165,7 +164,7 @@ public:
 
   template <typename T>
   requires(require_custom_serialization<T>)
-  simdjson_inline void append(const T &val);
+  simdjson_inline void append(T &&val);
 
   // Support for string-like types
   template <typename T>

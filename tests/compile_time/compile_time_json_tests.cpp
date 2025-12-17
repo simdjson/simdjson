@@ -661,6 +661,8 @@ bool test_array_of_objects_with_concept() {
     TEST_SUCCEED();
 }
 
+#if defined(__cpp_pp_embed) && __cpp_pp_embed >= 202502L
+#define TEST_EMBED_SUPPORTED
 /**
  * Test: #embed support for external JSON files (C++26)
  */
@@ -688,6 +690,7 @@ bool test_embed_twitter_json() {
 
     TEST_SUCCEED();
 }
+#endif //  defined(__cpp_pp_embed) && __cpp_pp_embed >= 202502L
 
 bool run() {
     return test_basic_object() &&
@@ -713,8 +716,11 @@ bool run() {
            test_user_config_example() &&
            test_nested_servers_example() &&
            test_top_level_array_example() &&
-           test_array_of_objects_with_concept() &&
-           test_embed_twitter_json();
+           test_array_of_objects_with_concept()
+#ifdef TEST_EMBED_SUPPORTED
+           && test_embed_twitter_json()
+#endif
+;
 }
 
 } // namespace compile_time_json_tests
