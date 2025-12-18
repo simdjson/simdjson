@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.3</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -533,6 +533,7 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Look up a field by name on an object (order-sensitive). </p>
+<p>By order-sensitive, we mean that fields must be accessed in the order they appear in the JSON text (although you can skip fields). See <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a55d8bd31e2f5e6b10986af2f48a544fc" title="Look up a field by name on an object, without regard to key order.">find_field_unordered()</a> and operator[] for an order-insensitive version.</p>
 <p>The following code reads z, then y, then x, and thus will not retrieve x or y if fed the JSON <code>{ "x": 1, "y": 2, "z": 3 }</code>:</p>
 <div class="fragment"><div class="line">simdjson::ondemand::parser <a class="code hl_class" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>;</div>
 <div class="line"><span class="keyword">auto</span> obj = <a class="code hl_class" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>.parse(R<span class="stringliteral">&quot;( { &quot;x&quot;: 1, &quot;y&quot;: 2, &quot;z&quot;: 3 } )&quot;_padded);</span></div>
@@ -611,7 +612,7 @@ Protected Attributes</h2></td></tr>
 
 <p>Look up a field by name on an object, without regard to key order. </p>
 <p><b>Performance Notes:</b> This is a bit less performant than <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aa25020165cc5a191026a243a10da6558" title="Look up a field by name on an object (order-sensitive).">find_field()</a>, though its effect varies and often appears negligible. It starts out normally, starting out at the last field; but if the field is not found, it scans from the beginning of the object to see if it missed it. That missing case has a non-cache-friendly bump and lots of extra scanning, especially if the object in question is large. The fact that the extra code is there also bumps the executable size.</p>
-<p>It is the default, however, because it would be highly surprising (and hard to debug) if the default behavior failed to look up a field just because it was in the wrong order&ndash;and many APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.</p>
+<p>We default operator[] on <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a55d8bd31e2f5e6b10986af2f48a544fc" title="Look up a field by name on an object, without regard to key order.">find_field_unordered()</a> for convenience. It is the default because it would be highly surprising (and hard to debug) if the default behavior failed to look up a field just because it was in the wrong order&ndash;and many APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.</p>
 <p>Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aa25020165cc5a191026a243a10da6558" title="Look up a field by name on an object (order-sensitive).">find_field()</a> if you are sure fields will be in order (or are willing to treat it as if the field was not there when they are not in order).</p>
 <p>If you have multiple fields with a matching key ({"x": 1, "x": 1}) be mindful that only one field is returned.</p>
 <p>You must consume the fields on an object one at a time. A request for a new key invalidates previous field values: it makes them unsafe. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. The array given by content["bids"].get_array() should not be accessed after you have called content["asks"].get_array(). You can detect such mistakes by first compiling and running the code in Debug mode (or with the macro <code>SIMDJSON_DEVELOPMENT_CHECKS</code> set to 1): an OUT_OF_ORDER_ITERATION error is generated.</p>
@@ -909,7 +910,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00291">291</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00294">294</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
 
 </div>
 </div>

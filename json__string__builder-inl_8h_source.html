@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.3</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -627,8 +627,8 @@ $(document).ready(function(){initNavTree('json__string__builder-inl_8h_source.ht
 <div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span> </div>
 <div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>  <span class="keyword">requires</span>(require_custom_serialization&lt;T&gt;)</div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>simdjson_inline <span class="keywordtype">void</span> string_builder::append(<span class="keyword">const</span> T &amp;val) {</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>  serialize(*<span class="keyword">this</span>, val);</div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>simdjson_inline <span class="keywordtype">void</span> string_builder::append(T &amp;&amp;val) {</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>  serialize(*<span class="keyword">this</span>, std::forward&lt;T&gt;(val));</div>
 <div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>}</div>
 <div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span> </div>
 <div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
