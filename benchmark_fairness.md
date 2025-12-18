@@ -241,16 +241,24 @@ For academic publication, note:
 | simdjson (reuse buffer) | 4,483 | +12% over fair |
 | simdjson (to_json reuse) | 3,698 | +0.3% over fair |
 
-### 5.2 CITM Catalog Serialization
+### 5.2 CITM Catalog Serialization (Fair Comparison)
 
-| Library | Throughput (MB/s) | Output Size | Notes |
-|---------|-------------------|-------------|-------|
-| **simdjson (static reflection)** | **2,830** | 496,682 | |
-| simdjson (reuse buffer) | 2,970 | 496,682 | +5% with reuse |
-| simdjson (to_json reuse) | 2,780 | 496,682 | |
-| Rust/serde | 1,527 | 496,682 | |
-| reflect-cpp | 1,198 | 476,270 | Smaller output |
-| nlohmann::json | 102 | 496,682 | |
+| Library | Throughput (MB/s) | Relative to simdjson |
+|---------|-------------------|----------------------|
+| **simdjson (static reflection)** | **2,836** | 1.00x |
+| simdjson (to_json API) | 2,780 | 0.98x |
+| Rust/serde | 1,566 | 0.55x |
+| reflect-cpp | 1,215 | 0.43x |
+| nlohmann::json | 103 | 0.04x |
+
+**With Buffer Reuse (Optimized):**
+
+| Library | Throughput (MB/s) | Improvement |
+|---------|-------------------|-------------|
+| simdjson (reuse buffer) | 3,017 | +6% over fair |
+| simdjson (to_json reuse) | 2,788 | +0.3% over fair |
+
+**Note**: reflect-cpp output is 476,270 bytes vs 496,682 bytes for others (see Section 2.2).
 
 ---
 
