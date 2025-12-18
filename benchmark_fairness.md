@@ -245,18 +245,19 @@ For academic publication, note:
 
 | Library | Throughput (MB/s) | Relative to simdjson |
 |---------|-------------------|----------------------|
-| **simdjson (static reflection)** | **2,836** | 1.00x |
-| simdjson (to_json API) | 2,780 | 0.98x |
-| Rust/serde | 1,566 | 0.55x |
-| reflect-cpp | 1,215 | 0.43x |
-| nlohmann::json | 103 | 0.04x |
+| **simdjson (static reflection)** | **2,796** | 1.00x |
+| simdjson (to_json API) | 2,908 | 1.04x |
+| Rust/serde | 1,513 | 0.54x |
+| yyjson | 1,510 | 0.54x |
+| reflect-cpp | 1,216 | 0.44x |
+| nlohmann::json | 105 | 0.04x |
 
 **With Buffer Reuse (Optimized):**
 
 | Library | Throughput (MB/s) | Improvement |
 |---------|-------------------|-------------|
-| simdjson (reuse buffer) | 3,017 | +6% over fair |
-| simdjson (to_json reuse) | 2,788 | +0.3% over fair |
+| simdjson (reuse buffer) | 3,170 | +13% over fair |
+| simdjson (to_json reuse) | 2,803 | -4% (negligible) |
 
 **Note**: reflect-cpp output is 476,270 bytes vs 496,682 bytes for others (see Section 2.2).
 
