@@ -128,14 +128,18 @@ void bench_simdjson_static_reflection_reuse(CitmCatalog &data) {
 #if SIMDJSON_STATIC_REFLECTION
 // Fair allocation variant: allocates fresh string each iteration
 void bench_simdjson_to(CitmCatalog &data) {
-  std::string output = simdjson::to_json_string(data);
-  size_t output_volume = output.size();
+  // First run to determine size
+  std::string output_init;
+  simdjson::builder::to_json(data, output_init);
+  size_t output_volume = output_init.size();
   printf("# output volume: %zu bytes\n", output_volume);
 
   volatile size_t measured_volume = 0;
   pretty_print(sizeof(data), output_volume, "bench_simdjson_to",
                bench([&data, &measured_volume, &output_volume]() {
-                 std::string output = simdjson::to_json_string(data);
+                 // Fresh allocation each iteration - fair comparison
+                 std::string output;
+                 simdjson::builder::to_json(data, output);
                  measured_volume = output.size();
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");
