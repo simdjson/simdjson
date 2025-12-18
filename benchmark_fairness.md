@@ -223,43 +223,37 @@ For academic publication, note:
 
 ## 5. Final Benchmark Results
 
-### 5.1 Twitter Serialization (Fair Comparison)
+### 5.1 Twitter Serialization
 
-| Library | Throughput (MB/s) | Relative to simdjson |
-|---------|-------------------|----------------------|
-| **simdjson (static reflection)** | **4,005** | 1.00x |
-| simdjson (to_json API) | 3,687 | 0.92x |
-| yyjson | 1,923 | 0.48x |
-| Rust/serde | 1,820 | 0.45x |
-| reflect-cpp | 1,502 | 0.37x |
-| nlohmann::json | 208 | 0.05x |
+| Library | Throughput (MB/s) | Relative to simdjson | Notes |
+|---------|-------------------|----------------------|-------|
+| **simdjson (buffer reuse)** | **4,483** | 1.00x | Optimized: reuses buffer |
+| simdjson (fresh alloc) | 4,005 | 0.89x | Fair: fresh allocation each iteration |
+| simdjson to_json (buffer reuse) | 3,698 | 0.82x | Optimized |
+| simdjson to_json (fresh alloc) | 3,687 | 0.82x | Fair |
+| yyjson | 1,923 | 0.43x | |
+| Rust/serde | 1,820 | 0.41x | Includes FFI overhead |
+| reflect-cpp | 1,502 | 0.34x | |
+| nlohmann::json | 208 | 0.05x | |
 
-**With Buffer Reuse (Optimized):**
+**Key insight**: Buffer reuse provides ~12% improvement for the string_builder API. simdjson was designed with buffer reuse in mind, so this represents realistic production performance.
 
-| Library | Throughput (MB/s) | Improvement |
-|---------|-------------------|-------------|
-| simdjson (reuse buffer) | 4,483 | +12% over fair |
-| simdjson (to_json reuse) | 3,698 | +0.3% over fair |
+### 5.2 CITM Catalog Serialization
 
-### 5.2 CITM Catalog Serialization (Fair Comparison)
+| Library | Throughput (MB/s) | Relative to simdjson | Notes |
+|---------|-------------------|----------------------|-------|
+| **simdjson (buffer reuse)** | **3,170** | 1.00x | Optimized: reuses buffer |
+| simdjson (fresh alloc) | 2,796 | 0.88x | Fair: fresh allocation each iteration |
+| simdjson to_json (fresh alloc) | 2,908 | 0.92x | Fair |
+| simdjson to_json (buffer reuse) | 2,803 | 0.88x | Optimized |
+| Rust/serde | 1,513 | 0.48x | Includes FFI overhead |
+| yyjson | 1,510 | 0.48x | |
+| reflect-cpp | 1,216 | 0.38x | Smaller output (476KB) |
+| nlohmann::json | 105 | 0.03x | |
 
-| Library | Throughput (MB/s) | Relative to simdjson |
-|---------|-------------------|----------------------|
-| **simdjson (static reflection)** | **2,796** | 1.00x |
-| simdjson (to_json API) | 2,908 | 1.04x |
-| Rust/serde | 1,513 | 0.54x |
-| yyjson | 1,510 | 0.54x |
-| reflect-cpp | 1,216 | 0.44x |
-| nlohmann::json | 105 | 0.04x |
+**Key insight**: Buffer reuse provides ~13% improvement for CITM. The `to_json` API shows minimal difference because the string growth pattern differs.
 
-**With Buffer Reuse (Optimized):**
-
-| Library | Throughput (MB/s) | Improvement |
-|---------|-------------------|-------------|
-| simdjson (reuse buffer) | 3,170 | +13% over fair |
-| simdjson (to_json reuse) | 2,803 | -4% (negligible) |
-
-**Note**: reflect-cpp output is 476,270 bytes vs 496,682 bytes for others (see Section 2.2).
+**Note**: reflect-cpp output is 476,270 bytes vs 496,682 bytes for others due to omitting null optional fields (see Section 2.2).
 
 ---
 
