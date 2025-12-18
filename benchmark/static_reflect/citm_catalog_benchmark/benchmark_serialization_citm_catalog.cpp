@@ -11,6 +11,10 @@
 #include "nlohmann_citm_catalog_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
 
+#ifdef SIMDJSON_COMPETITION_YYJSON
+#include "yyjson_citm_catalog_data.h"
+#endif
+
 #if SIMDJSON_BENCH_CPP_REFLECT
 #include <rfl.hpp>
 #include <rfl/json.hpp>
@@ -67,6 +71,24 @@ void bench_nlohmann(CitmCatalog &data) {
                  }
                }));
 }
+
+#ifdef SIMDJSON_COMPETITION_YYJSON
+void bench_yyjson(CitmCatalog &data) {
+  std::string output = yyjson_serialize_citm(data);
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(1, output_volume, "bench_yyjson",
+               bench([&data, &measured_volume, &output_volume]() {
+                 std::string output = yyjson_serialize_citm(data);
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif
 
 // Fair allocation variant: allocates fresh buffer each iteration (matches other libraries)
 void bench_simdjson_static_reflection(CitmCatalog &data) {
@@ -244,6 +266,11 @@ int main(int argc, char* argv[]) {
   if (matches_filter("nlohmann", filter)) {
     bench_nlohmann(my_struct);
   }
+#ifdef SIMDJSON_COMPETITION_YYJSON
+  if (matches_filter("yyjson", filter)) {
+    bench_yyjson(my_struct);
+  }
+#endif
   if (matches_filter("simdjson_static_reflection", filter)) {
     bench_simdjson_static_reflection(my_struct);
   }

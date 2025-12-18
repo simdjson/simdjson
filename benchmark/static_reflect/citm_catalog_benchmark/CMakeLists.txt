@@ -12,6 +12,11 @@ target_link_libraries(benchmark_serialization_citm_catalog PRIVATE simdjson::sim
 target_link_libraries(benchmark_serialization_citm_catalog PRIVATE reflectcpp)
 target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE SIMDJSON_BENCH_CPP_REFLECT=1)
 
+if(TARGET yyjson)
+    target_link_libraries(benchmark_serialization_citm_catalog PRIVATE yyjson)
+    target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE SIMDJSON_COMPETITION_YYJSON)
+endif()
+
 target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE JSON_FILE="${BENCH_CITM_JSON}")
 
 # Configuration for parsing benchmark
