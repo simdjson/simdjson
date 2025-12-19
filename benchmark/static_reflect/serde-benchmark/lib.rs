@@ -238,3 +238,116 @@ pub extern "C" fn free_str(ptr: *mut c_char) {
         }
     }
 }
+
+//==============================================================================
+// FFI Overhead Measurement Functions
+// These allow measuring the actual FFI overhead vs pure Rust serialization
+//==============================================================================
+
+/// Result structure for FFI overhead measurement
+#[repr(C)]
+pub struct FfiOverheadResult {
+    /// Time in nanoseconds for pure serde_json::to_string() (no FFI overhead)
+    pub pure_serde_ns: u64,
+    /// Time in nanoseconds for serde + CString conversion
+    pub serde_plus_cstring_ns: u64,
+    /// Number of iterations performed
+    pub iterations: u64,
+    /// Output size in bytes (for verification)
+    pub output_size: u64,
+}
+
+/// Prevents compiler from optimizing away the value
+/// Works on stable Rust (unlike std::hint::black_box which is unstable)
+#[inline(never)]
+fn black_box<T>(dummy: T) -> T {
+    unsafe {
+        let ret = std::ptr::read_volatile(&dummy);
+        std::mem::forget(dummy);
+        ret
+    }
+}
+
+/// Measures FFI overhead for Twitter serialization.
+/// Performs `iterations` serializations entirely in Rust and returns timing data.
+/// This allows comparing against per-call FFI overhead.
+#[no_mangle]
+pub unsafe extern "C" fn measure_twitter_ffi_overhead(
+    raw: *mut TwitterData,
+    iterations: u64
+) -> FfiOverheadResult {
+    use std::time::Instant;
+
+    let twitter_data = &*raw;
+    let mut output_size: u64 = 0;
+
+    // Warm-up run
+    let warmup = serde_json::to_string(&twitter_data).unwrap();
+    output_size = warmup.len() as u64;
+
+    // Measure pure serde_json::to_string() - no CString conversion
+    let start_pure = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&twitter_data).unwrap();
+        // Prevent optimization from eliminating the work
+        black_box(&serialized);
+    }
+    let pure_serde_ns = start_pure.elapsed().as_nanos() as u64;
+
+    // Measure serde + CString conversion (but not FFI return)
+    let start_cstring = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&twitter_data).unwrap();
+        let cstring = CString::new(serialized).unwrap();
+        // Prevent optimization from eliminating the work
+        black_box(&cstring);
+    }
+    let serde_plus_cstring_ns = start_cstring.elapsed().as_nanos() as u64;
+
+    FfiOverheadResult {
+        pure_serde_ns,
+        serde_plus_cstring_ns,
+        iterations,
+        output_size,
+    }
+}
+
+/// Measures FFI overhead for CITM serialization.
+#[no_mangle]
+pub unsafe extern "C" fn measure_citm_ffi_overhead(
+    raw: *mut CitmCatalog,
+    iterations: u64
+) -> FfiOverheadResult {
+    use std::time::Instant;
+
+    let catalog = &*raw;
+    let mut output_size: u64 = 0;
+
+    // Warm-up run
+    let warmup = serde_json::to_string(&catalog).unwrap();
+    output_size = warmup.len() as u64;
+
+    // Measure pure serde_json::to_string() - no CString conversion
+    let start_pure = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&catalog).unwrap();
+        black_box(&serialized);
+    }
+    let pure_serde_ns = start_pure.elapsed().as_nanos() as u64;
+
+    // Measure serde + CString conversion
+    let start_cstring = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&catalog).unwrap();
+        let cstring = CString::new(serialized).unwrap();
+        black_box(&cstring);
+    }
+    let serde_plus_cstring_ns = start_cstring.elapsed().as_nanos() as u64;
+
+    FfiOverheadResult {
+        pure_serde_ns,
+        serde_plus_cstring_ns,
+        iterations,
+        output_size,
+    }
+}
