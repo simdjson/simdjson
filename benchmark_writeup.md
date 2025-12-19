@@ -2,7 +2,7 @@
 
 **Document Version**: 1.0
 **Date**: December 2024
-**Authors**: simdjson team
+**Authors**: Daniel Lemire and Francisco Geiman Thiesen
 
 ---
 
