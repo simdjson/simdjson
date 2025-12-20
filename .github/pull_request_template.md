@@ -6,6 +6,7 @@ Description
 
 Type of change
 - [ ] Bug fix
+- [ ] Optimization
 - [ ] New feature
 - [ ] Refactor / cleanup
 - [ ] Documentation / tests
