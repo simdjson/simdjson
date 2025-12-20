@@ -131,7 +131,7 @@ struct padded_string final {
   /**
    * This function accepts a wide string path (UTF-16) and converts it to
    * UTF-8 before loading the file. This allows windows users to work
-   * with unicode file paths without manually converting the paths everytime.
+   * with unicode file paths without manually converting the paths every time.
    *
    * @return IO_ERROR on error, including conversion failures.
    *

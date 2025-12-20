@@ -814,7 +814,7 @@ public:
    * in question is large. The fact that the extra code is there also bumps the executable size.
    *
    * We default operator[] on find_field_unordered() for convenience.
-   * It is the defaul because it would be highly surprising (and hard to debug) if the
+   * It is the default because it would be highly surprising (and hard to debug) if the
    * default behavior failed to look up a field just because it was in the wrong order--and many
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
