@@ -332,7 +332,7 @@ pattern:
 
 ### Customization
 
-If you want to serialize a value in a custome way, you can do it with a
+If you want to serialize a value in a custom way, you can do it with a
 `tag_invoke` specialization like the following example which will map
 the year attribute to a string.
 
