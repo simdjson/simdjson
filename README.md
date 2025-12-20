@@ -6,7 +6,7 @@
 simdjson : Parsing gigabytes of JSON per second
 ===============================================
 
-<img src="images/official_logo/logo_noir/SVG/logo_simdjason_noir.svg" width="40%" style="float: right">
+<img src="images/official_logo/logo_noir/SVG/logo_simdjson_noir.svg" width="40%" style="float: right">
 
 JSON is everywhere on the Internet. Servers spend a *lot* of time parsing it. We need a fresh
 approach. The simdjson library uses commonly available SIMD instructions and microparallel algorithms
