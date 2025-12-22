@@ -128,7 +128,7 @@ Let us consider this example:
 ```
 
 You might want to ensure that the result is an array of persons. You can define your
-expection with concepts like so:
+expectation with concepts like so:
 
 ```cpp
 template <typename T>
