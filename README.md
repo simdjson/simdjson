@@ -212,6 +212,21 @@ For the video inclined, <br />
 [![simdjson at QCon San Francisco 2019](http://img.youtube.com/vi/wlvKAT7SZIQ/0.jpg)](http://www.youtube.com/watch?v=wlvKAT7SZIQ)<br />
 (It was the best voted talk, we're kinda proud of it.)
 
+Citing this work
+-----------------
+
+If you use simdjson in published research, please cite the software library. A suitable BibTeX entry is:
+
+```bibtex
+@misc{simdjson,
+  title={{The simdjson library: Parsing Gigabytes of JSON per Second}},
+  author={Daniel Lemire and Geoff Langdale and John Keiser and Paul Dreik and Francisco Thiesen and others},
+  year={2019},
+  howpublished={Software library},
+  note={https://github.com/simdjson/simdjson}
+}
+```
+
 Funding
 -------
 
