@@ -96,6 +96,23 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool issue2570() {
+    TEST_START();
+    auto json = R"([44.411101, 8.908021])"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::array arr;
+    ASSERT_SUCCESS(parser.parse(json).get_array().get(arr));
+    std::vector<double> numbers = {44.411101, 8.908021};
+    size_t index = 0;
+    for (auto val : arr) {
+      double parsed;
+      ASSERT_SUCCESS(val.get_double().get(parsed));
+      ASSERT_EQUAL(parsed, numbers[index]);
+      index++;
+    }
+    TEST_SUCCEED();
+  }
+
   bool issue2017() {
     TEST_START();
     simdjson::dom::parser parser;
@@ -423,6 +440,7 @@ namespace number_tests {
     return issue2213() &&
            bomskip() &&
            issue2017() &&
+           issue2570() &&
            truncated_borderline() &&
            specific_tests() &&
            ground_truth() &&

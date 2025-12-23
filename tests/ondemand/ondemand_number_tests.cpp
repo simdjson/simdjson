@@ -22,6 +22,25 @@ namespace number_tests {
     return true;
   }
 
+  bool issue2570() {
+    TEST_START();
+    auto json = R"([44.411101, 8.908021])"_padded;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    simdjson::ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    std::vector<double> numbers = {44.411101, 8.908021};
+    size_t index = 0;
+    for (auto val : arr) {
+      double parsed;
+      ASSERT_SUCCESS(val.get_double().get(parsed));
+      ASSERT_EQUAL(parsed, numbers[index]);
+      index++;
+    }
+    TEST_SUCCEED();
+  }
+
   bool powers_of_two() {
     TEST_START();
 
@@ -540,6 +559,7 @@ namespace number_tests {
            get_root_number_tests() &&
            get_number_tests()&&
            small_integers() &&
+           issue2570() &&
            powers_of_two() &&
            powers_of_ten() &&
            old_crashes();
