@@ -35,7 +35,7 @@ cmake .. \
 -DSIMDJSON_DISABLE_DEPRECATED_API=On \
 -DSIMDJSON_FUZZ_LDFLAGS=$LIB_FUZZING_ENGINE
 
-cmake --build . --target all_fuzzers
+cmake --build . --target all_fuzzers all_tests
 
 cp fuzz/fuzz_* $OUT
 
