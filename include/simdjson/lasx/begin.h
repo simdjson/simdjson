@@ -4,6 +4,7 @@
 #else
 SIMDJSON_TARGET_REGION("lasx,lsx")
 #endif
+
 #include "simdjson/lasx/base.h"
 #include "simdjson/lasx/intrinsics.h"
 #include "simdjson/lasx/bitmanipulation.h"
