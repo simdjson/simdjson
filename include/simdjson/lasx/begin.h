@@ -1,4 +1,5 @@
 #define SIMDJSON_IMPLEMENTATION lasx
+#include <lsxintrin.h> // This is a hack. We should not need to put this include here.
 #if SIMDJSON_CAN_ALWAYS_RUN_LASX
 // nothing needed.
 #else
