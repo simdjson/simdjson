@@ -124,7 +124,7 @@ using std::size_t;
 //
 
 // We are going to use runtime dispatch.
-#if SIMDJSON_IS_X86_64 || defined(SIMDJSON_IS_LSX)
+#if defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -141,7 +141,7 @@ using std::size_t;
 #define SIMDJSON_UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
-#endif // x86
+#endif // defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 
 // Default target region macros don't do anything.
 #ifndef SIMDJSON_TARGET_REGION
