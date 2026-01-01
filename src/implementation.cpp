@@ -210,11 +210,11 @@ static const std::initializer_list<const implementation *>& get_available_implem
 #if SIMDJSON_IMPLEMENTATION_PPC64
     get_ppc64_singleton(),
 #endif
-#if SIMDJSON_IMPLEMENTATION_LSX
-    get_lsx_singleton(),
-#endif
 #if SIMDJSON_IMPLEMENTATION_LASX
     get_lasx_singleton(),
+#endif
+#if SIMDJSON_IMPLEMENTATION_LSX
+    get_lsx_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton(),
