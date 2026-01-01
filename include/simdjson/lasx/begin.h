@@ -8,3 +8,10 @@
 #include "simdjson/lasx/stringparsing_defs.h"
 
 #define SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT 1
+
+
+#if SIMDJSON_CAN_ALWAYS_RUN_LASX
+// nothing needed.
+#else
+SIMDJSON_TARGET_REGION("lasx,lsx")
+#endif
