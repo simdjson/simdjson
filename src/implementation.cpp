@@ -94,6 +94,18 @@ static const simdjson::westmere::implementation* get_westmere_singleton() {
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_WESTMERE
 
+#if SIMDJSON_IMPLEMENTATION_LASX
+#include <simdjson/lasx/implementation.h>
+namespace simdjson {
+namespace internal {
+static const simdjson::lasx::implementation* get_lasx_singleton() {
+  static const simdjson::lasx::implementation lasx_singleton{};
+  return &lasx_singleton;
+}
+} // namespace internal
+} // namespace simdjson
+#endif // SIMDJSON_IMPLEMENTATION_LASX
+
 #if SIMDJSON_IMPLEMENTATION_LSX
 #include <simdjson/lsx/implementation.h>
 namespace simdjson {
@@ -106,17 +118,6 @@ static const simdjson::lsx::implementation* get_lsx_singleton() {
 } // namespace simdjson
 #endif // SIMDJSON_IMPLEMENTATION_LSX
 
-#if SIMDJSON_IMPLEMENTATION_LASX
-#include <simdjson/lasx/implementation.h>
-namespace simdjson {
-namespace internal {
-static const simdjson::lasx::implementation* get_lasx_singleton() {
-  static const simdjson::lasx::implementation lasx_singleton{};
-  return &lasx_singleton;
-}
-} // namespace internal
-} // namespace simdjson
-#endif // SIMDJSON_IMPLEMENTATION_LASX
 
 #undef SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -210,11 +211,11 @@ static const std::initializer_list<const implementation *>& get_available_implem
 #if SIMDJSON_IMPLEMENTATION_PPC64
     get_ppc64_singleton(),
 #endif
-#if SIMDJSON_IMPLEMENTATION_LSX
-    get_lsx_singleton(),
-#endif
 #if SIMDJSON_IMPLEMENTATION_LASX
     get_lasx_singleton(),
+#endif
+#if SIMDJSON_IMPLEMENTATION_LSX
+    get_lsx_singleton(),
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
     get_fallback_singleton(),

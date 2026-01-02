@@ -63,6 +63,12 @@ using std::size_t;
   #endif
 #elif defined(__loongarch_lp64)
 #define SIMDJSON_IS_LOONGARCH64 1
+#if defined(__loongarch_sx) && defined(__loongarch_asx)
+  #define SIMDJSON_IS_LSX 1
+  #define SIMDJSON_IS_LASX 1 // We can always run both
+#elif defined(__loongarch_sx)
+  #define SIMDJSON_IS_LSX 1
+#endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #define SIMDJSON_IS_PPC64 1
 #if defined(__ALTIVEC__)
@@ -118,7 +124,7 @@ using std::size_t;
 //
 
 // We are going to use runtime dispatch.
-#if SIMDJSON_IS_X86_64
+#if defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -135,7 +141,7 @@ using std::size_t;
 #define SIMDJSON_UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
-#endif // x86
+#endif // defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 
 // Default target region macros don't do anything.
 #ifndef SIMDJSON_TARGET_REGION

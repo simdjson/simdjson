@@ -140,24 +140,6 @@ if(SIMDJSON_MINUS_ZERO_AS_FLOAT)
   simdjson_add_props(target_compile_definitions PRIVATE SIMDJSON_MINUS_ZERO_AS_FLOAT=1)
 endif(SIMDJSON_MINUS_ZERO_AS_FLOAT)
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(loongarch64)$")
-    option(SIMDJSON_PREFER_LSX "Prefer LoongArch SX" ON)
-    include(CheckCXXCompilerFlag)
-    check_cxx_compiler_flag(-mlasx COMPILER_SUPPORTS_LASX)
-    check_cxx_compiler_flag(-mlsx COMPILER_SUPPORTS_LSX)
-    if(COMPILER_SUPPORTS_LASX AND NOT SIMDJSON_PREFER_LSX)
-        simdjson_add_props(
-            target_compile_options PRIVATE
-            -mlasx
-        )
-    elseif(COMPILER_SUPPORTS_LSX)
-        simdjson_add_props(
-            target_compile_options PRIVATE
-            -mlsx
-        )
-    endif()
-endif()
-
 # GCC and Clang have horrendous Debug builds when using SIMD.
 # A common fix is to use '-Og' instead.
 # bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412
