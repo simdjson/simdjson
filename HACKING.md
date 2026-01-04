@@ -110,6 +110,24 @@ workflows used by simdjson.
 Directory Structure and Source
 ------------------------------
 
+Before diving into the directory structure, here are key concepts used in the codebase:
+
+- **Amalgamated File**: A file that is conditionally included in the amalgamation process. These are wrapped in `#ifndef SIMDJSON_CONDITIONAL_INCLUDE` blocks and are included based on the target implementation (e.g., ARM64, x86). They include implementation-specific files (e.g., `arm64.h`) and generic files (e.g., under `generic/`). Amalgamated files have associated dependency files (`dependencies.h`) to track includes.
+
+- **Amalgamator File**: A file that orchestrates the inclusion of amalgamated files. Examples: `arm64.h`, `arm64/implementation.h`, `generic/amalgamated.h`. These are not themselves amalgamated but control conditional inclusions.
+
+- **Free Dependency File**: A top-level header that is always included unconditionally. These do not have dependency files and represent the public API (e.g., main headers).
+
+- **Implementation-Specific File**: A file tied to a specific CPU architecture or instruction set (e.g., `arm64/`, `haswell/`). These must be amalgamated.
+
+- **Generic File**: A shared file (under `generic/` or `simdjson/generic/`) that contains common code included once per implementation.
+
+- **Builtin File**: Special files under `simdjson/builtin/` that handle the builtin implementation, a fallback/default implementation used when no optimized implementation is available.
+
+- **Conditional Include Block**: A section wrapped in `#ifndef SIMDJSON_CONDITIONAL_INCLUDE` for editor-only or implementation-specific content.
+
+The script `singleheader/amalgation_helper.py` will generate an HTML report which you can use to visualize the status of each file.
+
 simdjson's source structure, from the top level, looks like this:
 
 * **CMakeLists.txt:** The main build system.
@@ -133,6 +151,12 @@ simdjson's source structure, from the top level, looks like this:
     * simdjson/generic/ondemand/*.h: individual On-Demand classes, generically written.
       * simdjson/generic/ondemand/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
       * simdjson/generic/ondemand/amalgamated.h: all generic ondemand classes for an implementation.
+  * simdjson/builder.h: the `simdjson::builder` namespace. Includes all public builder classes.
+    * simdjson/builtin/builder.h: the `simdjson::builtin::builder` namespace.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/builder.h: the `simdjson::<implementation>::builder` namespace. Builder compiled for the specific implementation.
+    * simdjson/generic/builder/*.h: individual Builder classes, generically written.
+      * simdjson/generic/builder/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
+      * simdjson/generic/builder/amalgamated.h: all generic builder classes for an implementation.
 * **src:** The source files for non-inlined functionality (e.g. the architecture-specific parser
   implementations).
   * simdjson.cpp: A "main source" that includes all implementation files from src/. This is
@@ -147,6 +171,7 @@ Other important files and directories:
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
 * **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script). If you add a new implementation (e.g., rvv), you need to edit this file (IMPLEMENTATIONS).
+* **singleheader/amalgation_helper.py:** Generates and `amalgamation_report.html` that helps you understand the status of each file.
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnecessary system calls. We recommend checking the performance as follows:

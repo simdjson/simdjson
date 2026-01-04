@@ -20,31 +20,68 @@ if sys.version_info < (3, 0):
 
 rules = """
 
-We refer your to the HACKING.md file for more information on how the project is organized.
+Amalgamation Rules for simdjson
+==============================
 
-If you are trying to add a new implementation, you need to edit the amalgamate.py script
-to add your implementation to the IMPLEMENTATIONS list.
+This script creates a single compilation unit (amalgamation) from multiple source files,
+allowing the entire library to be compiled as one file while supporting multiple CPU
+architectures. Implementation-specific code is conditionally included at compile time.
 
-To help understand the error, here are the rules for including files in simdjson:
+For more details, see HACKING.md.
 
-All implementation-specific files, including arm64.h, arm64/implementation.h and
-arm64/ondemand.h, must be within SIMDJSON_CONDITIONAL_INCLUDE blocks.
+Key Concepts:
+- **Amalgamated File**: A file that is conditionally included in the amalgamation process.
+  These are wrapped in #ifndef SIMDJSON_CONDITIONAL_INCLUDE blocks and are included
+  based on the target implementation (e.g., ARM64, x86). They include implementation-specific
+  files (e.g., arm64.h) and generic files (e.g., under generic/). Amalgamated files have
+  associated dependency files (dependencies.h) to track includes.
 
-Top-level headers must not be included in any SIMDJSON_CONDITIONAL_INCLUDE block.
+- **Amalgamator File**: A file that orchestrates the inclusion of amalgamated files.
+  Examples: arm64.h, arm64/implementation.h, generic/amalgamated.h. These are not
+  themselves amalgamated but control conditional inclusions.
 
-Generic files must be included only in amalgamator files (arm64.h,
-arm64/implementation.h, arm64/ondemand.h, generic/amalgamated.h).
+- **Free Dependency File**: A top-level header that is always included unconditionally.
+  These do not have dependency files and represent the public API (e.g., main headers).
 
-We fail if an implementation-specific file is included more than once in the same block.
-We fail if a generic file is included more than once per implementation in the same block.
+- **Implementation-Specific File**: A file tied to a specific CPU architecture or
+  instruction set (e.g., arm64/, haswell/). These must be amalgamated.
 
+- **Generic File**: A shared file (under generic/ or simdjson/generic/) that contains
+  common code included once per implementation.
 
-Tip: generally, "file" will search the including file's source directory first, then
-the search paths while <file> does it the other way around.
-We prefer to use <> in simdjson headers to avoid accidentally including a file from the
-wrong directory.
+- **Builtin File**: Special files under simdjson/builtin/ that handle the builtin
+  implementation, a fallback/default implementation used when no optimized implementation
+  is available.
 
-The amalgamate.py script checks that all files are included.
+- **Conditional Include Block**: A section wrapped in #ifndef SIMDJSON_CONDITIONAL_INCLUDE
+  for editor-only or implementation-specific content.
+
+Use amalgation_helper.py to generate an HTML report to help you understand the status of each file.
+
+Inclusion Rules:
+1. All implementation-specific files must be within SIMDJSON_CONDITIONAL_INCLUDE blocks.
+
+2. Top-level headers (free dependency files) must not be included in any
+   SIMDJSON_CONDITIONAL_INCLUDE block.
+
+3. Generic files must be included only in amalgamator files.
+
+4. Amalgamated files can only include other amalgamated files.
+
+5. Free dependency files can only include amalgamator files or other free files,
+   not amalgamated files directly.
+
+6. We fail if an implementation-specific file is included more than once in the same block.
+
+7. We fail if a generic file is included more than once per implementation in the same block.
+
+8. Dependency files (dependencies.h) must list all editor-only includes for completeness.
+
+Tips:
+- Use <> for includes to search system paths first, avoiding accidental local includes.
+- The script validates that all .h and .cpp files are included or deprecated.
+
+If adding a new implementation, edit the IMPLEMENTATIONS list in this script.
 
 """
 
@@ -179,6 +216,8 @@ class SimdjsonFile:
             # simdjson/arm64/ondemand.h
             if self.filename == 'ondemand.h':
                 return self.repository["simdjson/generic/ondemand/dependencies.h"]
+            if self.filename == 'builder.h':
+                return self.repository["simdjson/generic/builder/dependencies.h"]
 
             # simdjson/arm64.h, simdjson/arm64/*.h
             else:
@@ -192,7 +231,7 @@ class SimdjsonFile:
     @property
     def is_amalgamator(self):
         if self.implementation:
-            return self.root == 'src' or self.include_dir == 'simdjson' or self.filename == 'ondemand.h' or self.filename == 'implementation.h'
+            return self.root == 'src' or self.include_dir == 'simdjson' or self.filename == 'ondemand.h'or self.filename == 'builder.h'  or self.filename == 'implementation.h'
         else:
             return self.filename == 'amalgamated.h'
 
@@ -209,22 +248,23 @@ class SimdjsonFile:
         return self.filename == 'dependencies.h'
 
     def add_include(self, include: 'SimdjsonFile'):
+        print(f"    Adding include: {self} includes {include}")
         if self.is_conditional_include:
             # If I have a dependency file, I can only include something that has a dependency file.
-            assert include.is_conditional_include, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE. {rules}"
+            assert include.is_conditional_include, f"Error: Amalgamated file '{self}' is trying to include '{include}', but '{include}' is not an amalgamated file. Amalgamated files can only include other amalgamated files to maintain conditional inclusion structure. Check the inclusion rules in the script's 'rules' variable. {rules}"
             # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
             # if include.amalgamator_file:
             #     assert include.amalgamator_file == self, f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
         else:
-            assert include.is_amalgamator or not include.is_conditional_include, f"{self} cannot include {include} because it is an amalgamated file. {rules}"
+            assert include.is_amalgamator or not include.is_conditional_include, f"Error: Free dependency file '{self}' is trying to include '{include}', which is an amalgamated file. Free dependency files (top-level headers) can only include amalgamator files or other free files, not amalgamated files directly. This prevents improper layering. Move the include to an amalgamator or restructure dependencies. {rules}"
 
         self.includes.append(include)
         include.included_from.add(self)
 
     def add_editor_only_include(self, include: 'SimdjsonFile'):
-        assert self.is_conditional_include, f"Cannot use #ifndef SIMDJSON_CONDITIONAL_INCLUDE in {self} because it is not an amalgamated file. {rules}"
+        assert self.is_conditional_include, f"Error: File '{self}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE', but '{self}' is not an amalgamated file. Conditional include blocks are only allowed in amalgamated files (those with dependencies). Remove the conditional block or ensure the file is amalgamated. {rules}"
         if not include.is_conditional_include:
-            assert self.dependency_file, f"{self} cannot include {include} without #ifndef SIMDJSON_CONDITIONAL_INCLUDE. {rules}"
+            assert self.dependency_file, f"Error: In '{self}', editor-only include of '{include}' requires a dependency file, but '{self}' has none. Ensure '{self}' has an associated dependencies.h file. {rules}"
         # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
         # elif include.amalgamator_file:
         #     assert self.is_amalgamated_before(self.amalgamator_file), f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
@@ -239,11 +279,11 @@ class SimdjsonFile:
                 if file.dependency_file == self:
                     for editor_only_include in file.editor_only_includes:
                         if not editor_only_include.is_conditional_include:
-                            assert editor_only_include in self.includes, f"{file} includes {editor_only_include}, but it is not included from {self}. It must be added to {self}. {rules}"
+                            assert editor_only_include in self.includes, f"Error: Dependency file '{self}' is missing an include for '{editor_only_include}', which is editor-only included in '{file}'. Add '{editor_only_include}' to '{self}' to ensure completeness. {rules}"
                             if editor_only_include in extra_include_set:
                                 extra_include_set.remove(editor_only_include)
 
-            assert len(extra_include_set) == 0, f"{self} unnecessarily includes {extra_include_set}. They are not included in the corresponding amalgamated files. {rules}"
+            assert len(extra_include_set) == 0, f"Error: Dependency file '{self}' includes {extra_include_set}, which are not used in any amalgamated files. Remove these unnecessary includes to clean up dependencies. {rules}"
 
 class SimdjsonRepository:
     def __init__(self, project_path: str, relative_roots: List[RelativeRoot]):
@@ -279,12 +319,12 @@ class SimdjsonRepository:
         result = None
         for relative_root in self.relative_roots:
             if os.path.exists(os.path.join(self.project_path, relative_root, filename)):
-                assert result is None, "{file} exists in both {result} and {root}!"
+                assert result is None, f"Error: File '{filename}' exists in both '{result}' and '{root}' directories. Files must be unique across roots to avoid ambiguity. Rename or move the duplicate file.{result}' and '{root}' directories. Files must be unique across roots to avoid ambiguity. Rename or move the duplicate file."
                 result = relative_root
         return result
 
     def validate_all_files_used(self, root: RelativeRoot):
-        assert root in self.relative_roots
+        assert root in self.relative_roots, f"Error: Root '{root}' is not a valid relative root. Valid roots are {self.relative_roots}. Check the root parameter passed to validate_all_files_used."
         absolute_root = os.path.join(self.project_path, root)
         all_files = set([
             os.path.relpath(os.path.join(dir, file).replace('\\', '/'), absolute_root)
@@ -295,7 +335,7 @@ class SimdjsonRepository:
         used_files = set([file.include_path for file in self if file.root == root])
         all_files.difference_update(used_files)
         all_files.difference_update(DEPRECATED_FILES)
-        assert len(all_files) == 0, f"Files not used: {sorted(all_files)}"
+        assert len(all_files) == 0, f"Error: The following files in '{root}' are not used in the amalgamation: {sorted(all_files)}. All .h and .cpp files must be included or added to DEPRECATED_FILES. Check for missing includes or deprecate unused files."
 
 class Amalgamator:
     @classmethod
@@ -305,7 +345,7 @@ class Amalgamator:
         print(f"/* auto-generated on {timestamp}. version {version} Do not edit! */", file=fid)
         amalgamator = cls(fid, SimdjsonRepository(PROJECTPATH, roots))
         file = amalgamator.repository[filename]
-        assert file, f"{filename} not found in {[os.path.join(PROJECTPATH, root) for root in roots]}!"
+        assert file, f"Error: Starting file '{filename}' not found in paths {[os.path.join(PROJECTPATH, root) for root in roots]}. Ensure the file exists and the paths are correct."
         amalgamator.maybe_write_file(file, None, "")
         amalgamator.repository.validate_free_dependency_files()
         fid.close()
@@ -327,8 +367,8 @@ class Amalgamator:
         if file.is_conditional_include:
             if file.is_generic:
                 # Generic files get written out once per implementation in a well-defined order
-                assert (file, self.implementation) not in self.found_generic_includes, f"generic file {file} included from {including_file} a second time for {self.implementation}!"
-                assert self.implementation, file
+                assert (file, self.implementation) not in self.found_generic_includes, f"Error: Generic file '{file}' is being included a second time for implementation '{self.implementation}' from '{including_file}'. Generic files should be included only once per implementation to avoid duplication."
+                assert self.implementation, f"Error: Attempting to write generic file '{file}', but no implementation is currently set. Generic files require an active implementation context."
                 self.found_generic_includes.append((file, self.implementation))
             else:
                 # Other amalgamated files, on the other hand, may only be included once per *amalgamation*
@@ -348,13 +388,13 @@ class Amalgamator:
 
     def file_to_str(self, file: SimdjsonFile):
         if file.is_generic and file.is_conditional_include:
-            assert self.implementation, file
+            assert self.implementation, f"Error: In file_to_str for '{file}', implementation is not set. This is required for generic conditional files."
             return f"{file} for {self.implementation}"
         return file
 
     def write_file(self, file: SimdjsonFile):
         # Detect cyclic dependencies
-        assert file not in self.include_stack, f"Cyclic include: {self.include_stack} -> {file}"
+        assert file not in self.include_stack, f"Error: Cyclic include detected: {self.include_stack} -> {file}. Remove the circular dependency by restructuring includes."
         self.include_stack.append(file)
 
         file.processed = False
@@ -362,14 +402,13 @@ class Amalgamator:
         self.write(f"/* begin file {self.file_to_str(file)} */")
 
         if file == BUILTIN_BEGIN_H:
-            assert self.implementation is None, self.implementation
-            assert not self.builtin_implementation, self.builtin_implementation
+            assert self.implementation is None, f"Error: Starting builtin implementation, but '{self.implementation}' is already set. Builtin should start with no prior implementation."
+            assert not self.builtin_implementation, f"Error: Builtin implementation is already active ({self.builtin_implementation}). Cannot start again."
             self.builtin_implementation = True
             self.implementation = "SIMDJSON_BUILTIN_IMPLEMENTATION"
 
-        assert not self.editor_only_region
+        assert not self.editor_only_region, f"Error: Already in an editor-only region when starting to write '{file}'. Ensure proper nesting of conditional blocks."
         with open(file.absolute_path, 'r') as fid2:
-            print(f"including: {file}")
             for line in fid2:
                 line = line.rstrip('\n')
 
@@ -379,9 +418,9 @@ class Amalgamator:
 
                 # Ignore lines inside #ifndef SIMDJSON_CONDITIONAL_INCLUDE
                 if re.search(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
-                    assert file.is_conditional_include, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE but is not an amalgamated file! {rules}"
-                    assert self.in_conditional_include_block, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE without a prior #define SIMDJSON_CONDITIONAL_INCLUDE: {self.include_stack} {rules}"
-                    assert not self.editor_only_region, f"{file} uses #ifndef SIMDJSON_CONDITIONAL_INCLUDE twice in a row {rules}"
+                    assert file.is_conditional_include, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE', but it's not an amalgamated file. Conditional includes are only for amalgamated files. {rules}"
+                    assert self.in_conditional_include_block, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' without a prior '#define SIMDJSON_CONDITIONAL_INCLUDE'. Ensure the define comes first. Stack: {self.include_stack}. {rules}"
+                    assert not self.editor_only_region, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' twice in a row. Ensure conditional blocks are properly nested and closed. {rules}"
                     self.editor_only_region = True
 
                 # Handle ignored lines (and ending ignore blocks)
@@ -399,7 +438,7 @@ class Amalgamator:
                         self.editor_only_region = False
                     continue
 
-                assert not end_ignore, f"{file} has #endif // SIMDJSON_CONDITIONAL_INCLUDE without #ifndef SIMDJSON_CONDITIONAL_INCLUDE {rules}"
+                assert not end_ignore, f"Error: File '{file}' has '#endif // SIMDJSON_CONDITIONAL_INCLUDE' without a matching '#ifndef'. Ensure proper conditional block structure. {rules}"
 
                 # Handle #include lines
                 included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
@@ -426,36 +465,36 @@ class Amalgamator:
                     self.implementation = None
                 elif re.search(r'\bSIMDJSON_IMPLEMENTATION\b', line) and file.include_path != IMPLEMENTATION_DETECTION_H:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
-                    assert self.implementation, f"Use of SIMDJSON_IMPLEMENTATION while not defined in {file}: {line}\n{rules}"
+                    assert self.implementation, f"Error: In '{file}', line '{line}' uses SIMDJSON_IMPLEMENTATION, but it's not defined. Ensure SIMDJSON_IMPLEMENTATION is set before use. {rules}"
                     line = re.sub(r'\bSIMDJSON_IMPLEMENTATION\b',self.implementation,line)
 
                 # Handle defining and undefining SIMDJSON_CONDITIONAL_INCLUDE
                 defined = re.search(r'^#define\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
                 if defined:
-                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE defined in amalgamated file {file}! Not allowed. {rules}"
-                    assert not self.in_conditional_include_block, f"{file} redefines SIMDJSON_CONDITIONAL_INCLUDE {rules}"
+                    assert not file.is_conditional_include, f"Error: Amalgamated file '{file}' defines SIMDJSON_CONDITIONAL_INCLUDE, which is not allowed. Only non-amalgamated files can define it. {rules}"
+                    assert not self.in_conditional_include_block, f"Error: File '{file}' redefines SIMDJSON_CONDITIONAL_INCLUDE while already in a conditional block. Avoid redefinition. {rules}"
                     self.in_conditional_include_block = True
                     self.found_includes_per_conditional_block.clear()
                     self.write(f'/* defining SIMDJSON_CONDITIONAL_INCLUDE */')
                 elif re.search(r'^#undef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
-                    assert not file.is_conditional_include, "SIMDJSON_CONDITIONAL_INCLUDE undefined in amalgamated file {file}! Not allowed. {rules}"
-                    assert self.in_conditional_include_block, f"{file} undefines SIMDJSON_CONDITIONAL_INCLUDE without defining it {rules}"
+                    assert not file.is_conditional_include, f"Error: Amalgamated file '{file}' undefines SIMDJSON_CONDITIONAL_INCLUDE, which is not allowed. Only non-amalgamated files can undefine it. {rules}"
+                    assert self.in_conditional_include_block, f"Error: File '{file}' undefines SIMDJSON_CONDITIONAL_INCLUDE without having defined it first. Ensure proper define/undefine pairing. {rules}"
                     self.write(f'/* undefining SIMDJSON_CONDITIONAL_INCLUDE */')
                     self.in_conditional_include_block = False
 
                 self.write(line)
 
-            assert not self.editor_only_region, f"{file} ended without #endif // SIMDJSON_CONDITIONAL_INCLUDE {rules}"
+            assert not self.editor_only_region, f"Error: File '{file}' ended without closing the '#endif // SIMDJSON_CONDITIONAL_INCLUDE'. Ensure all conditional blocks are properly closed. {rules}"
 
         self.write(f"/* end file {self.file_to_str(file)} */")
 
         if file.include_path == BUILTIN_BEGIN_H:
             # begin.h redefined SIMDJSON_IMPLEMENTATION multiple times
-            assert self.builtin_implementation
+            assert self.builtin_implementation, f"Error: Processing BUILTIN_BEGIN_H, but builtin implementation is not active."
             self.implementation = "SIMDJSON_BUILTIN_IMPLEMENTATION"
         elif file.include_path == BUILTIN_END_H:
-            assert self.implementation is None
-            assert self.builtin_implementation
+            assert self.implementation is None, f"Error: Processing BUILTIN_END_H, but implementation is still set to '{self.implementation}'. It should be None."
+            assert self.builtin_implementation, f"Error: Processing BUILTIN_END_H, but builtin implementation is not active."
             self.implementation = None
 
         file.processed = True
