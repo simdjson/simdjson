@@ -8,7 +8,6 @@
 // Internal headers needed for ondemand generics.
 // All includes not under simdjson/generic/ondemand must be here!
 // Otherwise, amalgamation will fail.
-#include "simdjson/concepts.h"
 #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY
 #include "simdjson/implementation.h"
 #include "simdjson/padded_string.h"
