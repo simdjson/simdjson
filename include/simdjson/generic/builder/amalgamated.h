@@ -4,6 +4,7 @@
 
 #include "simdjson/generic/builder/json_string_builder.h"
 #include "simdjson/generic/builder/json_builder.h"
+#include "simdjson/generic/builder/fractured_json_builder.h"
 
 
 
