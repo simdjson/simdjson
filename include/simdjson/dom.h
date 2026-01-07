@@ -9,6 +9,7 @@
 #include "simdjson/dom/object.h"
 #include "simdjson/dom/parser.h"
 #include "simdjson/dom/serialization.h"
+#include "simdjson/dom/fractured_json.h"
 
 // Inline functions
 #include "simdjson/dom/array-inl.h"
@@ -19,5 +20,6 @@
 #include "simdjson/dom/parser-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/dom/serialization-inl.h"
+#include "simdjson/dom/fractured_json-inl.h"
 
 #endif // SIMDJSON_DOM_H

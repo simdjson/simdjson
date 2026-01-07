@@ -1,0 +1,144 @@
+#ifndef SIMDJSON_INTERNAL_JSON_STRUCTURE_ANALYZER_H
+#define SIMDJSON_INTERNAL_JSON_STRUCTURE_ANALYZER_H
+
+#include "simdjson/dom/base.h"
+#include "simdjson/dom/element.h"
+#include "simdjson/dom/array.h"
+#include "simdjson/dom/object.h"
+#include "simdjson/dom/fractured_json.h"
+#include "simdjson/internal/tape_type.h"
+
+#include <unordered_map>
+#include <vector>
+#include <string>
+#include <string_view>
+#include <set>
+
+namespace simdjson {
+namespace internal {
+
+/**
+ * Layout mode for fractured JSON formatting.
+ */
+enum class layout_mode {
+  INLINE,              // Single line: [1, 2, 3] or {"a": 1}
+  COMPACT_MULTILINE,   // Multiple items per line with breaks
+  TABLE,               // Tabular format for arrays of similar objects
+  EXPANDED             // Traditional multi-line with indentation
+};
+
+/**
+ * Metrics computed for a JSON element during structure analysis.
+ * These metrics drive layout decisions.
+ */
+struct element_metrics {
+  /** Nesting depth score (0 = scalar, 1 = flat container, etc.) */
+  size_t complexity = 0;
+
+  /** Estimated character length if rendered inline (minified + spaces) */
+  size_t estimated_inline_len = 0;
+
+  /** Number of direct children (0 for scalars) */
+  size_t child_count = 0;
+
+  /** Pre-computed: can this element be rendered inline? */
+  bool can_inline = false;
+
+  /** Is this an array where all elements have similar structure? */
+  bool is_uniform_array = false;
+
+  /** For uniform arrays of objects: the common keys */
+  std::vector<std::string> common_keys;
+
+  /** Recommended layout mode based on analysis */
+  layout_mode recommended_layout = layout_mode::EXPANDED;
+};
+
+/**
+ * Analyzes JSON structure to compute metrics for formatting decisions.
+ *
+ * The analyzer performs a single pass over the DOM to compute:
+ * - Complexity (nesting depth)
+ * - Estimated inline length
+ * - Array uniformity for table detection
+ *
+ * Results are cached by tape index for efficient lookup during formatting.
+ */
+class structure_analyzer {
+public:
+  /**
+   * Analyze a DOM element and compute metrics.
+   * @param elem The element to analyze
+   * @param opts Formatting options that affect metric computation
+   * @return Metrics for the root element
+   */
+  element_metrics analyze(const dom::element& elem,
+                          const fractured_json_options& opts);
+
+  /**
+   * Get cached metrics for a specific tape position.
+   * Must be called after analyze().
+   * @param tape_index The tape index of the element
+   * @return Metrics for that element
+   */
+  const element_metrics& get_metrics(size_t tape_index) const;
+
+  /**
+   * Check if metrics exist for a tape position.
+   */
+  bool has_metrics(size_t tape_index) const;
+
+  /**
+   * Clear cached metrics.
+   */
+  void clear();
+
+private:
+  std::unordered_map<size_t, element_metrics> metrics_cache_;
+  const fractured_json_options* current_opts_ = nullptr;
+
+  /** Recursive analysis implementation */
+  element_metrics analyze_element(const dom::element& elem, size_t depth);
+
+  /** Analyze an array element */
+  element_metrics analyze_array(const dom::array& arr, size_t tape_idx, size_t depth);
+
+  /** Analyze an object element */
+  element_metrics analyze_object(const dom::object& obj, size_t tape_idx, size_t depth);
+
+  /** Estimate inline length for a string (including quotes and escaping) */
+  size_t estimate_string_length(std::string_view s) const;
+
+  /** Estimate inline length for a number */
+  size_t estimate_number_length(double d) const;
+  size_t estimate_number_length(int64_t i) const;
+  size_t estimate_number_length(uint64_t u) const;
+
+  /**
+   * Check if an array contains uniform objects suitable for table formatting.
+   * @param arr The array to check
+   * @param common_keys Output: keys common to all objects
+   * @return true if the array is suitable for table formatting
+   */
+  bool check_array_uniformity(const dom::array& arr,
+                               std::vector<std::string>& common_keys) const;
+
+  /**
+   * Compute similarity between two objects.
+   * @return Fraction of keys that are common (0.0 to 1.0)
+   */
+  double compute_object_similarity(const dom::object& a,
+                                   const dom::object& b) const;
+
+  /**
+   * Decide the recommended layout mode based on metrics and options.
+   */
+  layout_mode decide_layout(const element_metrics& metrics,
+                            size_t depth,
+                            size_t available_width) const;
+};
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_INTERNAL_JSON_STRUCTURE_ANALYZER_H
