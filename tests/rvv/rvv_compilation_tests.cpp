@@ -41,7 +41,7 @@ int main() {
     // ---------------------------------------------------------------------
     // We defined simd8x64 to be a wrapper around a 64-byte aligned buffer.
     // If this size is wrong, memory safety is compromised.
-    
+
     size_t size_u8 = sizeof(simdjson::rvv::simd8x64<uint8_t>);
     size_t align_u8 = alignof(simdjson::rvv::simd8x64<uint8_t>);
 
@@ -55,31 +55,31 @@ int main() {
     // 3. Implementation Registry Check
     // ---------------------------------------------------------------------
     // Does the standard simdjson registry know about "rvv"?
-    
+
     bool found_in_registry = false;
     for (auto impl : simdjson::get_available_implementations()) {
         if (impl->name() == "rvv") {
             found_in_registry = true;
             std::cout << "[INFO] Found 'rvv' in available implementations." << std::endl;
-            
+
             // Check properties
-            TEST_ASSERT(impl->instruction_set() == simdjson::internal::instruction_set::RVV, 
+            TEST_ASSERT(impl->instruction_set() == simdjson::internal::instruction_set::RVV,
                         "Instruction set enum mismatch");
         }
     }
-    
+
     TEST_ASSERT(found_in_registry, "The RVV backend was not registered in available_implementations()");
 
     // ---------------------------------------------------------------------
     // 4. Direct Instantiation Check
     // ---------------------------------------------------------------------
-    // Can we manually instantiate the implementation class? 
+    // Can we manually instantiate the implementation class?
     // This catches linker errors (missing symbols in src/rvv.cpp).
-    
+
     {
         simdjson::rvv::implementation rvv_impl;
         std::cout << "[INFO] Successfully instantiated simdjson::rvv::implementation." << std::endl;
-        
+
         // Basic method check (should not crash)
         auto name = rvv_impl.name();
         TEST_ASSERT(name == "rvv", "Implementation name mismatch");

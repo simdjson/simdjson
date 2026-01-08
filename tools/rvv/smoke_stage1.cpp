@@ -65,7 +65,7 @@ int main() {
     {"Escaped Quote", R"({"key": "val\"ue"})", true},
     {"Backslash at End", R"({"key": "val\\"})", true}, // ends with double backslash (valid)
     {"Escaped Backslash", R"({"key": "val\\ue"})", true},
-    
+
     // Structural characters inside quotes (Should be ignored)
     {"Braces in String", R"({"key": "{}"})", true},
     {"Colons in String", R"({"key": "a:b"})", true},
@@ -75,7 +75,7 @@ int main() {
     // We pad with spaces to push significant chars across boundaries.
     {"Boundary: Quote Split", std::string(60, ' ') + R"({"a": "b"})", true},
     {"Boundary: Structural Split", std::string(63, ' ') + R"([1,2])", true},
-    
+
     // Invalid JSON (Should fail)
     {"Unclosed Quote", R"({"key": "value)", false},
     {"Unescaped Quote", R"({"key": "val"ue"})", false},

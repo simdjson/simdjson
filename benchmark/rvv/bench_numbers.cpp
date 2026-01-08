@@ -22,10 +22,10 @@ protected:
     simdjson::padded_string ints_json;
     simdjson::padded_string doubles_json;
     const simdjson::implementation* rvv_impl = nullptr;
-    
+
     // We target a large enough buffer to ensure we are measuring steady-state
     // parsing speed, not just startup overhead.
-    const size_t NUM_ELEMENTS = 100000; 
+    const size_t NUM_ELEMENTS = 100000;
 
 public:
     void SetUp(const benchmark::State& state) override {
@@ -46,7 +46,7 @@ public:
         std::stringstream ss_int;
         ss_int << "[";
         for (size_t i = 0; i < NUM_ELEMENTS; ++i) {
-            ss_int << "1234567890"; 
+            ss_int << "1234567890";
             if (i < NUM_ELEMENTS - 1) ss_int << ",";
         }
         ss_int << "]";
@@ -57,7 +57,7 @@ public:
         std::stringstream ss_dbl;
         ss_dbl << "[";
         for (size_t i = 0; i < NUM_ELEMENTS; ++i) {
-            ss_dbl << std::setprecision(10) << 1.234567890123e10; 
+            ss_dbl << std::setprecision(10) << 1.234567890123e10;
             if (i < NUM_ELEMENTS - 1) ss_dbl << ",";
         }
         ss_dbl << "]";

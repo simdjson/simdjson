@@ -14,7 +14,7 @@
 // 1. Verify correct parsing of Integers (Signed/Unsigned) via the RVV backend.
 // 2. Verify correct parsing of Floating Point numbers (Double).
 // 3. Verify handling of Scientific Notation.
-// 4. Confirm that the fallback wiring (M0) or vector optimization (M4) 
+// 4. Confirm that the fallback wiring (M0) or vector optimization (M4)
 //    is functioning correctly.
 // -------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ template <typename T>
 bool check_value(const std::string& json, T expected, const std::string& type_name) {
     simdjson::dom::parser parser;
     simdjson::dom::element doc;
-    
+
     auto error = parser.parse(simdjson::padded_string(json)).get(doc);
     if (error) {
         std::cerr << "[FAIL] Parse error for " << type_name << ": " << error << std::endl;
@@ -65,7 +65,7 @@ bool check_value(const std::string& json, T expected, const std::string& type_na
              return false;
         }
     }
-    
+
     std::cout << "[PASS] " << type_name << ": " << json << std::endl;
     return true;
 }
@@ -83,7 +83,7 @@ bool test_integers() {
     ok &= check_value<int64_t>("-1", -1, "Negative One");
     ok &= check_value<int64_t>("9223372036854775807", std::numeric_limits<int64_t>::max(), "Int64 Max");
     ok &= check_value<int64_t>("-9223372036854775808", std::numeric_limits<int64_t>::min(), "Int64 Min");
-    
+
     return ok;
 }
 

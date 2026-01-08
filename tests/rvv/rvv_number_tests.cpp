@@ -89,7 +89,7 @@ bool test_unsigned() {
     // > Int64 Max
     uint64_t val = static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 100;
     std::string val_s = std::to_string(val);
-    
+
     ASSERT_SUCCESS(parser.parse(simdjson::padded_string(val_s)).get(doc));
     uint64_t parsed;
     ASSERT_SUCCESS(doc.get(parsed));
@@ -143,7 +143,7 @@ bool test_floats() {
 bool test_invalid() {
     std::cout << "Running test_invalid..." << std::endl;
     simdjson::dom::parser parser;
-    
+
     // Leading zeros (forbidden in JSON except for "0")
     if (parser.parse("01"_padded).error() == simdjson::SUCCESS) {
         std::cerr << "  [FAIL] Leading zero should be invalid" << std::endl;

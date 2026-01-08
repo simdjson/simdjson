@@ -33,8 +33,8 @@ To integrate the RVV backend, we will add new files under an organized directory
 
 **tests/ additions:**
 
-We will extend simdjson’s test suite to cover the RVV backend:  
-\- New unit tests in tests/ (or extending existing ones) to verify that the RV64 implementation produces correct results. For example, tests for Stage 1 can feed known JSON strings and check that the set of structural indices found by simdjson::get\_active\_implementation() (forced to RV64) matches those found by fallback. We will also test edge cases: JSON with unescaped quotes and backslashes at boundaries, multi-chunk inputs, and non-ASCII characters (to validate UTF-8 handling). These tests might reside in an architecture-general test file (guarded by \#if SIMDJSON\_IMPLEMENTATION\_RV64) or a dedicated rv64\_tests.cpp.  
+We will extend simdjson’s test suite to cover the RVV backend:
+\- New unit tests in tests/ (or extending existing ones) to verify that the RV64 implementation produces correct results. For example, tests for Stage 1 can feed known JSON strings and check that the set of structural indices found by simdjson::get\_active\_implementation() (forced to RV64) matches those found by fallback. We will also test edge cases: JSON with unescaped quotes and backslashes at boundaries, multi-chunk inputs, and non-ASCII characters (to validate UTF-8 handling). These tests might reside in an architecture-general test file (guarded by \#if SIMDJSON\_IMPLEMENTATION\_RV64) or a dedicated rv64\_tests.cpp.
 \- **Compilation tests:** Ensure that defining SIMDJSON\_IMPLEMENTATION\_RV64=1 and compiling on a compiler with RISC-V vector support passes all existing tests (this can be part of CI).
 
 **tools/ additions:**
@@ -49,12 +49,12 @@ We will extend simdjson’s test suite to cover the RVV backend:
 
 * include/simdjson/internal/instruction\_set.h: Add detection macros for RISC-V. For example:
 
-* \#ifndef SIMDJSON\_IS\_RISCV64  
-  \#if defined(\_\_riscv) && \_\_riscv\_xlen \== 64  
-  \#define SIMDJSON\_IS\_RISCV64 1  
-  \#else  
-  \#define SIMDJSON\_IS\_RISCV64 0  
-  \#endif  
+* \#ifndef SIMDJSON\_IS\_RISCV64
+  \#if defined(\_\_riscv) && \_\_riscv\_xlen \== 64
+  \#define SIMDJSON\_IS\_RISCV64 1
+  \#else
+  \#define SIMDJSON\_IS\_RISCV64 0
+  \#endif
   \#endif
 
 * And define SIMDJSON\_IMPLEMENTATION\_RV64 default based on compiler support for vectors: e.g., \#define SIMDJSON\_IMPLEMENTATION\_RV64 (SIMDJSON\_IS\_RISCV64 && defined(\_\_riscv\_vector)). We will also introduce a flag in internal::instruction\_set enum, e.g. RVV, to represent the RISC-V Vector ISA support[\[5\]](file://file_000000007ed871fdac4d325c16299ccc#:~:text=,size_t%20max_length).
@@ -105,7 +105,7 @@ By defining these core concepts explicitly, we ensure the RVV backend’s code i
 
 * **Mask to bitmask conversion:** A key primitive is converting a vector comparison result into a 64-bit bitmask. We implement simd8x64\<uint8\_t\>::to\_bitmask() which returns a 64-bit where each bit corresponds to a byte lane of the 64-byte chunk[\[2\]\[18\]](file://file_000000007ed871fdac4d325c16299ccc#:~:text=uint64_t%20r0%20%3D%20uint32_t%28this,chunks%5B3%5D%20%3D%3D%20mask%29%5Cn%20.to_bitmask). Our strategy: after computing a condition (say, vec \== '"'), we obtain simd8\<bool\> that spans 64 bytes (which internally might be 1–4 registers). We can use RVV’s intrinsic to compress a mask to bits. RVV 1.0 provides instructions like vmsbf (vector mask to bitmask) but that yields a mask length bit-count equal to VL, which could be up to 64 bits if VL=64. If our chunk is processed in multiple registers, we can compute partial masks per register and then combine:
 
-* Compute mask for each sub-chunk (e.g., 16 bytes) using vpopc (population count on mask) and shifts, or use the approach from other backends: each simd8\<T\> (16 bytes) has a to\_bitmask() that gives a 16-bit mask. Then simd8x64::to\_bitmask() concatenates these (shifting r1 by 16, r2 by 32, etc.)[\[2\]](file://file_000000007ed871fdac4d325c16299ccc#:~:text=uint64_t%20r0%20%3D%20uint32_t%28this,chunks%5B3%5D%20%3D%3D%20mask%29%5Cn%20.to_bitmask). We will do similarly: e.g., if NUM\_CHUNKS=4, get 4 masks of 16 bits and combine into one 64-bit. On architectures where one register covers 64 bytes (NUM\_CHUNKS=1), it will directly produce the 64-bit mask.  
+* Compute mask for each sub-chunk (e.g., 16 bytes) using vpopc (population count on mask) and shifts, or use the approach from other backends: each simd8\<T\> (16 bytes) has a to\_bitmask() that gives a 16-bit mask. Then simd8x64::to\_bitmask() concatenates these (shifting r1 by 16, r2 by 32, etc.)[\[2\]](file://file_000000007ed871fdac4d325c16299ccc#:~:text=uint64_t%20r0%20%3D%20uint32_t%28this,chunks%5B3%5D%20%3D%3D%20mask%29%5Cn%20.to_bitmask). We will do similarly: e.g., if NUM\_CHUNKS=4, get 4 masks of 16 bits and combine into one 64-bit. On architectures where one register covers 64 bytes (NUM\_CHUNKS=1), it will directly produce the 64-bit mask.
   This bitmask extraction is critical for the performance of finding structural indices, and we will test it thoroughly (comparing results with a scalar loop to ensure correctness).
 
 * **Reduction and compression:** Implement utility methods:
@@ -168,14 +168,14 @@ Given minimal-diff priority, we might mirror what other SIMD backends do: many u
 
   * Compute OD \= calc\_OD(B) where B \= backslash\_bits. In practice, OD (odd-length ends of backslash sequences) can be derived by:
 
-  * uint64\_t even\_runs \= B & (B \<\< 1);       // pairs of backslashes  
-    even\_runs &= (even\_runs \<\< 1);          // quartets of backslashes, etc.  
+  * uint64\_t even\_runs \= B & (B \<\< 1);       // pairs of backslashes
+    even\_runs &= (even\_runs \<\< 1);          // quartets of backslashes, etc.
     // (This alone is not enough; a known approach is a loop or a bit trick with \+ operations.)
 
   * A simpler method: use a carry mechanism:
 
-  * uint64\_t bs\_bits \= backslash\_bits;  
-    // mask to identify bits where a run of backslashes ends in an odd count  
+  * uint64\_t bs\_bits \= backslash\_bits;
+    // mask to identify bits where a run of backslashes ends in an odd count
     uint64\_t odd\_mask \= bs\_bits & \~ (bs\_bits \<\< 1);
 
   * But the above odd\_mask would mark the *first* backslash of a pair as odd, which is not exactly what we want. Instead, simdjson historically uses a state machine or addition trick. We might do:
@@ -200,7 +200,7 @@ Given minimal-diff priority, we might mirror what other SIMD backends do: many u
 
 * Exclude any structural characters that occur inside strings: S\_filtered \= S & \~R. Likewise, we might exclude whitespace inside strings if needed (though whitespace inside strings is simply treated as data and not structural). Typically, simdjson masks out anything inside a string because it’s not relevant for structure[\[32\]](https://koko8624.medium.com/simd-json-unlocking-maximum-performance-for-json-deserialization-6189a199590a#:~:text=,Exclude%20whitespace%20inside%20the%20string). Our code will do:
 
-* uint64\_t structurals \= structural\_mask & \~string\_mask;  
+* uint64\_t structurals \= structural\_mask & \~string\_mask;
   uint64\_t whitespace  \= whitespace\_mask & \~string\_mask;
 
 * At this point, structurals has 1s for structural characters that are actual JSON separators.
@@ -327,8 +327,8 @@ With the RVV backend implemented, we must integrate it into simdjson’s runtime
 
 * **Registration in get\_available\_implementations():** simdjson has a global list of compiled SIMD implementations[\[64\]](file://file_00000000258471fd8ebd57e18c428e24#:~:text=internal%3A%3Aavailable_implementation_list%26%20get_available_implementations%28%29%3B%5Cn%5Cn%2F,nextern%20SIMDJSON_DLLIMPORTEXPORT). We will add RV64 to this list. Specifically, in the internals (likely in implementation.cpp or the header that defines available\_implementation\_list), we will append our rv64::implementation. For example, there may be code like:
 
-* \#if SIMDJSON\_IMPLEMENTATION\_RV64  
-  available\_implementations\_list.add\_internal( internal::get\_rv64\_singleton() );  
+* \#if SIMDJSON\_IMPLEMENTATION\_RV64
+  available\_implementations\_list.add\_internal( internal::get\_rv64\_singleton() );
   \#endif
 
 * Where get\_rv64\_singleton() returns a pointer to a static rv64::implementation instance[\[65\]](file://file_000000007ed871fdac4d325c16299ccc#:~:text=,define)[\[66\]](file://file_00000000f43871fdacdd538e26ffa9e4#:~:text=ppc64%3A%3Aimplementation,only). We will create a function similar to others for RV64. This ensures that if the binary is compiled with RVV support, the list of available impls includes "rv64".
@@ -343,9 +343,9 @@ With the RVV backend implemented, we must integrate it into simdjson’s runtime
 
 * We will implement a conservative approach: call a small function that attempts to execute a harmless vector instruction inside a SIGILL handler to detect support. However, given the complexity, a simpler approach is to rely on the OS: we can use \<sys/auxv.h\> on Linux:
 
-* \#ifdef RISCV\_HWCAP\_CHECK  
-    unsigned long hwcap \= getauxval(AT\_HWCAP2);  
-    if (hwcap & (1UL \<\< SOME\_RVV\_BIT)) return true;  
+* \#ifdef RISCV\_HWCAP\_CHECK
+    unsigned long hwcap \= getauxval(AT\_HWCAP2);
+    if (hwcap & (1UL \<\< SOME\_RVV\_BIT)) return true;
   \#endif
 
 * (We need to find out the correct HWCAP bit for RVV; assuming it exists in the running environment).
@@ -406,8 +406,8 @@ To support the RVV backend, we must update the build configuration (CMake and an
 
 * **Enable RVV backend:** Modify CMake to detect RISC-V architecture. We can use CMake’s CMAKE\_SYSTEM\_PROCESSOR or compiler predefined macros. For example:
 
-* if(CMAKE\_SYSTEM\_PROCESSOR STREQUAL "riscv64" OR CMAKE\_C\_COMPILER\_TARGET MATCHES "riscv64")  
-    option(SIMDJSON\_ENABLE\_RV64 "Enable RISC-V RVV backend" ON)  
+* if(CMAKE\_SYSTEM\_PROCESSOR STREQUAL "riscv64" OR CMAKE\_C\_COMPILER\_TARGET MATCHES "riscv64")
+    option(SIMDJSON\_ENABLE\_RV64 "Enable RISC-V RVV backend" ON)
   endif()
 
 * By default, if building natively on RISC-V64, we turn it ON (assuming the compiler supports \<riscv\_vector.h\>). If cross-compiling, user can set this option.
@@ -416,11 +416,11 @@ To support the RVV backend, we must update the build configuration (CMake and an
 
 * **Target include and source files:** Add our new files to the library target. For instance:
 
-* if(SIMDJSON\_ENABLE\_RV64)  
-    target\_sources(simdjson PRIVATE   
-      include/simdjson/rv64.h   
-      include/simdjson/rv64/base.h ... \[all RV64 headers\] ...  
-      )  
+* if(SIMDJSON\_ENABLE\_RV64)
+    target\_sources(simdjson PRIVATE
+      include/simdjson/rv64.h
+      include/simdjson/rv64/base.h ... \[all RV64 headers\] ...
+      )
   endif()
 
 * Since simdjson might amalgamate sources, we have to ensure these headers are packaged in releases. The single-header generation script (tools like release.py) likely pick up all included headers; we should double-check that our rv64.h will be included when appropriate. (We might need to add references in singleheader/simdjson.cpp generation if that process isn’t fully automatic. But likely, including rv64.h in simdjson.h or similar will cause it to be amalgamated when enabled.)
@@ -433,7 +433,7 @@ To support the RVV backend, we must update the build configuration (CMake and an
 
 * Provide a toolchain file or instructions to cross-compile from x86\_64 to riscv64. Possibly update the README/BUILDING docs with an example:
 
-* cmake \-B build-rv64 \-DCMAKE\_C\_COMPILER=riscv64-linux-gnu-gcc \-DCMAKE\_CXX\_COMPILER=riscv64-linux-gnu-g++ \-DSIMDJSON\_ENABLE\_RV64=ON \-DCMAKE\_SYSTEM\_PROCESSOR=riscv64 .  
+* cmake \-B build-rv64 \-DCMAKE\_C\_COMPILER=riscv64-linux-gnu-gcc \-DCMAKE\_CXX\_COMPILER=riscv64-linux-gnu-g++ \-DSIMDJSON\_ENABLE\_RV64=ON \-DCMAKE\_SYSTEM\_PROCESSOR=riscv64 .
   cmake \--build build-rv64
 
 * We might add a convenience script as mentioned in Tools (build-rv64.sh) which sets these variables and also sets up the \-march flags.
@@ -496,7 +496,7 @@ We aim for comprehensive test coverage to ensure the RVV backend is correct and 
 
 * If possible, add an automated test job that runs at least the basic tests under QEMU. This might be slower, so perhaps not for every PR but at least manually or nightly. However, for development we will manually run the test suite under QEMU to validate functionality.
 
-* **Unit tests (Stage 1 logic):**  
+* **Unit tests (Stage 1 logic):**
   We will add targeted tests for the critical algorithms:
 
 * **Quote mask generation:** Construct small JSON inputs that stress string masking. For example: "\\"hello\\"" (simple string), "\\"esca\\\\\\"ped\\"" (escaped quote inside string), strings that span across a 64-byte boundary (we can create a 100+ byte string with no closing quote in the first chunk to simulate carry). Verify that the quote mask produced by Stage 1 correctly marks inside-string regions and that the structural indices exclude any commas inside strings, etc. We can compare the results of ondemand::parser.iterate() on such JSON using our RVV backend vs using fallback to ensure the structural indices (and ultimately the parse result) match.

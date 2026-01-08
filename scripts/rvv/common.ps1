@@ -27,12 +27,12 @@ function Import-EnvFile {
             if ($line -match '^([A-Za-z_][A-Za-z0-9_]*)=(.*)$') {
                 $name = $matches[1]
                 $value = $matches[2]
-                
+
                 # Strip quotes if present
                 if ($value.StartsWith('"') -and $value.EndsWith('"')) {
                     $value = $value.Substring(1, $value.Length - 2)
                 }
-                
+
                 # Set variable in Script scope (global to the session importing this)
                 Set-Variable -Name $name -Value $value -Scope Script
             }
@@ -79,7 +79,7 @@ function Check-Dependency {
 # --------------------------------------------------------------------------
 function Get-QemuCpu {
     param([string]$TargetVlen)
-    
+
     if (-not $TargetVlen) {
         Log-Error "Get-QemuCpu called without VLEN argument"
         return ""
@@ -88,7 +88,7 @@ function Get-QemuCpu {
     # The QEMU_CPU_TEMPLATE from common.env looks like:
     # rv64,v=true,...,vlen=${VLEN}
     # We need to replace '${VLEN}' with the actual number.
-    
+
     # Note: $QEMU_CPU_TEMPLATE is available because we imported common.env
     if (-not $script:QEMU_CPU_TEMPLATE) {
         Log-Error "QEMU_CPU_TEMPLATE not found. Did common.env load correctly?"

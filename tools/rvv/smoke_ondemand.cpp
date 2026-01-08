@@ -34,7 +34,7 @@ bool test_basic_traversal() {
     std::cout << "--- Testing Basic Traversal ---" << std::endl;
     simdjson::ondemand::parser parser;
     simdjson::padded_string json = R"({ "x": 1, "y": 2 })"_padded;
-    
+
     simdjson::ondemand::document doc;
     if (parser.iterate(json).get(doc) != simdjson::SUCCESS) {
         std::cerr << "[FAIL] Failed to start iteration" << std::endl;
@@ -59,7 +59,7 @@ bool test_array_iteration() {
     std::cout << "--- Testing Array Iteration ---" << std::endl;
     simdjson::ondemand::parser parser;
     simdjson::padded_string json = R"([1, 2, 3])"_padded;
-    
+
     simdjson::ondemand::document doc;
     if (parser.iterate(json).get(doc) != simdjson::SUCCESS) return false;
 
@@ -86,7 +86,7 @@ bool test_large_skip() {
     std::cout << "--- Testing Large Value Skipping ---" << std::endl;
     // This tests the backend's ability to skip over large chunks of data
     // using the structural indexes.
-    
+
     std::string big_array = "[";
     for(int i=0; i<1000; i++) big_array += "1,";
     big_array += "2]";

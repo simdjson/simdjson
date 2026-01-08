@@ -9,7 +9,7 @@
 // RVV Backend: Stage 2 (DOM) Regression Suite
 // -------------------------------------------------------------------------
 // This suite verifies the "Tape Building" phase of the parser.
-// Even though Stage 2 is currently generic (scalar), specific backend 
+// Even though Stage 2 is currently generic (scalar), specific backend
 // configurations (like padding or index formats) can subtly break it.
 // -------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ bool test_primitives() {
     // 1. Integers
     ASSERT_TRUE(parser.parse("0"_padded).get(doc) == simdjson::SUCCESS);
     ASSERT_EQUAL(int64_t(doc), 0);
-    
+
     ASSERT_TRUE(parser.parse("-12345"_padded).get(doc) == simdjson::SUCCESS);
     ASSERT_EQUAL(int64_t(doc), -12345);
 
@@ -61,10 +61,10 @@ bool test_primitives() {
     // 3. Booleans & Null
     ASSERT_TRUE(parser.parse("true"_padded).get(doc) == simdjson::SUCCESS);
     ASSERT_TRUE(bool(doc));
-    
+
     ASSERT_TRUE(parser.parse("false"_padded).get(doc) == simdjson::SUCCESS);
     ASSERT_TRUE(!bool(doc));
-    
+
     ASSERT_TRUE(parser.parse("null"_padded).get(doc) == simdjson::SUCCESS);
     ASSERT_TRUE(doc.is_null());
 
@@ -116,7 +116,7 @@ bool test_structure() {
 
     ASSERT_TRUE(parser.parse(json).get(doc) == simdjson::SUCCESS);
     ASSERT_TRUE(doc.is_array());
-    
+
     simdjson::dom::array arr;
     ASSERT_TRUE(doc.get(arr) == simdjson::SUCCESS);
     ASSERT_EQUAL(arr.size(), 2);
@@ -124,12 +124,12 @@ bool test_structure() {
     // Access elements
     int64_t id;
     std::string_view val;
-    
+
     // Element 0
     simdjson::dom::element e0 = arr.at(0).value();
     ASSERT_TRUE(e0["id"].get(id) == simdjson::SUCCESS);
     ASSERT_EQUAL(id, 1);
-    
+
     // Element 1
     simdjson::dom::element e1 = arr.at(1).value();
     ASSERT_TRUE(e1["val"].get(val) == simdjson::SUCCESS);

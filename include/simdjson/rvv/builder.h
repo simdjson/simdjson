@@ -10,8 +10,8 @@ namespace rvv {
 /**
  * RVV-specialized DOM parser implementation.
  *
- * This class serves as the bridge between the high-level DOM API and the 
- * RVV-optimized kernels. 
+ * This class serves as the bridge between the high-level DOM API and the
+ * RVV-optimized kernels.
  *
  * Status (M0): Fully delegates to simdjson::internal::dom_parser_implementation.
  * Future (M3): Will override stage1() to use RVV structural indexing.

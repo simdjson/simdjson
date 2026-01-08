@@ -164,5 +164,3 @@ Before reporting a bug:
 2. Confirm `QEMU_CPU` includes `v=true` and `vext_spec=v1.0`.
 3. Run both smoketests at `VLEN=128` and `VLEN=1024`.
 4. If dynamic linking: confirm `QEMU_LD_PREFIX` points to a valid RISC-V sysroot.
-
-

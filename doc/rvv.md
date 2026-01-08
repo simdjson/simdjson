@@ -3,7 +3,7 @@
 
 This document describes the **simdjson RVV backend** (RISC-V Vector Extension, RVV v1.0) as integrated in this tree: build wiring, QEMU user-mode execution, tests, tools, benchmarks, fuzzing, and the “fixed variables” that must not drift.
 
-> Scope: this is **engineering documentation** for the RVV port (bring-up + maintenance).  
+> Scope: this is **engineering documentation** for the RVV port (bring-up + maintenance).
 > It is not a performance paper; use `benchmark/` for performance results.
 
 ---
@@ -43,34 +43,34 @@ The RVV backend is **VLEN-agnostic**: it must work for multiple hardware vector 
 
 ### Public include entry points
 
-- `include/simdjson/rvv.h`  
+- `include/simdjson/rvv.h`
   Public include that wires RVV generic instantiations into `simdjson::rvv` and provides method definitions when needed.
 
-- `include/simdjson/rvv/implementation.h`  
+- `include/simdjson/rvv/implementation.h`
   Declares `simdjson::rvv::implementation` (registered backend object).
 
 ### RVV backend internals (include/)
 
-- `include/simdjson/rvv/intrinsics.h`  
+- `include/simdjson/rvv/intrinsics.h`
   RVV intrinsics wrapper. Must be safe to include in non-RVV builds (guarded by `SIMDJSON_IS_RVV`) and must not shadow standard RVV typedefs.
 
-- `include/simdjson/rvv/simd.h`  
+- `include/simdjson/rvv/simd.h`
   SIMD abstractions used by RVV stage1 kernels (e.g., simd8/simd8x64 scaffolding).
 
-- `include/simdjson/rvv/rvv_config.h`  
+- `include/simdjson/rvv/rvv_config.h`
   Single source of truth for RVV constants (block bytes, LMUL lock, etc.).
 
-- `include/simdjson/rvv/base.h`, `include/simdjson/rvv/begin.h`, `include/simdjson/rvv/end.h`, `include/simdjson/rvv/builder.h`  
+- `include/simdjson/rvv/base.h`, `include/simdjson/rvv/begin.h`, `include/simdjson/rvv/end.h`, `include/simdjson/rvv/builder.h`
   Standard simdjson backend structure and glue.
 
 ### Library implementation (src/)
 
-- `src/rvv.cpp` (or `src/rvv/implementation.cpp` depending on your layout)  
+- `src/rvv.cpp` (or `src/rvv/implementation.cpp` depending on your layout)
   Provides non-header-only definitions for the RVV `implementation` virtuals (factory + minify + utf8).
 
 ### Tests
 
-- `tests/rvv/*.cpp`  
+- `tests/rvv/*.cpp`
   Backend-focused test suite (registry checks, equivalence vs fallback, stage1 stress, minify tests, UTF-8 tests, corpus tests, etc.).
 
 ### Tools (smoketests)
@@ -316,5 +316,3 @@ Before landing RVV changes:
 * Add sanitizers on native RVV hardware (when available) to catch UB.
 
 ---
-
-

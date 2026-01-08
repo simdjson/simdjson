@@ -52,7 +52,7 @@ int main() {
     {"Empty", "", true},
     {"ASCII Word", "simdjson", true},
     {"ASCII Sentence", "The quick brown fox jumps over the lazy dog.", true},
-    
+
     // Valid Multibyte
     {"2-byte (Latin)", "Gr\xC3\xBC\xC3\x9F Gott", true}, // Grüß Gott
     {"3-byte (Euro)", "\xE2\x82\xAC", true}, // €
@@ -67,9 +67,9 @@ int main() {
     {"Truncated 2-byte", "\xC3", false},
     {"Truncated 3-byte", "\xE2\x82", false},
     {"Truncated 4-byte", "\xF0\x9F\x98", false},
-    {"Invalid Header (Continuation)", "\x80", false}, 
-    {"Overlong / (2-byte)", "\xC0\xAF", false}, 
-    {"Surrogate Pair (Invalid in UTF-8)", "\xED\xA0\x80", false}, 
+    {"Invalid Header (Continuation)", "\x80", false},
+    {"Overlong / (2-byte)", "\xC0\xAF", false},
+    {"Surrogate Pair (Invalid in UTF-8)", "\xED\xA0\x80", false},
     {"Impossible Byte (> 0xF4)", "\xFF", false},
   };
 
@@ -96,8 +96,8 @@ int main() {
   std::cout << "--------------------------------------------------" << std::endl;
   std::string large_input(1025, 'x');
   // Inject an error at the very end
-  large_input[1024] = static_cast<char>(0xFF); 
-  
+  large_input[1024] = static_cast<char>(0xFF);
+
   if (simdjson::validate_utf8(large_input.data(), large_input.size()) == false) {
       std::cout << "[PASS] Large Buffer Tail Error Detection" << std::endl;
   } else {

@@ -246,4 +246,3 @@ export QEMU_CPU="rv64,v=true,vext_spec=v1.0,vlen=256"
 # export QEMU_LD_PREFIX=/path/to/riscv64-sysroot
 ctest --test-dir build/rvv-clang-rv64gcv -j --output-on-failure
 ```
-

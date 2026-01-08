@@ -9,7 +9,7 @@
 // RVV Backend: Equivalence (Golden Master) Tests
 // -------------------------------------------------------------------------
 // Purpose:
-// Prove that the RVV backend produces identical DOM trees to the 
+// Prove that the RVV backend produces identical DOM trees to the
 // reference scalar implementation ("fallback") for identical inputs.
 //
 // This validates:
@@ -76,13 +76,13 @@ bool are_equal(simdjson::dom::element a, simdjson::dom::element b, std::string& 
         }
         case simdjson::dom::element_type::INT64:
             if (int64_t(a) != int64_t(b)) {
-                reason = "Int64 mismatch"; 
+                reason = "Int64 mismatch";
                 return false;
             }
             return true;
         case simdjson::dom::element_type::UINT64:
             if (uint64_t(a) != uint64_t(b)) {
-                reason = "UInt64 mismatch"; 
+                reason = "UInt64 mismatch";
                 return false;
             }
             return true;
@@ -130,7 +130,7 @@ struct Result {
     // We must keep the parser alive as the doc references it
 };
 
-// We cannot easily return a 'doc' that outlives the parser/implementation switch 
+// We cannot easily return a 'doc' that outlives the parser/implementation switch
 // in a clean thread-safe way without careful orchestration.
 // Simpler approach: Run the logic sequentially.
 
@@ -146,7 +146,7 @@ bool verify_equivalence(const std::string& name, const std::string& json_str) {
         std::cerr << "[SETUP] Fallback implementation not found!" << std::endl;
         return false;
     }
-    
+
     simdjson::get_active_implementation() = fallback_impl;
     simdjson::dom::parser parser_ref;
     simdjson::dom::element doc_ref;
@@ -165,7 +165,7 @@ bool verify_equivalence(const std::string& name, const std::string& json_str) {
     auto err_rvv = parser_rvv.parse(json).get(doc_rvv);
 
     // 3. Compare Results
-    
+
     // A) Error Code Parity
     if (err_ref != err_rvv) {
         std::cerr << "[FAIL] " << name << ": Error code mismatch.\n"
@@ -206,7 +206,7 @@ int main() {
     all_passed &= verify_equivalence("Integers", "[1, -1, 0, 9223372036854775807]");
     all_passed &= verify_equivalence("Floats", "[1.2, -3.4, 0.0, 1.5e10]");
     all_passed &= verify_equivalence("Booleans/Null", "[true, false, null]");
-    
+
     // 2. Structures
     all_passed &= verify_equivalence("Nested Array", "[[1,2],[3,4]]");
     all_passed &= verify_equivalence("Object", R"({"a": 1, "b": "text"})");

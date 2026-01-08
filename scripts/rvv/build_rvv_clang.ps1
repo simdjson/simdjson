@@ -26,7 +26,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # --------------------------------------------------------------------------
 if (-not (Check-Dependency "cmake")) { exit 1 }
 if (-not (Check-Dependency "clang++")) { exit 1 }
-if ($Generator -eq "Ninja") { 
+if ($Generator -eq "Ninja") {
     if (-not (Check-Dependency "ninja")) { exit 1 }
 }
 
@@ -61,13 +61,13 @@ if (Test-Path $ToolchainFile) {
 } else {
     Log-Warn "No specific toolchain file found. Using manual cross-compile flags."
     Log-Warn "Ensure your Clang supports --target=riscv64-unknown-linux-gnu and has access to sysroot."
-    
+
     # Manual Cross-Compile Flags
     $CmakeArgs += "-DCMAKE_SYSTEM_NAME=Linux"
     $CmakeArgs += "-DCMAKE_SYSTEM_PROCESSOR=riscv64"
     $CmakeArgs += "-DCMAKE_C_COMPILER=clang"
     $CmakeArgs += "-DCMAKE_CXX_COMPILER=clang++"
-    
+
     # Target Flags (Architecture + ABI)
     # Note: We must be careful with quotes in PowerShell args
     $TargetFlags = "-march=$script:MARCH_BASELINE -mabi=$script:MABI --target=riscv64-unknown-linux-gnu"
@@ -90,7 +90,7 @@ if ($script:COMMON_CMAKE_FLAGS) {
 try {
     Log-Info "Step 1: Configuring..."
     Log-Cmd "cmake $CmakeArgs"
-    
+
     # Run CMake Configure
     $Process = Start-Process -FilePath "cmake" -ArgumentList $CmakeArgs -PassThru -NoNewWindow -Wait
     if ($Process.ExitCode -ne 0) { throw "CMake configuration failed." }
@@ -98,7 +98,7 @@ try {
     Log-Info "Step 2: Building..."
     $BuildArgs = @("--build", $BuildDir, "--config", "Release")
     Log-Cmd "cmake $BuildArgs"
-    
+
     # Run CMake Build
     $Process = Start-Process -FilePath "cmake" -ArgumentList $BuildArgs -PassThru -NoNewWindow -Wait
     if ($Process.ExitCode -ne 0) { throw "Build failed." }

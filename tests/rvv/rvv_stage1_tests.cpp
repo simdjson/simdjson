@@ -43,7 +43,7 @@ bool test_complex_escapes() {
         {"Double Backslash", R"({"key": "val\\"})", true}, // Ends in double slash (escaped slash) -> valid
         {"Triple Backslash", R"({"key": "val\\\""})", true}, // \\ + \" -> valid
         {"Quad Backslash", R"({"key": "val\\\\"})", true}, // \\ + \\ -> valid
-        
+
         // Invalid cases
         {"Unescaped Quote", R"({"key": "val"ue"})", false}, // "val" ue" -> error
         {"Trailing Single Slash", R"({"key": "val\"})", false}, // Escapes the closing quote -> error
@@ -53,11 +53,11 @@ bool test_complex_escapes() {
     for (const auto& c : cases) {
         auto err = parser.parse(c.json).error();
         bool is_valid = (err == simdjson::SUCCESS);
-        
+
         if (is_valid != c.valid) {
             std::cerr << "[FAIL] " << c.name << "\n"
                       << "       Input: " << c.json << "\n"
-                      << "       Expected: " << (c.valid?"Valid":"Invalid") 
+                      << "       Expected: " << (c.valid?"Valid":"Invalid")
                       << ", Got: " << (is_valid?"Valid":"Invalid") << std::endl;
             ok = false;
         }
@@ -77,7 +77,7 @@ bool test_boundaries() {
     // We use spaces to pad critical characters to specific offsets.
     // Spec defines fixed block size = 64 bytes.
     // Critical offsets: 63 (end of block 0), 64 (start of block 1).
-    
+
     std::vector<size_t> offsets = {
         62, 63, 64, 65,         // Block 0/1 boundary
         126, 127, 128, 129,     // Block 1/2 boundary (VLEN=128 boundary)
@@ -86,7 +86,7 @@ bool test_boundaries() {
 
     for (size_t pad_len : offsets) {
         std::string padding(pad_len, ' ');
-        
+
         // Scenario A: Structural character at boundary
         // {"a": 1} ...
         // We place the colon ':' or comma ',' exactly at the boundary.
@@ -104,7 +104,7 @@ bool test_boundaries() {
         }
 
         // Scenario C: Escaped quote crossing boundary
-        // We want the sequence \" to straddle the boundary if possible, 
+        // We want the sequence \" to straddle the boundary if possible,
         // or sit right on it.
         // Padded so \" lands near the cut.
         std::string json_c = R"({"k": ")" + padding + R"(\"val"})";
@@ -113,7 +113,7 @@ bool test_boundaries() {
             ok = false;
         }
     }
-    
+
     if(ok) std::cout << "[PASS] Boundary Alignment" << std::endl;
     return ok;
 }

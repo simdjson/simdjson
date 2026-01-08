@@ -64,14 +64,14 @@ bool run_test(const std::string& name, const std::string& input, const std::stri
 bool test_whitespace_types() {
     std::cout << "--- Testing Whitespace Types ---" << std::endl;
     bool ok = true;
-    
+
     // Space, Tab, LF, CR
-    ok &= run_test("All Whitespace Types", 
-        " \t\n\r{\"a\":1} \t\n\r", 
+    ok &= run_test("All Whitespace Types",
+        " \t\n\r{\"a\":1} \t\n\r",
         "{\"a\":1}");
-        
-    ok &= run_test("Interleaved", 
-        "{\n\"key\":\t123\r}", 
+
+    ok &= run_test("Interleaved",
+        "{\n\"key\":\t123\r}",
         "{\"key\":123}");
 
     return ok;
@@ -81,14 +81,14 @@ bool test_block_boundaries() {
     std::cout << "--- Testing Block Boundaries ---" << std::endl;
     bool ok = true;
 
-    // Spec defines 64-byte blocks. 
+    // Spec defines 64-byte blocks.
     // We create a string that has whitespace/non-whitespace crossing the 63/64/65 boundary.
-    
+
     // 60 chars of noise + critical section
-    std::string padding(60, ' '); 
+    std::string padding(60, ' ');
     std::string input = padding + "{\"a\":1}"; // starts at 60
     std::string expected = "{\"a\":1}";
-    
+
     ok &= run_test("Crossing 64B Boundary", input, expected);
 
     // Exact fit
@@ -106,14 +106,14 @@ bool test_block_boundaries() {
 bool test_correctness_preservation() {
     std::cout << "--- Testing Content Preservation ---" << std::endl;
     bool ok = true;
-    
+
     // Ensure we don't accidentally strip non-whitespace or mangle data
     // Note: The current kernel (M6) performs context-free whitespace removal.
     // It does not respect quotes. We test simple structural preservation here.
-    
+
     ok &= run_test("Preserve Non-Whitespace", "a,b,c", "a,b,c");
     ok &= run_test("Numbers", "[1, 2, 3]", "[1,2,3]");
-    
+
     return ok;
 }
 

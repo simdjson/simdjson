@@ -7,8 +7,8 @@
 // -------------------------------------------------------------------------
 // RVV Backend: Regression Test Suite
 // -------------------------------------------------------------------------
-// This suite accumulates specific test cases for bugs discovered during 
-// development. It focuses on "tricky" inputs that stress specific 
+// This suite accumulates specific test cases for bugs discovered during
+// development. It focuses on "tricky" inputs that stress specific
 // interaction paths in the RVV kernels.
 // -------------------------------------------------------------------------
 
@@ -53,14 +53,14 @@ bool test_block_alignment() {
     // 8 chars overhead + 56 dots = 64 chars
     std::string padding(56, '.');
     std::string json_64 = R"({"key": ")" + padding + R"("})";
-    
+
     if (json_64.size() != 64) {
         std::cerr << "  [SETUP ERROR] String is " << json_64.size() << " bytes, expected 64." << std::endl;
         return false;
     }
 
     ASSERT_SUCCESS(parser.parse(simdjson::padded_string(json_64)).get(doc));
-    
+
     std::string_view val;
     ASSERT_SUCCESS(doc["key"].get(val));
     ASSERT_EQUAL(val.size(), 56);
@@ -100,11 +100,11 @@ bool test_boundary_structurals() {
 bool test_empty_inputs() {
     std::cout << "Running test_empty_inputs..." << std::endl;
     simdjson::dom::parser parser;
-    
+
     // Empty string (Valid padded_string, but invalid JSON)
     auto err = parser.parse("").error();
     if (err != simdjson::EMPTY) {
-        // Depending on version, might be EMPTY or some other error, 
+        // Depending on version, might be EMPTY or some other error,
         // but definitely not SUCCESS and definitely not a Segfault.
         if (err == simdjson::SUCCESS) {
              std::cerr << "  [FAIL] Empty string should not parse successfully." << std::endl;
@@ -128,9 +128,9 @@ bool test_deep_nesting() {
     std::string open(50, '[');
     std::string close(50, ']');
     std::string json = open + "1" + close;
-    
+
     ASSERT_SUCCESS(parser.parse(simdjson::padded_string(json)).get(doc));
-    
+
     // Verify we can drill down
     simdjson::dom::element curr = doc;
     for(int i=0; i<50; ++i) {

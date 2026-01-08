@@ -3,9 +3,9 @@
     RVV Backend: Benchmark Runner (QEMU)
 .DESCRIPTION
     Executes the performance benchmarks under QEMU emulation.
-    
+
     NOTE: Timing results under QEMU are NOT representative of real hardware.
-    This script is primarily for correctness under load (stress testing) and 
+    This script is primarily for correctness under load (stress testing) and
     verifying instruction retire counts if QEMU plugin logging is enabled.
 .PARAMETER Compiler
     The compiler identifier used during build (clang/gcc). Default: "clang".
@@ -77,28 +77,28 @@ foreach ($Target in $BenchTargets) {
         Log-Info "--------------------------------------------------"
         Log-Info "Running: $Target"
         Log-Info "--------------------------------------------------"
-        
+
         # We invoke QEMU directly on the binary
         # We limit iterations to keep runtime reasonable under emulation
         # --benchmark_filter regex provided by user
         # --benchmark_min_time=0.01 reduces the wait time significantly
         $ArgsList = @($BinaryPath, "--benchmark_filter=$Filter", "--benchmark_min_time=0.01")
-        
+
         # We construct the full command line string for display
         Log-Cmd "$QemuCmd $BinaryPath --benchmark_filter=$Filter --benchmark_min_time=0.01"
 
         # Execution
         # Note: PowerShell's Start-Process separating arguments for the emulator vs the target is tricky.
-        # It's often easier to rely on the wrapper variable if the binary respects it, 
+        # It's often easier to rely on the wrapper variable if the binary respects it,
         # but here we manually invoke: qemu [flags] binary [binary_flags]
-        
+
         # Argument list for QEMU: [cpu flags] [binary path] [binary flags]
         # We need to split the QEMU command string into args
         $QemuArgs = $QemuCmd.Split(' ') | Where-Object { $_ }
         $FinalArgs = $QemuArgs + $ArgsList
 
         $Process = Start-Process -FilePath "qemu-riscv64" -ArgumentList $FinalArgs -PassThru -NoNewWindow -Wait
-        
+
         if ($Process.ExitCode -ne 0) {
             Log-Error "Benchmark $Target crashed or failed."
             $GlobalFail = $true

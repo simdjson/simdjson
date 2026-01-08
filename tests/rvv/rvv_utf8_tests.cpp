@@ -130,7 +130,7 @@ bool test_boundaries() {
             ok = false;
         }
     }
-    
+
     if (ok) std::cout << "[PASS] Boundary Tests" << std::endl;
     return ok;
 }
@@ -143,21 +143,21 @@ bool test_fuzzing() {
     // We generate random mostly-valid ASCII with occasional valid/invalid multibyte chars.
     std::mt19937 gen(12345);
     std::uniform_int_distribution<> dis(0, 255);
-    
-    // Simply check that we don't crash. Correctness is hard to verify randomly 
+
+    // Simply check that we don't crash. Correctness is hard to verify randomly
     // without a reference implementation, but we assume the generic implementation
-    // (if we fell back) or the previous tests covered logic. 
+    // (if we fell back) or the previous tests covered logic.
     // This is primarily for SEGFAULT detection.
-    
+
     for (int i = 0; i < 100; ++i) {
         size_t len = 100 + (dis(gen) % 1000);
         std::vector<char> buf(len);
         for (size_t j = 0; j < len; ++j) buf[j] = (char)dis(gen);
-        
+
         // Just ensure it returns true/false and doesn't crash (e.g. invalid memory access)
         simdjson::validate_utf8(buf.data(), len);
     }
-    
+
     std::cout << "[PASS] Fuzzing (No crashes observed)" << std::endl;
     return true;
 }

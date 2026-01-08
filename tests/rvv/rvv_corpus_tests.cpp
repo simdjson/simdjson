@@ -12,10 +12,10 @@
 //
 // Purpose:
 // 1. Verify stability on large, real-world datasets.
-// 2. Ensure no segfaults/errors occur on complex, deeply nested, or 
+// 2. Ensure no segfaults/errors occur on complex, deeply nested, or
 //    large-volume data.
 //
-// Note: This test is "soft" - if the corpus files are missing, it skips 
+// Note: This test is "soft" - if the corpus files are missing, it skips
 // them rather than failing, making it safe for minimal CI environments.
 // -------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ bool test_file(const std::string& filename) {
     }
 
     std::cout << "Testing file: " << filename << " ... ";
-    
+
     simdjson::padded_string json;
     auto load_err = simdjson::padded_string::load(filename).get(json);
     if (load_err) {
@@ -54,7 +54,7 @@ bool test_file(const std::string& filename) {
 
     simdjson::dom::parser parser;
     simdjson::dom::element doc;
-    
+
     // Parse
     auto parse_err = parser.parse(json).get(doc);
     if (parse_err) {

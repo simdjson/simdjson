@@ -45,17 +45,17 @@ public:
         while (dense_json.size() < TARGET_SIZE) {
             dense_json += dense_pattern;
         }
-        
+
         // B) Pretty JSON (Lots of whitespace) - Tests removal logic
         // This forces the "vcompress" / vector packing logic to work hard.
         std::string pretty_pattern = R"(
         {
             "id": 123,
             "data": [
-                1, 
-                2, 
-                3, 
-                4, 
+                1,
+                2,
+                3,
+                4,
                 5
             ],
             "valid": true
@@ -75,7 +75,7 @@ public:
 // -------------------------------------------------------------------------
 BENCHMARK_DEFINE_F(MinifyFixture, BM_Minify_Dense)(benchmark::State& state) {
     simdjson::get_active_implementation() = rvv_impl;
-    
+
     size_t out_len = 0;
     for (auto _ : state) {
         auto err = simdjson::minify(dense_json.data(), dense_json.size(), buffer.data(), out_len);
@@ -94,7 +94,7 @@ BENCHMARK_DEFINE_F(MinifyFixture, BM_Minify_Dense)(benchmark::State& state) {
 // -------------------------------------------------------------------------
 BENCHMARK_DEFINE_F(MinifyFixture, BM_Minify_Pretty)(benchmark::State& state) {
     simdjson::get_active_implementation() = rvv_impl;
-    
+
     size_t out_len = 0;
     for (auto _ : state) {
         auto err = simdjson::minify(pretty_json.data(), pretty_json.size(), buffer.data(), out_len);

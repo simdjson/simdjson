@@ -21,13 +21,13 @@ index 1234567..89abcde 100644
  option(SIMDJSON_ENABLE_FALLBACK "Enable Fallback implementation" ON)
  option(SIMDJSON_ENABLE_LASX "Enable LoongArch LASX implementation" ON)
 +option(SIMDJSON_ENABLE_RV64 "Enable RISC-V Vector implementation" OFF) # Default OFF until stable
- 
+
  #
  # Compile flags
 @@ -250,6 +251,23 @@ if(SIMDJSON_ENABLE_LASX)
    endif()
  endif()
- 
+
 +# --------------------------------------------------------------------------
 +# RVV (RISC-V Vector) Backend
 +# --------------------------------------------------------------------------
@@ -55,13 +55,13 @@ index 2345678..90abcdef 100644
 @@ -48,6 +48,10 @@
  #include "simdjson/lasx/implementation.h"
  #endif
- 
+
 +#if SIMDJSON_IMPLEMENTATION_RVV
 +#include "simdjson/rvv/implementation.h"
 +#endif
 +
  #include "simdjson/fallback/implementation.h"
- 
+
  namespace simdjson {
 @@ -79,6 +83,11 @@ const std::list<const implementation *>& get_available_implementations() {
        static const lasx::implementation lasx_impl;
@@ -76,5 +76,5 @@ index 2345678..90abcdef 100644
        static const fallback::implementation fallback_impl;
        available_implementations.push_back(&fallback_impl);
      }
--- 
+--
 2.34.1

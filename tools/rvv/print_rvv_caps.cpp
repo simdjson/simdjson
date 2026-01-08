@@ -55,7 +55,7 @@ int main() {
 #endif
 
   // Simdjson Logic
-  print_row("SIMDJSON_IS_RVV", 
+  print_row("SIMDJSON_IS_RVV",
 #if SIMDJSON_IS_RVV
     "1 (Active)"
 #else
@@ -67,9 +67,9 @@ int main() {
   // 2. RVV Policy Locks (from rvv_config.h)
   // -------------------------------------------------------------------------
   std::cout << "\n[Policy Locks (rvv_config.h)]" << std::endl;
-  
+
   print_row("RVV_BLOCK_BYTES", std::to_string(simdjson::rvv::RVV_BLOCK_BYTES));
-  
+
 #ifdef SIMDJSON_RVV_LMUL_M1
   print_row("LMUL Policy", "m1 (Fixed)");
 #else

@@ -60,10 +60,10 @@ try {
     # -R: Run only tests matching regex (usually "rvv")
     # -j: Parallel execution (QEMU handles this well)
     $CTestArgs = @("--output-on-failure", "-R", $Filter, "-j", "$env:NUMBER_OF_PROCESSORS")
-    
+
     Log-Cmd "ctest $CTestArgs"
     $Process = Start-Process -FilePath "ctest" -ArgumentList $CTestArgs -PassThru -NoNewWindow -Wait
-    
+
     if ($Process.ExitCode -eq 0) {
         Log-Info "All Tests Passed."
         exit 0

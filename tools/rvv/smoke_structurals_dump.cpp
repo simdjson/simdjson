@@ -41,18 +41,18 @@ int main(int argc, char *argv[]) {
 
     // 1. Input Handling
     // Default test string if none provided
-    std::string input = R"({"key": "value", "array": [1, 2, 3], "null": null})"; 
-    
+    std::string input = R"({"key": "value", "array": [1, 2, 3], "null": null})";
+
     if (argc > 1) {
         input = argv[1];
     }
-    
-    // Pad input to ensure we can load full 64-byte blocks safely 
+
+    // Pad input to ensure we can load full 64-byte blocks safely
     // (simulating the padded_string behavior)
     size_t len = input.size();
     size_t padded_len = (len + 63) & ~63; // Align to 64
     if (padded_len < len + 64) padded_len += 64; // Extra safety buffer
-    
+
     std::vector<uint8_t> buffer(padded_len, ' '); // Fill with spaces (whitespace)
     std::copy(input.begin(), input.end(), buffer.begin());
 
@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
         // Load 64 bytes
         // We use the raw SIMD abstraction defined in simd.h
         const uint8_t* ptr = buffer.data() + offset;
-        
+
         // Note: We assume the M1 'load' implementation in simd8x64 is active.
-        // If not fully implemented yet, this relies on the implicit copy constructor 
-        // or a load helper if one exists. For this smoke test, we simulate the load 
+        // If not fully implemented yet, this relies on the implicit copy constructor
+        // or a load helper if one exists. For this smoke test, we simulate the load
         // by constructing from pointer if the constructor exists, otherwise we'd need a specific loader.
         // Assuming simd8x64<uint8_t> has a constructor from pointer (Standard in simdjson backends).
         simdjson::rvv::simd8x64<uint8_t> chunk(ptr);

@@ -41,17 +41,17 @@ echo "==============================================================="
 
 for VLEN in $VLEN_LIST; do
     OUTPUT_FILE="${RESULTS_PATH}/bench_vlen${VLEN}.txt"
-    
+
     echo "---------------------------------------------------------------"
     echo "Benchmarking VLEN=${VLEN} -> ${OUTPUT_FILE}"
     echo "---------------------------------------------------------------"
-    
+
     export QEMU_CPU="rv64,v=true,vext_spec=v1.0,vlen=${VLEN}"
-    
+
     # Check if binary exists
     if [ -f "${BUILD_DIR}/${BENCH_BINARY}" ]; then
         # Run benchmark binary.
-        # We assume the default benchmark suite. 
+        # We assume the default benchmark suite.
         # You can add arguments here like "minify" or "validate_utf8" to filter.
         "${BUILD_DIR}/${BENCH_BINARY}" | tee "${OUTPUT_FILE}"
     else

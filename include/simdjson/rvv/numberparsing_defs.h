@@ -29,17 +29,17 @@ simdjson_inline bool is_made_of_eight_digits_quickly(const uint8_t *chars) {
 
   // The '0' character is 0x30. '9' is 0x39.
   // We need to check if every byte is in the range [0x30, 0x39].
-  
+
   // Logic:
-  // 1. (val & 0xF0...) == 0x30... 
-  //    Verifies that the high nibble of every byte is 3. 
+  // 1. (val & 0xF0...) == 0x30...
+  //    Verifies that the high nibble of every byte is 3.
   //    This accepts 0x30-0x3F (digits + :;<=>? ).
   //
   // 2. ((val + 0x06...) & 0xF0...) == 0x30...
   //    Verifies that the byte + 6 does not overflow out of the 0x30 range.
   //    - '9' (0x39) + 0x06 = 0x3F (high nibble still 3). OK.
   //    - ':' (0x3A) + 0x06 = 0x40 (high nibble becomes 4). FAIL.
-  
+
   return ((val & 0xF0F0F0F0F0F0F0F0ULL) == 0x3030303030303030ULL) &&
          (((val + 0x0606060606060606ULL) & 0xF0F0F0F0F0F0F0F0ULL) == 0x3030303030303030ULL);
 }
@@ -60,13 +60,13 @@ simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // 2. Horizontal aggregation using multiplication.
   //    We process pairs, then quads, then the octet.
   //    Input is Little Endian: d0 d1 d2 ... (where d0 is the first char '1')
-  //    We want: d0*10^7 + d1*10^6 ... 
-  
+  //    We want: d0*10^7 + d1*10^6 ...
+
   // Step A: Merge pairs (d0,d1) -> d0*10 + d1
   // Formula: (val * 10) + (val >> 8)  (masked to keep relevant bytes)
   const uint64_t mask_pairs = 0x00FF00FF00FF00FFULL;
   const uint64_t mul_10     = 0x000A000A000A000AULL; // Multiplier 10 in every other slot
-  
+
   uint64_t pairs = ((val * mul_10) + (val >> 8)) & mask_pairs;
   // Now we have 4 results (16-bits apart): [d6d7] [d4d5] [d2d3] [d0d1]
   // (Note: d0d1 means d0*10+d1, e.g. "12" -> 12)
@@ -74,9 +74,9 @@ simdjson_inline uint32_t parse_eight_digits_unrolled(const uint8_t *chars) {
   // Step B: Merge quads [d0d1] and [d2d3] -> [d0d1]*100 + [d2d3]
   const uint64_t mul_100    = 0x0064006400640064ULL; // Multiplier 100
   uint64_t quads = ((pairs * mul_100) + (pairs >> 16));
-  
+
   // Mask out the garbage in upper bits of 32-bit chunks
-  quads &= 0x0000FFFF0000FFFFULL; 
+  quads &= 0x0000FFFF0000FFFFULL;
 
   // Step C: Merge halves -> result
   const uint64_t mul_10000  = 0x2710271027102710ULL; // Multiplier 10000

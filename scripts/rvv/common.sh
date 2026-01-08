@@ -65,13 +65,13 @@ get_qemu_cpu() {
         log_error "get_qemu_cpu called without VLEN argument"
         return 1
     fi
-    
+
     # We use envsubst-like behavior or simple eval to replace ${VLEN}
     # Since we are in bash, simple substitution is safest.
     # The template is: rv64,v=true,...,vlen=${VLEN}
-    # We strip the literal '${VLEN}' and append the actual value, 
+    # We strip the literal '${VLEN}' and append the actual value,
     # or perform a string replace.
-    
+
     # Simple, robust string replacement:
     local cpu_str="${QEMU_CPU_TEMPLATE//\$\{VLEN\}/$target_vlen}"
     echo "$cpu_str"

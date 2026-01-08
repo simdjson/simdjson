@@ -16,8 +16,8 @@ namespace ondemand {
 // 2. find_next_structural (Jumping between JSON tokens)
 //
 // For Milestone 1 (Skeleton), we leave this empty.
-// The generic ondemand::parser will utilize the basic SIMD primitives 
-// defined in rvv/simd.h and rvv/stringparsing_defs.h via the 
+// The generic ondemand::parser will utilize the basic SIMD primitives
+// defined in rvv/simd.h and rvv/stringparsing_defs.h via the
 // generic implementation templates.
 // -------------------------------------------------------------------------
 

@@ -65,7 +65,7 @@ index 0000000..e1e1e1e
 +
 +    strategy:
 +      matrix:
-+        config: 
++        config:
 +          - { compiler: "clang", vlen: 256 }
 +          - { compiler: "gcc",   vlen: 512 }
 +
@@ -107,7 +107,7 @@ index 0000000..f2f2f2f
 +      fail-fast: false
 +      matrix:
 +        compiler: [ "gcc", "clang" ]
-+        vlen: [ 128, 256, 512 ] 
++        vlen: [ 128, 256, 512 ]
 +
 +    steps:
 +      - uses: actions/checkout@v3
@@ -141,10 +141,10 @@ index 0000000..f2f2f2f
 +    name: Bench Sanity (GCC/128)
 +    runs-on: ubuntu-22.04
 +    needs: rvv-build-and-test
-+    
++
 +    steps:
 +      - uses: actions/checkout@v3
-+      
++
 +      - name: Install Toolchain
 +        run: sudo ./scripts/rvv/fetch_toolchain.sh
 +
@@ -199,5 +199,5 @@ index 0000000..a3a3a3a
 +
 +      - name: Run Smoketests
 +        run: ./scripts/rvv/run_qemu_smoke.sh clang 128
--- 
+--
 2.34.1

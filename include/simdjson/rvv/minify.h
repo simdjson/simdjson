@@ -11,8 +11,8 @@ namespace rvv {
 /**
  * @brief Vectorized whitespace removal (Minify).
  *
- * Scans the input buffer, removes JSON whitespace characters 
- * (Space, Line Feed, Carriage Return, Tab), and writes the 
+ * Scans the input buffer, removes JSON whitespace characters
+ * (Space, Line Feed, Carriage Return, Tab), and writes the
  * result to the destination.
  *
  * Architecture:
@@ -28,7 +28,7 @@ simdjson_inline error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, 
   while (remaining > 0) {
     // 1. Configure Vector Length (Tail-safe)
     // We clamp AVL to RVV_BLOCK_BYTES (64) to strictly follow the backend policy,
-    // ensuring we don't process massive chunks on large-vector hardware 
+    // ensuring we don't process massive chunks on large-vector hardware
     // which could affect latency consistency.
     size_t avl = (remaining < RVV_BLOCK_BYTES) ? remaining : RVV_BLOCK_BYTES;
     size_t vl = __riscv_vsetvl_e8m1(avl);

@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         // ---------------------------------------------------------------------
         const char* filename = argv[1];
         std::cout << "Loading file: " << filename << std::endl;
-        
+
         error = parser.load(filename).get(doc);
         if (error) {
             std::cerr << "[FAIL] Failed to load/parse file: " << error << std::endl;
@@ -90,20 +90,20 @@ int main(int argc, char *argv[]) {
         // Mode 2: Default Smoketest (Hardcoded)
         // ---------------------------------------------------------------------
         std::cout << "No file provided. Running default verification..." << std::endl;
-        
+
         auto json = R"({ "status": "ok", "values": [1, 2, 3], "nested": { "a": true } })"_padded;
-        
+
         error = parser.parse(json).get(doc);
         if (error) {
             std::cerr << "[FAIL] Default JSON parse failed: " << error << std::endl;
             return 1;
         }
-        
+
         // Quick verify
         bool ok = true;
         std::string_view status;
         if (doc["status"].get(status) || status != "ok") ok = false;
-        
+
         simdjson::dom::array arr;
         if (doc["values"].get(arr) || arr.size() != 3) ok = false;
 

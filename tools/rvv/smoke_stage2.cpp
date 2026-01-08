@@ -39,35 +39,35 @@ bool test_basic_types() {
     bool ok = true;
 
     // 1. Integer
-    if (parser.parse("12345"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse("12345"_padded).get(doc) != simdjson::SUCCESS ||
         int64_t(doc) != 12345) {
         std::cerr << "[FAIL] Integer parsing" << std::endl;
         ok = false;
     }
 
     // 2. Double
-    if (parser.parse("123.45"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse("123.45"_padded).get(doc) != simdjson::SUCCESS ||
         double(doc) != 123.45) {
         std::cerr << "[FAIL] Double parsing" << std::endl;
         ok = false;
     }
 
     // 3. Boolean True
-    if (parser.parse("true"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse("true"_padded).get(doc) != simdjson::SUCCESS ||
         bool(doc) != true) {
         std::cerr << "[FAIL] Boolean true" << std::endl;
         ok = false;
     }
 
     // 4. Boolean False
-    if (parser.parse("false"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse("false"_padded).get(doc) != simdjson::SUCCESS ||
         bool(doc) != false) {
         std::cerr << "[FAIL] Boolean false" << std::endl;
         ok = false;
     }
 
     // 5. Null
-    if (parser.parse("null"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse("null"_padded).get(doc) != simdjson::SUCCESS ||
         !doc.is_null()) {
         std::cerr << "[FAIL] Null parsing" << std::endl;
         ok = false;
@@ -75,7 +75,7 @@ bool test_basic_types() {
 
     // 6. String (Simple)
     std::string_view sv;
-    if (parser.parse(R"("hello")"_padded).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse(R"("hello")"_padded).get(doc) != simdjson::SUCCESS ||
         doc.get(sv) != simdjson::SUCCESS || sv != "hello") {
         std::cerr << "[FAIL] String parsing" << std::endl;
         ok = false;
@@ -134,7 +134,7 @@ bool test_large_integers() {
 
     // Max int64
     std::string max_str = std::to_string(std::numeric_limits<int64_t>::max());
-    if (parser.parse(simdjson::padded_string(max_str)).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse(simdjson::padded_string(max_str)).get(doc) != simdjson::SUCCESS ||
         int64_t(doc) != std::numeric_limits<int64_t>::max()) {
         std::cerr << "[FAIL] Int64 Max" << std::endl;
         ok = false;
@@ -142,7 +142,7 @@ bool test_large_integers() {
 
     // Min int64
     std::string min_str = std::to_string(std::numeric_limits<int64_t>::min());
-    if (parser.parse(simdjson::padded_string(min_str)).get(doc) != simdjson::SUCCESS || 
+    if (parser.parse(simdjson::padded_string(min_str)).get(doc) != simdjson::SUCCESS ||
         int64_t(doc) != std::numeric_limits<int64_t>::min()) {
         std::cerr << "[FAIL] Int64 Min" << std::endl;
         ok = false;
