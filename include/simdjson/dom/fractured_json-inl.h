@@ -155,7 +155,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
 
     element_metrics child_metrics = analyze_element(child, depth + 1);
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;
-    max_child_complexity = std::max(max_child_complexity, child_metrics.complexity);
+    max_child_complexity = (std::max)(max_child_complexity, child_metrics.complexity);
     metrics.child_count++;
   }
 
@@ -212,7 +212,7 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 
     element_metrics child_metrics = analyze_element(field.value, depth + 1);
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;
-    max_child_complexity = std::max(max_child_complexity, child_metrics.complexity);
+    max_child_complexity = (std::max)(max_child_complexity, child_metrics.complexity);
     metrics.child_count++;
   }
 
@@ -1003,7 +1003,7 @@ inline std::vector<size_t> fractured_string_builder::calculate_column_widths(
         if (field.key == key) {
           // Measure actual value length
           size_t len = measure_value_length(field.value);
-          widths[col_idx] = std::max(widths[col_idx], len);
+          widths[col_idx] = (std::max)(widths[col_idx], len);
           break;
         }
       }
