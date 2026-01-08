@@ -393,7 +393,7 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
 //
 
 inline fractured_formatter::fractured_formatter(const fractured_json_options& opts)
-    : options_(opts) {}
+    : options_(opts), column_widths_{} {}
 
 simdjson_inline void fractured_formatter::print_newline() {
   if (current_layout_ == layout_mode::INLINE) {
@@ -492,7 +492,7 @@ inline void fractured_formatter::align_to_column_width(size_t actual_width) {
 //
 
 inline fractured_string_builder::fractured_string_builder(const fractured_json_options& opts)
-    : format_(opts), options_(opts) {}
+    : format_(opts), analyzer_{}, options_(opts) {}
 
 inline void fractured_string_builder::append(const dom::element& value) {
   // Phase 1: Analyze structure

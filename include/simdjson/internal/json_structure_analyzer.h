@@ -48,7 +48,7 @@ struct element_metrics {
   bool is_uniform_array = false;
 
   /** For uniform arrays of objects: the common keys */
-  std::vector<std::string> common_keys;
+  std::vector<std::string> common_keys{};
 
   /** Recommended layout mode based on analysis */
   layout_mode recommended_layout = layout_mode::EXPANDED;
@@ -66,6 +66,9 @@ struct element_metrics {
  */
 class structure_analyzer {
 public:
+  /** Default constructor */
+  structure_analyzer() : metrics_cache_{}, current_opts_(nullptr) {}
+
   /**
    * Analyze a DOM element and compute metrics.
    * @param elem The element to analyze
