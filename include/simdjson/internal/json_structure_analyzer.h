@@ -69,6 +69,18 @@ public:
   /** Default constructor */
   structure_analyzer() : metrics_cache_{}, current_opts_(nullptr) {}
 
+  /** Copy constructor - deleted since class has pointer member */
+  structure_analyzer(const structure_analyzer&) = delete;
+
+  /** Copy assignment - deleted since class has pointer member */
+  structure_analyzer& operator=(const structure_analyzer&) = delete;
+
+  /** Move constructor */
+  structure_analyzer(structure_analyzer&&) = default;
+
+  /** Move assignment */
+  structure_analyzer& operator=(structure_analyzer&&) = default;
+
   /**
    * Analyze a DOM element and compute metrics.
    * @param elem The element to analyze
