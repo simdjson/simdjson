@@ -118,39 +118,34 @@ private:
   fractured_json_options options_;
 
   /** Format an element using pre-computed metrics */
-  void format_element(const dom::element& elem, size_t depth);
+  void format_element(const dom::element& elem, const element_metrics& metrics, size_t depth);
 
   /** Format an array with the appropriate layout */
   void format_array(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
   /** Format an array inline: [1, 2, 3] */
-  void format_array_inline(const dom::array& arr);
+  void format_array_inline(const dom::array& arr, const element_metrics& metrics);
 
   /** Format an array with compact multiline: multiple items per line */
-  void format_array_compact_multiline(const dom::array& arr, size_t depth);
+  void format_array_compact_multiline(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
   /** Format an array as a table */
-  void format_array_as_table(const dom::array& arr,
-                              const std::vector<std::string>& columns,
-                              size_t depth);
+  void format_array_as_table(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
   /** Format an array expanded: one item per line */
-  void format_array_expanded(const dom::array& arr, size_t depth);
+  void format_array_expanded(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
   /** Format an object with the appropriate layout */
   void format_object(const dom::object& obj, const element_metrics& metrics, size_t depth);
 
   /** Format an object inline: {"a": 1, "b": 2} */
-  void format_object_inline(const dom::object& obj);
+  void format_object_inline(const dom::object& obj, const element_metrics& metrics);
 
   /** Format an object expanded: one key per line */
-  void format_object_expanded(const dom::object& obj, size_t depth);
+  void format_object_expanded(const dom::object& obj, const element_metrics& metrics, size_t depth);
 
   /** Format a scalar value */
   void format_scalar(const dom::element& elem);
-
-  /** Get metrics for an element (must be analyzed first) */
-  const element_metrics& get_metrics(const dom::element& elem) const;
 
   /** Calculate column widths for table formatting */
   std::vector<size_t> calculate_column_widths(const dom::array& arr,

@@ -8,7 +8,6 @@
 #include "simdjson/dom/fractured_json.h"
 #include "simdjson/internal/tape_type.h"
 
-#include <unordered_map>
 #include <vector>
 #include <string>
 #include <string_view>
@@ -29,7 +28,7 @@ enum class layout_mode {
 
 /**
  * Metrics computed for a JSON element during structure analysis.
- * These metrics drive layout decisions.
+ * These metrics drive layout decisions and contain child metrics for recursive formatting.
  */
 struct element_metrics {
   /** Nesting depth score (0 = scalar, 1 = flat container, etc.) */
@@ -52,6 +51,9 @@ struct element_metrics {
 
   /** Recommended layout mode based on analysis */
   layout_mode recommended_layout = layout_mode::EXPANDED;
+
+  /** Child metrics for arrays and objects (in order of iteration) */
+  std::vector<element_metrics> children{};
 };
 
 /**
@@ -62,12 +64,13 @@ struct element_metrics {
  * - Estimated inline length
  * - Array uniformity for table detection
  *
- * Results are cached by tape index for efficient lookup during formatting.
+ * Metrics are stored hierarchically with child metrics embedded in parent metrics,
+ * enabling efficient lookup during formatting without address-based caching.
  */
 class structure_analyzer {
 public:
   /** Default constructor */
-  structure_analyzer() : metrics_cache_{}, current_opts_(nullptr) {}
+  structure_analyzer() : current_opts_(nullptr) {}
 
   /** Copy constructor - deleted since class has pointer member */
   structure_analyzer(const structure_analyzer&) = delete;
@@ -85,41 +88,45 @@ public:
    * Analyze a DOM element and compute metrics.
    * @param elem The element to analyze
    * @param opts Formatting options that affect metric computation
-   * @return Metrics for the root element
+   * @return Metrics for the root element (with child metrics embedded)
    */
   element_metrics analyze(const dom::element& elem,
                           const fractured_json_options& opts);
 
   /**
-   * Get cached metrics for a specific tape position.
-   * Must be called after analyze().
-   * @param tape_index The tape index of the element
-   * @return Metrics for that element
-   */
-  const element_metrics& get_metrics(size_t tape_index) const;
-
-  /**
-   * Check if metrics exist for a tape position.
-   */
-  bool has_metrics(size_t tape_index) const;
-
-  /**
-   * Clear cached metrics.
+   * Clear state.
    */
   void clear();
 
+  /**
+   * Analyze an array element directly (for standalone array formatting).
+   * @param arr The array to analyze
+   * @param opts Formatting options
+   * @return Metrics for the array
+   */
+  element_metrics analyze_array(const dom::array& arr,
+                                const fractured_json_options& opts);
+
+  /**
+   * Analyze an object element directly (for standalone object formatting).
+   * @param obj The object to analyze
+   * @param opts Formatting options
+   * @return Metrics for the object
+   */
+  element_metrics analyze_object(const dom::object& obj,
+                                 const fractured_json_options& opts);
+
 private:
-  std::unordered_map<size_t, element_metrics> metrics_cache_;
   const fractured_json_options* current_opts_ = nullptr;
 
   /** Recursive analysis implementation */
   element_metrics analyze_element(const dom::element& elem, size_t depth);
 
   /** Analyze an array element */
-  element_metrics analyze_array(const dom::array& arr, size_t tape_idx, size_t depth);
+  element_metrics analyze_array(const dom::array& arr, size_t depth);
 
   /** Analyze an object element */
-  element_metrics analyze_object(const dom::object& obj, size_t tape_idx, size_t depth);
+  element_metrics analyze_object(const dom::object& obj, size_t depth);
 
   /** Estimate inline length for a string (including quotes and escaping) */
   size_t estimate_string_length(std::string_view s) const;

@@ -24,27 +24,24 @@ namespace internal {
 
 inline element_metrics structure_analyzer::analyze(const dom::element& elem,
                                                     const fractured_json_options& opts) {
-  clear();
   current_opts_ = &opts;
   return analyze_element(elem, 0);
 }
 
-inline const element_metrics& structure_analyzer::get_metrics(size_t tape_index) const {
-  static element_metrics empty_metrics;
-  auto it = metrics_cache_.find(tape_index);
-  if (it != metrics_cache_.end()) {
-    return it->second;
-  }
-  return empty_metrics;
-}
-
-inline bool structure_analyzer::has_metrics(size_t tape_index) const {
-  return metrics_cache_.find(tape_index) != metrics_cache_.end();
-}
-
 inline void structure_analyzer::clear() {
-  metrics_cache_.clear();
   current_opts_ = nullptr;
+}
+
+inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
+                                                          const fractured_json_options& opts) {
+  current_opts_ = &opts;
+  return analyze_array(arr, 0);
+}
+
+inline element_metrics structure_analyzer::analyze_object(const dom::object& obj,
+                                                           const fractured_json_options& opts) {
+  current_opts_ = &opts;
+  return analyze_object(obj, 0);
 }
 
 inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) {
@@ -54,18 +51,14 @@ inline element_metrics structure_analyzer::analyze_element(const dom::element& e
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        // Get tape index from internal representation
-        // We use the element's address as a proxy for tape index
-        size_t tape_idx = reinterpret_cast<size_t>(&elem);
-        metrics = analyze_array(arr, tape_idx, depth);
+        metrics = analyze_array(arr, depth);
       }
       break;
     }
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        size_t tape_idx = reinterpret_cast<size_t>(&elem);
-        metrics = analyze_object(obj, tape_idx, depth);
+        metrics = analyze_object(obj, depth);
       }
       break;
     }
@@ -137,7 +130,6 @@ inline element_metrics structure_analyzer::analyze_element(const dom::element& e
 }
 
 inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
-                                                          size_t tape_idx,
                                                           size_t depth) {
   element_metrics metrics;
   metrics.complexity = 1; // At least 1 for being an array
@@ -157,6 +149,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;
     max_child_complexity = (std::max)(max_child_complexity, child_metrics.complexity);
     metrics.child_count++;
+    metrics.children.push_back(std::move(child_metrics));
   }
 
   // Complexity is 1 + max child complexity
@@ -186,12 +179,10 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
     metrics.recommended_layout = layout_mode::EXPANDED;
   }
 
-  metrics_cache_[tape_idx] = metrics;
   return metrics;
 }
 
 inline element_metrics structure_analyzer::analyze_object(const dom::object& obj,
-                                                           size_t tape_idx,
                                                            size_t depth) {
   element_metrics metrics;
   metrics.complexity = 1;
@@ -214,6 +205,7 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;
     max_child_complexity = (std::max)(max_child_complexity, child_metrics.complexity);
     metrics.child_count++;
+    metrics.children.push_back(std::move(child_metrics));
   }
 
   metrics.complexity = 1 + max_child_complexity;
@@ -228,7 +220,6 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
     metrics.recommended_layout = layout_mode::EXPANDED;
   }
 
-  metrics_cache_[tape_idx] = metrics;
   return metrics;
 }
 
@@ -495,42 +486,22 @@ inline fractured_string_builder::fractured_string_builder(const fractured_json_o
     : format_(opts), analyzer_{}, options_(opts) {}
 
 inline void fractured_string_builder::append(const dom::element& value) {
-  // Phase 1: Analyze structure
+  // Phase 1: Analyze structure (metrics tree is built recursively)
   element_metrics root_metrics = analyzer_.analyze(value, options_);
 
-  // Phase 2: Format using metrics
-  format_element(value, 0);
+  // Phase 2: Format using metrics tree (passed through recursion)
+  format_element(value, root_metrics, 0);
 }
 
 inline void fractured_string_builder::append(const dom::array& value) {
-  dom::element elem;
-  // Create a temporary element wrapper - this is a simplification
-  // In practice, we'd need access to the underlying element
-  element_metrics metrics;
-  metrics.complexity = 1;
-  metrics.child_count = 0;
-  metrics.can_inline = true;
-
-  // Count children
-  for (dom::element child : value) {
-    (void)child;
-    metrics.child_count++;
-  }
-
+  // Analyze the array to get proper metrics with children
+  element_metrics metrics = analyzer_.analyze_array(value, options_);
   format_array(value, metrics, 0);
 }
 
 inline void fractured_string_builder::append(const dom::object& value) {
-  element_metrics metrics;
-  metrics.complexity = 1;
-  metrics.child_count = 0;
-  metrics.can_inline = true;
-
-  for (dom::key_value_pair field : value) {
-    (void)field;
-    metrics.child_count++;
-  }
-
+  // Analyze the object to get proper metrics with children
+  element_metrics metrics = analyzer_.analyze_object(value, options_);
   format_object(value, metrics, 0);
 }
 
@@ -543,15 +514,13 @@ simdjson_inline std::string_view fractured_string_builder::str() const {
   return format_.str();
 }
 
-inline void fractured_string_builder::format_element(const dom::element& elem, size_t depth) {
+inline void fractured_string_builder::format_element(const dom::element& elem,
+                                                       const element_metrics& metrics,
+                                                       size_t depth) {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        size_t tape_idx = reinterpret_cast<size_t>(&elem);
-        const element_metrics& metrics = analyzer_.has_metrics(tape_idx)
-            ? analyzer_.get_metrics(tape_idx)
-            : element_metrics{};
         format_array(arr, metrics, depth);
       }
       break;
@@ -559,10 +528,6 @@ inline void fractured_string_builder::format_element(const dom::element& elem, s
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        size_t tape_idx = reinterpret_cast<size_t>(&elem);
-        const element_metrics& metrics = analyzer_.has_metrics(tape_idx)
-            ? analyzer_.get_metrics(tape_idx)
-            : element_metrics{};
         format_object(obj, metrics, depth);
       }
       break;
@@ -578,22 +543,23 @@ inline void fractured_string_builder::format_array(const dom::array& arr,
                                                     size_t depth) {
   switch (metrics.recommended_layout) {
     case layout_mode::INLINE:
-      format_array_inline(arr);
+      format_array_inline(arr, metrics);
       break;
     case layout_mode::COMPACT_MULTILINE:
-      format_array_compact_multiline(arr, depth);
+      format_array_compact_multiline(arr, metrics, depth);
       break;
     case layout_mode::TABLE:
-      format_array_as_table(arr, metrics.common_keys, depth);
+      format_array_as_table(arr, metrics, depth);
       break;
     case layout_mode::EXPANDED:
     default:
-      format_array_expanded(arr, depth);
+      format_array_expanded(arr, metrics, depth);
       break;
   }
 }
 
-inline void fractured_string_builder::format_array_inline(const dom::array& arr) {
+inline void fractured_string_builder::format_array_inline(const dom::array& arr,
+                                                            const element_metrics& metrics) {
   layout_mode prev_layout = format_.get_layout_mode();
   format_.set_layout_mode(layout_mode::INLINE);
 
@@ -601,6 +567,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr)
 
   bool first = true;
   bool empty = true;
+  size_t child_idx = 0;
   for (dom::element elem : arr) {
     empty = false;
     if (!first) {
@@ -612,7 +579,10 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr)
       format_.print_space();
     }
     first = false;
-    format_element(elem, 0);
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+    format_element(elem, child_metrics, 0);
+    child_idx++;
   }
 
   if (options_.simple_bracket_padding && !empty) {
@@ -624,6 +594,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr)
 }
 
 inline void fractured_string_builder::format_array_compact_multiline(const dom::array& arr,
+                                                                       const element_metrics& metrics,
                                                                        size_t depth) {
   format_.start_array();
   format_.print_newline();
@@ -631,6 +602,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
   size_t items_on_line = 0;
   bool first = true;
+  size_t child_idx = 0;
 
   for (dom::element elem : arr) {
     if (!first) {
@@ -651,10 +623,13 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     // Format element inline
     layout_mode prev_layout = format_.get_layout_mode();
     format_.set_layout_mode(layout_mode::INLINE);
-    format_element(elem, depth + 1);
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+    format_element(elem, child_metrics, depth + 1);
     format_.set_layout_mode(prev_layout);
 
     items_on_line++;
+    child_idx++;
   }
 
   format_.print_newline();
@@ -663,10 +638,11 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 }
 
 inline void fractured_string_builder::format_array_as_table(const dom::array& arr,
-                                                             const std::vector<std::string>& columns,
+                                                             const element_metrics& metrics,
                                                              size_t depth) {
+  const std::vector<std::string>& columns = metrics.common_keys;
   if (columns.empty()) {
-    format_array_expanded(arr, depth);
+    format_array_expanded(arr, metrics, depth);
     return;
   }
 
@@ -678,6 +654,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
   format_.print_newline();
 
   bool first_row = true;
+  size_t child_idx = 0;
   for (dom::element elem : arr) {
     if (!first_row) {
       format_.comma();
@@ -691,8 +668,13 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
     // Format object as inline with aligned columns
     dom::object obj;
     if (elem.get_object().get(obj) != SUCCESS) {
+      child_idx++;
       continue;
     }
+
+    // Get child metrics for this row (object)
+    const element_metrics& row_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
 
     format_.start_object();
     if (options_.simple_bracket_padding) {
@@ -720,22 +702,26 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
         format_.print_space();
       }
 
-      // Find the value for this key
+      // Find the value for this key and its metrics
       dom::element value;
       bool found = false;
+      size_t field_idx = 0;
       for (dom::key_value_pair field : obj) {
         if (field.key == key) {
           value = field.value;
           found = true;
           break;
         }
+        field_idx++;
       }
 
       // Write value
       if (found) {
         layout_mode prev_layout = format_.get_layout_mode();
         format_.set_layout_mode(layout_mode::INLINE);
-        format_element(value, depth + 1);
+        const element_metrics& value_metrics = (field_idx < row_metrics.children.size())
+            ? row_metrics.children[field_idx] : element_metrics{};
+        format_element(value, value_metrics, depth + 1);
         format_.set_layout_mode(prev_layout);
       } else {
         format_.null_atom();
@@ -759,6 +745,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
     }
     format_.end_object();
     format_.end_table_row();
+    child_idx++;
   }
 
   format_.print_newline();
@@ -766,11 +753,14 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
   format_.end_array();
 }
 
-inline void fractured_string_builder::format_array_expanded(const dom::array& arr, size_t depth) {
+inline void fractured_string_builder::format_array_expanded(const dom::array& arr,
+                                                              const element_metrics& metrics,
+                                                              size_t depth) {
   format_.start_array();
 
   bool empty = true;
   bool first = true;
+  size_t child_idx = 0;
 
   for (dom::element elem : arr) {
     empty = false;
@@ -781,7 +771,10 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 
     format_.print_newline();
     format_.print_indents(depth + 1);
-    format_element(elem, depth + 1);
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+    format_element(elem, child_metrics, depth + 1);
+    child_idx++;
   }
 
   if (!empty) {
@@ -795,13 +788,14 @@ inline void fractured_string_builder::format_object(const dom::object& obj,
                                                      const element_metrics& metrics,
                                                      size_t depth) {
   if (metrics.recommended_layout == layout_mode::INLINE || metrics.can_inline) {
-    format_object_inline(obj);
+    format_object_inline(obj, metrics);
   } else {
-    format_object_expanded(obj, depth);
+    format_object_expanded(obj, metrics, depth);
   }
 }
 
-inline void fractured_string_builder::format_object_inline(const dom::object& obj) {
+inline void fractured_string_builder::format_object_inline(const dom::object& obj,
+                                                             const element_metrics& metrics) {
   layout_mode prev_layout = format_.get_layout_mode();
   format_.set_layout_mode(layout_mode::INLINE);
 
@@ -809,6 +803,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
 
   bool empty = true;
   bool first = true;
+  size_t child_idx = 0;
 
   for (dom::key_value_pair field : obj) {
     empty = false;
@@ -826,7 +821,10 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
     if (options_.colon_padding) {
       format_.print_space();
     }
-    format_element(field.value, 0);
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+    format_element(field.value, child_metrics, 0);
+    child_idx++;
   }
 
   if (options_.simple_bracket_padding && !empty) {
@@ -837,11 +835,14 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
   format_.set_layout_mode(prev_layout);
 }
 
-inline void fractured_string_builder::format_object_expanded(const dom::object& obj, size_t depth) {
+inline void fractured_string_builder::format_object_expanded(const dom::object& obj,
+                                                               const element_metrics& metrics,
+                                                               size_t depth) {
   format_.start_object();
 
   bool empty = true;
   bool first = true;
+  size_t child_idx = 0;
 
   for (dom::key_value_pair field : obj) {
     empty = false;
@@ -856,7 +857,10 @@ inline void fractured_string_builder::format_object_expanded(const dom::object& 
     if (options_.colon_padding) {
       format_.print_space();
     }
-    format_element(field.value, depth + 1);
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+    format_element(field.value, child_metrics, depth + 1);
+    child_idx++;
   }
 
   if (!empty) {
@@ -913,11 +917,6 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
     default:
       break;
   }
-}
-
-inline const element_metrics& fractured_string_builder::get_metrics(const dom::element& elem) const {
-  size_t tape_idx = reinterpret_cast<size_t>(&elem);
-  return analyzer_.get_metrics(tape_idx);
 }
 
 inline size_t fractured_string_builder::measure_value_length(const dom::element& elem) const {
