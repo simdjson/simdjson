@@ -256,6 +256,8 @@ inline size_t structure_analyzer::estimate_number_length(double d) const {
 
 inline size_t structure_analyzer::estimate_number_length(int64_t i) const {
   if (i == 0) return 1;
+  // Handle INT64_MIN specially to avoid overflow when negating
+  if (i == INT64_MIN) return 20; // "-9223372036854775808" is 20 characters
   size_t len = (i < 0) ? 1 : 0; // negative sign
   int64_t abs_val = (i < 0) ? -i : i;
   while (abs_val > 0) {
@@ -280,7 +282,8 @@ inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
   common_keys.clear();
 
   std::set<std::string> shared_keys;
-  bool first_object = true;
+  dom::object first_obj;
+  bool have_first = false;
   size_t object_count = 0;
 
   for (dom::element elem : arr) {
@@ -298,10 +301,17 @@ inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
       current_keys.insert(std::string(field.key));
     }
 
-    if (first_object) {
+    if (!have_first) {
       shared_keys = current_keys;
-      first_object = false;
+      first_obj = obj;
+      have_first = true;
     } else {
+      // Check similarity threshold against the first object
+      double similarity = compute_object_similarity(first_obj, obj);
+      if (similarity < current_opts_->table_similarity_threshold) {
+        return false; // Objects are too dissimilar for table format
+      }
+
       // Intersect with current keys
       std::set<std::string> intersection;
       std::set_intersection(shared_keys.begin(), shared_keys.end(),
@@ -317,8 +327,7 @@ inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
     return false;
   }
 
-  // Check similarity threshold
-  // For simplicity, we require at least one common key
+  // Require at least one common key for table formatting
   if (shared_keys.empty()) {
     return false;
   }
@@ -933,6 +942,8 @@ inline size_t fractured_string_builder::measure_value_length(const dom::element&
       int64_t val;
       if (elem.get_int64().get(val) == SUCCESS) {
         if (val == 0) return 1;
+        // Handle INT64_MIN specially to avoid overflow when negating
+        if (val == INT64_MIN) return 20; // "-9223372036854775808" is 20 characters
         size_t len = (val < 0) ? 1 : 0;
         int64_t abs_val = (val < 0) ? -val : val;
         while (abs_val > 0) { len++; abs_val /= 10; }
