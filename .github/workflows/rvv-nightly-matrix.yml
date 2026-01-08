@@ -1,0 +1,92 @@
+name: RVV Backend (Nightly Deep Scan)
+
+# Trigger:
+# 1. Schedule: Every night at 02:00 UTC
+# 2. Manual: Allow developers to force a deep run
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  # ------------------------------------------------------------------------
+  # Job 1: Extended VLEN Matrix
+  # ------------------------------------------------------------------------
+  rvv-deep-test:
+    name: Deep Test (${{ matrix.compiler }}, VLEN=${{ matrix.vlen }})
+    runs-on: ubuntu-24.04
+    env:
+      # Canonical RVV CPU template. Scripts should append zvbb/vlen.
+      QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+      QEMU_CPU_BASE: rv64,v=on,vext_spec=v1.0,rvv_ta_all_1s=on,rvv_ma_all_1s=on
+      # Support both names to avoid drift
+      SIMDJSON_FORCE_IMPL: rvv
+      SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ "gcc", "clang" ]
+        # Nightly includes 1024 to ensure VLEN-extreme coverage.
+        vlen: [ 128, 256, 512, 1024 ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Toolchain
+        run: |
+          chmod +x scripts/rvv/*.sh
+          sudo ./scripts/rvv/fetch_toolchain.sh
+
+      - name: Verify Environment
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/verify_toolchain.sh
+
+      - name: Build (${{ matrix.compiler }})
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/build_rvv_${{ matrix.compiler }}.sh ${{ matrix.vlen }}
+
+      - name: Full CTest Suite
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_ctest.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
+
+  # ------------------------------------------------------------------------
+  # Job 2: Benchmark Stability Run
+  # ------------------------------------------------------------------------
+  rvv-bench-stress:
+    name: Bench Stress Test
+    runs-on: ubuntu-24.04
+    needs: rvv-deep-test
+    env:
+      QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+      QEMU_CPU_BASE: rv64,v=on,vext_spec=v1.0,rvv_ta_all_1s=on,rvv_ma_all_1s=on
+      SIMDJSON_FORCE_IMPL: rvv
+      SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { compiler: "clang", vlen: 256 }
+          - { compiler: "gcc",   vlen: 512 }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Toolchain
+        run: |
+          chmod +x scripts/rvv/*.sh
+          sudo ./scripts/rvv/fetch_toolchain.sh
+
+      - name: Build Benchmarks
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/build_rvv_${{ matrix.config.compiler }}.sh ${{ matrix.config.vlen }}
+
+      - name: Run All Benchmarks (Stability)
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_bench.sh ${{ matrix.config.compiler }} ${{ matrix.config.vlen }} ".*"

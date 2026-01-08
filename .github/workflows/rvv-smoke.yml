@@ -1,0 +1,46 @@
+name: RVV Backend (Smoke)
+
+on:
+  push:
+    paths:
+      - "src/rvv/**"
+      - "include/simdjson/rvv/**"
+      - "tools/rvv/**"
+      - "scripts/rvv/**"
+      - ".github/workflows/rvv-smoke.yml"
+  pull_request:
+    paths:
+      - "src/rvv/**"
+      - "include/simdjson/rvv/**"
+      - "tools/rvv/**"
+      - "scripts/rvv/**"
+      - ".github/workflows/rvv-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  rvv-fast-check:
+    name: Fast Check (Clang/128)
+    runs-on: ubuntu-24.04
+    env:
+      QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+      QEMU_CPU_BASE: rv64,v=on,vext_spec=v1.0,rvv_ta_all_1s=on,rvv_ma_all_1s=on
+      SIMDJSON_FORCE_IMPL: rvv
+      SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Toolchain
+        run: |
+          chmod +x scripts/rvv/*.sh
+          sudo ./scripts/rvv/fetch_toolchain.sh
+
+      - name: Build
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/build_rvv_clang.sh 128
+
+      - name: Run Smoketests
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_smoke.sh clang 128

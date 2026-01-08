@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simdjson RVV Port <rvv@simdjson.port>
+Date: Thu, 01 Jan 2026 00:00:00 +0000
+Subject: [PATCH] [RVV] Add headers to single-header amalgamation
+
+This patch ensures that the RVV headers are included in the 
+list of files processed during the single-header generation.
+---
+ include/simdjson/rvv.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+ create mode 100644 include/simdjson/rvv.h
+
+diff --git a/include/simdjson/rvv.h b/include/simdjson/rvv.h
+new file mode 100644
+index 0000000..f1f1f1f
+--- /dev/null
++++ b/include/simdjson/rvv.h
+@@ -0,0 +1,4 @@
++#ifndef SIMDJSON_RVV_H
++#define SIMDJSON_RVV_H
++#include "simdjson/rvv/implementation.h"
++#endif // SIMDJSON_RVV_H
+-- 
+2.34.1

@@ -1,0 +1,203 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simdjson RVV Port <rvv@simdjson.port>
+Date: Thu, 01 Jan 2026 00:00:00 +0000
+Subject: [PATCH] [RVV] Add CI Workflows
+
+This patch adds the GitHub Actions workflows for the RVV backend:
+1. rvv-smoke.yml: Fast feedback on RVV-specific changes.
+2. rvv-qemu-matrix.yml: PR validation (GCC/Clang x VLEN 128/256/512).
+3. rvv-nightly-matrix.yml: Deep testing (VLEN 1024 + Stress Benchmarks).
+---
+ .github/workflows/rvv-nightly-matrix.yml | 66 ++++++++++++++++++++++
+ .github/workflows/rvv-qemu-matrix.yml    | 70 +++++++++++++++++++++++
+ .github/workflows/rvv-smoke.yml          | 43 ++++++++++++++
+ 3 files changed, 179 insertions(+)
+ create mode 100644 .github/workflows/rvv-nightly-matrix.yml
+ create mode 100644 .github/workflows/rvv-qemu-matrix.yml
+ create mode 100644 .github/workflows/rvv-smoke.yml
+
+diff --git a/.github/workflows/rvv-nightly-matrix.yml b/.github/workflows/rvv-nightly-matrix.yml
+new file mode 100644
+index 0000000..e1e1e1e
+--- /dev/null
++++ b/.github/workflows/rvv-nightly-matrix.yml
+@@ -0,0 +1,66 @@
++name: RVV Backend (Nightly Deep Scan)
++
++on:
++  schedule:
++    - cron: '0 2 * * *'
++  workflow_dispatch:
++
++jobs:
++  rvv-deep-test:
++    name: Deep Test (${{ matrix.compiler }}, VLEN=${{ matrix.vlen }})
++    runs-on: ubuntu-22.04
++
++    strategy:
++      fail-fast: false
++      matrix:
++        compiler: [ "gcc", "clang" ]
++        vlen: [ 128, 256, 512, 1024 ]
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Toolchain
++        run: sudo ./scripts/rvv/fetch_toolchain.sh
++
++      - name: Verify Environment
++        run: ./scripts/rvv/verify_toolchain.sh
++
++      - name: Build (${{ matrix.compiler }})
++        run: |
++          chmod +x scripts/rvv/*.sh
++          ./scripts/rvv/build_rvv_${{ matrix.compiler }}.sh ${{ matrix.vlen }}
++
++      - name: Full CTest Suite
++        run: |
++          ./scripts/rvv/run_qemu_ctest.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
++
++  rvv-bench-stress:
++    name: Bench Stress Test
++    runs-on: ubuntu-22.04
++    needs: rvv-deep-test
++
++    strategy:
++      matrix:
++        config: 
++          - { compiler: "clang", vlen: 256 }
++          - { compiler: "gcc",   vlen: 512 }
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Toolchain
++        run: sudo ./scripts/rvv/fetch_toolchain.sh
++
++      - name: Build Benchmarks
++        run: |
++          chmod +x scripts/rvv/*.sh
++          ./scripts/rvv/build_rvv_${{ matrix.config.compiler }}.sh ${{ matrix.config.vlen }}
++
++      - name: Run All Benchmarks (Stability)
++        run: |
++          ./scripts/rvv/run_qemu_bench.sh ${{ matrix.config.compiler }} ${{ matrix.config.vlen }} ".*"
+diff --git a/.github/workflows/rvv-qemu-matrix.yml b/.github/workflows/rvv-qemu-matrix.yml
+new file mode 100644
+index 0000000..f2f2f2f
+--- /dev/null
++++ b/.github/workflows/rvv-qemu-matrix.yml
+@@ -0,0 +1,70 @@
++name: RVV Backend (QEMU Matrix)
++
++on:
++  push:
++    branches: [ "master", "main" ]
++  pull_request:
++    branches: [ "master", "main" ]
++  workflow_dispatch:
++
++jobs:
++  rvv-build-and-test:
++    name: ${{ matrix.compiler }} (VLEN=${{ matrix.vlen }})
++    runs-on: ubuntu-22.04
++
++    strategy:
++      fail-fast: false
++      matrix:
++        compiler: [ "gcc", "clang" ]
++        vlen: [ 128, 256, 512 ] 
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Toolchain (apt)
++        run: |
++          sudo ./scripts/rvv/fetch_toolchain.sh
++
++      - name: Verify Toolchain
++        run: |
++          ./scripts/rvv/verify_toolchain.sh
++
++      - name: Build (${{ matrix.compiler }})
++        run: |
++          chmod +x scripts/rvv/*.sh
++          if [ "${{ matrix.compiler }}" == "gcc" ]; then
++            ./scripts/rvv/build_rvv_gcc.sh ${{ matrix.vlen }}
++          else
++            ./scripts/rvv/build_rvv_clang.sh ${{ matrix.vlen }}
++          fi
++
++      - name: Test (VLEN=${{ matrix.vlen }})
++        run: |
++          ./scripts/rvv/run_qemu_ctest.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
++
++      - name: Smoketests
++        run: |
++          ./scripts/rvv/run_qemu_smoke.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
++
++  rvv-bench-sanity:
++    name: Bench Sanity (GCC/128)
++    runs-on: ubuntu-22.04
++    needs: rvv-build-and-test
++    
++    steps:
++      - uses: actions/checkout@v3
++      
++      - name: Install Toolchain
++        run: sudo ./scripts/rvv/fetch_toolchain.sh
++
++      - name: Build (GCC/128)
++        run: |
++          chmod +x scripts/rvv/*.sh
++          ./scripts/rvv/build_rvv_gcc.sh 128
++
++      - name: Run Benchmarks (Correctness Only)
++        run: |
++          ./scripts/rvv/run_qemu_bench.sh gcc 128 "bench_stage1"
+diff --git a/.github/workflows/rvv-smoke.yml b/.github/workflows/rvv-smoke.yml
+new file mode 100644
+index 0000000..a3a3a3a
+--- /dev/null
++++ b/.github/workflows/rvv-smoke.yml
+@@ -0,0 +1,43 @@
++name: RVV Backend (Smoke)
++
++on:
++  push:
++    paths:
++      - 'src/rvv/**'
++      - 'include/simdjson/rvv/**'
++      - 'tools/rvv/**'
++      - 'scripts/rvv/**'
++      - '.github/workflows/rvv-smoke.yml'
++  pull_request:
++    paths:
++      - 'src/rvv/**'
++      - 'include/simdjson/rvv/**'
++      - 'tools/rvv/**'
++      - 'scripts/rvv/**'
++      - '.github/workflows/rvv-smoke.yml'
++  workflow_dispatch:
++
++jobs:
++  rvv-fast-check:
++    name: Fast Check (Clang/128)
++    runs-on: ubuntu-22.04
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Toolchain
++        run: sudo ./scripts/rvv/fetch_toolchain.sh
++
++      - name: Build
++        run: |
++          chmod +x scripts/rvv/*.sh
++          ./scripts/rvv/build_rvv_clang.sh 128
++
++      - name: Run Smoketests
++        run: ./scripts/rvv/run_qemu_smoke.sh clang 128
+-- 
+2.34.1

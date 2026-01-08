@@ -1,0 +1,302 @@
+name: RVV (RISC-V Vector) CI
+
+on:
+  push:
+    paths:
+      - ".github/workflows/rvv.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "include/simdjson/rvv/**"
+      - "src/rvv/**"
+      - "src/rvv.cpp"
+      - "tests/rvv/**"
+      - "tools/rvv/**"
+      - "scripts/rvv/**"
+      - "include/simdjson/**/begin.h"
+      - "include/simdjson/**/end.h"
+  pull_request:
+    paths:
+      - ".github/workflows/rvv.yml"
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "include/simdjson/rvv/**"
+      - "src/rvv/**"
+      - "src/rvv.cpp"
+      - "tests/rvv/**"
+      - "tools/rvv/**"
+      - "scripts/rvv/**"
+      - "include/simdjson/**/begin.h"
+      - "include/simdjson/**/end.h"
+  workflow_dispatch:
+    inputs:
+      run_bench:
+        description: "Also run RVV benchmarks under QEMU (slow)"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+  schedule:
+    # Weekly (benchmarks can be slow). Adjust as needed.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: rvv-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Fixed-by-spec knobs
+  MARCH_BASELINE: rv64gcv
+  MABI: lp64d
+  VLEN_LIST: "128 256 1024"
+
+  # Force runtime selection so nothing silently falls back.
+  SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+  # QEMU user-mode sysroot (used only if dynamically linked binaries are produced)
+  QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint (RVV)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lint deps
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q \
+            clang-format \
+            shellcheck
+
+      - name: Run RVV linter
+        run: |
+          if [[ -f tools/rvv/lint_rvv.sh ]]; then
+            chmod +x tools/rvv/lint_rvv.sh
+            tools/rvv/lint_rvv.sh
+          else
+            echo "tools/rvv/lint_rvv.sh not found; skipping."
+          fi
+
+  build_and_test:
+    name: Build + Test (QEMU) — ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang, gcc]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain + QEMU
+        run: |
+          sudo apt-get update -q
+
+          # Cross toolchain + build tools + QEMU user-mode
+          sudo apt-get install -y -q \
+            cmake ninja-build build-essential \
+            gcc-riscv64-linux-gnu g++-riscv64-linux-gnu libc6-dev-riscv64-cross \
+            qemu-user qemu-user-static
+
+          # Clang is needed for the clang matrix entry
+          sudo apt-get install -y -q clang lld
+
+          echo "---- Versions ----"
+          qemu-riscv64 --version || true
+          riscv64-linux-gnu-g++ --version | head -n 1 || true
+          clang++ --version | head -n 1 || true
+          cmake --version | head -n 1 || true
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x scripts/rvv/*.sh 2>/dev/null || true
+          chmod +x tools/rvv/*.sh 2>/dev/null || true
+
+      - name: Build RVV (static) — ${{ matrix.compiler }}
+        run: |
+          if [[ "${{ matrix.compiler }}" == "clang" ]]; then
+            ./scripts/rvv/build_rvv_clang.sh
+          else
+            ./scripts/rvv/build_rvv_gcc.sh
+          fi
+
+      - name: Compute BUILD_DIR
+        id: builddir
+        run: |
+          BUILD_DIR="build/rvv-${{ matrix.compiler }}-${MARCH_BASELINE}"
+          if [[ ! -d "${BUILD_DIR}" ]]; then
+            echo "Expected build dir '${BUILD_DIR}' not found."
+            echo "Available build/rvv-* directories:"
+            ls -1d build/rvv-* 2>/dev/null || true
+            exit 1
+          fi
+          echo "BUILD_DIR=${BUILD_DIR}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify RVV is registered (host-side sanity)
+        run: |
+          # This checks build outputs exist and that we have the expected RVV build folder.
+          # Runtime selection is enforced in the QEMU steps with SIMDJSON_FORCE_IMPLEMENTATION=rvv.
+          BUILD_DIR="${{ steps.builddir.outputs.BUILD_DIR }}"
+          echo "Using BUILD_DIR=${BUILD_DIR}"
+          test -d "${BUILD_DIR}" || exit 1
+          # Print a quick tree of likely tool/test locations for debugging.
+          ls -la "${BUILD_DIR}" || true
+          ls -la "${BUILD_DIR}/tools" 2>/dev/null || true
+          ls -la "${BUILD_DIR}/tools/rvv" 2>/dev/null || true
+          ls -la "${BUILD_DIR}/tests" 2>/dev/null || true
+
+      - name: RVV smoketests under QEMU (VLEN matrix)
+        run: |
+          BUILD_DIR="${{ steps.builddir.outputs.BUILD_DIR }}"
+          echo "Using BUILD_DIR=${BUILD_DIR}"
+
+          # Prefer a dedicated smoke runner if present; otherwise run discovered binaries directly.
+          if [[ -f scripts/rvv/run_qemu_smoke.sh ]]; then
+            chmod +x scripts/rvv/run_qemu_smoke.sh
+            for VLEN in ${VLEN_LIST}; do
+              echo "=== Smoke: compiler=${{ matrix.compiler }} VLEN=${VLEN} ==="
+              ./scripts/rvv/run_qemu_smoke.sh "${{ matrix.compiler }}" "${VLEN}"
+            done
+          else
+            echo "scripts/rvv/run_qemu_smoke.sh not found; attempting to run common smoke binaries directly."
+
+            # Try common locations/names. This is intentionally redundant to survive minor CMake layout changes.
+            SMOKES=(
+              "smoke_validate_utf8"
+              "smoke_stage1"
+              "rvv_smoke_validate_utf8"
+              "rvv_smoke_stage1"
+              "rvv_smoke_utf8"
+              "rvv_smoke_structurals"
+              "print_rvv_caps"
+            )
+
+            find_smoke() {
+              local name="$1"
+              local p
+              for p in \
+                "${BUILD_DIR}/${name}" \
+                "${BUILD_DIR}/bin/${name}" \
+                "${BUILD_DIR}/tools/${name}" \
+                "${BUILD_DIR}/tools/rvv/${name}" \
+                "${BUILD_DIR}/tools/rvv/${name}.exe"
+              do
+                [[ -f "$p" ]] && { echo "$p"; return 0; }
+              done
+              return 1
+            }
+
+            for VLEN in ${VLEN_LIST}; do
+              export QEMU_CPU="rv64,v=true,vext_spec=v1.0,vlen=${VLEN}"
+              export QEMU_LD_PREFIX="${QEMU_LD_PREFIX}"
+              echo "=== QEMU_CPU=${QEMU_CPU} ==="
+
+              ran_any=0
+              for s in "${SMOKES[@]}"; do
+                if BIN="$(find_smoke "$s")"; then
+                  ran_any=1
+                  echo "Running: ${BIN}"
+                  qemu-riscv64 "${BIN}"
+                fi
+              done
+
+              if [[ "${ran_any}" -eq 0 ]]; then
+                echo "No smoke binaries found in ${BUILD_DIR} (searched common locations)."
+                echo "Expected tools under ${BUILD_DIR}/tools/rvv/."
+                exit 1
+              fi
+            done
+          fi
+
+      - name: RVV ctest under QEMU (VLEN matrix)
+        run: |
+          BUILD_DIR="${{ steps.builddir.outputs.BUILD_DIR }}"
+          echo "Using BUILD_DIR=${BUILD_DIR}"
+
+          if [[ -f scripts/rvv/run_qemu_ctest.sh ]]; then
+            chmod +x scripts/rvv/run_qemu_ctest.sh
+            BUILD_DIR="${BUILD_DIR}" ./scripts/rvv/run_qemu_ctest.sh
+          else
+            echo "scripts/rvv/run_qemu_ctest.sh not found; attempting best-effort ctest with QEMU VLEN matrix."
+            echo "NOTE: Best-effort requires CTest to be configured with an emulator (e.g. CMAKE_CROSSCOMPILING_EMULATOR)."
+            for VLEN in ${VLEN_LIST}; do
+              export QEMU_CPU="rv64,v=true,vext_spec=v1.0,vlen=${VLEN}"
+              export QEMU_LD_PREFIX="${QEMU_LD_PREFIX}"
+              echo "=== ctest VLEN=${VLEN} (QEMU_CPU=${QEMU_CPU}) ==="
+              (cd "${BUILD_DIR}" && ctest --output-on-failure -j "$(nproc)")
+            done
+          fi
+
+      - name: Upload build + test logs (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvv-${{ matrix.compiler }}-logs
+          path: |
+            ${{ steps.builddir.outputs.BUILD_DIR }}/Testing/**/*
+            ${{ steps.builddir.outputs.BUILD_DIR }}/CMakeFiles/CMakeOutput.log
+            ${{ steps.builddir.outputs.BUILD_DIR }}/CMakeFiles/CMakeError.log
+            ${{ steps.builddir.outputs.BUILD_DIR }}/CMakeCache.txt
+          if-no-files-found: ignore
+
+  benchmark:
+    name: Bench (QEMU) — clang (scheduled / on-demand)
+    runs-on: ubuntu-latest
+    needs: [build_and_test]
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_bench == 'true')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain + QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q \
+            cmake ninja-build build-essential \
+            gcc-riscv64-linux-gnu g++-riscv64-linux-gnu libc6-dev-riscv64-cross \
+            qemu-user qemu-user-static \
+            clang lld
+          qemu-riscv64 --version || true
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x scripts/rvv/*.sh 2>/dev/null || true
+
+      - name: Build RVV (clang) with benchmarks
+        run: |
+          # If your helper script does not enable benchmarks, update it to pass:
+          #   -DSIMDJSON_ENABLE_BENCHMARKS=ON
+          # This workflow assumes the script already does the right thing.
+          ./scripts/rvv/build_rvv_clang.sh
+
+      - name: Run benchmarks under QEMU (VLEN matrix)
+        run: |
+          BUILD_DIR="build/rvv-clang-${MARCH_BASELINE}"
+          if [[ -f scripts/rvv/run_qemu_benchmark.sh ]]; then
+            chmod +x scripts/rvv/run_qemu_benchmark.sh
+            BUILD_DIR="${BUILD_DIR}" ./scripts/rvv/run_qemu_benchmark.sh
+          else
+            echo "scripts/rvv/run_qemu_benchmark.sh not found."
+            exit 1
+          fi
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: rvv-bench-results
+          path: |
+            build/rvv-clang-${{ env.MARCH_BASELINE }}/bench_results/**/*
+          if-no-files-found: error

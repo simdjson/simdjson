@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Simdjson RVV Port <rvv@simdjson.port>
+Date: Thu, 01 Jan 2026 00:00:00 +0000
+Subject: [PATCH] [RVV] Wire up RISC-V Vector Backend
+
+This patch integrates the RVV backend into the build system.
+1. Adds SIMDJSON_ENABLE_RV64 CMake option.
+2. Compiles src/rvv.cpp with -march=rv64gcv.
+3. Registers the 'rvv' implementation in src/simdjson.cpp.
+---
+ CMakeLists.txt   | 18 ++++++++++++++++++
+ src/simdjson.cpp |  9 +++++++++
+ 2 files changed, 27 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1234567..89abcde 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -100,6 +100,7 @@ option(SIMDJSON_ENABLE_PPC64 "Enable PPC64 implementation" ON)
+ option(SIMDJSON_ENABLE_ARM64 "Enable ARM64 implementation" ON)
+ option(SIMDJSON_ENABLE_FALLBACK "Enable Fallback implementation" ON)
+ option(SIMDJSON_ENABLE_LASX "Enable LoongArch LASX implementation" ON)
++option(SIMDJSON_ENABLE_RV64 "Enable RISC-V Vector implementation" OFF) # Default OFF until stable
+ 
+ #
+ # Compile flags
+@@ -250,6 +251,23 @@ if(SIMDJSON_ENABLE_LASX)
+   endif()
+ endif()
+ 
++# --------------------------------------------------------------------------
++# RVV (RISC-V Vector) Backend
++# --------------------------------------------------------------------------
++if(SIMDJSON_ENABLE_RV64)
++  message(STATUS "Enabling RVV (RISC-V Vector) Backend")
++  set(RVV_SOURCES src/rvv.cpp)
++
++  # Apply Architecture Flags specifically to these source files
++  # This allows building the backend even if the host compiler defaults to scalar RV64
++  set_source_files_properties(${RVV_SOURCES} PROPERTIES
++      COMPILE_FLAGS "-march=rv64gcv -mabi=lp64d"
++  )
++
++  target_sources(simdjson PRIVATE ${RVV_SOURCES})
++  target_compile_definitions(simdjson PRIVATE SIMDJSON_IMPLEMENTATION_RVV=1)
++endif()
++
+ #
+ # Linker flags
+ #
+diff --git a/src/simdjson.cpp b/src/simdjson.cpp
+index 2345678..90abcdef 100644
+--- a/src/simdjson.cpp
++++ b/src/simdjson.cpp
+@@ -48,6 +48,10 @@
+ #include "simdjson/lasx/implementation.h"
+ #endif
+ 
++#if SIMDJSON_IMPLEMENTATION_RVV
++#include "simdjson/rvv/implementation.h"
++#endif
++
+ #include "simdjson/fallback/implementation.h"
+ 
+ namespace simdjson {
+@@ -79,6 +83,11 @@ const std::list<const implementation *>& get_available_implementations() {
+       static const lasx::implementation lasx_impl;
+       available_implementations.push_back(&lasx_impl);
+ #endif
++
++#if SIMDJSON_IMPLEMENTATION_RVV
++      static const rvv::implementation rvv_impl;
++      available_implementations.push_back(&rvv_impl);
++#endif
++
+       static const fallback::implementation fallback_impl;
+       available_implementations.push_back(&fallback_impl);
+     }
+-- 
+2.34.1

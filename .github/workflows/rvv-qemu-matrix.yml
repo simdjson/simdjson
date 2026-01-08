@@ -1,0 +1,92 @@
+name: RVV Backend (QEMU Matrix)
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  # ------------------------------------------------------------------------
+  # Job 1: Build & Test Matrix
+  # ------------------------------------------------------------------------
+  rvv-build-and-test:
+    name: ${{ matrix.compiler }} (VLEN=${{ matrix.vlen }})
+    runs-on: ubuntu-24.04
+    env:
+      QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+      # Canonical RVV CPU template. Scripts should append zvbb/vlen.
+      QEMU_CPU_BASE: rv64,v=on,vext_spec=v1.0,rvv_ta_all_1s=on,rvv_ma_all_1s=on
+      # Support both names to avoid drift
+      SIMDJSON_FORCE_IMPL: rvv
+      SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ "gcc", "clang" ]
+        vlen: [ 128, 256, 512 ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Toolchain (apt)
+        run: |
+          chmod +x scripts/rvv/*.sh
+          sudo ./scripts/rvv/fetch_toolchain.sh
+
+      - name: Verify Toolchain
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/verify_toolchain.sh
+
+      - name: Build (${{ matrix.compiler }})
+        run: |
+          chmod +x scripts/rvv/*.sh
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            ./scripts/rvv/build_rvv_gcc.sh ${{ matrix.vlen }}
+          else
+            ./scripts/rvv/build_rvv_clang.sh ${{ matrix.vlen }}
+          fi
+
+      - name: Test (VLEN=${{ matrix.vlen }})
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_ctest.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
+
+      - name: Smoketests
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_smoke.sh ${{ matrix.compiler }} ${{ matrix.vlen }}
+
+  # ------------------------------------------------------------------------
+  # Job 2: Benchmark Sanity Check
+  # ------------------------------------------------------------------------
+  rvv-bench-sanity:
+    name: Bench Sanity (GCC/128)
+    runs-on: ubuntu-24.04
+    needs: rvv-build-and-test
+    env:
+      QEMU_LD_PREFIX: /usr/riscv64-linux-gnu
+      QEMU_CPU_BASE: rv64,v=on,vext_spec=v1.0,rvv_ta_all_1s=on,rvv_ma_all_1s=on
+      SIMDJSON_FORCE_IMPL: rvv
+      SIMDJSON_FORCE_IMPLEMENTATION: rvv
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Toolchain
+        run: |
+          chmod +x scripts/rvv/*.sh
+          sudo ./scripts/rvv/fetch_toolchain.sh
+
+      - name: Build (GCC/128)
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/build_rvv_gcc.sh 128
+
+      - name: Run Benchmarks (Correctness Only)
+        run: |
+          chmod +x scripts/rvv/*.sh
+          ./scripts/rvv/run_qemu_bench.sh gcc 128 "bench_stage1"
