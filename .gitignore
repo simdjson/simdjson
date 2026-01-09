@@ -107,3 +107,17 @@ objs
 
 # clangd
 .cache
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Rust build artifacts
+**/target/
+
+# Local ablation/benchmark artifacts
+ablation/
+
+# Generated documentation/review files
+CODE_REVIEW.md
+SUMMARY.md
