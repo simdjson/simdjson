@@ -9,5 +9,6 @@
 // All includes not under simdjson/generic/builder must be here!
 // Otherwise, amalgamation will fail.
 #include "simdjson/concepts.h"
+#include "simdjson/dom/fractured_json.h"
 
 #endif // SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H

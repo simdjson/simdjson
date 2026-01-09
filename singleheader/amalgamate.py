@@ -231,7 +231,11 @@ class SimdjsonFile:
     @property
     def is_amalgamator(self):
         if self.implementation:
-            return self.root == 'src' or self.include_dir == 'simdjson' or self.filename == 'ondemand.h'or self.filename == 'builder.h'  or self.filename == 'implementation.h'
+            return (self.root == 'src' or
+                    self.include_dir == 'simdjson' or
+                    self.filename == 'ondemand.h' or
+                    self.filename == 'builder.h' or
+                    self.filename == 'implementation.h')
         else:
             return self.filename == 'amalgamated.h'
 
@@ -319,7 +323,7 @@ class SimdjsonRepository:
         result = None
         for relative_root in self.relative_roots:
             if os.path.exists(os.path.join(self.project_path, relative_root, filename)):
-                assert result is None, f"Error: File '{filename}' exists in both '{result}' and '{root}' directories. Files must be unique across roots to avoid ambiguity. Rename or move the duplicate file.{result}' and '{root}' directories. Files must be unique across roots to avoid ambiguity. Rename or move the duplicate file."
+                assert result is None, f"Error: File '{filename}' exists in both '{result}' and '{relative_root}' directories. Files must be unique across roots to avoid ambiguity. Rename or move the duplicate file."
                 result = relative_root
         return result
 
