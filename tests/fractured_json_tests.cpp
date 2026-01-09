@@ -7,6 +7,15 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
+// Helper function to count newlines in a string
+static size_t count_newlines(const std::string& s) {
+  size_t count = 0;
+  for (char c : s) {
+    if (c == '\n') count++;
+  }
+  return count;
+}
+
 // Test that fractured_json produces valid JSON that can be re-parsed
 bool roundtrip_test() {
   std::cout << "Running " << __func__ << std::endl;
@@ -65,11 +74,7 @@ bool inline_array_test() {
   std::cout << "Formatted: " << formatted << std::endl;
 
   // Should be inline (single line, no newlines except possibly at end)
-  size_t newline_count = 0;
-  for (char c : formatted) {
-    if (c == '\n') newline_count++;
-  }
-
+  size_t newline_count = count_newlines(formatted);
   if (newline_count > 1) {
     std::cerr << "Simple array should be inline but has " << newline_count << " newlines" << std::endl;
     return false;
@@ -99,12 +104,8 @@ bool inline_object_test() {
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted: " << formatted << std::endl;
 
-  // Should be inline
-  size_t newline_count = 0;
-  for (char c : formatted) {
-    if (c == '\n') newline_count++;
-  }
-
+  // Should be inline (single line)
+  size_t newline_count = count_newlines(formatted);
   if (newline_count > 1) {
     std::cerr << "Simple object should be inline but has " << newline_count << " newlines" << std::endl;
     return false;
@@ -134,12 +135,8 @@ bool expanded_test() {
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted:\n" << formatted << std::endl;
 
-  // Should have multiple lines
-  size_t newline_count = 0;
-  for (char c : formatted) {
-    if (c == '\n') newline_count++;
-  }
-
+  // Should have multiple lines (at least 3 newlines for nested structure)
+  size_t newline_count = count_newlines(formatted);
   if (newline_count < 3) {
     std::cerr << "Complex nested object should be expanded" << std::endl;
     return false;
