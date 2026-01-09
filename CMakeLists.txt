@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.14)
 
+# Build performance optimizations
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile commands for faster IDE integration")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# Enable parallel compilation on MSVC
+if(MSVC)
+  add_compile_options(/MP)
+endif()
+
 project(
     simdjson
     # The version number is modified by tools/release.py
@@ -83,10 +92,36 @@ add_library(simdjson ${SIMDJSON_SOURCES})
 add_library(simdjson::simdjson ALIAS simdjson)
 set(SIMDJSON_LIBRARIES simdjson)
 
+# Enable precompiled headers for faster builds
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
+  target_precompile_headers(simdjson PRIVATE
+    <algorithm>
+    <array>
+    <atomic>
+    <bit>
+    <cassert>
+    <cctype>
+    <cerrno>
+    <cstddef>
+    <cstdint>
+    <cstdlib>
+    <cstring>
+    <memory>
+    <string>
+    <utility>
+    <vector>
+  )
+endif()
+
 if(SIMDJSON_BUILD_STATIC_LIB)
   add_library(simdjson_static STATIC ${SIMDJSON_SOURCES})
   add_library(simdjson::simdjson_static ALIAS simdjson_static)
   list(APPEND SIMDJSON_LIBRARIES simdjson_static)
+  
+  # Reuse precompiled headers for static library
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
+    target_precompile_headers(simdjson_static REUSE_FROM simdjson)
+  endif()
 endif()
 
 set_target_properties(
@@ -111,6 +146,14 @@ simdjson_add_props(
     PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     PRIVATE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
 )
+
+# Optimize linker settings for faster builds
+if(MSVC)
+  target_link_options(simdjson PRIVATE /INCREMENTAL)
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_options(simdjson PRIVATE /DEBUG:FASTLINK)
+  endif()
+endif()
 
 if(SIMDJSON_STATIC_REFLECTION)
   # We would like to require C++26, but no compiler supports that!
