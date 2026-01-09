@@ -1,118 +1,122 @@
-# Set the default behavior, in case people don't have core.autocrlf set.
-# Uncomment next line to adjust line endings
+# ---------------------------------------------------------------------------
+# Line endings policy
+# ---------------------------------------------------------------------------
+# Default: detect text and normalize (unless overridden below)
 * text=auto
 
-# we don't want json files to be modified for this project
-*.json binary diff=astextplain
+# Don't let JSON get rewritten (project requirement)
+*.json -text binary diff=astextplain
 
-
-# Common settings that generally should always be used with your language specific settings
-
-#
-# From generator:
-# https://www.davidlaing.com/2012/09/19/customise-your-gitattributes-to-become-a-git-ninja/
-#
-
-# Documents
+# ---------------------------------------------------------------------------
+# Documents / text formats
+# ---------------------------------------------------------------------------
 *.bibtex   text diff=bibtex
-*.doc	        diff=astextplain
-*.DOC	        diff=astextplain
-*.docx          diff=astextplain
-*.DOCX          diff=astextplain
-*.dot           diff=astextplain
-*.DOT           diff=astextplain
-*.pdf           diff=astextplain
-*.PDF           diff=astextplain
-*.rtf           diff=astextplain
-*.RTF	        diff=astextplain
-*.md       text
-*.tex      text diff=tex
-*.adoc     text
-*.textile  text
-*.mustache text
-*.csv      text
-*.tab      text
-*.tsv      text
-*.txt      text
-*.sql      text
+*.doc      -text diff=astextplain
+*.DOC      -text diff=astextplain
+*.docx     -text diff=astextplain
+*.DOCX     -text diff=astextplain
+*.dot      -text diff=astextplain
+*.DOT      -text diff=astextplain
+*.pdf      -text diff=astextplain
+*.PDF      -text diff=astextplain
+*.rtf      -text diff=astextplain
+*.RTF      -text diff=astextplain
 
-# Graphics
-*.png      binary
-*.jpg      binary
-*.jpeg     binary
-*.gif      binary
-*.tif      binary
-*.tiff     binary
-*.ico      binary
-# SVG treated as an asset (binary) by default.
-*.svg      text
-# If you want to treat it as binary,
-# use the following line instead.
-# *.svg    binary
-*.eps      binary
+# Keep markdown/text files consistent across platforms (avoid CRLF noise)
+*.md       text eol=lf
+*.tex      text eol=lf diff=tex
+*.adoc     text eol=lf
+*.textile  text eol=lf
+*.mustache text eol=lf
+*.csv      text eol=lf
+*.tab      text eol=lf
+*.tsv      text eol=lf
+*.txt      text eol=lf
+*.sql      text eol=lf
 
+# ---------------------------------------------------------------------------
+# Config / serialization (LF to avoid CI diffs)
+# ---------------------------------------------------------------------------
+*.toml     text eol=lf
+*.xml      text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+
+# Patch files should be LF (prevents accidental patch corruption)
+*.patch    text eol=lf
+*.diff     text eol=lf
+
+# ---------------------------------------------------------------------------
+# Graphics / assets
+# ---------------------------------------------------------------------------
+*.png      -text binary
+*.jpg      -text binary
+*.jpeg     -text binary
+*.gif      -text binary
+*.tif      -text binary
+*.tiff     -text binary
+*.ico      -text binary
+# SVG: keep as text unless you explicitly want it binary
+*.svg      text eol=lf
+*.eps      -text binary
+
+# ---------------------------------------------------------------------------
 # Scripts
+# ---------------------------------------------------------------------------
+# POSIX scripts must be LF
 *.bash     text eol=lf
 *.sh       text eol=lf
-# These are explicitly windows files and should use crlf
+
+# Windows scripts should be CRLF
 *.bat      text eol=crlf
 *.cmd      text eol=crlf
 *.ps1      text eol=crlf
 
-# Serialisation
-#*.json     text
-*.toml     text
-*.xml      text
-*.yaml     text
-*.yml      text
-
-# Archives
-*.7z       binary
-*.gz       binary
-*.tar      binary
-*.zip      binary
-
-#
-# Exclude files from exporting
-#
-
-.gitattributes export-ignore
-.gitignore     export-ignore
-.editorconfig  export-ignore
-
-# Sources
+# ---------------------------------------------------------------------------
+# Sources (force LF so diffs are stable across platforms)
+# ---------------------------------------------------------------------------
 *.c     text eol=lf diff=c
 *.cc    text eol=lf diff=cpp
 *.cxx   text eol=lf diff=cpp
 *.cpp   text eol=lf diff=cpp
 *.c++   text eol=lf diff=cpp
-*.hpp   text eol=lf diff=cpp
 *.h     text eol=lf diff=c
+*.hpp   text eol=lf diff=cpp
 *.h++   text eol=lf diff=cpp
 *.hh    text eol=lf diff=cpp
 
-# Compiled Object files
-*.slo   binary
-*.lo    binary
-*.o     binary
-*.obj   binary
+# ---------------------------------------------------------------------------
+# Build / binary outputs
+# ---------------------------------------------------------------------------
+*.7z       -text binary
+*.gz       -text binary
+*.tar      -text binary
+*.zip      -text binary
 
-# Precompiled Headers
-*.gch   binary
-*.pch   binary
+*.slo      -text binary
+*.lo       -text binary
+*.o        -text binary
+*.obj      -text binary
 
-# Compiled Dynamic libraries
-*.so    binary
-*.dylib binary
-*.dll   binary
+*.gch      -text binary
+*.pch      -text binary
 
-# Compiled Static libraries
-*.lai   binary
-*.la    binary
-*.a     binary
-*.lib   binary
+*.so       -text binary
+*.dylib    -text binary
+*.dll      -text binary
 
-# Executables
-*.exe   binary
-*.out   binary
-*.app   binary
+*.lai      -text binary
+*.la       -text binary
+*.a        -text binary
+*.lib      -text binary
+
+*.exe      -text binary
+*.out      -text binary
+*.app      -text binary
+
+# ---------------------------------------------------------------------------
+# Exclude from `git archive` exports
+# ---------------------------------------------------------------------------
+.gitattributes export-ignore
+.gitignore     export-ignore
+.editorconfig  export-ignore
