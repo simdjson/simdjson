@@ -45,84 +45,75 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 }
 
 inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) {
-  element_metrics metrics;
-
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        metrics = analyze_array(arr, depth);
+        return analyze_array(arr, depth);
       }
       break;
     }
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        metrics = analyze_object(obj, depth);
+        return analyze_object(obj, depth);
       }
       break;
     }
+    default:
+      // Handle all scalar types with a helper
+      return analyze_scalar(elem);
+  }
+  return element_metrics{};
+}
+
+inline element_metrics structure_analyzer::analyze_scalar(const dom::element& elem) {
+  element_metrics metrics;
+  metrics.complexity = 0;
+  metrics.child_count = 0;
+  metrics.can_inline = true;
+  metrics.recommended_layout = layout_mode::INLINE;
+
+  switch (elem.type()) {
     case dom::element_type::STRING: {
       std::string_view str;
       if (elem.get_string().get(str) == SUCCESS) {
-        metrics.complexity = 0;
         metrics.estimated_inline_len = estimate_string_length(str);
-        metrics.child_count = 0;
-        metrics.can_inline = true;
-        metrics.recommended_layout = layout_mode::INLINE;
       }
       break;
     }
     case dom::element_type::INT64: {
       int64_t val;
       if (elem.get_int64().get(val) == SUCCESS) {
-        metrics.complexity = 0;
         metrics.estimated_inline_len = estimate_number_length(val);
-        metrics.child_count = 0;
-        metrics.can_inline = true;
-        metrics.recommended_layout = layout_mode::INLINE;
       }
       break;
     }
     case dom::element_type::UINT64: {
       uint64_t val;
       if (elem.get_uint64().get(val) == SUCCESS) {
-        metrics.complexity = 0;
         metrics.estimated_inline_len = estimate_number_length(val);
-        metrics.child_count = 0;
-        metrics.can_inline = true;
-        metrics.recommended_layout = layout_mode::INLINE;
       }
       break;
     }
     case dom::element_type::DOUBLE: {
       double val;
       if (elem.get_double().get(val) == SUCCESS) {
-        metrics.complexity = 0;
         metrics.estimated_inline_len = estimate_number_length(val);
-        metrics.child_count = 0;
-        metrics.can_inline = true;
-        metrics.recommended_layout = layout_mode::INLINE;
       }
       break;
     }
     case dom::element_type::BOOL: {
       bool val;
       if (elem.get_bool().get(val) == SUCCESS) {
-        metrics.complexity = 0;
         metrics.estimated_inline_len = val ? 4 : 5; // "true" or "false"
-        metrics.child_count = 0;
-        metrics.can_inline = true;
-        metrics.recommended_layout = layout_mode::INLINE;
       }
       break;
     }
     case dom::element_type::NULL_VALUE:
-      metrics.complexity = 0;
       metrics.estimated_inline_len = 4; // "null"
-      metrics.child_count = 0;
-      metrics.can_inline = true;
-      metrics.recommended_layout = layout_mode::INLINE;
+      break;
+    default:
       break;
   }
 
@@ -903,11 +894,7 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
     case dom::element_type::BOOL: {
       bool val;
       if (elem.get_bool().get(val) == SUCCESS) {
-        if (val) {
-          format_.true_atom();
-        } else {
-          format_.false_atom();
-        }
+        val ? format_.true_atom() : format_.false_atom();
       }
       break;
     }

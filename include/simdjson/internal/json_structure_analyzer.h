@@ -122,6 +122,9 @@ private:
   /** Recursive analysis implementation */
   element_metrics analyze_element(const dom::element& elem, size_t depth);
 
+  /** Analyze scalar values (strings, numbers, booleans, null) */
+  element_metrics analyze_scalar(const dom::element& elem);
+
   /** Analyze an array element */
   element_metrics analyze_array(const dom::array& arr, size_t depth);
 
