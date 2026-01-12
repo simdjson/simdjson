@@ -1,0 +1,6 @@
+{"timestamp": "2023-10-01T12:00:01Z", "service": "auth-service", "status": 200, "latency_ms": 15.5, "meta": {}}
+{"timestamp": "2023-10-01T12:00:02Z", "service": "payment-api", "status": 200, "latency_ms": 102.0}
+{"timestamp": "2023-10-01T12:00:03Z", "service": "auth-service", "status": 500, "error": "db_timeout"}
+{"timestamp": "2023-10-01T12:00:04Z", "service": "payment-api", "status": 200, "latency_ms": 50.5}
+{"timestamp": "2023-10-01T12:00:05Z", "service": "payment-api", "status": 400, "latency_ms": 10.0}
+{"timestamp": "2023-10-01T12:00:06Z", "service": "payment-api", "status": 200, "latency_ms": 98.0}
