@@ -12,6 +12,7 @@ add_cpp_test(unicode_tests       LABELS dom acceptance per_implementation)
 add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
 add_cpp_test(padded_string_tests LABELS other acceptance                   )
 add_cpp_test(prettify_tests      LABELS other acceptance per_implementation)
+add_cpp_test(fractured_json_tests LABELS other acceptance per_implementation)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
