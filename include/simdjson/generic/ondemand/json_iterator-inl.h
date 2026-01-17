@@ -215,11 +215,10 @@ simdjson_inline void json_iterator::assert_more_tokens(uint32_t required_tokens)
 }
 
 simdjson_inline void json_iterator::assert_valid_position(token_position position) const noexcept {
+  (void)position; // Suppress unused parameter warning
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
   SIMDJSON_ASSUME( position >= &parser->implementation->structural_indexes[0] );
   SIMDJSON_ASSUME( position < &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] );
-#else
-  (void)position; // Suppress unused parameter warning
 #endif
 }
 
