@@ -966,7 +966,10 @@ simdjson_inline bool value_iterator::is_at_key() const noexcept {
   // Keys are at the same depth as the object.
   // Note here that we could be safer and check that we are within an object,
   // but we do not.
-  return _depth == _json_iter->_depth && *_json_iter->peek() == '"' && * _json_iter->peek(1) == ':';
+  //
+  // As long as we are at the object's depth, in a valid document,
+  // we will only ever be at { , : or the actual string key: ".
+  return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
 }
 
 simdjson_inline bool value_iterator::is_at_iterator_start() const noexcept {
