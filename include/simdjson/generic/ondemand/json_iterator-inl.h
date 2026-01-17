@@ -358,7 +358,11 @@ simdjson_inline token_position json_iterator::position() const noexcept {
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape(in, _string_buf_loc, allow_replacement);
+#ifndef SIMDJSON_VISUAL_STUDIO
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+#endif // SIMDJSON_VISUAL_STUDIO
   return result;
 #else
   return parser->unescape(in, _string_buf_loc, allow_replacement);
@@ -368,7 +372,11 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape_wobbly(in, _string_buf_loc);
+#ifndef SIMDJSON_VISUAL_STUDIO
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+#endif // SIMDJSON_VISUAL_STUDIO
   return result;
 #else
   return parser->unescape_wobbly(in, _string_buf_loc);
