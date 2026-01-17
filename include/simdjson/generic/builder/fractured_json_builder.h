@@ -40,36 +40,14 @@ simdjson_warn_unused simdjson_result<std::string> to_fractured_json_string(
     const fractured_json_options& opts = {},
     size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   // Step 1: Serialize to minified JSON
-  auto minified_result = to_json_string(obj, initial_capacity);
-  if (minified_result.error()) {
-    return minified_result.error();
+  std::string formatted;
+  auto error = to_json_string(obj, initial_capacity).get(formatted);
+  if (error) {
+    return error;
   }
 
   // Step 2: Reformat with FracturedJson
-  return fractured_json_string(minified_result.value(), opts);
-}
-
-/**
- * Serialize an object to a FracturedJson-formatted string (output parameter version).
- *
- * @param obj The object to serialize
- * @param output The string to write the result to
- * @param opts FracturedJson formatting options
- * @param initial_capacity Initial buffer capacity for serialization
- * @return SUCCESS or an error code
- */
-template <class T>
-simdjson_warn_unused simdjson_error to_fractured_json(
-    const T& obj,
-    std::string& output,
-    const fractured_json_options& opts = {},
-    size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
-  auto result = to_fractured_json_string(obj, opts, initial_capacity);
-  if (result.error()) {
-    return result.error();
-  }
-  output = std::move(result.value());
-  return SUCCESS;
+  return fractured_json_string(formatted, opts);
 }
 
 /**
@@ -93,13 +71,14 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
     const fractured_json_options& opts = {},
     size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   // Step 1: Extract fields to minified JSON
-  auto minified_result = extract_from<FieldNames...>(obj, initial_capacity);
-  if (minified_result.error()) {
-    return minified_result.error();
+  std::string formatted;
+  auto error = extract_from<FieldNames...>(obj, initial_capacity).get(formatted);
+  if (error) {
+    return error;
   }
 
   // Step 2: Reformat with FracturedJson
-  return fractured_json_string(minified_result.value(), opts);
+  return fractured_json_string(formatted, opts);
 }
 
 } // namespace builder
@@ -118,20 +97,6 @@ simdjson_warn_unused simdjson_result<std::string> to_fractured_json_string(
     size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   return SIMDJSON_IMPLEMENTATION::builder::to_fractured_json_string(obj, opts, initial_capacity);
 }
-
-/**
- * Serialize an object to a FracturedJson-formatted string (output parameter version).
- * Global namespace version for convenience.
- */
-template <class T>
-simdjson_warn_unused simdjson_error to_fractured_json(
-    const T& obj,
-    std::string& output,
-    const fractured_json_options& opts = {},
-    size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  return SIMDJSON_IMPLEMENTATION::builder::to_fractured_json(obj, output, opts, initial_capacity);
-}
-
 /**
  * Extract specific fields from an object and format with FracturedJson.
  * Global namespace version for convenience.

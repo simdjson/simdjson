@@ -39,9 +39,7 @@ bool basic_fractured_json_test() {
   SimpleUser user{1, "Alice", true};
 
   std::string formatted;
-  auto result = builder::to_fractured_json_string(user);
-  ASSERT_SUCCESS(result.error());
-  formatted = result.value();
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(user).get(formatted));
 
   // Verify it produces valid JSON by re-parsing
   simdjson::dom::parser parser;
@@ -77,9 +75,8 @@ bool custom_options_test() {
   opts.indent_spaces = 2;
   opts.simple_bracket_padding = false;
 
-  auto result = builder::to_fractured_json_string(data, opts);
-  ASSERT_SUCCESS(result.error());
-  std::string formatted = result.value();
+  std::string formatted;
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(data, opts).get(formatted));
 
   // Verify it produces valid JSON
   simdjson::dom::parser parser;
@@ -98,7 +95,7 @@ bool output_param_test() {
   SimpleUser user{42, "Charlie", false};
 
   std::string output;
-  ASSERT_SUCCESS(builder::to_fractured_json(user, output));
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(user).get(output));
 
   // Verify it produces valid JSON
   simdjson::dom::parser parser;
@@ -117,9 +114,8 @@ bool extract_fields_test() {
   UserWithEmail user{1, "Alice", "alice@example.com", true};
 
   // Extract only id and name fields
-  auto result = builder::extract_fractured_json<"id", "name">(user);
-  ASSERT_SUCCESS(result.error());
-  std::string formatted = result.value();
+ std::string formatted;
+  ASSERT_SUCCESS(simdjson::extract_fractured_json<"id", "name">(user).get(formatted));
 
   // Verify it produces valid JSON
   simdjson::dom::parser parser;
@@ -157,9 +153,8 @@ bool table_format_test() {
   opts.enable_table_format = true;
   opts.min_table_rows = 3;
 
-  auto result = builder::to_fractured_json_string(data, opts);
-  ASSERT_SUCCESS(result.error());
-  std::string formatted = result.value();
+  std::string formatted;
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(data, opts).get(formatted));
 
   // Verify it produces valid JSON
   simdjson::dom::parser parser;
@@ -178,9 +173,8 @@ bool roundtrip_test() {
   SimpleUser original{123, "TestUser", true};
 
   // Serialize with FracturedJson
-  auto result = builder::to_fractured_json_string(original);
-  ASSERT_SUCCESS(result.error());
-  std::string formatted = result.value();
+  std::string formatted;
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(original).get(formatted));
 
   // Parse back using ondemand
   simdjson::ondemand::parser parser;
@@ -208,15 +202,13 @@ bool global_namespace_test() {
   SimpleUser user{99, "GlobalTest", false};
 
   // Test global to_fractured_json_string
-  auto result = simdjson::to_fractured_json_string(user);
-  ASSERT_SUCCESS(result.error());
-
+  std::string formatted;
+  ASSERT_SUCCESS(simdjson::to_fractured_json_string(user).get(formatted));
   // Verify output
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
-  ASSERT_SUCCESS(parser.parse(result.value()).get(doc));
-
-  std::cout << "Global namespace output: " << result.value() << std::endl;
+  ASSERT_SUCCESS(parser.parse(simdjson::pad(formatted)).get(doc));
+  std::cout << "Global namespace output: " << formatted << std::endl;
 #endif
   TEST_SUCCEED();
 }
@@ -235,18 +227,10 @@ bool run() {
 
 int main(int argc, char *argv[]) {
   std::cout << "Running FracturedJson builder integration tests..." << std::endl;
-
 #if SIMDJSON_STATIC_REFLECTION
   std::cout << "Static reflection is ENABLED" << std::endl;
 #else
   std::cout << "Static reflection is DISABLED - tests will be skipped" << std::endl;
 #endif
-
-  if (fractured_json_builder_tests::run()) {
-    std::cout << "All FracturedJson builder tests passed!" << std::endl;
-    return EXIT_SUCCESS;
-  } else {
-    std::cerr << "Some FracturedJson builder tests failed!" << std::endl;
-    return EXIT_FAILURE;
-  }
+  return test_main(argc, argv, fractured_json_builder_tests::run);
 }
