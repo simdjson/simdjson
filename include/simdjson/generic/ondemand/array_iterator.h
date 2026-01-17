@@ -72,6 +72,9 @@ public:
   simdjson_warn_unused simdjson_inline bool at_end() const noexcept;
 
 private:
+#if SIMDJSON_DEVELOPMENT_CHECKS
+   bool has_been_referenced{false};
+#endif
   value_iterator iter{};
 
   simdjson_inline array_iterator(const value_iterator &iter) noexcept;

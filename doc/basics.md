@@ -354,7 +354,13 @@ the  macro `SIMDJSON_DEVELOPMENT_CHECKS` to 1 prior to including
 the `simdjson.h` header to enable these additional checks: just make sure you remove the
 definition once your code has been tested. When `SIMDJSON_DEVELOPMENT_CHECKS` is set to 1, the
 simdjson library runs additional (expensive) tests on your code to help ensure that you are
-using the library in a safe manner.
+using the library in a safe manner. We add asserts which may halt your program, helping
+you find the bad programming pattern.
+
+When `SIMDJSON_DEVELOPMENT_CHECKS`, some of our data structures contain extra data for
+tracking explicitly potential programming mistakes. Thus you should not relying on the
+size (`sizeof`) of our data structures to be constant: they may change depending on the
+compiler settings.
 
 Once your code has been tested, you can then run it in
 Release mode: under Visual Studio, it means having the `_DEBUG` macro undefined, and, for other
@@ -437,7 +443,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
 
-  You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if (i == array.end()) {...}`.
+  You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if (i == array.end()) {...}`. You should derefence (`*i`) an iterator at most once before incrementing it (`i++`), when compiling in debug mode with development checks, we add asserts to help you identify such a mistake.
 * **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`.
   - `field.unescaped_key()` will get you the unescaped key string as a `std::string_view` instance. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
   - `field.escaped_key()` will get you the key string as  as a `std::string_view` instance, but unlike `unescaped_key()`, the key is not processed, so no unescaping is done. E.g., the JSON string `"\u00e1"` becomes the Unicode string `\u00e1`. We expect that `escaped_key()` is faster than `field.unescaped_key()`.
@@ -451,7 +457,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 
   When you are iterating through an object, you are advancing through its keys and values. You should not also access the object or other objects. E.g. within a loop over `myobject`, you should not be accessing `myobject`. The following is an anti-pattern: `for(auto value: myobject) {myobject["mykey"]}`.
 
-  We discourage using the iterators explicitly: `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. In addition to the usual requirement to check against `end()` prior to dereferencing, you must also always dereference the pointer (`*it`) exactly once before you increment it (`it++`).
+  We discourage using the object iterators explicitly: `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. In addition to the usual requirement to check against `end()` prior to dereferencing, you must also always dereference the pointer (`*it`) exactly once before you increment it (`it++`). You must also only deference the iterator once (never more than once). When compiling in
+  debug mode with development checks, we add asserts to help check whether you correctly
+  dereferenced the pointer before incrementing it.
 
   You should never reset an object as you are iterating through it. The following is an anti-pattern: `for(auto value: myobject) {myobject.reset()}`.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,

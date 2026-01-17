@@ -37,6 +37,9 @@ public:
   simdjson_inline object_iterator &operator++() noexcept;
 
 private:
+#if SIMDJSON_DEVELOPMENT_CHECKS
+   bool has_been_referenced{false};
+#endif
   /**
    * The underlying JSON iterator.
    *
