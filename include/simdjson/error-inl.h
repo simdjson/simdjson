@@ -8,7 +8,7 @@
 namespace simdjson {
 
 inline bool is_fatal(error_code error) noexcept {
-  return error == TAPE_ERROR || error == INCOMPLETE_ARRAY_OR_OBJECT;
+  return error == TAPE_ERROR || error == INCOMPLETE_ARRAY_OR_OBJECT || error == OUT_OF_ORDER_ITERATION || error == DEPTH_ERROR;
 }
 
 namespace internal {

@@ -438,7 +438,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   If you know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`.
 
   You may also use explicit iterators: `for(auto i = array.begin(); i != array.end(); i++) {}`. You can check that an array is empty with the condition `auto i = array.begin(); if (i == array.end()) {...}`.
-* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`. You may also use explicit iterators : `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. You can check that an object is empty with the condition `auto i = object.begin(); if (i == object.end()) {...}`.
+* **Object Iteration:** You can iterate through an object's fields, as well: `for (auto field : object) { ... }`.
   - `field.unescaped_key()` will get you the unescaped key string as a `std::string_view` instance. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
   - `field.escaped_key()` will get you the key string as  as a `std::string_view` instance, but unlike `unescaped_key()`, the key is not processed, so no unescaping is done. E.g., the JSON string `"\u00e1"` becomes the Unicode string `\u00e1`. We expect that `escaped_key()` is faster than `field.unescaped_key()`.
   - `field.value()` will get you the value, which you can then use all these other methods on.
@@ -450,6 +450,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   you should consume each value at most once.
 
   When you are iterating through an object, you are advancing through its keys and values. You should not also access the object or other objects. E.g. within a loop over `myobject`, you should not be accessing `myobject`. The following is an anti-pattern: `for(auto value: myobject) {myobject["mykey"]}`.
+
+  We discourage using the iterators explicitly: `for(auto i = object.begin(); i != object.end(); i++) { auto field = *i; .... }`. In addition to the usual requirement to check against `end()` prior to dereferencing, you must also always dereference the pointer (`*it`) exactly once before you increment it (`it++`).
 
   You should never reset an object as you are iterating through it. The following is an anti-pattern: `for(auto value: myobject) {myobject.reset()}`.
 * **Array Index:** Because it is forward-only, you cannot look up an array element by index. Instead,

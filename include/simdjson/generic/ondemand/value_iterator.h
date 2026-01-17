@@ -472,6 +472,7 @@ protected:
 
   friend class document;
   friend class object;
+  friend class object_iterator;
   friend class array;
   friend class value;
   friend class field;

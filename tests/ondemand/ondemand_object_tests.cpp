@@ -1,3 +1,4 @@
+#define SIMDJSON_VERBOSE_LOGGING 1
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -6,7 +7,6 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
-
   bool issue1979() {
     TEST_START();
     auto json = R"({
@@ -1015,6 +1015,26 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool manual_iterator_increment() {
+    // not recommended usage, but should work
+    TEST_START();
+    auto json = R"( {"1":1, "2":2, "3":3} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    std::cout << "object obtained.\n";
+    auto it = obj.begin();
+    *it; // essential !!!
+    ++it;
+    auto field = *it;
+    std::string_view key;
+    ASSERT_SUCCESS(field.unescaped_key().get(key));
+    std::cout << "Key: " << key << std::endl;
+    ASSERT_EQUAL(key, "2");
+    TEST_SUCCEED();
+  }
   bool issue1876() {
     TEST_START();
     auto json = R"( {} )"_padded;
@@ -1350,6 +1370,7 @@ namespace object_tests {
 #endif
            issue1974a() &&
            issue1974b() &&
+           manual_iterator_increment() &&
            issue1876a() &&
            issue1876() &&
            test_strager() &&

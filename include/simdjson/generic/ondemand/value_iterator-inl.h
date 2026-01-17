@@ -94,7 +94,6 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::end_container() 
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_next_field() noexcept {
   assert_at_next();
-
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
   switch (*_json_iter->return_current_and_advance()) {
@@ -967,7 +966,7 @@ simdjson_inline bool value_iterator::is_at_key() const noexcept {
   // Keys are at the same depth as the object.
   // Note here that we could be safer and check that we are within an object,
   // but we do not.
-  return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
+  return _depth == _json_iter->_depth && *_json_iter->peek() == '"' && * _json_iter->peek(1) == ':';
 }
 
 simdjson_inline bool value_iterator::is_at_iterator_start() const noexcept {

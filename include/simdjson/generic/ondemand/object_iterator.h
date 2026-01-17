@@ -32,6 +32,8 @@ public:
   // Assumes it's being compared with the end. true if depth >= iter->depth.
   simdjson_inline bool operator!=(const object_iterator &) const noexcept;
   // Checks for ']' and ','
+  // YOU MUST NOT CALL THIS IF operator* YIELDED AN ERROR.
+  // YOU MUST NOT CALL THIS WITHOUT A CORRESPONDING operator* CALL.
   simdjson_inline object_iterator &operator++() noexcept;
 
 private:
