@@ -239,6 +239,16 @@ static inline uint32_t detect_supported_architectures() {
   return host_isa;
 }
 
+#elif SIMDJSON_IS_RISCV64
+
+static inline uint32_t detect_supported_architectures() {
+  uint32_t host_isa = instruction_set::DEFAULT;
+#if SIMDJSON_IS_RVV_VLS
+  host_isa |= instruction_set::RVV_VLS;
+#endif
+  return host_isa;
+}
+
 #else // fallback
 
 

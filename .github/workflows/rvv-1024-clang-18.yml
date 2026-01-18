@@ -19,11 +19,11 @@ jobs:
         sudo apt-get install -y cmake make g++-riscv64-linux-gnu qemu-user-static clang-18
     - name: Build
       run: |
-        CXX=clang++-18 CXXFLAGS="--target=riscv64-linux-gnu -march=rv64gcv_zvbb" \
-        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DCMAKE_BUILD_TYPE=Release -B build
-        cmake --build build/ -j$(nproc)
+        CC=clang-18 CXX=clang++-18 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv_zvbb" CXXFLAGS="${CFLAGS}" \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build
+        cmake --build build/ -j$(nproc) --config Release
     - name: Test VLEN=1024
       run: |
-        export QEMU_LD_PREFIX="/usr/riscv64-linux-gnu"
-        export QEMU_CPU="rv64,v=on,zvbb=on,vlen=1024,rvv_ta_all_1s=on,rvv_ma_all_1s=on"
+        QEMU_LD_PREFIX="/usr/riscv64-linux-gnu" \
+        QEMU_CPU="rv64,v=on,zvbb=on,vlen=1024,rvv_ta_all_1s=on,rvv_ma_all_1s=on" \
         ctest --timeout 1800 --output-on-failure --test-dir build -j $(nproc)
