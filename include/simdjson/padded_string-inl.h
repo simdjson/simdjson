@@ -277,7 +277,7 @@ inline padded_string_builder::padded_string_builder(size_t new_capacity) noexcep
   if (new_capacity > 0) {
     data = internal::allocate_padded_buffer(new_capacity);
     if (data != nullptr) {
-      this->capacity = capacity;
+      this->capacity = new_capacity;
     }
   }
 }
