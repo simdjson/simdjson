@@ -17,6 +17,10 @@ simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noex
 {}
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+   SIMDJSON_ASSUME(!has_been_referenced);
+   has_been_referenced = true;
+#endif
   if (iter.error()) { iter.abandon(); return iter.error(); }
   return value(iter.child());
 }
@@ -27,6 +31,9 @@ simdjson_inline bool array_iterator::operator!=(const array_iterator &) const no
   return iter.is_open();
 }
 simdjson_inline array_iterator &array_iterator::operator++() noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+   has_been_referenced = false;
+#endif
   error_code error;
   // PERF NOTE this is a safety rail ... users should exit loops as soon as they receive an error, so we'll never get here.
   // However, it does not seem to make a perf difference, so we add it out of an abundance of caution.

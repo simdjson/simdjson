@@ -289,7 +289,9 @@ namespace std {
 // when the compiler is optimizing.
 // We only set SIMDJSON_DEVELOPMENT_CHECKS if both __OPTIMIZE__
 // and NDEBUG are not defined.
-#if !defined(__OPTIMIZE__) && !defined(NDEBUG)
+// We recognize _DEBUG as overriding __OPTIMIZE__ so that if both
+// __OPTIMIZE__ and _DEBUG are defined, we still set SIMDJSON_DEVELOPMENT_CHECKS.
+#if ((!defined(__OPTIMIZE__) || defined(_DEBUG)) && !defined(NDEBUG))
 #define SIMDJSON_DEVELOPMENT_CHECKS 1
 #endif // __OPTIMIZE__
 #endif // _MSC_VER

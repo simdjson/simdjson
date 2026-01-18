@@ -27,6 +27,13 @@ public:
    */
   simdjson_inline object() noexcept = default;
 
+  /**
+   * Get an iterator to the start of the object. We recommend using a range-based for loop.
+   *
+   * Using the iterator directly is also possible but error-prone and discouraged. In particular,
+   * you must dereference the iterator exactly once per iteration (before calling '++').
+   * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   */
   simdjson_inline simdjson_result<object_iterator> begin() noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**

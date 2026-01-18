@@ -210,7 +210,8 @@ using std::size_t;
 #define simdjson_strncasecmp strncasecmp
 #endif
 
-#if defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+#if (defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))) && !SIMDJSON_DEVELOPMENT_CHECKS
+// If SIMDJSON_DEVELOPMENT_CHECKS is undefined or 0, we consider that we are in release mode.
 // If NDEBUG is set, or __OPTIMIZE__ is set, or we are under MSVC in release mode,
 // then do away with asserts and use __assume.
 // We still recommend that our users set NDEBUG in release mode.
@@ -222,7 +223,7 @@ using std::size_t;
 #define SIMDJSON_ASSUME(COND) do { if (!(COND)) __builtin_unreachable(); } while (0)
 #endif
 
-#else // defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+#else // defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG)) && !SIMDJSON_DEVELOPMENT_CHECKS
 // This should only ever be enabled in debug mode.
 #define SIMDJSON_UNREACHABLE() assert(0);
 #define SIMDJSON_ASSUME(COND) assert(COND)

@@ -215,11 +215,10 @@ simdjson_inline void json_iterator::assert_more_tokens(uint32_t required_tokens)
 }
 
 simdjson_inline void json_iterator::assert_valid_position(token_position position) const noexcept {
+  (void)position; // Suppress unused parameter warning
 #ifndef SIMDJSON_CLANG_VISUAL_STUDIO
   SIMDJSON_ASSUME( position >= &parser->implementation->structural_indexes[0] );
   SIMDJSON_ASSUME( position < &parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] );
-#else
-  (void)position; // Suppress unused parameter warning
 #endif
 }
 
@@ -358,7 +357,11 @@ simdjson_inline token_position json_iterator::position() const noexcept {
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape(in, _string_buf_loc, allow_replacement);
+#if !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+#endif // !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)
   return result;
 #else
   return parser->unescape(in, _string_buf_loc, allow_replacement);
@@ -368,7 +371,11 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape_wobbly(in, _string_buf_loc);
+#if !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)
+  // Under Visual Studio, the next SIMDJSON_ASSUME fails with: the argument
+  // has side effects that will be discarded.
   SIMDJSON_ASSUME(!parser->string_buffer_overflow(_string_buf_loc));
+#endif // !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)
   return result;
 #else
   return parser->unescape_wobbly(in, _string_buf_loc);

@@ -117,7 +117,7 @@ if(SIMDJSON_BUILD_STATIC_LIB)
   add_library(simdjson_static STATIC ${SIMDJSON_SOURCES})
   add_library(simdjson::simdjson_static ALIAS simdjson_static)
   list(APPEND SIMDJSON_LIBRARIES simdjson_static)
-  
+
   # Reuse precompiled headers for static library
   if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
     target_precompile_headers(simdjson_static REUSE_FROM simdjson)
@@ -196,7 +196,12 @@ if(
       target_compile_options PRIVATE
       $<$<CONFIG:DEBUG>:-Og>
   )
-endif()
+  # We still want to enable development checks in Debug mode
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_DEVELOPMENT_CHECKS
+  )
+  endif()
 
 if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
