@@ -69,6 +69,8 @@ enum instruction_set {
   AVX512VBMI2 = 0x10000,
   LSX = 0x20000,
   LASX = 0x40000,
+  //RVV = 0x80000,
+  RVV_VLS = 0x100000,
 };
 
 } // namespace internal

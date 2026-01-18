@@ -397,6 +397,7 @@ template <typename T> struct simd8x64 {
   static_assert(NUM_CHUNKS == 4,
                 "PPC64 kernel should use four registers per 64-byte block.");
   const simd8<T> chunks[NUM_CHUNKS];
+  template<int idx> simd8<uint8_t> get() const { return idx < NUM_CHUNKS ? chunks[idx] : simd8<T>(); }
 
   simd8x64(const simd8x64<T> &o) = delete; // no copy allowed
   simd8x64<T> &
