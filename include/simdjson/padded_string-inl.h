@@ -273,9 +273,9 @@ inline simdjson_result<padded_string> padded_string::load(std::wstring_view file
 
 inline padded_string_builder::padded_string_builder() noexcept = default;
 
-inline padded_string_builder::padded_string_builder(size_t capacity) noexcept {
-  if (capacity > 0) {
-    data = internal::allocate_padded_buffer(capacity);
+inline padded_string_builder::padded_string_builder(size_t new_capacity) noexcept {
+  if (new_capacity > 0) {
+    data = internal::allocate_padded_buffer(new_capacity);
     if (data != nullptr) {
       this->capacity = capacity;
     }
