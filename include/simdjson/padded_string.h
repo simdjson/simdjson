@@ -190,6 +190,16 @@ public:
   inline padded_string_builder &operator=(padded_string_builder &&o) noexcept;
 
   /**
+   * Copy constructor (deleted).
+   */
+  padded_string_builder(const padded_string_builder &) = delete;
+
+  /**
+   * Copy assignment (deleted).
+   */
+  padded_string_builder &operator=(const padded_string_builder &) = delete;
+
+  /**
    * Destructor.
    */
   inline ~padded_string_builder() noexcept;
