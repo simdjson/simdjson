@@ -62,6 +62,8 @@ auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json
 dom::element doc = parser.parse(json);
 ```
 
+[You can similarly fetch a file from a URL to a padded string](https://github.com/simdjson/curltostring) using our `simdjson::padded_string_builder`.
+
 (Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
 filenames: `padded_string::load(L"twitter.json")`.)
 
