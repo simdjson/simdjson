@@ -134,12 +134,25 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
 }
 
 inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept {
-  // Warning: no check is done on the buffer padding. We trust the user.
+
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
+
   if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
     buf += 3;
     len -= 3;
   }
+
+  size_t offset = 0;
+  while (offset < len && (buf[offset] == ' ' || buf[offset] == '\r' || buf[offset] == '\n' || buf[offset] == '\t')) {
+    offset++;
+  }
+
+  if (offset < len && buf[offset] == '[') {
+    buf += (offset + 1);
+    len -= (offset + 1);
+    allow_comma_separated = true;
+  }
+
   if(allow_comma_separated && batch_size < len) { batch_size = len; }
   return document_stream(*this, buf, len, batch_size, allow_comma_separated);
 }
