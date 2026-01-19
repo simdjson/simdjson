@@ -126,6 +126,33 @@ inline const char *padded_string::data() const noexcept { return data_ptr; }
 
 inline char *padded_string::data() noexcept { return data_ptr; }
 
+inline bool padded_string::append(const char *data, size_t length) noexcept {
+  if (length == 0) {
+    return true; // Nothing to append
+  }
+  size_t new_size = viable_size + length;
+  if (new_size < viable_size) {
+    // Overflow, cannot append
+    return false;
+  }
+  char *new_data_ptr = internal::allocate_padded_buffer(new_size);
+  if (new_data_ptr == nullptr) {
+    // Allocation failed, cannot append
+    return false;
+  }
+  // Copy existing data
+  if (viable_size > 0) {
+    std::memcpy(new_data_ptr, data_ptr, viable_size);
+  }
+  // Copy new data
+  std::memcpy(new_data_ptr + viable_size, data, length);
+  // Update
+  delete[] data_ptr;
+  data_ptr = new_data_ptr;
+  viable_size = new_size;
+  return true;
+}
+
 inline padded_string::operator std::string_view() const simdjson_lifetime_bound { return std::string_view(data(), length()); }
 
 inline padded_string::operator padded_string_view() const noexcept simdjson_lifetime_bound {
@@ -241,6 +268,103 @@ inline simdjson_result<padded_string> padded_string::load(std::wstring_view file
   return s;
 }
 #endif
+
+// padded_string_builder implementations
+
+inline padded_string_builder::padded_string_builder() noexcept = default;
+
+inline padded_string_builder::padded_string_builder(size_t new_capacity) noexcept {
+  if (new_capacity > 0) {
+    data = internal::allocate_padded_buffer(new_capacity);
+    if (data != nullptr) {
+      this->capacity = new_capacity;
+    }
+  }
+}
+
+inline padded_string_builder::padded_string_builder(padded_string_builder &&o) noexcept
+    : size(o.size), capacity(o.capacity), data(o.data) {
+  o.size = 0;
+  o.capacity = 0;
+  o.data = nullptr;
+}
+
+inline padded_string_builder &padded_string_builder::operator=(padded_string_builder &&o) noexcept {
+  if (this != &o) {
+    delete[] data;
+    size = o.size;
+    capacity = o.capacity;
+    data = o.data;
+    o.size = 0;
+    o.capacity = 0;
+    o.data = nullptr;
+  }
+  return *this;
+}
+
+inline padded_string_builder::~padded_string_builder() noexcept {
+  delete[] data;
+}
+
+inline bool padded_string_builder::append(const char *newdata, size_t length) noexcept {
+  if (length == 0) {
+    return true;
+  }
+  if (!reserve(length)) {
+    return false;
+  }
+  std::memcpy(data + size, newdata, length);
+  size += length;
+  return true;
+}
+
+inline bool padded_string_builder::append(std::string_view sv) noexcept {
+  return append(sv.data(), sv.size());
+}
+
+inline size_t padded_string_builder::length() const noexcept {
+  return size;
+}
+
+inline padded_string padded_string_builder::build() const noexcept {
+  return padded_string(data, size);
+}
+
+inline padded_string padded_string_builder::convert() noexcept {
+  padded_string result{};
+  result.data_ptr = data;
+  result.viable_size = size;
+  data = nullptr;
+  size = 0;
+  capacity = 0;
+  return result;
+}
+
+inline bool padded_string_builder::reserve(size_t additional) noexcept {
+  size_t needed = size + additional;
+  if (needed <= capacity) {
+    return true;
+  }
+  size_t new_capacity = needed;
+  // We are going to grow the capacity exponentially to avoid
+  // repeated allocations.
+  if (new_capacity < 4096) {
+    new_capacity *= 2;
+  } else {
+    new_capacity += new_capacity/2; // grow by 1.5x
+  }
+  char *new_data = internal::allocate_padded_buffer(new_capacity);
+  if (new_data == nullptr) {
+    return false; // Allocation failed
+  }
+  if (size > 0) {
+    std::memcpy(new_data, data, size);
+  }
+  delete[] data;
+  data = new_data;
+  capacity = new_capacity;
+  return true;
+}
 
 } // namespace simdjson
 

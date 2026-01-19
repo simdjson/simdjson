@@ -169,8 +169,10 @@ For efficiency reasons, simdjson requires a string with a few bytes (`simdjson::
 at the end, these bytes may be read but their content does not affect the parsing. In practice,
 it means that the JSON inputs should be stored in a memory region with `simdjson::SIMDJSON_PADDING`
 extra bytes at the end. You do not have to set these bytes to specific values though you may
-want to if you want to avoid runtime warnings with some sanitizers. Advanced users may want to
-read the section Free Padding in [our performance notes](performance.md).
+want to if you want to avoid runtime warnings with some sanitizers. We expect the user
+of the library to load the data (from disk or from the network) into a padded buffer. To make
+this easy, we provide the `padded_string::load` function which loads files from disk in a padded buffer.
+[You can similarly fetch a file from a URL to a padded string](https://github.com/simdjson/curltostring) using our `simdjson::padded_string_builder`. Advanced users may want to read the section Free Padding in [our performance notes](performance.md).
 
 The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can
 access by creating a `ondemand::parser` and calling the `iterate()` method. The iterate method
