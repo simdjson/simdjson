@@ -462,6 +462,11 @@ namespace parse_api_tests {
   const padded_string BASIC_JSON = "[1,2,3]"_padded;
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
+  // GCC 15 gives false positive -Wfree-nonheap-object warning here
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
   bool parser_moving_parser() {
     std::cout << "Running " << __func__ << std::endl;
     typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
@@ -479,6 +484,9 @@ namespace parse_api_tests {
     }
     return true;
   }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #if SIMDJSON_EXCEPTIONS
 
   bool issue_2375() {
