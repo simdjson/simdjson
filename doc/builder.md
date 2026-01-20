@@ -14,6 +14,7 @@ speed and high convenience.
   * [C++26 static reflection](#c--26-static-reflection)
     + [Without `string_buffer` instance](#without--string-buffer--instance)
     + [Without `string_buffer` instance but with explicit error handling](#without--string-buffer--instance-but-with-explicit-error-handling)
+    + [Pretty formatted (fractured JSON)](#pretty-formatted-fractured-json)
 
 Overview: string_builder
 ---------------------------
@@ -364,3 +365,49 @@ void tag_invoke(serialize_tag, builder_type &builder, const Car& car) {
 
 } // namespace simdjson
 ```
+
+### Pretty formatted (fractured JSON)
+
+In some instances, you may want your JSON to be more readable. For this pupose, we also
+support the Fractured JSON standard.
+
+```Cpp
+  TableTestData data{
+    {{1, "Alice", true}, {2, "Bob", false}, {3, "Carol", true}, {4, "Dave", false}}
+  };
+
+  fractured_json_options opts;
+  opts.enable_table_format = true;
+  opts.min_table_rows = 3;
+
+  std::string formatted = simdjson::to_fractured_json_string(data, opts);
+```
+
+The result might be as follows.
+
+```json
+{
+    "records": [
+        { "active": true , "id": 1, "name": "Alice" },
+        { "active": false, "id": 2, "name": "Bob" },
+        { "active": true , "id": 3, "name": "Carol" },
+        { "active": false, "id": 4, "name": "Dave" }
+    ]
+}
+```
+
+The `fractured_json_options` struct allows you to customize the formatting behavior. It includes the following options:
+
+- `max_total_line_length` (default: 120): Maximum total characters per line. Content exceeding this will be expanded to multiple lines.
+- `max_inline_length` (default: 80): Maximum length for inlined elements. Simple arrays/objects shorter than this may be rendered inline.
+- `max_inline_complexity` (default: 2): Maximum nesting depth for inline rendering. Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.
+- `max_compact_array_complexity` (default: 1): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.
+- `indent_spaces` (default: 4): Number of spaces per indentation level.
+- `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.
+- `min_table_rows` (default: 3): Minimum number of rows to trigger table mode.
+- `table_similarity_threshold` (default: 0.8): Similarity threshold for table detection. Objects must share at least this fraction of keys to be formatted as a table.
+- `enable_compact_multiline` (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.
+- `max_items_per_line` (default: 10): Maximum array items per line in compact mode.
+- `simple_bracket_padding` (default: true): Add space inside brackets for simple containers. When true: `{ "key": "value" }`, when false: `{"key": "value"}`.
+- `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.
+- `comma_padding` (default: true): Add space after commas in inline content. When true: `[1, 2, 3]`, when false: `[1,2,3]`.
