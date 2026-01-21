@@ -24,6 +24,8 @@
 #include "simdjson/lsx/builder.h"
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)
 #include "simdjson/lasx/builder.h"
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(rvv_vls)
+#include "simdjson/rvv-vls/builder.h"
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif

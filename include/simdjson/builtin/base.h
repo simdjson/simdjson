@@ -21,6 +21,8 @@ namespace simdjson {
   namespace lsx {}
 #elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)
   namespace lasx {}
+#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(rvv_vls)
+  namespace rvv_vls {}
 #else
 #error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION
 #endif
