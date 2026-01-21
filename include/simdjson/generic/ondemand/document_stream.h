@@ -81,7 +81,7 @@ public:
   /**
    * Construct an uninitialized document_stream.
    *
-   *  ```c++
+   *  ```cpp
    *  document_stream docs;
    *  auto error = parser.iterate_many(json).get(docs);
    *  ```
@@ -131,6 +131,7 @@ public:
      * Default constructor.
      */
     simdjson_inline iterator() noexcept;
+    simdjson_inline iterator(const iterator &other) noexcept = default;
     /**
      * Get the current document (or error).
      */
@@ -144,6 +145,7 @@ public:
      * @param other the end iterator to compare to.
      */
     simdjson_inline bool operator!=(const iterator &other) const noexcept;
+    simdjson_inline bool operator==(const iterator &other) const noexcept;
     /**
      * @private
      *
@@ -187,6 +189,11 @@ public:
      */
      inline error_code error() const noexcept;
 
+     /**
+      * Returns whether the iterator is at the end.
+      */
+     inline bool at_end() const noexcept;
+
   private:
     simdjson_inline iterator(document_stream *s, bool finished) noexcept;
     /** The document_stream we're iterating through. */
@@ -198,6 +205,7 @@ public:
     friend class document_stream;
     friend class json_iterator;
   };
+  using iterator = document_stream::iterator;
 
   /**
    * Start iterating the documents in the stream.
@@ -316,7 +324,7 @@ private:
   friend class document;
   friend class json_iterator;
   friend struct simdjson_result<ondemand::document_stream>;
-  friend struct internal::simdjson_result_base<ondemand::document_stream>;
+  friend struct simdjson::internal::simdjson_result_base<ondemand::document_stream>;
 };  // document_stream
 
 } // namespace ondemand

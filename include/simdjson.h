@@ -52,6 +52,13 @@
 #include "simdjson/padded_string_view-inl.h"
 
 #include "simdjson/dom.h"
+#include "simdjson/builder.h"
 #include "simdjson/ondemand.h"
+#include "simdjson/convert.h"
+#include "simdjson/convert-inl.h"
+
+// Compile-time JSON parsing (C++26 P2996 reflection)
+#include "simdjson/compile_time_json.h"
+#include "simdjson/compile_time_json-inl.h"
 
 #endif // SIMDJSON_H

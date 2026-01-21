@@ -24,7 +24,7 @@ jobs:
       implementations: haswell westmere fallback
       UBSAN_OPTIONS: halt_on_error=1
       MAXLEN: -max_len=4000
-      CLANGVERSION: 15
+      CLANGVERSION: 19
       # which optimization level to use for the sanitizer build (see build_fuzzer.variants.sh)
       OPTLEVEL: -O3
 
@@ -125,7 +125,7 @@ jobs:
         done
 
     - name: Save the corpus as a github artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: corpus
         path: corpus.tar
@@ -148,7 +148,7 @@ jobs:
       run: tar cf valgrind.tar valgrind-*.txt
 
     - name: Save valgrind output as a github artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: valgrindresults
@@ -156,7 +156,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Archive any crashes as an artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: crashes

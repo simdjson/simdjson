@@ -52,7 +52,7 @@ if (Python3_Interpreter_FOUND AND (NOT WIN32))
       # file regeneration in the source directory without the user's knowledge.
       # OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.cpp ${CMAKE_CURRENT_SOURCE_DIR}/simdjson.h ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate_demo.cpp ${CMAKE_CURRENT_SOURCE_DIR}/README.md
       COMMAND ${CMAKE_COMMAND} -E copy ${SINGLEHEADER_FILES} ${CMAKE_CURRENT_SOURCE_DIR}
-      DEPENDS ${SINGLEHEADER_FILES}
+      POST_BUILD ${SINGLEHEADER_FILES}
     )
   endif()
 

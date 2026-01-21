@@ -9,7 +9,8 @@ assignees: ''
 
 Before submitting an issue, please ensure that you have read the documentation:
 
-* Basics is an overview of how to use simdjson and its APIs: https://github.com/simdjson/simdjson/blob/master/doc/basics.md
+* Basics is an overview of how to use simdjson and its APIs to parse JSON: https://github.com/simdjson/simdjson/blob/master/doc/basics.md
+* Builder is an overview of how to use simdjson to generate JSON: https://github.com/simdjson/simdjson/blob/master/doc/builder.md
 * Performance shows some more advanced scenarios and how to tune for them: https://github.com/simdjson/simdjson/blob/master/doc/performance.md
 * Contributing: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md
 * We follow the [JSON specification as described by RFC 8259](https://www.rfc-editor.org/rfc/rfc8259.txt) (T. Bray, 2017).

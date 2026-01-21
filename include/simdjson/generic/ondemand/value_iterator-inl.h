@@ -6,9 +6,9 @@
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/generic/numberparsing.h"
 #include "simdjson/generic/ondemand/json_iterator.h"
+#include "simdjson/generic/ondemand/value_iterator.h"
 #include "simdjson/generic/ondemand/json_type-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
-#include "simdjson/generic/ondemand/value_iterator.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -41,7 +41,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   if (*_json_iter->peek() == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->return_current_and_advance();
-    end_container();
+    SIMDJSON_TRY(end_container());
     return false;
   }
   return true;
@@ -94,7 +94,6 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::end_container() 
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_next_field() noexcept {
   assert_at_next();
-
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
   switch (*_json_iter->return_current_and_advance()) {
@@ -778,19 +777,23 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   }
   return result;
 }
+
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("bool");
-  uint8_t tmpbuf[5+1+1]; // +1 for null termination
-  tmpbuf[5+1] = '\0'; // make sure that buffer is always null terminated.
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 5+1)) { return incorrect_type_error("Not a boolean"); }
-  auto result = parse_bool(tmpbuf);
-  if(result.error() == SUCCESS) {
-    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
-    advance_root_scalar("bool");
-  }
-  return result;
+  // We have a boolean if we have either "true" or "false" and the next character is either
+  // a structural character or whitespace. We also check that the length is correct:
+  // "true" and "false" are 4 and 5 characters long, respectively.
+  bool value_true = (max_len >= 4 && !atomparsing::str4ncmp(json, "true") &&
+  (max_len == 4 || jsoncharutils::is_structural_or_whitespace(json[4])));
+  bool value_false = (max_len >= 5 && !atomparsing::str4ncmp(json, "false") &&
+  (max_len == 5 || jsoncharutils::is_structural_or_whitespace(json[5])));
+  if(value_true == false && value_false == false) { return incorrect_type_error("Not a boolean"); }
+  if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+  advance_root_scalar("bool");
+  return value_true;
 }
+
 simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("null");
@@ -799,6 +802,8 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_tr
   if(result) { // we have something that looks like a null.
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("null");
+  } else if (json[0] == 'n') {
+    return incorrect_type_error("Not a null but starts with n");
   }
   return result;
 }
@@ -889,7 +894,7 @@ simdjson_inline void value_iterator::advance_scalar(const char *type) noexcept {
   _json_iter->ascend_to(depth()-1);
 }
 
-simdjson_inline error_code value_iterator::start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept {
+simdjson_warn_unused simdjson_inline error_code value_iterator::start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept {
   logger::log_start_value(*_json_iter, start_position(), depth(), type);
   // If we're not at the position anymore, we don't want to advance the cursor.
   const uint8_t *json;
@@ -961,6 +966,9 @@ simdjson_inline bool value_iterator::is_at_key() const noexcept {
   // Keys are at the same depth as the object.
   // Note here that we could be safer and check that we are within an object,
   // but we do not.
+  //
+  // As long as we are at the object's depth, in a valid document,
+  // we will only ever be at { , : or the actual string key: ".
   return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
 }
 
@@ -1051,7 +1059,7 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
     default:
-      return TAPE_ERROR;
+      return json_type::unknown;
   }
 }
 

@@ -156,6 +156,7 @@ simdjson_warn_unused std::pair<const uint8_t *, bool> dom_parser_implementation:
   return westmere::stringparsing::parse_string_if_needed(src, dst, allow_replacement);
 }
 
+  SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
   return westmere::stringparsing::parse_string(src, dst, replacement_char);
 }
@@ -169,7 +170,6 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
   if (error) { return error; }
   return stage2(_doc);
 }
-
 } // namespace westmere
 } // namespace simdjson
 

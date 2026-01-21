@@ -1,0 +1,29 @@
+name: Ubuntu rvv VLEN=256 (gcc 14)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install packages
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get install -y cmake make g++-14-riscv64-linux-gnu qemu-user-static
+    - name: Build
+      run: |
+        CXX=riscv64-linux-gnu-g++-14 CXXFLAGS=-march=rv64gcv \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DCMAKE_BUILD_TYPE=Release -B build
+        cmake --build build/ -j$(nproc)
+    - name: Test VLEN=256
+      run: |
+        export QEMU_LD_PREFIX="/usr/riscv64-linux-gnu"
+        export QEMU_CPU="rv64,v=on,zvbb=on,vlen=256,rvv_ta_all_1s=on,rvv_ma_all_1s=on"
+        ctest --timeout 1800 --output-on-failure --test-dir build -j $(nproc)

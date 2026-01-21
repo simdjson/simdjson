@@ -6,10 +6,14 @@
 #include <cstdlib>
 #include <cfloat>
 #include <cassert>
+#include <climits>
 #ifndef _WIN32
 // strcasecmp, strncasecmp
 #include <strings.h>
 #endif
+
+static_assert(CHAR_BIT == 8, "simdjson requires 8-bit bytes");
+
 
 // We are using size_t without namespace std:: throughout the project
 using std::size_t;
@@ -41,9 +45,32 @@ using std::size_t;
 #define SIMDJSON_IS_ARM64 1
 #elif defined(__riscv) && __riscv_xlen == 64
 #define SIMDJSON_IS_RISCV64 1
+  #if __riscv_v_intrinsic >= 11000
+    #define SIMDJSON_HAS_RVV_INTRINSICS 1
+  #endif
+
+  #define SIMDJSON_HAS_ZVBB_INTRINSICS                                          \
+    0 // there is currently no way to detect this
+
+  #if SIMDJSON_HAS_RVV_INTRINSICS && __riscv_vector &&                          \
+      __riscv_v_min_vlen >= 128 && __riscv_v_elen >= 64
+    // RISC-V V extension
+    #define SIMDJSON_IS_RVV 1
+    #if SIMDJSON_HAS_ZVBB_INTRINSICS && __riscv_zvbb >= 1000000
+      // RISC-V Vector Basic Bit-manipulation
+      #define SIMDJSON_IS_ZVBB 1
+    #endif
+  #endif
 #elif defined(__loongarch_lp64)
 #define SIMDJSON_IS_LOONGARCH64 1
+#if defined(__loongarch_sx) && defined(__loongarch_asx)
+  #define SIMDJSON_IS_LSX 1
+  #define SIMDJSON_IS_LASX 1 // We can always run both
+#elif defined(__loongarch_sx)
+  #define SIMDJSON_IS_LSX 1
+#endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
+#define SIMDJSON_IS_PPC64 1
 #if defined(__ALTIVEC__)
 #define SIMDJSON_IS_PPC64_VMX 1
 #endif // defined(__ALTIVEC__)
@@ -97,7 +124,7 @@ using std::size_t;
 //
 
 // We are going to use runtime dispatch.
-#if SIMDJSON_IS_X86_64
+#if defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 #ifdef __clang__
 // clang does not have GCC push pop
 // warning: clang attribute push can't be used within a namespace in clang up
@@ -114,7 +141,7 @@ using std::size_t;
 #define SIMDJSON_UNTARGET_REGION _Pragma("GCC pop_options")
 #endif // clang then gcc
 
-#endif // x86
+#endif // defined(SIMDJSON_IS_X86_64) || defined(SIMDJSON_IS_LSX)
 
 // Default target region macros don't do anything.
 #ifndef SIMDJSON_TARGET_REGION
@@ -183,9 +210,11 @@ using std::size_t;
 #define simdjson_strncasecmp strncasecmp
 #endif
 
-#if defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+#if (defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))) && !SIMDJSON_DEVELOPMENT_CHECKS
+// If SIMDJSON_DEVELOPMENT_CHECKS is undefined or 0, we consider that we are in release mode.
 // If NDEBUG is set, or __OPTIMIZE__ is set, or we are under MSVC in release mode,
 // then do away with asserts and use __assume.
+// We still recommend that our users set NDEBUG in release mode.
 #if SIMDJSON_VISUAL_STUDIO
 #define SIMDJSON_UNREACHABLE() __assume(0)
 #define SIMDJSON_ASSUME(COND) __assume(COND)
@@ -194,11 +223,50 @@ using std::size_t;
 #define SIMDJSON_ASSUME(COND) do { if (!(COND)) __builtin_unreachable(); } while (0)
 #endif
 
-#else // defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG))
+#else // defined(NDEBUG) || defined(__OPTIMIZE__) || (defined(_MSC_VER) && !defined(_DEBUG)) && !SIMDJSON_DEVELOPMENT_CHECKS
 // This should only ever be enabled in debug mode.
 #define SIMDJSON_UNREACHABLE() assert(0);
 #define SIMDJSON_ASSUME(COND) assert(COND)
 
 #endif
+
+
+
+#if defined __BYTE_ORDER__ && defined __ORDER_BIG_ENDIAN__
+#define SIMDJSON_IS_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#elif defined _WIN32
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#else
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <machine/endian.h>
+#elif defined(sun) || defined(__sun)
+#include <sys/byteorder.h>
+#elif defined(__MVS__)
+#include <sys/endian.h>
+#else
+#ifdef __has_include
+#if __has_include(<endian.h>)
+#include <endian.h>
+#endif //__has_include(<endian.h>)
+#endif //__has_include
+#endif
+#
+#ifndef __BYTE_ORDER__
+// safe choice
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#endif
+#
+#ifndef __ORDER_LITTLE_ENDIAN__
+// safe choice
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#endif
+#
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define SIMDJSON_IS_BIG_ENDIAN 0
+#else
+#define SIMDJSON_IS_BIG_ENDIAN 1
+#endif
+#endif
+
 
 #endif // SIMDJSON_PORTABILITY_H

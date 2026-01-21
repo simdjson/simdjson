@@ -9,7 +9,11 @@ simdjson_never_inline
 double bench(std::string filename, simdjson::padded_string& p) {
   std::chrono::time_point<std::chrono::steady_clock> start_clock =
       std::chrono::steady_clock::now();
-  simdjson::padded_string::load(filename).value_unsafe().swap(p);
+  auto error = simdjson::padded_string::load(filename).get(p);
+  if(error) {
+    std::cerr << simdjson::error_message(error) << std::endl;
+    std::abort();
+  }
   std::chrono::time_point<std::chrono::steady_clock> end_clock =
       std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = end_clock - start_clock;

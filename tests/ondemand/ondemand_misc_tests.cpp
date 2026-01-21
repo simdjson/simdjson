@@ -5,6 +5,51 @@ using namespace simdjson;
 
 namespace misc_tests {
   using namespace std;
+  bool issue2354() {
+    TEST_START();
+    auto json = "true   "_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    bool b;
+    ASSERT_SUCCESS(doc.get_bool().get(b));
+    ASSERT_TRUE(b);
+    TEST_SUCCEED();
+  }
+  bool issue2355() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    auto json = "[\"extra close\"]]"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    simdjson::ondemand::array test;
+    ASSERT_SUCCESS(doc.get_array().get(test));
+    for(auto vale : test) {
+      std::string_view str;
+      ASSERT_SUCCESS(vale.get_string().get(str));
+      ASSERT_EQUAL(str, "extra close");
+    }
+    ASSERT_FALSE(doc.at_end());
+    TEST_SUCCEED();
+  }
+
+  bool issue2322() {
+    TEST_START();
+    std::vector<std::pair<std::string, bool>> examples = {{R"("hello")", false},
+                                          {R"(\"hello)", true},
+                                          {R"("hello\")", true},
+                                          {R"("hel\"lo")", false},
+                                          {R"("hel\\lo")", false},
+                                          {R"(\"hel\\\"lo\")", true},
+                                          {R"(\\"hel\\\"lo\")", false}};
+    for (std::pair<std::string, bool> v : examples) {
+      ASSERT_EQUAL(ondemand::raw_json_string::is_free_from_unescaped_quote(v.first),
+                  v.second);
+      ASSERT_EQUAL(ondemand::raw_json_string::is_free_from_unescaped_quote(v.first.c_str()),
+                  v.second);
+    }
+    TEST_SUCCEED();
+  }
 #if SIMDJSON_EXCEPTIONS
   // user reported an asan error:
   bool issue2199() {
@@ -537,6 +582,24 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  simdjson_warn_unused bool issue2312() {
+    TEST_START();
+    std::string init_string = R"("abc":)";
+    init_string.resize(init_string.size() + simdjson::SIMDJSON_PADDING);
+    simdjson::padded_string_view padded_view{init_string.data(), 5, init_string.size()};
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded_view).get(doc));
+    std::string_view abc;
+    ASSERT_SUCCESS(doc.get_string().get(abc));
+    ASSERT_EQUAL(abc, "abc");
+    ASSERT_SUCCESS(parser.iterate(padded_view).get(doc));
+    std::string_view raw;
+    ASSERT_SUCCESS(doc.raw_json().get(raw));
+    ASSERT_EQUAL(raw, "\"abc\"");
+    TEST_SUCCEED();
+  }
+
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -620,6 +683,10 @@ namespace misc_tests {
 
   bool run() {
     return
+           issue2355() &&
+           issue2354() &&
+           issue2322() &&
+           issue2312() &&
 #if SIMDJSON_EXCEPTIONS
            issue2199() &&
 #endif

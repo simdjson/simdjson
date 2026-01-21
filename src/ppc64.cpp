@@ -124,6 +124,7 @@ simdjson_warn_unused std::pair<const uint8_t *, bool> dom_parser_implementation:
   return ppc64::stringparsing::parse_string_if_needed(src, dst, allow_replacement);
 }
 
+SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
   return ppc64::stringparsing::parse_string(src, dst, replacement_char);
 }

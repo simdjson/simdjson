@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
 
+# Build performance optimizations
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile commands for faster IDE integration")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# Enable parallel compilation on MSVC
+if(MSVC)
+  add_compile_options(/MP)
+endif()
+
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 3.9.4
+    VERSION 4.2.4
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -20,10 +29,14 @@ string(
 # ---- Options, variables ----
 
 # These version numbers are modified by tools/release.py
-set(SIMDJSON_LIB_VERSION "22.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "22" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_VERSION "29.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "29" CACHE STRING "simdjson library soversion")
 
-option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson" OFF)
+option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
+if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
+  message(WARNING "SIMDJSON_BUILD_STATIC_LIB only makes sense if BUILD_SHARED_LIBS is set to ON")
+  message(WARNING "You might be building and installing a two identical static libraries.")
+endif()
 
 option(SIMDJSON_ENABLE_THREADS "Link with thread support" ON)
 
@@ -39,6 +52,20 @@ if(SIMDJSON_DISABLE_DEPRECATED_API)
   )
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.25.0")
+    option(SIMDJSON_STATIC_REFLECTION "Enables static reflection (experimental), requires C++26" OFF)
+else()
+    set(SIMDJSON_STATIC_REFLECTION OFF CACHE BOOL "Enables static reflection (experimental)" FORCE)
+    message(WARNING "SIMDJSON_STATIC_REFLECTION is disabled because your CMake version is below 3.25")
+endif()
+
+if(SIMDJSON_STATIC_REFLECTION)
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_STATIC_REFLECTION=1
+  )
+endif()
+
 option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
 checks for incorrect API usage. Enabled by default in DEBUG." OFF)
 if(SIMDJSON_DEVELOPMENT_CHECKS)
@@ -51,6 +78,7 @@ endif()
 if(is_top_project)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
+  option(SIMDJSON_SINGLEHEADER "Disable singleheader generation" ON)
 endif()
 
 include(cmake/handle-deprecations.cmake)
@@ -64,10 +92,36 @@ add_library(simdjson ${SIMDJSON_SOURCES})
 add_library(simdjson::simdjson ALIAS simdjson)
 set(SIMDJSON_LIBRARIES simdjson)
 
+# Enable precompiled headers for faster builds
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
+  target_precompile_headers(simdjson PRIVATE
+    <algorithm>
+    <array>
+    <atomic>
+    <bit>
+    <cassert>
+    <cctype>
+    <cerrno>
+    <cstddef>
+    <cstdint>
+    <cstdlib>
+    <cstring>
+    <memory>
+    <string>
+    <utility>
+    <vector>
+  )
+endif()
+
 if(SIMDJSON_BUILD_STATIC_LIB)
   add_library(simdjson_static STATIC ${SIMDJSON_SOURCES})
   add_library(simdjson::simdjson_static ALIAS simdjson_static)
   list(APPEND SIMDJSON_LIBRARIES simdjson_static)
+
+  # Reuse precompiled headers for static library
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
+    target_precompile_headers(simdjson_static REUSE_FROM simdjson)
+  endif()
 endif()
 
 set_target_properties(
@@ -79,7 +133,7 @@ set_target_properties(
 )
 
 # FIXME: Use proper CMake integration for exports
-if(MSVC AND BUILD_SHARED_LIBS)
+if(WIN32 AND BUILD_SHARED_LIBS)
   target_compile_definitions(
       simdjson
       PRIVATE SIMDJSON_BUILDING_WINDOWS_DYNAMIC_LIBRARY=1
@@ -93,7 +147,24 @@ simdjson_add_props(
     PRIVATE "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
 )
 
-simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
+# Optimize linker settings for faster builds
+if(MSVC)
+  target_link_options(simdjson PRIVATE /INCREMENTAL)
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_link_options(simdjson PRIVATE /DEBUG:FASTLINK)
+  endif()
+endif()
+
+if(SIMDJSON_STATIC_REFLECTION)
+  # We would like to require C++26, but no compiler supports that!
+  # This is a hack:
+  simdjson_add_props(
+      target_compile_options PUBLIC
+      -freflection -fexpansion-statements -stdlib=libc++ -std=c++26
+  )
+else()
+  simdjson_add_props(target_compile_features PUBLIC cxx_std_11)
+endif()
 
 # workaround for GNU GCC poor AVX load/store code generation
 if(
@@ -106,23 +177,11 @@ if(
   )
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(loongarch64)$")
-    option(SIMDJSON_PREFER_LSX "Prefer LoongArch SX" ON)
-    include(CheckCXXCompilerFlag)
-    check_cxx_compiler_flag(-mlasx COMPILER_SUPPORTS_LASX)
-    check_cxx_compiler_flag(-mlsx COMPILER_SUPPORTS_LSX)
-    if(COMPILER_SUPPORTS_LASX AND NOT SIMDJSON_PREFER_LSX)
-        simdjson_add_props(
-            target_compile_options PRIVATE
-            -mlasx
-        )
-    elseif(COMPILER_SUPPORTS_LSX)
-        simdjson_add_props(
-            target_compile_options PRIVATE
-            -mlsx
-        )
-    endif()
-endif()
+option(SIMDJSON_MINUS_ZERO_AS_FLOAT "Treat -0 as a floating-point value" OFF)
+
+if(SIMDJSON_MINUS_ZERO_AS_FLOAT)
+  simdjson_add_props(target_compile_definitions PRIVATE SIMDJSON_MINUS_ZERO_AS_FLOAT=1)
+endif(SIMDJSON_MINUS_ZERO_AS_FLOAT)
 
 # GCC and Clang have horrendous Debug builds when using SIMD.
 # A common fix is to use '-Og' instead.
@@ -137,7 +196,12 @@ if(
       target_compile_options PRIVATE
       $<$<CONFIG:DEBUG>:-Og>
   )
-endif()
+  # We still want to enable development checks in Debug mode
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_DEVELOPMENT_CHECKS
+  )
+  endif()
 
 if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
@@ -155,11 +219,13 @@ endif()
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-install(
-    FILES singleheader/simdjson.h
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT simdjson_Development
-)
+if(SIMDJSON_SINGLEHEADER)
+  install(
+      FILES singleheader/simdjson.h
+      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+      COMPONENT simdjson_Development
+  )
+endif()
 
 install(
     TARGETS simdjson
@@ -203,6 +269,7 @@ if(SIMDJSON_BUILD_STATIC_LIB)
       TARGETS simdjson_static
       EXPORT simdjson_staticTargets
       ARCHIVE COMPONENT simdjson_Development
+      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
   install(
       EXPORT simdjson_staticTargets
@@ -279,6 +346,7 @@ enable_testing()
 add_custom_target(all_tests)
 
 add_subdirectory(windows)
+include(cmake/CPM.cmake)
 add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
 add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 
@@ -286,8 +354,9 @@ add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
 # most of the data has been moved to https://github.com/simdjson/simdjson-data
 add_subdirectory(jsonexamples)
 
-
+if(SIMDJSON_SINGLEHEADER)
 add_subdirectory(singleheader)
+endif()
 
 
 

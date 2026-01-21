@@ -103,7 +103,12 @@ cases, remove almost entirely its cost and replaces it by the overhead of a thre
 of magnitude cheaper. Ain't that awesome!
 
 Thread support is only active if thread supported is detected in which case the macro
-SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in  single-thread mode.
+SIMDJSON_THREADS_ENABLED is set.  You can also manually pass `SIMDJSON_THREADS_ENABLED=1` flag
+to the library. Otherwise the library runs in single-thread mode.
+
+You should be consistent. If you link against the simdjson library built for multithreading
+(i.e., with `SIMDJSON_THREADS_ENABLED`), then you should build your application with multithreading
+system (setting `SIMDJSON_THREADS_ENABLED=1` and linking against a thread library).
 
 A `document_stream` instance uses at most two threads: there is a main thread and a worker thread.
 You should expect the main thread to be fully occupied while the worker thread is partially busy
@@ -125,9 +130,9 @@ Whitespace Characters:
 - **Nothing**
 
 Some official formats **(non-exhaustive list)**:
-- [Newline-Delimited JSON (NDJSON)](http://ndjson.org/)
+- [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec)
 - [JSON lines (JSONL)](http://jsonlines.org/)
-- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by JsonStream!
+- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by simdjson!
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
 API
@@ -179,7 +184,7 @@ You may also call the `source()` method to get a `std::string_view` instance on 
 Let us illustrate the idea with code:
 
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;
@@ -220,7 +225,7 @@ Some users may need to work with truncated streams. The simdjson may truncate do
 
 Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
     simdjson::dom::parser parser;
     simdjson::dom::document_stream stream;

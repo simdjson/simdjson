@@ -20,12 +20,53 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
 Build Quickstart
 ------------------------------
 
+For non-Windows system,
+
 ```bash
-mkdir build
-cd build
-cmake -D SIMDJSON_DEVELOPER_MODE=ON ..
-cmake --build .
+cmake -B -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
 ```
+
+It is similar for Visual Studio users, please see the CMake or Visual Studio documentation.
+
+By default the library is built in Release mode.
+
+
+Assertions and development checks
+------------------------------
+
+We do not use conventional `assert` in simdjson. Instead we use the macro
+`SIMDJSON_ASSUME`:
+
+```cpp
+SIMDJSON_ASSUME(something_that_is_true());
+```
+
+Sometimes, you need to do a bit more work that a simple check.
+The `SIMDJSON_DEVELOPMENT_CHECKS` macro is true only in Debug mode unless manually set.
+It is acceptable to add checks that you would not do in Release mode as long as
+they are guarded:
+
+```cpp
+#if SIMDJSON_DEVELOPMENT_CHECKS
+// do sanity checks here
+```
+
+
+Working with sanitizers
+------------------------------
+
+The simdjson library must be memory-safe. We cannot allow buffer overruns.
+During development, if you system supports it, we recommend configuring
+the project with `-D SIMDJSON_SANITIZE=ON`.
+
+```bash
+cmake -B -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake --build build
+ctest --test-dir build
+```
+
 
 Design notes
 ------------------------------
@@ -69,6 +110,24 @@ workflows used by simdjson.
 Directory Structure and Source
 ------------------------------
 
+Before diving into the directory structure, here are key concepts used in the codebase:
+
+- **Amalgamated File**: A file that is conditionally included in the amalgamation process. These are wrapped in `#ifndef SIMDJSON_CONDITIONAL_INCLUDE` blocks and are included based on the target implementation (e.g., ARM64, x86). They include implementation-specific files (e.g., `arm64.h`) and generic files (e.g., under `generic/`). Amalgamated files have associated dependency files (`dependencies.h`) to track includes.
+
+- **Amalgamator File**: A file that orchestrates the inclusion of amalgamated files. Examples: `arm64.h`, `arm64/implementation.h`, `generic/amalgamated.h`. These are not themselves amalgamated but control conditional inclusions.
+
+- **Free Dependency File**: A top-level header that is always included unconditionally. These do not have dependency files and represent the public API (e.g., main headers).
+
+- **Implementation-Specific File**: A file tied to a specific CPU architecture or instruction set (e.g., `arm64/`, `haswell/`). These must be amalgamated.
+
+- **Generic File**: A shared file (under `generic/` or `simdjson/generic/`) that contains common code included once per implementation.
+
+- **Builtin File**: Special files under `simdjson/builtin/` that handle the builtin implementation, a fallback/default implementation used when no optimized implementation is available.
+
+- **Conditional Include Block**: A section wrapped in `#ifndef SIMDJSON_CONDITIONAL_INCLUDE` for editor-only or implementation-specific content.
+
+The script `singleheader/amalgation_helper.py` will generate an HTML report which you can use to visualize the status of each file.
+
 simdjson's source structure, from the top level, looks like this:
 
 * **CMakeLists.txt:** The main build system.
@@ -88,10 +147,16 @@ simdjson's source structure, from the top level, looks like this:
   * simdjson/ondemand.h: the `simdjson::ondemand` namespace. Includes all public ondemand classes.
     * simdjson/builtin.h: the `simdjson::builtin` namespace. Aliased to the most universal implementation available.
     * simdjson/builtin/ondemand.h: the `simdjson::builtin::ondemand` namespace.
-    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/ondemand.h: the `simdjson::<implementation>::ondemand` namespace. on demand compiled for the specific implementation.
-    * simdjson/generic/ondemand/*.h: individual on demand classes, generically written.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/ondemand.h: the `simdjson::<implementation>::ondemand` namespace. On-Demand compiled for the specific implementation.
+    * simdjson/generic/ondemand/*.h: individual On-Demand classes, generically written.
       * simdjson/generic/ondemand/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
       * simdjson/generic/ondemand/amalgamated.h: all generic ondemand classes for an implementation.
+  * simdjson/builder.h: the `simdjson::builder` namespace. Includes all public builder classes.
+    * simdjson/builtin/builder.h: the `simdjson::builtin::builder` namespace.
+    * simdjson/arm64|fallback|haswell|icelake|ppc64|westmere/builder.h: the `simdjson::<implementation>::builder` namespace. Builder compiled for the specific implementation.
+    * simdjson/generic/builder/*.h: individual Builder classes, generically written.
+      * simdjson/generic/builder/dependencies.h: dependencies on common, non-implementation-specific simdjson classes. This will be included before including amalgamated.h.
+      * simdjson/generic/builder/amalgamated.h: all generic builder classes for an implementation.
 * **src:** The source files for non-inlined functionality (e.g. the architecture-specific parser
   implementations).
   * simdjson.cpp: A "main source" that includes all implementation files from src/. This is
@@ -99,16 +164,14 @@ simdjson's source structure, from the top level, looks like this:
   * *.cpp: other misc. implementations, such as `simdjson::implementation` and the minifier.
   * arm64|fallback|haswell|icelake|ppc64|westmere.cpp: Architecture-specific parser implementations.
     * generic/*.h: `simdjson::<implementation>` namespace. Generic implementation of the parser, particularly the `dom_parser_implementation`.
-    * generic/stage1/*.h: `simdjson::<implementation>::stage1` namespace. Generic implementation of the simd-heavy tokenizer/indexer pass of the simdjson parser. Used for the On Demand interface
+    * generic/stage1/*.h: `simdjson::<implementation>::stage1` namespace. Generic implementation of the simd-heavy tokenizer/indexer pass of the simdjson parser. Used for the On-Demand interface
     * generic/stage2/*.h: `simdjson::<implementation>::stage2` namespace. Generic implementation of the tape creator, which consumes the index from stage 1 and actually parses numbers and string and such. Used for the DOM interface.
 
 Other important files and directories:
-* **.drone.yml:** Definitions for Drone CI.
-* **.appveyor.yml:** Definitions for Appveyor CI (Windows).
-* **.circleci:** Definitions for Circle CI.
 * **.github/workflows:** Definitions for GitHub Actions (CI).
 * **singleheader:** Contains generated `simdjson.h` and `simdjson.cpp` that we release. The files `singleheader/simdjson.h` and `singleheader/simdjson.cpp` should never be edited by hand.
-* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script).
+* **singleheader/amalgamate.py:** Generates `singleheader/simdjson.h` and `singleheader/simdjson.cpp` for release (python script). If you add a new implementation (e.g., rvv), you need to edit this file (IMPLEMENTATIONS).
+* **singleheader/amalgation_helper.py:** Generates and `amalgamation_report.html` that helps you understand the status of each file.
 * **benchmark:** This is where we do benchmarking. Benchmarking is core to every change we make; the
   cardinal rule is don't regress performance without knowing exactly why, and what you're trading
   for it. Many of our benchmarks are microbenchmarks. We are effectively doing controlled scientific experiments for the purpose of understanding what affects our performance. So we simplify as much as possible. We try to avoid irrelevant factors such as page faults, interrupts, unnecessary system calls. We recommend checking the performance as follows:

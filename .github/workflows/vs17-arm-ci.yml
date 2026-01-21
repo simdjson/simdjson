@@ -10,7 +10,6 @@ jobs:
        fail-fast: false
        matrix:
          include:
-           - {arch: ARM}
            - {arch: ARM64}
            - {arch: ARM64EC}
      steps:

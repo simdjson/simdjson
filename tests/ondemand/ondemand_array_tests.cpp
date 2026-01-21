@@ -6,7 +6,23 @@ using namespace simdjson;
 namespace array_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
-
+  bool std_advance() {
+    TEST_START();
+    auto json = R"(   [  {"key" : "value1"}, {"key" : "value2"}  ]  )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    auto iter = arr.begin();
+    std::advance(iter, 1);
+    ondemand::value v;
+    ASSERT_SUCCESS((*iter).get(v));
+    std::string_view sv;
+    ASSERT_SUCCESS(v["key"].get_string().get(sv));
+    ASSERT_EQUAL(sv, "value2");
+    TEST_SUCCEED();
+  }
   bool document_is_array_treated_as_object() {
     TEST_START();
     auto json = R"(   [  {"key" : "value"}  ]  )"_padded;
@@ -375,7 +391,7 @@ namespace array_tests {
       ASSERT_EQUAL(i*sizeof(uint64_t), sizeof(expected_value));
       std::vector<int64_t> container(i); // container of size 'i'.
 
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
       i = 0;
@@ -783,7 +799,7 @@ namespace array_tests {
       for (auto value : array) { (void) value; i++; }
       ASSERT_EQUAL(i, 0);
 
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::array );
       ASSERT_SUCCESS( doc_result.get(array) );
       i = 0;
@@ -855,6 +871,7 @@ namespace array_tests {
 
   bool run() {
     return
+           std_advance() &&
            document_is_array_treated_as_object() &&
            issue1977() &&
            issue1876() &&

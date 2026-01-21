@@ -9,7 +9,8 @@ assignees: ''
 
 Before submitting an issue, please ensure that you have read the documentation:
 
-* Basics is an overview of how to use simdjson and its APIs: https://github.com/simdjson/simdjson/blob/master/doc/basics.md
+* Basics is an overview of how to use simdjson and its APIs to parse JSON: https://github.com/simdjson/simdjson/blob/master/doc/basics.md
+* Builder is an overview of how to use simdjson to generate JSON: https://github.com/simdjson/simdjson/blob/master/doc/builder.md
 * Performance shows some more advanced scenarios and how to tune for them: https://github.com/simdjson/simdjson/blob/master/doc/performance.md
 * Contributing: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md
 * We follow the [JSON specification as described by RFC 8259](https://www.rfc-editor.org/rfc/rfc8259.txt) (T. Bray, 2017). If you wish to support features that are not part of RFC 8259, then you should not refer to your issue as a bug.
@@ -37,7 +38,7 @@ If we cannot reproduce the issue, then we cannot address it. Note that a stack t
 
 It should be possible to trigger the bug by using solely simdjson with our default build setup. If you can only observe the bug within some specific context, with some other software, please reduce the issue first.
 
-**simjson release**
+**simdjson release**
 
 Unless you plan to contribute to simdjson, you should only work from releases. Please be mindful that our main branch may have additional features, bugs and documentation items.
 
@@ -54,6 +55,8 @@ We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux syste
 * We do not support unreleased or experimental compilers. If you encounter an issue with a
 pre-release version of a compiler, do not report it as a bug to simdjson. However, we always
 invite contributions either in the form an analysis or of a code contribution.
+
+Under Windows, we support Visual Studio (both with LLVM and without). We do not support MinGW and other alternate compiler systems. Windows users should be aware that there [is a long-running bug with GCC under Windows](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
 **Indicate whether you are willing or able to provide a bug fix as a pull request**
 

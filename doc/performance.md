@@ -4,9 +4,9 @@ Performance Notes
 simdjson strives to be at its fastest *without tuning*, and generally achieves this. However, there
 are still some scenarios where tuning can enhance performance.
 Once your code is tested, we
-further encourage you to define `NDEBUG` in your Release builds to disable additional runtime
+further encourage you to define `NDEBUG` in your release builds to disable additional runtime
 testing and get the best performance.
-* [NDEBUG directive](#ndebug-directive)
+* [NDEBUG macro](#ndebug-macro)
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Reusing string buffers](#reusing-string-buffers)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
@@ -17,16 +17,27 @@ testing and get the best performance.
 * [Free Padding](#free-padding)
 
 
-NDEBUG directive
+NDEBUG macro
 -------------
 
-In C/C++, the `NDEBUG` pre-processor directive is not set by default. When it is not set, the simdjson library does
-many additional checks that may impact negatively the performance. We recommend that, once your code
-is well tested, you define `NDEBUG` directive in your Release builds. The `NDEBUG` directive should be defined
-prior to including the `simdjson.h` header.
+We recommend that you set `NDEBUG` macro in your release builds.
 
-The `NDEBUG` directive is generally independent from optimization flags. For example, setting `-O3` under
-GCC does not set the `NDEBUG` directive.
+In C/C++, the `NDEBUG` macro is not set by default.
+When it is not set, the software may do many additional checks that may impact
+negatively the performance. We recommend that, once your code
+is well tested, you define `NDEBUG` directive in your release builds.
+
+The `NDEBUG` directive is generally independent from optimization flags.
+For example, setting `-O3` under GCC does not set the `NDEBUG` directive.
+However, tools like `CMake` automatically
+set `NDEBUG` for release builds.
+
+In the simdjson library, we check the `NDEBUG` macro as well as other
+macros to make performant release builds. However, the C++ standard
+does not provide a definitive approach to determine whether you are
+compiling for a release build. Thus we recommend that you follow
+the practice of setting the `NDEBUG` macro in release mode to make sure
+that you do not get undesirable expensive checks.
 
 Reusing the parser for maximum efficiency
 -----------------------------------------
@@ -36,7 +47,7 @@ and reuse it. The simdjson library will allocate and retain internal buffers bet
 buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner,
 you can parse terabytes of JSON data without doing any new allocation.
 
-```c++
+```cpp
 ondemand::parser parser;
 
 // This initializes buffers  big enough to handle this JSON.
@@ -60,14 +71,14 @@ Reusing string buffers
 
 We recommend against creating many `std::string` or `simdjson::padded_string` instances to store the JSON content in your application. [Creating many non-trivial objects is convenient but often surprisingly slow](https://lemire.me/blog/2020/08/08/performance-tip-constructing-many-non-trivial-objects-is-slow/). Instead, as much as possible, you should allocate (once or a few times) reusable memory buffers where you write your JSON content. If you have a buffer `json_str` (of type `char*`) allocated for  `capacity` bytes and you store a JSON document spanning `length` bytes, you can pass it to simdjson as follows:
 
-```c++
+```cpp
  auto doc = parser.iterate(padded_string_view(json_str, length, capacity));
 ```
 
 or simply
 
 
-```c++
+```cpp
  auto doc = parser.iterate(json_str, length, capacity);
 ```
 
@@ -75,10 +86,10 @@ or simply
 Server Loops: Long-Running Processes and Memory Capacity
 ---------------------------------
 
-The On Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On Demand also lets you adjust the maximal capacity that the parser can process:
+The On-Demand approach also automatically expands its memory capacity when larger documents are parsed. However, for longer processes where very large files are processed (such as server loops), this capacity is not resized down. On-Demand also lets you adjust the maximal capacity that the parser can process:
 
 * You can set an upper bound (*max_capacity*) when construction the parser:
-```C++
+```cpp
     ondemand::parser parser(1000*1000);  // Never grows past documents > 1 MB
     auto doc = parser.iterate(json);
     for (web_request request : listen()) {
@@ -94,7 +105,7 @@ The On Demand approach also automatically expands its memory capacity when large
 The capacity will grow as the parser encounters larger documents up to 1 MB.
 
 * You can also allocate a *fixed capacity* that will never grow:
-```C++
+```cpp
     ondemand::parser parser(1000*1000);
     parser.allocate(1000*1000)  // Fix the capacity to 1 MB
     auto doc = parser.iterate(json);
@@ -158,9 +169,9 @@ On Intel and AMD Windows platforms, Microsoft Visual Studio enables programmers 
 
 When compiling with Visual Studio, we recommend the flags `/Ob2 /O2` or better. We do not recommend that you compile simdjson with architecture-specific flags such as  `arch:AVX2`. The simdjson library automatically selects the best execution kernel at runtime.
 
-Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component (ClangCL). You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the [LLVM CLang compiler is binary compatible with Visual Studio](https://clang.llvm.org/docs/MSVCCompatibility.html) which means that you can combine their binaries (executables and libraries).
+Recent versions of Microsoft Visual Studio on Windows provides support for the LLVM Clang compiler. You  only need to install the "Clang compiler" optional component (clang-cl). You may also get a copy of the 64-bit LLVM CLang compiler for [Windows directly from LLVM](https://releases.llvm.org/download.html). The simdjson library fully supports the LLVM Clang compiler under Windows. In fact, you may get better performance out of simdjson with the LLVM Clang compiler than with the regular Visual Studio compiler. Meanwhile the [LLVM CLang compiler is binary compatible with Visual Studio](https://clang.llvm.org/docs/MSVCCompatibility.html) which means that you can combine their binaries (executables and libraries).
 
-Under Windows, we also support the GNU GCC compiler via MSYS2. The performance of 64-bit MSYS2 under Windows is excellent (on par with Linux).
+We recommend Visual Studio users prefer LLVM (clang-cl). It compiles to faster release binaries. Furthermore, it compilers faster in release mode.
 
 
 Power Usage and Downclocking
@@ -241,8 +252,8 @@ long page_size() {
 // Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the
 // page boundary.
 bool need_allocation(const char *buf, size_t len) {
-  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size()) <
-          simdjson::SIMDJSON_PADDING);
+  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
+    + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size()));
 }
 
 simdjson::padded_string_view
@@ -285,5 +296,63 @@ int main() {
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
+}
+```
+
+Further, whenever you allocate N bytes, memory allocators tend to allocate more memory, without you necessarily knowing about it. Under linux, you can use the `malloc_usable_size` function to see how much memory was actually allocated.
+Under an Apple plateform, you can  `malloc_size`. The following program illustrates the usage.
+
+```cpp
+#include <iostream>
+#include <cstddef>
+#include <memory>
+#include <cstdlib>
+#ifdef __APPLE__
+#include <malloc/malloc.h>  // for malloc_size on macOS
+#endif
+#ifdef __linux__
+#include <malloc.h> // for malloc_usable_size on Linux
+#endif
+size_t get_usable_size(void* ptr) {
+#ifdef __linux__
+    return malloc_usable_size(ptr);
+#elif defined(__APPLE__)
+    return malloc_size(ptr);
+#else
+    return 0;  // Unsupported platform
+#endif
+}
+
+int main() {
+    std::cout << "Demonstrating allocation overhead and rounding with operator new\n\n";
+
+#ifdef __linux__
+    std::cout << "Platform: Linux\n";
+#elif defined(__APPLE__)
+    std::cout << "Platform: macOS (using malloc_size)\n";
+#else
+    std::cout << "Platform: Other/unsupported (usable size will show 0)\n";
+#endif
+
+    std::cout << "Requested size | Actual usable size\n";
+    std::cout << "---------------|-------------------\n";
+    size_t total_requested = 0;
+    size_t total_usable = 0;
+    for (size_t requested = 1; requested <= 4096; requested++) {
+        total_requested += requested;
+        std::unique_ptr<char[]> ptr(new char[requested]);  // Allocate
+        size_t usable = get_usable_size(ptr.get());  // Get usable size
+        total_usable += usable;
+
+        std::cout << requested << "\t       | " << usable << "\n";
+    }
+    std::cout << "---------------|-------------------\n";
+    std::cout << "Total requested: " << total_requested << " bytes\n";
+    std::cout << "Total usable:    " << total_usable << " bytes\n";
+    std::cout << "Total overhead:  " << (total_usable - total_requested) << " bytes\n";
+    std::cout << "Percentage overhead: "
+              << ((total_usable - total_requested) * 100.0 / total_requested) << " %\n";
+
+    return EXIT_SUCCESS;
 }
 ```

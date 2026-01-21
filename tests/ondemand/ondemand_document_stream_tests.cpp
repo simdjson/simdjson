@@ -37,8 +37,8 @@ namespace document_stream_tests {
             // it does not do UTF-8 validation in stage one, but it will do
             // so when we access the document.
             if(err == SUCCESS) {
-                ondemand::json_type t;
-                err = doc.type().get(t);
+                std::string_view document_string;
+                err = doc.get_string().get(document_string);
             }
             if((err == SUCCESS) && (document_index != 1)) {
               std::cerr << "Only the first document should be valid." << std::endl;
@@ -840,10 +840,10 @@ namespace document_stream_tests {
           if(doc.get_bool().get(b) == SUCCESS) { bool_count +=b; }
           // If we don't access the document at all, other than get_bool(),
           // then some simdjson kernels will allow you to iterate through
-          // 3 'documents'. By asking for the type, we make the iteration
+          // 3 'documents'. By trying to access the content, we make the iteration
           // terminate after the first 'document'.
-          ondemand::json_type t;
-          if(doc.type().get(t) != SUCCESS) { break; }
+          std::string_view document_string;
+          if(doc.get_string().get(document_string) != SUCCESS) { break; }
         }
         return (bool_count == 0) && (total_count == 1);
     }

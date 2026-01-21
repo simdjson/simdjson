@@ -164,8 +164,7 @@ namespace json_pointer_tests {
         ASSERT_TRUE(is_scalar);
         ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
         std::cout << "  checking true"<< std::endl;
-        ASSERT_SUCCESS(parser.iterate(true_json).get(doc));
-        ASSERT_SUCCESS(doc.is_scalar().get(is_scalar));
+        ASSERT_SUCCESS(parser.iterate(true_json).is_scalar().get(is_scalar));
         ASSERT_TRUE(is_scalar);
         ASSERT_ERROR(doc.at_pointer("").get(val), simdjson::SCALAR_DOCUMENT_AS_VALUE);
         std::cout << "  checking object"<< std::endl;

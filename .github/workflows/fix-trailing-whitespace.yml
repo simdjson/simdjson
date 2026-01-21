@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   whitespace:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Remove whitespace and check the diff
@@ -24,7 +24,7 @@ jobs:
              echo "no trailing whitespace found, good!"
           fi
       - name: Archive whitespace patch
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: whitespace-patch

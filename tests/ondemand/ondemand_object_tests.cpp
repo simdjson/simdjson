@@ -1,3 +1,4 @@
+#define SIMDJSON_VERBOSE_LOGGING 1
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -6,7 +7,6 @@ using namespace simdjson;
 namespace object_tests {
   using namespace std;
   using simdjson::ondemand::json_type;
-
   bool issue1979() {
     TEST_START();
     auto json = R"({
@@ -22,6 +22,24 @@ namespace object_tests {
     ASSERT_SUCCESS(object["@avito-core/toggles:6.1.18"].get_object().error());
     TEST_SUCCEED();
   }
+
+
+  bool testing_to_string() {
+    TEST_START();
+    auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    for (auto field : object) {
+      std::string key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+      ASSERT_EQUAL(key, "bebe");
+    }
+    TEST_SUCCEED();
+  }
+
 
   bool issue1977() {
     TEST_START();
@@ -258,6 +276,19 @@ namespace object_tests {
 
 #if SIMDJSON_EXCEPTIONS
 
+  bool testing_to_string_exception() {
+    TEST_START();
+    auto json = R"({"\u0062\u0065\u0062\u0065": 2} })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object object = doc.get_object();
+    for (auto field : object) {
+      std::string key;
+      ASSERT_SUCCESS(field.unescaped_key().get(key));
+    }
+    TEST_SUCCEED();
+  }
+
   bool issue1965() {
     TEST_START();
     std::string str = "{\"query\":\"ah\"}";
@@ -454,7 +485,7 @@ namespace object_tests {
         i++;
       }
       ASSERT_EQUAL( i*sizeof(uint64_t), sizeof(expected_value) );
-      doc_result.rewind();
+      ASSERT_SUCCESS( doc_result.rewind() );
       ASSERT_RESULT( doc_result.type(), json_type::object );
       ASSERT_SUCCESS( doc_result.get(object) );
       i = 0;
@@ -691,6 +722,22 @@ namespace object_tests {
       for (auto field : object) {
         std::string_view keyv;
         ASSERT_SUCCESS( field.unescaped_key().get(keyv) );
+        if(keyv == "key") {
+          int64_t value;
+          ASSERT_SUCCESS( field.value().get(value) );
+          ASSERT_EQUAL( value, 1);
+          got_key = true;
+        }
+      }
+      return got_key;
+    }));
+    SUBTEST("ondemand::unescapedkey(std)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      bool got_key = false;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      for (auto field : object) {
+        std::string keyv;
+        ASSERT_SUCCESS( field.unescaped_key(keyv) );
         if(keyv == "key") {
           int64_t value;
           ASSERT_SUCCESS( field.value().get(value) );
@@ -968,6 +1015,26 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool manual_iterator_increment() {
+    // not recommended usage, but should work
+    TEST_START();
+    auto json = R"( {"1":1, "2":2, "3":3} )"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object obj;
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    std::cout << "object obtained.\n";
+    auto it = obj.begin();
+    *it; // essential !!!
+    ++it;
+    auto field = *it;
+    std::string_view key;
+    ASSERT_SUCCESS(field.unescaped_key().get(key));
+    std::cout << "Key: " << key << std::endl;
+    ASSERT_EQUAL(key, "2");
+    TEST_SUCCEED();
+  }
   bool issue1876() {
     TEST_START();
     auto json = R"( {} )"_padded;
@@ -1294,13 +1361,16 @@ namespace object_tests {
   }
 
   bool run() {
-    return issue1979() &&
+    return testing_to_string() &&
+           issue1979() &&
            issue1977() &&
 #if SIMDJSON_EXCEPTIONS
+           testing_to_string_exception() &&
            issue1965() &&
 #endif
            issue1974a() &&
            issue1974b() &&
+           manual_iterator_increment() &&
            issue1876a() &&
            issue1876() &&
            test_strager() &&
