@@ -149,9 +149,13 @@ private:
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc.
    * The result will be a valid UTF-8.
    *
+   * When the string does not contain any escape sequences, this function
+   * will simply return a string_view into the original JSON buffer.
+   *
    * ## IMPORTANT: string_view lifetime
    *
-   * The string_view is only valid until the next parse() call on the parser.
+   * The string_view is only valid until the next parse() call on the parser when escaping
+   * was needed.
    *
    * @param iter A json_iterator, which contains a buffer where the string will be written.
    * @param allow_replacement Whether we allow replacement of invalid surrogate pairs.
