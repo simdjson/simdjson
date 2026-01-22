@@ -1,0 +1,24 @@
+name: Ubuntu rvv VLEN=128 (clang 17)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install packages
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get install -y cmake make g++-riscv64-linux-gnu qemu-user-static clang-17
+    - name: Build
+      run: |
+        CC=clang-17 CXX=clang++-17 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv" CXXFLAGS="${CFLAGS}" \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build
+        cmake --build build/ -j$(nproc) --config Release

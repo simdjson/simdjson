@@ -17,7 +17,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 64;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -40,6 +40,35 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
       static_cast<uint64_t>(v == '"'), // quote_bits
   };
 }
+
+
+
+struct escaping {
+  static constexpr uint32_t BYTES_PROCESSED = 64;
+  simdjson_inline static escaping copy_and_find(const uint8_t *src, uint8_t *dst);
+
+  simdjson_inline bool has_escape() { return escape_bits != 0; }
+  simdjson_inline int escape_index() { return trailing_zeroes(uint64_t(escape_bits)); }
+
+  __mmask64 escape_bits;
+}; // struct escaping
+
+
+
+simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *dst) {
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "escaping finder must process fewer than SIMDJSON_PADDING bytes");
+  simd8<uint8_t> v(src);
+  v.store(dst);
+  __mmask64 is_quote = _mm512_cmpeq_epi8_mask(v, _mm512_set1_epi8('"'));
+  __mmask64 is_backslash = _mm512_cmpeq_epi8_mask(v, _mm512_set1_epi8('\\'));
+  __mmask64 is_control = _mm512_cmplt_epi8_mask(v, _mm512_set1_epi8(32));
+  return {
+    (is_backslash | is_quote | is_control)
+  };
+}
+
+
+
 
 } // unnamed namespace
 } // namespace icelake

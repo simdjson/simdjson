@@ -13,7 +13,7 @@ struct nlohmann_json {
     auto root = nlohmann::json::parse(json.data(), json.data() + json.size());
     for (auto tweet : root["statuses"]) {
       if (tweet["id"] == find_id) {
-        result = tweet["text"];
+        result = to_string(tweet["text"]);
         return true;
       }
     }

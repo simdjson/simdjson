@@ -1,7 +1,8 @@
 #ifndef TEST_MACROS_H
 #define TEST_MACROS_H
-
+#include "simdjson.h"
 #include <iostream>
+#include <vector>
 
 #ifndef SIMDJSON_BENCHMARK_DATA_DIR
 #define SIMDJSON_BENCHMARK_DATA_DIR "jsonexamples/"
@@ -44,6 +45,21 @@ simdjson_inline simdjson::error_code to_error_code(simdjson::error_code error) {
 template<typename T>
 simdjson_inline simdjson::error_code to_error_code(const simdjson::simdjson_result<T> &result) {
   return result.error();
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
+  os << "["; // Start with opening bracket
+  if (!vec.empty()) {
+    // Print first element without leading comma
+    os << static_cast<uint16_t>(vec[0]);
+    // Print remaining elements with commas
+    for (size_t i = 1; i < vec.size(); ++i) {
+      os << ", " << static_cast<uint16_t>(vec[i]);
+    }
+  }
+  os << "]"; // End with closing bracket
+  return os;
 }
 
 template<typename T>
@@ -110,10 +126,11 @@ simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected,
   return assert_equal( count, 1, operation );
 }
 #define TEST_START()                    do { std::cout << "> Running " << __func__ << " ..." << std::endl; } while(0);
+#define TYPED_TEST_START(T)             do { std::cout << "> Running " << __func__ << "<" << typeid(T).name() << "> ..." << std::endl; } while(0);
 #define SUBTEST(NAME, TEST)             do { std::cout << " - Subtest " << (NAME) << " ..." << std::endl; if (!(TEST)) { return false; } } while (0);
 #define ASSERT_EQUAL(ACTUAL, EXPECTED)  do { if (!::assert_equal  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_RESULT(ACTUAL, EXPECTED) do { if (!::assert_result ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
-#define ASSERT_SUCCESS(ACTUAL)          do { if (!::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
+#define ASSERT_SUCCESS(...)          do { if (!::assert_success((__VA_ARGS__),             #__VA_ARGS__)) { return false; } } while (0);
 #define ASSERT_FAILURE(ACTUAL)          do { if (::assert_success((ACTUAL),             #ACTUAL)) { return false; } } while (0);
 #define ASSERT_ERROR(ACTUAL, EXPECTED)  do { if (!::assert_error  ((ACTUAL), (EXPECTED), #ACTUAL)) { return false; } } while (0);
 #define ASSERT_TRUE(ACTUAL)             do { if (!::assert_true   ((ACTUAL),             #ACTUAL)) { return false; } } while (0);
@@ -123,5 +140,4 @@ simdjson_inline bool assert_iterate_error(T &arr, simdjson::error_code expected,
 #define RUN_TEST(ACTUAL)                do { if (!(ACTUAL)) { return false; } } while (0);
 #define TEST_FAIL(MESSAGE)              do { std::cerr << "FAIL: " << (MESSAGE) << std::endl; return false; } while (0);
 #define TEST_SUCCEED()                  do { return true; } while (0);
-
 #endif // TEST_MACROS_H

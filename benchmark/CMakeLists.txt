@@ -4,6 +4,9 @@ add_subdirectory(dom)
 include_directories( . linux )
 link_libraries(simdjson-windows-headers test-data)
 link_libraries(simdjson)
+if(SIMDJSON_STATIC_REFLECTION)
+  add_compile_definitions(SIMDJSON_STATIC_REFLECTION=1)
+endif(SIMDJSON_STATIC_REFLECTION)
 
 add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
@@ -31,4 +34,17 @@ if (TARGET benchmark::benchmark)
     endif()
   endif()
 endif()
+
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++20" SIMDJSON_COMPILER_SUPPORTS_CXX20)
+if(SIMDJSON_STATIC_REFLECTION)
+  add_subdirectory(static_reflect)
+else()
+  if(SIMDJSON_EXCEPTIONS AND SIMDJSON_COMPILER_SUPPORTS_CXX20)
+    add_subdirectory(from)
+    add_subdirectory(car_builder)
+  endif()
+endif(SIMDJSON_STATIC_REFLECTION)
+
 

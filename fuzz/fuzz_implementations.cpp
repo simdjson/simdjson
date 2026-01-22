@@ -72,7 +72,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     // make this dynamic, so it works regardless of how it was compiled
     // or what hardware it runs on
-    constexpr std::size_t Nimplementations_max=3;
+    constexpr std::size_t Nimplementations_max=4;
     const std::size_t Nimplementations = supported_implementations.size();
 
     if(Nimplementations>Nimplementations_max) {

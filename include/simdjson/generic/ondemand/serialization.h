@@ -35,6 +35,20 @@ inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> x);
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> x);
 inline simdjson_result<std::string_view> to_json_string(simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> x);
+
+#if SIMDJSON_STATIC_REFLECTION
+/**
+ * Create a JSON string from any user-defined type using static reflection.
+ * Only available when SIMDJSON_STATIC_REFLECTION is enabled.
+ */
+template<typename T>
+  requires(!std::same_as<T, SIMDJSON_IMPLEMENTATION::ondemand::document> &&
+           !std::same_as<T, SIMDJSON_IMPLEMENTATION::ondemand::value> &&
+           !std::same_as<T, SIMDJSON_IMPLEMENTATION::ondemand::object> &&
+           !std::same_as<T, SIMDJSON_IMPLEMENTATION::ondemand::array>)
+inline std::string to_json_string(const T& obj);
+#endif
+
 } // namespace simdjson
 
 /**

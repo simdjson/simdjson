@@ -5,12 +5,16 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include "simdjson/generic/ondemand/deserialize.h"
+#include <vector>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <type_traits>
+
 namespace simdjson {
+
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
-
 /**
  * An ephemeral JSON value returned during iteration. It is only valid for as long as you do
  * not access more data in the JSON document.
@@ -31,11 +35,72 @@ public:
    *
    * You may use get_double(), get_bool(), get_uint64(), get_int64(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
+   * When SIMDJSON_SUPPORTS_CONCEPTS is set, custom types are also supported.
    *
    * @returns A value of the given type, parsed from the JSON.
    * @returns INCORRECT_TYPE If the JSON value is not the given type.
    */
-  template<typename T> simdjson_inline simdjson_result<T> get() noexcept {
+  template <typename T>
+  simdjson_inline simdjson_result<T> get()
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+#else
+    noexcept
+#endif
+  {
+    static_assert(std::is_default_constructible<T>::value, "The specified type is not default constructible.");
+    T out{};
+    SIMDJSON_TRY(get<T>(out));
+    return out;
+  }
+
+
+  /**
+   * Get this value as the given type.
+   *
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * If the macro SIMDJSON_SUPPORTS_CONCEPTS is set, then custom types are also supported.
+   *
+   * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
+   * @returns INCORRECT_TYPE If the JSON value is not an object.
+   * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
+   */
+  template <typename T>
+  simdjson_warn_unused simdjson_inline error_code get(T &out)
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+#else
+    noexcept
+#endif
+ {
+  #if SIMDJSON_SUPPORTS_CONCEPTS
+  if constexpr (custom_deserializable<T, value>) {
+      return deserialize(*this, out);
+  } else if constexpr (concepts::optional_type<T>) {
+      using value_type = typename std::remove_cvref_t<T>::value_type;
+
+      // Check if the value is null
+      bool is_null_value;
+      SIMDJSON_TRY( is_null().get(is_null_value) );
+      if (is_null_value) {
+        out.reset(); // Set to nullopt
+        return SUCCESS;
+      }
+
+      if (!out) {
+        out.emplace();
+      }
+      return get<value_type>(out.value());
+  } else {
+    static_assert(!sizeof(T), "The get<T> method with type T is not implemented by the simdjson library. "
+      "And you do not seem to have added support for it. Indeed, we have that "
+      "simdjson::custom_deserializable<T> is false and the type T is not a default type "
+      "such as ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
+      "int64_t, double, or bool.");
+    static_cast<void>(out); // to get rid of unused errors
+    return UNINITIALIZED;
+  }
+#else // SIMDJSON_SUPPORTS_CONCEPTS
     // Unless the simdjson library or the user provides an inline implementation, calling this method should
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
@@ -43,18 +108,10 @@ public:
       "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
+    static_cast<void>(out); // to get rid of unused errors
+    return UNINITIALIZED;
+#endif
   }
-
-  /**
-   * Get this value as the given type.
-   *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
-   *
-   * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
-   * @returns INCORRECT_TYPE If the JSON value is not an object.
-   * @returns SUCCESS If the parse succeeded and the out parameter was set to the value.
-   */
-  template<typename T> simdjson_inline error_code get(T &out) noexcept;
 
   /**
    * Cast this JSON value to an array.
@@ -130,6 +187,17 @@ public:
    * Important: a value should be consumed once. Calling get_string() twice on the same value
    * is an error.
    *
+   * In some instances, you may want to allow replacement of invalid Unicode sequences.
+   * You may do so by passing the allow_replacement parameter as true. In the following
+   * example, the string "431924697b\udff0L\u0001Y" is not valid Unicode. By passing true
+   * to get_string, we allow the replacement of the invalid Unicode sequences with the Unicode
+   * replacement character (U+FFFD).
+   *
+   *   simdjson::ondemand::parser parser;
+   *   auto json = R"({"deviceId":"431924697b\udff0L\u0001Y"})"_padded;
+   *   simdjson::ondemand::document doc = parser.iterate(json);
+   *   auto view = doc["deviceId"].get_string(true);
+   *
    * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
    *          time it parses a document or when it is destroyed.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
@@ -150,7 +218,7 @@ public:
    * @returns INCORRECT_TYPE if the JSON value is not a string. Otherwise, we return SUCCESS.
    */
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
 
   /**
    * Cast this JSON value to a "wobbly" string.
@@ -327,12 +395,14 @@ public:
    */
   simdjson_inline simdjson_result<value> at(size_t index) noexcept;
   /**
-   * Look up a field by name on an object (order-sensitive).
+   * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
+   * fields must be accessed in the order they appear in the JSON text (although you can
+   * skip fields). See find_field_unordered() and operator[] for an order-insensitive version.
    *
    * The following code reads z, then y, then x, and thus will not retrieve x or y if fed the
    * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
-   * ```c++
+   * ```cpp
    * simdjson::ondemand::parser parser;
    * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
    * double z = obj.find_field("z");
@@ -361,7 +431,8 @@ public:
    * missing case has a non-cache-friendly bump and lots of extra scanning, especially if the object
    * in question is large. The fact that the extra code is there also bumps the executable size.
    *
-   * It is the default, however, because it would be highly surprising (and hard to debug) if the
+   * We default operator[] on find_field_unordered() for convenience.
+   * It is the default because it would be highly surprising (and hard to debug) if the
    * default behavior failed to look up a field just because it was in the wrong order--and many
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
@@ -381,6 +452,7 @@ public:
   simdjson_inline simdjson_result<value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<value> operator[](const char *key) noexcept;
+  simdjson_result<value> operator[](int) noexcept = delete;
 
   /**
    * Get the type of this JSON value. It does not validate or consume the value.
@@ -603,6 +675,14 @@ public:
    */
   simdjson_inline simdjson_result<value> at_path(std::string_view at_path) noexcept;
 
+  /**
+   * Get all values matching the given JSONPath expression with wildcard support.
+   * Supports wildcard character (*) for arrays or ".*" for objects.
+   *
+   * @param json_path JSONPath expression with wildcards
+   * @return Vector of values matching the wildcard pattern
+   */
+  simdjson_inline simdjson_result<std::vector<value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 
 protected:
   /**
@@ -670,7 +750,7 @@ public:
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
-  simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
+  simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> get_raw_json_string() noexcept;
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
@@ -699,12 +779,14 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() & noexcept;
 
   /**
-   * Look up a field by name on an object (order-sensitive).
+   * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
+   * fields must be accessed in the order they appear in the JSON text (although you can
+   * skip fields). See find_field_unordered() and operator[] for an order-insensitive version.
    *
    * The following code reads z, then y, then x, and thus will not retrieve x or y if fed the
    * JSON `{ "x": 1, "y": 2, "z": 3 }`:
    *
-   * ```c++
+   * ```cpp
    * simdjson::ondemand::parser parser;
    * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
    * double z = obj.find_field("z");
@@ -731,7 +813,8 @@ public:
    * missing case has a non-cache-friendly bump and lots of extra scanning, especially if the object
    * in question is large. The fact that the extra code is there also bumps the executable size.
    *
-   * It is the default, however, because it would be highly surprising (and hard to debug) if the
+   * We default operator[] on find_field_unordered() for convenience.
+   * It is the default because it would be highly surprising (and hard to debug) if the
    * default behavior failed to look up a field just because it was in the wrong order--and many
    * APIs assume this. Therefore, you must be explicit if you want to treat objects as out of order.
    *
@@ -748,9 +831,25 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
   /** @overload simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept; */
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](int) noexcept = delete;
 
   /**
-   * Get the type of this JSON value.
+   * Get the type of this JSON value. It does not validate or consume the value.
+   * E.g., you must still call "is_null()" to check that a value is null even if
+   * "type()" returns json_type::null.
+   *
+   * Given a valid JSON document, the answer can be one of
+   * simdjson::ondemand::json_type::object,
+   * simdjson::ondemand::json_type::array,
+   * simdjson::ondemand::json_type::string,
+   * simdjson::ondemand::json_type::number,
+   * simdjson::ondemand::json_type::boolean,
+   * simdjson::ondemand::json_type::null.
+   *
+   * Starting with simdjson 4.0, this function will return simdjson::ondemand::json_type::unknown
+   * given a bad token.
+   * This allows you to identify a case such as {"key": NaN} and identify the NaN value.
+   * The simdjson::ondemand::json_type::unknown value should only happen with non-valid JSON.
    *
    * NOTE: If you're only expecting a value to be one type (a typical case), it's generally
    * better to just call .get_double, .get_string, etc. and check for INCORRECT_TYPE (or just
@@ -774,6 +873,7 @@ public:
   simdjson_inline simdjson_result<int32_t> current_depth() const noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
+  simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> at_path_with_wildcard(std::string_view json_path) noexcept;
 };
 
 } // namespace simdjson

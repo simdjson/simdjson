@@ -1,0 +1,39 @@
+name: Ubuntu rvv VLEN=128 (clang 20)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install packages
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get install -y cmake make g++-riscv64-linux-gnu qemu-user-static clang-20
+    - name: Build
+      run: |
+        CC=clang-20 CXX=clang++-20 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv" CXXFLAGS="${CFLAGS}" \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build
+        cmake --build build/ -j$(nproc) --config Release
+    - name: Test VLEN=128
+      run: |
+        QEMU_LD_PREFIX="/usr/riscv64-linux-gnu" \
+        QEMU_CPU="rv64,v=on,vlen=128,rvv_ta_all_1s=on,rvv_ma_all_1s=on" \
+        ctest --timeout 1800 --output-on-failure --test-dir build -j $(nproc)
+    - name: Build VLS
+      run: |
+        CC=clang-20 CXX=clang++-20 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv_zvl128b_zba_zbb_zbc -mrvv-vector-bits=zvl" CXXFLAGS="${CFLAGS}" \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build-vls
+        cmake --build build-vls/ -j$(nproc) --config Release
+    - name: Test VLEN=128 VLS
+      run: |
+        QEMU_LD_PREFIX="/usr/riscv64-linux-gnu" \
+        QEMU_CPU="rv64,v=on,zba=on,zbb=on,zbc=on,vlen=128,rvv_ta_all_1s=on,rvv_ma_all_1s=on" \
+        ctest --timeout 1800 --output-on-failure --test-dir build-vls -j $(nproc)

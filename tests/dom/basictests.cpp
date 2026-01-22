@@ -38,6 +38,25 @@ const size_t AMAZON_CELLPHONES_NDJSON_DOC_COUNT = 793;
 
 namespace number_tests {
 
+  bool build(const std::string& json) {
+    simdjson::dom::parser parser;
+    simdjson::dom::element recvdJson;
+    auto error = parser.parse(json.c_str(), json.size()).get(recvdJson);
+    if (error) {
+        return false;
+    }
+    return true;
+  }
+  bool issue2213() {
+    TEST_START();
+    std::string jsonStr = "[1,2,3,\"4\", {\"a\": 5}]";
+    for (int i = 0; i < 15; ++i) {
+        if (!build(jsonStr)) {
+          TEST_FAIL("The JSON is valid");
+        }
+    }
+    TEST_SUCCEED();
+  }
   bool ground_truth() {
     std::cout << __func__ << std::endl;
     std::pair<std::string,double> ground_truth[] = {
@@ -74,6 +93,23 @@ namespace number_tests {
     double score;
     ASSERT_SUCCESS(parser.parse(docdata)["score"].get_double().get(score));
     ASSERT_EQUAL(score, 0.8825149536132812);
+    TEST_SUCCEED();
+  }
+
+  bool issue2570() {
+    TEST_START();
+    auto json = R"([44.411101, 8.908021])"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::array arr;
+    ASSERT_SUCCESS(parser.parse(json).get_array().get(arr));
+    std::vector<double> numbers = {44.411101, 8.908021};
+    size_t index = 0;
+    for (auto val : arr) {
+      double parsed;
+      ASSERT_SUCCESS(val.get_double().get(parsed));
+      ASSERT_EQUAL(parsed, numbers[index]);
+      index++;
+    }
     TEST_SUCCEED();
   }
 
@@ -380,7 +416,11 @@ namespace number_tests {
 
   bool specific_tests() {
     std::cout << __func__ << std::endl;
-    return basic_test_64bit("-1e-999", -0.0) &&
+    return
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+           basic_test_64bit("-0", -0.0) &&
+    #endif // SIMDJSON_MINUS_ZERO_AS_FLOAT
+           basic_test_64bit("-1e-999", -0.0) &&
            basic_test_64bit("-2402844368454405395.2",-2402844368454405395.2) &&
            basic_test_64bit("4503599627370496.5", 4503599627370496.5) &&
            basic_test_64bit("4503599627475352.5", 4503599627475352.5) &&
@@ -397,8 +437,10 @@ namespace number_tests {
   }
 
   bool run() {
-    return bomskip() &&
+    return issue2213() &&
+           bomskip() &&
            issue2017() &&
+           issue2570() &&
            truncated_borderline() &&
            specific_tests() &&
            ground_truth() &&
@@ -420,6 +462,11 @@ namespace parse_api_tests {
   const padded_string BASIC_JSON = "[1,2,3]"_padded;
   const padded_string BASIC_NDJSON = "[1,2,3]\n[4,5,6]"_padded;
   const padded_string EMPTY_NDJSON = ""_padded;
+  // GCC 15 gives false positive -Wfree-nonheap-object warning here
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#endif
   bool parser_moving_parser() {
     std::cout << "Running " << __func__ << std::endl;
     typedef std::tuple<std::string, std::unique_ptr<parser>,element> simdjson_tuple;
@@ -437,7 +484,35 @@ namespace parse_api_tests {
     }
     return true;
   }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #if SIMDJSON_EXCEPTIONS
+
+  bool issue_2375() {
+    TEST_START();
+    std::string jsonData =
+        R"eos({"asset":{"version":"1.0"},"geometricError":100,"root":{"boundingVolume":{"region":[10,0,10,10,0,109]},"geometricError":100,"refine":"ADD","children":[{"boundingVolume":{"region":[20,0,20,0,0,20]},"geometricError":70,"content":{"url":"city/tileset.json"}},{"transform":[4,1,0,0,-0.7,3.1,3.8,0,0.9,-3.7,3.21,0,12,-47,40,1],"boundingVolume":{"region":[-1.3,0.6,-1.39,0.6,0,20]},"geometricError":0,"content":{"url":"building.b3dm"}},{"transform":[0.9,0.2,0,0,-0.15,0.62,0.76,0,0.19,-0.74,0.64,0,12,-47,40,1],"viewerRequestVolume":{"region":[-1.3,0.6,-1.31,0.6,0,20]},"boundingVolume":{"region":[-1.31,0.6,-1.3,0.6,0,20]},"geometricError":0,"content":{"url":"points.pnts"}}]}})eos";
+
+    simdjson::dom::parser parser;
+    auto json = parser.parse(jsonData.data(), jsonData.size());
+    const simdjson::dom::element jsonElement = json.value();
+    const simdjson::dom::element rootElement = jsonElement["root"];
+
+    if (jsonElement["asset"]["gltfUpAxis"].is_string()) {
+      if (jsonElement["asset"]["gltfUpAxis"].get_string().value_unsafe() == std::string_view("Z")) {
+        printf("up\n");
+      }
+    }
+
+    if (rootElement.is_object()) {
+      printf("I can confirm that root is an object!\n");
+      return true;
+    }
+    printf("root is not an object!\n");
+    return false;
+  }
+
   bool issue679() {
     std::cout << "Running " << __func__ << std::endl;
     auto input = "[1, 2, 3]"_padded;
@@ -722,6 +797,7 @@ namespace parse_api_tests {
            parser_load_exception() &&
            parser_load_many_exception() &&
            issue679() &&
+           issue_2375() &&
 #endif
            true;
   }
@@ -947,6 +1023,36 @@ namespace dom_api_tests {
       ASSERT_EQUAL( v, expected_value[i] );
       std::advance( iter, 1 );
     }
+    return true;
+  }
+
+  bool convert_object_to_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "a": 1, "b": 2, "c": 3 })");
+
+    dom::parser parser;
+    dom::object object;
+    dom::element element;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+    element = object;
+    ASSERT_EQUAL( element["a"].get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( element["b"].get_uint64().value_unsafe(), 2 );
+    ASSERT_EQUAL( element["c"].get_uint64().value_unsafe(), 3 );
+    return true;
+  }
+
+  bool convert_array_to_element() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"([ 1, 10, 100 ])");
+
+    dom::parser parser;
+    dom::array array;
+    dom::element element;
+    ASSERT_SUCCESS( parser.parse(json).get(array) );
+    element = array;
+    ASSERT_EQUAL( element.at(0).get_uint64().value_unsafe(), 1 );
+    ASSERT_EQUAL( element.at(1).get_uint64().value_unsafe(), 10 );
+    ASSERT_EQUAL( element.at(2).get_uint64().value_unsafe(), 100 );
     return true;
   }
 
@@ -1195,7 +1301,6 @@ namespace dom_api_tests {
   bool numeric_values_exception() {
     std::cout << "Running " << __func__ << std::endl;
     dom::parser parser;
-
     ASSERT_EQUAL( uint64_t(parser.parse("0"_padded)), 0);
     ASSERT_EQUAL( int64_t(parser.parse("0"_padded)), 0);
     ASSERT_EQUAL( double(parser.parse("0"_padded)), 0);
@@ -1331,6 +1436,8 @@ namespace dom_api_tests {
            array_iterator_empty() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
+           convert_object_to_element() &&
+           convert_array_to_element() &&
            string_value() &&
            numeric_values() &&
            boolean_values() &&
@@ -1714,6 +1821,18 @@ namespace validate_tests {
     return true;
   }
 
+  bool shall_not_parse() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto test = "{\"joe\":\"\xf0\x8f\xbf\xbf\"}"_padded;
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(test).get(doc);
+    if(error) {
+      return true; // expected
+    }
+    return false;
+  }
+
   bool test_validate() {
     std::cout << "Running " << __func__ << std::endl;
     const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 3 ], "baz": { "a": 1, "b": 2, "c": 3 } })";
@@ -1779,6 +1898,7 @@ namespace validate_tests {
   }
   bool run() {
     return issue1187() &&
+           shall_not_parse() &&
            test_range() &&
            test_issue1169_long() &&
            test_issue1169() &&
@@ -1857,18 +1977,39 @@ namespace minify_tests {
     return false;
   }
 
+  bool test_empty() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = "";
+    const std::string_view minified = "";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
+  bool test_two_quotes() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = R"("")";
+    const std::string_view minified = R"("")";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
+  bool test_number() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string_view test = R"(3.41)";
+    const std::string_view minified = R"(3.41)";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
+  }
+
   bool test_minify() {
     std::cout << "Running " << __func__ << std::endl;
-    const std::string test = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
-    const std::string minified(R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})");
-    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+    const std::string_view test = R"({ "foo" : 1, "bar" : [ 1, 2, 0.11111111111111113 ], "baz": { "a": 3.1415926535897936, "b": 2, "c": 3.141592653589794 } })";
+    const std::string_view minified = R"({"foo":1,"bar":[1,2,0.11111111111111113],"baz":{"a":3.1415926535897936,"b":2,"c":3.141592653589794}})";
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
   }
 
   bool test_minify_array() {
     std::cout << "Running " << __func__ << std::endl;
-    std::string test("[ 1,    2,    3]");
-    std::string minified("[1,2,3]");
-    return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
+    std::string_view test("[ 1,    2,    3]");
+    std::string_view minified("[1,2,3]");
+    return check_minification(test.data(), test.size(), minified.data(), minified.size());
   }
 
   bool test_minify_object() {
@@ -1878,7 +2019,10 @@ namespace minify_tests {
     return check_minification(test.c_str(), test.size(), minified.c_str(), minified.size());
   }
   bool run() {
-    return test_various_lengths2() &&
+    return test_two_quotes() &&
+           test_empty() &&
+           test_number() &&
+           test_various_lengths2() &&
            test_various_lengths() &&
            test_single_quote() &&
            test_minify() &&
@@ -2100,6 +2244,22 @@ namespace format_tests {
     s << minify(object);
     return assert_minified(s, R"({"a":3.1415926535897936,"b":2,"c":3.141592653589794})");
   }
+  bool print_minify_empty_string() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element e = parser.parse(R"("")"_padded);
+    ostringstream s;
+    s << minify(e);
+    return assert_minified(s, R"("")");
+  }
+  bool print_minify_number_string() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element e = parser.parse("3.41"_padded);
+    ostringstream s;
+    s << minify(e);
+    return assert_minified(s, "3.41");
+  }
 #endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
@@ -2115,6 +2275,7 @@ namespace format_tests {
            print_element_exception() && print_minify_element_exception() &&
            print_array_exception() && print_minify_array_exception() &&
            print_object_exception() && print_minify_object_exception() &&
+           print_minify_empty_string() && print_minify_number_string() &&
 #endif
            true;
   }

@@ -2,6 +2,7 @@
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_ONDEMAND_ARRAY_INL_H
+#include "simdjson/jsonpathutil.h"
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/array_iterator-inl.h"
@@ -84,7 +85,7 @@ simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
 simdjson_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
-simdjson_inline error_code array::consume() noexcept {
+simdjson_warn_unused simdjson_warn_unused simdjson_inline error_code array::consume() noexcept {
   auto error = iter.json_iter().skip_child(iter.depth()-1);
   if(error) { iter.abandon(); }
   return error;
@@ -163,57 +164,71 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   return child;
 }
 
-inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
-  if (json_path.empty() || (json_path.front() != '.' &&
-      json_path.front() != '[')) {
-    return "-1"; // This is just a sentinel value, the caller should check for this and return an error.
-  }
-
-  std::string result;
-  // Reserve space to reduce allocations, adjusting for potential increases due
-  // to escaping.
-  result.reserve(json_path.size() * 2);
-
-  size_t i = 0;
-
-  while (i < json_path.length()) {
-    if (json_path[i] == '.') {
-      result += '/';
-    } else if (json_path[i] == '[') {
-      result += '/';
-      ++i; // Move past the '['
-      while (i < json_path.length() && json_path[i] != ']') {
-          if (json_path[i] == '~') {
-            result += "~0";
-          } else if (json_path[i] == '/') {
-            result += "~1";
-          } else {
-            result += json_path[i];
-          }
-          ++i;
-      }
-      if (i == json_path.length() || json_path[i] != ']') {
-          return "-1"; // Using sentinel value that will be handled as an error by the caller.
-      }
-    } else {
-      if (json_path[i] == '~') {
-          result += "~0";
-      } else if (json_path[i] == '/') {
-          result += "~1";
-      } else {
-          result += json_path[i];
-      }
-    }
-    ++i;
-  }
-
-  return result;
-}
-
 inline simdjson_result<value> array::at_path(std::string_view json_path) noexcept {
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
   return at_pointer(json_pointer);
+}
+
+inline simdjson_result<std::vector<value>> array::at_path_with_wildcard(std::string_view json_path) noexcept {
+  std::vector<value> result;
+
+  auto result_pair = get_next_key_and_json_path(json_path);
+  std::string_view key = result_pair.first;
+  std::string_view remaining_path = result_pair.second;
+  // Wildcard case
+  if(key=="*"){
+    for(auto element: *this){
+
+      if(element.error()){
+        return element.error();
+      }
+
+      if(remaining_path.empty()){
+        // Use value_unsafe() because we've already checked for errors above.
+        // The 'element' is a simdjson_result<value> wrapper, and we need to extract
+        // the underlying value. value_unsafe() is safe here because error() returned false.
+        result.push_back(std::move(element).value_unsafe());
+
+      }else{
+        auto nested_result = element.at_path_with_wildcard(remaining_path);
+
+        if(nested_result.error()){
+          return nested_result.error();
+        }
+        // Same logic as above.
+        std::vector<value> nested_matches = std::move(nested_result).value_unsafe();
+
+        result.insert(result.end(),
+                      std::make_move_iterator(nested_matches.begin()),
+                      std::make_move_iterator(nested_matches.end()));
+      }
+    }
+    return result;
+  }else{
+    // Specific index case in which we access the element at the given index
+    size_t idx=0;
+
+    for(char c:key){
+      if(c < '0' || c > '9'){
+        return INVALID_JSON_POINTER;
+      }
+      idx = idx*10 + (c - '0');
+    }
+
+    auto element = at(idx);
+
+    if(element.error()){
+      return element.error();
+    }
+
+    if(remaining_path.empty()){
+      result.push_back(std::move(element).value_unsafe());
+      return result;
+    }else{
+      return element.at_path_with_wildcard(remaining_path);
+    }
+  }
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
@@ -273,6 +288,10 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
 simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path(std::string_view json_path) noexcept {
   if (error()) { return error(); }
   return first.at_path(json_path);
+}
+simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path_with_wildcard(std::string_view json_path) noexcept {
+  if (error()) { return error(); }
+  return first.at_path_with_wildcard(json_path);
 }
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
   if (error()) { return error(); }

@@ -67,12 +67,17 @@ struct implementation_simdjson_result_base {
    *
    * @param value The variable to assign the value to. May not be set if there is an error.
    */
-  simdjson_inline error_code get(T &value) && noexcept;
+  simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
    */
-  simdjson_inline error_code error() const noexcept;
+  simdjson_warn_unused simdjson_inline error_code error() const noexcept;
+
+  /**
+   * Whether there is a value.
+   */
+  simdjson_warn_unused simdjson_inline bool has_value() const noexcept;
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -81,6 +86,16 @@ struct implementation_simdjson_result_base {
    *
    * @throw simdjson_error if there was an error.
    */
+  simdjson_inline T& operator*() &  noexcept(false);
+  simdjson_inline T&& operator*() &&  noexcept(false);
+  /**
+   * Arrow operator to access members of the contained value.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline T* operator->() noexcept(false);
+  simdjson_inline const T* operator->() const noexcept(false);
+
   simdjson_inline T& value() & noexcept(false);
 
   /**
@@ -122,6 +137,10 @@ struct implementation_simdjson_result_base {
    * the error() method returns a value that evaluates to false.
    */
   simdjson_inline T&& value_unsafe() && noexcept;
+
+  using value_type = T;
+  using error_type = error_code;
+
 protected:
   /** users should never directly access first and second. **/
   T first{}; /** Users should never directly access 'first'. **/

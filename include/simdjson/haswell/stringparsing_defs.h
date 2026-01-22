@@ -17,7 +17,7 @@ using namespace simd;
 struct backslash_and_quote {
 public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
-  simdjson_inline static backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
+  simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
   simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
@@ -38,6 +38,31 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   return {
       static_cast<uint32_t>((v == '\\').to_bitmask()),     // bs_bits
       static_cast<uint32_t>((v == '"').to_bitmask()), // quote_bits
+  };
+}
+
+
+struct escaping {
+  static constexpr uint32_t BYTES_PROCESSED = 32;
+  simdjson_inline static escaping copy_and_find(const uint8_t *src, uint8_t *dst);
+
+  simdjson_inline bool has_escape() { return escape_bits != 0; }
+  simdjson_inline int escape_index() { return trailing_zeroes(escape_bits); }
+
+  uint64_t escape_bits;
+}; // struct escaping
+
+
+
+simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *dst) {
+  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "escaping finder must process fewer than SIMDJSON_PADDING bytes");
+  simd8<uint8_t> v(src);
+  v.store(dst);
+  simd8<bool> is_quote = (v == '"');
+  simd8<bool> is_backslash = (v == '\\');
+  simd8<bool> is_control = (v < 32);
+  return {
+    uint64_t((is_backslash | is_quote | is_control).to_bitmask())
   };
 }
 

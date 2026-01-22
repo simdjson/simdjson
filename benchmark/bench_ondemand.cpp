@@ -148,4 +148,9 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "large_amazon_cellphones/simdjson_dom.h"
 #include "large_amazon_cellphones/simdjson_ondemand.h"
 
+#include "accessor_performance/runtime_accessors.h"
+#if SIMDJSON_STATIC_REFLECTION
+#include "accessor_performance/compile_time_accessors.h"
+#endif
+
 BENCHMARK_MAIN();

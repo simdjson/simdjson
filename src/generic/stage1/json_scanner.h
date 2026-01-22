@@ -108,7 +108,7 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
   // Returns either UNCLOSED_STRING or SUCCESS
-  simdjson_inline error_code finish();
+  simdjson_warn_unused simdjson_inline error_code finish();
 
 private:
   // Whether the last character of the previous iteration is part of a scalar token
@@ -156,7 +156,7 @@ simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in)
   );
 }
 
-simdjson_inline error_code json_scanner::finish() {
+simdjson_warn_unused simdjson_inline error_code json_scanner::finish() {
   return string_scanner.finish();
 }
 

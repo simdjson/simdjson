@@ -385,16 +385,36 @@ namespace error_tests {
     }));
     TEST_SUCCEED();
   }
-
+#if SIMDJSON_EXCEPTIONS
   bool invalid_type() {
     TEST_START();
-    ONDEMAND_SUBTEST("]", "]", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("}", "}", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(":", ":", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST(",", ",", doc.type().error() == TAPE_ERROR);
-    ONDEMAND_SUBTEST("+", "+", doc.type().error() == TAPE_ERROR);
+    ONDEMAND_SUBTEST("]", "]", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("}", "}", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(":", ":", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST(",", ",", doc.type() == ondemand::json_type::unknown);
+    ONDEMAND_SUBTEST("+", "+", doc.type() == ondemand::json_type::unknown);
     TEST_SUCCEED();
   }
+#endif // SIMDJSON_EXCEPTIONS
+
+#if SIMDJSON_EXCEPTIONS
+  bool operator_tests() {
+    TEST_START();
+    ondemand::parser parser;
+
+    // Test successful case
+    auto json = R"({ "key": "value", "number": 42 })"_padded;
+    parser.iterate(json).value(); // Test operator*
+    *parser.iterate(json); // Test operator*
+    auto doc_result = parser.iterate(json);
+    ASSERT_SUCCESS(doc_result.error());
+
+    ASSERT_TRUE(doc_result.has_value());
+    double x = doc_result->find_field("number").get<double>();
+    ASSERT_EQUAL(x, 42.0);
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_EXCEPTIONS
 
   bool run() {
     return
@@ -414,10 +434,11 @@ namespace error_tests {
            parser_max_capacity() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
-           invalid_type() &&
            simple_error_example() &&
 #if SIMDJSON_EXCEPTIONS
+           invalid_type() &&
            simple_error_example_except() &&
+           operator_tests() &&
 #endif
            true;
   }

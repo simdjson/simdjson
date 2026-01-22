@@ -35,11 +35,11 @@ inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
   return valid ? doc.dump_raw_tape(os) : false;
 }
 
-inline simdjson_result<size_t> parser::read_file(const std::string &path) noexcept {
+inline simdjson_result<size_t> parser::read_file(std::string_view path) noexcept {
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = std::fopen(path.c_str(), "rb");
+  std::FILE *fp = std::fopen(path.data(), "rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
@@ -91,18 +91,18 @@ inline simdjson_result<size_t> parser::read_file(const std::string &path) noexce
   return bytes_read;
 }
 
-inline simdjson_result<element> parser::load(const std::string &path) & noexcept {
+inline simdjson_result<element> parser::load(std::string_view path) & noexcept {
   return load_into_document(doc, path);
 }
 
-inline simdjson_result<element> parser::load_into_document(document& provided_doc, const std::string &path) & noexcept {
+inline simdjson_result<element> parser::load_into_document(document& provided_doc, std::string_view path) & noexcept {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
   return parse_into_document(provided_doc, loaded_bytes.get(), len, false);
 }
 
-inline simdjson_result<document_stream> parser::load_many(const std::string &path, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::load_many(std::string_view path, size_t batch_size) noexcept {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }

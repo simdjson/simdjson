@@ -99,6 +99,16 @@ struct padded_string final {
   char *data() noexcept;
 
   /**
+   * Append data to the padded string. Return true on success, false on failure.
+   * The complexity is O(n) where n is the new size of the string. If you are
+   * doing multiple appends, consider using padded_string_builder for better performance.
+   *
+   * @param data the buffer to append
+   * @param length the number of bytes to append
+   */
+  inline bool append(const char *data, size_t length) noexcept;
+
+  /**
    * Create a std::string_view with the same content.
    */
   operator std::string_view() const;
@@ -127,7 +137,21 @@ struct padded_string final {
    **/
   inline static simdjson_result<padded_string> load(std::string_view path) noexcept;
 
+    #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
+  /**
+   * This function accepts a wide string path (UTF-16) and converts it to
+   * UTF-8 before loading the file. This allows windows users to work
+   * with unicode file paths without manually converting the paths every time.
+   *
+   * @return IO_ERROR on error, including conversion failures.
+   *
+   * @param path the path to the file as a wide string.
+  **/
+    inline static simdjson_result<padded_string> load(std::wstring_view path) noexcept;
+  #endif
+
 private:
+  friend class padded_string_builder;
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
@@ -135,6 +159,101 @@ private:
   char *data_ptr{nullptr};
 
 }; // padded_string
+
+/**
+ * Builder for constructing padded_string incrementally.
+ *
+ * This class allows efficient appending of data and then building a padded_string.
+ */
+class padded_string_builder {
+public:
+  /**
+   * Create a new, empty padded string builder.
+   */
+  inline padded_string_builder() noexcept;
+
+  /**
+   * Create a new padded string builder with initial capacity.
+   *
+   * @param capacity the initial capacity of the builder.
+   */
+  inline padded_string_builder(size_t capacity) noexcept;
+
+  /**
+   * Move constructor.
+   */
+  inline padded_string_builder(padded_string_builder &&o) noexcept;
+
+  /**
+   * Move assignment.
+   */
+  inline padded_string_builder &operator=(padded_string_builder &&o) noexcept;
+
+  /**
+   * Copy constructor (deleted).
+   */
+  padded_string_builder(const padded_string_builder &) = delete;
+
+  /**
+   * Copy assignment (deleted).
+   */
+  padded_string_builder &operator=(const padded_string_builder &) = delete;
+
+  /**
+   * Destructor.
+   */
+  inline ~padded_string_builder() noexcept;
+
+  /**
+   * Append data to the builder.
+   *
+   * @param newdata the buffer to append
+   * @param length the number of bytes to append
+   * @return true if the append succeeded, false if allocation failed
+   */
+  inline bool append(const char *newdata, size_t length) noexcept;
+
+  /**
+   * Append a string view to the builder.
+   *
+   * @param sv the string view to append
+   * @return true if the append succeeded, false if allocation failed
+   */
+  inline bool append(std::string_view sv) noexcept;
+
+  /**
+   * Get the current length of the built string.
+   */
+  inline size_t length() const noexcept;
+
+  /**
+   * Build a padded_string from the current content. The builder's content
+   * is not modified. If you want to avoid the copy, use convert() instead.
+   *
+   * @return a padded_string containing a copy of the built content.
+   */
+  inline padded_string build() const noexcept;
+
+  /**
+   * Convert the current content into a padded_string. The
+   * builder's content is emptied, the capacity is lost.
+   *
+   * @return a padded_string containing the built content.
+   */
+  inline padded_string convert() noexcept;
+private:
+  size_t size{0};
+  size_t capacity{0};
+  char *data{nullptr};
+
+  /**
+   * Ensure the builder has enough capacity.
+   *
+   * @param additional the additional capacity needed.
+   * @return true if the reservation succeeded, false if allocation failed
+   */
+  inline bool reserve(size_t additional) noexcept;
+};
 
 /**
  * Send padded_string instance to an output stream.
@@ -161,9 +280,9 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 } // namespace simdjson
 
 // This is deliberately outside of simdjson so that people get it without having to use the namespace
-inline simdjson::padded_string operator "" _padded(const char *str, size_t len);
+inline simdjson::padded_string operator ""_padded(const char *str, size_t len);
 #ifdef __cpp_char8_t
-inline simdjson::padded_string operator "" _padded(const char8_t *str, size_t len);
+inline simdjson::padded_string operator ""_padded(const char8_t *str, size_t len);
 #endif
 
 namespace simdjson {

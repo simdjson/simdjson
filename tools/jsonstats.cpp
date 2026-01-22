@@ -278,7 +278,7 @@ int main(int argc, const char *argv[]) {
          s.repeated_key_byte_count, s.maximum_depth);
   return EXIT_SUCCESS;
 #ifdef __cpp_exceptions
-  } catch (const cxxopts::OptionException& e) {
+  } catch (const cxxopts::exceptions::option_has_no_value& e) {
     std::cout << "error parsing options: " << e.what() << std::endl;
     return EXIT_FAILURE;
   }

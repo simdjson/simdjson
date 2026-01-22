@@ -1,3 +1,4 @@
+#include <cstdint>
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
@@ -143,14 +144,15 @@ simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
  * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
  * must be an unescaped quote terminating the string. It returns the final output
  * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_nullptrptr is returned. It is assumed that the output buffer is large
+ * then null_ptr is returned. It is assumed that the output buffer is large
  * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
  * SIMDJSON_PADDING bytes.
  */
 simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -195,7 +197,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
     // Copy the next n bytes, and find the backslash and quote in them.
-    auto bs_quote = backslash_and_quote::copy_and_find(src, dst);
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
     if (bs_quote.has_quote_first()) {
       // we encountered quotes first. Move dst to point to quotes and exit
@@ -237,6 +240,7 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 }
 
 } // namespace stringparsing
+
 } // unnamed namespace
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

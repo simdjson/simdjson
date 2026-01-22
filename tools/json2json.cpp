@@ -31,7 +31,7 @@ int main(int argc, const char *argv[]) {
   cxxopts::Options options(progName, progUsage);
 
   options.add_options()
-    ("z,ondemand", "Use On Demand front-end.", cxxopts::value<bool>()->default_value("false"))
+    ("z,ondemand", "Use On-Demand front-end.", cxxopts::value<bool>()->default_value("false"))
   	("d,rawdump", "Dumps the raw content of the tape.", cxxopts::value<bool>()->default_value("false"))
   	("f,file", "File name.", cxxopts::value<std::string>())
   	("h,help", "Print usage.")
@@ -92,7 +92,7 @@ int main(int argc, const char *argv[]) {
   }
   return EXIT_SUCCESS;
 #ifdef __cpp_exceptions
-  } catch (const cxxopts::OptionException& e) {
+  } catch (const cxxopts::exceptions::option_has_no_value& e) {
     std::cout << "error parsing options: " << e.what() << std::endl;
     return EXIT_FAILURE;
   }

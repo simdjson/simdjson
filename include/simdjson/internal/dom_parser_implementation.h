@@ -106,7 +106,7 @@ public:
    * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
    * must be an unescaped quote terminating the string. It returns the final output
    * position as pointer. In case of error (e.g., the string has bad escaped codes),
-   * then null_nullptrptr is returned. It is assumed that the output buffer is large
+   * then null_ptr is returned. It is assumed that the output buffer is large
    * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
    * SIMDJSON_PADDING bytes.
    *
@@ -123,7 +123,7 @@ public:
    * Unescape a NON-valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
    * must be an unescaped quote terminating the string. It returns the final output
    * position as pointer. In case of error (e.g., the string has bad escaped codes),
-   * then null_nullptrptr is returned. It is assumed that the output buffer is large
+   * then null_ptr is returned. It is assumed that the output buffer is large
    * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
    * SIMDJSON_PADDING bytes.
    *

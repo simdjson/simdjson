@@ -55,6 +55,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #elif defined(HAVE_GCC_GET_CPUID) && defined(USE_GCC_GET_CPUID)
 #include <cpuid.h>
 #endif
+#if defined(__loongarch__) && defined(__linux__)
+  #include <sys/auxv.h>
+#endif
 
 namespace simdjson {
 namespace internal {
@@ -219,16 +222,31 @@ static inline uint32_t detect_supported_architectures() {
   return host_isa;
 }
 
-#elif defined(__loongarch_sx) && !defined(__loongarch_asx)
+#elif defined(__loongarch__)
 
 static inline uint32_t detect_supported_architectures() {
-  return instruction_set::LSX;
+  uint32_t host_isa = instruction_set::DEFAULT;
+  #if defined(__linux__)
+  uint64_t hwcap = 0;
+  hwcap = getauxval(AT_HWCAP);
+  if (hwcap & HWCAP_LOONGARCH_LSX) {
+    host_isa |= instruction_set::LSX;
+  }
+  if (hwcap & HWCAP_LOONGARCH_LASX) {
+    host_isa |= instruction_set::LASX;
+  }
+  #endif
+  return host_isa;
 }
 
-#elif defined(__loongarch_asx)
+#elif SIMDJSON_IS_RISCV64
 
 static inline uint32_t detect_supported_architectures() {
-  return instruction_set::LASX;
+  uint32_t host_isa = instruction_set::DEFAULT;
+#if SIMDJSON_IS_RVV_VLS
+  host_isa |= instruction_set::RVV_VLS;
+#endif
+  return host_isa;
 }
 
 #else // fallback

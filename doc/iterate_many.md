@@ -8,7 +8,7 @@ library provides high-speed access to files or streams containing multiple small
 {"text":"a"}
 {"text":"b"}
 {"text":"c"}
-...
+"..."
 ```
 ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.
 
@@ -25,6 +25,7 @@ Contents
 - [Use cases](#use-cases)
 - [Tracking your position](#tracking-your-position)
 - [Incomplete streams](#incomplete-streams)
+- [C++20 features](#c20-features)
 
 Motivation
 -----------
@@ -102,7 +103,12 @@ remove almost entirely its cost and replaces it by the overhead of a thread, whi
 cheaper. Ain't that awesome!
 
 Thread support is only active if thread supported is detected in which case the macro
-SIMDJSON_THREADS_ENABLED is set. Otherwise the library runs in  single-thread mode.
+SIMDJSON_THREADS_ENABLED is set.  You can also manually pass `SIMDJSON_THREADS_ENABLED=1` flag
+to the library. Otherwise the library runs in single-thread mode.
+
+You should be consistent. If you link against the simdjson library built for multithreading
+(i.e., with `SIMDJSON_THREADS_ENABLED`), then you should build your application with multithreading
+system (setting `SIMDJSON_THREADS_ENABLED=1` and linking against a thread library).
 
 A `document_stream` instance uses at most two threads: there is a main thread and a worker thread.
 
@@ -124,9 +130,9 @@ If your documents are all objects or arrays, then you may even have nothing betw
 E.g., `[1,2]{"32":1}` is recognized as two documents.
 
 Some official formats **(non-exhaustive list)**:
-- [Newline-Delimited JSON (NDJSON)](http://ndjson.org/)
+- [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec/)
 - [JSON lines (JSONL)](http://jsonlines.org/)
-- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by JsonStream!
+- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by simdjson!
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
 API
@@ -134,8 +140,10 @@ API
 
 Example:
 
-```c++
+```cpp
+//  R"( ... )" is a C++ raw string literal.
 auto json = R"({ "foo": 1 } { "foo": 2 } { "foo": 3 } )"_padded;
+// _padded returns an simdjson::padded_string instance
 ondemand::parser parser;
 ondemand::document_stream docs = parser.iterate_many(json);
 for (auto doc : docs) {
@@ -191,7 +199,7 @@ and `error()` to check if there were any error.
 Let us illustrate the idea with code:
 
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2,3]  )"_padded;
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
@@ -232,7 +240,7 @@ Some users may need to work with truncated streams. The simdjson may truncate do
 
 Consider the following example where a truncated document (`{"key":"intentionally unclosed string  `) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the `truncated_bytes()` method returns 39.
 
-```C++
+```cpp
     auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} {"key":"intentionally unclosed string  )"_padded;
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document_stream stream;
@@ -261,7 +269,7 @@ is effectively ignored, as it is set to at least the document size.
 
 Example:
 
-```C++
+```cpp
     auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
     ondemand::parser parser;
     ondemand::document_stream doc_stream;
@@ -287,4 +295,112 @@ string
 string
 object
 array
+```
+
+
+C++20 features
+--------------------
+
+In C++20, the standard introduced the notion of *customization point*.
+A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.
+
+A tag_invoke function serves as a mechanism for customization points. It is not directly part of the C++ standard library but is often used in libraries that implement customization points.
+The tag_invoke function is typically a generic function that takes a tag type and additional arguments.
+The first argument is usually a tag type (often an empty struct) that uniquely identifies the customization point (e.g., deserialization of custom types in simdjson). Users or library providers can specialize tag_invoke for their types by defining it in the appropriate namespace, often inline namespace.
+
+
+
+You can deserialize you own data structures conveniently if your system supports C++20.
+When it is the case, the macro `SIMDJSON_SUPPORTS_CONCEPTS` will be set to 1 by
+the simdjson library.
+
+Consider a custom class `Car`:
+
+```cpp
+struct Car {
+  std::string make;
+  std::string model;
+  int year;
+  std::vector<float> tire_pressure;
+};
+```
+
+
+You may support deserializing directly from a JSON value or document to your own `Car` instance
+by defining a single `tag_invoke` function:
+
+
+```cpp
+namespace simdjson {
+// This tag_invoke MUST be inside simdjson namespace
+template <typename simdjson_value>
+auto tag_invoke(deserialize_tag, simdjson_value &val, Car& car) {
+  ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) {
+    return error;
+  }
+  if ((error = obj["make"].get_string(car.make))) {
+    return error;
+  }
+  if ((error = obj["model"].get_string(car.model))) {
+    return error;
+  }
+  if ((error = obj["year"].get(car.year))) {
+    return error;
+  }
+  if ((error = obj["tire_pressure"].get<std::vector<float>>().get(
+           car.tire_pressure))) {
+    return error;
+  }
+  return simdjson::SUCCESS;
+}
+} // namespace simdjson
+```
+
+Importantly, the `tag_invoke` function must be inside the `simdjson` namespace.
+Let us explain each argument of `tag_invoke` function.
+
+- `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.
+- `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
+- The third parameter is an instance of the type that you want to support.
+
+Please see our main documentation (`basics.md`) under
+"Use `tag_invoke` for custom types (C++20)" for details about
+tag_invoke functions.
+
+Given a stream of JSON documents, you can add them to a data structure
+such as a `std::vector<Car>` like so if you support exceptions:
+
+```cpp
+  padded_string json =
+      R"( { "make": "Toyota", "model": "Camry",  "year": 2018,
+       "tire_pressure": [ 40.1, 39.9 ] }
+  { "make": "Kia",    "model": "Soul",   "year": 2012,
+       "tire_pressure": [ 30.1, 31.0 ] }
+  { "make": "Toyota", "model": "Tercel", "year": 1999,
+       "tire_pressure": [ 29.8, 30.0 ] }
+)"_padded;
+  ondemand::parser parser;
+  ondemand::document_stream stream;
+  [[maybe_unused]] auto error = parser.iterate_many(json).get(stream);
+  std::vector<Car> cars;
+  for(auto doc : stream) {
+    cars.push_back((Car)doc); // an exception may be thrown
+  }
+```
+
+Otherwise you may use this longer version for explicit handling of errors:
+
+
+```cpp
+  std::vector<Car> cars;
+  for(auto doc : stream) {
+    Car c;
+    if ((error = doc.get<Car>().get(c))) {
+      std::cerr << simdjson::error_message(error); << std::endl;
+      return EXIT_FAILURE;
+    }
+    cars.push_back(c);
+  }
 ```

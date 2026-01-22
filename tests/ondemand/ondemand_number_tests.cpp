@@ -22,6 +22,25 @@ namespace number_tests {
     return true;
   }
 
+  bool issue2570() {
+    TEST_START();
+    auto json = R"([44.411101, 8.908021])"_padded;
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    simdjson::ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    std::vector<double> numbers = {44.411101, 8.908021};
+    size_t index = 0;
+    for (auto val : arr) {
+      double parsed;
+      ASSERT_SUCCESS(val.get_double().get(parsed));
+      ASSERT_EQUAL(parsed, numbers[index]);
+      index++;
+    }
+    TEST_SUCCEED();
+  }
+
   bool powers_of_two() {
     TEST_START();
 
@@ -312,7 +331,30 @@ namespace number_tests {
     ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
     ASSERT_EQUAL(number.get_double(), 1e9);
     TEST_SUCCEED();
-}
+  }
+
+  bool minus_zero() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = "-0"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::number number;
+    ASSERT_SUCCESS(doc.get_number().get(number));
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::floating_point_number);
+    #else
+    ASSERT_EQUAL(number.get_number_type(), ondemand::number_type::signed_integer);
+    #endif
+    ondemand::number_type nt{};
+    ASSERT_SUCCESS(doc.get_number_type().get(nt));
+    #if SIMDJSON_MINUS_ZERO_AS_FLOAT
+    ASSERT_EQUAL(nt, ondemand::number_type::floating_point_number);
+    #else
+    ASSERT_EQUAL(nt, ondemand::number_type::signed_integer);
+    #endif
+    TEST_SUCCEED();
+  }
 
   bool issue1878() {
     TEST_START();
@@ -504,7 +546,8 @@ namespace number_tests {
   }
 
   bool run() {
-    return gigantic_big_int() &&
+    return minus_zero() &&
+           gigantic_big_int() &&
            big_int_not_zero() &&
            negative_big_int() &&
            issue2099() &&
@@ -516,6 +559,7 @@ namespace number_tests {
            get_root_number_tests() &&
            get_number_tests()&&
            small_integers() &&
+           issue2570() &&
            powers_of_two() &&
            powers_of_ten() &&
            old_crashes();

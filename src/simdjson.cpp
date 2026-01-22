@@ -35,11 +35,14 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #if SIMDJSON_IMPLEMENTATION_WESTMERE
 #include <westmere.cpp>
 #endif
+#if SIMDJSON_IMPLEMENTATION_LASX
+#include <lasx.cpp>
+#endif
 #if SIMDJSON_IMPLEMENTATION_LSX
 #include <lsx.cpp>
 #endif
-#if SIMDJSON_IMPLEMENTATION_LASX
-#include <lasx.cpp>
+#if SIMDJSON_IMPLEMENTATION_RVV_VLS
+#include <rvv-vls.cpp>
 #endif
 #if SIMDJSON_IMPLEMENTATION_FALLBACK
 #include <fallback.cpp>
