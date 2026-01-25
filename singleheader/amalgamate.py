@@ -13,6 +13,18 @@ import datetime
 import json
 from typing import Dict, List, Optional, Set, TextIO, Union, cast
 
+# Pre-compile regex patterns for performance
+pragma_once_re = re.compile(r'^#pragma once$')
+ifndef_conditional_re = re.compile(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$')
+endif_conditional_re = re.compile(r'^#endif\s*//\s*SIMDJSON_CONDITIONAL_INCLUDE\s*$')
+include_re = re.compile(r'^#include\s+["<]([^">]*)[">]')
+define_implementation_re = re.compile(r'^#define\s+SIMDJSON_IMPLEMENTATION\s+(.+)$')
+undef_implementation_re = re.compile(r'^#undef\s+SIMDJSON_IMPLEMENTATION\s*$')
+simdjson_implementation_re = re.compile(r'\bSIMDJSON_IMPLEMENTATION\b')
+define_conditional_re = re.compile(r'^#define\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$')
+undef_conditional_re = re.compile(r'^#undef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$')
+version_re = re.compile(r'\d+\.\d+\.\d+')
+
 # Check for Python 3, this does not actually work.
 if sys.version_info < (3, 0):
     sys.stdout.write("Sorry, requires Python 3.x or better\n")
@@ -109,6 +121,7 @@ RelativeRoot = str # Literal['src','include'] # Literal not supported in Python 
 RELATIVE_ROOTS: List[RelativeRoot] = ['src', 'include' ]
 Implementation = str # Literal['arm64', 'fallback', 'haswell', 'icelake', 'ppc64', 'westmere', 'lsx', 'lasx'] # Literal not supported in Python 3.7 (CI)
 IMPLEMENTATIONS: List[Implementation] = [ 'arm64', 'haswell', 'icelake', 'lasx', 'lsx', 'ppc64', 'rvv-vls', 'westmere', 'fallback' ]
+implementation_re = re.compile(f'(^|/)({"|".join(IMPLEMENTATIONS)})')
 GENERIC_INCLUDE = "simdjson/generic"
 GENERIC_SRC = "generic"
 BUILTIN = "simdjson/builtin"
@@ -199,7 +212,7 @@ class SimdjsonFile:
 
     @property
     def implementation(self) -> Optional[Implementation]:
-        match = re.search(f'(^|/)({"|".join(IMPLEMENTATIONS)})', self.include_path)
+        match = implementation_re.search(self.include_path)
         if match:
             return cast(Implementation, str(match.group(2)))
 
@@ -417,23 +430,23 @@ class Amalgamator:
                 line = line.rstrip('\n')
 
                 # Ignore #pragma once, it causes warnings if it ends up in a .cpp file
-                if re.search(r'^#pragma once$', line):
+                if pragma_once_re.search(line):
                     continue
 
                 # Ignore lines inside #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-                if re.search(r'^#ifndef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
+                if ifndef_conditional_re.search(line):
                     assert file.is_conditional_include, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE', but it's not an amalgamated file. Conditional includes are only for amalgamated files. {rules}"
                     assert self.in_conditional_include_block, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' without a prior '#define SIMDJSON_CONDITIONAL_INCLUDE'. Ensure the define comes first. Stack: {self.include_stack}. {rules}"
                     assert not self.editor_only_region, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' twice in a row. Ensure conditional blocks are properly nested and closed. {rules}"
                     self.editor_only_region = True
 
                 # Handle ignored lines (and ending ignore blocks)
-                end_ignore = re.search(r'^#endif\s*//\s*SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
+                end_ignore = endif_conditional_re.search(line)
                 if self.editor_only_region:
                     self.write(f"/* amalgamation skipped (editor-only): {line} */")
 
                     # Add the editor-only include so we can check dependencies.h for completeness later
-                    included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
+                    included = include_re.search(line)
                     if included:
                         included_file = self.repository[included.group(1)]
                         if included_file:
@@ -445,7 +458,7 @@ class Amalgamator:
                 assert not end_ignore, f"Error: File '{file}' has '#endif // SIMDJSON_CONDITIONAL_INCLUDE' without a matching '#ifndef'. Ensure proper conditional block structure. {rules}"
 
                 # Handle #include lines
-                included = re.search(r'^#include\s+["<]([^">]*)[">]', line)
+                included = include_re.search(line)
                 if included:
                     # we explicitly include simdjson headers, one time each (unless they are generic, in which case multiple times is fine)
                     included_file = self.repository[included.group(1)]
@@ -455,7 +468,7 @@ class Amalgamator:
                         continue
 
                 # Handle defining and replacing SIMDJSON_IMPLEMENTATION
-                defined = re.search(r'^#define\s+SIMDJSON_IMPLEMENTATION\s+(.+)$', line)
+                defined = define_implementation_re.search(line)
                 if defined:
                     old_implementation = self.implementation
                     self.implementation = defined.group(1)
@@ -463,24 +476,24 @@ class Amalgamator:
                         self.write(f'/* defining SIMDJSON_IMPLEMENTATION to "{self.implementation}" */')
                     else:
                         self.write(f'/* redefining SIMDJSON_IMPLEMENTATION from "{old_implementation}" to "{self.implementation}" */')
-                elif re.search(r'^#undef\s+SIMDJSON_IMPLEMENTATION\s*$', line):
+                elif undef_implementation_re.search(line):
                     # Don't include #undef SIMDJSON_IMPLEMENTATION since we're handling it ourselves
                     self.write(f'/* undefining SIMDJSON_IMPLEMENTATION from "{self.implementation}" */')
                     self.implementation = None
-                elif re.search(r'\bSIMDJSON_IMPLEMENTATION\b', line) and file.include_path != IMPLEMENTATION_DETECTION_H:
+                elif self.implementation and file.include_path != IMPLEMENTATION_DETECTION_H:
                     # copy the line, with SIMDJSON_IMPLEMENTATION replace to what it is currently defined to
                     assert self.implementation, f"Error: In '{file}', line '{line}' uses SIMDJSON_IMPLEMENTATION, but it's not defined. Ensure SIMDJSON_IMPLEMENTATION is set before use. {rules}"
-                    line = re.sub(r'\bSIMDJSON_IMPLEMENTATION\b',self.implementation,line)
+                    line = simdjson_implementation_re.sub(self.implementation, line)
 
                 # Handle defining and undefining SIMDJSON_CONDITIONAL_INCLUDE
-                defined = re.search(r'^#define\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line)
+                defined = define_conditional_re.search(line)
                 if defined:
                     assert not file.is_conditional_include, f"Error: Amalgamated file '{file}' defines SIMDJSON_CONDITIONAL_INCLUDE, which is not allowed. Only non-amalgamated files can define it. {rules}"
                     assert not self.in_conditional_include_block, f"Error: File '{file}' redefines SIMDJSON_CONDITIONAL_INCLUDE while already in a conditional block. Avoid redefinition. {rules}"
                     self.in_conditional_include_block = True
                     self.found_includes_per_conditional_block.clear()
                     self.write(f'/* defining SIMDJSON_CONDITIONAL_INCLUDE */')
-                elif re.search(r'^#undef\s+SIMDJSON_CONDITIONAL_INCLUDE\s*$', line):
+                elif undef_conditional_re.search(line):
                     assert not file.is_conditional_include, f"Error: Amalgamated file '{file}' undefines SIMDJSON_CONDITIONAL_INCLUDE, which is not allowed. Only non-amalgamated files can undefine it. {rules}"
                     assert self.in_conditional_include_block, f"Error: File '{file}' undefines SIMDJSON_CONDITIONAL_INCLUDE without having defined it first. Ensure proper define/undefine pairing. {rules}"
                     self.write(f'/* undefining SIMDJSON_CONDITIONAL_INCLUDE */')
@@ -554,7 +567,7 @@ def validate_implementations():
 
 def read_version():
     with open(os.path.join(PROJECTPATH, 'include/simdjson/simdjson_version.h')) as f:
-        return re.search(r'\d+\.\d+\.\d+', f.read()).group(0)
+        return version_re.search(f.read()).group(0)
 
 version = read_version()
 if not validate_implementations():
