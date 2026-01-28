@@ -54,7 +54,7 @@ Importantly, we build the experimental LLVM compiler based on the current state 
 ```bash
 CXX=clang++ cmake -B buildreflect -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON
 ```
-This only needs to be done once.
+This only needs to be done once. To build the Rust code, add `-D SIMDJSON_USE_RUST=ON`.
 
 5. Build the code...
 ```bash
