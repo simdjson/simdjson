@@ -280,7 +280,7 @@ simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t ini
   return std::string(s);
 }
 template <class Z>
-simdjson_warn_unused simdjson_error to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
   std::string_view sv;
