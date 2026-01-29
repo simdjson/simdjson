@@ -5,131 +5,33 @@ extern crate libc;
 use libc::{c_char, size_t};
 use serde::{Serialize, Deserialize};
 use std::{collections::HashMap, ffi::CString, ptr, slice};
-use serde::de::{self, Deserializer};
-/******************************************************/
-/******************************************************/
-/**
- * Warning: the C++ code may not generate the same JSON.
- */
- /******************************************************/
- /******************************************************/
 
-// This has no equivalent in C++:
-#[derive(Serialize, Deserialize)]
-pub struct Metadata {
-    result_type: String,
-    iso_language_code: String,
-}
+//==============================================================================
+// Twitter Benchmark Structures
+// These match the C++ TwitterData structures exactly
+//==============================================================================
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
-    id: i64,
-    id_str: String,
+    id: u64,
     name: String,
     screen_name: String,
     location: String,
     description: String,
-    // C++ does not have those:
-    // url: Option<String>,
-    //protected: bool,
-    //listed_count: i64,
-    //created_at: String,
-    //favourites_count: i64,
-    //utc_offset: Option<i64>,
-    //time_zone: Option<String>,
-    //geo_enabled: bool,
     verified: bool,
-    followers_count: i64,
-    friends_count: i64,
-    statuses_count: i64,
-    // C++ does not have those:
-    //lang: String,
-    //profile_background_color: String,
-    //profile_background_image_url: String,
-    //profile_background_image_url_https: String,
-    //profile_background_tile: bool,
-    //profile_image_url: String,
-    //profile_image_url_https: String,
-    //profile_banner_url: Option<String>,
-    //profile_link_color: String,
-    //profile_sidebar_border_color: String,
-    //profile_sidebar_fill_color: String,
-    //profile_text_color: String,
-    //profile_use_background_image: bool,
-    //default_profile: bool,
-    //default_profile_image: bool,
-    //following: bool,
-    //follow_request_sent: bool,
-    //notifications: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Hashtag {
-    text: String,
-
-    // C++ has those but D. Lemire does not know what they are, they don't appear in the JSON:
-    // int64_t indices_start;
-    // int64_t indices_end;
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Url {
-    url: String,
-    expanded_url: String,
-    display_url: String,
-    // C++ has those but D. Lemire does not know what they are, they don't appear in the JSON:
-    // int64_t indices_start;
-    // int64_t indices_end;
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct UserMention {
-    id: i64,
-    name: String,
-    screen_name: String,
-    // Not in the C++ equivalent:
-    //id_str: String,
-    //indices: Vec<i64>,
-    // C++ has those but D. Lemire does not know what they are, they don't appear in the JSON:
-    // int64_t indices_start;
-    // int64_t indices_end;
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Entities {
-    hashtags: Vec<Hashtag>,
-    urls: Vec<Url>,
-    user_mentions: Vec<UserMention>,
+    followers_count: u64,
+    friends_count: u64,
+    statuses_count: u64,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Status {
     created_at: String,
-    id: i64,
+    id: u64,
     text: String,
     user: User,
-    entities: Entities,
-    retweet_count: i64,
-    favorite_count: i64,
-    favorited: bool,
-    retweeted: bool,
-    // None of these are in the C++ equivalent:
-    /*
-    metadata: Metadata,
-    id_str: String,
-    source: String,
-    truncated: bool,
-    in_reply_to_status_id: Option<i64>,
-    in_reply_to_status_id_str: Option<String>,
-    in_reply_to_user_id: Option<i64>,
-    in_reply_to_user_id_str: Option<String>,
-    in_reply_to_screen_name: Option<String>,
-    geo: Option<String>,
-    coordinates: Option<String>,
-    place: Option<String>,
-    contributors: Option<String>,
-    lang: String,
-    */
+    retweet_count: u64,
+    favorite_count: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -138,272 +40,120 @@ pub struct TwitterData {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn  twitter_from_str(raw_input: *const c_char, raw_input_length: size_t) -> *mut TwitterData {
-  let input = std::str::from_utf8_unchecked(slice::from_raw_parts(raw_input as *const u8, raw_input_length));
-  match serde_json::from_str(&input) {
-    Ok(result) => Box::into_raw(Box::new(result)),
-    Err(_) => std::ptr::null_mut(),
-  }
+pub unsafe extern "C" fn twitter_from_str(raw_input: *const c_char, raw_input_length: size_t) -> *mut TwitterData {
+    let input = std::str::from_utf8_unchecked(slice::from_raw_parts(raw_input as *const u8, raw_input_length));
+    match serde_json::from_str(&input) {
+        Ok(result) => Box::into_raw(Box::new(result)),
+        Err(_) => std::ptr::null_mut(),
+    }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn str_from_twitter(raw: *mut TwitterData) -> *const c_char {
-  let twitter_thing = { &*raw };
-  let serialized = serde_json::to_string(&twitter_thing).unwrap();
-  return std::ffi::CString::new(serialized.as_str()).unwrap().into_raw()
+    let twitter_thing = { &*raw };
+    let serialized = serde_json::to_string(&twitter_thing).unwrap();
+    return std::ffi::CString::new(serialized.as_str()).unwrap().into_raw()
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn free_twitter(raw: *mut TwitterData) {
-  if raw.is_null() {
-    return;
-  }
-
-  drop(Box::from_raw(raw))
+    if raw.is_null() {
+        return;
+    }
+    drop(Box::from_raw(raw))
 }
-
 
 #[no_mangle]
 pub unsafe extern fn free_string(ptr: *const c_char) {
     let _ = std::ffi::CString::from_raw(ptr as *mut _);
 }
 
-// Functions associated with the CitmCatalog benchmark
+//==============================================================================
+// CITM Catalog Benchmark Structures
+// These match the C++ CitmCatalog structures EXACTLY for fair comparison
+//==============================================================================
 
-#[derive(Serialize, Deserialize)]
-pub struct Area {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-    pub parent: i64,
-    #[serde(rename = "childAreas")]
-    pub child_areas: Vec<i64>,
+/// Matches C++ CITMPrice struct exactly
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CITMPrice {
+    pub amount: u64,
+    #[serde(rename = "audienceSubCategoryId")]
+    pub audience_sub_category_id: u64,
+    #[serde(rename = "seatCategoryId")]
+    pub seat_category_id: u64,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct AudienceSubCategory {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-    pub parent: i64,
+/// Matches C++ CITMArea struct exactly
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CITMArea {
+    #[serde(rename = "areaId")]
+    pub area_id: u64,
+    #[serde(rename = "blockIds")]
+    pub block_ids: Vec<u64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Event {
-    #[serde(default)]
-    pub description: Option<String>,
-    pub id: i64,
+/// Matches C++ CITMSeatCategory struct exactly
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CITMSeatCategory {
+    pub areas: Vec<CITMArea>,
+    #[serde(rename = "seatCategoryId")]
+    pub seat_category_id: u64,
+}
+
+/// Matches C++ CITMPerformance struct exactly
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CITMPerformance {
+    pub id: u64,
+    #[serde(rename = "eventId")]
+    pub event_id: u64,
     #[serde(default)]
     pub logo: Option<String>,
     #[serde(default)]
     pub name: Option<String>,
+    pub prices: Vec<CITMPrice>,
+    #[serde(rename = "seatCategories")]
+    pub seat_categories: Vec<CITMSeatCategory>,
     #[serde(default)]
-    pub subTopicIds: Vec<i64>,
+    #[serde(rename = "seatMapImage")]
+    pub seat_map_image: Option<String>,
+    pub start: u64,
+    #[serde(rename = "venueCode")]
+    pub venue_code: String,
+}
+
+/// Matches C++ CITMEvent struct exactly
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CITMEvent {
+    pub id: u64,
     #[serde(default)]
-    pub subjectCode: Option<String>,
+    pub name: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub logo: Option<String>,
+    #[serde(default)]
+    #[serde(rename = "subTopicIds")]
+    pub sub_topic_ids: Vec<u64>,
+    #[serde(default)]
+    #[serde(rename = "subjectCode")]
+    pub subject_code: Option<String>,
     #[serde(default)]
     pub subtitle: Option<String>,
     #[serde(default)]
-    pub topicIds: Vec<i64>,
-    // Add a catch-all for any other fields
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
+    #[serde(rename = "topicIds")]
+    pub topic_ids: Vec<u64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Performance {
-    #[serde(default)]
-    pub id: i64,
-
-    #[serde(default)]
-    pub name: Option<String>,
-
-    #[serde(default)]
-    pub event: i64,
-
-    // This is the key fix - accept any JSON value type for timestamps
-    // This allows both string dates and integer timestamps (line 3511)
-    #[serde(default)]
-    pub start: serde_json::Value,
-
-    #[serde(rename = "venueCode")]
-    pub venue_code: String,
-
-    // Add a catch-all for any other fields
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct SeatCategory {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-    pub areas: Vec<i64>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct SubTopic {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-    pub parent: i64,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Topic {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Venue {
-    pub id: i64,
-    pub name: Option<String>,  // Changed to Option
-    pub address: i64,
-}
-
-// Custom deserializers
-fn deserialize_string_to_area<'de, D>(deserializer: D) -> Result<HashMap<String, Area>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        let id_num = id.parse::<i64>().unwrap_or(0);
-        result.insert(id.clone(), Area {
-            id: id_num,
-            name: Some(name),
-            parent: 0,
-            child_areas: Vec::new(),
-        });
-    }
-
-    Ok(result)
-}
-
-fn deserialize_string_to_audience_subcategory<'de, D>(deserializer: D) -> Result<HashMap<String, AudienceSubCategory>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        let id_num = id.parse::<i64>().unwrap_or(0);
-        result.insert(id.clone(), AudienceSubCategory {
-            id: id_num,
-            name: Some(name),
-            parent: 0,
-        });
-    }
-
-    Ok(result)
-}
-
-fn deserialize_string_to_seat_category<'de, D>(deserializer: D) -> Result<HashMap<String, SeatCategory>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        let id_num = id.parse::<i64>().unwrap_or(0);
-        result.insert(id.clone(), SeatCategory {
-            id: id_num,
-            name: Some(name),
-            areas: Vec::new(),
-        });
-    }
-
-    Ok(result)
-}
-
-fn deserialize_string_to_subtopic<'de, D>(deserializer: D) -> Result<HashMap<String, SubTopic>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        let id_num = id.parse::<i64>().unwrap_or(0);
-        result.insert(id.clone(), SubTopic {
-            id: id_num,
-            name: Some(name),
-            parent: 0,
-        });
-    }
-
-    Ok(result)
-}
-
-fn deserialize_string_to_topic<'de, D>(deserializer: D) -> Result<HashMap<String, Topic>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        let id_num = id.parse::<i64>().unwrap_or(0);
-        result.insert(id.clone(), Topic {
-            id: id_num,
-            name: Some(name),
-        });
-    }
-
-    Ok(result)
-}
-
-fn deserialize_string_to_venue<'de, D>(deserializer: D) -> Result<HashMap<String, Venue>, D::Error>
-where D: Deserializer<'de> {
-    let string_map: HashMap<String, String> = HashMap::deserialize(deserializer)?;
-    let mut result = HashMap::new();
-
-    for (id, name) in string_map {
-        result.insert(id.clone(), Venue {
-            id: 0,
-            name: Some(name),
-            address: 0,
-        });
-    }
-
-    Ok(result)
-}
-
+/// Matches C++ CitmCatalog struct exactly - ONLY events and performances
+/// This is the key fix: we serialize only what C++ serializes
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CitmCatalog {
-    #[serde(rename = "areaNames")]
-    pub area_names: HashMap<String, String>,
-
-    #[serde(rename = "audienceSubCategoryNames")]
-    pub audience_subcategory_names: HashMap<String, String>,
-
-    #[serde(default)]
-    #[serde(rename = "blockNames")]
-    pub block_names: HashMap<String, String>,
-
-    pub events: HashMap<String, Event>,
-
-    #[serde(default)]
-    pub performances: Vec<Performance>,
-
-    #[serde(rename = "seatCategoryNames")]
-    pub seat_category_names: HashMap<String, String>,
-
-    #[serde(rename = "subTopicNames")]
-    pub subtopic_names: HashMap<String, String>,
-
-    #[serde(default)]
-    #[serde(rename = "subjectNames")]
-    pub subject_names: HashMap<String, String>,
-
-    #[serde(rename = "topicNames")]
-    pub topic_names: HashMap<String, String>,
-
-    #[serde(rename = "topicSubTopics")]
-    pub topic_subtopics: HashMap<String, Vec<i64>>,
-
-    #[serde(rename = "venueNames")]
-    pub venue_names: HashMap<String, String>,
-
-    // Catch-all for other fields
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
+    pub events: HashMap<String, CITMEvent>,
+    pub performances: Vec<CITMPerformance>,
 }
 
 /// Creates a CitmCatalog from a JSON string (UTF-8 encoded).
+/// Only extracts events and performances to match C++ behavior.
 #[no_mangle]
 pub unsafe extern "C" fn citm_from_str(
     raw_input: *const c_char,
@@ -414,7 +164,6 @@ pub unsafe extern "C" fn citm_from_str(
         return ptr::null_mut();
     }
 
-    // Convert the raw pointer + length into a Rust slice
     let bytes = slice::from_raw_parts(raw_input as *const u8, raw_input_length);
     let input_str = match std::str::from_utf8(bytes) {
         Ok(s) => s,
@@ -424,12 +173,23 @@ pub unsafe extern "C" fn citm_from_str(
         }
     };
 
-    // Try deserializing the input string into CitmCatalog
-    match serde_json::from_str::<CitmCatalog>(input_str) {
-        Ok(catalog) => Box::into_raw(Box::new(catalog)),
+    // Parse the full JSON to extract only events and performances
+    match serde_json::from_str::<serde_json::Value>(input_str) {
+        Ok(full_json) => {
+            // Extract only the fields we need (matching C++ behavior)
+            let events: HashMap<String, CITMEvent> = full_json.get("events")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_default();
+
+            let performances: Vec<CITMPerformance> = full_json.get("performances")
+                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .unwrap_or_default();
+
+            let catalog = CitmCatalog { events, performances };
+            Box::into_raw(Box::new(catalog))
+        },
         Err(e) => {
             eprintln!("Error deserializing JSON: {}", e);
-            eprintln!("JSON snippet (first 200 chars): {:.200}...", input_str);
             ptr::null_mut()
         }
     }
@@ -443,7 +203,6 @@ pub unsafe extern "C" fn str_from_citm(raw_catalog: *mut CitmCatalog) -> *mut c_
         return ptr::null_mut();
     }
 
-    // Fix: Actually serialize the catalog
     let catalog = &*raw_catalog;
 
     match serde_json::to_string(catalog) {
@@ -475,8 +234,120 @@ pub unsafe extern "C" fn free_citm(raw_catalog: *mut CitmCatalog) {
 pub extern "C" fn free_str(ptr: *mut c_char) {
     if !ptr.is_null() {
         unsafe {
-            // Convert back into a CString, which automatically frees the memory
             let _ = CString::from_raw(ptr);
         }
+    }
+}
+
+//==============================================================================
+// FFI Overhead Measurement Functions
+// These allow measuring the actual FFI overhead vs pure Rust serialization
+//==============================================================================
+
+/// Result structure for FFI overhead measurement
+#[repr(C)]
+pub struct FfiOverheadResult {
+    /// Time in nanoseconds for pure serde_json::to_string() (no FFI overhead)
+    pub pure_serde_ns: u64,
+    /// Time in nanoseconds for serde + CString conversion
+    pub serde_plus_cstring_ns: u64,
+    /// Number of iterations performed
+    pub iterations: u64,
+    /// Output size in bytes (for verification)
+    pub output_size: u64,
+}
+
+/// Prevents compiler from optimizing away the value
+/// Works on stable Rust (unlike std::hint::black_box which is unstable)
+#[inline(never)]
+fn black_box<T>(dummy: T) -> T {
+    unsafe {
+        let ret = std::ptr::read_volatile(&dummy);
+        std::mem::forget(dummy);
+        ret
+    }
+}
+
+/// Measures FFI overhead for Twitter serialization.
+/// Performs `iterations` serializations entirely in Rust and returns timing data.
+/// This allows comparing against per-call FFI overhead.
+#[no_mangle]
+pub unsafe extern "C" fn measure_twitter_ffi_overhead(
+    raw: *mut TwitterData,
+    iterations: u64
+) -> FfiOverheadResult {
+    use std::time::Instant;
+
+    let twitter_data = &*raw;
+    let output_size: u64;
+
+    // Warm-up run
+    let warmup = serde_json::to_string(&twitter_data).unwrap();
+    output_size = warmup.len() as u64;
+
+    // Measure pure serde_json::to_string() - no CString conversion
+    let start_pure = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&twitter_data).unwrap();
+        // Prevent optimization from eliminating the work
+        black_box(&serialized);
+    }
+    let pure_serde_ns = start_pure.elapsed().as_nanos() as u64;
+
+    // Measure serde + CString conversion (but not FFI return)
+    let start_cstring = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&twitter_data).unwrap();
+        let cstring = CString::new(serialized).unwrap();
+        // Prevent optimization from eliminating the work
+        black_box(&cstring);
+    }
+    let serde_plus_cstring_ns = start_cstring.elapsed().as_nanos() as u64;
+
+    FfiOverheadResult {
+        pure_serde_ns,
+        serde_plus_cstring_ns,
+        iterations,
+        output_size,
+    }
+}
+
+/// Measures FFI overhead for CITM serialization.
+#[no_mangle]
+pub unsafe extern "C" fn measure_citm_ffi_overhead(
+    raw: *mut CitmCatalog,
+    iterations: u64
+) -> FfiOverheadResult {
+    use std::time::Instant;
+
+    let catalog = &*raw;
+    let output_size: u64;
+
+    // Warm-up run
+    let warmup = serde_json::to_string(&catalog).unwrap();
+    output_size = warmup.len() as u64;
+
+    // Measure pure serde_json::to_string() - no CString conversion
+    let start_pure = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&catalog).unwrap();
+        black_box(&serialized);
+    }
+    let pure_serde_ns = start_pure.elapsed().as_nanos() as u64;
+
+    // Measure serde + CString conversion
+    let start_cstring = Instant::now();
+    for _ in 0..iterations {
+        let serialized = serde_json::to_string(&catalog).unwrap();
+        let cstring = CString::new(serialized).unwrap();
+        black_box(&cstring);
+    }
+    let serde_plus_cstring_ns = start_cstring.elapsed().as_nanos() as u64;
+
+    FfiOverheadResult {
+        pure_serde_ns,
+        serde_plus_cstring_ns,
+        iterations,
+        output_size,
     }
 }
