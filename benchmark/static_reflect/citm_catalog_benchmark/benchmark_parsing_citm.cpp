@@ -79,15 +79,13 @@ template <class T> void bench_simdjson_from_parsing(const std::string &json_str)
   volatile bool result = true;
   pretty_print(1, input_volume, "bench_simdjson_from_parsing",
                bench([&padded, &result]() {
-                 try {
-                   // Using simdjson::from API directly with padded string
-                   // This will throw an exception if parsing fails
-                   T my_struct = simdjson::from(padded);
-                   result = true;
-                 } catch (const std::exception& e) {
-                   result = false;
-                   printf("parse error: %s\n", e.what());
-                 }
+                 T my_struct;
+                 auto err = simdjson::from(padded).get(my_struct);
+                  if (err) {
+                    result = false;
+                    printf("parse error: %s\n", simdjson::error_message(err));
+                    return;
+                  }
                }));
 }
 #endif
