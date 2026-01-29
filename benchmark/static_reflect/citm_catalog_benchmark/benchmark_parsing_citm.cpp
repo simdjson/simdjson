@@ -95,8 +95,8 @@ template <class T> void bench_simdjson_from_parsing(const std::string &json_str)
 // nlohmann::json deserialization functions
 void from_json(const nlohmann::json &j, CITMPrice &p) {
     j.at("amount").get_to(p.amount);
-    j.at("audienceSubCategoryId").get_to(p.audience);
-    j.at("seatCategoryId").get_to(p.seat);
+    j.at("audienceSubCategoryId").get_to(p.audienceSubCategoryId);
+    j.at("seatCategoryId").get_to(p.seatCategoryId);
 }
 
 void from_json(const nlohmann::json &j, CITMArea &a) {
@@ -238,8 +238,8 @@ CitmCatalog rapidjson_deserialize(const std::string &json_str) {
             for (auto& price : p["prices"].GetArray()) {
                 CITMPrice pr;
                 pr.amount = price["amount"].GetUint64();
-                pr.audience = price["audienceSubCategoryId"].GetUint64();
-                pr.seat = price["seatCategoryId"].GetUint64();
+                pr.audienceSubCategoryId = price["audienceSubCategoryId"].GetUint64();
+                pr.seatCategoryId = price["seatCategoryId"].GetUint64();
                 perf.prices.push_back(pr);
             }
 
@@ -392,8 +392,8 @@ CitmCatalog yyjson_deserialize(const std::string &json_str) {
                 yyjson_arr_foreach(prices, pidx, pmax, pval) {
                     CITMPrice price;
                     price.amount = yyjson_get_uint(yyjson_obj_get(pval, "amount"));
-                    price.audience = yyjson_get_uint(yyjson_obj_get(pval, "audienceSubCategoryId"));
-                    price.seat = yyjson_get_uint(yyjson_obj_get(pval, "seatCategoryId"));
+                    price.audienceSubCategoryId = yyjson_get_uint(yyjson_obj_get(pval, "audienceSubCategoryId"));
+                    price.seatCategoryId = yyjson_get_uint(yyjson_obj_get(pval, "seatCategoryId"));
                     perf.prices.push_back(price);
                 }
             }

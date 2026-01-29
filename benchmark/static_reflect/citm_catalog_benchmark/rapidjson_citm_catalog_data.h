@@ -27,14 +27,14 @@ CitmCatalog rapidjson_deserialize_citm(const std::string& json_str) {
             Event event;
             const Value& ev = it->value;
 
-            if (ev.HasMember("description") && ev["description"].IsString())
-                event.description = ev["description"].GetString();
             if (ev.HasMember("id") && ev["id"].IsUint64())
                 event.id = ev["id"].GetUint64();
-            if (ev.HasMember("logo") && ev["logo"].IsString())
-                event.logo = ev["logo"].GetString();
             if (ev.HasMember("name") && ev["name"].IsString())
                 event.name = ev["name"].GetString();
+            if (ev.HasMember("description") && ev["description"].IsString())
+                event.description = ev["description"].GetString();
+            if (ev.HasMember("logo") && ev["logo"].IsString())
+                event.logo = ev["logo"].GetString();
             if (ev.HasMember("subjectCode") && ev["subjectCode"].IsString())
                 event.subjectCode = ev["subjectCode"].GetString();
             if (ev.HasMember("subtitle") && ev["subtitle"].IsString())
@@ -77,31 +77,59 @@ CitmCatalog rapidjson_deserialize_citm(const std::string& json_str) {
                 perf.venueCode = p["venueCode"].GetString();
             if (p.HasMember("name") && p["name"].IsString())
                 perf.name = p["name"].GetString();
+            if (p.HasMember("logo") && p["logo"].IsString())
+                perf.logo = p["logo"].GetString();
+            if (p.HasMember("seatMapImage") && p["seatMapImage"].IsString())
+                perf.seatMapImage = p["seatMapImage"].GetString();
+
+            // Parse prices
+            if (p.HasMember("prices") && p["prices"].IsArray()) {
+                const Value& prices = p["prices"];
+                for (SizeType j = 0; j < prices.Size(); j++) {
+                    CITMPrice price;
+                    const Value& pr = prices[j];
+                    if (pr.HasMember("amount") && pr["amount"].IsUint64())
+                        price.amount = pr["amount"].GetUint64();
+                    if (pr.HasMember("audienceSubCategoryId") && pr["audienceSubCategoryId"].IsUint64())
+                        price.audienceSubCategoryId = pr["audienceSubCategoryId"].GetUint64();
+                    if (pr.HasMember("seatCategoryId") && pr["seatCategoryId"].IsUint64())
+                        price.seatCategoryId = pr["seatCategoryId"].GetUint64();
+                    perf.prices.push_back(price);
+                }
+            }
+
+            // Parse seatCategories
+            if (p.HasMember("seatCategories") && p["seatCategories"].IsArray()) {
+                const Value& seatCats = p["seatCategories"];
+                for (SizeType j = 0; j < seatCats.Size(); j++) {
+                    CITMSeatCategory seatCat;
+                    const Value& sc = seatCats[j];
+                    if (sc.HasMember("seatCategoryId") && sc["seatCategoryId"].IsUint64())
+                        seatCat.seatCategoryId = sc["seatCategoryId"].GetUint64();
+                    if (sc.HasMember("areas") && sc["areas"].IsArray()) {
+                        const Value& areas = sc["areas"];
+                        for (SizeType k = 0; k < areas.Size(); k++) {
+                            CITMArea area;
+                            const Value& ar = areas[k];
+                            if (ar.HasMember("areaId") && ar["areaId"].IsUint64())
+                                area.areaId = ar["areaId"].GetUint64();
+                            if (ar.HasMember("blockIds") && ar["blockIds"].IsArray()) {
+                                const Value& blocks = ar["blockIds"];
+                                for (SizeType l = 0; l < blocks.Size(); l++) {
+                                    if (blocks[l].IsUint64())
+                                        area.blockIds.push_back(blocks[l].GetUint64());
+                                }
+                            }
+                            seatCat.areas.push_back(area);
+                        }
+                    }
+                    perf.seatCategories.push_back(seatCat);
+                }
+            }
 
             catalog.performances.push_back(perf);
         }
     }
-
-    // Parse other string maps
-    auto parseStringMap = [&doc](const char* key, std::map<std::string, std::string>& target) {
-        if (doc.HasMember(key) && doc[key].IsObject()) {
-            const Value& obj = doc[key];
-            for (auto it = obj.MemberBegin(); it != obj.MemberEnd(); ++it) {
-                if (it->value.IsString()) {
-                    target[it->name.GetString()] = it->value.GetString();
-                }
-            }
-        }
-    };
-
-    parseStringMap("areaNames", catalog.areaNames);
-    parseStringMap("audienceSubCategoryNames", catalog.audienceSubCategoryNames);
-    parseStringMap("blockNames", catalog.blockNames);
-    parseStringMap("seatCategoryNames", catalog.seatCategoryNames);
-    parseStringMap("subTopicNames", catalog.subTopicNames);
-    parseStringMap("subjectNames", catalog.subjectNames);
-    parseStringMap("topicNames", catalog.topicNames);
-    parseStringMap("venueNames", catalog.venueNames);
 
     return catalog;
 }
@@ -117,27 +145,35 @@ std::string rapidjson_serialize_citm(const CitmCatalog& catalog) {
     for (const auto& [key, event] : catalog.events) {
         Value event_obj(kObjectType);
 
-        Value desc;
-        desc.SetString(event.description.c_str(), allocator);
-        event_obj.AddMember("description", desc, allocator);
-
         event_obj.AddMember("id", event.id, allocator);
-
-        Value logo;
-        logo.SetString(event.logo.c_str(), allocator);
-        event_obj.AddMember("logo", logo, allocator);
 
         Value name;
         name.SetString(event.name.c_str(), allocator);
         event_obj.AddMember("name", name, allocator);
 
-        Value subject;
-        subject.SetString(event.subjectCode.c_str(), allocator);
-        event_obj.AddMember("subjectCode", subject, allocator);
+        if (event.description) {
+            Value desc;
+            desc.SetString(event.description->c_str(), allocator);
+            event_obj.AddMember("description", desc, allocator);
+        }
 
-        Value subtitle;
-        subtitle.SetString(event.subtitle.c_str(), allocator);
-        event_obj.AddMember("subtitle", subtitle, allocator);
+        if (event.logo) {
+            Value logo;
+            logo.SetString(event.logo->c_str(), allocator);
+            event_obj.AddMember("logo", logo, allocator);
+        }
+
+        if (event.subjectCode) {
+            Value subject;
+            subject.SetString(event.subjectCode->c_str(), allocator);
+            event_obj.AddMember("subjectCode", subject, allocator);
+        }
+
+        if (event.subtitle) {
+            Value subtitle;
+            subtitle.SetString(event.subtitle->c_str(), allocator);
+            event_obj.AddMember("subtitle", subtitle, allocator);
+        }
 
         Value topicIds(kArrayType);
         for (uint64_t id : event.topicIds) {
@@ -169,36 +205,63 @@ std::string rapidjson_serialize_citm(const CitmCatalog& catalog) {
         venue.SetString(perf.venueCode.c_str(), allocator);
         perf_obj.AddMember("venueCode", venue, allocator);
 
-        Value name;
-        name.SetString(perf.name.c_str(), allocator);
-        perf_obj.AddMember("name", name, allocator);
+        if (perf.name) {
+            Value name;
+            name.SetString(perf.name->c_str(), allocator);
+            perf_obj.AddMember("name", name, allocator);
+        }
+
+        if (perf.logo) {
+            Value logo;
+            logo.SetString(perf.logo->c_str(), allocator);
+            perf_obj.AddMember("logo", logo, allocator);
+        }
+
+        if (perf.seatMapImage) {
+            Value seatMap;
+            seatMap.SetString(perf.seatMapImage->c_str(), allocator);
+            perf_obj.AddMember("seatMapImage", seatMap, allocator);
+        }
+
+        // Serialize prices
+        Value prices_array(kArrayType);
+        for (const auto& price : perf.prices) {
+            Value price_obj(kObjectType);
+            price_obj.AddMember("amount", price.amount, allocator);
+            price_obj.AddMember("audienceSubCategoryId", price.audienceSubCategoryId, allocator);
+            price_obj.AddMember("seatCategoryId", price.seatCategoryId, allocator);
+            prices_array.PushBack(price_obj, allocator);
+        }
+        perf_obj.AddMember("prices", prices_array, allocator);
+
+        // Serialize seatCategories
+        Value seatCats_array(kArrayType);
+        for (const auto& seatCat : perf.seatCategories) {
+            Value seatCat_obj(kObjectType);
+            seatCat_obj.AddMember("seatCategoryId", seatCat.seatCategoryId, allocator);
+
+            Value areas_array(kArrayType);
+            for (const auto& area : seatCat.areas) {
+                Value area_obj(kObjectType);
+                area_obj.AddMember("areaId", area.areaId, allocator);
+
+                Value blockIds_array(kArrayType);
+                for (uint64_t blockId : area.blockIds) {
+                    blockIds_array.PushBack(blockId, allocator);
+                }
+                area_obj.AddMember("blockIds", blockIds_array, allocator);
+
+                areas_array.PushBack(area_obj, allocator);
+            }
+            seatCat_obj.AddMember("areas", areas_array, allocator);
+
+            seatCats_array.PushBack(seatCat_obj, allocator);
+        }
+        perf_obj.AddMember("seatCategories", seatCats_array, allocator);
 
         performances_array.PushBack(perf_obj, allocator);
     }
     doc.AddMember("performances", performances_array, allocator);
-
-    // Helper to serialize string maps
-    auto addStringMap = [&doc, &allocator](const char* key, const std::map<std::string, std::string>& map) {
-        Value map_obj(kObjectType);
-        for (const auto& [k, v] : map) {
-            Value key_val, val_val;
-            key_val.SetString(k.c_str(), allocator);
-            val_val.SetString(v.c_str(), allocator);
-            map_obj.AddMember(key_val, val_val, allocator);
-        }
-        Value key_name;
-        key_name.SetString(key, allocator);
-        doc.AddMember(key_name, map_obj, allocator);
-    };
-
-    addStringMap("areaNames", catalog.areaNames);
-    addStringMap("audienceSubCategoryNames", catalog.audienceSubCategoryNames);
-    addStringMap("blockNames", catalog.blockNames);
-    addStringMap("seatCategoryNames", catalog.seatCategoryNames);
-    addStringMap("subTopicNames", catalog.subTopicNames);
-    addStringMap("subjectNames", catalog.subjectNames);
-    addStringMap("topicNames", catalog.topicNames);
-    addStringMap("venueNames", catalog.venueNames);
 
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
