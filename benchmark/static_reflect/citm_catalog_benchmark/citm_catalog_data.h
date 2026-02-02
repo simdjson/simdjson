@@ -4,79 +4,65 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <optional>
+#include <cstdint>
 
-struct Area {
-  int64_t id;
-  std::string name;
-  int64_t parent;
-  std::vector<int64_t> childAreas;
-  bool operator==(const Area &other) const = default;
+// Price structure - field names must match JSON keys for reflection
+struct CITMPrice {
+    uint64_t amount;
+    uint64_t audienceSubCategoryId;
+    uint64_t seatCategoryId;
+    bool operator==(const CITMPrice&) const = default;
 };
 
-struct AudienceSubCategory {
-  int64_t id;
-  std::string name;
-  int64_t parent;
-  bool operator==(const AudienceSubCategory &other) const = default;
+struct CITMArea {
+    uint64_t areaId;
+    std::vector<uint64_t> blockIds;
+    bool operator==(const CITMArea&) const = default;
 };
 
-struct Event {
-  int64_t id;
-  std::string name;
-  std::string description;
-  int64_t subTopic;
-  int64_t topic;
-  std::vector<int64_t> audience;
-  bool operator==(const Event &other) const = default;
+struct CITMSeatCategory {
+    std::vector<CITMArea> areas;
+    uint64_t seatCategoryId;
+    bool operator==(const CITMSeatCategory&) const = default;
 };
 
-struct Performance {
-  int64_t id;
-  std::string name;
-  int64_t event;
-  std::string start;
-  int64_t venueCode;
-  bool operator==(const Performance &other) const = default;
+struct CITMPerformance {
+    uint64_t id;
+    uint64_t eventId;
+    std::optional<std::string> logo;
+    std::optional<std::string> name;
+    std::vector<CITMPrice> prices;
+    std::vector<CITMSeatCategory> seatCategories;
+    std::optional<std::string> seatMapImage;
+    uint64_t start;
+    std::string venueCode;
+    bool operator==(const CITMPerformance&) const = default;
 };
 
-struct SeatCategory {
-  int64_t id;
-  std::string name;
-  std::vector<int64_t> areas;
-  bool operator==(const SeatCategory &other) const = default;
-};
-
-struct SubTopic {
-  int64_t id;
-  std::string name;
-  int64_t parent;
-  bool operator==(const SubTopic &other) const = default;
-};
-
-struct Topic {
-  int64_t id;
-  std::string name;
-  bool operator==(const Topic &other) const = default;
-};
-
-struct Venue {
-  int64_t id;
-  std::string name;
-  int64_t address;
-  bool operator==(const Venue &other) const = default;
+struct CITMEvent {
+    uint64_t id;
+    std::string name;
+    std::optional<std::string> description;
+    std::optional<std::string> logo;
+    std::vector<uint64_t> subTopicIds;
+    std::optional<std::string> subjectCode;
+    std::optional<std::string> subtitle;
+    std::vector<uint64_t> topicIds;
+    bool operator==(const CITMEvent&) const = default;
 };
 
 struct CitmCatalog {
-  std::map<std::string, Area> areas;
-  std::map<std::string, AudienceSubCategory> audienceSubCategory;
-  std::map<std::string, Event> events;
-  std::map<std::string, Performance> performances;
-  std::map<std::string, SeatCategory> seatCategory;
-  std::map<std::string, SubTopic> subTopic;
-  std::map<std::string, Topic> topic;
-  std::map<std::string, Venue> venue;
-
-  bool operator==(const CitmCatalog &other) const = default;
+    std::map<std::string, CITMEvent> events;
+    std::vector<CITMPerformance> performances;
+    bool operator==(const CitmCatalog&) const = default;
 };
+
+// Type aliases
+using Event = CITMEvent;
+using Performance = CITMPerformance;
+using Price = CITMPrice;
+using SeatArea = CITMArea;
+using SeatCategoryInfo = CITMSeatCategory;
 
 #endif

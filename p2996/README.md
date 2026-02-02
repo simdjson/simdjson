@@ -54,15 +54,15 @@ Importantly, we build the experimental LLVM compiler based on the current state 
 ```bash
 CXX=clang++ cmake -B buildreflect -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON
 ```
-This only needs to be done once. To build the Rust code, add `-D SIMDJSON_USE_RUST=ON`.
+This only needs to be done once. To build the Rust code, add `-D SIMDJSON_USE_RUST=ON`. Note that you should have Rust on your system as a prerequisite for this option to be meaningful.
 
 5. Build the code...
 ```bash
-cmake --build buildreflect --target benchmark_serialization_citm_catalog benchmark_serialization_twitter
+cmake --build buildreflect --target benchmark_serialization_citm_catalog benchmark_serialization_twitter benchmark_parsing_twitter  benchmark_parsing_citm
 ```
+This is sufficient if you only mean to run the benchmarks (and skip the tests).
 
-
-6. Run the tests...
+6. Run the tests... (optional)
 ```bash
 cmake --build buildreflect
 ctest --test-dir buildreflect --output-on-failure
@@ -71,8 +71,15 @@ ctest --test-dir buildreflect --output-on-failure
 7. Run the benchmarks.
 ```bash
 ./buildreflect/benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
+./buildreflect/benchmark/static_reflect/citm_catalog_benchmark/benchmark_parsing_citm
 ./buildreflect/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter
+./buildreflect/benchmark/static_reflect/twitter_benchmark/benchmark_parsing_twitter
 ```
+
+These benchmarks should print performance counters *if* run in privileged mode (e.g., run under sudo).
+If you run the code inside a docker container, under Linux, it should have access to the performance
+counters if they are enabled on the host. Note that they are usually disabled in a cloud setting
+unless you have so-called metal access.
 
 You can modify the source code with your favorite editor and run again steps 5 (Build the code) and 6 (Run the tests) and 7 (Run the benchmark). Importantly, you should remain in the docker shell.
 
