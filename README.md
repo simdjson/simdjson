@@ -64,6 +64,7 @@ Real-world usage
 - [RonDB](https://github.com/logicalclocks/rondb)
 - [GreptimeDB](https://github.com/GreptimeTeam/greptimedb)
 - [mamba](https://github.com/mamba-org/mamba)
+- [Ladybird Browser](https://ladybird.org)
 
 
 If you are planning to use simdjson in a product, please work from one of our releases.
