@@ -520,14 +520,18 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
   // backslash is found early. However, we expect that in most strings there will be no backslash,
   // so we optimize for that case. The compiler knows to expect a full scan and it can optimize for it.
   auto has_backslash_fast = [](std::string_view s) noexcept {
-    bool has_backslash = false;
-    for( const char c : s) { has_backslash |= (c == '\\'); }
-    return has_backslash;
+    for(const char c : s) {
+      if(c == '\\') {
+        return true;
+      }
+    }
+    return false;
   };
   std::string_view string_with_quotes(reinterpret_cast<const char*>(peek_start()), peek_start_length());
   if(string_with_quotes.front() != '"') {
     return incorrect_type_error("Not a string");
   }
+
   if(!has_backslash_fast(string_with_quotes)) {
     // Find the ending quote
     size_t len = string_with_quotes.size();

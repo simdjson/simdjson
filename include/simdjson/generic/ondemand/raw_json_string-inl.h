@@ -162,16 +162,7 @@ simdjson_unused simdjson_inline bool operator!=(std::string_view c, const raw_js
 
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape(json_iterator &iter, bool allow_replacement) const noexcept {
-  // This function is called by field::unescaped_key(), and so we expect tiny strings, usually without escapes.
-  const char * r{raw()};
-  while(*r != '"') {
-    if(*r == '\\') {
-      return iter.unescape(*this, allow_replacement);
-    }
-    r++;
-  }
-  // No escapes: we can just return a string_view into the original JSON buffer.
-  return std::string_view(raw(), r - raw() );
+  return iter.unescape(*this, allow_replacement);
 }
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> raw_json_string::unescape_wobbly(json_iterator &iter) const noexcept {
