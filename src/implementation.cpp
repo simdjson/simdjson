@@ -145,7 +145,7 @@ namespace internal {
              + SIMDJSON_IMPLEMENTATION_RVV_VLS + SIMDJSON_IMPLEMENTATION_FALLBACK == 1)
 
 #if SIMDJSON_SINGLE_IMPLEMENTATION
-  static const implementation* get_single_implementation() {
+  simdjson_really_inline static const implementation* get_single_implementation() {
     return
 #if SIMDJSON_IMPLEMENTATION_ICELAKE
     get_icelake_singleton();
