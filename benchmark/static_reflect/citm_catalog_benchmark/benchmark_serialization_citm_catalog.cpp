@@ -39,20 +39,18 @@ void bench_reflect_cpp(CitmCatalog &data) {
 #include "../serde-benchmark/serde_benchmark.h"
 
 void bench_rust(serde_benchmark::CitmCatalog *data) {
-  const char * output = serde_benchmark::str_from_citm(data);
+  serde_benchmark::set_citm_data(data);
+  char * output = serde_benchmark::serialize_citm_to_string();
   size_t output_volume = strlen(output);
   printf("# output volume: %zu bytes\n", output_volume);
+  serde_benchmark::free_str(output);
+
   volatile size_t measured_volume = 0;
   pretty_print(1, output_volume, "bench_rust",
-               bench([&data, &measured_volume, &output_volume]() {
-                 const char * output = serde_benchmark::str_from_citm(data);
-                 measured_volume = strlen(output);
-                 if (measured_volume != output_volume) {
-                   printf("mismatch\n");
-                 }
-                 serde_benchmark::free_str(const_cast<char*>(output));
+               bench([&measured_volume, &output_volume]() {
+                 char * output = serde_benchmark::serialize_citm_to_string();
+                 serde_benchmark::free_str(output);
                }));
-  serde_benchmark::free_str(const_cast<char*>(output));
 }
 #endif // SIMDJSON_RUST_VERSION
 

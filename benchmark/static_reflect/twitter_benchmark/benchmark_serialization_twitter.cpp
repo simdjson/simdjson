@@ -39,71 +39,18 @@ void bench_reflect_cpp(TwitterData &data) {
 
 
 void bench_rust(serde_benchmark::TwitterData *data) {
-  const char * output = serde_benchmark::str_from_twitter(data);
+  serde_benchmark::set_twitter_data(data);
+  const char * output = serde_benchmark::serialize_twitter_to_string();
   size_t output_volume = strlen(output);
   printf("# output volume: %zu bytes\n", output_volume);
+  serde_benchmark::free_string(output);
+
   volatile size_t measured_volume = 0;
   pretty_print(1, output_volume, "bench_rust",
-               bench([&data, &measured_volume, &output_volume]() {
-                 const char * output = serde_benchmark::str_from_twitter(data);
+               bench([&measured_volume, &output_volume]() {
+                 const char * output = serde_benchmark::serialize_twitter_to_string();
                  serde_benchmark::free_string(output);
                }));
-}
-
-// Measures and reports FFI overhead for Rust/serde serialization
-void measure_rust_ffi_overhead(serde_benchmark::TwitterData *data) {
-  printf("\n=== Rust/serde FFI Overhead Analysis ===\n");
-
-  // First, measure the per-call FFI benchmark (what we normally report)
-  const uint64_t iterations = 10000;
-
-  // Time the per-call FFI approach (N separate FFI calls)
-  auto start_ffi = std::chrono::steady_clock::now();
-  for (uint64_t i = 0; i < iterations; i++) {
-    const char * output = serde_benchmark::str_from_twitter(data);
-    serde_benchmark::free_string(output);
-  }
-  auto end_ffi = std::chrono::steady_clock::now();
-  uint64_t ffi_total_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_ffi - start_ffi).count();
-
-  // Now measure via the Rust-internal timing (1 FFI call, N serializations inside Rust)
-  serde_benchmark::FfiOverheadResult result = serde_benchmark::measure_twitter_ffi_overhead(data, iterations);
-
-  // Calculate overhead
-  double per_call_ffi_ns = static_cast<double>(ffi_total_ns) / iterations;
-  double per_call_pure_serde_ns = static_cast<double>(result.pure_serde_ns) / iterations;
-  double per_call_serde_cstring_ns = static_cast<double>(result.serde_plus_cstring_ns) / iterations;
-
-  double cstring_overhead_ns = per_call_serde_cstring_ns - per_call_pure_serde_ns;
-  double ffi_call_overhead_ns = per_call_ffi_ns - per_call_serde_cstring_ns;
-  double total_overhead_ns = per_call_ffi_ns - per_call_pure_serde_ns;
-
-  double overhead_percent = (total_overhead_ns / per_call_ffi_ns) * 100.0;
-  double cstring_percent = (cstring_overhead_ns / per_call_ffi_ns) * 100.0;
-  double ffi_call_percent = (ffi_call_overhead_ns / per_call_ffi_ns) * 100.0;
-
-  // Calculate throughput in MB/s
-  double output_mb = static_cast<double>(result.output_size) / (1024.0 * 1024.0);
-  double pure_serde_throughput = (output_mb * 1e9) / per_call_pure_serde_ns;
-  double with_ffi_throughput = (output_mb * 1e9) / per_call_ffi_ns;
-
-  printf("# Iterations: %lu\n", iterations);
-  printf("# Output size: %lu bytes\n", result.output_size);
-  printf("#\n");
-  printf("# Timing breakdown (per iteration):\n");
-  printf("#   Pure serde_json::to_string():     %8.1f ns  (%.1f MB/s)\n", per_call_pure_serde_ns, pure_serde_throughput);
-  printf("#   + CString conversion:             %8.1f ns  (+%.1f%% overhead)\n", per_call_serde_cstring_ns, cstring_percent);
-  printf("#   + FFI call/return overhead:       %8.1f ns  (+%.1f%% overhead)\n", per_call_ffi_ns, ffi_call_percent);
-  printf("#\n");
-  printf("# Total FFI overhead: %.1f ns (%.2f%% of total time)\n", total_overhead_ns, overhead_percent);
-  printf("#   - CString conversion: %.1f ns (%.2f%%)\n", cstring_overhead_ns, cstring_percent);
-  printf("#   - FFI call mechanics: %.1f ns (%.2f%%)\n", ffi_call_overhead_ns, ffi_call_percent);
-  printf("#\n");
-  printf("# Throughput comparison:\n");
-  printf("#   Pure Rust (no FFI):    %.1f MB/s\n", pure_serde_throughput);
-  printf("#   With FFI overhead:     %.1f MB/s  (reported in benchmarks)\n", with_ffi_throughput);
-  printf("#   Performance penalty:   %.2f%%\n", overhead_percent);
-  printf("===========================================\n\n");
 }
 #endif
 
@@ -358,8 +305,6 @@ int main(int argc, char* argv[]) {
       printf("# Failed to parse Twitter data for Rust benchmark\n");
     } else {
       bench_rust(td);
-      // Always run FFI overhead analysis when rust benchmark runs
-      measure_rust_ffi_overhead(td);
       serde_benchmark::free_twitter(td);
     }
   }

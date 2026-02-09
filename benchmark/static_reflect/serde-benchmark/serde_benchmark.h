@@ -34,7 +34,9 @@ extern "C" {
 
 TwitterData *twitter_from_str(const char *raw_input, size_t raw_input_length);
 
-const char *str_from_twitter(TwitterData *raw);
+void set_twitter_data(TwitterData *raw);
+
+const char *serialize_twitter_to_string();
 
 void free_twitter(TwitterData *raw);
 
@@ -43,8 +45,9 @@ void free_string(const char *ptr);
 /// Creates a CitmCatalog from a JSON string (UTF-8 encoded).
 CitmCatalog *citm_from_str(const char *raw_input, uintptr_t raw_input_length);
 
-/// Serializes a CitmCatalog into a JSON string (UTF-8).
-char *str_from_citm(CitmCatalog *raw_catalog);
+void set_citm_data(CitmCatalog *raw);
+
+char *serialize_citm_to_string();
 
 /// Frees the CitmCatalog pointer.
 void free_citm(CitmCatalog *raw_catalog);
