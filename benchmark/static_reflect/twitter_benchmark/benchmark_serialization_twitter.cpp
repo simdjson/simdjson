@@ -40,16 +40,13 @@ void bench_reflect_cpp(TwitterData &data) {
 
 void bench_rust(serde_benchmark::TwitterData *data) {
   serde_benchmark::set_twitter_data(data);
-  const char * output = serde_benchmark::serialize_twitter_to_string();
-  size_t output_volume = strlen(output);
+  size_t output_volume = serde_benchmark::serialize_twitter_to_string();
   printf("# output volume: %zu bytes\n", output_volume);
-  serde_benchmark::free_string(output);
 
   volatile size_t measured_volume = 0;
   pretty_print(1, output_volume, "bench_rust",
                bench([&measured_volume, &output_volume]() {
-                 const char * output = serde_benchmark::serialize_twitter_to_string();
-                 serde_benchmark::free_string(output);
+                 measured_volume = serde_benchmark::serialize_twitter_to_string();
                }));
 }
 #endif

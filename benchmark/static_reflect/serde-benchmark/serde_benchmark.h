@@ -36,7 +36,7 @@ TwitterData *twitter_from_str(const char *raw_input, size_t raw_input_length);
 
 void set_twitter_data(TwitterData *raw);
 
-const char *serialize_twitter_to_string();
+size_t serialize_twitter_to_string();
 
 void free_twitter(TwitterData *raw);
 
@@ -47,7 +47,7 @@ CitmCatalog *citm_from_str(const char *raw_input, uintptr_t raw_input_length);
 
 void set_citm_data(CitmCatalog *raw);
 
-char *serialize_citm_to_string();
+size_t serialize_citm_to_string();
 
 /// Frees the CitmCatalog pointer.
 void free_citm(CitmCatalog *raw_catalog);

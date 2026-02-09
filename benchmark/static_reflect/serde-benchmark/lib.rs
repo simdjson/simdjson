@@ -38,7 +38,6 @@ pub struct Status {
 pub struct TwitterData {
     statuses: Vec<Status>,
 }
-
 static mut TWITTER_DATA: *mut TwitterData = std::ptr::null_mut();
 
 #[no_mangle]
@@ -56,13 +55,12 @@ pub unsafe extern "C" fn set_twitter_data(raw: *mut TwitterData) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn serialize_twitter_to_string() -> *const c_char {
+pub unsafe extern "C" fn serialize_twitter_to_string() -> usize {
     if TWITTER_DATA.is_null() {
-        return std::ptr::null();
+        return 0;
     }
     let data = &*TWITTER_DATA;
-    let serialized = serde_json::to_string(data).unwrap();
-    std::ffi::CString::new(serialized).unwrap().into_raw() as *const c_char
+    serde_json::to_string(data).unwrap().len()
 }
 
 #[no_mangle]
@@ -214,13 +212,12 @@ pub unsafe extern "C" fn set_citm_data(raw: *mut CitmCatalog) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn serialize_citm_to_string() -> *mut c_char {
+pub unsafe extern "C" fn serialize_citm_to_string() -> usize {
     if CITM_DATA.is_null() {
-        return std::ptr::null_mut();
+        return 0;
     }
     let data = &*CITM_DATA;
-    let serialized = serde_json::to_string(data).unwrap();
-    std::ffi::CString::new(serialized).unwrap().into_raw()
+    return serde_json::to_string(data).unwrap().len();
 }
 
 /// Frees the CitmCatalog pointer.
