@@ -93,23 +93,22 @@ void bench_simdjson_from_parsing(const std::string &json_str) {
 }
 #endif
 
-// Nlohmann parsing disabled - deserialization functions not implemented
-// void bench_nlohmann_parsing(const std::string &json_str) {
-//   size_t input_volume = json_str.size();
-//   printf("# input volume: %zu bytes\n", input_volume);
-//
-//   volatile bool result = true;
-//   pretty_print(1, input_volume, "bench_nlohmann_parsing",
-//                bench([&json_str, &result]() {
-//                  try {
-//                    TwitterData data = nlohmann_deserialize(json_str);
-//                    result = true;
-//                  } catch (...) {
-//                    result = false;
-//                    printf("parse error\n");
-//                  }
-//                }));
-// }
+ void bench_nlohmann_parsing(const std::string &json_str) {
+   size_t input_volume = json_str.size();
+   printf("# input volume: %zu bytes\n", input_volume);
+
+   volatile bool result = true;
+   pretty_print(1, input_volume, "bench_nlohmann_parsing",
+                bench([&json_str, &result]() {
+                  try {
+                    TwitterData data = nlohmann_deserialize(json_str);
+                    result = true;
+                  } catch (...) {
+                    result = false;
+                    printf("parse error\n");
+                  }
+                }));
+}
 
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
 void bench_rapidjson_parsing(const std::string &json_str) {
@@ -202,10 +201,9 @@ int main(int argc, char* argv[]) {
   std::string json_str = read_file(JSON_FILE);
 
   // Benchmarking the parsing
-  // Nlohmann parsing disabled - deserialization functions not implemented
-  // if (matches_filter("nlohmann", filter)) {
-  //   bench_nlohmann_parsing(json_str);
-  // }
+  if (matches_filter("nlohmann", filter)) {
+    bench_nlohmann_parsing(json_str);
+  }
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
   if (matches_filter("rapidjson", filter)) {
     bench_rapidjson_parsing(json_str);
