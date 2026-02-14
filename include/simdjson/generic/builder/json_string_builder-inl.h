@@ -133,6 +133,55 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   }
   return _mm_movemask_epi8(running) != 0;
 }
+#elif defined(__ALTIVEC__) || defined(__VSX__)
+// POWER processor implementation using Altivec/VSX
+#include <altivec.h>
+
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
+  if (view.size() < 16) {
+    return simple_needs_escaping(view);
+  }
+
+  size_t i = 0;
+  // Create a running OR of all comparisons
+  vector unsigned char running = vec_splat_u8(0);
+  vector unsigned char v34 = vec_splat_u8(34);   // ASCII '"'
+  vector unsigned char v92 = vec_splat_u8(92);   // ASCII '\'
+  vector unsigned char v31 = vec_splat_u8(31);   // Control char threshold
+
+  for (; i + 15 < view.size(); i += 16) {
+    vector unsigned char word = vec_vsx_ld(0, (const unsigned char*)(view.data() + i));
+
+    // Check for '"' (ASCII 34)
+    running = vec_or(running, vec_cmpeq(word, v34));
+
+    // Check for '\' (ASCII 92)
+    running = vec_or(running, vec_cmpeq(word, v92));
+
+    // Check for control characters (< 32)
+    // Subtract with saturation: if word <= 31, result is 0
+    vector unsigned char subs = vec_subs(word, v31);
+    vector unsigned char zero = vec_splat_u8(0);
+    running = vec_or(running, vec_cmpeq(subs, zero));
+  }
+
+  // Handle remaining bytes (if any)
+  if (i < view.size()) {
+    vector unsigned char word = vec_vsx_ld(0, (const unsigned char*)(view.data() + view.length() - 16));
+
+    running = vec_or(running, vec_cmpeq(word, v34));
+    running = vec_or(running, vec_cmpeq(word, v92));
+
+    vector unsigned char subs = vec_subs(word, v31);
+    vector unsigned char zero = vec_splat_u8(0);
+    running = vec_or(running, vec_cmpeq(subs, zero));
+  }
+
+  // Check if any bit is set in running
+  // vec_any_ne returns true if any element is non-zero
+  vector unsigned char zero = vec_splat_u8(0);
+  return vec_any_ne(running, zero);
+}
 #else
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return simple_needs_escaping(view);
