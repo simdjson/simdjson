@@ -157,10 +157,9 @@ find_next_json_quotable_character_scalar(const std::string_view view,
   return size_t(view.size());
 }
 
-// SIMD-accelerated position finding eliminates redundant scanning.
-// Previously, write_string_escaped called fast_needs_escaping (SIMD scan to
-// check IF escape needed) then find_next_json_quotable_character (scalar scan
-// to find WHERE). This unified approach does both in one pass.
+// SIMD-accelerated position finding that directly locates the first quotable
+// character, combining detection and position extraction in a single pass to
+// minimize redundant work.
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
@@ -292,9 +291,8 @@ SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
   }
 }
 
-// Uses SIMD position finding directly instead of separate fast_needs_escaping
-// check followed by scalar position search. This eliminates redundant scanning
-// that was visible in profiling (24.85% of Twitter serialization time).
+// Writes the escaped version of input to out, returning the number of bytes
+// written. Uses SIMD position finding to locate quotable characters efficiently.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
   size_t mysize = input.size();
 
@@ -507,9 +505,6 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
   else SIMDJSON_IF_CONSTEXPR(std::is_unsigned<number_type>::value) {
     // Process 4 digits at a time instead of 2, reducing store operations
     // and divisions by approximately half for large numbers.
-    // Profiling showed 39% of CITM serialization time in the 2-byte store
-    // instruction. With CITM integers averaging 8.8 digits, this meant 4+
-    // stores per number. 4-digit batching cuts this roughly in half.
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
