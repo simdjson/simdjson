@@ -29,9 +29,15 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 #include <arm_neon.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_SSE2
 #include <emmintrin.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 #endif
 
 namespace simdjson {
@@ -139,10 +145,10 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 }
 #endif
 
+// Scalar fallback for finding next quotable character
 SIMDJSON_CONSTEXPR_LAMBDA inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-
+find_next_json_quotable_character_scalar(const std::string_view view,
+                                         size_t location) noexcept {
   for (auto pos = view.begin() + location; pos != view.end(); ++pos) {
     if (json_quotable_character[static_cast<uint8_t>(*pos)]) {
       return pos - view.begin();
@@ -150,6 +156,114 @@ find_next_json_quotable_character(const std::string_view view,
   }
   return size_t(view.size());
 }
+
+// SIMD-accelerated position finding that directly locates the first quotable
+// character, combining detection and position extraction in a single pass to
+// minimize redundant work.
+#if SIMDJSON_EXPERIMENTAL_HAS_NEON
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  // SIMD constants for characters requiring escape
+  uint8x16_t v34 = vdupq_n_u8(34);  // '"'
+  uint8x16_t v92 = vdupq_n_u8(92);  // '\\'
+  uint8x16_t v32 = vdupq_n_u8(32);  // control char threshold
+
+  while (remaining >= 16) {
+    uint8x16_t word = vld1q_u8(ptr);
+
+    // Check for quotable characters: '"', '\\', or control chars (< 32)
+    uint8x16_t needs_escape = vceqq_u8(word, v34);
+    needs_escape = vorrq_u8(needs_escape, vceqq_u8(word, v92));
+    needs_escape = vorrq_u8(needs_escape, vcltq_u8(word, v32));
+
+    if (vmaxvq_u32(vreinterpretq_u32_u8(needs_escape)) != 0) {
+      // Found quotable character - extract exact byte position using ctz
+      uint64x2_t as64 = vreinterpretq_u64_u8(needs_escape);
+      uint64_t lo = vgetq_lane_u64(as64, 0);
+      uint64_t hi = vgetq_lane_u64(as64, 1);
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+#ifdef _MSC_VER
+      unsigned long trailing_zero = 0;
+      if (lo != 0) {
+        _BitScanForward64(&trailing_zero, lo);
+        return offset + trailing_zero / 8;
+      } else {
+        _BitScanForward64(&trailing_zero, hi);
+        return offset + 8 + trailing_zero / 8;
+      }
+#else
+      if (lo != 0) {
+        return offset + __builtin_ctzll(lo) / 8;
+      } else {
+        return offset + 8 + __builtin_ctzll(hi) / 8;
+      }
+#endif
+    }
+    ptr += 16;
+    remaining -= 16;
+  }
+
+  // Scalar fallback for remaining bytes
+  size_t current = len - remaining;
+  return find_next_json_quotable_character_scalar(view, current);
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  // SIMD constants
+  __m128i v34 = _mm_set1_epi8(34);  // '"'
+  __m128i v92 = _mm_set1_epi8(92);  // '\\'
+  __m128i v31 = _mm_set1_epi8(31);  // for control char detection
+
+  while (remaining >= 16) {
+    __m128i word = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr));
+
+    // Check for quotable characters
+    __m128i needs_escape = _mm_cmpeq_epi8(word, v34);
+    needs_escape = _mm_or_si128(needs_escape, _mm_cmpeq_epi8(word, v92));
+    needs_escape = _mm_or_si128(
+        needs_escape,
+        _mm_cmpeq_epi8(_mm_subs_epu8(word, v31), _mm_setzero_si128()));
+
+    int mask = _mm_movemask_epi8(needs_escape);
+    if (mask != 0) {
+      // Found quotable character - use trailing zero count to find position
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+#ifdef _MSC_VER
+      unsigned long trailing_zero = 0;
+      _BitScanForward(&trailing_zero, mask);
+      return offset + trailing_zero;
+#else
+      return offset + __builtin_ctz(mask);
+#endif
+    }
+    ptr += 16;
+    remaining -= 16;
+  }
+
+  // Scalar fallback for remaining bytes
+  size_t current = len - remaining;
+  return find_next_json_quotable_character_scalar(view, current);
+}
+#else
+SIMDJSON_CONSTEXPR_LAMBDA inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  return find_next_json_quotable_character_scalar(view, location);
+}
+#endif
 
 SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
     "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
@@ -177,14 +291,20 @@ SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
   }
 }
 
+// Writes the escaped version of input to out, returning the number of bytes
+// written. Uses SIMD position finding to locate quotable characters efficiently.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
   size_t mysize = input.size();
-  if (!fast_needs_escaping(input)) { // fast path!
+
+  // Use SIMD position finder directly - it returns mysize if no escape needed
+  size_t location = find_next_json_quotable_character(input, 0);
+  if (location == mysize) {
+    // Fast path: no escaping needed
     memcpy(out, input.data(), input.size());
     return input.size();
   }
+
   const char *const initout = out;
-  size_t location = find_next_json_quotable_character(input, 0);
   memcpy(out, input.data(), location);
   out += location;
   escape_json_char(input[location], out);
@@ -383,12 +503,29 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_unsigned<number_type>::value) {
+    // Process 4 digits at a time instead of 2, reducing store operations
+    // and divisions by approximately half for large numbers.
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       unsigned_type pv = static_cast<unsigned_type>(v);
       size_t dc = internal::digit_count(pv);
       char *write_pointer = buffer.get() + position + dc - 1;
+
+      // Process 4 digits per iteration for large numbers
+      while (pv >= 10000) {
+        unsigned_type q = pv / 10000;
+        unsigned_type r = pv % 10000;
+        unsigned_type r_hi = r / 100;  // High 2 digits of remainder
+        unsigned_type r_lo = r % 100;  // Low 2 digits of remainder
+        // Write low 2 digits first (rightmost), then high 2 digits
+        memcpy(write_pointer - 1, &internal::decimal_table[r_lo * 2], 2);
+        memcpy(write_pointer - 3, &internal::decimal_table[r_hi * 2], 2);
+        write_pointer -= 4;
+        pv = q;
+      }
+
+      // Handle remaining 1-4 digits with original 2-digit loop
       while (pv >= 100) {
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
         write_pointer -= 2;
@@ -403,6 +540,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_integral<number_type>::value) {
+    // Same 4-digit batching as unsigned path for signed integers
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
@@ -416,6 +554,20 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       buffer.get()[position] = '-';
       position += negative ? 1 : 0;
       char *write_pointer = buffer.get() + position + dc - 1;
+
+      // Process 4 digits per iteration for large numbers
+      while (pv >= 10000) {
+        unsigned_type q = pv / 10000;
+        unsigned_type r = pv % 10000;
+        unsigned_type r_hi = r / 100;
+        unsigned_type r_lo = r % 100;
+        memcpy(write_pointer - 1, &internal::decimal_table[r_lo * 2], 2);
+        memcpy(write_pointer - 3, &internal::decimal_table[r_hi * 2], 2);
+        write_pointer -= 4;
+        pv = q;
+      }
+
+      // Handle remaining 1-4 digits
       while (pv >= 100) {
         memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
         write_pointer -= 2;
