@@ -29,9 +29,15 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 #include <arm_neon.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_SSE2
 #include <emmintrin.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 #endif
 
 namespace simdjson {
@@ -183,11 +189,22 @@ find_next_json_quotable_character(const std::string_view view,
       uint64_t lo = vgetq_lane_u64(as64, 0);
       uint64_t hi = vgetq_lane_u64(as64, 1);
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+#ifdef _MSC_VER
+      unsigned long trailing_zero = 0;
+      if (lo != 0) {
+        _BitScanForward64(&trailing_zero, lo);
+        return offset + trailing_zero / 8;
+      } else {
+        _BitScanForward64(&trailing_zero, hi);
+        return offset + 8 + trailing_zero / 8;
+      }
+#else
       if (lo != 0) {
         return offset + __builtin_ctzll(lo) / 8;
       } else {
         return offset + 8 + __builtin_ctzll(hi) / 8;
       }
+#endif
     }
     ptr += 16;
     remaining -= 16;
@@ -223,9 +240,15 @@ find_next_json_quotable_character(const std::string_view view,
 
     int mask = _mm_movemask_epi8(needs_escape);
     if (mask != 0) {
-      // Found quotable character - use ctz to find position
+      // Found quotable character - use trailing zero count to find position
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+#ifdef _MSC_VER
+      unsigned long trailing_zero = 0;
+      _BitScanForward(&trailing_zero, mask);
+      return offset + trailing_zero;
+#else
       return offset + __builtin_ctz(mask);
+#endif
     }
     ptr += 16;
     remaining -= 16;
