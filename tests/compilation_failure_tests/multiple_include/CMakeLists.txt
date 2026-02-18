@@ -1,3 +1,5 @@
-# We only check that we can build (it is not an actual runtime test).
-add_subdirectory(lib)
-add_subdirectory(exe)
+add_library(mylib mylib.cpp)
+target_link_libraries(mylib PUBLIC simdjson::simdjson)
+target_include_directories(mylib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(myexe main.cpp)
+target_link_libraries(myexe PRIVATE mylib)
