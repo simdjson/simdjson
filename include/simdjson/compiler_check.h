@@ -59,7 +59,7 @@
 #if SIMDJSON_CPLUSPLUS17
 #define SIMDJSON_CONSTEXPR_LAMBDA constexpr
 #else
-#define SIMDJSON_CONSTEXPR_LAMBDA inline
+#define SIMDJSON_CONSTEXPR_LAMBDA
 #endif
 #endif
 

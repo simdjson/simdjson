@@ -146,7 +146,7 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
 #endif
 
 // Scalar fallback for finding next quotable character
-SIMDJSON_CONSTEXPR_LAMBDA inline size_t
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character_scalar(const std::string_view view,
                                          size_t location) noexcept {
   for (auto pos = view.begin() + location; pos != view.end(); ++pos) {
@@ -258,7 +258,7 @@ find_next_json_quotable_character(const std::string_view view,
   return find_next_json_quotable_character_scalar(view, current);
 }
 #else
-SIMDJSON_CONSTEXPR_LAMBDA inline size_t
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
   return find_next_json_quotable_character_scalar(view, location);
@@ -277,7 +277,7 @@ SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
 // control characters (U+0000 through U+001F). There are two-character sequence
 // escape representations of some popular characters:
 // \", \\, \b, \f, \n, \r, \t.
-SIMDJSON_CONSTEXPR_LAMBDA void escape_json_char(char c, char *&out) {
+SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&out) {
   if (c == '"') {
     memcpy(out, "\\\"", 2);
     out += 2;
