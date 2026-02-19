@@ -266,6 +266,13 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
 !concepts::appendable_containers<T>);
 
+// Trait to indicate JSON fields arrive in struct declaration order.
+// Users can specialize this for their types to enable faster ordered field lookup.
+// Example:
+//   template<> struct simdjson::fields_in_order<MyStruct> : std::true_type {};
+template <typename T>
+struct fields_in_order : std::false_type {};
+
 
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
@@ -276,25 +283,112 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
-  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
-      if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
-        // for optional members, it's ok if the key is missing
-        auto error = obj[key].get(out.[:mem:]);
-        if (error && error != NO_SUCH_FIELD) {
-          if(error == NO_SUCH_FIELD) {
-            out.[:mem:].reset();
-            continue;
+
+  // For ordered fields, use fast ordered lookup
+  if constexpr (fields_in_order<T>::value) {
+    template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+      if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+        constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+        if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+          error_code error = obj.find_field(key).get(out.[:mem:]);
+          if (error && error != NO_SUCH_FIELD) {
+            return error;
           }
-          return error;
+        } else {
+          SIMDJSON_TRY(obj.find_field(key).get(out.[:mem:]));
         }
-      } else {
-        // for non-optional members, the key must be present
-        SIMDJSON_TRY(obj[key].get(out.[:mem:]));
       }
     }
-  };
+    return simdjson::SUCCESS;
+  }
+
+  // Algorithm selection based on struct size:
+  // - Per-field lookup: calls find_field_unordered() for each struct field (N scans)
+  // - Single-pass: iterates JSON once, checking each field against all struct fields
+  //
+  // Crossover analysis: per-field does N object scans, single-pass does 1 scan with N compares.
+  // Empirically, per-field wins for N<=8, single-pass wins dramatically for N>=9.
+  // At N=9, per-field causes ~35% performance regression vs single-pass.
+  constexpr size_t num_fields = []() consteval {
+    size_t count = 0;
+    template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+      if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+        ++count;
+      }
+    }
+    return count;
+  }();
+
+  if constexpr (num_fields <= 8) {
+    // Per-field lookup: efficient for small structs, leverages simdjson's SIMD-optimized find_field
+    template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+      if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+        constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+        if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+          error_code error = obj.find_field_unordered(key).get(out.[:mem:]);
+          if (error && error != NO_SUCH_FIELD) {
+            return error;
+          }
+        } else {
+          SIMDJSON_TRY(obj.find_field_unordered(key).get(out.[:mem:]));
+        }
+      }
+    }
+  } else {
+    // Single-pass with all optimizations for larger structs
+    constexpr uint64_t required_mask = []() consteval {
+      uint64_t mask = 0;
+      size_t idx = 0;
+      template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+          if constexpr (!concepts::optional_type<decltype(std::declval<T&>().[:mem:])>) {
+            mask |= (uint64_t(1) << idx);
+          }
+          ++idx;
+        }
+      }
+      return mask;
+    }();
+
+    uint64_t found_mask = 0;
+    constexpr uint64_t all_fields_mask = (num_fields < 64) ? ((uint64_t(1) << num_fields) - 1) : ~uint64_t(0);
+
+    for (auto field : obj) {
+      if (found_mask == all_fields_mask) break;
+
+      SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string json_key = field.key();
+      const char* raw = json_key.raw();
+      char first_char = raw[0];
+      bool matched = false;
+      size_t field_idx = 0;
+
+      template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+          constexpr std::string_view expected_key = std::define_static_string(std::meta::identifier_of(mem));
+          if (!matched && first_char == expected_key[0] && !(found_mask & (uint64_t(1) << field_idx))) {
+            if (json_key.unsafe_is_equal(expected_key)) {
+              auto field_val = field.value();
+              error_code err = field_val.get(out.[:mem:]);
+              if (err) {
+                if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+                  if (err != INCORRECT_TYPE) { return err; }
+                } else {
+                  return err;
+                }
+              }
+              found_mask |= (uint64_t(1) << field_idx);
+              matched = true;
+            }
+          }
+          ++field_idx;
+        }
+      }
+    }
+
+    if ((found_mask & required_mask) != required_mask) {
+      return NO_SUCH_FIELD;
+    }
+  }
   return simdjson::SUCCESS;
 }
 

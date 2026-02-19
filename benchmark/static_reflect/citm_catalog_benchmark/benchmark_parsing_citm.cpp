@@ -8,6 +8,7 @@
 #include <simdjson.h>
 #include <string>
 #include "citm_catalog_data.h"
+// NOTE: citm_traits.h NOT included because CITM JSON fields are NOT in struct order
 #include "nlohmann_citm_catalog_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
 

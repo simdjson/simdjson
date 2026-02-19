@@ -8,6 +8,7 @@
 #include <simdjson.h>
 #include <string>
 #include "twitter_data.h"
+// NOTE: twitter_traits.h NOT included because Twitter JSON fields are NOT in struct order
 #include "nlohmann_twitter_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
