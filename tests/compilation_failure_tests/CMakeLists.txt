@@ -25,3 +25,8 @@ if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(dangling_parser_parse_padstring)
   add_dual_compile_test(unsafe_parse_many)
 endif()
+
+if(NOT BUILD_SHARED_LIBS)
+  # We only check that it builds
+  add_subdirectory(multiple_include)
+endif()
