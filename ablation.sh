@@ -1,0 +1,23 @@
+CXX=clang++ cmake -B buildreflect -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ABLATION_NO_BRANCH_HINTS=ON
+cmake --build buildreflect --target benchmark_serialization_citm_catalog benchmark_serialization_twitter
+./buildreflect/benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
+./buildreflect/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter
+
+
+CXX=clang++ cmake -B buildreflecthints -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ABLATION_NO_BRANCH_HINTS=ON
+cmake --build buildreflecthints --target benchmark_serialization_citm_catalog benchmark_serialization_twitter
+./buildreflecthints/benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
+./buildreflecthints/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter
+
+
+CXX=clang++ cmake -B buildreflectescaping -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ABLATION_NO_SIMD_ESCAPING=ON
+cmake --build buildreflectescaping --target benchmark_serialization_citm_catalog benchmark_serialization_twitter
+./buildreflectescaping/benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
+./buildreflectescaping/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter
+
+
+
+CXX=clang++ cmake -B buildreflectconsteval -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ABLATION_NO_CONSTEVAL=ON
+cmake --build buildreflectconsteval --target benchmark_serialization_citm_catalog benchmark_serialization_twitter
+./buildreflectconsteval/benchmark/static_reflect/citm_catalog_benchmark/benchmark_serialization_citm_catalog
+./buildreflectconsteval/benchmark/static_reflect/twitter_benchmark/benchmark_serialization_twitter

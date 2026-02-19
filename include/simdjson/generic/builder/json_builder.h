@@ -229,8 +229,12 @@ void append(string_builder &b, const Z &z) {
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked()))) {
     if (i != 0)
       b.append(',');
+#if ABLATION_NO_CONSTEVAL
+    b.escape_and_append_with_quotes(std::meta::identifier_of(dm));
+#else
     constexpr auto key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
     b.append_raw(key);
+#endif
     b.append(':');
     atom(b, z.[:dm:]);
     i++;

@@ -240,6 +240,36 @@ else()
   add_compile_definitions(SIMDJSON_UTF8VALIDATION=1)
 endif()
 
+option(
+    SIMDJSON_ABLATION_NO_BRANCH_HINTS
+    "Disable branch hints for ablation testing."
+    OFF
+)
+if(SIMDJSON_ABLATION_NO_BRANCH_HINTS)
+  add_compile_definitions(ABLATION_NO_BRANCH_HINTS=1)
+  message(STATUS "ABLATION_NO_BRANCH_HINTS enabled")
+endif()
+
+option(
+    SIMDJSON_ABLATION_NO_SIMD_ESCAPING
+    "Disable SIMD escaping for ablation testing."
+    OFF
+)
+if(SIMDJSON_ABLATION_NO_SIMD_ESCAPING)
+  add_compile_definitions(ABLATION_NO_SIMD_ESCAPING=1)
+  message(STATUS "ABLATION_NO_SIMD_ESCAPING enabled")
+endif()
+
+option(
+    SIMDJSON_ABLATION_NO_CONSTEVAL
+    "Disable consteval for ablation testing."
+    OFF
+)
+if(SIMDJSON_ABLATION_NO_CONSTEVAL)
+  add_compile_definitions(ABLATION_NO_CONSTEVAL=1)
+  message(STATUS "ABLATION_NO_CONSTEVAL enabled")
+endif()
+
 include(CheckSymbolExists)
 check_symbol_exists(fork unistd.h HAVE_POSIX_FORK)
 check_symbol_exists(wait sys/wait.h HAVE_POSIX_WAIT)

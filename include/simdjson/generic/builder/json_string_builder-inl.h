@@ -295,9 +295,22 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
 // written. Uses SIMD position finding to locate quotable characters efficiently.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
   size_t mysize = input.size();
+#if ABLATION_NO_SIMD_ESCAPING
+  auto naive_find_next_json_quotable_character = [](std::string_view input, size_t start) -> size_t {
+    for (size_t i = start; i < input.size(); ++i) {
+        auto c = static_cast<unsigned char>(input[i]);
+        if (c == '"' || c == '\\' || c < 32) return i;
+    }
+    return input.size();
+  };
+#endif
 
   // Use SIMD position finder directly - it returns mysize if no escape needed
+#if ABLATION_NO_SIMD_ESCAPING
+  size_t location = naive_find_next_json_quotable_character(input, 0);
+#else
   size_t location = find_next_json_quotable_character(input, 0);
+#endif
   if (location == mysize) {
     // Fast path: no escaping needed
     memcpy(out, input.data(), input.size());
@@ -310,7 +323,11 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
   escape_json_char(input[location], out);
   location += 1;
   while (location < mysize) {
+    #if ABLATION_NO_SIMD_ESCAPING
+    size_t newlocation = naive_find_next_json_quotable_character(input, location);
+    #else
     size_t newlocation = find_next_json_quotable_character(input, location);
+    #endif
     memcpy(out, input.data() + location, newlocation - location);
     out += newlocation - location;
     location = newlocation;
@@ -332,6 +349,15 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   // We use the convention that when is_valid is false, then the capacity and
   // the position are 0.
   // Most of the time, this function will return true.
+#if ABLATION_NO_BRANCH_HINTS
+  if (upcoming_bytes <= capacity - position) {
+    return true;
+  }
+  // check for overflow, most of the time there is no overflow
+  if (position + upcoming_bytes < position) {
+    return false;
+  }
+#else
   if (simdjson_likely(upcoming_bytes <= capacity - position)) {
     return true;
   }
@@ -339,6 +365,7 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   if (simdjson_likely(position + upcoming_bytes < position)) {
     return false;
   }
+#endif
   // We will rarely get here.
   grow_buffer((std::max)(capacity * 2, position + upcoming_bytes));
   // If the buffer allocation failed, we set is_valid to false.
