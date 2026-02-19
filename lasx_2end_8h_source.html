@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -108,6 +108,13 @@ $(document).ready(function(){initNavTree('lasx_2end_8h_source.html',''); initRes
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#undef SIMDJSON_SKIP_BACKSLASH_SHORT_CIRCUIT</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#undef SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#if SIMDJSON_CAN_ALWAYS_RUN_LASX</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// nothing needed.</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>SIMDJSON_UNTARGET_REGION</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#endif</span></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -109,13 +109,12 @@ $(document).ready(function(){initNavTree('lasx_2intrinsics_8h_source.html',''); 
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &quot;simdjson/lasx/base.h&quot;</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_CONDITIONAL_INCLUDE</span></div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">// This should be the correct header whether</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">// you use visual studio or other compilers.</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;lasxintrin.h&gt;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">static_assert</span>(<span class="keyword">sizeof</span>(__m256i) &lt;= <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for LoongArch ASX&quot;</span>);</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_LASX_INTRINSICS_H</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &lt;lsxintrin.h&gt;</span></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;lasxintrin.h&gt;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">static_assert</span>(<span class="keyword">sizeof</span>(__m256i) &lt;= <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>, <span class="stringliteral">&quot;insufficient padding for LoongArch ASX&quot;</span>);</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#endif </span><span class="comment">//  SIMDJSON_LASX_INTRINSICS_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition</b> <a href="base_8h_source.html#l00033">base.h:33</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -97,14 +97,14 @@ $(document).ready(function(){initNavTree('md_doc_2compile__time.html',''); initR
   <div class="headertitle"><div class="title">Parse json at compile time</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md53"></a></p><ul>
+<div class="textblock"><p><a class="anchor" id="autotoc_md54"></a></p><ul>
 <li>Introduction</li>
 <li>Example</li>
 <li>Concepts</li>
 <li>Loading from disk</li>
 <li>Limitations (compile-time errors)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md54"></a>
+<h1><a class="anchor" id="autotoc_md55"></a>
 Introduction</h1>
 <p>In some instances, you may want to configure your software at compile-time with a JSON document. Maybe you have a single code base but many different possible configurations, all resulting in different software. For example, you might be programming robots, using the same software, but different robot configurations.</p>
 <p>To achieve the desired result, you have a few options. You may start the software and parser a JSON file at runtime. Or you might convert your JSON data into C++ code that you can compile with your software.</p>
@@ -131,7 +131,7 @@ Introduction</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>null</code>   </td><td class="markdownTableBodyNone"><code>std::nullptr_t</code>   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md55"></a>
+<h1><a class="anchor" id="autotoc_md56"></a>
 Example</h1>
 <p>Suppose you want to parse the following JSON document:</p>
 <div class="fragment"><div class="line">{</div>
@@ -177,7 +177,7 @@ Example</h1>
 <div class="line"><span class="stringliteral">)&quot;_json;</span></div>
 <div class="line"><span class="stringliteral"></span><span class="keyword">static_assert</span>(arr.size() == 3);</div>
 <div class="line"><span class="keyword">static_assert</span>(arr[1] == 2);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md56"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
 Concepts</h1>
 <p>Given that the parsed data is made of structures that depend on the JSON input, you might want to check that it conforms to your expectation. You can do so with concepts.</p>
 <p>Let us consider this example:</p>
@@ -190,7 +190,7 @@ Concepts</h1>
 <div class="line"><span class="stringliteral">]</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">)&quot;_json;</span></div>
-</div><!-- fragment --><p>You might want to ensure that the result is an array of persons. You can define your expection with concepts like so:</p>
+</div><!-- fragment --><p>You might want to ensure that the result is an array of persons. You can define your expectation with concepts like so:</p>
 <div class="fragment"><div class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><span class="keyword">concept </span>person = <span class="keyword">requires</span>(T p) {</div>
 <div class="line">    std::string_view(p.name);  <span class="comment">// has name field convertible to string_view</span></div>
@@ -218,7 +218,7 @@ Concepts</h1>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral"></span><span class="comment">// Validate that the array satisfies the array_of_person concept</span></div>
 <div class="line"><span class="keyword">static_assert</span>(array_of_person&lt;<span class="keyword">decltype</span>(config)&gt;);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md58"></a>
 Loading from disk</h1>
 <p>In practice, you may have a JSON file, say <code>json_data</code> that you want to parse at compile time. You may do so as follows.</p>
 <div class="fragment"><div class="line"> ++</div>
@@ -228,7 +228,7 @@ Loading from disk</h1>
 <div class="line">};</div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> json = simdjson::compile_time::parse_json&lt;json_data&gt;();</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md58"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md59"></a>
 Limitations (compile-time errors)</h1>
 <p>We have a few limitations which trigger compile-time errors if violated.</p>
 <ul>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -404,76 +404,77 @@ $(document).ready(function(){initNavTree('haswell_2simd_8h_source.html',''); ini
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">int</span> NUM_CHUNKS = 64 / <span class="keyword">sizeof</span>(simd8&lt;T&gt;);</div>
 <div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>    <span class="keyword">static_assert</span>(NUM_CHUNKS == 2, <span class="stringliteral">&quot;Haswell kernel should use two registers per 64-byte block.&quot;</span>);</div>
 <div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>    <span class="keyword">const</span> simd8&lt;T&gt; chunks[NUM_CHUNKS];</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>    simd8x64(<span class="keyword">const</span> simd8x64&lt;T&gt;&amp; o) = <span class="keyword">delete</span>; <span class="comment">// no copy allowed</span></div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    simd8x64&lt;T&gt;&amp; operator=(<span class="keyword">const</span> simd8&lt;T&gt;&amp; other) = <span class="keyword">delete</span>; <span class="comment">// no assignment allowed</span></div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>    simd8x64() = <span class="keyword">delete</span>; <span class="comment">// no default constructor allowed</span></div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>    simdjson_inline simd8x64(<span class="keyword">const</span> simd8&lt;T&gt; chunk0, <span class="keyword">const</span> simd8&lt;T&gt; chunk1) : chunks{chunk0, chunk1} {}</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>    simdjson_inline simd8x64(<span class="keyword">const</span> T ptr[64]) : chunks{simd8&lt;T&gt;::load(ptr), simd8&lt;T&gt;::load(ptr+32)} {}</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span> </div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>    simdjson_inline uint64_t compress(uint64_t mask, T * output)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>      uint32_t mask1 = uint32_t(mask);</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>      uint32_t mask2 = uint32_t(mask &gt;&gt; 32);</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>      this-&gt;chunks[0].compress(mask1, output);</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>      this-&gt;chunks[1].compress(mask2, output + 32 - count_ones(mask1));</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>      <span class="keywordflow">return</span> 64 - count_ones(mask);</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>    }</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>    simdjson_inline <span class="keywordtype">void</span> store(T ptr[64])<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>      this-&gt;chunks[0].store(ptr+<span class="keyword">sizeof</span>(simd8&lt;T&gt;)*0);</div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>      this-&gt;chunks[1].store(ptr+<span class="keyword">sizeof</span>(simd8&lt;T&gt;)*1);</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>    }</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>    simdjson_inline uint64_t to_bitmask()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>      uint64_t r_lo = uint32_t(this-&gt;chunks[0].to_bitmask());</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>      uint64_t r_hi =                       this-&gt;chunks[1].to_bitmask();</div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>      <span class="keywordflow">return</span> r_lo | (r_hi &lt;&lt; 32);</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>    }</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span> </div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>    simdjson_inline simd8&lt;T&gt; reduce_or()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>      <span class="keywordflow">return</span> this-&gt;chunks[0] | this-&gt;chunks[1];</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>    }</div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span> </div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>    simdjson_inline simd8x64&lt;T&gt; bit_or(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>      <span class="keywordflow">return</span> simd8x64&lt;T&gt;(</div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>        this-&gt;chunks[0] | mask,</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>        this-&gt;chunks[1] | mask</div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>      );</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    }</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>    simdjson_inline uint64_t eq(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>        this-&gt;chunks[0] == mask,</div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>        this-&gt;chunks[1] == mask</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>      ).to_bitmask();</div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>    }</div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span> </div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>    simdjson_inline uint64_t eq(<span class="keyword">const</span> simd8x64&lt;uint8_t&gt; &amp;other)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        this-&gt;chunks[0] == other.chunks[0],</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>        this-&gt;chunks[1] == other.chunks[1]</div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>      ).to_bitmask();</div>
-<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>    }</div>
-<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span> </div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>    simdjson_inline uint64_t lteq(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>        this-&gt;chunks[0] &lt;= mask,</div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>        this-&gt;chunks[1] &lt;= mask</div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>      ).to_bitmask();</div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>    }</div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  }; <span class="comment">// struct simd8x64&lt;T&gt;</span></div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span> </div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>} <span class="comment">// namespace simd</span></div>
-<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span> </div>
-<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>} <span class="comment">// unnamed namespace</span></div>
-<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>} <span class="comment">// namespace haswell</span></div>
-<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span> </div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_HASWELL_SIMD_H</span></div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    <span class="keyword">template</span>&lt;<span class="keywordtype">int</span> <span class="keywordtype">id</span>x&gt; simd8&lt;uint8_t&gt; get()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> idx &lt; NUM_CHUNKS ? chunks[idx] : simd8&lt;T&gt;(); }</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    simd8x64(<span class="keyword">const</span> simd8x64&lt;T&gt;&amp; o) = <span class="keyword">delete</span>; <span class="comment">// no copy allowed</span></div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>    simd8x64&lt;T&gt;&amp; operator=(<span class="keyword">const</span> simd8&lt;T&gt;&amp; other) = <span class="keyword">delete</span>; <span class="comment">// no assignment allowed</span></div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>    simd8x64() = <span class="keyword">delete</span>; <span class="comment">// no default constructor allowed</span></div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span> </div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>    simdjson_inline simd8x64(<span class="keyword">const</span> simd8&lt;T&gt; chunk0, <span class="keyword">const</span> simd8&lt;T&gt; chunk1) : chunks{chunk0, chunk1} {}</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>    simdjson_inline simd8x64(<span class="keyword">const</span> T ptr[64]) : chunks{simd8&lt;T&gt;::load(ptr), simd8&lt;T&gt;::load(ptr+32)} {}</div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span> </div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>    simdjson_inline uint64_t compress(uint64_t mask, T * output)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>      uint32_t mask1 = uint32_t(mask);</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>      uint32_t mask2 = uint32_t(mask &gt;&gt; 32);</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>      this-&gt;chunks[0].compress(mask1, output);</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>      this-&gt;chunks[1].compress(mask2, output + 32 - count_ones(mask1));</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>      <span class="keywordflow">return</span> 64 - count_ones(mask);</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>    }</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>    simdjson_inline <span class="keywordtype">void</span> store(T ptr[64])<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>      this-&gt;chunks[0].store(ptr+<span class="keyword">sizeof</span>(simd8&lt;T&gt;)*0);</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>      this-&gt;chunks[1].store(ptr+<span class="keyword">sizeof</span>(simd8&lt;T&gt;)*1);</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>    }</div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span> </div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>    simdjson_inline uint64_t to_bitmask()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>      uint64_t r_lo = uint32_t(this-&gt;chunks[0].to_bitmask());</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>      uint64_t r_hi =                       this-&gt;chunks[1].to_bitmask();</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>      <span class="keywordflow">return</span> r_lo | (r_hi &lt;&lt; 32);</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>    }</div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>    simdjson_inline simd8&lt;T&gt; reduce_or()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>      <span class="keywordflow">return</span> this-&gt;chunks[0] | this-&gt;chunks[1];</div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>    }</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>    simdjson_inline simd8x64&lt;T&gt; bit_or(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>      <span class="keywordflow">return</span> simd8x64&lt;T&gt;(</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>        this-&gt;chunks[0] | mask,</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>        this-&gt;chunks[1] | mask</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>      );</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>    }</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span> </div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    simdjson_inline uint64_t eq(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>        this-&gt;chunks[0] == mask,</div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>        this-&gt;chunks[1] == mask</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>      ).to_bitmask();</div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>    }</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span> </div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>    simdjson_inline uint64_t eq(<span class="keyword">const</span> simd8x64&lt;uint8_t&gt; &amp;other)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>        this-&gt;chunks[0] == other.chunks[0],</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>        this-&gt;chunks[1] == other.chunks[1]</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>      ).to_bitmask();</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>    }</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span> </div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>    simdjson_inline uint64_t lteq(<span class="keyword">const</span> T m)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>      <span class="keyword">const</span> simd8&lt;T&gt; mask = simd8&lt;T&gt;::splat(m);</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>      <span class="keywordflow">return</span>  simd8x64&lt;bool&gt;(</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>        this-&gt;chunks[0] &lt;= mask,</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>        this-&gt;chunks[1] &lt;= mask</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>      ).to_bitmask();</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>    }</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>  }; <span class="comment">// struct simd8x64&lt;T&gt;</span></div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span> </div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>} <span class="comment">// namespace simd</span></div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span> </div>
+<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>} <span class="comment">// unnamed namespace</span></div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>} <span class="comment">// namespace haswell</span></div>
+<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span> </div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_HASWELL_SIMD_H</span></div>
 <div class="ttc" id="anamespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_html_aab771b17058b0c93bdd0a8679c2c4d84"><div class="ttname"><a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#aab771b17058b0c93bdd0a8679c2c4d84">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::operator==</a></div><div class="ttdeci">simdjson_unused simdjson_inline bool operator==(const raw_json_string &amp;a, std::string_view c) noexcept</div><div class="ttdoc">Comparisons between raw_json_string and std::string_view instances are potentially unsafe: the user i...</div><div class="ttdef"><b>Definition</b> <a href="raw__json__string-inl_8h_source.html#l00147">raw_json_string-inl.h:147</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

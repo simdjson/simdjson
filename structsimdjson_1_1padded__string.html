@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -147,6 +147,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa833ecdbe40c220c5baf7a29c472c972" id="r_aa833ecdbe40c220c5baf7a29c472c972"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1padded__string.html#aa833ecdbe40c220c5baf7a29c472c972">data</a> () noexcept</td></tr>
 <tr class="memdesc:aa833ecdbe40c220c5baf7a29c472c972"><td class="mdescLeft">&#160;</td><td class="mdescRight">The string data.  <br /></td></tr>
 <tr class="separator:aa833ecdbe40c220c5baf7a29c472c972"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a522fe984823023c8e57150f14155911f" id="r_a522fe984823023c8e57150f14155911f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1padded__string.html#a522fe984823023c8e57150f14155911f">append</a> (const char *<a class="el" href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">data</a>, size_t <a class="el" href="structsimdjson_1_1padded__string.html#a863fded7b347718299190ad3f501d38c">length</a>) noexcept</td></tr>
+<tr class="memdesc:a522fe984823023c8e57150f14155911f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append data to the padded string.  <br /></td></tr>
+<tr class="separator:a522fe984823023c8e57150f14155911f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4bf80c11155b8067a87bd76762bee23b" id="r_a4bf80c11155b8067a87bd76762bee23b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1padded__string.html#a4bf80c11155b8067a87bd76762bee23b">operator std::string_view</a> () const</td></tr>
 <tr class="memdesc:a4bf80c11155b8067a87bd76762bee23b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a std::string_view with the same content.  <br /></td></tr>
 <tr class="separator:a4bf80c11155b8067a87bd76762bee23b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -386,6 +389,54 @@ Static Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a522fe984823023c8e57150f14155911f" name="a522fe984823023c8e57150f14155911f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a522fe984823023c8e57150f14155911f">&#9670;&#160;</a></span>append()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool simdjson::padded_string::append </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Append data to the padded string. </p>
+<p>Return true on success, false on failure. The complexity is O(n) where n is the new size of the string. If you are doing multiple appends, consider using <a class="el" href="classsimdjson_1_1padded__string__builder.html" title="Builder for constructing padded_string incrementally.">padded_string_builder</a> for better performance.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>the buffer to append </td></tr>
+    <tr><td class="paramname">length</td><td>the number of bytes to append </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00129">129</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
+
+</div>
+</div>
 <a id="aadd3bb268cbba43012c5d17a8c1ab7ef" name="aadd3bb268cbba43012c5d17a8c1ab7ef"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aadd3bb268cbba43012c5d17a8c1ab7ef">&#9670;&#160;</a></span>data() <span class="overload">[1/2]</span></h2>
 
@@ -499,7 +550,7 @@ Static Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Load this padded string from a file. </p>
-<h2><a class="anchor" id="autotoc_md204"></a>
+<h2><a class="anchor" id="autotoc_md205"></a>
 Windows and Unicode</h2>
 <p>Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001) before calling this function. This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
 <dl class="section return"><dt>Returns</dt><dd>IO_ERROR on error. Be mindful that on some 32-bit systems, the file size might be limited to 2 GB.</dd></dl>
@@ -510,7 +561,7 @@ Windows and Unicode</h2>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00135">135</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00162">162</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -539,7 +590,7 @@ Windows and Unicode</h2>
 
 <p>Create a <a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">padded_string_view</a> with the same content. </p>
 
-<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00131">131</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00158">158</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
 
 </div>
 </div>
@@ -568,7 +619,7 @@ Windows and Unicode</h2>
 
 <p>Create a std::string_view with the same content. </p>
 
-<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00129">129</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string-inl_8h_source.html#l00156">156</a> of file <a class="el" href="padded__string-inl_8h_source.html">padded_string-inl.h</a>.</p>
 
 </div>
 </div>

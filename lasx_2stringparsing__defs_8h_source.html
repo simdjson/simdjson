@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -165,7 +165,7 @@ $(document).ready(function(){initNavTree('lasx_2stringparsing__defs_8h_source.ht
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  simd8&lt;bool&gt; is_backslash = (v == <span class="charliteral">&#39;\\&#39;</span>);</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  simd8&lt;bool&gt; is_control = (v &lt; 32);</div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordflow">return</span> {</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    (is_backslash | is_quote | is_control).to_bitmask()</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="keyword">static_cast&lt;</span>uint64_t<span class="keyword">&gt;</span>((is_backslash | is_quote | is_control).to_bitmask())</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  };</div>
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>}</div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>

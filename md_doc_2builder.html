@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -105,6 +105,7 @@ $(document).ready(function(){initNavTree('md_doc_2builder.html',''); initResizab
 <li>C++26 static reflection<ul>
 <li>Without `string_buffer` instance</li>
 <li>Without `string_buffer` instance but with explicit error handling</li>
+<li>Pretty formatted (fractured JSON)</li>
 </ul>
 </li>
 </ul>
@@ -330,7 +331,7 @@ Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error hand
 <div class="line">}</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md52"></a>
 Customization</h2>
-<p>If you want to serialize a value in a custome way, you can do it with a <code>tag_invoke</code> specialization like the following example which will map the year attribute to a string.</p>
+<p>If you want to serialize a value in a custom way, you can do it with a <code>tag_invoke</code> specialization like the following example which will map the year attribute to a string.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;simdjson&gt;</span></div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">struct </span>Car {</div>
@@ -356,7 +357,44 @@ Customization</h2>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">} <span class="comment">// namespace simdjson</span></div>
-</div><!-- fragment --> </div></div><!-- contents -->
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md53"></a>
+Pretty formatted (fractured JSON)</h2>
+<p>In some instances, you may want your JSON to be more readable. For this pupose, we also support the Fractured JSON standard.</p>
+<div class="fragment"><div class="line">TableTestData data{</div>
+<div class="line">  {{1, <span class="stringliteral">&quot;Alice&quot;</span>, <span class="keyword">true</span>}, {2, <span class="stringliteral">&quot;Bob&quot;</span>, <span class="keyword">false</span>}, {3, <span class="stringliteral">&quot;Carol&quot;</span>, <span class="keyword">true</span>}, {4, <span class="stringliteral">&quot;Dave&quot;</span>, <span class="keyword">false</span>}}</div>
+<div class="line">};</div>
+<div class="line"> </div>
+<div class="line">fractured_json_options opts;</div>
+<div class="line">opts.enable_table_format = <span class="keyword">true</span>;</div>
+<div class="line">opts.min_table_rows = 3;</div>
+<div class="line"> </div>
+<div class="line">std::string formatted = simdjson::to_fractured_json_string(data, opts);</div>
+</div><!-- fragment --><p>The result might be as follows.</p>
+<div class="fragment"><div class="line">{</div>
+<div class="line">    &quot;records&quot;: [</div>
+<div class="line">        { &quot;active&quot;: true , &quot;id&quot;: 1, &quot;name&quot;: &quot;Alice&quot; },</div>
+<div class="line">        { &quot;active&quot;: false, &quot;id&quot;: 2, &quot;name&quot;: &quot;Bob&quot; },</div>
+<div class="line">        { &quot;active&quot;: true , &quot;id&quot;: 3, &quot;name&quot;: &quot;Carol&quot; },</div>
+<div class="line">        { &quot;active&quot;: false, &quot;id&quot;: 4, &quot;name&quot;: &quot;Dave&quot; }</div>
+<div class="line">    ]</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>The <code>fractured_json_options</code> struct allows you to customize the formatting behavior. It includes the following options:</p>
+<ul>
+<li><code>max_total_line_length</code> (default: 120): Maximum total characters per line. Content exceeding this will be expanded to multiple lines.</li>
+<li><code>max_inline_length</code> (default: 80): Maximum length for inlined elements. Simple arrays/objects shorter than this may be rendered inline.</li>
+<li><code>max_inline_complexity</code> (default: 2): Maximum nesting depth for inline rendering. Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.</li>
+<li><code>max_compact_array_complexity</code> (default: 1): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.</li>
+<li><code>indent_spaces</code> (default: 4): Number of spaces per indentation level.</li>
+<li><code>enable_table_format</code> (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.</li>
+<li><code>min_table_rows</code> (default: 3): Minimum number of rows to trigger table mode.</li>
+<li><code>table_similarity_threshold</code> (default: 0.8): Similarity threshold for table detection. Objects must share at least this fraction of keys to be formatted as a table.</li>
+<li><code>enable_compact_multiline</code> (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.</li>
+<li><code>max_items_per_line</code> (default: 10): Maximum array items per line in compact mode.</li>
+<li><code>simple_bracket_padding</code> (default: true): Add space inside brackets for simple containers. When true: <code>{ "key": "value" }</code>, when false: <code>{"key": "value"}</code>.</li>
+<li><code>colon_padding</code> (default: true): Add space after colons. When true: <code>"key": "value"</code>, when false: <code>"key":"value"</code>.</li>
+<li><code>comma_padding</code> (default: true): Add space after commas in inline content. When true: <code>[1, 2, 3]</code>, when false: <code>[1,2,3]</code>. </li>
+</ul>
+</div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->

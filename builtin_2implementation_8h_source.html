@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -127,17 +127,19 @@ $(document).ready(function(){initNavTree('builtin_2implementation_8h_source.html
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;simdjson/lsx/implementation.h&quot;</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(lasx)</span></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &quot;simdjson/lasx/implementation.h&quot;</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#else</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span> </div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#undef SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="preprocessor">#elif SIMDJSON_BUILTIN_IMPLEMENTATION_IS(rvv_vls)</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="preprocessor">#include &quot;simdjson/rvv-vls/implementation.h&quot;</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#else</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#error Unknown SIMDJSON_BUILTIN_IMPLEMENTATION</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a> {</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">   39</a></span>  <span class="keyword">const</span> <a class="code hl_class" href="classsimdjson_1_1implementation.html">implementation</a> * <a class="code hl_function" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">builtin_implementation</a>();</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_BUILTIN_IMPLEMENTATION_H</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="preprocessor">#undef SIMDJSON_CONDITIONAL_INCLUDE</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a> {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">   41</a></span>  <span class="keyword">const</span> <a class="code hl_class" href="classsimdjson_1_1implementation.html">implementation</a> * <a class="code hl_function" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">builtin_implementation</a>();</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_BUILTIN_IMPLEMENTATION_H</span></div>
 <div class="ttc" id="aclasssimdjson_1_1implementation_html"><div class="ttname"><a href="classsimdjson_1_1implementation.html">simdjson::implementation</a></div><div class="ttdoc">An implementation of simdjson for a particular CPU architecture.</div><div class="ttdef"><b>Definition</b> <a href="implementation_8h_source.html#l00045">implementation.h:45</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a27d0ec4db7cb0197fa90096703a13e25"><div class="ttname"><a href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">simdjson::builtin_implementation</a></div><div class="ttdeci">const implementation * builtin_implementation()</div><div class="ttdoc">Function which returns a pointer to an implementation matching the &quot;builtin&quot; implementation.</div></div>

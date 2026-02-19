@@ -6,6 +6,7 @@ var structsimdjson_1_1padded__string =
     [ "padded_string", "structsimdjson_1_1padded__string.html#a44fb0f219f05528e606f79dab7c32482", null ],
     [ "padded_string", "structsimdjson_1_1padded__string.html#a6199f5bf259fcac114addeef569cf5a5", null ],
     [ "padded_string", "structsimdjson_1_1padded__string.html#a952eaf7ff8ddf252d9c00a693978a4da", null ],
+    [ "append", "structsimdjson_1_1padded__string.html#a522fe984823023c8e57150f14155911f", null ],
     [ "data", "structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef", null ],
     [ "data", "structsimdjson_1_1padded__string.html#aa833ecdbe40c220c5baf7a29c472c972", null ],
     [ "length", "structsimdjson_1_1padded__string.html#a863fded7b347718299190ad3f501d38c", null ],

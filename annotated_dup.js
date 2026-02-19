@@ -32,9 +32,11 @@ var annotated_dup =
         [ "implementation_simdjson_result_base", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base" ],
         [ "open_container", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1open__container.html", null ]
       ] ],
+      [ "fractured_json_options", "structsimdjson_1_1fractured__json__options.html", "structsimdjson_1_1fractured__json__options" ],
       [ "has_custom_serialization", "structsimdjson_1_1has__custom__serialization.html", null ],
       [ "implementation", "classsimdjson_1_1implementation.html", "classsimdjson_1_1implementation" ],
       [ "padded_string", "structsimdjson_1_1padded__string.html", "structsimdjson_1_1padded__string" ],
+      [ "padded_string_builder", "classsimdjson_1_1padded__string__builder.html", "classsimdjson_1_1padded__string__builder" ],
       [ "padded_string_view", "classsimdjson_1_1padded__string__view.html", "classsimdjson_1_1padded__string__view" ],
       [ "simdjson_error", "structsimdjson_1_1simdjson__error.html", "structsimdjson_1_1simdjson__error" ],
       [ "simdjson_result", "structsimdjson_1_1simdjson__result.html", "structsimdjson_1_1simdjson__result" ],

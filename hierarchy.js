@@ -18,6 +18,7 @@ var hierarchy =
     [ "std::false_type", null, [
       [ "simdjson::has_custom_serialization", "structsimdjson_1_1has__custom__serialization.html", null ]
     ] ],
+    [ "simdjson::fractured_json_options", "structsimdjson_1_1fractured__json__options.html", null ],
     [ "simdjson::implementation", "classsimdjson_1_1implementation.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< T >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base< SIMDJSON_IMPLEMENTATION::ondemand::array >", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html", [
@@ -64,6 +65,7 @@ var hierarchy =
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object_iterator", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__iterator.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::open_container", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1open__container.html", null ],
     [ "simdjson::padded_string", "structsimdjson_1_1padded__string.html", null ],
+    [ "simdjson::padded_string_builder", "classsimdjson_1_1padded__string__builder.html", null ],
     [ "std::pair", null, [
       [ "simdjson::internal::simdjson_result_base< dom::array >", null, [
         [ "simdjson::simdjson_result< dom::array >", "structsimdjson_1_1simdjson__result_3_01dom_1_1array_01_4.html", null ]

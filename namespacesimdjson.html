@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -134,12 +134,18 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespacesimdjson_1_1ppc64" id="r_namespacesimdjson_1_1ppc64"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1ppc64.html">ppc64</a></td></tr>
 <tr class="memdesc:namespacesimdjson_1_1ppc64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for ALTIVEC (PPC64). <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacesimdjson_1_1rvv__vls" id="r_namespacesimdjson_1_1rvv__vls"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1rvv__vls.html">rvv_vls</a></td></tr>
+<tr class="memdesc:namespacesimdjson_1_1rvv__vls"><td class="mdescLeft">&#160;</td><td class="mdescRight">RVV-VLS implementation. <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacesimdjson_1_1westmere" id="r_namespacesimdjson_1_1westmere"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson_1_1westmere.html">westmere</a></td></tr>
 <tr class="memdesc:namespacesimdjson_1_1westmere"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation for Westmere (Intel SSE4.2). <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration options for FracturedJson formatting.  <a href="structsimdjson_1_1fractured__json__options.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1has__custom__serialization.html">has_custom_serialization</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1implementation.html">implementation</a></td></tr>
@@ -147,6 +153,9 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">String with extra allocation for ease of use with parser::parse()  <a href="structsimdjson_1_1padded__string.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__string__builder.html">padded_string_builder</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builder for constructing <a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">padded_string</a> incrementally.  <a href="classsimdjson_1_1padded__string__builder.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().  <a href="classsimdjson_1_1padded__string__view.html#details">More...</a><br /></td></tr>
@@ -248,8 +257,8 @@ Enumerations</h2></td></tr>
 <tr class="memdesc:ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="mdescLeft">&#160;</td><td class="mdescRight">This enum is used with the dom_parser_implementation::stage1 function.  <a href="namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811">More...</a><br /></td></tr>
 <tr class="separator:ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44beb117a12abd0d8d18589dbc3dbe97" id="r_a44beb117a12abd0d8d18589dbc3dbe97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97ae36fce138c6f2f7a25e9ee06e7ed37ae">SIMDJSON_VERSION_MAJOR</a> = 4
-, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97ab442d4c66052c2f30b72a0d6f8dc8814">SIMDJSON_VERSION_MINOR</a> = 2
-, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97a5537fa0bdb6b7345ea789c51f74b10ee">SIMDJSON_VERSION_REVISION</a> = 4
+, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97ab442d4c66052c2f30b72a0d6f8dc8814">SIMDJSON_VERSION_MINOR</a> = 3
+, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97a5537fa0bdb6b7345ea789c51f74b10ee">SIMDJSON_VERSION_REVISION</a> = 0
  }</td></tr>
 <tr class="separator:a44beb117a12abd0d8d18589dbc3dbe97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -258,6 +267,50 @@ Functions</h2></td></tr>
 <tr class="memitem:a27d0ec4db7cb0197fa90096703a13e25" id="r_a27d0ec4db7cb0197fa90096703a13e25"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classsimdjson_1_1implementation.html">implementation</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25">builtin_implementation</a> ()</td></tr>
 <tr class="memdesc:a27d0ec4db7cb0197fa90096703a13e25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function which returns a pointer to an implementation matching the "builtin" implementation.  <br /></td></tr>
 <tr class="separator:a27d0ec4db7cb0197fa90096703a13e25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74f7d8c95c93575eebbf0555aacbc36f" id="r_a74f7d8c95c93575eebbf0555aacbc36f"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a74f7d8c95c93575eebbf0555aacbc36f"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a> (T x)</td></tr>
+<tr class="memdesc:a74f7d8c95c93575eebbf0555aacbc36f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Format JSON using FracturedJson formatting with default options.  <br /></td></tr>
+<tr class="separator:a74f7d8c95c93575eebbf0555aacbc36f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a671be8d2bd2c26de0c137034254ad1bd" id="r_a671be8d2bd2c26de0c137034254ad1bd"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a671be8d2bd2c26de0c137034254ad1bd"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a671be8d2bd2c26de0c137034254ad1bd">fractured_json</a> (T x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="memdesc:a671be8d2bd2c26de0c137034254ad1bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Format JSON using FracturedJson formatting with custom options.  <br /></td></tr>
+<tr class="separator:a671be8d2bd2c26de0c137034254ad1bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa887e577fe72204d01c19fed9f6af0e" id="r_afa887e577fe72204d01c19fed9f6af0e"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:afa887e577fe72204d01c19fed9f6af0e"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#afa887e577fe72204d01c19fed9f6af0e">fractured_json</a> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt; x)</td></tr>
+<tr class="separator:afa887e577fe72204d01c19fed9f6af0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7eb21bd4fcfd7c7c3f4fd6f5f60953a1" id="r_a7eb21bd4fcfd7c7c3f4fd6f5f60953a1"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a7eb21bd4fcfd7c7c3f4fd6f5f60953a1"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a7eb21bd4fcfd7c7c3f4fd6f5f60953a1">fractured_json</a> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt; x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="separator:a7eb21bd4fcfd7c7c3f4fd6f5f60953a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b4cc3ea8d99caffea2302e562c46a38" id="r_a5b4cc3ea8d99caffea2302e562c46a38"><td class="memItemLeft" align="right" valign="top"><a id="a5b4cc3ea8d99caffea2302e562c46a38" name="a5b4cc3ea8d99caffea2302e562c46a38"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> x)</td></tr>
+<tr class="separator:a5b4cc3ea8d99caffea2302e562c46a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5c1d03a8c0b3e3c51aa83aba82d0dd3" id="r_ac5c1d03a8c0b3e3c51aa83aba82d0dd3"><td class="memItemLeft" align="right" valign="top"><a id="ac5c1d03a8c0b3e3c51aa83aba82d0dd3" name="ac5c1d03a8c0b3e3c51aa83aba82d0dd3"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="separator:ac5c1d03a8c0b3e3c51aa83aba82d0dd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a228531150427d70244e4e836c2c5d1eb" id="r_a228531150427d70244e4e836c2c5d1eb"><td class="memItemLeft" align="right" valign="top"><a id="a228531150427d70244e4e836c2c5d1eb" name="a228531150427d70244e4e836c2c5d1eb"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1array.html">dom::array</a> x)</td></tr>
+<tr class="separator:a228531150427d70244e4e836c2c5d1eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6a85265dcf5da686d1c0e453141a44d" id="r_af6a85265dcf5da686d1c0e453141a44d"><td class="memItemLeft" align="right" valign="top"><a id="af6a85265dcf5da686d1c0e453141a44d" name="af6a85265dcf5da686d1c0e453141a44d"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1array.html">dom::array</a> x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="separator:af6a85265dcf5da686d1c0e453141a44d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abdd3d9e9971345b6d7b6b7957a08d414" id="r_abdd3d9e9971345b6d7b6b7957a08d414"><td class="memItemLeft" align="right" valign="top"><a id="abdd3d9e9971345b6d7b6b7957a08d414" name="abdd3d9e9971345b6d7b6b7957a08d414"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1object.html">dom::object</a> x)</td></tr>
+<tr class="separator:abdd3d9e9971345b6d7b6b7957a08d414"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a75a835025d86297be49bdef3c33acf" id="r_a4a75a835025d86297be49bdef3c33acf"><td class="memItemLeft" align="right" valign="top"><a id="a4a75a835025d86297be49bdef3c33acf" name="a4a75a835025d86297be49bdef3c33acf"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="classsimdjson_1_1dom_1_1object.html">dom::object</a> x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="separator:a4a75a835025d86297be49bdef3c33acf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8777e401d8b7e5c69387270785e0d7d4" id="r_a8777e401d8b7e5c69387270785e0d7d4"><td class="memItemLeft" align="right" valign="top"><a id="a8777e401d8b7e5c69387270785e0d7d4" name="a8777e401d8b7e5c69387270785e0d7d4"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> &gt; x)</td></tr>
+<tr class="separator:a8777e401d8b7e5c69387270785e0d7d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08475e952bc858b3796d4b4733fab260" id="r_a08475e952bc858b3796d4b4733fab260"><td class="memItemLeft" align="right" valign="top"><a id="a08475e952bc858b3796d4b4733fab260" name="a08475e952bc858b3796d4b4733fab260"></a>
+template std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fractured_json</b> (<a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> &gt; x, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="separator:a08475e952bc858b3796d4b4733fab260"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64861b6d9d98dc3c85683b50cc6d224a" id="r_a64861b6d9d98dc3c85683b50cc6d224a"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a> (std::string_view json_str)</td></tr>
+<tr class="memdesc:a64861b6d9d98dc3c85683b50cc6d224a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Format a JSON string using FracturedJson formatting.  <br /></td></tr>
+<tr class="separator:a64861b6d9d98dc3c85683b50cc6d224a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14c3570e05ee337b2ed5d6a2d9b904a4" id="r_a14c3570e05ee337b2ed5d6a2d9b904a4"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a14c3570e05ee337b2ed5d6a2d9b904a4">fractured_json_string</a> (std::string_view json_str, const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;options)</td></tr>
+<tr class="memdesc:a14c3570e05ee337b2ed5d6a2d9b904a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Format a JSON string using FracturedJson formatting with custom options.  <br /></td></tr>
+<tr class="separator:a14c3570e05ee337b2ed5d6a2d9b904a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade4516933f53705eacfaed65ed14962d" id="r_ade4516933f53705eacfaed65ed14962d"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:ade4516933f53705eacfaed65ed14962d"><td class="memTemplItemLeft" align="right" valign="top">std::string&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ade4516933f53705eacfaed65ed14962d">to_string</a> (T x)</td></tr>
 <tr class="memdesc:ade4516933f53705eacfaed65ed14962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts JSON to a string.  <br /></td></tr>
@@ -296,9 +349,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a3a02bf12c3c83e244264e6634033d233" id="r_a3a02bf12c3c83e244264e6634033d233"><td class="memTemplParams" colspan="2">template&lt;class Z &gt; </td></tr>
 <tr class="memitem:a3a02bf12c3c83e244264e6634033d233"><td class="memTemplItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a3a02bf12c3c83e244264e6634033d233">to_json</a> (const Z &amp;z, size_t initial_capacity=simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY)</td></tr>
 <tr class="separator:a3a02bf12c3c83e244264e6634033d233"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44dd4554673ef921a81d1e028c2c2eef" id="r_a44dd4554673ef921a81d1e028c2c2eef"><td class="memTemplParams" colspan="2">template&lt;class Z &gt; </td></tr>
-<tr class="memitem:a44dd4554673ef921a81d1e028c2c2eef"><td class="memTemplItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="structsimdjson_1_1simdjson__error.html">simdjson_error</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a44dd4554673ef921a81d1e028c2c2eef">to_json</a> (const Z &amp;z, std::string &amp;s, size_t initial_capacity=simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY)</td></tr>
-<tr class="separator:a44dd4554673ef921a81d1e028c2c2eef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46ca15b3fa96136bd7c573e86b136f24" id="r_a46ca15b3fa96136bd7c573e86b136f24"><td class="memTemplParams" colspan="2">template&lt;class Z &gt; </td></tr>
+<tr class="memitem:a46ca15b3fa96136bd7c573e86b136f24"><td class="memTemplItemLeft" align="right" valign="top">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a46ca15b3fa96136bd7c573e86b136f24">to_json</a> (const Z &amp;z, std::string &amp;s, size_t initial_capacity=simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY)</td></tr>
+<tr class="separator:a46ca15b3fa96136bd7c573e86b136f24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ee1eccef6fb8cdcdaf794e3e3d9ee66" id="r_a4ee1eccef6fb8cdcdaf794e3e3d9ee66"><td class="memItemLeft" align="right" valign="top">std::string_view&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a4ee1eccef6fb8cdcdaf794e3e3d9ee66">trim</a> (const std::string_view str) noexcept</td></tr>
 <tr class="separator:a4ee1eccef6fb8cdcdaf794e3e3d9ee66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cda17221b852e5c398bad5bf350d270" id="r_a2cda17221b852e5c398bad5bf350d270"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a2cda17221b852e5c398bad5bf350d270">to_json_string</a> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html">SIMDJSON_IMPLEMENTATION::ondemand::document</a> &amp;x) noexcept</td></tr>
@@ -626,6 +679,194 @@ Variables</h2></td></tr>
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000002">Deprecated:</a></b></dt><dd>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...">error_message()</a></code> instead. </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="error-inl_8h_source.html#l00032">32</a> of file <a class="el" href="error-inl_8h_source.html">error-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="afa887e577fe72204d01c19fed9f6af0e" name="afa887e577fe72204d01c19fed9f6af0e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa887e577fe72204d01c19fed9f6af0e">&#9670;&#160;</a></span>fractured_json() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01023">1023</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a7eb21bd4fcfd7c7c3f4fd6f5f60953a1" name="a7eb21bd4fcfd7c7c3f4fd6f5f60953a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7eb21bd4fcfd7c7c3f4fd6f5f60953a1">&#9670;&#160;</a></span>fractured_json() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; T &gt;&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01031">1031</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a74f7d8c95c93575eebbf0555aacbc36f" name="a74f7d8c95c93575eebbf0555aacbc36f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74f7d8c95c93575eebbf0555aacbc36f">&#9670;&#160;</a></span>fractured_json() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>x</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Format JSON using FracturedJson formatting with default options. </p>
+<p>FracturedJson produces human-readable yet compact output by intelligently choosing between inline, compact multiline, table, and expanded layouts.</p>
+<p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse(json_string); cout &lt;&lt; fractured_json(doc) &lt;&lt; endl; </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01009">1009</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a671be8d2bd2c26de0c137034254ad1bd" name="a671be8d2bd2c26de0c137034254ad1bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a671be8d2bd2c26de0c137034254ad1bd">&#9670;&#160;</a></span>fractured_json() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>x</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Format JSON using FracturedJson formatting with custom options. </p>
+<p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse(json_string); <a class="el" href="structsimdjson_1_1fractured__json__options.html" title="Configuration options for FracturedJson formatting.">fractured_json_options</a> opts; opts.max_total_line_length = 80; cout &lt;&lt; fractured_json(doc, opts) &lt;&lt; endl; </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01014">1014</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a64861b6d9d98dc3c85683b50cc6d224a" name="a64861b6d9d98dc3c85683b50cc6d224a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a64861b6d9d98dc3c85683b50cc6d224a">&#9670;&#160;</a></span>fractured_json_string() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json_string </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_str</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Format a JSON string using FracturedJson formatting. </p>
+<p>This is useful for formatting output from the builder/static reflection API or any valid JSON string.</p>
+<p>// With static reflection MyStruct data = {...}; auto minified = simdjson::to_json_string(data); auto formatted = <a class="el" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a" title="Format a JSON string using FracturedJson formatting.">simdjson::fractured_json_string</a>(minified.value());</p>
+<p>// Or with any JSON string std::string json = R"({"key":"value"})"; auto formatted = simdjson::fractured_json_string(json); </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01056">1056</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a14c3570e05ee337b2ed5d6a2d9b904a4" name="a14c3570e05ee337b2ed5d6a2d9b904a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a14c3570e05ee337b2ed5d6a2d9b904a4">&#9670;&#160;</a></span>fractured_json_string() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string simdjson::fractured_json_string </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_str</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Format a JSON string using FracturedJson formatting with custom options. </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01060">1060</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -968,7 +1209,7 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string_8h_source.html#l00159">159</a> of file <a class="el" href="padded__string_8h_source.html">padded_string.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string_8h_source.html#l00265">265</a> of file <a class="el" href="padded__string_8h_source.html">padded_string.h</a>.</p>
 
 </div>
 </div>
@@ -1061,7 +1302,7 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string_8h_source.html#l00171">171</a> of file <a class="el" href="padded__string_8h_source.html">padded_string.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string_8h_source.html#l00277">277</a> of file <a class="el" href="padded__string_8h_source.html">padded_string.h</a>.</p>
 
 </div>
 </div>
@@ -1310,12 +1551,12 @@ template&lt;class Z &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00278">278</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00274">274</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>
-<a id="a44dd4554673ef921a81d1e028c2c2eef" name="a44dd4554673ef921a81d1e028c2c2eef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44dd4554673ef921a81d1e028c2c2eef">&#9670;&#160;</a></span>to_json() <span class="overload">[2/2]</span></h2>
+<a id="a46ca15b3fa96136bd7c573e86b136f24" name="a46ca15b3fa96136bd7c573e86b136f24"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46ca15b3fa96136bd7c573e86b136f24">&#9670;&#160;</a></span>to_json() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1323,7 +1564,7 @@ template&lt;class Z &gt; </div>
 template&lt;class Z &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">simdjson_warn_unused <a class="el" href="structsimdjson_1_1simdjson__error.html">simdjson_error</a> simdjson::to_json </td>
+          <td class="memname">simdjson_warn_unused <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::to_json </td>
           <td>(</td>
           <td class="paramtype">const Z &amp;&#160;</td>
           <td class="paramname"><em>z</em>, </td>
@@ -1348,7 +1589,7 @@ template&lt;class Z &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00287">287</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00283">283</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>

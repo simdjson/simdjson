@@ -9,6 +9,8 @@ var dir_438095d7beafc60159803dc5832a82bd =
     [ "document_stream.h", "dom_2document__stream_8h_source.html", null ],
     [ "element-inl.h", "element-inl_8h_source.html", null ],
     [ "element.h", "element_8h_source.html", null ],
+    [ "fractured_json-inl.h", "fractured__json-inl_8h_source.html", null ],
+    [ "fractured_json.h", "fractured__json_8h_source.html", null ],
     [ "object-inl.h", "dom_2object-inl_8h_source.html", null ],
     [ "object.h", "dom_2object_8h_source.html", null ],
     [ "parser-inl.h", "dom_2parser-inl_8h_source.html", null ],

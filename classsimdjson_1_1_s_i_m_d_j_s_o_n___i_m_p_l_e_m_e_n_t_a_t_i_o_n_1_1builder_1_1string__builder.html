@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.2.4</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -196,7 +196,7 @@ Static Public Attributes</h2></td></tr>
 <p>This is a low-level builder that is not meant to be used directly by end-users. Though it supports atomic types (Booleans, strings), it does not support composed types (arrays and objects).</p>
 <p>Ultimately, this class can support kernel-specific optimizations. E.g., it may make use of SIMD instructions to escape strings faster. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00055">55</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00051">51</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a45fc612a9e0e2d1a6f327241cdc60060" name="a45fc612a9e0e2d1a6f327241cdc60060"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a45fc612a9e0e2d1a6f327241cdc60060">&#9670;&#160;</a></span>string_builder()</h2>
@@ -214,7 +214,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00210">210</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00326">326</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -245,7 +245,7 @@ Static Public Attributes</h2></td></tr>
 
 <p>Append character c. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00261">261</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00377">377</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -278,7 +278,7 @@ template&lt;typename number_type , typename &gt; </div>
 <p>Append number (includes Booleans). </p>
 <p>Booleans are mapped to the strings false and true. Numbers are converted to strings abiding by the JSON standard. Floating-point numbers are converted to the shortest string that 'correctly' represents the number. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00366">366</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00482">482</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -307,7 +307,7 @@ template&lt;typename number_type , typename &gt; </div>
 
 <p>Append ":" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00641">641</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00789">789</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -336,7 +336,7 @@ template&lt;typename number_type , typename &gt; </div>
 
 <p>Append "," to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00635">635</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00783">783</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -379,7 +379,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append a key-value pair to the buffer. </p>
 <p>The key is escaped and surrounded by double quotes. The value is escaped if it is a string. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00649">649</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00797">797</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -408,7 +408,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append the string 'null'. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00267">267</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00383">383</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -439,7 +439,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the C string directly, without escaping. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00488">488</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00636">636</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -480,7 +480,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append len characters from str. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00501">501</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00649">649</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -511,7 +511,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view directly, without escaping. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00494">494</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00642">642</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -542,7 +542,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns an error if memory allocation failed. The result is null-terminated.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00599">599</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00747">747</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -571,7 +571,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Clear the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00276">276</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00392">392</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -600,7 +600,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "]" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00629">629</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00777">777</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -629,7 +629,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "}" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00617">617</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00765">765</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -660,7 +660,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00448">448</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00596">596</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -691,7 +691,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the character surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00466">466</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00614">614</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -722,7 +722,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the character surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00477">477</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00625">625</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -753,7 +753,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00456">456</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00604">604</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -776,7 +776,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Throws if memory allocation failed</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content if needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00581">581</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00729">729</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -799,7 +799,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Throws if memory allocation failed.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content if needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00585">585</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00733">733</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -829,7 +829,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns the current size of the written JSON buffer. </p>
 <p>If an error occurred, returns 0. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00257">257</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00373">373</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -858,7 +858,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "[" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00623">623</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00771">771</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -887,7 +887,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "{" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00611">611</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00759">759</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -916,7 +916,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Return true if the content is valid UTF-8. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00607">607</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00755">755</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -947,7 +947,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns an error if memory allocation failed.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00592">592</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00740">740</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -972,13 +972,13 @@ template&lt;typename key_type , typename value_type &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00059">59</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00055">55</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>include/simdjson/generic/ondemand/<a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a></li>
-<li>include/simdjson/generic/ondemand/<a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a></li>
+<li>include/simdjson/generic/builder/<a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a></li>
+<li>include/simdjson/generic/builder/<a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

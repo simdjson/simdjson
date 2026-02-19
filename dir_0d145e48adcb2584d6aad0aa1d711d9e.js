@@ -4,6 +4,7 @@ var dir_0d145e48adcb2584d6aad0aa1d711d9e =
     [ "begin.h", "westmere_2begin_8h_source.html", null ],
     [ "bitmanipulation.h", "westmere_2bitmanipulation_8h_source.html", null ],
     [ "bitmask.h", "westmere_2bitmask_8h_source.html", null ],
+    [ "builder.h", "westmere_2builder_8h_source.html", null ],
     [ "end.h", "westmere_2end_8h_source.html", null ],
     [ "implementation.h", "westmere_2implementation_8h_source.html", null ],
     [ "intrinsics.h", "westmere_2intrinsics_8h_source.html", null ],

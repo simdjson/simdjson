@@ -4,6 +4,7 @@ var dir_c9268d037c0b2c52e0345956131bd131 =
     [ "begin.h", "lsx_2begin_8h_source.html", null ],
     [ "bitmanipulation.h", "lsx_2bitmanipulation_8h_source.html", null ],
     [ "bitmask.h", "lsx_2bitmask_8h_source.html", null ],
+    [ "builder.h", "lsx_2builder_8h_source.html", null ],
     [ "end.h", "lsx_2end_8h_source.html", null ],
     [ "implementation.h", "lsx_2implementation_8h_source.html", null ],
     [ "intrinsics.h", "lsx_2intrinsics_8h_source.html", null ],

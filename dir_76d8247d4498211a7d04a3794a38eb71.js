@@ -4,6 +4,7 @@ var dir_76d8247d4498211a7d04a3794a38eb71 =
     [ "begin.h", "arm64_2begin_8h_source.html", null ],
     [ "bitmanipulation.h", "arm64_2bitmanipulation_8h_source.html", null ],
     [ "bitmask.h", "arm64_2bitmask_8h_source.html", null ],
+    [ "builder.h", "arm64_2builder_8h_source.html", null ],
     [ "end.h", "arm64_2end_8h_source.html", null ],
     [ "implementation.h", "arm64_2implementation_8h_source.html", null ],
     [ "intrinsics.h", "arm64_2intrinsics_8h_source.html", null ],

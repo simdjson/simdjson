@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['default_5fmax_5fdepth_0',['DEFAULT_MAX_DEPTH',['../namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d',1,'simdjson']]],
-  ['doc_1',['doc',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1dom__parser__implementation.html#a4089d6265ec845fd85acd2db0973b858',1,'simdjson::SIMDJSON_IMPLEMENTATION::dom_parser_implementation']]],
-  ['document_5fdepth_2',['DOCUMENT_DEPTH',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html#a18847ef30e5800f1c628a344c23ec968',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document']]]
+  ['colon_5fpadding_0',['colon_padding',['../structsimdjson_1_1fractured__json__options.html#aa8dd1f91ebb219b2738751abf7e6c48b',1,'simdjson::fractured_json_options']]],
+  ['comma_5fpadding_1',['comma_padding',['../structsimdjson_1_1fractured__json__options.html#a7252b66b5be52bd7c8bd297e928f9a05',1,'simdjson::fractured_json_options']]]
 ];
