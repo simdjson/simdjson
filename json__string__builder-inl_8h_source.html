@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -423,7 +423,7 @@ $(document).ready(function(){initNavTree('json__string__builder-inl_8h_source.ht
 <div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  }</div>
 <div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  <span class="comment">// check for overflow, most of the time there is no overflow</span></div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  <span class="keywordflow">if</span> (simdjson_likely(position + upcoming_bytes &lt; position)) {</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  <span class="keywordflow">if</span> (simdjson_unlikely(position + upcoming_bytes &lt; position)) {</div>
 <div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  }</div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>  <span class="comment">// We will rarely get here.</span></div>
