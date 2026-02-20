@@ -336,7 +336,7 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
     return true;
   }
   // check for overflow, most of the time there is no overflow
-  if (simdjson_likely(position + upcoming_bytes < position)) {
+  if (simdjson_unlikely(position + upcoming_bytes < position)) {
     return false;
   }
   // We will rarely get here.
