@@ -329,8 +329,12 @@ void extract_from(string_builder &b, const T &obj) {
         first = false;
 
         // Serialize the key
+#if ABLATION_NO_CONSTEVAL
+        b.escape_and_append_with_quotes(std::meta::identifier_of(mem));
+#else
         constexpr auto quoted_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)));
         b.append_raw(quoted_key);
+#endif
         b.append(':');
 
         // Serialize the value
