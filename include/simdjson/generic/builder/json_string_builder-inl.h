@@ -27,6 +27,11 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_NEON 1
 #endif
 #endif
+#if defined(__loongarch_sx)
+#ifndef SIMDJSON_EXPERIMENTAL_HAS_LSX
+#define SIMDJSON_EXPERIMENTAL_HAS_LSX 1
+#endif
+#endif
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 #include <arm_neon.h>
 #ifdef _MSC_VER
@@ -39,6 +44,10 @@
 #include <intrin.h>
 #endif
 #endif
+#if SIMDJSON_EXPERIMENTAL_HAS_LSX
+#include <lsxintrin.h>
+#endif
+
 
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
@@ -254,6 +263,46 @@ find_next_json_quotable_character(const std::string_view view,
   }
 
   // Scalar fallback for remaining bytes
+  size_t current = len - remaining;
+  return find_next_json_quotable_character_scalar(view, current);
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_LSX
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  //SIMD constants for characters requiring escape
+  __m128i v34 = __lsx_vreplgr2vr_b(34);  // '"'
+  __m128i v92 = __lsx_vreplgr2vr_b(92);  // '\\'
+  __m128i v32 = __lsx_vreplgr2vr_b(32);  // control char threshold
+
+  while (remaining >= 16){
+    __m128i word = __lsx_vld(ptr, 0);
+
+    //Check for the quotable characters: '"', '\\', or control char (<32)
+    __m128i needs_escape = __lsx_vseq_b(word, v34);
+    needs_escape = __lsx_vor_v(needs_escape, __lsx_vseq_b(word, v92));
+    needs_escape = __lsx_vor_v(needs_escape, __lsx_vslt_bu(word, v32));
+
+    if (!__lsx_bz_v(needs_escape)){
+
+      //Found quotable character - extract exact byte position
+      uint64_t lo = __lsx_vpickve2gr_du(needs_escape,0);
+      uint64_t hi = __lsx_vpickve2gr_du(needs_escape,1);
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+      if ( lo != 0) {
+        return offset + __builtin_ctzll(lo) / 8;
+      } else {
+        return offset + 8 + __builtin_ctzll(hi) / 8;
+      }
+    }
+    ptr += 16;
+    remaining -= 16;
+  }
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
 }
