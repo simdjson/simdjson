@@ -374,6 +374,10 @@ builds to disable additional runtime testing and get the best performance. We
 disable these checks on a best-effort basis but the C++ standard does not provide
 a direct way to check for a release build.
 
+
+Warnign: Mixing debug and release simdjson code is unsafe: you either build all your code
+using simdjson in release mode or all of it in debug mode.
+
 Using the parsed JSON
 ---------------------
 
