@@ -191,28 +191,12 @@ find_next_json_quotable_character(const std::string_view view,
     needs_escape = vorrq_u8(needs_escape, vceqq_u8(word, v92));
     needs_escape = vorrq_u8(needs_escape, vcltq_u8(word, v32));
 
-    if (vmaxvq_u32(vreinterpretq_u32_u8(needs_escape)) != 0) {
-      // Found quotable character - extract exact byte position using ctz
-      uint64x2_t as64 = vreinterpretq_u64_u8(needs_escape);
-      uint64_t lo = vgetq_lane_u64(as64, 0);
-      uint64_t hi = vgetq_lane_u64(as64, 1);
+    const uint8x8_t res = vshrn_n_u16(vreinterpretq_u16_u8(needs_escape), 4);
+    const uint64_t mask = vget_lane_u64(vreinterpret_u64_u8(res), 0);
+    if(mask != 0) {
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-#ifdef _MSC_VER
-      unsigned long trailing_zero = 0;
-      if (lo != 0) {
-        _BitScanForward64(&trailing_zero, lo);
-        return offset + trailing_zero / 8;
-      } else {
-        _BitScanForward64(&trailing_zero, hi);
-        return offset + 8 + trailing_zero / 8;
-      }
-#else
-      if (lo != 0) {
-        return offset + __builtin_ctzll(lo) / 8;
-      } else {
-        return offset + 8 + __builtin_ctzll(hi) / 8;
-      }
-#endif
+      auto trailing_zero = trailing_zeroes(mask);
+      return offset + (trailing_zero >> 2);
     }
     ptr += 16;
     remaining -= 16;
