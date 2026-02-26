@@ -101,3 +101,10 @@ Getting Started Hacking
 
 An overview of simdjson's directory structure, with pointers to architecture and design
 considerations and other helpful notes, can be found at [HACKING.md](HACKING.md).
+
+
+
+AI Usage Policy
+---------------
+
+Please also review our [AI Usage Policy](AI_USAGE_POLICY.md).

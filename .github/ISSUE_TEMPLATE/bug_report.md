@@ -29,6 +29,9 @@ We accept the identification of an issue by a sanitizer or some checker tool (e.
 
 We recommend that you run your tests using different optimization levels. In particular, we recommend your run tests with the simdjson library and you code compiled in debug mode. The simdjson then sets the SIMDJSON_DEVELOPMENT_CHECKS macro to 1, and this triggers additional checks on your code and on the internals of the library. If possible, we recommend that you run tests with sanitizers (e.g., see [No more leaks with sanitize flags in gcc and clang](https://lemire.me/blog/2016/04/20/no-more-leaks-with-sanitize-flags-in-gcc-and-clang/)).  You can compile the library with sanitizers for debugging purposes (e.g., set SIMDJSON_SANITIZE to ON using CMake), but you should also turn on sanitizers on your own code. You may also use tools like valgrind or the commercial equivalent.
 
+Mixing debug and release simdjson code is unsafe: you either build all your code using simdjson in
+release mode or all of it in debug mode.
+
 Before reporting a bug, please ensure that you have read our documentation.
 
 **To Reproduce**

@@ -20,7 +20,7 @@ How to verify / test
 Please read before contributing:
 - CONTRIBUTING: https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md
 - HACKING: https://github.com/simdjson/simdjson/blob/master/HACKING.md
-
+- AI Usage Policy: https://github.com/simdjson/simdjson/blob/master/AI_USAGE_POLICY.md
 
 
 If you can, we recommend running our tests with the sanitizers turned on.
