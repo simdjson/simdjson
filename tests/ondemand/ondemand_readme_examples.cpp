@@ -764,7 +764,7 @@ bool basics_1() {
   TEST_START();
 
   ondemand::parser parser;
-  auto json = padded_string::load("twitter.json");
+  auto json = padded_string::load("twitter.json"); // this is a simdjson_result<padded_string>
   ondemand::document doc = parser.iterate(json); // load and parse a file
 
   simdjson_unused auto unused_doc = doc.get_object();

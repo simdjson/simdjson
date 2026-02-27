@@ -20,6 +20,26 @@ namespace twitter_tests {
     TEST_SUCCEED();
   }
 #if SIMDJSON_EXCEPTIONS
+  bool twitter_result_example() {
+    TEST_START();
+    simdjson_result<padded_string> json = padded_string::load(TWITTER_JSON);
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    for (ondemand::object tweet : doc["statuses"]) {
+      uint64_t         id            = tweet["id"];
+      std::string_view text          = tweet["text"];
+      std::string_view screen_name   = tweet["user"]["screen_name"];
+      uint64_t         retweets      = tweet["retweet_count"];
+      uint64_t         favorites     = tweet["favorite_count"];
+      (void) id;
+      (void) text;
+      (void) retweets;
+      (void) favorites;
+      (void) screen_name;
+    }
+    TEST_SUCCEED();
+  }
+
   bool twitter_example() {
     TEST_START();
     padded_string json;
@@ -182,6 +202,7 @@ namespace twitter_tests {
            twitter_default_profile() &&
            twitter_image_sizes() &&
 #if SIMDJSON_EXCEPTIONS
+           twitter_result_example() &&
            twitter_count_exception() &&
            twitter_example() &&
            twitter_default_profile_exception() &&
