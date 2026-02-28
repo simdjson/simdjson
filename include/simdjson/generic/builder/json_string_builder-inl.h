@@ -32,6 +32,11 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_LSX 1
 #endif
 #endif
+#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000
+#ifndef SIMDJSON_EXPERIMENTAL_HAS_RVV
+#define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
+#endif
+#endif
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 #include <arm_neon.h>
 #ifdef _MSC_VER
@@ -46,6 +51,9 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_LSX
 #include <lsxintrin.h>
+#endif
+#if SIMDJSON_EXPERIMENTAL_HAS_RVV
+#include <riscv_vector.h>
 #endif
 
 
@@ -289,6 +297,37 @@ find_next_json_quotable_character(const std::string_view view,
   }
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_RVV
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  while (remaining > 0) {
+    size_t vl = __riscv_vsetvl_e8m1(remaining);
+    vuint8m1_t word = __riscv_vle8_v_u8m1(ptr, vl);
+
+    // Check for quotable characters: '"', '\\', or control chars (< 32)
+    vbool8_t needs_escape = __riscv_vmseq(word, (uint8_t)34, vl);
+    needs_escape = __riscv_vmor(needs_escape,
+        __riscv_vmseq(word, (uint8_t)92, vl), vl);
+    needs_escape = __riscv_vmor(needs_escape,
+        __riscv_vmsltu(word, (uint8_t)32, vl), vl);
+
+    long first = __riscv_vfirst(needs_escape, vl);
+    if (first >= 0) {
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+      return offset + first;
+    }
+    ptr += vl;
+    remaining -= vl;
+  }
+
+  return len;
 }
 #else
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
