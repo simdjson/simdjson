@@ -198,14 +198,17 @@ public:
    *   simdjson::ondemand::document doc = parser.iterate(json);
    *   auto view = doc["deviceId"].get_string(true);
    *
-   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
-   *          time it parses a document or when it is destroyed.
+   * @returns An UTF-8 string. The string is stored in the parser when escaping was needed
+   *           and will be invalidated the next
+   *          time it parses a document or when it is destroyed. If no escaping was needed,
+   *          the string_view points directly into the original JSON buffer.
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 
   /**
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
+   * The data is stored into the provided std::string instance.
    *
    * The string is guaranteed to be valid UTF-8.
    *

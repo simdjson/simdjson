@@ -510,6 +510,38 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::parse
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_string(bool allow_replacement) noexcept {
+  // Optimization strategy:
+  // We expect that most strings do not have escape characters, and most are short.
+  // So we can quickly check for backslashes and if there are none, we can just return a string_view
+  // into the original JSON buffer. There is no need to copy or unescape.
+
+  // Fast path: check for backslash in the string
+  // It may seem that this function is odd in that it scans the string even if a
+  // backslash is found early. However, we expect that in most strings there will be no backslash,
+  // so we optimize for that case. The compiler knows to expect a full scan and it can optimize for it.
+  auto has_backslash_fast = [](std::string_view s) noexcept {
+    for(const char c : s) {
+      if(c == '\\') {
+        return true;
+      }
+    }
+    return false;
+  };
+  std::string_view string_with_quotes(reinterpret_cast<const char*>(peek_start()), peek_start_length());
+  if(string_with_quotes.front() != '"') {
+    return incorrect_type_error("Not a string");
+  }
+
+  if(!has_backslash_fast(string_with_quotes)) {
+    // Find the ending quote
+    size_t len = string_with_quotes.size();
+    while(string_with_quotes[len - 1] != '"') {
+      len--;
+    }
+    // At this point len is 2 or more
+    return std::string_view(string_with_quotes.data() + 1, len - 2);
+  }
+  // Slow path: we have a backslash, so we need to unescape
   return get_raw_json_string().unescape(json_iter(), allow_replacement);
 }
 template <typename string_type>
@@ -517,8 +549,7 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(strin
   std::string_view content;
   // Save the string buffer location so that we can restore it after get_string
   auto saved_string_buf_loc = _json_iter->string_buf_loc();
-  auto err = get_string(allow_replacement).get(content);
-  if (err) { return err; }
+  SIMDJSON_TRY(get_string(allow_replacement).get(content));
   receiver = content;
   // Restore the string buffer location, effectively discarding any temporary string storage
   _json_iter->string_buf_loc() = saved_string_buf_loc;
@@ -656,6 +687,8 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   return num;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_string(bool check_trailing, bool allow_replacement) noexcept {
+  // We could optimize for the no-escape case here as well, but root strings
+  // are less common so we do the simple thing for now.
   return get_root_raw_json_string(check_trailing).unescape(json_iter(), allow_replacement);
 }
 template <typename string_type>
@@ -663,8 +696,7 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(
   std::string_view content;
   // Save the string buffer location so that we can restore it after get_string
   auto saved_string_buf_loc = _json_iter->string_buf_loc();
-  auto err = get_root_string(check_trailing, allow_replacement).get(content);
-  if (err) { return err; }
+  SIMDJSON_TRY(get_root_string(check_trailing, allow_replacement).get(content));
   receiver = content;
   // Restore the string buffer location, effectively discarding any temporary string storage
   _json_iter->string_buf_loc() = saved_string_buf_loc;
