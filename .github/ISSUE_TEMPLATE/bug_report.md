@@ -58,6 +58,7 @@ We support up-to-date 64-bit ARM and x64 FreeBSD, macOS, Windows and Linux syste
 * We do not support unreleased or experimental compilers. If you encounter an issue with a
 pre-release version of a compiler, do not report it as a bug to simdjson. However, we always
 invite contributions either in the form an analysis or of a code contribution.
+* Vendors (e.g., Apple and Microsoft) stop supporting old systems. Once a compiler system is no longer supported by its vendor, we no longer support it. We will gladly accept code contributions, but we do not consider it a *bug* if you have issues with an obsolete compiler systems. This policy extends to obsolete standard libraries, linkers and other build tools. Please do not report it as an issue. If you cannot resolve the issue yourself, we encourage you to reach out to the vendor for legacy support.
 
 Under Windows, we support Visual Studio (both with LLVM and without). We do not support MinGW and other alternate compiler systems. Windows users should be aware that there [is a long-running bug with GCC under Windows](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412).
 
