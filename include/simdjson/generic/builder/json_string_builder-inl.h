@@ -285,13 +285,7 @@ find_next_json_quotable_character(const std::string_view view,
     if (mask != 0) {
       // Found quotable character - use trailing zero count to find position
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-#ifdef _MSC_VER
-      unsigned long trailing_zero = 0;
-      _BitScanForward(&trailing_zero, mask);
-      return offset + trailing_zero;
-#else
       return offset + trailing_zeroes(mask);
-#endif
     }
     ptr += 16;
     remaining -= 16;
