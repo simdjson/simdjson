@@ -41,6 +41,19 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 #endif// _MSC_VER
 }
 
+simdjson_inline int trailing_zeroes(uint64_t input_num) {
+#ifdef _MSC_VER
+  unsigned long trailing_zero = 0;
+  // Search the mask data from least significant bit (LSB)
+  // to most significant bit (MSB) for a set bit (1).
+  if (_BitScanForward64(&trailing_zero, input_num))
+    return (int)trailing_zero;
+  else    return 64;
+#else
+  return __builtin_ctzll(input_num);
+#endif// _MSC_VER
+}
+
 } // unnamed namespace
 } // namespace fallback
 } // namespace simdjson
