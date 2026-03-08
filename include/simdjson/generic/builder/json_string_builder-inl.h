@@ -37,6 +37,11 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
+#if defined(__PPC64__) || defined(_M_PPC64)
+#ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
+#define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
+#endif
+#endif
 #if SIMDJSON_EXPERIMENTAL_HAS_NEON
 #include <arm_neon.h>
 #ifdef _MSC_VER
@@ -54,6 +59,15 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_RVV
 #include <riscv_vector.h>
+#endif
+#if SIMDJSON_EXPERIMENTAL_HAS_PPC64
+#include <altivec.h>
+#ifdef bool
+#undef bool
+#endif
+#ifdef vector
+#undef vector
+#endif
 #endif
 
 
@@ -156,6 +170,35 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   }
   return _mm_movemask_epi8(running) != 0;
 }
+#elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
+  if (view.size() < 16) {
+    return simple_needs_escaping(view);
+  }
+  size_t i = 0;
+  __vector unsigned char running = vec_splats((unsigned char)0);
+  __vector unsigned char v34 = vec_splats((unsigned char)34);
+  __vector unsigned char v92 = vec_splats((unsigned char)92);
+  __vector unsigned char v32 = vec_splats((unsigned char)32);
+
+  for (; i + 15 < view.size(); i += 16) {
+    __vector unsigned char word =
+        vec_vsx_ld(0, reinterpret_cast<const unsigned char *>(view.data() + i));
+    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v34));
+    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v92));
+    running = vec_or(running,
+        (__vector unsigned char)vec_cmplt(word, v32));
+  }
+  if (i < view.size()) {
+    __vector unsigned char word = vec_vsx_ld(
+        0, reinterpret_cast<const unsigned char *>(view.data() + view.length() - 16));
+    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v34));
+    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v92));
+    running = vec_or(running,
+        (__vector unsigned char)vec_cmplt(word, v32));
+  }
+  return !vec_all_eq(running, vec_splats((unsigned char)0));
+}
 #else
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
   return simple_needs_escaping(view);
@@ -242,13 +285,7 @@ find_next_json_quotable_character(const std::string_view view,
     if (mask != 0) {
       // Found quotable character - use trailing zero count to find position
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-#ifdef _MSC_VER
-      unsigned long trailing_zero = 0;
-      _BitScanForward(&trailing_zero, mask);
-      return offset + trailing_zero;
-#else
-      return offset + __builtin_ctz(mask);
-#endif
+      return offset + trailing_zeroes(mask);
     }
     ptr += 16;
     remaining -= 16;
@@ -287,9 +324,9 @@ find_next_json_quotable_character(const std::string_view view,
       uint64_t hi = __lsx_vpickve2gr_du(needs_escape,1);
       size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
       if ( lo != 0) {
-        return offset + __builtin_ctzll(lo) / 8;
+        return offset + trailing_zeroes(lo) / 8;
       } else {
-        return offset + 8 + __builtin_ctzll(hi) / 8;
+        return offset + 8 + trailing_zeroes(hi) / 8;
       }
     }
     ptr += 16;
@@ -328,6 +365,56 @@ find_next_json_quotable_character(const std::string_view view,
   }
 
   return len;
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  // SIMD constants for characters requiring escape
+  __vector unsigned char v34 = vec_splats((unsigned char)34);  // '"'
+  __vector unsigned char v92 = vec_splats((unsigned char)92);  // '\\'
+  __vector unsigned char v32 = vec_splats((unsigned char)32);  // control char threshold
+
+  // Bitmask for vec_vbpermq to extract one bit per byte
+  const __vector unsigned char perm_mask = {0x78, 0x70, 0x68, 0x60, 0x58, 0x50,
+                                            0x48, 0x40, 0x38, 0x30, 0x28, 0x20,
+                                            0x18, 0x10, 0x08, 0x00};
+
+  while (remaining >= 16) {
+    __vector unsigned char word =
+        vec_vsx_ld(0, reinterpret_cast<const unsigned char *>(ptr));
+
+    // Check for quotable characters: '"', '\\', or control chars (< 32)
+    __vector unsigned char needs_escape =
+        (__vector unsigned char)vec_cmpeq(word, v34);
+    needs_escape = vec_or(needs_escape,
+        (__vector unsigned char)vec_cmpeq(word, v92));
+    needs_escape = vec_or(needs_escape,
+        (__vector unsigned char)vec_cmplt(word, v32));
+
+    __vector unsigned long long result =
+        (__vector unsigned long long)vec_vbpermq(needs_escape, perm_mask);
+#ifdef __LITTLE_ENDIAN__
+    unsigned int mask = static_cast<unsigned int>(result[1]);
+#else
+    unsigned int mask = static_cast<unsigned int>(result[0]);
+#endif
+    if (mask != 0) {
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+      return offset + __builtin_ctz(mask);
+    }
+    ptr += 16;
+    remaining -= 16;
+  }
+
+  // Scalar fallback for remaining bytes
+  size_t current = len - remaining;
+  return find_next_json_quotable_character_scalar(view, current);
 }
 #else
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
