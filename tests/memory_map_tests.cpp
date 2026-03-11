@@ -1,4 +1,5 @@
 #ifdef _WIN32
+#include <cstdlib>
 // This test is not supported on Windows because it relies on POSIX APIs like
 // mmap. Please run it on a POSIX-compliant system.
 int main() { return EXIT_SUCCESS; }
