@@ -300,7 +300,7 @@ public:
   /**
    * Destroy the padded memory map and release any resources.
    */
-  simdjson_inline ~padded_memory_map();
+  simdjson_inline ~padded_memory_map() noexcept;
 
   // lifetime of the view is tied to the memory map, so we can return a view
   // directly
@@ -323,6 +323,9 @@ public:
   simdjson_inline bool is_valid() const noexcept;
 
 private:
+  padded_memory_map() = delete;
+  padded_memory_map(const padded_memory_map &) = delete;
+  padded_memory_map &operator=(const padded_memory_map &) = delete;
   const char *data{nullptr};
   size_t size{0};
 };

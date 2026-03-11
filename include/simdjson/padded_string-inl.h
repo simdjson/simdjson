@@ -406,8 +406,10 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
     close(fd); // no longer needed after mapping
 }
 
-simdjson_inline padded_memory_map::~padded_memory_map() {
-  munmap((void *)data, size + simdjson::SIMDJSON_PADDING);
+simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
+  if (data != nullptr) {
+    munmap((void *)data, size + simdjson::SIMDJSON_PADDING);
+  }
 }
 
 
