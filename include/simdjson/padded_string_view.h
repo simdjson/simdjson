@@ -17,7 +17,7 @@ namespace simdjson {
  */
 class padded_string_view : public std::string_view {
 private:
-  size_t _capacity;
+  size_t _capacity{0};
 
 public:
   /** Create an empty padded_string_view. */
