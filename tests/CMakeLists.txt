@@ -11,6 +11,7 @@ link_libraries(simdjson)
 add_cpp_test(unicode_tests       LABELS dom acceptance per_implementation)
 add_cpp_test(minify_tests        LABELS other acceptance per_implementation)
 add_cpp_test(padded_string_tests LABELS other acceptance                   )
+add_cpp_test(memory_map_tests    LABELS other acceptance                   )
 add_cpp_test(prettify_tests      LABELS other acceptance per_implementation)
 add_cpp_test(fractured_json_tests LABELS other acceptance per_implementation)
 

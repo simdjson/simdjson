@@ -217,6 +217,20 @@ got full document at 29
 ```
 
 
+
+**Advanced feature:**
+On non-Windows systems, you can use memory-file mapping to create a `simdjson::padded_string_view`
+from a file on disk.
+
+```cpp
+// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping
+// under Windows at this time.
+simdjson::padded_memory_map map(myfilename);
+if (!map.is_valid()) { /* handle error */ }
+simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope
+ondemand::document doc = parser.iterate(view); // parse the JSON
+```
+
 Incomplete streams
 -----------
 

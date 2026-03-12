@@ -277,6 +277,62 @@ inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { ret
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
 #endif
 
+
+#ifndef _WIN32
+/**
+ * A class representing a memory-mapped file with padding.
+ * It is only available on non-Windows platforms, as Windows has different APIs for memory mapping.
+ */
+class padded_memory_map {
+public:
+  /**
+   * Create a new padded memory map for the given file.
+   * After creating the memory map, you can call view() to get a padded_string_view of the file content.
+   * The memory map will be automatically released when the padded_memory_map instance is destroyed.
+   * Note that the file content is not copied, so this is efficient for large files. However,
+   * the file must remain unchanged while the memory map is in use. In case of error (e.g., file not found,
+   * permission denied, etc.), the memory map will be invalid and view() will return an empty view.
+   * You can check if the memory map is valid by calling is_valid() before using view().
+   *
+   * @param filename the path to the file to memory-map.
+   */
+  simdjson_inline padded_memory_map(const char *filename) noexcept;
+  /**
+   * Destroy the padded memory map and release any resources.
+   */
+  simdjson_inline ~padded_memory_map() noexcept;
+
+  // lifetime of the view is tied to the memory map, so we can return a view
+  // directly
+  /**
+   * Get a view of the memory-mapped file. It always succeeds, but the view may be empty
+   * if the memory map is invalid (e.g., due to file not found, permission denied, etc.).
+   * You can check if the memory map is valid by calling is_valid() before using the view.
+   *
+   * Lifetime of the view is tied to the memory map, so the view should not be used after the
+   * padded_memory_map instance is destroyed.
+   *
+   * @return a padded_string_view representing the memory-mapped file, or an empty view if the memory map is invalid.
+   */
+  simdjson_inline simdjson::padded_string_view view() const noexcept simdjson_lifetime_bound;
+  /**
+   * Check if the memory map is valid.
+   *
+   * @return true if the memory map is valid, false otherwise.
+   */
+  simdjson_inline bool is_valid() const noexcept;
+
+private:
+  padded_memory_map() = delete;
+  padded_memory_map(const padded_memory_map &) = delete;
+  padded_memory_map &operator=(const padded_memory_map &) = delete;
+  const char *data{nullptr};
+  size_t size{0};
+};
+#endif // _WIN32
+
+
+
 } // namespace simdjson
 
 // This is deliberately outside of simdjson so that people get it without having to use the namespace

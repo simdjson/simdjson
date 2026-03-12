@@ -125,6 +125,22 @@ Further, they may use the AreFileApisANSI function to determine whether
 the filename is interpreted using the ANSI or the system default OEM
 codepage, and they may call SetFileApisToOEM accordingly.
 
+
+**Advanced feature:**
+On non-Windows systems, you can use memory-file mapping to create a `simdjson::padded_string_view`
+from a file on disk.
+
+```cpp
+// if the macro _WIN32 is defined, this will not work since we do not support Windows
+simdjson::padded_memory_map map(TWITTER_JSON);
+if (!map.is_valid()) { /* handle error */ }
+simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope
+ondemand::document doc = parser.iterate(view); // parse the JSON
+```
+
+Using memory-file mapping requires some care. The file should not be modified while you are
+accessing it.
+
 Using the Parsed JSON
 ---------------------
 

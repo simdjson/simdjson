@@ -10,6 +10,14 @@
 #include <climits>
 #include <cwchar>
 
+#ifndef _WIN32
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 namespace simdjson {
 namespace internal {
 
@@ -366,6 +374,57 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
   return true;
 }
 
+
+#ifndef _WIN32
+simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexcept {
+
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+      return; // file not found or cannot be opened, data will be nullptr
+    }
+    struct stat st;
+    if (fstat(fd, &st) == -1) {
+      close(fd);
+      return; // failed to get file size, data will be nullptr
+    }
+    size = (size_t)st.st_size;
+    size_t total_size = size + simdjson::SIMDJSON_PADDING;
+    void *anon_map =
+        mmap(NULL, total_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (anon_map == MAP_FAILED) {
+      close(fd);
+      return; // failed to create anonymous mapping, data will be nullptr
+    }
+    void *file_map =
+        mmap(anon_map, size, PROT_READ, MAP_SHARED | MAP_FIXED, fd, 0);
+    if (file_map == MAP_FAILED) {
+      munmap(anon_map, total_size);
+      close(fd);
+      return; // failed to mmap file, data will be nullptr
+    }
+    data = (const char *)file_map;
+    close(fd); // no longer needed after mapping
+}
+
+simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
+  if (data != nullptr) {
+    munmap((void *)data, size + simdjson::SIMDJSON_PADDING);
+  }
+}
+
+
+simdjson_inline simdjson::padded_string_view padded_memory_map::view() const noexcept simdjson_lifetime_bound {
+  if(!is_valid()) {
+    return simdjson::padded_string_view(); // return an empty view if mapping failed
+  }
+  return simdjson::padded_string_view(data, size, size + simdjson::SIMDJSON_PADDING);
+}
+
+simdjson_inline bool padded_memory_map::is_valid() const noexcept {
+  return data != nullptr;
+}
+#endif // _WIN32
+
 } // namespace simdjson
 
 inline simdjson::padded_string operator ""_padded(const char *str, size_t len) {
@@ -376,4 +435,5 @@ inline simdjson::padded_string operator ""_padded(const char8_t *str, size_t len
   return simdjson::padded_string(reinterpret_cast<const char *>(str), len);
 }
 #endif
+
 #endif // SIMDJSON_PADDED_STRING_INL_H
