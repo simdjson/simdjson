@@ -33,6 +33,9 @@ compiles *all* the implementations into the executable. On Intel, it will includ
 (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is  unnecessary, and on PPC
 it will include 2 (ppc64 and fallback).
 
+On Loongson processors, LASX runtime dispatching is only enabled on GCC 15+, not on LLVM or older versions of GCC.
+Thus unless you compile specifically for LASX or use GCC 15+, you will not benefit from LASX support.
+
 If you know more about where you're going to run and want to save the space, you can disable any of
 these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is ICELAKE, HASWELL,
 WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).

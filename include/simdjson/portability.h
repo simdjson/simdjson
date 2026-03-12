@@ -66,6 +66,25 @@ using std::size_t;
   #define SIMDJSON_IS_LASX 1 // We can always run both
 #elif defined(__loongarch_sx)
   #define SIMDJSON_IS_LSX 1
+
+// Adjust for runtime dispatching support.
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)
+#if __GNUC__ > 15 || (__GNUC__ == 15 && __GNUC_MINOR__ >= 0)
+  // We are ok, we will support runtime dispatch for LASX.
+#else
+  // We disable runtime dispatch for LASX, which means that we will not be able to use LASX
+  // even if it is supported by the hardware.
+  // Loongson users should update to GCC 15 or better.
+  #define SIMDJSON_IMPLEMENTATION_LASX 0
+#endif
+#else
+  // We are not using GCC, so we assume that we can support runtime dispatch for LASX.
+  // https://godbolt.org/z/jcMnrjYhs
+  #define SIMDJSON_IMPLEMENTATION_LASX 0
+#endif
+
+
+
 #endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #define SIMDJSON_IS_PPC64 1

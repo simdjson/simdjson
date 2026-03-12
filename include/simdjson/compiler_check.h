@@ -119,5 +119,4 @@
 #define SIMDJSON_CONSTEVAL 0
 #endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // !defined(SIMDJSON_CONSTEVAL)
-
 #endif // SIMDJSON_COMPILER_CHECK_H
