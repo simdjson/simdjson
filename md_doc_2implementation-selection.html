@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -119,6 +119,7 @@ Overview</h1>
 <li>fallback: A generic implementation that runs on any 64-bit processor.</li>
 </ul>
 <p>In many cases, you don't know where your compiled binary is going to run, so simdjson automatically compiles <em>all</em> the implementations into the executable. On Intel, it will include 4 implementations (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is unnecessary, and on PPC it will include 2 (ppc64 and fallback).</p>
+<p>On Loongson processors, LASX runtime dispatching is only enabled on GCC 15+, not on LLVM or older versions of GCC. Thus unless you compile specifically for LASX or use GCC 15+, you will not benefit from LASX support.</p>
 <p>If you know more about where you're going to run and want to save the space, you can disable any of these implementations at compile time with <code>-DSIMDJSON_IMPLEMENTATION_X=0</code> (where X is ICELAKE, HASWELL, WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).</p>
 <p>The simdjson library automatically sets header flags for each implementation as it compiles; there is no need to set architecture-specific flags yourself (e.g., <code>-mavx2</code>, <code>/AVX2</code> or <code>-march=haswell</code>), and it may even break runtime dispatch and your binaries will fail to run on older processors. <em>Note:</em> for POWER9 processors make sure you compile it with <code>-mcpu=power9</code> and <code>-mtune=power9</code> to get maximum performance.</p>
 <h1><a class="anchor" id="autotoc_md106"></a>

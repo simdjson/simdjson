@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -159,6 +159,15 @@ The Basics: Loading and Parsing JSON Documents using the DOM front-end</h1>
 <p>For best performance, a <code>parser</code> instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. <a class="el" href="md_doc_2performance.html">See our performance notes for details</a>.</p>
 <p>If you need a lower-level interface, you may call the function <code>parser.parse(const char * p, size_t l)</code> on a pointer <code>p</code> while specifying the length of your input <code>l</code> in bytes.</p>
 <p><em>Windows-specific</em>: Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001). This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
+<p><b>Advanced feature:</b> On non-Windows systems, you can use memory-file mapping to create a <code><a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">simdjson::padded_string_view</a></code> from a file on disk.</p>
+<div class="fragment"><div class="line"><span class="comment">// if the macro _WIN32 is defined, this will not work since we do not support Windows</span></div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a> map(TWITTER_JSON);</div>
+<div class="line"><span class="keywordflow">if</span> (!map.is_valid()) { <span class="comment">/* handle error */</span> }</div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> view = map.view(); <span class="comment">// view is usable while padded_memory_map is in scope</span></div>
+<div class="line">ondemand::document doc = parser.iterate(view); <span class="comment">// parse the JSON</span></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a></div><div class="ttdoc">A class representing a memory-mapped file with padding.</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00286">padded_string.h:286</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00018">padded_string_view.h:18</a></div></div>
+</div><!-- fragment --><p>Using memory-file mapping requires some care. The file should not be modified while you are accessing it.</p>
 <h1><a class="anchor" id="autotoc_md88"></a>
 Using the Parsed JSON</h1>
 <p>Once you have an element, you can navigate it with idiomatic C++ iterators, operators and casts.</p>
@@ -173,7 +182,7 @@ Using the Parsed JSON</h1>
 <div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span> EXIT_FAILURE; }</div>
 <div class="line">std::cout &lt;&lt; <span class="stringliteral">&quot;I parsed &quot;</span> &lt;&lt; value &lt;&lt; <span class="stringliteral">&quot; from &quot;</span> &lt;&lt; numberstring.<a class="code hl_function" href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">data</a>() &lt;&lt; std::endl;</div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
-<div class="ttc" id="astructsimdjson_1_1padded__string_html_aadd3bb268cbba43012c5d17a8c1ab7ef"><div class="ttname"><a href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">simdjson::padded_string::data</a></div><div class="ttdeci">const char * data() const noexcept</div><div class="ttdoc">The string data.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00125">padded_string-inl.h:125</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html_aadd3bb268cbba43012c5d17a8c1ab7ef"><div class="ttname"><a href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">simdjson::padded_string::data</a></div><div class="ttdeci">const char * data() const noexcept</div><div class="ttdoc">The string data.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00133">padded_string-inl.h:133</a></div></div>
 </div><!-- fragment --> The strings contain unescaped valid UTF-8 strings: no unmatched surrogate is allowed. Internally, numbers are stored as either 64-bit integers or 64-bit floating-point numbers. Thus it is possible to get the full 64-bit integer range (either signed or unsigned). By default, the string <code>-0</code> is parsed as the integer 0 as in Python or C++. If you set the macro <code>SIMDJSON_MINUS_ZERO_AS_FLOAT</code> to <code>1</code> when building simdjson, you can get that <code>-0</code> is mapped to <code>-0.0</code> as in JavaScript. You can get the desired effect by building simdjson with cmake setting the <code>SIMDJSON_MINUS_ZERO_AS_FLOAT</code> to on: <code>cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON</code>.</li>
 <li><b>Field Access:</b> To get the value of the "foo" field in an object, use <code>object["foo"]</code>.</li>
 <li><b>Array Iteration:</b> To iterate through an array, use <code>for (auto value : array) { ... }</code>. If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code></li>

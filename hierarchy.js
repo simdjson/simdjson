@@ -64,6 +64,7 @@ var hierarchy =
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object_iterator", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__iterator.html", null ],
     [ "simdjson::SIMDJSON_IMPLEMENTATION::open_container", "structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1open__container.html", null ],
+    [ "simdjson::padded_memory_map", "classsimdjson_1_1padded__memory__map.html", null ],
     [ "simdjson::padded_string", "structsimdjson_1_1padded__string.html", null ],
     [ "simdjson::padded_string_builder", "classsimdjson_1_1padded__string__builder.html", null ],
     [ "std::pair", null, [

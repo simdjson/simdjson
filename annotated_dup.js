@@ -35,6 +35,7 @@ var annotated_dup =
       [ "fractured_json_options", "structsimdjson_1_1fractured__json__options.html", "structsimdjson_1_1fractured__json__options" ],
       [ "has_custom_serialization", "structsimdjson_1_1has__custom__serialization.html", null ],
       [ "implementation", "classsimdjson_1_1implementation.html", "classsimdjson_1_1implementation" ],
+      [ "padded_memory_map", "classsimdjson_1_1padded__memory__map.html", "classsimdjson_1_1padded__memory__map" ],
       [ "padded_string", "structsimdjson_1_1padded__string.html", "structsimdjson_1_1padded__string" ],
       [ "padded_string_builder", "classsimdjson_1_1padded__string__builder.html", "classsimdjson_1_1padded__string__builder" ],
       [ "padded_string_view", "classsimdjson_1_1padded__string__view.html", "classsimdjson_1_1padded__string__view" ],

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.3.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -176,7 +176,16 @@ API</h1>
 <div class="line">}</div>
 <div class="line"><span class="comment">// Prints 1 2 3</span></div>
 </div><!-- fragment --><p>See <a href="basics.md#newline-delimited-json-ndjson-and-json-lines">basics.md</a> for an overview of the API.</p>
-<h1><a class="anchor" id="autotoc_md119"></a>
+<p><b>Advanced feature:</b> On non-Windows systems, you can use memory-file mapping to create a <code><a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">simdjson::padded_string_view</a></code> from a file on disk.</p>
+<div class="fragment"><div class="line"><span class="comment">// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping</span></div>
+<div class="line"><span class="comment">// under Windows at this time.</span></div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a> map(myfilename);</div>
+<div class="line"><span class="keywordflow">if</span> (!map.is_valid()) { <span class="comment">/* handle error */</span> }</div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> view = map.view(); <span class="comment">// view is usable while padded_memory_map is in scope</span></div>
+<div class="line">ondemand::document doc = parser.iterate(view); <span class="comment">// parse the JSON</span></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a></div><div class="ttdoc">A class representing a memory-mapped file with padding.</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00286">padded_string.h:286</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00018">padded_string_view.h:18</a></div></div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md119"></a>
 Use cases</h1>
 <p>From <a href="http://jsonlines.org/examples/">jsonlines.org</a>:</p>
 <ul>

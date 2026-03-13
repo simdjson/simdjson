@@ -268,9 +268,9 @@ var NAVTREEINDEX =
 "amalgamated_8h_source.html",
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afb7be23d4f1006d5eae234d8c8c8d286",
 "classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2",
-"json__string__builder_8h_source.html",
-"namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a351bcafefbbc80a6dadc1ea6c27a35e6",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object_01_4.html"
+"implementation__detection_8h_source.html",
+"namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d",
+"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
