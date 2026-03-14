@@ -610,4 +610,34 @@ static void parse_surrogate_pairs(State& state) {
 }
 BENCHMARK(parse_surrogate_pairs);
 
+static void bench_get_int64(State &state) {
+  ondemand::parser parser;
+  const std::string_view number = "123456789";
+  padded_string json{number};
+
+  for (simdjson_unused auto _ : state) {
+    auto doc = parser.iterate(json);
+    int64_t x = doc.get_int64();
+
+    benchmark::DoNotOptimize(x);
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(bench_get_int64);
+
+static void bench_get_double(State &state) {
+  ondemand::parser parser;
+  const std::string_view number = "123456789.0";
+  padded_string json{number};
+
+  for (simdjson_unused auto _ : state) {
+    auto doc = parser.iterate(json);
+    double d = doc.get_double();
+
+    benchmark::DoNotOptimize(d);
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK(bench_get_double);
+
 BENCHMARK_MAIN();
