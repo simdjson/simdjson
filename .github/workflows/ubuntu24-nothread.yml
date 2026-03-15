@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9) Without Threads
+name: Ubuntu 24.04 CI (GCC 13) Without Threads
 
 on: [push, pull_request]
 

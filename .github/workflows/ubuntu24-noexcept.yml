@@ -1,4 +1,4 @@
-name: Ubuntu 20.04 CI (GCC 9) without exceptions
+name: Ubuntu 24.04 CI (GCC 13) without exceptions
 
 on: [push, pull_request]
 
@@ -24,7 +24,7 @@ jobs:
           cd .. &&
           mkdir build &&
           cd build &&
-          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           make install  &&
