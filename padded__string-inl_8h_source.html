@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -528,7 +528,7 @@ $(document).ready(function(){initNavTree('padded__string-inl_8h_source.html','')
 <div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>      close(fd);</div>
 <div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to get file size, data will be nullptr</span></div>
 <div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>    }</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    size = (size_t)st.st_size;</div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(st.st_size);</div>
 <div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>    <span class="keywordtype">size_t</span> total_size = size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>;</div>
 <div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>    <span class="keywordtype">void</span> *anon_map =</div>
 <div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>        mmap(NULL, total_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);</div>
@@ -543,7 +543,7 @@ $(document).ready(function(){initNavTree('padded__string-inl_8h_source.html','')
 <div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>      close(fd);</div>
 <div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to mmap file, data will be nullptr</span></div>
 <div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>    }</div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>    data = (<span class="keyword">const</span> <span class="keywordtype">char</span> *)file_map;</div>
+<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>    data = <span class="keyword">static_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(file_map);</div>
 <div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>    close(fd); <span class="comment">// no longer needed after mapping</span></div>
 <div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span>}</div>
 </div>
@@ -551,7 +551,7 @@ $(document).ready(function(){initNavTree('padded__string-inl_8h_source.html','')
 <div class="foldopen" id="foldopen00409" data-start="{" data-end="}">
 <div class="line"><a id="l00409" name="l00409"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">  409</a></span>simdjson_inline <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">padded_memory_map::~padded_memory_map</a>() noexcept {</div>
 <div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>  <span class="keywordflow">if</span> (data != <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>    munmap((<span class="keywordtype">void</span> *)data, size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
+<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>    munmap(<span class="keyword">const_cast&lt;</span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(data), size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
 <div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>  }</div>
 <div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>}</div>
 </div>
