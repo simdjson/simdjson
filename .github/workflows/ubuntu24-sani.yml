@@ -1,9 +1,9 @@
-name: Ubuntu 20.04 CI (GCC 9) With Memory Sanitizer
+name: Ubuntu 24.04 CI (GCC 13) With Memory Sanitizer
 
 on: [push, pull_request]
 
 jobs:
-  ubuntu-build-address-sanitizier:
+  ubuntu-build-address-sanitizer:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')

@@ -387,7 +387,7 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
       close(fd);
       return; // failed to get file size, data will be nullptr
     }
-    size = (size_t)st.st_size;
+    size = static_cast<size_t>(st.st_size);
     size_t total_size = size + simdjson::SIMDJSON_PADDING;
     void *anon_map =
         mmap(NULL, total_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -402,13 +402,13 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
       close(fd);
       return; // failed to mmap file, data will be nullptr
     }
-    data = (const char *)file_map;
+    data = static_cast<const char *>(file_map);
     close(fd); // no longer needed after mapping
 }
 
 simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
   if (data != nullptr) {
-    munmap((void *)data, size + simdjson::SIMDJSON_PADDING);
+    munmap(const_cast<char *>(data), size + simdjson::SIMDJSON_PADDING);
   }
 }
 
