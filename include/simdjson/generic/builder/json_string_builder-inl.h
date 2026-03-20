@@ -32,7 +32,8 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_LSX 1
 #endif
 #endif
-#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000
+#if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000 &&            \
+    defined(__riscv_vector)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_RVV
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
