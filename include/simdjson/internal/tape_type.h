@@ -19,7 +19,8 @@ enum class tape_type {
   DOUBLE = 'd',
   TRUE_VALUE = 't',
   FALSE_VALUE = 'f',
-  NULL_VALUE = 'n'
+  NULL_VALUE = 'n',
+  BIGINT = 'Z'  // Big integer stored as string in string buffer
 }; // enum class tape_type
 
 } // namespace internal

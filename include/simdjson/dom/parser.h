@@ -610,6 +610,13 @@ public:
   inline bool dump_raw_tape(std::ostream &os) const noexcept;
 
 
+  /**
+   * When enabled, big integers (exceeding uint64 range) are stored as strings
+   * in the tape instead of returning BIGINT_ERROR. Default: false.
+   */
+  inline void number_as_string(bool enabled) noexcept { _number_as_string = enabled; }
+  inline bool number_as_string() const noexcept { return _number_as_string; }
+
 private:
   /**
    * The maximum document length this parser will automatically support.
@@ -617,6 +624,9 @@ private:
    * The parser will not be automatically allocated above this amount.
    */
   size_t _max_capacity;
+
+  /** Whether to store big integers as strings instead of returning BIGINT_ERROR */
+  bool _number_as_string{false};
 
   /**
    * The loaded buffer (reused each time load() is called)

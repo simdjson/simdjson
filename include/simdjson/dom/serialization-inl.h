@@ -460,6 +460,12 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
     case tape_type::STRING:
       format.string(iter.get_string_view());
       break;
+    case tape_type::BIGINT: {
+      // Big integer stored as string — output raw digits (no quotes)
+      auto sv = iter.get_string_view();
+      format.chars(sv.data(), sv.data() + sv.size());
+      break;
+    }
     case tape_type::INT64:
       format.number(iter.next_tape_value<int64_t>());
       iter.json_index++; // numbers take up 2 spots, so we need to increment

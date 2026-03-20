@@ -132,6 +132,7 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
     buf += 3;
     len -= 3;
   }
+  implementation->_number_as_string = _number_as_string;
   _error = implementation->parse(buf, len, provided_doc);
 
   if (_error) { return _error; }

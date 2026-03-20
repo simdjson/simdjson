@@ -141,6 +141,15 @@ inline bool document::dump_raw_tape(std::ostream &os) const noexcept {
     case 'r': // we start and end with the root node
       // should we be hitting the root node?
       return false;
+    case 'Z': // we have a big integer
+      os << "bigint ";
+      std::memcpy(&string_length, string_buf.get() + payload, sizeof(uint32_t));
+      os << std::string_view(
+        reinterpret_cast<const char *>(string_buf.get() + payload + sizeof(uint32_t)),
+        string_length
+      );
+      os << '\n';
+      break;
     default:
       return false;
     }

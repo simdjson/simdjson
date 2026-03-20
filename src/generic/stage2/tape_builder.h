@@ -172,7 +172,23 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_string(
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  return numberparsing::parse_number(value, tape);
+  error_code err = numberparsing::parse_number(value, tape);
+  if (simdjson_unlikely(err == BIGINT_ERROR &&
+      iter.dom_parser._number_as_string)) {
+    // Write big integer to string buffer using the same format as strings.
+    // Scan digits the same way parse_number does (skip optional '-', then digits).
+    const uint8_t *p = value;
+    if (*p == '-') p++;
+    while (numberparsing::is_digit(*p)) p++;
+    size_t len = size_t(p - value);
+    tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::BIGINT);
+    uint8_t *dst = current_string_buf_loc + sizeof(uint32_t);
+    memcpy(dst, value, len);
+    dst += len;
+    on_end_string(dst);
+    return SUCCESS;
+  }
+  return err;
 }
 
 simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_number(json_iterator &iter, const uint8_t *value) noexcept {

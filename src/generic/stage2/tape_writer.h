@@ -26,6 +26,9 @@ struct tape_writer {
   /** Write a double value to tape. */
   simdjson_inline void append_double(double value) noexcept;
 
+  /** Write a big integer (as string) to tape. src points to first digit, len is byte count. */
+  simdjson_inline void append_bigint(const uint8_t *src, size_t len, uint8_t *&string_buf) noexcept;
+
   /**
    * Append a tape entry (an 8-bit type,and 56 bits worth of value).
    */
@@ -107,6 +110,18 @@ simdjson_inline void tape_writer::append2(uint64_t val, T val2, internal::tape_t
 
 simdjson_inline void tape_writer::write(uint64_t &tape_loc, uint64_t val, internal::tape_type t) noexcept {
   tape_loc = val | ((uint64_t(char(t))) << 56);
+}
+
+simdjson_inline void tape_writer::append_bigint(const uint8_t *src, size_t len, uint8_t *&string_buf) noexcept {
+  // Write to string buffer: [4-byte LE length][digits][null]
+  uint32_t str_len = uint32_t(len);
+  memcpy(string_buf, &str_len, sizeof(uint32_t));
+  memcpy(string_buf + sizeof(uint32_t), src, len);
+  string_buf[sizeof(uint32_t) + len] = 0;
+  // Tape entry: offset into string buffer
+  // The caller must set the offset relative to doc.string_buf base
+  append(0, internal::tape_type::BIGINT); // placeholder offset, caller patches
+  string_buf += sizeof(uint32_t) + len + 1;
 }
 
 } // namespace stage2

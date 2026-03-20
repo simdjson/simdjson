@@ -168,6 +168,23 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to `1` when building simdjson, you can get that `-0` is mapped to `-0.0`
   as in JavaScript. You can get the desired effect by building simdjson with cmake setting the
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to on: `cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON`.
+* **Big Integer Support (opt-in):** By default, integers that exceed the 64-bit range cause parsing to fail with `BIGINT_ERROR`. You can opt in to big integer support so that these numbers are stored as raw digit strings on the tape instead:
+  ```cpp
+  simdjson::dom::parser parser;
+  parser.number_as_string(true); // opt-in, default false
+  simdjson::dom::element doc;
+  auto error = parser.parse("[1, 123456789012345678901]"_padded).get(doc);
+  if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+  for (simdjson::dom::element elem : doc) {
+    if (elem.is_bigint()) {
+      std::string_view digits;
+      error = elem.get_bigint().get(digits);
+      if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+      std::cout << "big integer: " << digits << std::endl;
+    }
+  }
+  ```
+  When enabled, big integers have type `element_type::BIGINT`. Calling `get_int64()`, `get_uint64()`, or `get_double()` on a big integer returns `INCORRECT_TYPE`. Normal numbers (int64, uint64, double) are unaffected.
 * **Field Access:** To get the value of the "foo" field in an object, use `object["foo"]`.
 * **Array Iteration:** To iterate through an array, use `for (auto value : array) { ... }`. If you
   know the type of the value, you can cast it right there, too! `for (double value : array) { ... }`
@@ -180,7 +197,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
 * **Array and Object size** Given an array or an object, you can get its size (number of elements or keys)
   with the `size()` method.
 * **Checking an Element Type:** You can check an element's type with `element.type()`. It
-  returns an `element_type` with values such as `simdjson::dom::element_type::ARRAY`, `simdjson::dom::element_type::OBJECT`, `simdjson::dom::element_type::INT64`,  `simdjson::dom::element_type::UINT64`,`simdjson::dom::element_type::DOUBLE`, `simdjson::dom::element_type::STRING`, `simdjson::dom::element_type::BOOL` or, `simdjson::dom::element_type::NULL_VALUE`.
+  returns an `element_type` with values such as `simdjson::dom::element_type::ARRAY`, `simdjson::dom::element_type::OBJECT`, `simdjson::dom::element_type::INT64`,  `simdjson::dom::element_type::UINT64`,`simdjson::dom::element_type::DOUBLE`, `simdjson::dom::element_type::STRING`, `simdjson::dom::element_type::BOOL`, `simdjson::dom::element_type::NULL_VALUE` or, `simdjson::dom::element_type::BIGINT` (when big integer support is enabled).
 * **Output to streams and strings:** Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (`out << element`). You can also request the construction of a minified string version (`simdjson::minify(element)`) or a prettified string version (`simdjson::prettify(element)`). Numbers are serialized as 64-bit floating-point numbers (`double`).
 
 ### Examples

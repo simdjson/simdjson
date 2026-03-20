@@ -212,6 +212,12 @@ protected:
    */
   size_t _max_depth{0};
 
+public:
+  /** Whether to store big integers as strings instead of returning BIGINT_ERROR */
+  bool _number_as_string{false};
+
+protected:
+
   // Declaring these so that subclasses can use them to implement their constructors.
   simdjson_inline dom_parser_implementation() noexcept;
   simdjson_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;

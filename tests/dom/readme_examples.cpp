@@ -273,6 +273,9 @@ namespace treewalk_1 {
       case dom::element_type::NULL_VALUE:
         cout << "null" << endl;
         break;
+      case dom::element_type::BIGINT:
+        cout << element.get_bigint().value_unsafe() << endl;
+        break;
     }
   }
 

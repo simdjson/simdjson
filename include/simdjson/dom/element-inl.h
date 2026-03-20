@@ -81,6 +81,10 @@ simdjson_inline simdjson_result<bool> simdjson_result<dom::element>::get_bool() 
   if (error()) { return error(); }
   return first.get_bool();
 }
+simdjson_inline simdjson_result<std::string_view> simdjson_result<dom::element>::get_bigint() const noexcept {
+  if (error()) { return error(); }
+  return first.get_bigint();
+}
 
 simdjson_inline bool simdjson_result<dom::element>::is_array() const noexcept {
   return !error() && first.is_array();
@@ -109,6 +113,9 @@ simdjson_inline bool simdjson_result<dom::element>::is_bool() const noexcept {
 
 simdjson_inline bool simdjson_result<dom::element>::is_null() const noexcept {
   return !error() && first.is_null();
+}
+simdjson_inline bool simdjson_result<dom::element>::is_bigint() const noexcept {
+  return !error() && first.is_bigint();
 }
 
 simdjson_inline simdjson_result<dom::element> simdjson_result<dom::element>::operator[](std::string_view key) const noexcept {
@@ -217,6 +224,15 @@ inline simdjson_result<bool> element::get_bool() const noexcept {
     return false;
   }
   return INCORRECT_TYPE;
+}
+inline simdjson_result<std::string_view> element::get_bigint() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable());
+  switch (tape.tape_ref_type()) {
+    case internal::tape_type::BIGINT:
+      return tape.get_string_view();
+    default:
+      return INCORRECT_TYPE;
+  }
 }
 inline simdjson_result<const char *> element::get_c_str() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
@@ -360,6 +376,10 @@ inline bool element::is_null() const noexcept {
   return tape.is_null_on_tape();
 }
 
+inline bool element::is_bigint() const noexcept {
+  return tape.tape_ref_type() == internal::tape_type::BIGINT;
+}
+
 #if SIMDJSON_EXCEPTIONS
 
 inline element::operator bool() const noexcept(false) { return get<bool>(); }
@@ -492,6 +512,8 @@ inline std::ostream& operator<<(std::ostream& out, element_type type) {
       return out << "bool";
     case element_type::NULL_VALUE:
       return out << "null";
+    case element_type::BIGINT:
+      return out << "bigint";
     default:
       return out << "unexpected content!!!"; // abort() usage is forbidden in the library
   }

@@ -54,6 +54,9 @@ static void print_json(std::ostream& os, simdjson::dom::element element) noexcep
   case simdjson::dom::element_type::NULL_VALUE:
     os << "null" << endl;
     break;
+  case simdjson::dom::element_type::BIGINT:
+    os << element.get_bigint().value_unsafe() << endl;
+    break;
   }
 }
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {

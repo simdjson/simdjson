@@ -21,7 +21,8 @@ enum class element_type {
   DOUBLE = 'd',    ///< double: Any number with a "." or "e" that fits in double.
   STRING = '"',    ///< std::string_view
   BOOL = 't',      ///< bool
-  NULL_VALUE = 'n' ///< null
+  NULL_VALUE = 'n', ///< null
+  BIGINT = 'Z'     ///< std::string_view: big integer stored as raw digit string
 };
 
 /**
@@ -121,6 +122,14 @@ public:
   inline simdjson_result<bool> get_bool() const noexcept;
 
   /**
+   * Read this element as a big integer (raw digit string).
+   *
+   * @returns A string_view of the raw digits, or:
+   *          INCORRECT_TYPE if the JSON element is not a big integer.
+   */
+  inline simdjson_result<std::string_view> get_bigint() const noexcept;
+
+  /**
    * Whether this element is a json array.
    *
    * Equivalent to is<array>().
@@ -174,6 +183,11 @@ public:
    * Whether this element is a json `null`.
    */
   inline bool is_null() const noexcept;
+
+  /**
+   * Whether this element is a big integer (number exceeding 64-bit range).
+   */
+  inline bool is_bigint() const noexcept;
 
   /**
    * Tell whether the value can be cast to provided type (T).
@@ -533,6 +547,7 @@ public:
   simdjson_inline simdjson_result<uint64_t> get_uint64() const noexcept;
   simdjson_inline simdjson_result<double> get_double() const noexcept;
   simdjson_inline simdjson_result<bool> get_bool() const noexcept;
+  simdjson_inline simdjson_result<std::string_view> get_bigint() const noexcept;
 
   simdjson_inline bool is_array() const noexcept;
   simdjson_inline bool is_object() const noexcept;
@@ -543,6 +558,7 @@ public:
   simdjson_inline bool is_number() const noexcept;
   simdjson_inline bool is_bool() const noexcept;
   simdjson_inline bool is_null() const noexcept;
+  simdjson_inline bool is_bigint() const noexcept;
 
   simdjson_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
   simdjson_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
