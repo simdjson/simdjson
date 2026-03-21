@@ -65,6 +65,7 @@ Real-world usage
 - [GreptimeDB](https://github.com/GreptimeTeam/greptimedb)
 - [mamba](https://github.com/mamba-org/mamba)
 - [Ladybird Browser](https://ladybird.org)
+- [SereneDB](https://github.com/serenedb/serenedb)
 
 
 If you are planning to use simdjson in a product, please work from one of our releases.
