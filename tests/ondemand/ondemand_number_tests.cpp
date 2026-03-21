@@ -545,8 +545,111 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool get_int32_values() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    int32_t val;
+    padded_string docdata;
+
+    // Valid int32 values
+    docdata = "0"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_int32().get(val));
+    ASSERT_EQUAL(val, 0);
+
+    docdata = "42"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_int32().get(val));
+    ASSERT_EQUAL(val, 42);
+
+    docdata = "-1"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_int32().get(val));
+    ASSERT_EQUAL(val, -1);
+
+    docdata = "2147483647"_padded; // INT32_MAX
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_int32().get(val));
+    ASSERT_EQUAL(val, 2147483647);
+
+    docdata = "-2147483648"_padded; // INT32_MIN
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_int32().get(val));
+    ASSERT_EQUAL(val, -2147483648);
+
+    // Out of range
+    docdata = "2147483648"_padded; // INT32_MAX + 1
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_int32(), NUMBER_OUT_OF_RANGE);
+
+    docdata = "-2147483649"_padded; // INT32_MIN - 1
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_int32(), NUMBER_OUT_OF_RANGE);
+
+    docdata = "9999999999"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_int32(), NUMBER_OUT_OF_RANGE);
+
+    // Test via value path
+    auto json = R"({"x": 42})"_padded;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc["x"].get_int32().get(val));
+    ASSERT_EQUAL(val, 42);
+
+    TEST_SUCCEED();
+  }
+
+  bool get_uint32_values() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    uint32_t val;
+    padded_string docdata;
+
+    // Valid uint32 values
+    docdata = "0"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_uint32().get(val));
+    ASSERT_EQUAL(val, 0u);
+
+    docdata = "42"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_uint32().get(val));
+    ASSERT_EQUAL(val, 42u);
+
+    docdata = "4294967295"_padded; // UINT32_MAX
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_uint32().get(val));
+    ASSERT_EQUAL(val, 4294967295u);
+
+    // Out of range
+    docdata = "4294967296"_padded; // UINT32_MAX + 1
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_uint32(), NUMBER_OUT_OF_RANGE);
+
+    docdata = "9999999999"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_uint32(), NUMBER_OUT_OF_RANGE);
+
+    // Negative values should fail (get_uint64 will fail with INCORRECT_TYPE)
+    docdata = "-1"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_uint32(), INCORRECT_TYPE);
+
+    // Test via value path
+    auto json = R"({"x": 42})"_padded;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc["x"].get_uint32().get(val));
+    ASSERT_EQUAL(val, 42u);
+
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return minus_zero() &&
+    return get_int32_values() &&
+           get_uint32_values() &&
+           minus_zero() &&
            gigantic_big_int() &&
            big_int_not_zero() &&
            negative_big_int() &&
