@@ -884,6 +884,30 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool uint32_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        uint32_t x;
+        ASSERT_SUCCESS((*doc.begin()).get_uint32().get(x));
+        ASSERT_EQUAL(x,133);
+        TEST_SUCCEED();
+    }
+
+    bool int32_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        int32_t x;
+        ASSERT_SUCCESS((*doc.begin()).get_int32().get(x));
+        ASSERT_EQUAL(x,133);
+        TEST_SUCCEED();
+    }
+
     bool double_with_trailing() {
         TEST_START();
         auto json = R"( 133 badstuff )"_padded;
@@ -931,6 +955,8 @@ namespace document_stream_tests {
             string_with_trailing() &&
             uint64_with_trailing() &&
             int64_with_trailing() &&
+            uint32_with_trailing() &&
+            int32_with_trailing() &&
             bool_with_trailing() &&
             null_with_trailing() &&
             truncated_utf8() &&
