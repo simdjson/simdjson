@@ -92,13 +92,16 @@ add_library(simdjson ${SIMDJSON_SOURCES})
 add_library(simdjson::simdjson ALIAS simdjson)
 set(SIMDJSON_LIBRARIES simdjson)
 
+# Check for <bit> header compatibility
+include(CheckIncludeFileCXX)
+check_include_file_cxx(bit SIMDJSON_HAS_BIT_HEADER)
+
 # Enable precompiled headers for faster builds
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
-  target_precompile_headers(simdjson PRIVATE
+  set(SIMDJSON_PRECOMPILE_HEADERS
     <algorithm>
     <array>
     <atomic>
-    <bit>
     <cassert>
     <cctype>
     <cerrno>
@@ -111,6 +114,12 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
     <utility>
     <vector>
   )
+  
+  if(SIMDJSON_HAS_BIT_HEADER)
+    list(APPEND SIMDJSON_PRECOMPILE_HEADERS <bit>)
+  endif()
+
+  target_precompile_headers(simdjson PRIVATE ${SIMDJSON_PRECOMPILE_HEADERS})
 endif()
 
 if(SIMDJSON_BUILD_STATIC_LIB)
