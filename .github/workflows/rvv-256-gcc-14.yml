@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: |
         CC=riscv64-linux-gnu-gcc-14 CXX=riscv64-linux-gnu-g++-14 CFLAGS=-march=rv64gcv CXXFLAGS="${CFLAGS}" \
-        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -B build
         cmake --build build/ -j$(nproc) --config Release
     - name: Test VLEN=256
       run: |
@@ -30,7 +30,7 @@ jobs:
     - name: Build VLS
       run: |
         CC=riscv64-linux-gnu-gcc-14 CXX=riscv64-linux-gnu-g++-14 CFLAGS="-march=rv64gcv_zvl256b -mrvv-vector-bits=zvl" CXXFLAGS="${CFLAGS}" \
-        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build-vls
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -B build-vls
         cmake --build build-vls/ -j$(nproc) --config Release
     - name: Test VLEN=256 VLS
       run: |

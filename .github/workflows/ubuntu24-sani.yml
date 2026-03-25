@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir builddebug &&
           cd builddebug &&
-          cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j
   ubuntu-build-undefined-sanitizer:
@@ -36,6 +36,6 @@ jobs:
         run: |
           mkdir builddebugundefsani &&
           cd builddebugundefsani &&
-          cmake -DSIMDJSON_SANITIZE_UNDEFINED=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake -DSIMDJSON_SANITIZE_UNDEFINED=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j

@@ -18,6 +18,6 @@ jobs:
         run: |
           mkdir build &&
           cd build &&
-          CXX=clang++-13 cmake -DSIMDJSON_DEVELOPER_MODE=ON ..  &&
+          CXX=clang++-13 cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j

@@ -22,7 +22,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Configure
       run: |
-        cmake -DSIMDJSON_CXX_STANDARD=20 -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -B build
+        cmake -DSIMDJSON_CXX_STANDARD=20 -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -B build
     - name: Build Debug
       run: cmake --build build --config Debug --verbose
     - name: Build Release

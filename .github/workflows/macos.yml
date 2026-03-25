@@ -18,13 +18,13 @@ jobs:
         run: |
           mkdir builddebug &&
           cd builddebug &&
-          cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           cd .. &&
           mkdir build &&
           cd build &&
-          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           cmake --install . &&
@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir buildshared &&
           cd buildshared &&
-          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake  -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=destination -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           cmake --install . &&

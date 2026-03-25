@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir build &&
           cd build &&
-          CXX=g++-12 cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SANITIZE_THREADS=ON ..  &&
+          CXX=g++-12 cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SANITIZE_THREADS=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build . --target document_stream_tests  --target ondemand_document_stream_tests --target parse_many_test  &&
           ctest --output-on-failure  -R parse_many_test  &&
           ctest --output-on-failure  -R document_stream_tests

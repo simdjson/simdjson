@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: |
         CC=clang-18 CXX=clang++-18 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv_zvbb" CXXFLAGS="${CFLAGS}" \
-        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -B build
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -B build
         cmake --build build/ -j$(nproc) --config Release
     - name: Test VLEN=1024
       run: |

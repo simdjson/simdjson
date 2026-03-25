@@ -171,7 +171,7 @@ We recommend Visual Studio 2019 or better on a 64-bit system.")
 else()
   target_compile_options(
       simdjson-internal-flags INTERFACE
-      -Werror -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
+      -Wall -Wextra -Weffc++ -Wsign-compare -Wshadow -Wwrite-strings
       -Wpointer-arith -Winit-self -Wconversion -Wno-sign-conversion
   )
   if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)

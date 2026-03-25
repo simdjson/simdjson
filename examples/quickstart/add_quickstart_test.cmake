@@ -2,13 +2,6 @@
 function(add_quickstart_test TEST_NAME SOURCE_FILE)
   cmake_parse_arguments(PARSE_ARGV 2 ARGS "NO_EXCEPTIONS;NATIVE_ARCH" "" "CXX_STANDARD;LABELS")
 
-  # Standard compiler flags
-  if (MSVC)
-    list(APPEND QUICKSTART_FLAGS /WX)
-  else()
-    list(APPEND QUICKSTART_FLAGS -Werror)
-  endif()
-
   # Native architecture compiler flag
   if (ARGS_NATIVE_ARCH)
     if (MSVC)

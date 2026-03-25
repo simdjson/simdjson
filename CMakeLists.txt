@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.24)
 
 # Build performance optimizations
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile commands for faster IDE integration")

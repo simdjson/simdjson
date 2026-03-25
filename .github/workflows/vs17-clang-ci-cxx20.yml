@@ -21,7 +21,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Configure
       run: |
-        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -T ClangCL -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -B build
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -T ClangCL -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON -B build
     - name: Build
       run: cmake --build build --config ${{matrix.build_type}} --verbose
     - name: Run tests

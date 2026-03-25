@@ -18,13 +18,13 @@ jobs:
         run: |
           mkdir builddebug &&
           cd builddebug &&
-          cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           cd .. &&
           mkdir build &&
           cd build &&
-          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake  -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_EXCEPTIONS=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX:PATH=destination -DCMAKE_COMPILE_WARNING_AS_ERROR=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j   &&
           make install  &&
