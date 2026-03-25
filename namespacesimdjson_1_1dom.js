@@ -15,7 +15,8 @@ var namespacesimdjson_1_1dom =
       [ "DOUBLE", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229", null ],
       [ "STRING", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949", null ],
       [ "BOOL", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa97b2c144243b2b9d2c593ec268b62f5", null ],
-      [ "NULL_VALUE", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a", null ]
+      [ "NULL_VALUE", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a", null ],
+      [ "BIGINT", "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae", null ]
     ] ],
     [ "operator<<", "namespacesimdjson_1_1dom.html#a34e6f2a4920f4dcb683f5730f8d8601b", null ],
     [ "operator<<", "namespacesimdjson_1_1dom.html#abdab607221c423b08344548fa442a45a", null ],

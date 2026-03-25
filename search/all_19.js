@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['validate_20what_20you_20use_0',['IMPORTANT: Validate what you use',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#autotoc_md188',1,'']]],
+  ['validate_20what_20you_20use_0',['IMPORTANT: Validate what you use',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#autotoc_md189',1,'']]],
   ['validate_5funicode_1',['validate_unicode',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975',1,'simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder']]],
   ['validate_5futf8_2',['validate_utf8',['../classsimdjson_1_1implementation.html#aa3a7b818d56a54cca272191ec176f8f1',1,'simdjson::implementation::validate_utf8()'],['../namespacesimdjson.html#a04edabca6d128b8b31592e1e2e331ae0',1,'simdjson::validate_utf8(const std::string &amp;s) noexcept'],['../namespacesimdjson.html#a28a847c4b31fc804bec2987b171dbd07',1,'simdjson::validate_utf8(const std::string_view sv) noexcept'],['../namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1',1,'simdjson::validate_utf8(const char *buf, size_t len) noexcept']]],
   ['validated_20access_3',['validated access',['../md_doc_2compile__time__accessors.html#autotoc_md78',1,'Example 1: Validated Access'],['../md_doc_2compile__time__accessors.html#autotoc_md79',1,'Example 2: Non-Validated Access']]],

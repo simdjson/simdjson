@@ -21,7 +21,7 @@ var searchData=
   ['for_20objects_20and_20arrays_18',['Raw JSON string for objects and arrays',['../md_doc_2basics.html#autotoc_md37',1,'']]],
   ['for_20trailing_20content_19',['Checking for trailing content',['../md_doc_2basics.html#autotoc_md30',1,'']]],
   ['formal_20of_20the_20tape_20elements_20',['General formal of the tape elements',['../md_doc_2tape.html#autotoc_md161',1,'']]],
-  ['format_21',['format',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#autotoc_md196',1,'Format'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md177',1,'Format'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md181',1,'Format']]],
+  ['format_21',['format',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#autotoc_md197',1,'Format'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md178',1,'Format'],['../classsimdjson_1_1dom_1_1parser.html#autotoc_md182',1,'Format']]],
   ['formatted_20fractured_20json_22',['Pretty formatted (fractured JSON)',['../md_doc_2builder.html#autotoc_md53',1,'']]],
   ['fractured_20json_23',['Pretty formatted (fractured JSON)',['../md_doc_2builder.html#autotoc_md53',1,'']]],
   ['fractured_5fjson_24',['fractured_json',['../namespacesimdjson.html#a671be8d2bd2c26de0c137034254ad1bd',1,'simdjson::fractured_json(T x, const fractured_json_options &amp;options)'],['../namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f',1,'simdjson::fractured_json(T x)']]],

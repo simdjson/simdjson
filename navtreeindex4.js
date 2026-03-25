@@ -1,5 +1,12 @@
 var NAVTREEINDEX4 =
 {
+"namespacesimdjson.html#a598dd79ec46726de8a6d409ba1bae034":[13,0,0,56],
+"namespacesimdjson.html#a63b494af834917af13120dcd57719bdb":[13,0,0,32],
+"namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a":[13,0,0,40],
+"namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa":[13,0,0,36],
+"namespacesimdjson.html#a667605c4c36cfa45bf111d6c76d39284":[13,0,0,52],
+"namespacesimdjson.html#a671be8d2bd2c26de0c137034254ad1bd":[13,0,0,39],
+"namespacesimdjson.html#a687e6510cd2f94c7dc8a31a6db83d278":[13,0,0,54],
 "namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d":[13,0,0,64],
 "namespacesimdjson.html#a6f306690d6d088d80b0cc2717040b2d0":[13,0,0,45],
 "namespacesimdjson.html#a73aaf38a36c010a6c5421dbe747c5736":[13,0,0,51],
@@ -62,6 +69,7 @@ var NAVTREEINDEX4 =
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c":[13,0,0,1,7,2],
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949":[13,0,0,1,7,5],
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa6de7acf711860176ba606e9aa2b85d5f":[13,0,0,1,7,3],
+"namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae":[13,0,0,1,7,8],
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa8eee8e217391199668cbac89472ace53":[13,0,0,1,7,1],
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa97b2c144243b2b9d2c593ec268b62f5":[13,0,0,1,7,6],
 "namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a":[13,0,0,1,7,7],
@@ -241,13 +249,5 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[14,0,0,10,5],
 "structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[13,0,0,18,5],
 "structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[14,0,0,10,2],
-"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[13,0,0,18,2],
-"structsimdjson_1_1simdjson__result.html#abb562d9f25241605a9ca8e110259c2c4":[13,0,0,18,9],
-"structsimdjson_1_1simdjson__result.html#abb562d9f25241605a9ca8e110259c2c4":[14,0,0,10,9],
-"structsimdjson_1_1simdjson__result.html#aeb935568c37351a9ae907662f90d2f45":[13,0,0,18,8],
-"structsimdjson_1_1simdjson__result.html#aeb935568c37351a9ae907662f90d2f45":[14,0,0,10,8],
-"structsimdjson_1_1simdjson__result.html#afcce23c64894ec135fe8c2d255d2121b":[13,0,0,18,3],
-"structsimdjson_1_1simdjson__result.html#afcce23c64894ec135fe8c2d255d2121b":[14,0,0,10,3],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html":[14,0,0,15],
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array_01_4.html":[13,0,0,23]
+"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[13,0,0,18,2]
 };

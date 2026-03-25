@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.5.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -325,7 +325,7 @@ Consider the following example where a truncated document (&lt;tt&gt;{"key":"int
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a></div><div class="ttdoc">A forward-only stream of documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream_8h_source.html#l00072">document_stream.h:72</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html_a6c2a07e08213dc9a51754940942f9e69"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69">simdjson::dom::document_stream::truncated_bytes</a></div><div class="ttdeci">size_t truncated_bytes() const noexcept</div><div class="ttdoc">After iterating through the stream, this method returns the number of bytes that were not parsed at t...</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream-inl_8h_source.html#l00266">document_stream-inl.h:266</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a></div><div class="ttdoc">A persistent document parser.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00030">parser.h:30</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a5c658556dd9e9396e9ce44ba4b01f2d1"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00170">parser-inl.h:170</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a5c658556dd9e9396e9ce44ba4b01f2d1"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00171">parser-inl.h:171</a></div></div>
 </div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->

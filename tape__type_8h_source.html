@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.5.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -120,16 +120,18 @@ $(document).ready(function(){initNavTree('tape__type_8h_source.html',''); initRe
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>  <a class="code hl_enumvalue" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229">DOUBLE</a> = <span class="charliteral">&#39;d&#39;</span>,</div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>  TRUE_VALUE = <span class="charliteral">&#39;t&#39;</span>,</div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>  FALSE_VALUE = <span class="charliteral">&#39;f&#39;</span>,</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <a class="code hl_enumvalue" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a">NULL_VALUE</a> = <span class="charliteral">&#39;n&#39;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}; <span class="comment">// enum class tape_type</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>} <span class="comment">// namespace internal</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_INTERNAL_TAPE_TYPE_H</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>  <a class="code hl_enumvalue" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a">NULL_VALUE</a> = <span class="charliteral">&#39;n&#39;</span>,</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <a class="code hl_enumvalue" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae">BIGINT</a> = <span class="charliteral">&#39;Z&#39;</span>  <span class="comment">// Big integer stored as string in string buffer</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>}; <span class="comment">// enum class tape_type</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>} <span class="comment">// namespace internal</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_INTERNAL_TAPE_TYPE_H</span></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c">simdjson::dom::element_type::INT64</a></div><div class="ttdeci">@ INT64</div><div class="ttdoc">int64_t</div></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949">simdjson::dom::element_type::STRING</a></div><div class="ttdeci">@ STRING</div><div class="ttdoc">std::string_view</div></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aa6de7acf711860176ba606e9aa2b85d5f"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa6de7acf711860176ba606e9aa2b85d5f">simdjson::dom::element_type::UINT64</a></div><div class="ttdeci">@ UINT64</div><div class="ttdoc">uint64_t: any integer that fits in uint64_t but not int64_t</div></div>
+<div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae">simdjson::dom::element_type::BIGINT</a></div><div class="ttdeci">@ BIGINT</div><div class="ttdoc">std::string_view: big integer stored as raw digit string</div></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a">simdjson::dom::element_type::NULL_VALUE</a></div><div class="ttdeci">@ NULL_VALUE</div><div class="ttdoc">null</div></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229">simdjson::dom::element_type::DOUBLE</a></div><div class="ttdeci">@ DOUBLE</div><div class="ttdoc">double: Any number with a &quot;.&quot; or &quot;e&quot; that fits in double.</div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>

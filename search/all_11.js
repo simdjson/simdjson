@@ -6,7 +6,7 @@ var searchData=
   ['ndjson_20and_20json_20lines_3',['Newline-Delimited JSON (ndjson) and JSON lines',['../md_doc_2basics.html#autotoc_md32',1,'']]],
   ['newline_20delimited_20json_20ndjson_20and_20json_20lines_4',['Newline-Delimited JSON (ndjson) and JSON lines',['../md_doc_2basics.html#autotoc_md32',1,'']]],
   ['no_5fsuch_5ffield_5',['NO_SUCH_FIELD',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a4a2c71f8eca438b3f0553a2811bdab9a',1,'simdjson']]],
-  ['node_6',['Root node',['../md_doc_2tape.html#autotoc_md164',1,'']]],
+  ['node_6',['Root node',['../md_doc_2tape.html#autotoc_md165',1,'']]],
   ['non_20validated_20access_7',['Example 2: Non-Validated Access',['../md_doc_2compile__time__accessors.html#autotoc_md79',1,'']]],
   ['notes_8',['Performance Notes',['../md_doc_2performance.html',1,'']]],
   ['null_9',['null',['../namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330a37a6259cc0c1dae299a7866489dff0bd',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand']]],
@@ -15,9 +15,10 @@ var searchData=
   ['number_12',['number',['../namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number'],['../structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::number']]],
   ['number_20parsing_13',['Number parsing',['../md_doc_2performance.html#autotoc_md154',1,'']]],
   ['number_20types_14',['Dynamic Number Types',['../md_doc_2basics.html#autotoc_md34',1,'']]],
-  ['number_5ferror_15',['NUMBER_ERROR',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8',1,'simdjson']]],
-  ['number_5fof_5fslots_16',['number_of_slots',['../classsimdjson_1_1dom_1_1array.html#a26e66312190e016c22093292974490ff',1,'simdjson::dom::array']]],
-  ['number_5fout_5fof_5frange_17',['NUMBER_OUT_OF_RANGE',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8c779dcc8fb73a4eb8891af3ef65eebb',1,'simdjson']]],
-  ['number_5ftype_18',['number_type',['../namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a6a2b39df6a1ac51d9fbb7b39a1fcf89c',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand']]],
-  ['numbers_20inside_20strings_19',['Parsing numbers inside strings',['../md_doc_2basics.html#autotoc_md33',1,'']]]
+  ['number_5fas_5fstring_15',['number_as_string',['../classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd',1,'simdjson::dom::parser']]],
+  ['number_5ferror_16',['NUMBER_ERROR',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9adfcabbbd1ddb0843a0f320e062866ae8',1,'simdjson']]],
+  ['number_5fof_5fslots_17',['number_of_slots',['../classsimdjson_1_1dom_1_1array.html#a26e66312190e016c22093292974490ff',1,'simdjson::dom::array']]],
+  ['number_5fout_5fof_5frange_18',['NUMBER_OUT_OF_RANGE',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a8c779dcc8fb73a4eb8891af3ef65eebb',1,'simdjson']]],
+  ['number_5ftype_19',['number_type',['../namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#a6a2b39df6a1ac51d9fbb7b39a1fcf89c',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand']]],
+  ['numbers_20inside_20strings_20',['Parsing numbers inside strings',['../md_doc_2basics.html#autotoc_md33',1,'']]]
 ];

@@ -10,6 +10,7 @@ var classsimdjson_1_1dom_1_1parser =
     [ "load_many", "classsimdjson_1_1dom_1_1parser.html#a8d839fa94a8a800814164f225d987d0a", null ],
     [ "max_capacity", "classsimdjson_1_1dom_1_1parser.html#a8bfde4193783adef9c5f12dfc4da3bc0", null ],
     [ "max_depth", "classsimdjson_1_1dom_1_1parser.html#ab090f596cd0b0c1d34576fd6aae88ee5", null ],
+    [ "number_as_string", "classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd", null ],
     [ "operator=", "classsimdjson_1_1dom_1_1parser.html#af5b61dda345cef1feba7c4529dfe0259", null ],
     [ "parse", "classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984", null ],
     [ "parse_into_document", "classsimdjson_1_1dom_1_1parser.html#a1afc4d3b429363b503a5605d66081e30", null ],

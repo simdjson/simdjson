@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.4.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.5.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -208,6 +208,11 @@ Integer and Double values</h1>
 </ul>
 <p>Performance consideration: We store numbers of the main tape because we believe that locality of reference is helpful for performance.</p>
 <h1><a class="anchor" id="autotoc_md164"></a>
+Big Integers</h1>
+<p>When a JSON integer exceeds the 64-bit range (both signed and unsigned), it is classified as a big integer. By default, parsing returns <code>BIGINT_ERROR</code>. When <code>parser.number_as_string(true)</code> is set, the raw digits are stored on the string tape using the same format as strings (4-byte little-endian length prefix, followed by the UTF-8 digit bytes, followed by a null terminator).</p>
+<p>A big integer is represented on the main tape as the 64-bit tape element &lsquo;('Z&rsquo; &lt;&lt; 56) + x<code>where the payload</code>x` is the location on the string tape of the null-terminated digit string.</p>
+<p>For example, the JSON value <code>99999999999999999999</code> would be stored as the string <code>"99999999999999999999"</code> on the string tape, with a &lsquo;'Z&rsquo;` tag on the main tape. Negative big integers include the leading minus sign.</p>
+<h1><a class="anchor" id="autotoc_md165"></a>
 Root node</h1>
 <p>Each JSON document will have two special 64-bit tape elements representing a root node, one at the beginning and one at the end.</p>
 <ul>
@@ -216,11 +221,11 @@ Root node</h1>
 </ul>
 <p>All of the parsed document is located between these two 64-bit tape elements.</p>
 <p>Hint: We can read the first tape element to determine the length of the tape.</p>
-<h1><a class="anchor" id="autotoc_md165"></a>
+<h1><a class="anchor" id="autotoc_md166"></a>
 Strings</h1>
 <p>We prefix the string data itself by a 32-bit header to be interpreted as a 32-bit integer. It indicates the length of the string. The actual string data starts at an offset of 4 bytes.</p>
 <p>We store string values using UTF-8 encoding with null termination on a separate tape. A string value is represented on the main tape as the 64-bit tape element &lsquo;(&rsquo;"' &lt;&lt; 56) + x<code>where the payload</code>x` is the location on the string tape of the null-terminated string.</p>
-<h1><a class="anchor" id="autotoc_md166"></a>
+<h1><a class="anchor" id="autotoc_md167"></a>
 Arrays</h1>
 <p>JSON arrays are represented using two 64-bit tape elements.</p>
 <ul>
@@ -229,7 +234,7 @@ Arrays</h1>
 </ul>
 <p>All the content of the array is located between these two tape elements, including arrays and objects.</p>
 <p>Performance consideration: We can skip the content of an array entirely by accessing the first 64-bit tape element, reading the payload and moving to the corresponding index on the tape.</p>
-<h1><a class="anchor" id="autotoc_md167"></a>
+<h1><a class="anchor" id="autotoc_md168"></a>
 Objects</h1>
 <p>JSON objects are represented using two 64-bit tape elements.</p>
 <ul>

@@ -4,7 +4,7 @@ var searchData=
   ['object_20iteration_1',['Object iteration',['../group__object.html',1,'']]],
   ['object_20model_20dom_20front_20end_2',['The Document-Object-Model (DOM) front-end',['../md_doc_2dom.html',1,'']]],
   ['object_5fiterator_3',['object_iterator',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__iterator.html',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object_iterator'],['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__iterator.html#a9fce67dabeb5dcccd16fa531febec666',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object_iterator::object_iterator()']]],
-  ['objects_4',['Objects',['../md_doc_2tape.html#autotoc_md167',1,'']]],
+  ['objects_4',['Objects',['../md_doc_2tape.html#autotoc_md168',1,'']]],
   ['objects_20and_20arrays_5',['Raw JSON string for objects and arrays',['../md_doc_2basics.html#autotoc_md37',1,'']]],
   ['of_20the_20dom_20api_6',['Best Use of the DOM API',['../md_doc_2dom.html#autotoc_md102',1,'']]],
   ['of_20the_20on_20demand_20approach_7',['of the on demand approach',['../md_doc_2ondemand__design.html#autotoc_md135',1,'Applicability of the On-Demand Approach'],['../md_doc_2ondemand__design.html#autotoc_md133',1,'Benefits of the On-Demand Approach'],['../md_doc_2ondemand__design.html#autotoc_md134',1,'Limitations of the On-Demand Approach']]],

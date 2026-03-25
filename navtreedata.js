@@ -229,10 +229,11 @@ var NAVTREE =
       [ "General formal of the tape elements", "md_doc_2tape.html#autotoc_md161", null ],
       [ "Simple JSON values", "md_doc_2tape.html#autotoc_md162", null ],
       [ "Integer and Double values", "md_doc_2tape.html#autotoc_md163", null ],
-      [ "Root node", "md_doc_2tape.html#autotoc_md164", null ],
-      [ "Strings", "md_doc_2tape.html#autotoc_md165", null ],
-      [ "Arrays", "md_doc_2tape.html#autotoc_md166", null ],
-      [ "Objects", "md_doc_2tape.html#autotoc_md167", null ]
+      [ "Big Integers", "md_doc_2tape.html#autotoc_md164", null ],
+      [ "Root node", "md_doc_2tape.html#autotoc_md165", null ],
+      [ "Strings", "md_doc_2tape.html#autotoc_md166", null ],
+      [ "Arrays", "md_doc_2tape.html#autotoc_md167", null ],
+      [ "Objects", "md_doc_2tape.html#autotoc_md168", null ]
     ] ],
     [ "Deprecated List", "deprecated.html", null ],
     [ "Topics", "topics.html", "topics" ],
@@ -267,10 +268,10 @@ var NAVTREEINDEX =
 [
 "amalgamated_8h_source.html",
 "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#afb7be23d4f1006d5eae234d8c8c8d286",
-"classsimdjson_1_1dom_1_1parser.html#aedf495a6e090929be23473e8a29f2fe2",
-"implementation__detection_8h_source.html",
-"namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d",
-"structsimdjson_1_1simdjson__result_3_01_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference_01_4.html"
+"classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd",
+"icelake_2numberparsing__defs_8h_source.html",
+"namespacesimdjson.html#a598dd79ec46726de8a6d409ba1bae034",
+"structsimdjson_1_1simdjson__result.html#abb562d9f25241605a9ca8e110259c2c4"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
