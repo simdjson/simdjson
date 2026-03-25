@@ -101,6 +101,8 @@ template<> simdjson_inline simdjson_result<number> value::get() noexcept { retur
 template<> simdjson_inline simdjson_result<double> value::get() noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> value::get() noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> value::get() noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<uint32_t> value::get() noexcept { return get_uint32(); }
+template<> simdjson_inline simdjson_result<int32_t> value::get() noexcept { return get_int32(); }
 template<> simdjson_inline simdjson_result<bool> value::get() noexcept { return get_bool(); }
 
 
@@ -112,6 +114,8 @@ template<> simdjson_warn_unused simdjson_inline error_code value::get(number& ou
 template<> simdjson_warn_unused simdjson_inline error_code value::get(double& out) noexcept { return get_double().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(uint64_t& out) noexcept { return get_uint64().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(int64_t& out) noexcept { return get_int64().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(uint32_t& out) noexcept { return get_uint32().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(int32_t& out) noexcept { return get_int32().get(out); }
 template<>  simdjson_warn_unused simdjson_inline error_code value::get(bool& out) noexcept { return get_bool().get(out); }
 
 #if SIMDJSON_EXCEPTIONS

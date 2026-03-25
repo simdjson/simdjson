@@ -178,6 +178,8 @@ template<> simdjson_inline simdjson_result<std::string_view> document::get() & n
 template<> simdjson_inline simdjson_result<double> document::get() & noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> document::get() & noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<uint32_t> document::get() & noexcept { return get_uint32(); }
+template<> simdjson_inline simdjson_result<int32_t> document::get() & noexcept { return get_int32(); }
 template<> simdjson_inline simdjson_result<bool> document::get() & noexcept { return get_bool(); }
 template<> simdjson_inline simdjson_result<value> document::get() & noexcept { return get_value(); }
 
@@ -188,6 +190,8 @@ template<> simdjson_warn_unused simdjson_inline error_code document::get(std::st
 template<> simdjson_warn_unused simdjson_inline error_code document::get(double& out) & noexcept { return get_double().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(uint64_t& out) & noexcept { return get_uint64().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(int64_t& out) & noexcept { return get_int64().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code document::get(uint32_t& out) & noexcept { return get_uint32().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code document::get(int32_t& out) & noexcept { return get_int32().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(bool& out) & noexcept { return get_bool().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(value& out) & noexcept { return get_value().get(out); }
 
@@ -782,6 +786,8 @@ template<> simdjson_inline simdjson_result<std::string_view> document_reference:
 template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
+template<> simdjson_inline simdjson_result<uint32_t> document_reference::get() & noexcept { return get_uint32(); }
+template<> simdjson_inline simdjson_result<int32_t> document_reference::get() & noexcept { return get_int32(); }
 template<> simdjson_inline simdjson_result<bool> document_reference::get() & noexcept { return get_bool(); }
 template<> simdjson_inline simdjson_result<value> document_reference::get() & noexcept { return get_value(); }
 #if SIMDJSON_EXCEPTIONS
