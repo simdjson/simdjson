@@ -349,6 +349,15 @@ inline padded_string padded_string_builder::convert() noexcept {
 }
 
 inline bool padded_string_builder::reserve(size_t additional) noexcept {
+  // [SECURITY] Guard against integer overflow on size + additional.
+  // Without this check, a wrapped `needed` value could slip past the
+  // capacity test below, causing allocate_padded_buffer() to allocate a
+  // far-too-small buffer. The subsequent memcpy in append() would then
+  // write `additional` bytes past the end of that buffer (heap overflow).
+  // This mirrors the overflow guard already present in padded_string::append().
+  if (simdjson_unlikely(additional > SIZE_MAX - size)) {
+    return false; // size + additional would overflow size_t
+  }
   size_t needed = size + additional;
   if (needed <= capacity) {
     return true;
@@ -357,9 +366,23 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
   // We are going to grow the capacity exponentially to avoid
   // repeated allocations.
   if (new_capacity < 4096) {
-    new_capacity *= 2;
+    // [SECURITY] Guard doubling overflow: if new_capacity > SIZE_MAX/2,
+    // multiplying by 2 wraps. Clamp to SIZE_MAX in that case; the
+    // subsequent allocate_padded_buffer will fail gracefully if the OS
+    // cannot satisfy the request.
+    if (simdjson_unlikely(new_capacity > SIZE_MAX / 2)) {
+      new_capacity = SIZE_MAX;
+    } else {
+      new_capacity *= 2;
+    }
   } else {
-    new_capacity += new_capacity/2; // grow by 1.5x
+    // [SECURITY] Guard 1.5x growth overflow: new_capacity + new_capacity/2
+    // can overflow when new_capacity > SIZE_MAX*2/3. Clamp to SIZE_MAX.
+    if (simdjson_unlikely(new_capacity > SIZE_MAX - new_capacity / 2)) {
+      new_capacity = SIZE_MAX;
+    } else {
+      new_capacity += new_capacity / 2; // grow by 1.5x
+    }
   }
   char *new_data = internal::allocate_padded_buffer(new_capacity);
   if (new_data == nullptr) {
