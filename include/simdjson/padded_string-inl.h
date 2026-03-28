@@ -168,10 +168,13 @@ inline padded_string::operator padded_string_view() const noexcept simdjson_life
 }
 
 inline simdjson_result<padded_string> padded_string::load(std::string_view filename) noexcept {
+  // std::string_view is not guaranteed to be null-terminated, but std::fopen requires
+  // a null-terminated C string. Construct a temporary std::string to ensure null-termination.
+  const std::string null_terminated_filename(filename);
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = std::fopen(filename.data(), "rb");
+  std::FILE *fp = std::fopen(null_terminated_filename.c_str(), "rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
@@ -223,10 +226,13 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
 #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
 inline simdjson_result<padded_string> padded_string::load(std::wstring_view filename) noexcept {
+  // std::wstring_view is not guaranteed to be null-terminated, but _wfopen requires
+  // a null-terminated wide C string. Construct a temporary std::wstring to ensure null-termination.
+  const std::wstring null_terminated_filename(filename);
   // Open the file using the wide characters
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = _wfopen(filename.data(), L"rb");
+  std::FILE *fp = _wfopen(null_terminated_filename.c_str(), L"rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
