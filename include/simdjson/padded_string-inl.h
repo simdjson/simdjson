@@ -355,7 +355,7 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
   // far-too-small buffer. The subsequent memcpy in append() would then
   // write `additional` bytes past the end of that buffer (heap overflow).
   // This mirrors the overflow guard already present in padded_string::append().
-  if (simdjson_unlikely(additional > SIZE_MAX - size)) {
+  if (simdjson_unlikely(size + additional < size)) {
     return false; // size + additional would overflow size_t
   }
   size_t needed = size + additional;
@@ -370,7 +370,7 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
     // multiplying by 2 wraps. Clamp to SIZE_MAX in that case; the
     // subsequent allocate_padded_buffer will fail gracefully if the OS
     // cannot satisfy the request.
-    if (simdjson_unlikely(new_capacity > SIZE_MAX / 2)) {
+    if (simdjson_unlikely(2 * new_capacity / new_capacity != 2 )) {
       new_capacity = SIZE_MAX;
     } else {
       new_capacity *= 2;
