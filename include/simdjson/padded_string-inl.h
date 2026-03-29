@@ -355,6 +355,10 @@ inline padded_string padded_string_builder::convert() noexcept {
 }
 
 inline bool padded_string_builder::reserve(size_t additional) noexcept {
+  // Guard 1: size + additional must not wrap around.
+  if (simdjson_unlikely(additional > SIZE_MAX - size)) {
+    return false; // overflow: cannot satisfy request
+  }
   size_t needed = size + additional;
   if (needed <= capacity) {
     return true;
@@ -363,9 +367,17 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
   // We are going to grow the capacity exponentially to avoid
   // repeated allocations.
   if (new_capacity < 4096) {
+    // Guard 2: doubling must not wrap around.
+    if (simdjson_unlikely(new_capacity > SIZE_MAX / 2)) {
+      return false; // overflow: fall back to exact allocation
+    }
     new_capacity *= 2;
   } else {
-    new_capacity += new_capacity/2; // grow by 1.5x
+    // Guard 3: 1.5x growth must not wrap around.
+    if (simdjson_unlikely(new_capacity > SIZE_MAX - new_capacity / 2)) {
+      return false; // overflow: fall back to exact allocation
+    }
+    new_capacity += new_capacity / 2; // grow by 1.5x
   }
   char *new_data = internal::allocate_padded_buffer(new_capacity);
   if (new_data == nullptr) {
