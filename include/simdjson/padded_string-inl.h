@@ -168,10 +168,13 @@ inline padded_string::operator padded_string_view() const noexcept simdjson_life
 }
 
 inline simdjson_result<padded_string> padded_string::load(std::string_view filename) noexcept {
+  // std::string_view is not guaranteed to be null-terminated, but std::fopen requires
+  // a null-terminated C string. Construct a temporary std::string to ensure null-termination.
+  const std::string null_terminated_filename(filename);
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = std::fopen(filename.data(), "rb");
+  std::FILE *fp = std::fopen(null_terminated_filename.c_str(), "rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
@@ -223,10 +226,13 @@ inline simdjson_result<padded_string> padded_string::load(std::string_view filen
 
 #if defined(_WIN32) && SIMDJSON_CPLUSPLUS17
 inline simdjson_result<padded_string> padded_string::load(std::wstring_view filename) noexcept {
+  // std::wstring_view is not guaranteed to be null-terminated, but _wfopen requires
+  // a null-terminated wide C string. Construct a temporary std::wstring to ensure null-termination.
+  const std::wstring null_terminated_filename(filename);
   // Open the file using the wide characters
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = _wfopen(filename.data(), L"rb");
+  std::FILE *fp = _wfopen(null_terminated_filename.c_str(), L"rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
@@ -349,14 +355,9 @@ inline padded_string padded_string_builder::convert() noexcept {
 }
 
 inline bool padded_string_builder::reserve(size_t additional) noexcept {
-  // [SECURITY] Guard against integer overflow on size + additional.
-  // Without this check, a wrapped `needed` value could slip past the
-  // capacity test below, causing allocate_padded_buffer() to allocate a
-  // far-too-small buffer. The subsequent memcpy in append() would then
-  // write `additional` bytes past the end of that buffer (heap overflow).
-  // This mirrors the overflow guard already present in padded_string::append().
-  if (simdjson_unlikely(size + additional < size)) {
-    return false; // size + additional would overflow size_t
+  // Guard 1: size + additional must not wrap around.
+  if (simdjson_unlikely(additional > SIZE_MAX - size)) {
+    return false; // overflow: cannot satisfy request
   }
   size_t needed = size + additional;
   if (needed <= capacity) {
@@ -366,23 +367,17 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
   // We are going to grow the capacity exponentially to avoid
   // repeated allocations.
   if (new_capacity < 4096) {
-    // [SECURITY] Guard doubling overflow: if new_capacity > SIZE_MAX/2,
-    // multiplying by 2 wraps. Clamp to SIZE_MAX in that case; the
-    // subsequent allocate_padded_buffer will fail gracefully if the OS
-    // cannot satisfy the request.
-    if (simdjson_unlikely(2 * new_capacity / new_capacity != 2 )) {
-      new_capacity = SIZE_MAX;
-    } else {
-      new_capacity *= 2;
+    // Guard 2: doubling must not wrap around.
+    if (simdjson_unlikely(new_capacity > SIZE_MAX / 2)) {
+      return false; // overflow: fall back to exact allocation
     }
+    new_capacity *= 2;
   } else {
-    // [SECURITY] Guard 1.5x growth overflow: new_capacity + new_capacity/2
-    // can overflow when new_capacity > SIZE_MAX*2/3. Clamp to SIZE_MAX.
+    // Guard 3: 1.5x growth must not wrap around.
     if (simdjson_unlikely(new_capacity > SIZE_MAX - new_capacity / 2)) {
-      new_capacity = SIZE_MAX;
-    } else {
-      new_capacity += new_capacity / 2; // grow by 1.5x
+      return false; // overflow: fall back to exact allocation
     }
+    new_capacity += new_capacity / 2; // grow by 1.5x
   }
   char *new_data = internal::allocate_padded_buffer(new_capacity);
   if (new_data == nullptr) {

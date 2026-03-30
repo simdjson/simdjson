@@ -76,9 +76,12 @@ if(SIMDJSON_DEVELOPMENT_CHECKS)
 endif()
 
 if(is_top_project)
+  option(SIMDJSON_INSTALL "Enable target install" ON)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)
   option(BUILD_SHARED_LIBS "Build simdjson as a shared library" OFF)
   option(SIMDJSON_SINGLEHEADER "Disable singleheader generation" ON)
+else()
+  option(SIMDJSON_INSTALL "Enable target install" ${BUILD_SHARED_LIBS})
 endif()
 
 include(cmake/handle-deprecations.cmake)
@@ -225,86 +228,88 @@ endif()
 
 # ---- Install rules ----
 
-include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
+if(SIMDJSON_INSTALL)
+    include(CMakePackageConfigHelpers)
+    include(GNUInstallDirs)
 
-if(SIMDJSON_SINGLEHEADER)
-  install(
-      FILES singleheader/simdjson.h
-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-      COMPONENT simdjson_Development
-  )
+    if(SIMDJSON_SINGLEHEADER)
+      install(
+          FILES singleheader/simdjson.h
+          DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+          COMPONENT simdjson_Development
+      )
+    endif()
+
+    install(
+        TARGETS simdjson
+        EXPORT simdjsonTargets
+        RUNTIME COMPONENT simdjson_Runtime
+        LIBRARY COMPONENT simdjson_Runtime
+        NAMELINK_COMPONENT simdjson_Development
+        ARCHIVE COMPONENT simdjson_Development
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    )
+    configure_file(cmake/simdjson-config.cmake.in simdjson-config.cmake @ONLY)
+
+    write_basic_package_version_file(
+        simdjson-config-version.cmake
+        COMPATIBILITY SameMinorVersion
+    )
+
+    set(
+        SIMDJSON_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
+        CACHE STRING "CMake package config location relative to the install prefix"
+    )
+    mark_as_advanced(SIMDJSON_INSTALL_CMAKEDIR)
+
+    install(
+        FILES
+        "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
+        "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
+        DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+        COMPONENT simdjson_Development
+    )
+
+    install(
+        EXPORT simdjsonTargets
+        NAMESPACE simdjson::
+        DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+        COMPONENT simdjson_Development
+    )
+
+    if(SIMDJSON_BUILD_STATIC_LIB)
+      install(
+          TARGETS simdjson_static
+          EXPORT simdjson_staticTargets
+          ARCHIVE COMPONENT simdjson_Development
+          INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+      )
+      install(
+          EXPORT simdjson_staticTargets
+          NAMESPACE simdjson::
+          DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
+          COMPONENT simdjson_Development
+      )
+    endif()
+
+    # pkg-config
+    include(cmake/JoinPaths.cmake)
+    join_paths(PKGCONFIG_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+    join_paths(PKGCONFIG_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}")
+
+    if(SIMDJSON_ENABLE_THREADS)
+      set(PKGCONFIG_CFLAGS "-DSIMDJSON_THREADS_ENABLED=1")
+      if(CMAKE_THREAD_LIBS_INIT)
+        set(PKGCONFIG_LIBS_PRIVATE "Libs.private: ${CMAKE_THREAD_LIBS_INIT}")
+      endif()
+    endif()
+
+    configure_file("simdjson.pc.in" "simdjson.pc" @ONLY)
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/simdjson.pc"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+    )
 endif()
-
-install(
-    TARGETS simdjson
-    EXPORT simdjsonTargets
-    RUNTIME COMPONENT simdjson_Runtime
-    LIBRARY COMPONENT simdjson_Runtime
-    NAMELINK_COMPONENT simdjson_Development
-    ARCHIVE COMPONENT simdjson_Development
-    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-)
-configure_file(cmake/simdjson-config.cmake.in simdjson-config.cmake @ONLY)
-
-write_basic_package_version_file(
-    simdjson-config-version.cmake
-    COMPATIBILITY SameMinorVersion
-)
-
-set(
-    SIMDJSON_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/simdjson"
-    CACHE STRING "CMake package config location relative to the install prefix"
-)
-mark_as_advanced(SIMDJSON_INSTALL_CMAKEDIR)
-
-install(
-    FILES
-    "${PROJECT_BINARY_DIR}/simdjson-config.cmake"
-    "${PROJECT_BINARY_DIR}/simdjson-config-version.cmake"
-    DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
-    COMPONENT simdjson_Development
-)
-
-install(
-    EXPORT simdjsonTargets
-    NAMESPACE simdjson::
-    DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
-    COMPONENT simdjson_Development
-)
-
-if(SIMDJSON_BUILD_STATIC_LIB)
-  install(
-      TARGETS simdjson_static
-      EXPORT simdjson_staticTargets
-      ARCHIVE COMPONENT simdjson_Development
-      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  )
-  install(
-      EXPORT simdjson_staticTargets
-      NAMESPACE simdjson::
-      DESTINATION "${SIMDJSON_INSTALL_CMAKEDIR}"
-      COMPONENT simdjson_Development
-  )
-endif()
-
-# pkg-config
-include(cmake/JoinPaths.cmake)
-join_paths(PKGCONFIG_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
-join_paths(PKGCONFIG_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}")
-
-if(SIMDJSON_ENABLE_THREADS)
-  set(PKGCONFIG_CFLAGS "-DSIMDJSON_THREADS_ENABLED=1")
-  if(CMAKE_THREAD_LIBS_INIT)
-    set(PKGCONFIG_LIBS_PRIVATE "Libs.private: ${CMAKE_THREAD_LIBS_INIT}")
-  endif()
-endif()
-
-configure_file("simdjson.pc.in" "simdjson.pc" @ONLY)
-install(
-    FILES "${CMAKE_CURRENT_BINARY_DIR}/simdjson.pc"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
-)
 
 #
 # CPack
