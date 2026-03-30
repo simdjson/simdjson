@@ -39,10 +39,16 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where capacity + 1 tape elements are
   // generated, see issue https://github.com/simdjson/simdjson/issues/345
-  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
+  uint64_t tape_capacity_64 = uint64_t(capacity) + 3;
+  if(tape_capacity_64 > SIZE_MAX) { return CAPACITY; }
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(size_t(tape_capacity_64), 64);
+  if(tape_capacity < tape_capacity_64) { return CAPACITY; }
   // a document with only zero-length strings... could have capacity/3 string
   // and we would need capacity/3 * 5 bytes on the string buffer
-  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * capacity / 3 + SIMDJSON_PADDING, 64);
+  uint64_t string_capacity_64 = (uint64_t(capacity) * 5) / 3 + SIMDJSON_PADDING;
+  if(string_capacity_64 > SIZE_MAX) { return CAPACITY; }
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(size_t(string_capacity_64), 64);
+  if(string_capacity < string_capacity_64) { return CAPACITY; }
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   if(!(string_buf && tape)) {
