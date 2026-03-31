@@ -35,20 +35,24 @@ inline error_code document::allocate(size_t capacity) noexcept {
   }
 
   // a pathological input like "[[[[..." would generate capacity tape elements, so
-  // need a capacity of at least capacity + 1, but it is also possible to do
+  // need a capacity of at least capacity + 3, but it is also possible to do
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
-  //where capacity + 1 tape elements are
+  // where capacity + 3 tape elements are
   // generated, see issue https://github.com/simdjson/simdjson/issues/345
-  uint64_t tape_capacity_64 = uint64_t(capacity) + 3;
-  if(tape_capacity_64 > SIZE_MAX) { return CAPACITY; }
-  size_t tape_capacity = SIMDJSON_ROUNDUP_N(size_t(tape_capacity_64), 64);
-  if(tape_capacity < tape_capacity_64) { return CAPACITY; }
-  // a document with only zero-length strings... could have capacity/3 string
-  // and we would need capacity/3 * 5 bytes on the string buffer
-  uint64_t string_capacity_64 = (uint64_t(capacity) * 5) / 3 + SIMDJSON_PADDING;
-  if(string_capacity_64 > SIZE_MAX) { return CAPACITY; }
-  size_t string_capacity = SIMDJSON_ROUNDUP_N(size_t(string_capacity_64), 64);
-  if(string_capacity < string_capacity_64) { return CAPACITY; }
+  // The ROUNDUP_N(x, 64) macro adds up to 63 bytes to its input.
+  // We need capacity + 3 + 63 <= SIZE_MAX.
+  if (simdjson_unlikely(capacity > SIZE_MAX - 66)) { return CAPACITY; }
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
+
+
+  // a document with only zero-length strings... could have capacity/3 strings
+  // and we would need capacity/3 * 5 bytes on the string buffer.
+  // We round up to 64 bytes.
+  uint64_t tmp = (uint64_t(capacity) * 5) / 3 + SIMDJSON_PADDING;
+  if (simdjson_unlikely(tmp > SIZE_MAX - 63)) { return CAPACITY; }
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(size_t(tmp), 64);
+
+
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   if(!(string_buf && tape)) {
