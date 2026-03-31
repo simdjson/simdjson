@@ -1,5 +1,9 @@
 var NAVTREEINDEX3 =
 {
+"icelake_2builder_8h_source.html":[15,0,0,0,6,4],
+"icelake_2end_8h_source.html":[15,0,0,0,6,5],
+"icelake_2implementation_8h_source.html":[15,0,0,0,6,6],
+"icelake_2intrinsics_8h_source.html":[15,0,0,0,6,7],
 "icelake_2numberparsing__defs_8h_source.html":[15,0,0,0,6,8],
 "icelake_2ondemand_8h_source.html":[15,0,0,0,6,9],
 "icelake_2simd_8h_source.html":[15,0,0,0,6,10],
@@ -245,9 +249,5 @@ var NAVTREEINDEX3 =
 "namespacesimdjson.html#a27d0ec4db7cb0197fa90096703a13e25":[13,0,0,35],
 "namespacesimdjson.html#a28a847c4b31fc804bec2987b171dbd07":[13,0,0,63],
 "namespacesimdjson.html#a2ad10bace3d523b188415e609640536a":[13,0,0,49],
-"namespacesimdjson.html#a2cda17221b852e5c398bad5bf350d270":[13,0,0,57],
-"namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27":[13,0,0,50],
-"namespacesimdjson.html#a4c998fcc6bf2bca2196b45a5c3e1967a":[13,0,0,59],
-"namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1":[13,0,0,61],
-"namespacesimdjson.html#a56e8e2fa6798b9e0da80bc51ae4a5f29":[13,0,0,37]
+"namespacesimdjson.html#a2cda17221b852e5c398bad5bf350d270":[13,0,0,57]
 };

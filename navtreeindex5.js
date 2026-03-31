@@ -1,5 +1,9 @@
 var NAVTREEINDEX5 =
 {
+"structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[14,0,0,10,5],
+"structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[13,0,0,18,5],
+"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[14,0,0,10,2],
+"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[13,0,0,18,2],
 "structsimdjson_1_1simdjson__result.html#abb562d9f25241605a9ca8e110259c2c4":[13,0,0,18,9],
 "structsimdjson_1_1simdjson__result.html#abb562d9f25241605a9ca8e110259c2c4":[14,0,0,10,9],
 "structsimdjson_1_1simdjson__result.html#aeb935568c37351a9ae907662f90d2f45":[13,0,0,18,8],

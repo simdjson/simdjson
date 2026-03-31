@@ -1,5 +1,9 @@
 var NAVTREEINDEX4 =
 {
+"namespacesimdjson.html#a43514fe76c3095e45f30a050a9551d27":[13,0,0,50],
+"namespacesimdjson.html#a4c998fcc6bf2bca2196b45a5c3e1967a":[13,0,0,59],
+"namespacesimdjson.html#a53546f3af0ed6840ffbeefcbefd305a1":[13,0,0,61],
+"namespacesimdjson.html#a56e8e2fa6798b9e0da80bc51ae4a5f29":[13,0,0,37],
 "namespacesimdjson.html#a598dd79ec46726de8a6d409ba1bae034":[13,0,0,56],
 "namespacesimdjson.html#a63b494af834917af13120dcd57719bdb":[13,0,0,32],
 "namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a":[13,0,0,40],
@@ -245,9 +249,5 @@ var NAVTREEINDEX4 =
 "structsimdjson_1_1simdjson__result.html#a67ba566f7561173cdcfe8ceb99ee1126":[14,0,0,10,6],
 "structsimdjson_1_1simdjson__result.html#a67ba566f7561173cdcfe8ceb99ee1126":[13,0,0,18,6],
 "structsimdjson_1_1simdjson__result.html#a815368a9e09fa675d0b6672595f5ad19":[14,0,0,10,4],
-"structsimdjson_1_1simdjson__result.html#a815368a9e09fa675d0b6672595f5ad19":[13,0,0,18,4],
-"structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[14,0,0,10,5],
-"structsimdjson_1_1simdjson__result.html#a86dbcba063713c0e284dbde9fae17568":[13,0,0,18,5],
-"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[14,0,0,10,2],
-"structsimdjson_1_1simdjson__result.html#ab0fafc6d63a14891788a9edaedff4b05":[13,0,0,18,2]
+"structsimdjson_1_1simdjson__result.html#a815368a9e09fa675d0b6672595f5ad19":[13,0,0,18,4]
 };
