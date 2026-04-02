@@ -326,7 +326,8 @@ using class_type = type_builder<meta_info...>::constructed_type;
 /**
  * @brief Variable template for constructing instances with values
  */
-template <typename T, auto... Vs> constexpr auto construct_from = T{Vs...};
+template <typename T, auto... Vs> constexpr T construct_from = T{Vs...};
+
 
 // in JSON, there are only a few whitespace characters that are allowed
 // outside of objects, arrays, strings, and numbers.
@@ -1107,16 +1108,11 @@ template <constevalutil::fixed_string json_str> consteval auto parse_json() {
                 "Only JSON objects and arrays are supported at the top level, this "
                 "limitation will be lifted in the future.");*/
 
-  constexpr auto result = json.front() == '['
-                              ? parse_json_array_impl(json)
-                              : parse_json_object_impl(json);
-  return [: result.first :];
-  /*
-  if(json.front() == '[') {
-      return [:parse_json_array_impl(json).first:];
-  } else if(json.front() == '{') {
-   //   return [:parse_json_object_impl(json).first:];
-  }*/
+  if constexpr (json.front() == '[') {
+    return [: parse_json_array_impl(json).first :];
+  } else {
+    return [: parse_json_object_impl(json).first :];
+  }
 }
 
 } // namespace compile_time

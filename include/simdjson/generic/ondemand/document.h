@@ -319,21 +319,21 @@ public:
    * @returns A signed 64-bit integer.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a 64-bit unsigned integer.
    */
-  simdjson_inline operator uint64_t() noexcept(false);
+  explicit simdjson_inline operator uint64_t() noexcept(false);
   /**
    * Cast this JSON value to a signed integer.
    *
    * @returns A signed 64-bit integer.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a 64-bit integer.
    */
-  simdjson_inline operator int64_t() noexcept(false);
+  explicit simdjson_inline operator int64_t() noexcept(false);
   /**
    * Cast this JSON value to a double.
    *
    * @returns A double.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a valid floating-point number.
    */
-  simdjson_inline operator double() noexcept(false);
+  explicit simdjson_inline operator double() noexcept(false);
   /**
    * Cast this JSON value to a string.
    *
@@ -343,7 +343,7 @@ public:
    *          time it parses a document or when it is destroyed.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
    */
-  simdjson_inline operator std::string_view() noexcept(false) simdjson_lifetime_bound;
+  explicit simdjson_inline operator std::string_view() noexcept(false) simdjson_lifetime_bound;
   /**
    * Cast this JSON value to a raw_json_string.
    *
@@ -352,14 +352,14 @@ public:
    * @returns A pointer to the raw JSON for the given string.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not a string.
    */
-  simdjson_inline operator raw_json_string() noexcept(false) simdjson_lifetime_bound;
+  explicit simdjson_inline operator raw_json_string() noexcept(false) simdjson_lifetime_bound;
   /**
    * Cast this JSON value to a bool.
    *
    * @returns A bool value.
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON value is not true or false.
    */
-  simdjson_inline operator bool() noexcept(false);
+  explicit simdjson_inline operator bool() noexcept(false);
   /**
    * Cast this JSON value to a value when the document is an object or an array.
    *
@@ -945,12 +945,12 @@ public:
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator array() & noexcept(false);
   simdjson_inline operator object() & noexcept(false);
-  simdjson_inline operator uint64_t() noexcept(false);
-  simdjson_inline operator int64_t() noexcept(false);
-  simdjson_inline operator double() noexcept(false);
-  simdjson_inline operator std::string_view() noexcept(false);
-  simdjson_inline operator raw_json_string() noexcept(false);
-  simdjson_inline operator bool() noexcept(false);
+  explicit simdjson_inline operator uint64_t() noexcept(false);
+  explicit simdjson_inline operator int64_t() noexcept(false);
+  explicit simdjson_inline operator double() noexcept(false);
+  explicit simdjson_inline operator std::string_view() noexcept(false);
+  explicit simdjson_inline operator raw_json_string() noexcept(false);
+  explicit simdjson_inline operator bool() noexcept(false);
   simdjson_inline operator value() noexcept(false);
 #endif
   simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
@@ -1030,12 +1030,12 @@ public:
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
-  simdjson_inline operator uint64_t() noexcept(false);
-  simdjson_inline operator int64_t() noexcept(false);
-  simdjson_inline operator double() noexcept(false);
-  simdjson_inline operator std::string_view() noexcept(false);
-  simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
-  simdjson_inline operator bool() noexcept(false);
+  explicit simdjson_inline operator uint64_t() noexcept(false);
+  explicit simdjson_inline operator int64_t() noexcept(false);
+  explicit simdjson_inline operator double() noexcept(false);
+  explicit simdjson_inline operator std::string_view() noexcept(false);
+  explicit simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
+  explicit simdjson_inline operator bool() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
@@ -1116,12 +1116,12 @@ public:
   explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
-  simdjson_inline operator uint64_t() noexcept(false);
-  simdjson_inline operator int64_t() noexcept(false);
-  simdjson_inline operator double() noexcept(false);
-  simdjson_inline operator std::string_view() noexcept(false);
-  simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
-  simdjson_inline operator bool() noexcept(false);
+  explicit simdjson_inline operator uint64_t() noexcept(false);
+  explicit simdjson_inline operator int64_t() noexcept(false);
+  explicit simdjson_inline operator double() noexcept(false);
+  explicit simdjson_inline operator std::string_view() noexcept(false);
+  explicit simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string() noexcept(false);
+  explicit simdjson_inline operator bool() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::value() noexcept(false);
 #endif
   simdjson_inline simdjson_result<size_t> count_elements() & noexcept;
