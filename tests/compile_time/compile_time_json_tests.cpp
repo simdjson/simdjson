@@ -666,7 +666,7 @@ bool test_array_of_objects_with_concept() {
 /**
  * Test: #embed support for external JSON files (C++26)
  */
-bool test_embed_twitter_json() {
+bool test_embed_example_config_json() {
     TEST_START();
 
     // C++26 #embed allows embedding files directly into the binary at compile time
@@ -718,7 +718,7 @@ bool run() {
            test_top_level_array_example() &&
            test_array_of_objects_with_concept()
 #ifdef TEST_EMBED_SUPPORTED
-           && test_embed_twitter_json()
+           && test_embed_example_config_json()
 #endif
 ;
 }
