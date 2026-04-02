@@ -505,7 +505,7 @@ simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   return is_valid;
 }
 
-simdjson_inline void string_builder::grow_buffer(size_t desired_capacity) {
+inline void string_builder::grow_buffer(size_t desired_capacity) {
   if (!is_valid) {
     return;
   }

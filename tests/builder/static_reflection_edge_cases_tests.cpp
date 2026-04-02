@@ -14,11 +14,11 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct EmptyValues {
-      std::string empty_string;
-      std::vector<int> empty_vector;
-      std::optional<int> null_optional;
-      std::unique_ptr<int> null_unique_ptr;
-      std::shared_ptr<std::string> null_shared_ptr;
+      std::string empty_string{};
+      std::vector<int> empty_vector{};
+      std::optional<int> null_optional{};
+      std::unique_ptr<int> null_unique_ptr{};
+      std::shared_ptr<std::string> null_shared_ptr{};
     };
 
     EmptyValues test;
@@ -56,11 +56,11 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct SpecialChars {
-      std::string quotes;
-      std::string backslashes;
-      std::string newlines;
-      std::string unicode;
-      char null_char;
+      std::string quotes{};
+      std::string backslashes{};
+      std::string newlines{};
+      std::string unicode{};
+      char null_char{};
     };
 
     SpecialChars test;
@@ -82,10 +82,10 @@ namespace builder_tests {
 
     // Test round-trip (excluding null char which has special handling)
     struct SpecialCharsNoNull {
-      std::string quotes;
-      std::string backslashes;
-      std::string newlines;
-      std::string unicode;
+      std::string quotes{};
+      std::string backslashes{};
+      std::string newlines{};
+      std::string unicode{};
     };
 
     SpecialCharsNoNull test_no_null;
@@ -157,15 +157,15 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct Inner {
-      int value;
-      std::string name;
+      int value{};
+      std::string name{};
     };
 
     struct Outer {
-      Inner inner_obj;
-      std::vector<Inner> inner_vector;
-      std::optional<Inner> optional_inner;
-      std::unique_ptr<Inner> unique_inner;
+      Inner inner_obj{};
+      std::vector<Inner> inner_vector{};
+      std::optional<Inner> optional_inner{};
+      std::unique_ptr<Inner> unique_inner{};
     };
 
     Outer test;

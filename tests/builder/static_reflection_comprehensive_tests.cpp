@@ -16,8 +16,8 @@ namespace builder_tests {
 #if SIMDJSON_STATIC_REFLECTION
   // Custom type for testing tag_invoke with extract_into
   struct Price {
-    double amount;
-    std::string currency;
+    double amount{};
+    std::string currency{};
 
     // Custom deserializer that applies currency conversion
     friend error_code tag_invoke(deserialize_tag,
@@ -46,17 +46,37 @@ namespace builder_tests {
       return SUCCESS;
     }
   };
-
+  struct Car {
+    std::string make{};
+    std::string model{};
+    int year{};
+    double price{};
+    bool electric{};
+  };
+  struct CarOpt {
+    std::string make;
+    std::string model;
+    int year;
+    double price;
+    std::optional<std::string> color;
+  };
+  struct CarColor {
+    std::string make;
+    std::string model;
+    int year;
+    double price;
+    std::string color;
+  };
   struct Product {
-    std::string name;
-    Price price;  // Custom deserializable type
-    int stock;
+    std::string name{};
+    Price price{};  // Custom deserializable type
+    int stock{};
   };
 
   // Another custom type for testing
   struct Dimensions {
-    double value;
-    std::string unit;
+    double value{};
+    std::string unit{};
 
     // Custom deserializer that converts to metric
     friend error_code tag_invoke(deserialize_tag,
@@ -88,6 +108,13 @@ namespace builder_tests {
     std::string id;
     Dimensions weight;
     Dimensions length;
+  };
+
+  struct Person {
+    std::string name;
+    int age;
+    std::optional<std::string> email;
+    std::optional<std::string> phone;
   };
 #endif
 
@@ -132,8 +159,8 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct StringTypes {
-      std::string string_val;
-      std::string_view string_view_val;
+      std::string string_val{};
+      std::string_view string_view_val{};
     };
 
     StringTypes test{"hello world", "test_view"};
@@ -159,10 +186,10 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct OptionalTypes {
-      std::optional<int> opt_int_with_value;
-      std::optional<std::string> opt_string_with_value;
-      std::optional<int> opt_int_null;
-      std::optional<std::string> opt_string_null;
+      std::optional<int> opt_int_with_value{};
+      std::optional<std::string> opt_string_with_value{};
+      std::optional<int> opt_int_null{};
+      std::optional<std::string> opt_string_null{};
     };
 
     OptionalTypes test;
@@ -200,11 +227,11 @@ namespace builder_tests {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
     struct SmartPointerTypes {
-      std::unique_ptr<int> unique_int_with_value;
-      std::shared_ptr<std::string> shared_string_with_value;
-      std::unique_ptr<bool> unique_bool_with_value;
-      std::unique_ptr<int> unique_int_null;
-      std::shared_ptr<std::string> shared_string_null;
+      std::unique_ptr<int> unique_int_with_value{};
+      std::shared_ptr<std::string> shared_string_with_value{};
+      std::unique_ptr<bool> unique_bool_with_value{};
+      std::unique_ptr<int> unique_int_null{};
+      std::shared_ptr<std::string> shared_string_null{};
     };
 
     SmartPointerTypes test;
@@ -245,9 +272,9 @@ namespace builder_tests {
 #if SIMDJSON_STATIC_REFLECTION
     // Test basic container types
     struct ContainerTypes {
-      std::vector<int> int_vector;
-      std::set<std::string> string_set;
-      std::map<std::string, int> string_map;
+      std::vector<int> int_vector{};
+      std::set<std::string> string_set{};
+      std::map<std::string, int> string_map{};
     };
 
     ContainerTypes test;
@@ -278,8 +305,8 @@ namespace builder_tests {
 
     // Test std::list with iterator-based serialization
     struct ListContainer {
-      std::list<int> int_list;
-      std::list<std::string> string_list;
+      std::list<int> int_list{};
+      std::list<std::string> string_list{};
     };
 
     ListContainer list_test;
@@ -319,13 +346,7 @@ namespace builder_tests {
   bool test_extract_into() {
     TEST_START();
 #if SIMDJSON_STATIC_REFLECTION
-    struct Car {
-      std::string make;
-      std::string model;
-      int year;
-      double price;
-      std::optional<std::string> color;
-    };
+
 
     ondemand::parser parser;
 
@@ -341,7 +362,7 @@ namespace builder_tests {
         "transmission": "Automatic"
       })"_padded;
 
-      Car car{};
+      CarOpt car{};
       ondemand::document doc;
       ASSERT_SUCCESS( parser.iterate(padded).get(doc) );
 
@@ -377,7 +398,7 @@ namespace builder_tests {
         "color": "Red"
       })"_padded;
 
-      Car car{};
+      CarOpt car{};
       ondemand::document doc;
       ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
@@ -402,7 +423,7 @@ namespace builder_tests {
         "price": 35999.99
       })"_padded;
 
-      Car car{};
+      CarOpt car{};
       ondemand::document doc;
       ASSERT_SUCCESS(parser.iterate(padded).get(doc));
 
@@ -495,13 +516,6 @@ namespace builder_tests {
 #if SIMDJSON_STATIC_REFLECTION
     // Test 1: Extract specific fields from Car struct
     {
-      struct Car {
-        std::string make;
-        std::string model;
-        int year;
-        double price;
-        bool electric;
-      };
 
       Car car{"Tesla", "Model 3", 2023, 42000.0, true};
 
@@ -533,13 +547,7 @@ namespace builder_tests {
 
     // Test 2: Extract different field combination
     {
-      struct Car {
-        std::string make;
-        std::string model;
-        int year;
-        double price;
-        bool electric;
-      };
+
 
       Car car{"Ford", "F-150", 2024, 55000.0, false};
 
@@ -566,13 +574,6 @@ namespace builder_tests {
 
     // Test 3: Extract from struct with optional fields
     {
-      struct Person {
-        std::string name;
-        int age;
-        std::optional<std::string> email;
-        std::optional<std::string> phone;
-      };
-
       Person person{"John Doe", 30, "john@example.com", std::nullopt};
 
       // Extract name and email
@@ -594,13 +595,6 @@ namespace builder_tests {
 
     // Test 4: Extract with optional that has value
     {
-      struct Person {
-        std::string name;
-        int age;
-        std::optional<std::string> email;
-        std::optional<std::string> phone;
-      };
-
       Person person{"Jane Smith", 25, "jane@example.com", "555-1234"};
 
       // Extract name, age, and phone
@@ -629,21 +623,21 @@ namespace builder_tests {
 
     // Test 5: Round-trip test - serialize with extract_from, deserialize with extract_into
     {
-      struct Product {
-        std::string id;
-        std::string name;
-        double price;
-        int stock;
+      struct MyProduct {
+        std::string id{};
+        std::string name{};
+        double price{};
+        int stock{};
       };
 
-      Product original{"P123", "Widget", 19.99, 100};
+      MyProduct original{"P123", "Widget", 19.99, 100};
 
       // Extract specific fields to JSON
       std::string json;
       ASSERT_SUCCESS((extract_from<"id", "name", "price">(original).get(json)));
 
       // Parse and extract back
-      Product restored{"", "", 0.0, 0};
+      MyProduct restored{"", "", 0.0, 0};
       auto padded = pad(json);
       ondemand::parser parser;
       auto doc = parser.iterate(padded);

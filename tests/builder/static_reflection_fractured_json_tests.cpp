@@ -8,26 +8,26 @@ using namespace simdjson;
 
 // Test structures for FracturedJson builder integration
 struct SimpleUser {
-  int id;
-  std::string name;
-  bool active;
+  int id{};
+  std::string name{};
+  bool active{};
 };
 
 struct UserWithEmail {
-  int id;
-  std::string name;
-  std::string email;
-  bool active;
+  int id{};
+  std::string name{};
+  std::string email{};
+  bool active{};
 };
 
 struct NestedData {
-  std::string title;
-  std::vector<SimpleUser> users;
-  int count;
+  std::string title{};
+  std::vector<SimpleUser> users{};
+  int count{};
 };
 
 struct TableTestData {
-  std::vector<SimpleUser> records;
+  std::vector<SimpleUser> records{};
 };
 
 namespace fractured_json_builder_tests {

@@ -13,7 +13,7 @@ using namespace simdjson;
 struct Car {
   std::string make{};
   std::string model{};
-  int64_t year;
+  int64_t year{};
   std::vector<float> tire_pressure{};
 };
 

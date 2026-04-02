@@ -663,6 +663,7 @@ bool test_array_of_objects_with_concept() {
 
 #if defined(__cpp_pp_embed) && __cpp_pp_embed >= 202502L
 #define TEST_EMBED_SUPPORTED
+
 /**
  * Test: #embed support for external JSON files (C++26)
  */
@@ -671,9 +672,9 @@ bool test_embed_twitter_json() {
 
     // C++26 #embed allows embedding files directly into the binary at compile time
     // This creates a const char array with the file contents plus null terminator
-    constexpr const char twitter_json[] = {
-        #embed TWITTER_JSON
-        , 0
+    constexpr const std::byte twitter_json[] = {
+        #embed "../../jsonexamples/twitter.json"
+        , std::byte{0}
     };
 
     // Parse the embedded JSON at compile time

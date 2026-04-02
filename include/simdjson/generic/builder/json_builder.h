@@ -130,7 +130,7 @@ template <typename T>
   requires(std::is_enum_v<T> && !require_custom_serialization<T>)
 void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
-  constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
+  static constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
   template for (constexpr auto enum_val : enumerators) {
     constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
     if (e == [:enum_val:]) {
@@ -294,30 +294,23 @@ string_builder& operator<<(string_builder& b, const Z& z) {
 template<constevalutil::fixed_string... FieldNames, typename T>
   requires(std::is_class_v<T> && (sizeof...(FieldNames) > 0))
 void extract_from(string_builder &b, const T &obj) {
-  // Helper to check if a field name matches any of the requested fields
-  auto should_extract = [](std::string_view field_name) constexpr -> bool {
-    return ((FieldNames.view() == field_name) || ...);
-  };
-
   b.append('{');
   bool first = true;
-
   // Iterate through all members of T using reflection
-  template for (constexpr auto mem : std::define_static_array(
-      std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-
+  static constexpr auto members = std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()));
+  template for (constexpr auto mem : members) {
     if constexpr (std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+      static constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
 
       // Only serialize this field if it's in our list of requested fields
-      if constexpr (should_extract(key)) {
+      if constexpr (((FieldNames.view() == key) || ...)) {
         if (!first) {
           b.append(',');
         }
         first = false;
 
         // Serialize the key
-        constexpr auto quoted_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)));
+        static constexpr auto quoted_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)));
         b.append_raw(quoted_key);
         b.append(':');
 

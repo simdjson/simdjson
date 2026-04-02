@@ -249,7 +249,7 @@ private:
    * If the allocation fails, is_valid is set to false. We expect
    * that this function would not be repeatedly called.
    */
-  simdjson_inline void grow_buffer(size_t desired_capacity);
+  inline void grow_buffer(size_t desired_capacity);
 
   /**
    * We use this helper function to make sure that is_valid is kept consistent.

@@ -51,8 +51,8 @@ namespace builder_tests {
     };
 
     struct StatusStruct {
-      Status status;
-      std::string name;
+      Status status{};
+      std::string name{};
     };
 
     // Test deserialization of different enum values with string representation
@@ -104,9 +104,9 @@ namespace builder_tests {
     };
 
     struct Task {
-      Priority priority;
-      std::string description;
-      int id;
+      Priority priority{};
+      std::string description{};
+      int id{};
     };
 
     Task original{Priority::High, "Important task", 123};
@@ -144,8 +144,8 @@ namespace builder_tests {
     };
 
     struct Response {
-      ErrorCode error;
-      std::string message;
+      ErrorCode error{};
+      std::string message{};
     };
 
     Response test{ErrorCode::NotFound, "Resource not found"};
