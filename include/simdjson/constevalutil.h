@@ -58,6 +58,11 @@ struct fixed_string {
             data[i] = str[i];
         }
     }
+    constexpr fixed_string(const unsigned char (&str)[N])  {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = static_cast<char>(str[i]);
+        }
+    }
     char data[N];
     constexpr std::string_view view() const { return {data, N - 1}; }
     constexpr size_t size() const { return N ; }

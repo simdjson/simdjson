@@ -894,10 +894,19 @@ parse_json_array_impl(const std::string_view json) {
   std::size_t count = values.size() - 1;
   // We assume all elements have the same type as the first element.
   // However, if the array is heterogeneous, we should use std::variant.
+  auto elem_type = std::meta::type_of(values[1]);
+  // String literals reflected via reflect_constant_string have type const
+  // char[N], but when passed as template auto parameters they decay to
+  // const char*.  Use const char* as the element type so that
+  // construct_from can aggregate-initialize the array.
+  if (std::meta::is_array_type(elem_type) &&
+      std::meta::remove_all_extents(elem_type) == ^^const char) {
+    elem_type = ^^const char *;
+  }
   auto array_type = std::meta::substitute(
       ^^std::array,
       {
-          std::meta::type_of(values[1]), std::meta::reflect_constant(count)});
+          elem_type, std::meta::reflect_constant(count)});
 
   // Create array instance with values
   values[0] = array_type;

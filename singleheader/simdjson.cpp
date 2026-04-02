@@ -1,4 +1,4 @@
-/* auto-generated on 2026-04-02 01:04:25 -0400. version 4.6.0 Do not edit! */
+/* auto-generated on 2026-04-02 16:36:48 -0400. version 4.6.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -3166,6 +3166,11 @@ struct fixed_string {
     constexpr fixed_string(const char (&str)[N])  {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] = str[i];
+        }
+    }
+    constexpr fixed_string(const unsigned char (&str)[N])  {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] = static_cast<char>(str[i]);
         }
     }
     char data[N];
