@@ -19,7 +19,7 @@ public:
         return date_str;
     }
 private:
-    std::string date_str;
+    std::string date_str{};
 };
 
 
@@ -52,8 +52,8 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, MyDate& date) {
 } // namespace simdjson
 
 struct complicated_weather_data {
-    std::vector<MyDate> time;
-    std::vector<float> temperature;
+    std::vector<MyDate> time{};
+    std::vector<float> temperature{};
 };
 
 
@@ -152,19 +152,19 @@ simdjson::padded_string json_cars =
     TEST_SUCCEED();
   }
   struct Player {
-      std::string username;
-      int level;
-      double health;
+      std::string username{};
+      int level{};
+      double health{};
   };
   struct BadPlayer {
-      int username;  // Oops, should be string!
-      int level;
-      double health;
+      int username{};  // Oops, should be string!
+      int level{};
+      double health{};
   };
   struct OptionalPlayer {
-      std::string username;
-      std::optional<int> level;
-      double health;
+      std::string username{};
+      std::optional<int> level{};
+      double health{};
   };
 #if SIMDJSON_STATIC_REFLECTION
   bool missing_key_player() {

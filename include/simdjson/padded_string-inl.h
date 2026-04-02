@@ -86,6 +86,14 @@ inline padded_string::padded_string(const std::string & str_ ) noexcept
     std::memcpy(data_ptr, str_.data(), str_.size());
   }
 }
+inline padded_string::padded_string(const std::string && str_ ) noexcept
+    : viable_size(str_.size()), data_ptr(internal::allocate_padded_buffer(str_.size())) {
+  if (data_ptr == nullptr) {
+    viable_size = 0;
+  } else {
+    std::memcpy(data_ptr, str_.data(), str_.size());
+  }
+}
 // note: do pass std::string_view arguments by value
 inline padded_string::padded_string(std::string_view sv_) noexcept
     : viable_size(sv_.size()), data_ptr(internal::allocate_padded_buffer(sv_.size())) {

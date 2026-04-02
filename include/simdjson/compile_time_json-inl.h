@@ -266,6 +266,12 @@ consteval std::pair<double, size_t> parse_double(const char *src,
 }
 } // namespace number_parsing
 
+consteval auto make_data_member_options(auto&& name_str) {
+  std::meta::data_member_options options{};
+  options.name = std::forward<decltype(name_str)>(name_str);
+  return options;
+}
+
 // JSON string may contain embedded nulls, and C++26 reflection does not yet
 // support std::string_view as a data member type. As a workaround, we define
 // a custom type that holds a const char* and a size.
@@ -410,7 +416,7 @@ parse_number(std::string_view json,
         std::from_chars(json.data(), json.data() + json.size(), int_value);
     if (res.ec == std::errc()) {
       out = int_value;
-      if ((res.ptr - json.data()) != scope) {
+      if (static_cast<std::size_t>(res.ptr - json.data()) != scope) {
         simdjson_consteval_error(
             "Internal error: cannot agree on the character range of the float");
       }
@@ -424,7 +430,7 @@ parse_number(std::string_view json,
         std::from_chars(json.data(), json.data() + json.size(), uint_value);
     if (res.ec == std::errc()) {
       out = uint_value;
-      if ((res.ptr - json.data()) != scope) {
+      if (static_cast<std::size_t>(res.ptr - json.data()) != scope) {
         simdjson_consteval_error(
             "Internal error: cannot agree on the character range of the float");
       }
@@ -533,7 +539,7 @@ parse_string(std::string_view json) {
       // present, we have an error (isolated high surrogate), which we
       // tolerate by substituting the substitution_code_point.
       if (end - cursor < 6 || *cursor != '\\' ||
-          *(cursor + 1) != 'u' > 0xFFFF) {
+          *(cursor + 1) != 'u') {
         code_point = substitution_code_point;
       } else {       // we have \u following the high surrogate
         cursor += 2; // skip \u
@@ -957,8 +963,7 @@ parse_json_object_impl(std::string_view json) {
         simdjson_consteval_error("Expected '}'");
       }
       cursor += object_size;
-      auto dms = std::meta::data_member_spec(std::meta::type_of(parsed),
-                                             {.name = field_name});
+      auto dms = std::meta::data_member_spec(std::meta::type_of(parsed), make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(parsed);
 
@@ -967,8 +972,7 @@ parse_json_object_impl(std::string_view json) {
     case '[': {
       std::string_view value(cursor, end);
       auto [parsed, array_size] = parse_json_array_impl(value);
-      auto dms = std::meta::data_member_spec(std::meta::type_of(parsed),
-                                             {.name = field_name});
+      auto dms = std::meta::data_member_spec(std::meta::type_of(parsed), make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(parsed);
       if (*(cursor + array_size - 1) != ']') {
@@ -989,8 +993,7 @@ parse_json_object_impl(std::string_view json) {
         }
       }
       auto dms =
-          std::meta::data_member_spec(^^const char *, {
-                                                          .name = field_name});
+          std::meta::data_member_spec(^^const char *, make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(std::meta::reflect_constant_string(value));
       break;
@@ -1001,8 +1004,7 @@ parse_json_object_impl(std::string_view json) {
       }
       cursor += 4;
 
-      auto dms = std::meta::data_member_spec(^^bool, {
-                                                         .name = field_name});
+      auto dms = std::meta::data_member_spec(^^bool, make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(std::meta::reflect_constant(true));
       break;
@@ -1013,8 +1015,7 @@ parse_json_object_impl(std::string_view json) {
       }
       cursor += 5;
 
-      auto dms = std::meta::data_member_spec(^^bool, {
-                                                         .name = field_name});
+      auto dms = std::meta::data_member_spec(^^bool, make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(std::meta::reflect_constant(false));
       break;
@@ -1025,9 +1026,7 @@ parse_json_object_impl(std::string_view json) {
       }
       cursor += 4;
 
-      auto dms = std::meta::data_member_spec(^^std::nullptr_t,
-                                             {
-                                                 .name = field_name});
+      auto dms = std::meta::data_member_spec(^^std::nullptr_t, make_data_member_options(field_name));
       members.push_back(std::meta::reflect_constant(dms));
       values.push_back(std::meta::reflect_constant(nullptr));
       break;
@@ -1051,22 +1050,19 @@ parse_json_object_impl(std::string_view json) {
       if (std::holds_alternative<int64_t>(out)) {
         int64_t int_value = std::get<int64_t>(out);
         auto dms =
-            std::meta::data_member_spec(^^int64_t, {
-                                                       .name = field_name});
+            std::meta::data_member_spec(^^int64_t, make_data_member_options(field_name));
         members.push_back(std::meta::reflect_constant(dms));
         values.push_back(std::meta::reflect_constant(int_value));
       } else if (std::holds_alternative<uint64_t>(out)) {
         uint64_t uint_value = std::get<uint64_t>(out);
         auto dms =
-            std::meta::data_member_spec(^^uint64_t, {
-                                                        .name = field_name});
+            std::meta::data_member_spec(^^uint64_t, make_data_member_options(field_name));
         members.push_back(std::meta::reflect_constant(dms));
         values.push_back(std::meta::reflect_constant(uint_value));
       } else {
         double float_value = std::get<double>(out);
         auto dms =
-            std::meta::data_member_spec(^^double, {
-                                                      .name = field_name});
+            std::meta::data_member_spec(^^double, make_data_member_options(field_name));
         members.push_back(std::meta::reflect_constant(dms));
         values.push_back(std::meta::reflect_constant(float_value));
       }

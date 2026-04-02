@@ -6,40 +6,40 @@
 
 using namespace simdjson;
 struct Car {
-  std::string make;
-  std::string model;
-  int64_t year;
-  std::vector<double> tire_pressure;
+  std::string make{};
+  std::string model{};
+  int64_t year{};
+  std::vector<double> tire_pressure{};
 };
 
 struct kid {
-  int age;
-  std::string name;
-  std::vector<std::string> toys;
+  int age{};
+  std::string name{};
+  std::vector<std::string> toys{};
   bool operator<=> (const kid&) const = default;
 };
 
 struct Z {
-  int x;
+  int x{};
   bool operator<=> (const Z&) const = default;
 };
 
 struct Y {
-  int g;
-  std::string h;
-  std::vector<int> i;
-  Z z;
+  int g{};
+  std::string h{};
+  std::vector<int> i{};
+  Z z{};
   bool operator<=> (const Y&) const = default;
 };
 
 struct X {
-  char a;
-  int b;
-  int c;
-  std::string d;
-  std::vector<int> e;
-  std::vector<std::string> f;
-  Y y;
+  char a{};
+  int b{};
+  int c{};
+  std::string d{};
+  std::vector<int> e{};
+  std::vector<std::string> f{};
+  Y y{};
   bool operator<=> (const X&) const = default;
 };
 

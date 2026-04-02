@@ -11,10 +11,10 @@ using namespace simdjson;
 // Suppose that we want to serialize/deserialize Car using
 // strings for the year
 struct Car {
-  std::string make;
-  std::string model;
+  std::string make{};
+  std::string model{};
   int64_t year;
-  std::vector<float> tire_pressure;
+  std::vector<float> tire_pressure{};
 };
 
 

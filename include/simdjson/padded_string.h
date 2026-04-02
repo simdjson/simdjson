@@ -51,6 +51,12 @@ struct padded_string final {
   /**
    * Create a new padded string by copying the given input.
    *
+   * @param str_ the string to copy
+   */
+  inline padded_string(const std::string && str_ ) noexcept;
+  /**
+   * Create a new padded string by copying the given input.
+   *
    * @param sv_ the string to copy
    */
   inline padded_string(std::string_view sv_) noexcept;

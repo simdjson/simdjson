@@ -22,7 +22,7 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
 template <class T>
-  requires(concepts::container_but_not_string<T> && !require_custom_serialization<T>)
+  requires(concepts::container_but_not_string<T> && ! concepts::optional_type<T> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
   auto it = t.begin();
   auto end = t.end();
