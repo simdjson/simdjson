@@ -114,6 +114,20 @@ namespace parser_load {
     TEST_SUCCEED();
   }
 
+  bool parser_load_string_view_subpath() {
+    TEST_START();
+    const std::string valid_path(TWITTER_JSON);
+    const std::string backing = valid_path + ".extra";
+    const std::string_view view(backing.data(), valid_path.size());
+    uint64_t count_from_string = 0;
+    uint64_t count_from_view = 0;
+    dom::parser parser;
+    ASSERT_SUCCESS(parser.load(valid_path)["search_metadata"]["count"].get(count_from_string));
+    ASSERT_SUCCESS(parser.load(view)["search_metadata"]["count"].get(count_from_view));
+    ASSERT_EQUAL(count_from_view, count_from_string);
+    TEST_SUCCEED();
+  }
+
   bool parser_load_chain() {
     TEST_START();
     dom::parser parser;
@@ -136,6 +150,7 @@ namespace parser_load {
         && parser_load_nonexistent()
         && parser_load_many_nonexistent()
         && padded_string_load_nonexistent()
+        && parser_load_string_view_subpath()
         && parser_load_chain()
         && parser_load_many_chain()
         && parser_parse_many_documents_error_in_the_middle()

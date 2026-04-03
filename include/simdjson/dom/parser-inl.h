@@ -36,10 +36,11 @@ inline bool parser::dump_raw_tape(std::ostream &os) const noexcept {
 }
 
 inline simdjson_result<size_t> parser::read_file(std::string_view path) noexcept {
+  const std::string path_copy(path);
   // Open the file
   SIMDJSON_PUSH_DISABLE_WARNINGS
   SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
-  std::FILE *fp = std::fopen(path.data(), "rb");
+  std::FILE *fp = std::fopen(path_copy.c_str(), "rb");
   SIMDJSON_POP_DISABLE_WARNINGS
 
   if (fp == nullptr) {
