@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.0</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.1</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -495,117 +495,109 @@ $(document).ready(function(){initNavTree('padded__string-inl_8h_source.html','')
 </div>
 <div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span> </div>
 <div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span><span class="keyword">inline</span> <span class="keywordtype">bool</span> padded_string_builder::reserve(<span class="keywordtype">size_t</span> additional) <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  <span class="comment">// Guard 1: size + additional must not wrap around.</span></div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>  <span class="keywordflow">if</span> (simdjson_unlikely(additional &gt; SIZE_MAX - size)) {</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// overflow: cannot satisfy request</span></div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>  }</div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>  <span class="keywordtype">size_t</span> needed = size + additional;</div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>  <span class="keywordflow">if</span> (needed &lt;= capacity) {</div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>  }</div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  <span class="keywordtype">size_t</span> new_capacity = needed;</div>
-<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>  <span class="comment">// We are going to grow the capacity exponentially to avoid</span></div>
-<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>  <span class="comment">// repeated allocations.</span></div>
-<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>  <span class="keywordflow">if</span> (new_capacity &lt; 4096) {</div>
-<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>    <span class="comment">// Guard 2: doubling must not wrap around.</span></div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>    <span class="keywordflow">if</span> (simdjson_unlikely(new_capacity &gt; SIZE_MAX / 2)) {</div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// overflow: fall back to exact allocation</span></div>
-<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>    }</div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    new_capacity *= 2;</div>
-<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>  } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>    <span class="comment">// Guard 3: 1.5x growth must not wrap around.</span></div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>    <span class="keywordflow">if</span> (simdjson_unlikely(new_capacity &gt; SIZE_MAX - new_capacity / 2)) {</div>
-<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>      <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// overflow: fall back to exact allocation</span></div>
-<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>    }</div>
-<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>    new_capacity += new_capacity / 2; <span class="comment">// grow by 1.5x</span></div>
-<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>  }</div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  <span class="keywordtype">char</span> *new_data = internal::allocate_padded_buffer(new_capacity);</div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  <span class="keywordflow">if</span> (new_data == <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// Allocation failed</span></div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>  }</div>
-<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>  <span class="keywordflow">if</span> (size &gt; 0) {</div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>    std::memcpy(new_data, data, size);</div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>  }</div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>  <span class="keyword">delete</span>[] data;</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>  data = new_data;</div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>  capacity = new_capacity;</div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>}</div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span> </div>
-<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span> </div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span><span class="preprocessor">#ifndef _WIN32</span></div>
-<div class="foldopen" id="foldopen00397" data-start="{" data-end="}">
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a5a1f73fd289f091ec983fd707811ae85">  397</a></span>simdjson_inline padded_memory_map::padded_memory_map(<span class="keyword">const</span> <span class="keywordtype">char</span> *filename) <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span> </div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>    <span class="keywordtype">int</span> fd = open(filename, O_RDONLY);</div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>    <span class="keywordflow">if</span> (fd == -1) {</div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>      <span class="keywordflow">return</span>; <span class="comment">// file not found or cannot be opened, data will be nullptr</span></div>
-<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>    }</div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>    <span class="keyword">struct </span>stat st;</div>
-<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>    <span class="keywordflow">if</span> (fstat(fd, &amp;st) == -1) {</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>  <span class="keywordflow">if</span> (simdjson_unlikely(additional + size &lt; size)) {</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// overflow: cannot satisfy request</span></div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>  }</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>  <span class="keywordtype">size_t</span> needed = size + additional;</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>  <span class="keywordflow">if</span> (needed &lt;= capacity) {</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>  }</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>  <span class="keywordtype">size_t</span> new_capacity = needed;</div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>  <span class="comment">// We are going to grow the capacity exponentially to avoid</span></div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>  <span class="comment">// repeated allocations.</span></div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>  <span class="keywordflow">if</span> (new_capacity &lt; 4096) {</div>
+<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>    new_capacity *= 2;</div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>    <span class="comment">// overflow guard: ensure new_capacity + new_capacity/2 does not overflow</span></div>
+<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>  } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (new_capacity + new_capacity / 2 &gt; new_capacity) {</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    new_capacity += new_capacity / 2; <span class="comment">// grow by 1.5x</span></div>
+<div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>  }</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>  <span class="keywordtype">char</span> *new_data = internal::allocate_padded_buffer(new_capacity);</div>
+<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>  <span class="keywordflow">if</span> (new_data == <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// Allocation failed</span></div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>  }</div>
+<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>  <span class="keywordflow">if</span> (size &gt; 0) {</div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>    std::memcpy(new_data, data, size);</div>
+<div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>  }</div>
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>  <span class="keyword">delete</span>[] data;</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>  data = new_data;</div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>  capacity = new_capacity;</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>}</div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span> </div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span> </div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span><span class="preprocessor">#ifndef _WIN32</span></div>
+<div class="foldopen" id="foldopen00389" data-start="{" data-end="}">
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a5a1f73fd289f091ec983fd707811ae85">  389</a></span>simdjson_inline padded_memory_map::padded_memory_map(<span class="keyword">const</span> <span class="keywordtype">char</span> *filename) <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span> </div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>    <span class="keywordtype">int</span> fd = open(filename, O_RDONLY);</div>
+<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>    <span class="keywordflow">if</span> (fd == -1) {</div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>      <span class="keywordflow">return</span>; <span class="comment">// file not found or cannot be opened, data will be nullptr</span></div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>    }</div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>    <span class="keyword">struct </span>stat st;</div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>    <span class="keywordflow">if</span> (fstat(fd, &amp;st) == -1) {</div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>      close(fd);</div>
+<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to get file size, data will be nullptr</span></div>
+<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>    }</div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>    size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(st.st_size);</div>
+<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>    <span class="keywordtype">size_t</span> total_size = size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>;</div>
+<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>    <span class="keywordtype">void</span> *anon_map =</div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>        mmap(NULL, total_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);</div>
+<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>    <span class="keywordflow">if</span> (anon_map == MAP_FAILED) {</div>
 <div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>      close(fd);</div>
-<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to get file size, data will be nullptr</span></div>
+<div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to create anonymous mapping, data will be nullptr</span></div>
 <div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span>    }</div>
-<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>    size = <span class="keyword">static_cast&lt;</span><span class="keywordtype">size_t</span><span class="keyword">&gt;</span>(st.st_size);</div>
-<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>    <span class="keywordtype">size_t</span> total_size = size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>;</div>
-<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>    <span class="keywordtype">void</span> *anon_map =</div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>        mmap(NULL, total_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);</div>
-<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>    <span class="keywordflow">if</span> (anon_map == MAP_FAILED) {</div>
-<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>      close(fd);</div>
-<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to create anonymous mapping, data will be nullptr</span></div>
-<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span>    }</div>
-<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>    <span class="keywordtype">void</span> *file_map =</div>
-<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>        mmap(anon_map, size, PROT_READ, MAP_SHARED | MAP_FIXED, fd, 0);</div>
-<div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span>    <span class="keywordflow">if</span> (file_map == MAP_FAILED) {</div>
-<div class="line"><a id="l00419" name="l00419"></a><span class="lineno">  419</span>      munmap(anon_map, total_size);</div>
-<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>      close(fd);</div>
-<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to mmap file, data will be nullptr</span></div>
-<div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>    }</div>
-<div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>    data = <span class="keyword">static_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(file_map);</div>
-<div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span>    close(fd); <span class="comment">// no longer needed after mapping</span></div>
-<div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span>}</div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno">  408</span>    <span class="keywordtype">void</span> *file_map =</div>
+<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span>        mmap(anon_map, size, PROT_READ, MAP_SHARED | MAP_FIXED, fd, 0);</div>
+<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>    <span class="keywordflow">if</span> (file_map == MAP_FAILED) {</div>
+<div class="line"><a id="l00411" name="l00411"></a><span class="lineno">  411</span>      munmap(anon_map, total_size);</div>
+<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span>      close(fd);</div>
+<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>      <span class="keywordflow">return</span>; <span class="comment">// failed to mmap file, data will be nullptr</span></div>
+<div class="line"><a id="l00414" name="l00414"></a><span class="lineno">  414</span>    }</div>
+<div class="line"><a id="l00415" name="l00415"></a><span class="lineno">  415</span>    data = <span class="keyword">static_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(file_map);</div>
+<div class="line"><a id="l00416" name="l00416"></a><span class="lineno">  416</span>    close(fd); <span class="comment">// no longer needed after mapping</span></div>
+<div class="line"><a id="l00417" name="l00417"></a><span class="lineno">  417</span>}</div>
 </div>
-<div class="line"><a id="l00426" name="l00426"></a><span class="lineno">  426</span> </div>
-<div class="foldopen" id="foldopen00427" data-start="{" data-end="}">
-<div class="line"><a id="l00427" name="l00427"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">  427</a></span>simdjson_inline <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">padded_memory_map::~padded_memory_map</a>() noexcept {</div>
-<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>  <span class="keywordflow">if</span> (data != <span class="keyword">nullptr</span>) {</div>
-<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>    munmap(<span class="keyword">const_cast&lt;</span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(data), size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
-<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  }</div>
+<div class="line"><a id="l00418" name="l00418"></a><span class="lineno">  418</span> </div>
+<div class="foldopen" id="foldopen00419" data-start="{" data-end="}">
+<div class="line"><a id="l00419" name="l00419"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">  419</a></span>simdjson_inline <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">padded_memory_map::~padded_memory_map</a>() noexcept {</div>
+<div class="line"><a id="l00420" name="l00420"></a><span class="lineno">  420</span>  <span class="keywordflow">if</span> (data != <span class="keyword">nullptr</span>) {</div>
+<div class="line"><a id="l00421" name="l00421"></a><span class="lineno">  421</span>    munmap(<span class="keyword">const_cast&lt;</span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(data), size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
+<div class="line"><a id="l00422" name="l00422"></a><span class="lineno">  422</span>  }</div>
+<div class="line"><a id="l00423" name="l00423"></a><span class="lineno">  423</span>}</div>
+</div>
+<div class="line"><a id="l00424" name="l00424"></a><span class="lineno">  424</span> </div>
+<div class="line"><a id="l00425" name="l00425"></a><span class="lineno">  425</span> </div>
+<div class="foldopen" id="foldopen00426" data-start="{" data-end="}">
+<div class="line"><a id="l00426" name="l00426"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">  426</a></span>simdjson_inline <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">padded_memory_map::view</a>() const noexcept simdjson_lifetime_bound {</div>
+<div class="line"><a id="l00427" name="l00427"></a><span class="lineno">  427</span>  <span class="keywordflow">if</span>(!<a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">is_valid</a>()) {</div>
+<div class="line"><a id="l00428" name="l00428"></a><span class="lineno">  428</span>    <span class="keywordflow">return</span> <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(); <span class="comment">// return an empty view if mapping failed</span></div>
+<div class="line"><a id="l00429" name="l00429"></a><span class="lineno">  429</span>  }</div>
+<div class="line"><a id="l00430" name="l00430"></a><span class="lineno">  430</span>  <span class="keywordflow">return</span> <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(data, size, size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
 <div class="line"><a id="l00431" name="l00431"></a><span class="lineno">  431</span>}</div>
 </div>
 <div class="line"><a id="l00432" name="l00432"></a><span class="lineno">  432</span> </div>
-<div class="line"><a id="l00433" name="l00433"></a><span class="lineno">  433</span> </div>
-<div class="foldopen" id="foldopen00434" data-start="{" data-end="}">
-<div class="line"><a id="l00434" name="l00434"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">  434</a></span>simdjson_inline <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">padded_memory_map::view</a>() const noexcept simdjson_lifetime_bound {</div>
-<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>  <span class="keywordflow">if</span>(!<a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">is_valid</a>()) {</div>
-<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span>    <span class="keywordflow">return</span> <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(); <span class="comment">// return an empty view if mapping failed</span></div>
-<div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span>  }</div>
-<div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>  <span class="keywordflow">return</span> <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(data, size, size + <a class="code hl_variable" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a>);</div>
-<div class="line"><a id="l00439" name="l00439"></a><span class="lineno">  439</span>}</div>
+<div class="foldopen" id="foldopen00433" data-start="{" data-end="}">
+<div class="line"><a id="l00433" name="l00433"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">  433</a></span>simdjson_inline <span class="keywordtype">bool</span> <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">padded_memory_map::is_valid</a>() const noexcept {</div>
+<div class="line"><a id="l00434" name="l00434"></a><span class="lineno">  434</span>  <span class="keywordflow">return</span> data != <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00435" name="l00435"></a><span class="lineno">  435</span>}</div>
 </div>
-<div class="line"><a id="l00440" name="l00440"></a><span class="lineno">  440</span> </div>
-<div class="foldopen" id="foldopen00441" data-start="{" data-end="}">
-<div class="line"><a id="l00441" name="l00441"></a><span class="lineno"><a class="line" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">  441</a></span>simdjson_inline <span class="keywordtype">bool</span> <a class="code hl_function" href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">padded_memory_map::is_valid</a>() const noexcept {</div>
-<div class="line"><a id="l00442" name="l00442"></a><span class="lineno">  442</span>  <span class="keywordflow">return</span> data != <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00443" name="l00443"></a><span class="lineno">  443</span>}</div>
-</div>
-<div class="line"><a id="l00444" name="l00444"></a><span class="lineno">  444</span><span class="preprocessor">#endif </span><span class="comment">// _WIN32</span></div>
-<div class="line"><a id="l00445" name="l00445"></a><span class="lineno">  445</span> </div>
-<div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span> </div>
-<div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span><span class="keyword">inline</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> <span class="keyword">operator</span> <span class="stringliteral">&quot;&quot;</span>_padded(<span class="keyword">const</span> <span class="keywordtype">char</span> *str, <span class="keywordtype">size_t</span> len) {</div>
-<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(str, len);</div>
-<div class="line"><a id="l00450" name="l00450"></a><span class="lineno">  450</span>}</div>
-<div class="line"><a id="l00451" name="l00451"></a><span class="lineno">  451</span><span class="preprocessor">#ifdef __cpp_char8_t</span></div>
-<div class="line"><a id="l00452" name="l00452"></a><span class="lineno">  452</span><span class="keyword">inline</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> <span class="keyword">operator</span> <span class="stringliteral">&quot;&quot;</span>_padded(<span class="keyword">const</span> <span class="keywordtype">char8_t</span> *str, <span class="keywordtype">size_t</span> len) {</div>
-<div class="line"><a id="l00453" name="l00453"></a><span class="lineno">  453</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(str), len);</div>
-<div class="line"><a id="l00454" name="l00454"></a><span class="lineno">  454</span>}</div>
-<div class="line"><a id="l00455" name="l00455"></a><span class="lineno">  455</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00456" name="l00456"></a><span class="lineno">  456</span> </div>
-<div class="line"><a id="l00457" name="l00457"></a><span class="lineno">  457</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_PADDED_STRING_INL_H</span></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_a067c795f5c367905314fba0ddf742299"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">simdjson::padded_memory_map::is_valid</a></div><div class="ttdeci">simdjson_inline bool is_valid() const noexcept</div><div class="ttdoc">Check if the memory map is valid.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00441">padded_string-inl.h:441</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_a8e9f7288655b3b476889761a3009891f"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">simdjson::padded_memory_map::~padded_memory_map</a></div><div class="ttdeci">simdjson_inline ~padded_memory_map() noexcept</div><div class="ttdoc">Destroy the padded memory map and release any resources.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00427">padded_string-inl.h:427</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_ae39494a1c3f0bc3ca330f80d16f7cf5f"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">simdjson::padded_memory_map::view</a></div><div class="ttdeci">simdjson_inline simdjson::padded_string_view view() const noexcept simdjson_lifetime_bound</div><div class="ttdoc">Get a view of the memory-mapped file.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00434">padded_string-inl.h:434</a></div></div>
+<div class="line"><a id="l00436" name="l00436"></a><span class="lineno">  436</span><span class="preprocessor">#endif </span><span class="comment">// _WIN32</span></div>
+<div class="line"><a id="l00437" name="l00437"></a><span class="lineno">  437</span> </div>
+<div class="line"><a id="l00438" name="l00438"></a><span class="lineno">  438</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l00439" name="l00439"></a><span class="lineno">  439</span> </div>
+<div class="line"><a id="l00440" name="l00440"></a><span class="lineno">  440</span><span class="keyword">inline</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> <span class="keyword">operator</span> <span class="stringliteral">&quot;&quot;</span>_padded(<span class="keyword">const</span> <span class="keywordtype">char</span> *str, <span class="keywordtype">size_t</span> len) {</div>
+<div class="line"><a id="l00441" name="l00441"></a><span class="lineno">  441</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(str, len);</div>
+<div class="line"><a id="l00442" name="l00442"></a><span class="lineno">  442</span>}</div>
+<div class="line"><a id="l00443" name="l00443"></a><span class="lineno">  443</span><span class="preprocessor">#ifdef __cpp_char8_t</span></div>
+<div class="line"><a id="l00444" name="l00444"></a><span class="lineno">  444</span><span class="keyword">inline</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> <span class="keyword">operator</span> <span class="stringliteral">&quot;&quot;</span>_padded(<span class="keyword">const</span> <span class="keywordtype">char8_t</span> *str, <span class="keywordtype">size_t</span> len) {</div>
+<div class="line"><a id="l00445" name="l00445"></a><span class="lineno">  445</span>  <span class="keywordflow">return</span> <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a>(<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">const </span><span class="keywordtype">char</span> *<span class="keyword">&gt;</span>(str), len);</div>
+<div class="line"><a id="l00446" name="l00446"></a><span class="lineno">  446</span>}</div>
+<div class="line"><a id="l00447" name="l00447"></a><span class="lineno">  447</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00448" name="l00448"></a><span class="lineno">  448</span> </div>
+<div class="line"><a id="l00449" name="l00449"></a><span class="lineno">  449</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_PADDED_STRING_INL_H</span></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_a067c795f5c367905314fba0ddf742299"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#a067c795f5c367905314fba0ddf742299">simdjson::padded_memory_map::is_valid</a></div><div class="ttdeci">simdjson_inline bool is_valid() const noexcept</div><div class="ttdoc">Check if the memory map is valid.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00433">padded_string-inl.h:433</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_a8e9f7288655b3b476889761a3009891f"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#a8e9f7288655b3b476889761a3009891f">simdjson::padded_memory_map::~padded_memory_map</a></div><div class="ttdeci">simdjson_inline ~padded_memory_map() noexcept</div><div class="ttdoc">Destroy the padded memory map and release any resources.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00419">padded_string-inl.h:419</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html_ae39494a1c3f0bc3ca330f80d16f7cf5f"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html#ae39494a1c3f0bc3ca330f80d16f7cf5f">simdjson::padded_memory_map::view</a></div><div class="ttdeci">simdjson_inline simdjson::padded_string_view view() const noexcept simdjson_lifetime_bound</div><div class="ttdoc">Get a view of the memory-mapped file.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00426">padded_string-inl.h:426</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1padded__string__builder_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__builder.html">simdjson::padded_string_builder</a></div><div class="ttdoc">Builder for constructing padded_string incrementally.</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00168">padded_string.h:168</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1padded__string__builder_html_a122b069d8007bd957b3e3eb375e2806f"><div class="ttname"><a href="classsimdjson_1_1padded__string__builder.html#a122b069d8007bd957b3e3eb375e2806f">simdjson::padded_string_builder::convert</a></div><div class="ttdeci">padded_string convert() noexcept</div><div class="ttdoc">Convert the current content into a padded_string.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00347">padded_string-inl.h:347</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1padded__string__builder_html_a133259548f131df6a653571ac23956ff"><div class="ttname"><a href="classsimdjson_1_1padded__string__builder.html#a133259548f131df6a653571ac23956ff">simdjson::padded_string_builder::operator=</a></div><div class="ttdeci">padded_string_builder &amp; operator=(padded_string_builder &amp;&amp;o) noexcept</div><div class="ttdoc">Move assignment.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00306">padded_string-inl.h:306</a></div></div>
