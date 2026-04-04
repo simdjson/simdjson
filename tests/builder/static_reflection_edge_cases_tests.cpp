@@ -67,7 +67,7 @@ namespace builder_tests {
     test.quotes = "He said \"Hello\"";
     test.backslashes = "Path\\to\\file";
     test.newlines = "Line1\nLine2\tTabbed";
-    test.unicode = "Café résumé";
+    test.unicode = "Caf\xc3\xa9 r\xc3\xa9sum\xc3\xa9";
     test.null_char = '\0';
 
     std::string json;
