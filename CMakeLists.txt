@@ -411,18 +411,25 @@ add_subdirectory(fuzz)
 #
 # Source files should be just ASCII
 #
-find_program(FIND find)
-find_program(FILE file)
-find_program(GREP grep)
-if(FIND AND FILE AND GREP)
+find_program(FIND_CMD find)
+find_program(FILE_CMD file)
+find_program(GREP_CMD grep)
+if(FIND_CMD AND FILE_CMD AND GREP_CMD)
   add_test(
       NAME just_ascii
       COMMAND sh -c "\
-${FIND} include src windows tools singleheader tests examples benchmark \
--path benchmark/checkperf-reference -prune -name '*.h' -o -name '*.cpp' \
--type f -exec ${FILE} '{}' \; | ${GREP} -qv ASCII || exit 0  && exit 1"
+non_ascii=$(${FIND_CMD} include src windows tools singleheader tests examples benchmark \
+  -path benchmark/checkperf-reference -prune -name '*.h' -o -name '*.cpp' \
+  -type f -exec ${FILE_CMD} '{}' \; | ${GREP_CMD} -v ASCII); \
+if [ -n \"$non_ascii\" ]; then \
+  echo 'The following files contain non-ASCII characters:'; \
+  echo \"$non_ascii\"; \
+  exit 1; \
+fi"
       WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
   )
+else()
+  message(WARNING "just_ascii test disabled because required tools were not found: find='${FIND_CMD}', file='${FILE_CMD}', grep='${GREP_CMD}'")
 endif()
 
 ##
