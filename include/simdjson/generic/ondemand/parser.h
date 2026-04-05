@@ -256,19 +256,38 @@ public:
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
   inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) */
   inline simdjson_result<document_stream> iterate_many(padded_string_view json, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) */
   inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) */
   inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size)
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated)
     the string might be automatically padded with up to SIMDJSON_PADDING whitespace characters */
   inline simdjson_result<document_stream> iterate_many(std::string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE, bool allow_comma_separated = false) noexcept;
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
+
+  /**
+   * Parse a stream of JSON documents with explicit format specification.
+   *
+   * @param buf The concatenated JSON documents.
+   * @param len The length of the buffer.
+   * @param batch_size The batch size to use.
+   * @param format The stream format (whitespace_delimited or json_sequence).
+   * @return A stream of documents, or an error.
+   */
+  inline simdjson_result<document_stream> iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept;
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> iterate_many(const char *buf, size_t len, size_t batch_size, stream_format format) noexcept;
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> iterate_many(padded_string_view s, size_t batch_size, stream_format format) noexcept;
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size, stream_format format) noexcept;
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size, stream_format format) noexcept;
 
   /** The capacity of this parser (the largest document it can process). */
   simdjson_pure simdjson_inline size_t capacity() const noexcept;

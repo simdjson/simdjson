@@ -95,13 +95,15 @@ simdjson_inline document_stream::document_stream(
   const uint8_t *_buf,
   size_t _len,
   size_t _batch_size,
-  bool _allow_comma_separated
+  bool _allow_comma_separated,
+  stream_format _format
 ) noexcept
   : parser{&_parser},
     buf{_buf},
     len{_len},
     batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
     allow_comma_separated{_allow_comma_separated},
+    format{_format},
     error{SUCCESS}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
@@ -120,6 +122,7 @@ simdjson_inline document_stream::document_stream() noexcept
     len{0},
     batch_size{0},
     allow_comma_separated{false},
+    format{stream_format::whitespace_delimited},
     error{UNINITIALIZED}
     #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(false)
@@ -219,7 +222,10 @@ inline void document_stream::start() noexcept {
     error = run_stage1(*parser, batch_start);
   }
   if (error) { return; }
-  doc_index = batch_start;
+  // For json_sequence mode, structural_indexes[0] points to the actual JSON value
+  // after the RS delimiter and any following whitespace. For regular mode, it is
+  // the offset from batch_start to the first document in the batch.
+  doc_index = batch_start + parser->implementation->structural_indexes[0];
   doc = document(json_iterator(&buf[batch_start], parser));
   doc.iter._streaming = true;
 
@@ -330,9 +336,11 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
   // instance.
   size_t remaining = len - _batch_start;
   if (remaining <= batch_size) {
-    return p.implementation->stage1(&buf[_batch_start], remaining, stage1_mode::streaming_final);
+    return p.implementation->stage1(&buf[_batch_start], remaining,
+      format == stream_format::json_sequence ? stage1_mode::json_sequence_final : stage1_mode::streaming_final);
   } else {
-    return p.implementation->stage1(&buf[_batch_start], batch_size, stage1_mode::streaming_partial);
+    return p.implementation->stage1(&buf[_batch_start], batch_size,
+      format == stream_format::json_sequence ? stage1_mode::json_sequence_partial : stage1_mode::streaming_partial);
   }
 }
 

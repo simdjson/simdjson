@@ -945,8 +945,147 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool json_sequence_tests() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+
+        // Verify enum values
+        static_assert(static_cast<int>(simdjson::stream_format::whitespace_delimited) == 0, "whitespace_delimited should be 0");
+        static_assert(static_cast<int>(simdjson::stream_format::json_sequence) == 1, "json_sequence should be 1");
+
+        SUBTEST("whitespace_delimited format works", ([&]() {
+            auto input = R"({"a":1} {"b":2} {"c":3})"_padded;
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::whitespace_delimited).get(stream));
+            size_t count = 0;
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+            ASSERT_EQUAL(count, size_t(3));
+            return true;
+        }()));
+
+        SUBTEST("basic RS-delimited objects with LF", ([&]() {
+            auto input = simdjson::padded_string("\x1e{\"a\":1}\n\x1e{\"b\":2}\n\x1e{\"c\":3}\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            const char* keys[] = {"a", "b", "c"};
+            int64_t expected[] = {1, 2, 3};
+            size_t count = 0;
+            for (auto doc : stream) {
+                ASSERT_SUCCESS(doc.error());
+                int64_t value;
+                ASSERT_SUCCESS(doc[keys[count]].get(value));
+                ASSERT_EQUAL(value, expected[count]);
+                count++;
+            }
+            ASSERT_EQUAL(count, size_t(3));
+            return true;
+        }()));
+
+        SUBTEST("multiple documents without trailing LF", ([&]() {
+            auto input = simdjson::padded_string("\x1e{\"a\":1}\x1e{\"b\":2}\x1e{\"c\":3}"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            size_t count = 0;
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+            ASSERT_EQUAL(count, size_t(3));
+            return true;
+        }()));
+
+        SUBTEST("single document without LF", ([&]() {
+            auto input = simdjson::padded_string("\x1e{\"a\":1}"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            size_t count = 0;
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+            ASSERT_EQUAL(count, size_t(1));
+            return true;
+        }()));
+
+        SUBTEST("scalar documents", ([&]() {
+            auto input = simdjson::padded_string("\x1e" "42\n" "\x1e" "\"hello\"\n" "\x1e" "true\n" "\x1e" "null\n" "\x1e" "[1,2,3]\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            size_t count = 0;
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+            ASSERT_EQUAL(count, size_t(5));
+            return true;
+        }()));
+
+        SUBTEST("current_index points to JSON value not RS", ([&]() {
+            // Layout: RS(0) 1(1) LF(2) RS(3) 2(4) LF(5)
+            auto input = simdjson::padded_string("\x1e" "1\n" "\x1e" "2\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            auto it = stream.begin();
+            ASSERT_EQUAL(it.current_index(), size_t(1));  // "1" at position 1
+            ++it;
+            ASSERT_EQUAL(it.current_index(), size_t(4));  // "2" at position 4
+            return true;
+        }()));
+
+        SUBTEST("RS-only input produces 0 documents", ([&]() {
+            auto input = simdjson::padded_string("\x1e\n\x1e\n"s);
+            auto result = parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream);
+            // We accept either EMPTY error or successful iteration with 0 documents
+            if (result == simdjson::SUCCESS) {
+                size_t count = 0;
+                for (auto doc : stream) { (void)doc; count++; }
+                ASSERT_EQUAL(count, size_t(0));
+            }
+            // EMPTY error is also acceptable
+            return true;
+        }()));
+
+        SUBTEST("whitespace between RS and value", ([&]() {
+            auto input = simdjson::padded_string("\x1e  {\"a\":1}\n\x1e\t\n{\"b\":2}\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            size_t count = 0;
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+            ASSERT_EQUAL(count, size_t(2));
+            return true;
+        }()));
+
+        SUBTEST("mixed document types in sequence", ([&]() {
+            auto input = simdjson::padded_string("\x1e" "123\n" "\x1e" "{\"x\":1}\n" "\x1e" "[1,2]\n" "\x1e" "\"str\"\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            auto it = stream.begin();
+            // Doc 0: number
+            {
+                ondemand::document_reference doc = *it;
+                int64_t num; ASSERT_SUCCESS(doc.get_int64().get(num)); ASSERT_EQUAL(num, int64_t(123));
+            }
+            ++it;
+            // Doc 1: object
+            {
+                ondemand::document_reference doc = *it;
+                int64_t x; ASSERT_SUCCESS(doc["x"].get(x)); ASSERT_EQUAL(x, int64_t(1));
+            }
+            ++it;
+            // Doc 2: array
+            {
+                ondemand::document_reference doc = *it;
+                ondemand::array arr; ASSERT_SUCCESS(doc.get_array().get(arr));
+            }
+            ++it;
+            // Doc 3: string
+            {
+                ondemand::document_reference doc = *it;
+                std::string_view sv; ASSERT_SUCCESS(doc.get_string().get(sv)); ASSERT_EQUAL(sv, std::string_view("str"));
+            }
+            return true;
+        }()));
+
+        SUBTEST("source returns correct document slice", ([&]() {
+            auto input = simdjson::padded_string("\x1e" "[1,2,3]\n" "\x1e" "{\"a\":1}\n"s);
+            ASSERT_SUCCESS(parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+            auto it = stream.begin();
+            ASSERT_EQUAL(it.source(), std::string_view("[1,2,3]"));
+            ++it;
+            ASSERT_EQUAL(it.source(), std::string_view("{\"a\":1}"));
+            return true;
+        }()));
+
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+            json_sequence_tests() &&
             issue2181() &&
             issue2170() &&
             issue2137() &&
@@ -988,6 +1127,7 @@ namespace document_stream_tests {
             stress_data_race_with_error() &&
             true;
     }
+
 } // document_stream_tests
 
 int main (int argc, char *argv[]) {

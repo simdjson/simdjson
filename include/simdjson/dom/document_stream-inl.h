@@ -89,12 +89,14 @@ simdjson_inline document_stream::document_stream(
   dom::parser &_parser,
   const uint8_t *_buf,
   size_t _len,
-  size_t _batch_size
+  size_t _batch_size,
+  stream_format _format
 ) noexcept
   : parser{&_parser},
     buf{_buf},
     len{_len},
     batch_size{_batch_size <= MINIMAL_BATCH_SIZE ? MINIMAL_BATCH_SIZE : _batch_size},
+    format{_format},
     error{SUCCESS}
 #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
@@ -112,6 +114,7 @@ simdjson_inline document_stream::document_stream() noexcept
     buf{nullptr},
     len{0},
     batch_size{0},
+    format{stream_format::whitespace_delimited},
     error{UNINITIALIZED}
 #ifdef SIMDJSON_THREADS_ENABLED
     , use_thread(false)
@@ -275,9 +278,11 @@ inline size_t document_stream::next_batch_start() const noexcept {
 inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
   size_t remaining = len - _batch_start;
   if (remaining <= batch_size) {
-    return p.implementation->stage1(&buf[_batch_start], remaining, stage1_mode::streaming_final);
+    return p.implementation->stage1(&buf[_batch_start], remaining,
+      format == stream_format::json_sequence ? stage1_mode::json_sequence_final : stage1_mode::streaming_final);
   } else {
-    return p.implementation->stage1(&buf[_batch_start], batch_size, stage1_mode::streaming_partial);
+    return p.implementation->stage1(&buf[_batch_start], batch_size,
+      format == stream_format::json_sequence ? stage1_mode::json_sequence_partial : stage1_mode::streaming_partial);
   }
 }
 

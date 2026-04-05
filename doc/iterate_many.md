@@ -132,7 +132,7 @@ E.g., `[1,2]{"32":1}` is recognized as two documents.
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec/)
 - [JSON lines (JSONL)](http://jsonlines.org/)
-- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464) <- Not supported by simdjson!
+- [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464)
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
 API
@@ -310,6 +310,44 @@ string
 object
 array
 ```
+
+JSON Text Sequences (RFC 7464)
+------------------------------
+
+[RFC 7464](https://tools.ietf.org/html/rfc7464) defines a format for streaming JSON values using ASCII Record Separator (RS, 0x1E) as a delimiter. Each JSON text is preceded by RS and optionally followed by ASCII Line Feed (LF, 0x0A).
+
+Example input:
+```
+<RS>{"name":"doc1"}<LF>
+<RS>{"name":"doc2"}<LF>
+<RS>{"name":"doc3"}<LF>
+```
+
+To parse JSON text sequences, use the `stream_format::json_sequence` parameter:
+
+```cpp
+// Build input with RS (0x1E) and LF (0x0A) delimiters
+std::string input_str;
+input_str += '\x1e'; input_str += "{\"a\":1}"; input_str += '\x0a';
+input_str += '\x1e'; input_str += "{\"b\":2}"; input_str += '\x0a';
+input_str += '\x1e'; input_str += "{\"c\":3}"; input_str += '\x0a';
+simdjson::padded_string input(input_str);
+
+ondemand::parser parser;
+ondemand::document_stream stream;
+auto error = parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE,
+                                 simdjson::stream_format::json_sequence).get(stream);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto doc : stream) {
+    std::cout << doc << std::endl;
+}
+```
+
+The `stream_format` enum has the following values:
+- `stream_format::whitespace_delimited` (default): Standard NDJSON/JSON Lines format
+- `stream_format::json_sequence`: RFC 7464 format with RS delimiters
+
+The trailing LF after each JSON text is optional but recommended by the RFC for robustness.
 
 
 C++20 features

@@ -170,12 +170,7 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string_view 
 }
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
-  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
-  if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
-    buf += 3;
-    len -= 3;
-  }
-  return document_stream(*this, buf, len, batch_size);
+  return parse_many(buf, len, batch_size, stream_format::whitespace_delimited);
 }
 inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
@@ -185,6 +180,24 @@ inline simdjson_result<document_stream> parser::parse_many(const std::string &s,
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
+}
+
+inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept {
+  if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
+  if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
+    buf += 3;
+    len -= 3;
+  }
+  return document_stream(*this, buf, len, batch_size, format);
+}
+inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size, stream_format format) noexcept {
+  return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, format);
+}
+inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size, stream_format format) noexcept {
+  return parse_many(s.data(), s.length(), batch_size, format);
+}
+inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept {
+  return parse_many(s.data(), s.length(), batch_size, format);
 }
 
 simdjson_inline size_t parser::capacity() const noexcept {

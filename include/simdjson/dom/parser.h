@@ -495,6 +495,23 @@ public:
   simdjson_result<document_stream> parse_many(const char *buf, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept = delete;
 
   /**
+   * Parse a stream of JSON documents with explicit format specification.
+   *
+   * @param buf The concatenated JSON documents.
+   * @param len The length of the buffer.
+   * @param batch_size The batch size to use.
+   * @param format The stream format (whitespace_delimited or json_sequence).
+   * @return A stream of documents, or an error.
+   */
+  inline simdjson_result<document_stream> parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size, stream_format format) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size, stream_format format) noexcept;
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept;
+
+  /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    *

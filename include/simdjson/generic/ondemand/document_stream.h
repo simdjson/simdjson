@@ -229,13 +229,16 @@ private:
    * @param buf is the raw byte buffer we need to process
    * @param len is the length of the raw byte buffer in bytes
    * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
+   * @param allow_comma_separated whether to allow comma-separated documents
+   * @param format the stream format (whitespace_delimited or json_sequence)
    */
   simdjson_inline document_stream(
     ondemand::parser &parser,
     const uint8_t *buf,
     size_t len,
     size_t batch_size,
-    bool allow_comma_separated
+    bool allow_comma_separated,
+    stream_format format = stream_format::whitespace_delimited
   ) noexcept;
 
   /**
@@ -284,6 +287,7 @@ private:
   size_t len;
   size_t batch_size;
   bool allow_comma_separated;
+  stream_format format;
   /**
    * We are going to use just one document instance. The document owns
    * the json_iterator. It implies that we only ever pass a reference
