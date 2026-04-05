@@ -79,7 +79,7 @@ namespace big_integer_tests {
     std::string output = simdjson::to_string(doc);
     // Raw digits should appear
     ASSERT_TRUE(output.find("123456789012345678901") != std::string::npos);
-    // Must not be quoted — it's a number, not a string
+    // Must not be quoted - it's a number, not a string
     ASSERT_EQUAL(output.find("\"123456789012345678901\""), std::string::npos);
     TEST_SUCCEED();
   }
