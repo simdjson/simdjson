@@ -158,6 +158,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     switch (*return_current_and_advance()) {
       case '[': case '{':
         logger::log_start_value(*this, "skip");
+        if (simdjson_unlikely(_depth == INT32_MAX)) { return report_error(DEPTH_ERROR, "Depth overflow in skip_child"); }
         _depth++;
         break;
       // TODO consider whether matching braces is a requirement: if non-matching braces indicates
