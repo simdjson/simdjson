@@ -1046,25 +1046,29 @@ namespace document_stream_tests {
             auto it = stream.begin();
             // Doc 0: number
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 int64_t num; ASSERT_SUCCESS(doc.get_int64().get(num)); ASSERT_EQUAL(num, int64_t(123));
             }
             ++it;
             // Doc 1: object
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 int64_t x; ASSERT_SUCCESS(doc["x"].get(x)); ASSERT_EQUAL(x, int64_t(1));
             }
             ++it;
             // Doc 2: array
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 ondemand::array arr; ASSERT_SUCCESS(doc.get_array().get(arr));
             }
             ++it;
             // Doc 3: string
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 std::string_view sv; ASSERT_SUCCESS(doc.get_string().get(sv)); ASSERT_EQUAL(sv, std::string_view("str"));
             }
             return true;
@@ -1164,7 +1168,8 @@ namespace document_stream_tests {
             auto it = stream.begin();
             // First doc: {"a":[1,2,3]}
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 ondemand::array arr;
                 ASSERT_SUCCESS(doc["a"].get_array().get(arr));
                 size_t arr_count = 0;
@@ -1174,7 +1179,8 @@ namespace document_stream_tests {
             ++it;
             // Second doc: {"b":{"c":4,"d":5}}
             {
-                ondemand::document_reference doc = *it;
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS((*it).get(doc));
                 ondemand::object b_obj;
                 ASSERT_SUCCESS(doc["b"].get_object().get(b_obj));
                 int64_t c_val, d_val;
