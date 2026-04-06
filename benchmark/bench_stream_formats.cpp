@@ -10,7 +10,9 @@ enum class stream_case {
   ndjson_small,
   ndjson_large,
   rfc7464_small,
-  rfc7464_large
+  rfc7464_large,
+  comma_delimited_small,
+  comma_delimited_large
 };
 
 constexpr size_t TARGET_BYTES = 128 * 1000 * 1000;
@@ -31,9 +33,12 @@ std::string make_document(size_t id, size_t payload_size) {
 
 stream_dataset build_dataset(stream_case which) {
   const bool small = which == stream_case::ndjson_small ||
-                     which == stream_case::rfc7464_small;
+                     which == stream_case::rfc7464_small ||
+                     which == stream_case::comma_delimited_small;
   const bool rfc = which == stream_case::rfc7464_small ||
                    which == stream_case::rfc7464_large;
+  const bool comma = which == stream_case::comma_delimited_small ||
+                     which == stream_case::comma_delimited_large;
   const size_t payload_size = small ? SMALL_PAYLOAD : LARGE_PAYLOAD;
   const size_t count = TARGET_BYTES / (payload_size + 48);
   std::string out;
@@ -42,8 +47,13 @@ stream_dataset build_dataset(stream_case which) {
     if (rfc) {
       out += char(0x1E);
     }
+    if (comma && i > 0) {
+      out += ',';
+    }
     out += make_document(i, payload_size);
-    out += '\n';
+    if (!comma) {
+      out += '\n';
+    }
   }
   return {padded_string(out), count};
 }
@@ -57,6 +67,10 @@ const stream_dataset &get_dataset(stream_case which) {
     build_dataset(stream_case::rfc7464_small);
   static const stream_dataset rfc_large =
     build_dataset(stream_case::rfc7464_large);
+  static const stream_dataset comma_small =
+    build_dataset(stream_case::comma_delimited_small);
+  static const stream_dataset comma_large =
+    build_dataset(stream_case::comma_delimited_large);
   switch (which) {
     case stream_case::ndjson_small:
       return ndjson_small;
@@ -66,6 +80,10 @@ const stream_dataset &get_dataset(stream_case which) {
       return rfc_small;
     case stream_case::rfc7464_large:
       return rfc_large;
+    case stream_case::comma_delimited_small:
+      return comma_small;
+    case stream_case::comma_delimited_large:
+      return comma_large;
   }
   return ndjson_small;
 }
@@ -75,15 +93,18 @@ void set_counters(benchmark::State &state, const stream_dataset &dataset) {
   state.SetItemsProcessed(int64_t(state.iterations()) * int64_t(dataset.count));
 }
 
-template <stream_case which>
+template <stream_case which, bool threaded = true>
 static void bench_ondemand(benchmark::State &state) {
   const auto &dataset = get_dataset(which);
   ondemand::parser parser;
-  parser.threaded = true;
+  parser.threaded = threaded;
   stream_format format = stream_format::whitespace_delimited;
   if constexpr (which == stream_case::rfc7464_small ||
                 which == stream_case::rfc7464_large) {
     format = stream_format::json_sequence;
+  } else if constexpr (which == stream_case::comma_delimited_small ||
+                       which == stream_case::comma_delimited_large) {
+    format = stream_format::comma_delimited;
   }
   for (const auto _ : state) {
     ondemand::document_stream docs;
@@ -120,6 +141,9 @@ static void bench_dom(benchmark::State &state) {
   if constexpr (which == stream_case::rfc7464_small ||
                 which == stream_case::rfc7464_large) {
     format = stream_format::json_sequence;
+  } else if constexpr (which == stream_case::comma_delimited_small ||
+                       which == stream_case::comma_delimited_large) {
+    format = stream_format::comma_delimited;
   }
   for (const auto _ : state) {
     dom::document_stream docs;
@@ -156,6 +180,19 @@ BENCHMARK(bench_ondemand<stream_case::rfc7464_small>)
 BENCHMARK(bench_ondemand<stream_case::rfc7464_large>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::comma_delimited_small>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::comma_delimited_large>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+// Non-threaded comma_delimited for comparison
+BENCHMARK(bench_ondemand<stream_case::comma_delimited_small, false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::comma_delimited_large, false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
 
 BENCHMARK(bench_dom<stream_case::ndjson_small>)
     ->UseRealTime()
@@ -167,6 +204,12 @@ BENCHMARK(bench_dom<stream_case::rfc7464_small>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);
 BENCHMARK(bench_dom<stream_case::rfc7464_large>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_dom<stream_case::comma_delimited_small>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_dom<stream_case::comma_delimited_large>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);
 

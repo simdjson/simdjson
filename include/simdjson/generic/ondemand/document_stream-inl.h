@@ -306,7 +306,7 @@ inline void document_stream::next() noexcept {
        */
 
       if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
-      doc_index = batch_start;
+      doc_index = batch_start + parser->implementation->structural_indexes[0];
     }
   }
 }
@@ -335,12 +335,35 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
   // This code only updates the structural index in the parser, it does not update any json_iterator
   // instance.
   size_t remaining = len - _batch_start;
+  stage1_mode mode;
   if (remaining <= batch_size) {
-    return p.implementation->stage1(&buf[_batch_start], remaining,
-      format == stream_format::json_sequence ? stage1_mode::json_sequence_final : stage1_mode::streaming_final);
+    // Final batch
+    switch (format) {
+      case stream_format::json_sequence:
+        mode = stage1_mode::json_sequence_final;
+        break;
+      case stream_format::comma_delimited:
+        mode = stage1_mode::comma_delimited_final;
+        break;
+      default:
+        mode = stage1_mode::streaming_final;
+        break;
+    }
+    return p.implementation->stage1(&buf[_batch_start], remaining, mode);
   } else {
-    return p.implementation->stage1(&buf[_batch_start], batch_size,
-      format == stream_format::json_sequence ? stage1_mode::json_sequence_partial : stage1_mode::streaming_partial);
+    // Partial batch
+    switch (format) {
+      case stream_format::json_sequence:
+        mode = stage1_mode::json_sequence_partial;
+        break;
+      case stream_format::comma_delimited:
+        mode = stage1_mode::comma_delimited_partial;
+        break;
+      default:
+        mode = stage1_mode::streaming_partial;
+        break;
+    }
+    return p.implementation->stage1(&buf[_batch_start], batch_size, mode);
   }
 }
 

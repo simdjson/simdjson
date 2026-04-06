@@ -19,7 +19,12 @@ class document;
 * 3) The stream_final mode allows us to truncate final
 * unterminated strings. It is useful in conjunction with streaming_partial.
 */
-enum class stage1_mode { regular, streaming_partial, streaming_final, json_sequence_partial, json_sequence_final};
+enum class stage1_mode {
+  regular,
+  streaming_partial, streaming_final,
+  json_sequence_partial, json_sequence_final,
+  comma_delimited_partial, comma_delimited_final
+};
 
 /**
  * Returns true if mode == streaming_partial or mode == streaming_final

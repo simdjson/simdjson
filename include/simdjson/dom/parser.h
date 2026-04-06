@@ -500,7 +500,7 @@ public:
    * @param buf The concatenated JSON documents.
    * @param len The length of the buffer.
    * @param batch_size The batch size to use.
-   * @param format The stream format (whitespace_delimited or json_sequence).
+   * @param format The stream format.
    * @return A stream of documents, or an error.
    */
   inline simdjson_result<document_stream> parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept;

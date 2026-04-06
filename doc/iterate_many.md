@@ -278,38 +278,57 @@ Importantly, you should only call `truncated_bytes()` after iterating through al
 Comma-separated documents
 -----------
 
-We also support comma-separated documents, but with some performance limitations. The `iterate_many` function  takes in an option to allow parsing of comma separated documents (which defaults on false). In this mode, the entire buffer is processed in one batch. Therefore, the total size of the document should not exceed the maximal capacity of the parser (4 GB). This mode also effectively disallow multithreading. It is therefore mostly suitable for not "very large" inputs. In this mode, the batch_size parameter
-is effectively ignored, as it is set to at least the document size.
-
-Example:
+To parse comma-separated documents like `{"a":1},{"b":2},{"c":3}`, use the `stream_format::comma_delimited` parameter:
 
 ```cpp
-    auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
-    ondemand::parser parser;
-    ondemand::document_stream doc_stream;
-    // We pass '32' as the batch size, but it is a bogus parameter because, since
-    // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
-    // the document size.
-    auto error = parser.iterate_many(json, 32, true).get(doc_stream);
-    if (error) { std::cerr << error << std::endl; return; }
-    for (auto doc : doc_stream) {
-        std::cout << doc.type() << std::endl;
-    }
- ```
-
- This will print:
-
+auto json = R"({"a":1},{"b":2},{"c":3})"_padded;
+ondemand::parser parser;
+ondemand::document_stream stream;
+auto error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,
+                                 simdjson::stream_format::comma_delimited).get(stream);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto doc : stream) {
+    std::cout << doc << std::endl;
+}
+// Prints: {"a":1}
+//         {"b":2}
+//         {"c":3}
 ```
-number
-number
-number
-number
-string
-string
-string
-object
-array
+
+Whitespace around the commas is allowed:
+```cpp
+auto json = R"({"a":1} , {"b":2} , {"c":3})"_padded;  // Also works
 ```
+
+Nested commas inside objects and arrays are preserved:
+```cpp
+auto json = R"({"arr":[1,2,3]},{"obj":{"x":1,"y":2}})"_padded;
+// Correctly parses as 2 documents, not 6
+```
+
+Mixed document types are supported:
+```cpp
+auto json = R"(1, 2, 3, 4, "a", "b", "c", {"hello": "world"}, [1, 2, 3])"_padded;
+ondemand::parser parser;
+ondemand::document_stream doc_stream;
+auto error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,
+                                 simdjson::stream_format::comma_delimited).get(doc_stream);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto doc : doc_stream) {
+    std::cout << doc.type() << std::endl;
+}
+// Prints: number number number number string string string object array
+```
+
+Extra top-level separators are tolerated for compatibility with the legacy
+`allow_comma_separated` behavior. For example, leading commas, trailing commas,
+and repeated commas are treated as empty separators rather than documents.
+
+### Legacy `allow_comma_separated` parameter (deprecated)
+
+The `allow_comma_separated` boolean parameter is deprecated. When set to `true`, it now internally maps to `stream_format::comma_delimited`.
+
+The old single-batch limitation no longer applies - comma-delimited parsing now supports multi-batch processing and threading for optimal performance on large files.
 
 JSON Text Sequences (RFC 7464)
 ------------------------------
@@ -346,6 +365,7 @@ for (auto doc : stream) {
 The `stream_format` enum has the following values:
 - `stream_format::whitespace_delimited` (default): Standard NDJSON/JSON Lines format
 - `stream_format::json_sequence`: RFC 7464 format with RS delimiters
+- `stream_format::comma_delimited`: Comma-separated JSON documents
 
 The trailing LF after each JSON text is optional but recommended by the RFC for robustness.
 

@@ -291,13 +291,12 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     }
     uint32_t next_batch_start = uint32_t(len);
     auto new_structural_indexes = find_next_document_index_json_sequence(parser, len, false, next_batch_start);
-    if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
-      if(parser.structural_indexes[0] == 0) {
-        return CAPACITY;
-      } else {
-        parser.n_structural_indexes = 0;
-        return EMPTY;
-      }
+    if (new_structural_indexes == DOCUMENT_TOO_LARGE) {
+      return CAPACITY;
+    }
+    if (new_structural_indexes == 0) {
+      parser.n_structural_indexes = 0;
+      return EMPTY;
     }
     parser.n_structural_indexes = new_structural_indexes;
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
@@ -306,6 +305,31 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     if(unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start);
+    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
+    if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
+  } else if (partial == stage1_mode::comma_delimited_partial) {
+    // Comma-delimited: filter root-level commas, use comma positions for batch boundaries
+    if(unclosed_string) {
+      parser.n_structural_indexes--;
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+    }
+    uint32_t next_batch_start = uint32_t(len);
+    auto new_structural_indexes = filter_comma_delimited(parser, len, false, next_batch_start);
+    if (new_structural_indexes == DOCUMENT_TOO_LARGE) {
+      return CAPACITY;
+    }
+    if (new_structural_indexes == 0) {
+      parser.n_structural_indexes = 0;
+      return EMPTY;
+    }
+    parser.n_structural_indexes = new_structural_indexes;
+    parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
+  } else if (partial == stage1_mode::comma_delimited_final) {
+    // Comma-delimited: final batch, last document extends to EOF
+    if(unclosed_string) { parser.n_structural_indexes--; }
+    uint32_t next_batch_start = uint32_t(len);
+    parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }

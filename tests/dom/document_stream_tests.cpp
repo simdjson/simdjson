@@ -1102,11 +1102,167 @@ namespace document_stream_tests {
       return true;
     }()));
 
+    SUBTEST("multibatch current_index and source", ([&]() {
+      auto input = simdjson::padded_string("\x1e {\"a\":1}\n\x1e\t{\"b\":2}\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, 10, simdjson::stream_format::json_sequence).get(stream));
+      auto it = stream.begin();
+      ASSERT_EQUAL(it.current_index(), size_t(2));
+      ASSERT_EQUAL(it.source(), std::string_view("{\"a\":1}"));
+      ++it;
+      ASSERT_EQUAL(it.current_index(), size_t(12));
+      ASSERT_EQUAL(it.source(), std::string_view("{\"b\":2}"));
+      return true;
+    }()));
+
+    SUBTEST("small batch reports capacity", ([&]() {
+      std::string json_sequence_input = "\x1e[";
+      for (size_t i = 0; i < 2000; i++) {
+        json_sequence_input += '1';
+        json_sequence_input += (i + 1 < 2000 ? ',' : ']');
+      }
+      json_sequence_input += '\n';
+      auto input = simdjson::padded_string(json_sequence_input);
+      ASSERT_SUCCESS(parser.parse_many(input, 1024, simdjson::stream_format::json_sequence).get(stream));
+      auto it = stream.begin();
+      auto doc = *it;
+      ASSERT_ERROR(doc.error(), simdjson::CAPACITY);
+      return true;
+    }()));
+
+    TEST_SUCCEED();
+  }
+
+  bool comma_delimited_tests() {
+    TEST_START();
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+
+    SUBTEST("basic comma-separated objects", ([&]() {
+      auto input = R"({"a":1},{"b":2},{"c":3})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      const char* keys[] = {"a", "b", "c"};
+      int64_t expected[] = {1, 2, 3};
+      size_t count = 0;
+      for (auto doc : stream) {
+        ASSERT_SUCCESS(doc.error());
+        int64_t value;
+        ASSERT_SUCCESS(doc[keys[count]].get(value));
+        ASSERT_EQUAL(value, expected[count]);
+        count++;
+      }
+      ASSERT_EQUAL(count, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("comma-separated with whitespace", ([&]() {
+      auto input = R"({"a":1} , {"b":2} , {"c":3})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      size_t count = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+      ASSERT_EQUAL(count, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("comma-separated arrays", ([&]() {
+      auto input = R"([1,2],[3,4],[5,6])"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      size_t count = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+      ASSERT_EQUAL(count, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("mixed document types", ([&]() {
+      auto input = R"({"a":1},[2,3],"string",42,true,null)"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      size_t count = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+      ASSERT_EQUAL(count, size_t(6));
+      return true;
+    }()));
+
+    SUBTEST("nested commas preserved", ([&]() {
+      auto input = R"({"a":[1,2,3]},{"b":{"c":4,"d":5}})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      auto it = stream.begin();
+      // First doc: {"a":[1,2,3]}
+      simdjson::dom::array arr;
+      ASSERT_SUCCESS((*it)["a"].get(arr));
+      size_t arr_count = 0;
+      for (auto elem : arr) { (void)elem; arr_count++; }
+      ASSERT_EQUAL(arr_count, size_t(3));
+      ++it;
+      // Second doc: {"b":{"c":4,"d":5}}
+      int64_t c_val, d_val;
+      ASSERT_SUCCESS((*it)["b"]["c"].get(c_val));
+      ASSERT_SUCCESS((*it)["b"]["d"].get(d_val));
+      ASSERT_EQUAL(c_val, int64_t(4));
+      ASSERT_EQUAL(d_val, int64_t(5));
+      return true;
+    }()));
+
+    SUBTEST("single document no comma", ([&]() {
+      auto input = R"({"a":1})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      size_t count = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); count++; }
+      ASSERT_EQUAL(count, size_t(1));
+      return true;
+    }()));
+
+    SUBTEST("current_index points to JSON value", ([&]() {
+      // Layout: {(0) "(1) a(2) "(3) :(4) 1(5) }(6) ,(7) {(8) ...
+      auto input = R"({"a":1},{"b":2})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      auto it = stream.begin();
+      ASSERT_EQUAL(it.current_index(), size_t(0));  // First { at position 0
+      ++it;
+      ASSERT_EQUAL(it.current_index(), size_t(8));  // Second { at position 8
+      return true;
+    }()));
+
+    SUBTEST("source returns correct document slice", ([&]() {
+      auto input = R"([1,2,3],{"a":1})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
+      auto it = stream.begin();
+      ASSERT_EQUAL(it.source(), std::string_view("[1,2,3]"));
+      ++it;
+      ASSERT_EQUAL(it.source(), std::string_view("{\"a\":1}"));
+      return true;
+    }()));
+
+    SUBTEST("multibatch current_index and source", ([&]() {
+      auto input = R"({"a":1}, {"b":2})"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, 10, simdjson::stream_format::comma_delimited).get(stream));
+      auto it = stream.begin();
+      ASSERT_EQUAL(it.current_index(), size_t(0));
+      ASSERT_EQUAL(it.source(), std::string_view("{\"a\":1}"));
+      ++it;
+      ASSERT_EQUAL(it.current_index(), size_t(9));
+      ASSERT_EQUAL(it.source(), std::string_view("{\"b\":2}"));
+      return true;
+    }()));
+
+    SUBTEST("small batch reports capacity", ([&]() {
+      std::string comma_input = "  [";
+      for (size_t i = 0; i < 2000; i++) {
+        comma_input += '1';
+        comma_input += (i + 1 < 2000 ? ',' : ']');
+      }
+      auto input = simdjson::padded_string(comma_input);
+      ASSERT_SUCCESS(parser.parse_many(input, 1024, simdjson::stream_format::comma_delimited).get(stream));
+      auto it = stream.begin();
+      auto doc = *it;
+      ASSERT_ERROR(doc.error(), simdjson::CAPACITY);
+      return true;
+    }()));
+
     TEST_SUCCEED();
   }
 
   bool run() {
     return json_sequence_tests() &&
+           comma_delimited_tests() &&
            issue2181() &&
            issue2170() &&
            skipbom() &&

@@ -98,6 +98,13 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
 }
 
 /**
+ * Sentinel value returned to indicate a document started but didn't fit
+ * (CAPACITY error), as opposed to 0 which means no document content found
+ * (EMPTY).
+ */
+constexpr uint32_t DOCUMENT_TOO_LARGE = UINT32_MAX;
+
+/**
  * For RFC 7464 JSON text sequences, filter RS from structural indexes and
  * find batch boundaries.
  *
@@ -112,7 +119,9 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
  * @param len The length of the current batch buffer.
  * @param is_final True if this is the final batch (no more data coming).
  * @param next_batch_start Output: offset where the next batch should start.
- * @return The number of structural indexes to keep (after RS filtering), or 0 if no complete document.
+ * @return The number of structural indexes to keep (after RS filtering),
+ *         0 if no document content found (EMPTY),
+ *         or DOCUMENT_TOO_LARGE if a document started but didn't fit (CAPACITY).
  */
 simdjson_inline uint32_t find_next_document_index_json_sequence(
     dom_parser_implementation &parser,
@@ -193,7 +202,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   if (rs_count < 2) {
     // Only one RS, so we have at most one document that may be incomplete.
     // We cannot confirm it is complete without another RS.
-    return 0;
+    // Return DOCUMENT_TOO_LARGE if content was found (write_idx > 0), 0 if only separators.
+    return (parser.n_structural_indexes > 0) ? DOCUMENT_TOO_LARGE : 0;
   }
 
   // We have at least 2 RS markers. The last complete document ends before last_rs_pos.
@@ -216,6 +226,108 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // confirms their end). No need to call find_next_document_index() which
   // would fail for scalar documents like `1` or `"hello"`.
   return keep_count;
+}
+
+/**
+ * Filter comma-delimited documents by removing root-level commas from
+ * structural indexes.
+ *
+ * For comma-delimited format like `{...},{...},{...}`, we need to remove
+ * the commas that separate documents (depth 0) while preserving commas
+ * inside arrays and objects (depth > 0).
+ *
+ * After filtering, the structural indexes look like whitespace-delimited
+ * documents, so find_next_document_index() works unchanged.
+ *
+ * @param parser The parser with structural_indexes and buf.
+ * @param len The length of the current batch buffer.
+ * @param is_final True if this is the final batch (no more data coming).
+ * @param next_batch_start Output: offset where the next batch should start.
+ * @return The number of structural indexes to keep,
+ *         0 if no document content found (EMPTY),
+ *         or DOCUMENT_TOO_LARGE if a document started but didn't fit (CAPACITY).
+ */
+simdjson_inline uint32_t filter_comma_delimited(
+    dom_parser_implementation &parser,
+    size_t len,
+    bool is_final,
+    uint32_t &next_batch_start) {
+  // Default: next batch starts at end of buffer
+  next_batch_start = uint32_t(len);
+
+  if (parser.n_structural_indexes == 0) { return 0; }
+
+  // Track depth to identify root-level commas (depth 0)
+  int depth = 0;
+  uint32_t write_idx = 0;
+  uint32_t last_root_comma_pos = 0;
+  uint32_t root_comma_count = 0;
+
+  for (uint32_t i = 0; i < parser.n_structural_indexes; i++) {
+    uint32_t idx = parser.structural_indexes[i];
+    uint8_t c = parser.buf[idx];
+
+    switch (c) {
+      case '{': case '[':
+        depth++;
+        parser.structural_indexes[write_idx++] = idx;
+        break;
+      case '}': case ']':
+        depth--;
+        parser.structural_indexes[write_idx++] = idx;
+        break;
+      case ',':
+        if (depth == 0) {
+          // Root-level comma = document boundary, skip it
+          last_root_comma_pos = idx;
+          root_comma_count++;
+          continue;
+        }
+        parser.structural_indexes[write_idx++] = idx;
+        break;
+      default:
+        // Colons, scalars, etc.
+        parser.structural_indexes[write_idx++] = idx;
+        break;
+    }
+  }
+
+  // Update structural index count
+  parser.n_structural_indexes = write_idx;
+
+  if (parser.n_structural_indexes == 0) { return 0; }
+
+  if (is_final) {
+    // Final batch: use standard boundary detection on filtered indexes
+    return find_next_document_index(parser);
+  }
+
+  // Partial batch: need to find complete documents only.
+  // A document ending with a root comma is complete.
+  if (root_comma_count == 0) {
+    // No root commas found; we cannot confirm any document is complete.
+    // The whole batch might be one incomplete document.
+    // Return DOCUMENT_TOO_LARGE if content was found (write_idx > 0), 0 if only commas.
+    return (parser.n_structural_indexes > 0) ? DOCUMENT_TOO_LARGE : 0;
+  }
+
+  // We have at least one root comma. Documents before the last comma are complete.
+  next_batch_start = last_root_comma_pos + 1;
+
+  // Find the structural index cutoff: keep only structurals < last_root_comma_pos
+  uint32_t keep_count = 0;
+  for (uint32_t i = parser.n_structural_indexes; i > 0; i--) {
+    if (parser.structural_indexes[i - 1] < last_root_comma_pos) {
+      keep_count = i;
+      break;
+    }
+  }
+
+  if (keep_count == 0) { return 0; }
+
+  // Use standard boundary detection on the complete portion
+  parser.n_structural_indexes = keep_count;
+  return find_next_document_index(parser);
 }
 
 } // namespace stage1

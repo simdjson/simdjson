@@ -289,5 +289,45 @@ for (auto doc : stream) {
 The `stream_format` enum has the following values:
 - `stream_format::whitespace_delimited` (default): Standard NDJSON/JSON Lines format
 - `stream_format::json_sequence`: RFC 7464 format with RS delimiters
+- `stream_format::comma_delimited`: Comma-separated JSON documents
 
 The trailing LF after each JSON text is optional but recommended by the RFC for robustness.
+
+Comma-Separated Documents
+-------------------------
+
+Some systems produce JSON documents separated by commas, like `{"a":1},{"b":2},{"c":3}`. This is common when extracting elements from a JSON array or when APIs return comma-separated results.
+
+To parse comma-separated documents, use the `stream_format::comma_delimited` parameter:
+
+```cpp
+auto json = R"({"a":1},{"b":2},{"c":3})"_padded;
+simdjson::dom::parser parser;
+simdjson::dom::document_stream stream;
+auto error = parser.parse_many(json, simdjson::dom::DEFAULT_BATCH_SIZE,
+                               simdjson::stream_format::comma_delimited).get(stream);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto doc : stream) {
+    std::cout << doc << std::endl;
+}
+// Prints: {"a":1}
+//         {"b":2}
+//         {"c":3}
+```
+
+Whitespace around the commas is allowed:
+```cpp
+auto json = R"({"a":1} , {"b":2} , {"c":3})"_padded;  // Also works
+```
+
+Nested commas inside objects and arrays are preserved:
+```cpp
+auto json = R"({"arr":[1,2,3]},{"obj":{"x":1,"y":2}})"_padded;
+// Correctly parses as 2 documents, not 6
+```
+
+Extra top-level separators are tolerated for compatibility with the legacy
+On-Demand comma-separated mode. Leading commas, trailing commas, and repeated
+commas are treated as empty separators rather than documents.
+
+Unlike the legacy `allow_comma_separated` parameter, `stream_format::comma_delimited` supports multi-batch processing and threading for optimal performance on large files.

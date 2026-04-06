@@ -230,7 +230,7 @@ private:
    * @param len is the length of the raw byte buffer in bytes
    * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
    * @param allow_comma_separated whether to allow comma-separated documents
-   * @param format the stream format (whitespace_delimited or json_sequence)
+   * @param format the stream format
    */
   simdjson_inline document_stream(
     ondemand::parser &parser,

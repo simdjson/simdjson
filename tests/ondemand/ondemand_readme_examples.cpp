@@ -1678,10 +1678,7 @@ bool allow_comma_separated_example() {
   auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  // We pass '32' as the batch size, but it is a bogus parameter because, since
-  // we pass 'true' to the allow_comma parameter, the batch size will be set to at least
-  // the document size.
-  auto error = parser.iterate_many(json, 32, true).get(doc_stream);
+  auto error = parser.iterate_many(json, 32, simdjson::stream_format::comma_delimited).get(doc_stream);
   if(error) { std::cerr << error << std::endl; return false; }
   for (auto doc : doc_stream) {
     std::cout << doc.type() << std::endl;

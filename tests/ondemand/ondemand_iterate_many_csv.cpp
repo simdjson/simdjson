@@ -13,7 +13,7 @@ bool normal() {
   auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), stream_format::comma_delimited).get(doc_stream));
 
   for (auto doc : doc_stream)
   {
@@ -28,7 +28,7 @@ bool small_batch_size() {
   auto json = R"( 1, 2, 3, 4, "a", "b", "c", {"hello": "world"} , [1, 2, 3])"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, 32, true).get(doc_stream));
+  ASSERT_SUCCESS(parser.iterate_many(json, 32, stream_format::comma_delimited).get(doc_stream));
 
   for (auto doc : doc_stream)
   {
@@ -43,7 +43,7 @@ bool trailing_comma() {
   auto json = R"(1,)"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), stream_format::comma_delimited).get(doc_stream));
 
   for (auto doc : doc_stream)
   {
@@ -59,7 +59,7 @@ bool check_parsed_values() {
   auto json = R"(  1  , "a" , [100, 1]  , {"hello"  :    "world"}  , )"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), stream_format::comma_delimited).get(doc_stream));
 
   auto begin = doc_stream.begin();
   auto end = doc_stream.end();
@@ -127,7 +127,7 @@ bool leading_comma() {
   auto json = R"(,1)"_padded;
   ondemand::parser parser;
   ondemand::document_stream doc_stream;
-  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), true).get(doc_stream));
+  ASSERT_SUCCESS(parser.iterate_many(json, json.size(), stream_format::comma_delimited).get(doc_stream));
 
   try {
     auto begin = doc_stream.begin();

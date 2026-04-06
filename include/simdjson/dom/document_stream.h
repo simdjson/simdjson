@@ -206,7 +206,7 @@ private:
    * @param buf is the raw byte buffer we need to process
    * @param len is the length of the raw byte buffer in bytes
    * @param batch_size is the size of the windows (must be strictly greater or equal to the largest JSON document)
-   * @param format is the stream format (whitespace_delimited or json_sequence)
+   * @param format is the stream format
    */
   simdjson_inline document_stream(
     dom::parser &parser,
@@ -263,7 +263,7 @@ private:
   const uint8_t *buf;
   size_t len;
   size_t batch_size;
-  /** The stream format (whitespace_delimited or json_sequence). */
+  /** The stream format. */
   stream_format format;
   /** The error (or lack thereof) from the current document. */
   error_code error;
