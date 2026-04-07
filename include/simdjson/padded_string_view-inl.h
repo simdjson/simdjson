@@ -130,37 +130,38 @@ inline uint32_t get_page_size() noexcept {
 #if SIMDJSON_CPLUSPLUS17
 
 inline padded_input::padded_input(std::string_view sv) {
-    if (needs_allocation(sv.data(), sv.size())) {
-        storage = simdjson::padded_string(sv);
-    } else {
-        storage = simdjson::padded_string_view(
-            sv.data(), sv.size(), sv.size() + simdjson::SIMDJSON_PADDING);
-    }
+  if (needs_allocation(sv.data(), sv.size())) {
+      storage = simdjson::padded_string(sv);
+  } else {
+      storage = simdjson::padded_string_view(
+          sv.data(), sv.size(), sv.size() + simdjson::SIMDJSON_PADDING);
+  }
 }
 
 inline padded_input::padded_input(const char *data, size_t length) {
-    if (needs_allocation(data, length)) {
-        storage = simdjson::padded_string(data, length);
-    } else {
-        storage = simdjson::padded_string_view(
-            data, length, length + simdjson::SIMDJSON_PADDING);
-    }
+  if (needs_allocation(data, length)) {
+      storage = simdjson::padded_string(data, length);
+  } else {
+      storage = simdjson::padded_string_view(
+          data, length, length + simdjson::SIMDJSON_PADDING);
+  }
 }
 
 inline bool padded_input::is_view() const noexcept {
-    return std::holds_alternative<simdjson::padded_string_view>(storage);
+  return std::holds_alternative<simdjson::padded_string_view>(storage);
 }
 
 inline padded_input::operator simdjson::padded_string_view() const noexcept {
-    return std::visit([](const auto& p) -> simdjson::padded_string_view {
-        return p;
-    }, storage);
+  return std::visit([](const auto& p) -> simdjson::padded_string_view {
+      return p;
+  }, storage);
 }
 
 inline bool padded_input::needs_allocation(const char* buf, size_t len) noexcept {
-    const auto page_size = get_page_size();
-    return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size)
-            + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size));
+  if(len == 0) { return false; }
+  const auto page_size = get_page_size();
+  return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size)
+          + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size));
 }
 #endif // SIMDJSON_CPLUSPLUS17
 

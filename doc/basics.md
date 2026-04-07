@@ -217,6 +217,13 @@ simdjson::padded_input input(json); // Automatically pads if needed
 ondemand::document doc = parser.iterate(input);
 ```
 
+The actual padding only occurs the JSON string ends near the boundary of a memory page, which is
+uncommon. Using a `simdjson::padded_input` is safe although sanitizers and tools like valgrind
+might report illegal reads (which are safe in our case because they remain in the mapped page). You should avoid `simdjson::padded_input`
+on systems withoout a page size of at least 4096: virtually all systems quality except for
+some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine. Note that, most times, an `simdjson::padded_input` instance will not copy the data and will only act
+as a view (it does not own the memory).
+
 If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `padded_string_view` to pass it in:
 
 ```cpp
@@ -230,6 +237,9 @@ This example allocates a buffer with `SIMDJSON_PADDING` extra bytes beyond the s
 
 The simdjson library will also accept `std::string` instances. If the provided
 reference is non-const, it will allocate padding as needed.
+
+If you are using C++17 or better, the `simdjson::padded_input` approach might be preferable.
+You can construct a `simdjson::padded_input` from an `std::string` since `std::string`.
 
 You can copy your data directly on a `simdjson::padded_string` as follows:
 

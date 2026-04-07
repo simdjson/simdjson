@@ -20,7 +20,7 @@ long page_size() {
 }
 
 // Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the
-// page boundary.
+// page boundary. Assumes len != 0.
 bool need_allocation(const char *buf, size_t len) {
   return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
     + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size()));

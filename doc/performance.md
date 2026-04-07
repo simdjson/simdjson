@@ -208,10 +208,10 @@ You can still make sure of this capability in your code if you are an expert
 programmer and you are willing to silence sanitizer warnings.
 
 If you are building simdjson with C++17 or better, you can use `simdjson::padded_input`.
-
 The `padded_input` struct automatically manages padding for you. It can be constructed from a `std::string_view` or a C-style string with length. If the input already has sufficient padding (up to the end of the memory page), it creates a view without copying. Otherwise, it copies the data into a `padded_string` with proper padding.
 
 Example usage:
+
 ```cpp
 std::string_view json = get_json_data();
 simdjson::padded_input input(json);  // Automatically pads if needed
@@ -266,7 +266,7 @@ long page_size() {
 }
 
 // Returns true if the buffer + len + simdjson::SIMDJSON_PADDING crosses the
-// page boundary.
+// page boundary. Assume len != 0.
 bool need_allocation(const char *buf, size_t len) {
   return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size())
     + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size()));

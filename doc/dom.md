@@ -891,7 +891,8 @@ simdjson::padded_input input(json); // Automatically pads if needed
 simdjson::dom::element element = parser.parse(input);
 ```
 
-The actual padding only occurs if the JSON string ends near the boundary of a memory page, which is uncommon. Using a `simdjson::padded_input` is safe although sanitizers and tools like valgrind might report illegal reads (which are safe in our case). You should avoid `simdjson::padded_input` on systems without a page size of at least 4096: virtually all systems qualify except for some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine.
+The actual padding only occurs if the JSON string ends near the boundary of a memory page, which is uncommon. Using a `simdjson::padded_input` is safe although sanitizers and tools like valgrind might report illegal reads (which are safe in our case because they remain in the mapped page). You should avoid `simdjson::padded_input` on systems without a page size of at least 4096: virtually all systems qualify except for some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine.  Note that, most times, an `simdjson::padded_input` instance will not copy the data and will only act
+as a view (it does not own the memory).
 
 Performance Tips
 ---------------------
