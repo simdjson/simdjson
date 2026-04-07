@@ -208,6 +208,15 @@ auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_s
 ondemand::document doc = parser.iterate(json); // parse a string
 ```
 
+If you are compiling your project with C++17 or better, you can use a `simdjson::padded_input`:
+
+```cpp
+ondemand::parser parser;
+std::string_view json = "[1,2,3]";
+simdjson::padded_input input(json); // Automatically pads if needed
+ondemand::document doc = parser.iterate(input);
+```
+
 If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `padded_string_view` to pass it in:
 
 ```cpp
@@ -216,6 +225,8 @@ char json[3+SIMDJSON_PADDING];
 strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
+
+This example allocates a buffer with `SIMDJSON_PADDING` extra bytes beyond the string length. The `iterate()` call passes the buffer pointer, the actual string length (3 for "[1]"), and the total allocated size including padding. This allows simdjson to safely read beyond the string content during parsing without buffer overflows, improving performance by avoiding bounds checks.
 
 The simdjson library will also accept `std::string` instances. If the provided
 reference is non-const, it will allocate padding as needed.

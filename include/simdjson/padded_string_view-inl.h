@@ -6,6 +6,17 @@
 
 #include <cstring> /* memcmp */
 
+// for page size computation.
+#if defined(_WIN32)
+  #include <sysinfoapi.h>
+#elif defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+  #include <unistd.h>
+  #if defined(__APPLE__)
+    #include <sys/sysctl.h>
+  #endif
+#endif
+
+
 namespace simdjson {
 
 inline padded_string_view::padded_string_view(const char* s, size_t len, size_t capacity) noexcept
@@ -95,7 +106,63 @@ inline padded_string_view pad_with_reserve(std::string& s) noexcept {
   return padded_string_view(s.data(), s.size(), s.capacity());
 }
 
+inline uint32_t get_page_size() noexcept {
+#if defined(_WIN32)
+    static const uint32_t cached = []() -> uint32_t {
+      SYSTEM_INFO si;
+      GetSystemInfo(&si);
+      return static_cast<std::uint32_t>(si.dwPageSize);
+    }();
+    return cached;
+#elif defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+    static const uint32_t cached = []() -> uint32_t {
+      long page_size = sysconf(_SC_PAGESIZE);
+      if (page_size > 0) {
+          return static_cast<uint32_t>(page_size);
+      }
+      return 4096; // fallback
+    }();
+    return cached;
+#else
+    return 4096; // fallback
+#endif
+}
+#if SIMDJSON_CPLUSPLUS17
 
+inline padded_input::padded_input(std::string_view sv) {
+    if (needs_allocation(sv.data(), sv.size())) {
+        storage = simdjson::padded_string(sv);
+    } else {
+        storage = simdjson::padded_string_view(
+            sv.data(), sv.size(), sv.size() + simdjson::SIMDJSON_PADDING);
+    }
+}
+
+inline padded_input::padded_input(const char *data, size_t length) {
+    if (needs_allocation(data, length)) {
+        storage = simdjson::padded_string(data, length);
+    } else {
+        storage = simdjson::padded_string_view(
+            data, length, length + simdjson::SIMDJSON_PADDING);
+    }
+}
+
+inline bool padded_input::is_view() const noexcept {
+    return std::holds_alternative<simdjson::padded_string_view>(storage);
+}
+
+inline padded_input::operator simdjson::padded_string_view() const noexcept {
+    return std::visit([](const auto& p) -> simdjson::padded_string_view {
+        return p;
+    }, storage);
+}
+
+inline bool padded_input::needs_allocation(const char* buf, size_t len) noexcept {
+    const auto page_size = get_page_size();
+    return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size)
+            + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size));
+}
+#endif // SIMDJSON_CPLUSPLUS17
 
 } // namespace simdjson
 

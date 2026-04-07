@@ -204,9 +204,25 @@ but can be significantly larger. E.g., Apple systems favour pages spanning 16 ki
 
 In effect, it means that you can almost always read a few bytes beyond your current buffer---without
 allocating extra memory. However, tools such as valgrind or memory sanitizers will flag such behavior as unsafe.
-Nevertheless, you can still make sure of this capability in your code if you are an expert
-programmer and you are willing to silence sanitizer warnings. The following code provides
-a portable example.
+You can still make sure of this capability in your code if you are an expert
+programmer and you are willing to silence sanitizer warnings.
+
+If you are building simdjson with C++17 or better, you can use `simdjson::padded_input`.
+
+The `padded_input` struct automatically manages padding for you. It can be constructed from a `std::string_view` or a C-style string with length. If the input already has sufficient padding (up to the end of the memory page), it creates a view without copying. Otherwise, it copies the data into a `padded_string` with proper padding.
+
+Example usage:
+```cpp
+std::string_view json = get_json_data();
+simdjson::padded_input input(json);  // Automatically pads if needed
+auto result = parser.parse(input);
+```
+
+This simplifies padding management compared to manually checking and allocating.
+
+
+More generally, the following code provides a portable example.
+
 
 
 The conditional compilation checks for the `_MSC_VER` macro (indicating Microsoft Visual Studio)

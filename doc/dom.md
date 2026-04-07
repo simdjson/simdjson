@@ -882,6 +882,17 @@ simdjson::dom::element element = parser.parse(padded_json_copy.get(), json_len, 
 
 Setting the `realloc_if_needed` parameter `false` in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.
 
+If you are compiling your project with C++17 or better, you can use a `simdjson::padded_input`:
+
+```cpp
+simdjson::dom::parser parser;
+std::string_view json = "[1,2,3]";
+simdjson::padded_input input(json); // Automatically pads if needed
+simdjson::dom::element element = parser.parse(input);
+```
+
+The actual padding only occurs if the JSON string ends near the boundary of a memory page, which is uncommon. Using a `simdjson::padded_input` is safe although sanitizers and tools like valgrind might report illegal reads (which are safe in our case). You should avoid `simdjson::padded_input` on systems without a page size of at least 4096: virtually all systems qualify except for some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine.
+
 Performance Tips
 ---------------------
 

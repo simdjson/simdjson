@@ -1,4 +1,5 @@
 #include "simdjson.h"
+#include "simdjson/padded_string_view.h"
 #include "test_ondemand.h"
 #if __cpp_lib_optional >= 201606L
 #include <optional>
@@ -48,6 +49,33 @@ bool simplepad() {
   auto error = parser.iterate(simdjson::pad(json)).get(doc);
   return error == SUCCESS;
 }
+
+
+#if SIMDJSON_CPLUSPLUS17
+bool simpleinputpad1() {
+  std::string json = "[1]";
+  simdjson::padded_input padded_json(json);
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(padded_json).get(doc);
+  return error == SUCCESS;
+}
+
+bool simpleinputpad2() {
+  const char *jsonpoiner = R"(
+        {
+            "key": "value"
+        }
+    )";
+  size_t len = strlen(jsonpoiner);
+
+  simdjson::padded_input padded_json(jsonpoiner, len);
+  ondemand::parser parser;
+  ondemand::document doc;
+  auto error = parser.iterate(padded_json).get(doc);
+  return error == SUCCESS;
+}
+#endif // SIMDJSON_CPLUSPLUS17
 
 bool string1() {
   const char * data = "my data"; // 7 bytes

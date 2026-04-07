@@ -1,5 +1,6 @@
 #include <iostream>
 #include "simdjson.h"
+#include "simdjson/padded_string_view.h"
 
 using namespace std;
 using namespace simdjson;
@@ -530,6 +531,35 @@ void simplepad() {
   auto error = parser.parse(simdjson::pad(json)).get(doc);
   if(error) { exit(-1); }
 }
+
+#if SIMDJSON_CPLUSPLUS17
+void simpleinputpad_dom1() {
+  std::string_view json = "[1,2,3]";
+  simdjson::padded_input input(json);
+  dom::parser parser;
+  dom::element doc;
+  auto error = parser.parse(input).get(doc);
+  if(error) { exit(-1); }
+}
+
+void simpleinputpad_dom2() {
+  const char *jsonpointer = R"(
+        {
+            "key": "value"
+        }
+    )";
+  size_t len = strlen(jsonpointer);
+  simdjson::padded_input input(jsonpointer, len);
+  dom::parser parser;
+  dom::element doc;
+  auto error = parser.parse(input).get(doc);
+  if(error) { exit(-1); }
+  std::string_view val;
+  error = doc["key"].get(val);
+  if(error) { exit(-1); }
+  if(val != "value") { exit(-1); }
+}
+#endif // SIMDJSON_CPLUSPLUS17
 
 void jsondollar() {
   dom::parser parser;

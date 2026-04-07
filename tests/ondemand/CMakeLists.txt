@@ -40,6 +40,7 @@ add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance 
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wildcard_tests                 LABELS ondemand acceptance per_implementation)
 if(NOT SIMDJSON_SANITIZE)
+  add_cpp_test(ondemand_padded_input              LABELS ondemand acceptance per_implementation)
   add_cpp_test(ondemand_cacheline              LABELS ondemand acceptance per_implementation)
 endif()
 

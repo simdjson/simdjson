@@ -73,6 +73,60 @@ public:
 
 }; // padded_string_view
 
+/**
+ * Get the system's memory page size. By default, we return
+ * 4096 bytes, which is the most common page size. On systems
+ * where the page size is not a multiple of 4096 bytes, and not
+ * a unix-like system, nor Windows, this function may return an
+ * incorrect value.
+ *
+ * @return The page size in bytes.
+ */
+inline uint32_t get_page_size() noexcept;
+
+#if SIMDJSON_CPLUSPLUS17
+/**
+ * A padded_input is a wrapper around either a padded_string_view or a padded_string.
+ * It will automatically pad a string_view if it does not have sufficient padding
+ * up to the end of the memory page. Note that a requirement for this method to
+ * make sense is to be on a system with a page size of at least 4096 (which is
+ * universal except on some embedded systems).
+ */
+struct padded_input {
+    /**
+     * Construct a padded_input from a string_view. If the string_view does not have sufficient padding,
+     * the data will be copied into a padded_string and the padded_string_view will point to the
+     * padded_string's data. Otherwise, the padded_string_view will point to the original string_view's data.
+     */
+     inline explicit padded_input(std::string_view sv);
+    /**
+     * Construct a padded_input from a C-style string (length specified). If the string does not have sufficient padding,
+     * the data will be copied into a padded_string and the padded_string_view will point to the
+     * padded_string's data. Otherwise, the padded_string_view will point to the original string's data.
+     */
+     inline explicit padded_input(const char *data, size_t length);
+
+    /**
+     * Check if the padded_input is a view.
+     *
+     * @return true if the padded_input is a view, false otherwise.
+     */
+     inline bool is_view() const noexcept;
+
+    /**
+     * Convert the padded_input to a padded_string_view.
+     *
+     * @return The padded_string_view.
+     */
+     inline operator simdjson::padded_string_view() const noexcept;
+
+private:
+    std::variant<simdjson::padded_string_view, simdjson::padded_string> storage;
+    static inline bool needs_allocation(const char* buf, size_t len) noexcept;
+};
+
+#endif // SIMDJSON_CPLUSPLUS17
+
 #if SIMDJSON_EXCEPTIONS
 /**
  * Send padded_string instance to an output stream.
@@ -105,6 +159,7 @@ inline padded_string_view pad(std::string& s) noexcept;
  * @return The padded string.
  */
 inline padded_string_view pad_with_reserve(std::string& s) noexcept;
+
 } // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_VIEW_H
