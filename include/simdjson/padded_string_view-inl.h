@@ -129,7 +129,8 @@ inline uint32_t get_page_size() noexcept {
 }
 #if SIMDJSON_CPLUSPLUS17
 
-inline padded_input::padded_input(std::string_view sv) {
+inline padded_input::padded_input(std::string_view sv)
+    : storage(simdjson::padded_string_view{}) {
   if (needs_allocation(sv.data(), sv.size())) {
       storage = simdjson::padded_string(sv);
   } else {
@@ -138,7 +139,8 @@ inline padded_input::padded_input(std::string_view sv) {
   }
 }
 
-inline padded_input::padded_input(const char *data, size_t length) {
+inline padded_input::padded_input(const char *data, size_t length)
+    : storage(simdjson::padded_string_view{}) {
   if (needs_allocation(data, length)) {
       storage = simdjson::padded_string(data, length);
   } else {
