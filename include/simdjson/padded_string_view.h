@@ -9,6 +9,9 @@
 #include <memory>
 #include <string>
 #include <ostream>
+#if SIMDJSON_CPLUSPLUS17
+#include <variant>
+#endif
 
 namespace simdjson {
 
