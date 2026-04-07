@@ -379,6 +379,8 @@ tracking explicitly potential programming mistakes. Thus you should not relying 
 size (`sizeof`) of our data structures to be constant: they may change depending on the
 compiler settings.
 
+When `SIMDJSON_DEVELOPMENT_CHECKS` is set at compile time, the global variable `simdjson_development_checks_enabled` is defined as true. It is false otherwise.
+
 Once your code has been tested, you can then run it in
 Release mode: under Visual Studio, it means having the `_DEBUG` macro undefined, and, for other
 compilers, it means setting `__OPTIMIZE__` to a positive integer. You can also forcefully

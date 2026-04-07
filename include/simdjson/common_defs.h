@@ -297,6 +297,15 @@ namespace std {
 #endif // _MSC_VER
 #endif // SIMDJSON_DEVELOPMENT_CHECKS
 
+
+// Prevent ODR violations for the simdjson_development_checks_enabled variable.
+#if SIMDJSON_DEVELOPMENT_CHECKS
+extern const bool simdjson_development_checks_enabled = true;
+#else
+extern const bool simdjson_development_checks_enabled = false;
+#endif // SIMDJSON_DEVELOPMENT_CHECKS
+
+
 // The SIMDJSON_CHECK_EOF macro is a feature flag for the "don't require padding"
 // feature.
 
