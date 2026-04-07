@@ -7,9 +7,7 @@
 #include <cstring> /* memcmp */
 
 // for page size computation.
-#if defined(_WIN32)
-  #include <sysinfoapi.h>
-#elif defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
   #include <unistd.h>
   #if defined(__APPLE__)
     #include <sys/sysctl.h>
@@ -107,7 +105,8 @@ inline padded_string_view pad_with_reserve(std::string& s) noexcept {
 }
 
 inline uint32_t get_page_size() noexcept {
-#if defined(_WIN32)
+#if defined(_WINDOWS_) // if and only if someonne loaded Windows.h, we can get the page size from there.
+// Otherwise, we assume 4096.
     static const uint32_t cached = []() -> uint32_t {
       SYSTEM_INFO si;
       GetSystemInfo(&si);
