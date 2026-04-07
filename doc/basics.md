@@ -161,70 +161,71 @@ The basics: loading and parsing JSON documents
 ----------------------------------------------
 
 The simdjson library allows you to navigate and validate JSON documents ([RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html)).
-As required by the standard, your JSON document should be in a Unicode (UTF-8) string. The whole
-string, from the beginning to the end, needs to be valid: we do not attempt to tolerate bad
-inputs before or after a document.
+Your JSON document should be a valid Unicode (UTF-8) string.
 
-For efficiency reasons, simdjson requires a string with a few bytes (`simdjson::SIMDJSON_PADDING`)
-at the end, these bytes may be read but their content does not affect the parsing. In practice,
-it means that the JSON inputs should be stored in a memory region with `simdjson::SIMDJSON_PADDING`
-extra bytes at the end. You do not have to set these bytes to specific values though you may
-want to if you want to avoid runtime warnings with some sanitizers. We expect the user
-of the library to load the data (from disk or from the network) into a padded buffer. To make
-this easy, we provide the `padded_string::load` function which loads files from disk in a padded buffer.
-[You can similarly fetch a file from a URL to a padded string](https://github.com/simdjson/curltostring) using our `simdjson::padded_string_builder`. Advanced users may want to read the section Free Padding in [our performance notes](performance.md).
-
-The simdjson library offers a tree-like [API](https://en.wikipedia.org/wiki/API), which you can
-access by creating a `ondemand::parser` and calling the `iterate()` method. The iterate method
-quickly indexes the input string and may detect some errors. The following example illustrates
-how to get started with an input JSON file (`"twitter.json"`):
+To parse JSON, create a `ondemand::parser` and call its `iterate()` method on a padded input.
+The simplest way to load a JSON file is with `padded_string::load`:
 
 ```cpp
 ondemand::parser parser;
-auto json = padded_string::load("twitter.json"); // load JSON file 'twitter.json'.
-ondemand::document doc = parser.iterate(json); // position a pointer at the beginning of the JSON data
+auto json = padded_string::load("twitter.json");
+ondemand::document doc = parser.iterate(json);
 ```
 
-(Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
-filenames: `padded_string::load(L"twitter.json")`.)
+For inline JSON strings, use the `_padded` suffix:
 
-If you prefer not to create your own `ondemand::parser` instance, you can access
-a thread-local version by calling `ondemand::parser.get_parser()`.
+```cpp
+ondemand::parser parser;
+auto json = "[1,2,3]"_padded;
+ondemand::document doc = parser.iterate(json);
+```
 
+If you are compiling with C++17 or better, you can use `simdjson::padded_input`
+which accepts any string-like input and handles padding automatically:
+
+```cpp
+ondemand::parser parser;
+std::string_view json = "[1,2,3]";
+simdjson::padded_input input(json);
+ondemand::document doc = parser.iterate(input);
+```
+
+The simdjson library also accepts `std::string` instances directly---if the provided
+reference is non-const, it will allocate padding as needed:
+
+```cpp
+ondemand::parser parser;
+std::string json = "[1,2,3]";
+ondemand::document doc = parser.iterate(json);
+```
+
+By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error handling](#error-handling) for details.
+
+
+### Advanced input options
+
+This section covers additional ways to provide JSON input to simdjson, including
+options for fine-grained control over padding and memory.
+
+**Thread-local parser.** If you prefer not to create your own `ondemand::parser` instance, you can access
+a thread-local version by calling `ondemand::parser.get_parser()`:
 
 ```cpp
 ondemand::document doc = ondemand::parser.get_parser().iterate(json);
 ```
 
-However, you should be careful because a parser instance can only be used for one
-document at a time, thus it is only applicable when you are only parsing one
+A parser instance can only be used for one document at a time, so
+the thread-local parser is only applicable when you parse one
 document per thread at any one time.
 
-You can also create a padded string---and call `iterate()`:
-
-```cpp
-ondemand::parser parser;
-auto json = "[1,2,3]"_padded; // The _padded suffix creates a simdjson::padded_string instance
-ondemand::document doc = parser.iterate(json); // parse a string
-```
-
-If you are compiling your project with C++17 or better, you can use a `simdjson::padded_input`:
-
-```cpp
-ondemand::parser parser;
-std::string_view json = "[1,2,3]";
-simdjson::padded_input input(json); // Automatically pads if needed
-ondemand::document doc = parser.iterate(input);
-```
-
-The actual padding only occurs the JSON string ends near the boundary of a memory page, which is
+**`padded_input` details (C++17+).** The actual padding only occurs when the JSON string ends near the boundary of a memory page, which is
 uncommon. Using a `simdjson::padded_input` is safe although sanitizers and tools like valgrind
 might report illegal reads (which are safe in our case because they remain in the mapped page). You should avoid `simdjson::padded_input`
-on systems withoout a page size of at least 4096: virtually all systems quality except for
-some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine. Note that, most times, an `simdjson::padded_input` instance will not copy the data and will only act
+on systems without a page size of at least 4096: virtually all systems qualify except for
+some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine. Note that, most times, a `simdjson::padded_input` instance will not copy the data and will only act
 as a view (it does not own the memory).
 
-If you have a buffer of your own with enough padding already (SIMDJSON_PADDING extra bytes allocated), you can use `padded_string_view` to pass it in:
+**User-managed buffers.** If you have a buffer of your own with enough padding already (`SIMDJSON_PADDING` extra bytes allocated), you can use `padded_string_view` to pass it in:
 
 ```cpp
 ondemand::parser parser;
@@ -233,78 +234,72 @@ strcpy(json, "[1]");
 ondemand::document doc = parser.iterate(json, strlen(json), sizeof(json));
 ```
 
-This example allocates a buffer with `SIMDJSON_PADDING` extra bytes beyond the string length. The `iterate()` call passes the buffer pointer, the actual string length (3 for "[1]"), and the total allocated size including padding. This allows simdjson to safely read beyond the string content during parsing without buffer overflows, improving performance by avoiding bounds checks.
-
-The simdjson library will also accept `std::string` instances. If the provided
-reference is non-const, it will allocate padding as needed.
-
-If you are using C++17 or better, the `simdjson::padded_input` approach might be preferable.
-You can construct a `simdjson::padded_input` from an `std::string` since `std::string`.
-
-You can copy your data directly on a `simdjson::padded_string` as follows:
+**Copying into a `padded_string`.** You can copy your data directly into a `simdjson::padded_string`:
 
 ```cpp
 const char * data = "my data"; // 7 bytes
 simdjson::padded_string my_padded_data(data, 7); // copies to a padded buffer
 ```
 
-Or as follows...
+Or from a `std::string`:
 
 ```cpp
 std::string data = "my data";
 simdjson::padded_string my_padded_data(data); // copies to a padded buffer
 ```
 
-You can then parse the JSON data from the `simdjson::padded_string` instance:
-
-
-```cpp
-ondemand::document doc = parser.iterate(my_padded_data);
-```
-
-Whenever you pass an `std::string` reference to `parser::iterate`,
-the parser will access the bytes beyond the end of
+**`std::string` and sanitizer warnings.** Whenever you pass an `std::string` reference to `parser::iterate`,
+the parser may access bytes beyond the end of
 the string but before the end of the allocated memory (`std::string::capacity()`).
-If you are using a sanitizer that checks for reading uninitialized bytes or `std::string`'s
-container-overflow checks, you may encounter sanitizer warnings.
-You can safely ignore these warnings. Or you can call `simdjson::pad(std::string&)` to pad the
-string with `SIMDJSON_PADDING` spaces: this function returns a `simdjson::padding_string_view` which can be be passed to the parser's iterator function:
+Sanitizers that check for reading uninitialized bytes may produce warnings.
+You can safely ignore these warnings, or call `simdjson::pad(std::string&)` to pad the
+string explicitly:
 
 ```cpp
 std::string json = "[1]";
 ondemand::document doc = parser.iterate(simdjson::pad(json));
 ```
 
-We recommend against creating many `std::string` or many `std::padding_string` instances in your application to store your JSON data.
+We recommend against creating many `std::string` or many `std::padded_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
-By default, the simdjson library throws exceptions (`simdjson_error`) on errors. We omit `try`-`catch` clauses from our illustrating examples: if you omit `try`-`catch` in your code, an uncaught exception will halt your program. It is also possible to use simdjson without generating exceptions, and you may even build the library without exception support at all. See [Error handling](#error-handling) for details.
+**Memory-file mapping (non-Windows).** You can use memory-file mapping to create a `simdjson::padded_string_view`
+from a file on disk:
 
-Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
+```cpp
+simdjson::padded_memory_map map(myfilename);
+if (!map.is_valid()) { /* handle error */ }
+simdjson::padded_string_view view = map.view();
+ondemand::document doc = parser.iterate(view);
+```
 
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
-
-*Windows-specific*:  Windows users who need to read files with
+**Windows-specific notes.** Windows users compiling with C++17 or better may use `wchar_t` strings to support non-ASCII
+filenames: `padded_string::load(L"twitter.json")`. Windows users who need to read files with
 non-ANSI characters in the name should set their code page to
 UTF-8 (65001). This should be the default with Windows 11 and better.
 Further, they may use the AreFileApisANSI function to determine whether
 the filename is interpreted using the ANSI or the system default OEM
 codepage, and they may call SetFileApisToOEM accordingly.
 
+Some users may want to browse code along with the compiled assembly:
 
-**Advanced feature:**
-On non-Windows systems, you can use memory-file mapping to create a `simdjson::padded_string_view`
-from a file on disk.
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
 
-```cpp
-// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping
-// under Windows at this time.
-simdjson::padded_memory_map map(myfilename);
-if (!map.is_valid()) { /* handle error */ }
-simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope
-ondemand::document doc = parser.iterate(view); // parse the JSON
-```
+**Summary of input types:**
+
+
+| Input Type / Method                          | Padding Requirement                                                                 | How Padding is Handled                                                                 | Ownership / Copying                          | Notes / Warnings                                                                 |
+|----------------------------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------------------------------------------|
+| `padded_string::load("file.json")`           | Automatic (SIMDJSON_PADDING extra bytes)                                           | Library allocates padded buffer and loads file into it                                 | Owned by `padded_string`                     | Recommended for files; safest and simplest.                                      |
+| `"...json..."_padded` literal                | Automatic (built-in padding)                                                        | Creates `padded_string` with padding                                                   | Owned by `padded_string`                     | Convenient for small hardcoded JSON.                                             |
+| `simdjson::padded_input` (C++17+)            | Automatic when needed                                                               | Adds padding **only** if the string ends near a memory page boundary                   | Usually a non-owning view (no copy most times) | Safe on standard OS (page size ≥ 4096). May trigger sanitizer/valgrind warnings (harmless). Avoid on niche embedded systems. |
+| User buffer with explicit padding            | Must have at least `SIMDJSON_PADDING` extra allocated bytes after JSON content     | Pass via `iterate(ptr, json_length, total_allocated_size)` or `padded_string_view`     | User-owned (no copy)                         | Use `char buf[len + SIMDJSON_PADDING]`. Library reads (but never writes) into padding. |
+| `std::string` (non-const)                    | Library checks `capacity()`                                                         | If insufficient, library may allocate a padded copy                                    | May copy (depends on capacity)               | Can trigger sanitizer warnings on uninitialized bytes. Use `simdjson::pad(json)` to avoid. |
+| `simdjson::pad(std::string&)`                | Adds padding if needed                                                              | Returns `padded_string_view` pointing to the (possibly resized) string                 | References original string                   | Recommended to silence sanitizers when using `std::string`.                      |
+| `padded_string(data, length)` or `padded_string(std::string)` | Automatic (copies into padded buffer)                                              | Explicit copy into owned padded buffer                                                 | Owned by `padded_string`                     | Safe when you want full ownership and padding guaranteed.                        |
+| `padded_string_view` (manual)                | User guarantees `SIMDJSON_PADDING` extra bytes after the viewed length             | User provides pointer + length + capacity                                              | Non-owning view                              | Low-level; requires careful buffer management.                                   |
+| Memory-mapped file (`padded_memory_map`)     | Automatic via mapping (non-Windows only)                                            | Creates view with sufficient padding                                                   | Non-owning (tied to map lifetime)            | Advanced; efficient for large files on Linux/macOS/etc.                          |
 
 
 Documents are iterators
