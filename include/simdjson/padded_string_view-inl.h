@@ -105,7 +105,7 @@ inline padded_string_view pad_with_reserve(std::string& s) noexcept {
 }
 
 inline uint32_t get_page_size() noexcept {
-#if defined(_WINDOWS_) // if and only if someonne loaded Windows.h, we can get the page size from there.
+#if defined(_WINDOWS_) // if and only if someone loaded Windows.h, we can get the page size from there.
 // Otherwise, we assume 4096.
     static const uint32_t cached = []() -> uint32_t {
       SYSTEM_INFO si;
