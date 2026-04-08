@@ -62,14 +62,14 @@ bool simpleinputpad1() {
 }
 
 bool simpleinputpad2() {
-  const char *jsonpoiner = R"(
+  const char *jsonpointer = R"(
         {
             "key": "value"
         }
     )";
-  size_t len = strlen(jsonpoiner);
+  size_t len = strlen(jsonpointer);
 
-  simdjson::padded_input padded_json(jsonpoiner, len);
+  simdjson::padded_input padded_json(jsonpointer, len);
   ondemand::parser parser;
   ondemand::document doc;
   auto error = parser.iterate(padded_json).get(doc);
