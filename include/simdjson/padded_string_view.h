@@ -108,6 +108,13 @@ struct padded_input {
      * padded_string's data. Otherwise, the padded_string_view will point to the original string's data.
      */
      inline explicit padded_input(const char *data, size_t length);
+    /**
+     * Construct a padded_input from a std::string. If the string does not have sufficient padding
+     * (considering its capacity), the data will be copied into a padded_string and the padded_string_view
+     * will point to the padded_string's data. Otherwise, the padded_string_view will point to the
+     * original string's data.
+     */
+     inline explicit padded_input(const std::string &s);
 
     /**
      * Check if the padded_input is a view.
@@ -125,7 +132,8 @@ struct padded_input {
 
 private:
     std::variant<simdjson::padded_string_view, simdjson::padded_string> storage;
-    static inline bool needs_allocation(const char* buf, size_t len) noexcept;
+    // whether we cross a page boundary and need to allocate a new padded string.
+    static inline bool needs_allocation(const char* buf, size_t len, size_t padding = SIMDJSON_PADDING) noexcept;
 };
 
 #endif // SIMDJSON_CPLUSPLUS17

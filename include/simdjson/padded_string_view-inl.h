@@ -148,6 +148,22 @@ inline padded_input::padded_input(const char *data, size_t length)
   }
 }
 
+inline padded_input::padded_input(const std::string &s)
+    : storage(simdjson::padded_string_view{}) {
+  const size_t len = s.size();
+  const size_t cap = s.capacity();
+  // Here we have the string content from data() to data() + size(),
+  // but the memory is accessible from data() to data() + capacity().
+  const size_t needed_padding = (cap - len) < simdjson::SIMDJSON_PADDING
+    ? simdjson::SIMDJSON_PADDING - (cap - len) : 0;
+  if (needed_padding > 0 && needs_allocation(s.data(), cap, needed_padding)) {
+      storage = simdjson::padded_string(s);
+  } else {
+      storage = simdjson::padded_string_view(
+          s.data(), len, len + simdjson::SIMDJSON_PADDING);
+  }
+}
+
 inline bool padded_input::is_view() const noexcept {
   return std::holds_alternative<simdjson::padded_string_view>(storage);
 }
@@ -158,11 +174,11 @@ inline padded_input::operator simdjson::padded_string_view() const noexcept {
   }, storage);
 }
 
-inline bool padded_input::needs_allocation(const char* buf, size_t len) noexcept {
+inline bool padded_input::needs_allocation(const char* buf, size_t len, size_t padding) noexcept {
   if(len == 0) { return false; }
   const auto page_size = get_page_size();
   return ((reinterpret_cast<uintptr_t>(buf + len - 1) % page_size)
-          + simdjson::SIMDJSON_PADDING >= static_cast<uintptr_t>(page_size));
+          + padding >= static_cast<uintptr_t>(page_size));
 }
 #endif // SIMDJSON_CPLUSPLUS17
 

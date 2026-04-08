@@ -146,10 +146,34 @@ bool test_padded_input_dom_object() {
   return true;
 }
 
+bool test_padded_input_from_std_string() {
+  std::string json = R"({"key": "value"})";
+  // Reserve extra space to test capacity handling
+  json.reserve(json.size() + 100);
+  simdjson::padded_input input(json);
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  auto error = parser.iterate(input).get(doc);
+  if (error) {
+    printf("FAILED: test_padded_input_from_std_string (iterate error: %s)\n",
+           simdjson::error_message(error));
+    return false;
+  }
+  std::string_view key;
+  error = doc["key"].get(key);
+  if (error || key != "value") {
+    printf("FAILED: test_padded_input_from_std_string (key/value mismatch)\n");
+    return false;
+  }
+  printf("OK: test_padded_input_from_std_string\n");
+  return true;
+}
+
 int main() {
   bool ok = true;
   ok = test_padded_input_from_string_view() && ok;
   ok = test_padded_input_from_cstring() && ok;
+  ok = test_padded_input_from_std_string() && ok;
   ok = test_padded_input_is_view() && ok;
   ok = test_padded_input_nested_json() && ok;
   ok = test_padded_input_dom() && ok;

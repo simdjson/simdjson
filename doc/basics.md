@@ -188,6 +188,12 @@ ondemand::parser parser;
 std::string_view json = "[1,2,3]";
 simdjson::padded_input input(json);
 ondemand::document doc = parser.iterate(input);
+
+// Also works with std::string, considering reserved capacity
+std::string json_str = "[1,2,3]";
+json_str.reserve(100);  // Reserve extra space
+simdjson::padded_input input2(json_str);  // May avoid copying
+ondemand::document doc2 = parser.iterate(input2);
 ```
 
 The simdjson library also accepts `std::string` instances directly---if the provided
@@ -293,7 +299,7 @@ Some users may want to browse code along with the compiled assembly:
 |----------------------------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------------------------------------------|
 | `padded_string::load("file.json")`           | Automatic (SIMDJSON_PADDING extra bytes)                                           | Library allocates padded buffer and loads file into it                                 | Owned by `padded_string`                     | Recommended for files; safest and simplest.                                      |
 | `"...json..."_padded` literal                | Automatic (built-in padding)                                                        | Creates `padded_string` with padding                                                   | Owned by `padded_string`                     | Convenient for small hardcoded JSON.                                             |
-| `simdjson::padded_input` (C++17+)            | Automatic when needed                                                               | Adds padding **only** if the string ends near a memory page boundary                   | Usually a non-owning view (no copy most times) | Safe on standard OS (page size ≥ 4096). May trigger sanitizer/valgrind warnings (harmless). Avoid on niche embedded systems. |
+| `simdjson::padded_input` (C++17+)            | Automatic when needed                                                               | Adds padding **only** if the string ends near a memory page boundary. For `std::string`, considers `capacity()` | Usually a non-owning view (no copy most times) | Safe on standard OS (page size ≥ 4096). May trigger sanitizer/valgrind warnings (harmless). Avoid on niche embedded systems. |
 | User buffer with explicit padding            | Must have at least `SIMDJSON_PADDING` extra allocated bytes after JSON content     | Pass via `iterate(ptr, json_length, total_allocated_size)` or `padded_string_view`     | User-owned (no copy)                         | Use `char buf[len + SIMDJSON_PADDING]`. Library reads (but never writes) into padding. |
 | `std::string` (non-const)                    | Library checks `capacity()`                                                         | If insufficient, library may allocate a padded copy                                    | May copy (depends on capacity)               | Can trigger sanitizer warnings on uninitialized bytes. Use `simdjson::pad(json)` to avoid. |
 | `simdjson::pad(std::string&)`                | Adds padding if needed                                                              | Returns `padded_string_view` pointing to the (possibly resized) string                 | References original string                   | Recommended to silence sanitizers when using `std::string`.                      |
