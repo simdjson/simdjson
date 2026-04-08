@@ -2,6 +2,7 @@
 #include "simdjson/padded_string_view.h"
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <string>
 #include <string_view>
 
