@@ -32,6 +32,21 @@ your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
 The `simdjson::compile_time::parse_json` function parses a JSON document at **compile time** and returns a `constexpr` structure reflecting its content. We support the full range of JSON values, which are mapped to C++ types as in
 the following table.
 
+For convenience, you can also use the `""_json` user-defined literal operator, which is available in the `simdjson::literals` namespace:
+
+```cpp
+using namespace simdjson::literals;
+
+constexpr auto cfg = R"(
+{
+    "port": 8080,
+    "host": "localhost"
+}
+)"_json;
+```
+
+Alternatively, you can use the qualified name `simdjson::literals::operator""_json`.
+
 
 | JSON type      | C++ type                         |
 |----------------|----------------------------------|
@@ -61,6 +76,8 @@ You can do so, at compile-time, as follows:
 
 
 ```cpp
+using namespace simdjson::literals;
+
 constexpr auto cfg = R"(
 
 {
@@ -79,6 +96,8 @@ constexpr auto cfg = R"(
 You can nest objects and arrays:
 
 ```cpp
+using namespace simdjson::literals;
+
 constexpr auto data = R"(
 
 {
@@ -98,6 +117,8 @@ constexpr auto data = R"(
 Top-level arrays are allowed:
 
 ```cpp
+using namespace simdjson::literals;
+
 constexpr auto arr = R"(
 
 [1, 2, 3]
@@ -116,6 +137,8 @@ want to check that it conforms to your expectation. You can do so with concepts.
 Let us consider this example:
 
 ```cpp
+    using namespace simdjson::literals;
+
     constexpr auto config = R"(
 
     [

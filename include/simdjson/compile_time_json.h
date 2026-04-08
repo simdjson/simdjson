@@ -63,13 +63,16 @@ namespace compile_time {
 template <constevalutil::fixed_string json_str> consteval auto parse_json();
 
 } // namespace compile_time
-} // namespace simdjson
 
+inline namespace literals {
 
 template <simdjson::constevalutil::fixed_string str>
 consteval auto operator ""_json() {
   return simdjson::compile_time::parse_json<str>();
 }
+
+} // namespace literals
+} // namespace simdjson
 
 #endif // SIMDJSON_STATIC_REFLECTION
 #endif // SIMDJSON_GENERIC_COMPILE_TIME_JSON_H

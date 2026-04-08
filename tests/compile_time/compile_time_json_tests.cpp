@@ -10,6 +10,7 @@
 
 using namespace std::string_view_literals;
 using namespace simdjson;
+using namespace simdjson::literals;
 
 namespace compile_time_json_tests {
 /**
