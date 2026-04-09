@@ -1,9 +1,8 @@
 #ifndef SIMDJSON_SRC_HASWELL_CPP
 #define SIMDJSON_SRC_HASWELL_CPP
 
-#include "simdjson/feature_macros.h"
-
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include "simdjson/feature_macros.h"
 #include <base.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 

@@ -1,7 +1,27 @@
-/* auto-generated on 2026-04-02 19:14:16 -0400. version 4.6.1 Do not edit! */
+/* auto-generated on 2026-04-09 14:54:35 -0400. version 4.6.1 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
+
+/* including simdjson/feature_macros.h: #include "simdjson/feature_macros.h" */
+/* begin file simdjson/feature_macros.h */
+
+#if !defined(SIMDJSON_FEATURE_DOM_API)
+#define SIMDJSON_FEATURE_DOM_API 1
+#endif
+
+#if !defined(SIMDJSON_FEATURE_ONDEMAND_API)
+#define SIMDJSON_FEATURE_ONDEMAND_API 1
+#endif
+
+#if !defined(SIMDJSON_FEATURE_BUILDER_API)
+#define SIMDJSON_FEATURE_BUILDER_API 1
+#endif
+
+#if !SIMDJSON_FEATURE_DOM_API && !SIMDJSON_FEATURE_ONDEMAND_API
+#error "simdjson: at least one of SIMDJSON_FEATURE_DOM_API or SIMDJSON_FEATURE_ONDEMAND_API must be enabled."
+#endif
+/* end file simdjson/feature_macros.h */
 
 /* including base.h: #include <base.h> */
 /* begin file base.h */
@@ -7705,10 +7725,13 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 #ifndef SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 #define SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 
+/* skipped duplicate #include "simdjson/feature_macros.h" */
 /* skipped duplicate #include <base.h> */
 
 #endif // SIMDJSON_SRC_GENERIC_DEPENDENCIES_H
 /* end file generic/dependencies.h */
+
+#if SIMDJSON_FEATURE_DOM_API
 /* including generic/stage1/dependencies.h: #include <generic/stage1/dependencies.h> */
 /* begin file generic/stage1/dependencies.h */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE1_DEPENDENCIES_H
@@ -7906,6 +7929,7 @@ enum class tape_type {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_DEPENDENCIES_H
 /* end file generic/stage2/dependencies.h */
+#endif
 
 /* including implementation.cpp: #include <implementation.cpp> */
 /* begin file implementation.cpp */
@@ -8861,6 +8885,7 @@ const implementation * builtin_implementation() {
 #define SIMDJSON_SRC_ARM64_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -14133,6 +14158,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for arm64 */
 /* including generic/stage2/amalgamated.h for arm64: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for arm64 */
+/* including generic/stage2/stringparsing.h for arm64: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for arm64 */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace arm64 {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace arm64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for arm64 */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for arm64: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for arm64 */
@@ -14731,257 +15010,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for arm64 */
-/* including generic/stage2/stringparsing.h for arm64: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for arm64 */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace arm64 {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace arm64
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for arm64 */
 /* including generic/stage2/structural_iterator.h for arm64: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for arm64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -15365,6 +15393,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for arm64 */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for arm64 */
 
 //
@@ -15496,6 +15526,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return arm64::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -15503,6 +15534,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept {
@@ -15513,11 +15545,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return arm64::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace arm64
 } // namespace simdjson
@@ -15543,6 +15577,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #define SIMDJSON_SRC_HASWELL_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -20525,6 +20560,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for haswell */
 /* including generic/stage2/amalgamated.h for haswell: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for haswell */
+/* including generic/stage2/stringparsing.h for haswell: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for haswell */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace haswell {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace haswell
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for haswell */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for haswell: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for haswell */
@@ -21123,257 +21412,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for haswell */
-/* including generic/stage2/stringparsing.h for haswell: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for haswell */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace haswell {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace haswell
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for haswell */
 /* including generic/stage2/structural_iterator.h for haswell: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for haswell */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -21757,6 +21795,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for haswell */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for haswell */
 
 //
@@ -21885,6 +21925,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return haswell::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -21892,6 +21933,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -21902,11 +21944,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return haswell::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace haswell
 } // namespace simdjson
@@ -21935,6 +21979,7 @@ SIMDJSON_UNTARGET_REGION
 #define SIMDJSON_SRC_ICELAKE_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -26912,6 +26957,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for icelake */
 /* including generic/stage2/amalgamated.h for icelake: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for icelake */
+/* including generic/stage2/stringparsing.h for icelake: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for icelake */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace icelake {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace icelake
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for icelake */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for icelake: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for icelake */
@@ -27510,257 +27809,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for icelake */
-/* including generic/stage2/stringparsing.h for icelake: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for icelake */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace icelake {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace icelake
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for icelake */
 /* including generic/stage2/structural_iterator.h for icelake: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for icelake */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -28144,6 +28192,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for icelake */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for icelake */
 
 #undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
@@ -28315,6 +28365,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return icelake::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -28322,6 +28373,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -28332,11 +28384,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return icelake::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace icelake
 } // namespace simdjson
@@ -28365,6 +28419,7 @@ SIMDJSON_UNTARGET_REGION
 #define SIMDJSON_SRC_PPC64_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -33570,6 +33625,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for ppc64 */
 /* including generic/stage2/amalgamated.h for ppc64: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for ppc64 */
+/* including generic/stage2/stringparsing.h for ppc64: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for ppc64 */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace ppc64 {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace ppc64
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for ppc64 */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for ppc64: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for ppc64 */
@@ -34168,257 +34477,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for ppc64 */
-/* including generic/stage2/stringparsing.h for ppc64: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for ppc64 */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace ppc64 {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace ppc64
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for ppc64 */
 /* including generic/stage2/structural_iterator.h for ppc64: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for ppc64 */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -34802,6 +34860,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for ppc64 */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for ppc64 */
 
 //
@@ -34903,6 +34963,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return ppc64::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -34910,6 +34971,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -34920,11 +34982,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return ppc64::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace ppc64
 } // namespace simdjson
@@ -34950,6 +35014,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #define SIMDJSON_SRC_WESTMERE_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -40790,6 +40855,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for westmere */
 /* including generic/stage2/amalgamated.h for westmere: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for westmere */
+/* including generic/stage2/stringparsing.h for westmere: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for westmere */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace westmere {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace westmere
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for westmere */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for westmere: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for westmere */
@@ -41388,257 +41707,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for westmere */
-/* including generic/stage2/stringparsing.h for westmere: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for westmere */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace westmere {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace westmere
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for westmere */
 /* including generic/stage2/structural_iterator.h for westmere: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for westmere */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -42022,6 +42090,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for westmere */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for westmere */
 
 //
@@ -42155,6 +42225,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return westmere::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -42162,6 +42233,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -42172,11 +42244,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return westmere::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 } // namespace westmere
 } // namespace simdjson
 
@@ -42204,6 +42278,7 @@ SIMDJSON_UNTARGET_REGION
 #define SIMDJSON_SRC_LASX_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -47041,6 +47116,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for lasx */
 /* including generic/stage2/amalgamated.h for lasx: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for lasx */
+/* including generic/stage2/stringparsing.h for lasx: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for lasx */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace lasx {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace lasx
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for lasx */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for lasx: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for lasx */
@@ -47639,257 +47968,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for lasx */
-/* including generic/stage2/stringparsing.h for lasx: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for lasx */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace lasx {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace lasx
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for lasx */
 /* including generic/stage2/structural_iterator.h for lasx: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for lasx */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -48273,6 +48351,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for lasx */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for lasx */
 
 //
@@ -48364,6 +48444,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return lasx::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -48371,6 +48452,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept {
@@ -48381,11 +48463,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return lasx::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace lasx
 } // namespace simdjson
@@ -48418,6 +48502,7 @@ SIMDJSON_UNTARGET_REGION
 #define SIMDJSON_SRC_LSX_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -53196,6 +53281,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for lsx */
 /* including generic/stage2/amalgamated.h for lsx: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for lsx */
+/* including generic/stage2/stringparsing.h for lsx: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for lsx */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace lsx {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace lsx
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for lsx */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for lsx: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for lsx */
@@ -53794,257 +54133,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for lsx */
-/* including generic/stage2/stringparsing.h for lsx: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for lsx */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace lsx {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace lsx
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for lsx */
 /* including generic/stage2/structural_iterator.h for lsx: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for lsx */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -54428,6 +54516,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for lsx */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for lsx */
 
 //
@@ -54523,6 +54613,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return lsx::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -54530,6 +54621,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept {
@@ -54540,11 +54632,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return lsx::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace lsx
 } // namespace simdjson
@@ -54570,6 +54664,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #define SIMDJSON_SRC_RVV_VLS_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -59770,6 +59865,260 @@ bool generic_validate_utf8(const char * input, size_t length) {
 /* end file generic/stage1/amalgamated.h for rvv_vls */
 /* including generic/stage2/amalgamated.h for rvv_vls: #include <generic/stage2/amalgamated.h> */
 /* begin file generic/stage2/amalgamated.h for rvv_vls */
+/* including generic/stage2/stringparsing.h for rvv_vls: #include <generic/stage2/stringparsing.h> */
+/* begin file generic/stage2/stringparsing.h for rvv_vls */
+#include <cstdint>
+#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+
+/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
+/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
+/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
+/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
+
+// This file contains the common code every implementation uses
+// It is intended to be included multiple times and compiled multiple times
+
+namespace simdjson {
+namespace rvv_vls {
+namespace {
+/// @private
+namespace stringparsing {
+
+// begin copypasta
+// These chars yield themselves: " \ /
+// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
+// u not handled in this table as it's complex
+static const uint8_t escape_map[256] = {
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
+    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
+    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
+};
+
+// handle a unicode codepoint
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr, bool allow_replacement) {
+  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
+  constexpr uint32_t substitution_code_point = 0xfffd;
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+    } else {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+
+      // We have already checked that the high surrogate is valid and
+      // (code_point - 0xd800) < 1024.
+      //
+      // Check that code_point_2 is in the range 0xdc00..0xdfff
+      // and that code_point_2 was parsed from valid hex.
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if (low_bit >> 10) {
+        if(!allow_replacement) { return false; }
+        code_point = substitution_code_point;
+      } else {
+        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+
+    }
+  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
+      // If we encounter a low surrogate (not preceded by a high surrogate)
+      // then we have an error.
+      if(!allow_replacement) { return false; }
+      code_point = substitution_code_point;
+  }
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+// handle a unicode codepoint using the wobbly convention
+// https://simonsapin.github.io/wtf-8/
+// write appropriate values into dest
+// src will advance 6 bytes or 12 bytes
+// dest will advance a variable amount (return via pointer)
+// return true if the unicode codepoint was valid
+// We work in little-endian then swap at write time
+simdjson_warn_unused
+simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
+                                            uint8_t **dst_ptr) {
+  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
+  //
+  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
+  // conversion is not valid; we defer the check for this to inside the
+  // multilingual plane check.
+  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
+  *src_ptr += 6;
+  // If we found a high surrogate, we must
+  // check for low surrogate for characters
+  // outside the Basic
+  // Multilingual Plane.
+  if (code_point >= 0xd800 && code_point < 0xdc00) {
+    const uint8_t *src_data = *src_ptr;
+    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
+    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
+      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
+      uint32_t low_bit = code_point_2 - 0xdc00;
+      if ((low_bit >> 10) ==  0) {
+        code_point =
+          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
+        *src_ptr += 6;
+      }
+    }
+  }
+
+  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
+  *dst_ptr += offset;
+  return offset > 0;
+}
+
+
+/**
+ * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
+ * must be an unescaped quote terminating the string. It returns the final output
+ * position as pointer. In case of error (e.g., the string has bad escaped codes),
+ * then null_ptr is returned. It is assumed that the output buffer is large
+ * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
+ * SIMDJSON_PADDING bytes.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
+  // It is not ideal that this function is nearly identical to parse_string.
+  while (1) {
+    // Copy the next n bytes, and find the backslash and quote in them.
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    // If the next thing is the end quote, copy and return
+    if (bs_quote.has_quote_first()) {
+      // we encountered quotes first. Move dst to point to quotes and exit
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      /* find out where the backspace is */
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      /* we encountered backslash first. Handle backslash */
+      if (escape_char == 'u') {
+        /* move src/dst up to the start; they will be further adjusted
+           within the unicode codepoint handling code. */
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
+         * write bs_dist+1 characters to output
+         * note this may reach beyond the part of the buffer we've actually
+         * seen. I think this is ok */
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr; /* bogus escape value is an error */
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      /* they are the same. Since they can't co-occur, it means we
+       * encountered neither. */
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+}
+
+} // namespace stringparsing
+
+} // unnamed namespace
+} // namespace rvv_vls
+} // namespace simdjson
+
+#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
+/* end file generic/stage2/stringparsing.h for rvv_vls */
+
+#if SIMDJSON_FEATURE_DOM_API
+
 // Stuff other things depend on
 /* including generic/stage2/base.h for rvv_vls: #include <generic/stage2/base.h> */
 /* begin file generic/stage2/base.h for rvv_vls */
@@ -60368,257 +60717,6 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_JSON_ITERATOR_H
 /* end file generic/stage2/json_iterator.h for rvv_vls */
-/* including generic/stage2/stringparsing.h for rvv_vls: #include <generic/stage2/stringparsing.h> */
-/* begin file generic/stage2/stringparsing.h for rvv_vls */
-#include <cstdint>
-#ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-
-/* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
-/* amalgamation skipped (editor-only): #define SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H */
-/* amalgamation skipped (editor-only): #include <generic/stage2/base.h> */
-/* amalgamation skipped (editor-only): #include <simdjson/generic/jsoncharutils.h> */
-/* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
-
-// This file contains the common code every implementation uses
-// It is intended to be included multiple times and compiled multiple times
-
-namespace simdjson {
-namespace rvv_vls {
-namespace {
-/// @private
-namespace stringparsing {
-
-// begin copypasta
-// These chars yield themselves: " \ /
-// b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
-// u not handled in this table as it's complex
-static const uint8_t escape_map[256] = {
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x0.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0x22, 0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0x2f,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x4.
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0x5c, 0, 0,    0, // 0x5.
-    0, 0, 0x08, 0, 0,    0, 0x0c, 0, 0, 0, 0, 0, 0,    0, 0x0a, 0, // 0x6.
-    0, 0, 0x0d, 0, 0x09, 0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0, // 0x7.
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-    0, 0, 0,    0, 0,    0, 0,    0, 0, 0, 0, 0, 0,    0, 0,    0,
-};
-
-// handle a unicode codepoint
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr, bool allow_replacement) {
-  // Use the default Unicode Character 'REPLACEMENT CHARACTER' (U+FFFD)
-  constexpr uint32_t substitution_code_point = 0xfffd;
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) != ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-    } else {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-
-      // We have already checked that the high surrogate is valid and
-      // (code_point - 0xd800) < 1024.
-      //
-      // Check that code_point_2 is in the range 0xdc00..0xdfff
-      // and that code_point_2 was parsed from valid hex.
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if (low_bit >> 10) {
-        if(!allow_replacement) { return false; }
-        code_point = substitution_code_point;
-      } else {
-        code_point =  (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-
-    }
-  } else if (code_point >= 0xdc00 && code_point <= 0xdfff) {
-      // If we encounter a low surrogate (not preceded by a high surrogate)
-      // then we have an error.
-      if(!allow_replacement) { return false; }
-      code_point = substitution_code_point;
-  }
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-// handle a unicode codepoint using the wobbly convention
-// https://simonsapin.github.io/wtf-8/
-// write appropriate values into dest
-// src will advance 6 bytes or 12 bytes
-// dest will advance a variable amount (return via pointer)
-// return true if the unicode codepoint was valid
-// We work in little-endian then swap at write time
-simdjson_warn_unused
-simdjson_inline bool handle_unicode_codepoint_wobbly(const uint8_t **src_ptr,
-                                            uint8_t **dst_ptr) {
-  // It is not ideal that this function is nearly identical to handle_unicode_codepoint.
-  //
-  // jsoncharutils::hex_to_u32_nocheck fills high 16 bits of the return value with 1s if the
-  // conversion is not valid; we defer the check for this to inside the
-  // multilingual plane check.
-  uint32_t code_point = jsoncharutils::hex_to_u32_nocheck(*src_ptr + 2);
-  *src_ptr += 6;
-  // If we found a high surrogate, we must
-  // check for low surrogate for characters
-  // outside the Basic
-  // Multilingual Plane.
-  if (code_point >= 0xd800 && code_point < 0xdc00) {
-    const uint8_t *src_data = *src_ptr;
-    /* Compiler optimizations convert this to a single 16-bit load and compare on most platforms */
-    if (((src_data[0] << 8) | src_data[1]) == ((static_cast<uint8_t> ('\\') << 8) | static_cast<uint8_t> ('u'))) {
-      uint32_t code_point_2 = jsoncharutils::hex_to_u32_nocheck(src_data + 2);
-      uint32_t low_bit = code_point_2 - 0xdc00;
-      if ((low_bit >> 10) ==  0) {
-        code_point =
-          (((code_point - 0xd800) << 10) | low_bit) + 0x10000;
-        *src_ptr += 6;
-      }
-    }
-  }
-
-  size_t offset = jsoncharutils::codepoint_to_utf8(code_point, *dst_ptr);
-  *dst_ptr += offset;
-  return offset > 0;
-}
-
-
-/**
- * Unescape a valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
- * must be an unescaped quote terminating the string. It returns the final output
- * position as pointer. In case of error (e.g., the string has bad escaped codes),
- * then null_ptr is returned. It is assumed that the output buffer is large
- * enough. E.g., if src points at 'joe"', then dst needs to have four free bytes +
- * SIMDJSON_PADDING bytes.
- */
-simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) {
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
-  // It is not ideal that this function is nearly identical to parse_string.
-  while (1) {
-    // Copy the next n bytes, and find the backslash and quote in them.
-    auto b = backslash_and_quote{};
-    auto bs_quote = b.copy_and_find(src, dst);
-    // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
-      // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
-    }
-    if (bs_quote.has_backslash()) {
-      /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
-      uint8_t escape_char = src[bs_dist + 1];
-      /* we encountered backslash first. Handle backslash */
-      if (escape_char == 'u') {
-        /* move src/dst up to the start; they will be further adjusted
-           within the unicode codepoint handling code. */
-        src += bs_dist;
-        dst += bs_dist;
-        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
-          return nullptr;
-        }
-      } else {
-        /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
-         * write bs_dist+1 characters to output
-         * note this may reach beyond the part of the buffer we've actually
-         * seen. I think this is ok */
-        uint8_t escape_result = escape_map[escape_char];
-        if (escape_result == 0u) {
-          return nullptr; /* bogus escape value is an error */
-        }
-        dst[bs_dist] = escape_result;
-        src += bs_dist + 2;
-        dst += bs_dist + 1;
-      }
-    } else {
-      /* they are the same. Since they can't co-occur, it means we
-       * encountered neither. */
-      src += backslash_and_quote::BYTES_PROCESSED;
-      dst += backslash_and_quote::BYTES_PROCESSED;
-    }
-  }
-}
-
-} // namespace stringparsing
-
-} // unnamed namespace
-} // namespace rvv_vls
-} // namespace simdjson
-
-#endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
-/* end file generic/stage2/stringparsing.h for rvv_vls */
 /* including generic/stage2/structural_iterator.h for rvv_vls: #include <generic/stage2/structural_iterator.h> */
 /* begin file generic/stage2/structural_iterator.h for rvv_vls */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_STRUCTURAL_ITERATOR_H
@@ -61002,6 +61100,8 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for rvv_vls */
+
+#endif // SIMDJSON_FEATURE_DOM_API
 /* end file generic/stage2/amalgamated.h for rvv_vls */
 
 //
@@ -61091,6 +61191,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
   return rvv_vls::stage1::generic_validate_utf8(buf,len);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -61098,6 +61199,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept {
@@ -61108,11 +61210,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return rvv_vls::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace rvv_vls
 } // namespace simdjson
@@ -61137,6 +61241,7 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #define SIMDJSON_SRC_FALLBACK_CPP
 
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
+/* amalgamation skipped (editor-only): #include "simdjson/feature_macros.h" */
 /* amalgamation skipped (editor-only): #include <base.h> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
@@ -63985,6 +64090,8 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_STRINGPARSING_H
 /* end file generic/stage2/stringparsing.h for fallback */
+
+#if SIMDJSON_FEATURE_DOM_API
 /* including generic/stage2/logger.h for fallback: #include <generic/stage2/logger.h> */
 /* begin file generic/stage2/logger.h for fallback */
 #ifndef SIMDJSON_SRC_GENERIC_STAGE2_LOGGER_H
@@ -64870,6 +64977,7 @@ simdjson_inline void tape_builder::on_end_string(uint8_t *dst) noexcept {
 
 #endif // SIMDJSON_SRC_GENERIC_STAGE2_TAPE_BUILDER_H
 /* end file generic/stage2/tape_builder.h for fallback */
+#endif // SIMDJSON_FEATURE_DOM_API
 
 //
 // Stage 1
@@ -65291,6 +65399,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
 namespace simdjson {
 namespace fallback {
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -65298,6 +65407,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -65308,11 +65418,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return fallback::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace fallback
 } // namespace simdjson
@@ -65334,5 +65446,4 @@ simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *
 #undef SIMDJSON_CONDITIONAL_INCLUDE
 
 SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
-
 /* end file simdjson.cpp */

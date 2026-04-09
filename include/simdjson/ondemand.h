@@ -8,12 +8,14 @@ namespace simdjson {
    * @copydoc simdjson::builtin::ondemand
    */
   namespace ondemand = builtin::ondemand;
+#if SIMDJSON_FEATURE_BUILDER_API
   /**
    * @copydoc simdjson::builtin::builder
    */
   namespace builder = builtin::builder;
+#endif // SIMDJSON_FEATURE_BUILDER_API
 
-#if SIMDJSON_STATIC_REFLECTION
+#if SIMDJSON_STATIC_REFLECTION && SIMDJSON_FEATURE_BUILDER_API
   /**
    * Create a JSON string from any user-defined type using static reflection.
    * Only available when SIMDJSON_STATIC_REFLECTION is enabled.

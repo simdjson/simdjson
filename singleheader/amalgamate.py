@@ -268,7 +268,21 @@ class SimdjsonFile:
         print(f"    Adding include: {self} includes {include}")
         if self.is_conditional_include:
             # If I have a dependency file, I can only include something that has a dependency file.
-            assert include.is_conditional_include, f"Error: Amalgamated file '{self}' is trying to include '{include}', but '{include}' is not an amalgamated file. Amalgamated files can only include other amalgamated files to maintain conditional inclusion structure. Check the inclusion rules in the script's 'rules' variable. {rules}"
+            if not include.is_conditional_include:
+                dep = self.dependency_file
+                dep_hint = f" and add it to the dependency file '{dep}'" if dep else ""
+                raise AssertionError(
+                    f"Error: Amalgamated file '{self}' is trying to include '{include}', "
+                    f"but '{include}' is not an amalgamated file.\n\n"
+                    f"FIX: Wrap the #include \"{include}\" in a conditional block:\n\n"
+                    f"    #ifndef SIMDJSON_CONDITIONAL_INCLUDE\n"
+                    f"    #include \"{include}\"\n"
+                    f"    #endif // SIMDJSON_CONDITIONAL_INCLUDE\n\n"
+                    f"This makes the include editor-only (skipped during amalgamation){dep_hint}.\n\n"
+                    f"During amalgamation, '{include}' is already included earlier in the "
+                    f"amalgamated output, so it does not need to be included again.\n\n"
+                    f"{rules}"
+                )
             # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
             # if include.amalgamator_file:
             #     assert include.amalgamator_file == self, f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
@@ -425,8 +439,10 @@ class Amalgamator:
             self.implementation = "SIMDJSON_BUILTIN_IMPLEMENTATION"
 
         assert not self.editor_only_region, f"Error: Already in an editor-only region when starting to write '{file}'. Ensure proper nesting of conditional blocks."
+        editor_only_start_line = None
+        bare_endif_lines = []
         with open(file.absolute_path, 'r') as fid2:
-            for line in fid2:
+            for line_number, line in enumerate(fid2, 1):
                 line = line.rstrip('\n')
 
                 # Ignore #pragma once, it causes warnings if it ends up in a .cpp file
@@ -439,6 +455,7 @@ class Amalgamator:
                     assert self.in_conditional_include_block, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' without a prior '#define SIMDJSON_CONDITIONAL_INCLUDE'. Ensure the define comes first. Stack: {self.include_stack}. {rules}"
                     assert not self.editor_only_region, f"Error: File '{file}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' twice in a row. Ensure conditional blocks are properly nested and closed. {rules}"
                     self.editor_only_region = True
+                    editor_only_start_line = line_number
 
                 # Handle ignored lines (and ending ignore blocks)
                 end_ignore = endif_conditional_re.search(line)
@@ -453,6 +470,12 @@ class Amalgamator:
                             file.add_editor_only_include(included_file)
                     if end_ignore:
                         self.editor_only_region = False
+                        editor_only_start_line = None
+                    else:
+                        # Track bare #endif lines that might be the intended closer
+                        stripped = line.strip()
+                        if stripped == '#endif' or (stripped.startswith('#endif') and 'SIMDJSON_CONDITIONAL_INCLUDE' not in stripped):
+                            bare_endif_lines.append((line_number, line.strip()))
                     continue
 
                 assert not end_ignore, f"Error: File '{file}' has '#endif // SIMDJSON_CONDITIONAL_INCLUDE' without a matching '#ifndef'. Ensure proper conditional block structure. {rules}"
@@ -501,7 +524,35 @@ class Amalgamator:
 
                 self.write(line)
 
-            assert not self.editor_only_region, f"Error: File '{file}' ended without closing the '#endif // SIMDJSON_CONDITIONAL_INCLUDE'. Ensure all conditional blocks are properly closed. {rules}"
+            if self.editor_only_region:
+                msg = (
+                    f"Error: File '{file}' ended without closing the "
+                    f"'#endif // SIMDJSON_CONDITIONAL_INCLUDE' block "
+                    f"(opened at line {editor_only_start_line}).\n\n"
+                )
+                if bare_endif_lines:
+                    msg += (
+                        f"HINT: Found #endif line(s) inside the block that are missing "
+                        f"the required comment. The amalgamation script looks for exactly:\n\n"
+                        f"    #endif // SIMDJSON_CONDITIONAL_INCLUDE\n\n"
+                        f"but found:\n"
+                    )
+                    for ln, text in bare_endif_lines:
+                        msg += f"    line {ln}: {text}\n"
+                    msg += (
+                        f"\nFIX: Change the #endif to:\n\n"
+                        f"    #endif // SIMDJSON_CONDITIONAL_INCLUDE\n\n"
+                        f"The '// SIMDJSON_CONDITIONAL_INCLUDE' comment is required "
+                        f"for the amalgamation script to recognize it as the closing "
+                        f"of the conditional block.\n"
+                    )
+                else:
+                    msg += (
+                        f"FIX: Add '#endif // SIMDJSON_CONDITIONAL_INCLUDE' to close "
+                        f"the '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' block.\n"
+                    )
+                msg += f"\n{rules}"
+                raise AssertionError(msg)
 
         self.write(f"/* end file {self.file_to_str(file)} */")
 

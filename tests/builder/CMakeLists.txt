@@ -1,5 +1,8 @@
 # All remaining tests link with simdjson proper
 include_directories(..)
+if(NOT SIMDJSON_FEATURE_BUILDER_API)
+  return()
+endif()
 add_cpp_test(builder_string_builder_tests                LABELS ondemand acceptance per_implementation)
 if(SIMDJSON_STATIC_REFLECTION)
   add_cpp_test(static_reflection_custom_tests            LABELS ondemand acceptance per_implementation)

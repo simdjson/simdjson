@@ -1,8 +1,10 @@
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/feature_macros.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #if SIMDJSON_FEATURE_ONDEMAND_API
 
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 

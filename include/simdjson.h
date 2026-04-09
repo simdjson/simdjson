@@ -46,6 +46,7 @@
 #include "simdjson/error.h"
 #include "simdjson/error-inl.h"
 #include "simdjson/implementation.h"
+#include "simdjson/builtin.h"
 #include "simdjson/minify.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string-inl.h"
@@ -54,7 +55,9 @@
 
 #if SIMDJSON_FEATURE_DOM_API
 #include "simdjson/dom.h"
+#if SIMDJSON_FEATURE_BUILDER_API
 #include "simdjson/builder.h"
+#endif // SIMDJSON_FEATURE_BUILDER_API
 #endif // SIMDJSON_FEATURE_DOM_API
 
 #if SIMDJSON_FEATURE_ONDEMAND_API
