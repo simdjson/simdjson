@@ -1,5 +1,7 @@
 #define SIMDJSON_SRC_SIMDJSON_CPP
 
+#include "simdjson/feature_macros.h"
+
 #include <base.h>
 
 SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
@@ -13,8 +15,11 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
 #include <simdjson/generic/dependencies.h>
 #include <generic/dependencies.h>
+
+#if SIMDJSON_FEATURE_DOM_API
 #include <generic/stage1/dependencies.h>
 #include <generic/stage2/dependencies.h>
+#endif
 
 #include <implementation.cpp>
 
@@ -50,4 +55,3 @@ SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 #undef SIMDJSON_CONDITIONAL_INCLUDE
 
 SIMDJSON_POP_DISABLE_UNUSED_WARNINGS
-

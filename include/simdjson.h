@@ -35,6 +35,7 @@
  */
 
 #include "simdjson/common_defs.h"
+#include "simdjson/feature_macros.h"
 
 // This provides the public API for simdjson.
 // DOM and ondemand are amalgamated separately, in simdjson.h
@@ -51,13 +52,20 @@
 #include "simdjson/padded_string_view.h"
 #include "simdjson/padded_string_view-inl.h"
 
+#if SIMDJSON_FEATURE_DOM_API
 #include "simdjson/dom.h"
 #include "simdjson/builder.h"
+#endif // SIMDJSON_FEATURE_DOM_API
+
+#if SIMDJSON_FEATURE_ONDEMAND_API
 #include "simdjson/ondemand.h"
+#endif // SIMDJSON_FEATURE_ONDEMAND_API
+
+#if SIMDJSON_FEATURE_DOM_API && SIMDJSON_FEATURE_ONDEMAND_API
 #include "simdjson/convert.h"
 #include "simdjson/convert-inl.h"
+#endif // SIMDJSON_FEATURE_DOM_API && SIMDJSON_FEATURE_ONDEMAND_API
 
-// Compile-time JSON parsing (C++26 P2996 reflection)
 #include "simdjson/compile_time_json.h"
 #include "simdjson/compile_time_json-inl.h"
 

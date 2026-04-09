@@ -1,6 +1,8 @@
 #ifndef SIMDJSON_SRC_FALLBACK_CPP
 #define SIMDJSON_SRC_FALLBACK_CPP
 
+#include "simdjson/feature_macros.h"
+
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include <base.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -11,10 +13,13 @@
 #include <simdjson/fallback/begin.h>
 #include <generic/stage1/find_next_document_index.h>
 #include <generic/stage2/stringparsing.h>
+
+#if SIMDJSON_FEATURE_DOM_API
 #include <generic/stage2/logger.h>
 #include <generic/stage2/json_iterator.h>
 #include <generic/stage2/tape_writer.h>
 #include <generic/stage2/tape_builder.h>
+#endif // SIMDJSON_FEATURE_DOM_API
 
 //
 // Stage 1
@@ -436,6 +441,7 @@ simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t 
 namespace simdjson {
 namespace fallback {
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<false>(*this, _doc);
 }
@@ -443,6 +449,7 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
   return stage2::tape_builder::parse_document<true>(*this, _doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 SIMDJSON_NO_SANITIZE_MEMORY
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint8_t *src, uint8_t *dst, bool replacement_char) const noexcept {
@@ -453,11 +460,13 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
   return fallback::stringparsing::parse_wobbly_string(src, dst);
 }
 
+#if SIMDJSON_FEATURE_DOM_API
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
   if (error) { return error; }
   return stage2(_doc);
 }
+#endif // SIMDJSON_FEATURE_DOM_API
 
 } // namespace fallback
 } // namespace simdjson

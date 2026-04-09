@@ -32,6 +32,21 @@ It is similar for Visual Studio users, please see the CMake or Visual Studio doc
 
 By default the library is built in Release mode.
 
+## Optional APIs (Feature Flags)
+
+simdjson provides two APIs:
+- DOM (`simdjson::dom`)
+- OnDemand (`simdjson::ondemand`)
+
+You can enable or disable these APIs at compile time to reduce binary size and compile time.
+
+### Configuration
+
+Using CMake:
+
+```bash
+cmake -DSIMDJSON_FEATURE_DOM_API=OFF \
+      -DSIMDJSON_FEATURE_ONDEMAND_API=ON ..
 
 Assertions and development checks
 ------------------------------

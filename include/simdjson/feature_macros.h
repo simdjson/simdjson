@@ -1,0 +1,13 @@
+#pragma once
+
+#if !defined(SIMDJSON_FEATURE_DOM_API)
+#define SIMDJSON_FEATURE_DOM_API 1
+#endif
+
+#if !defined(SIMDJSON_FEATURE_ONDEMAND_API)
+#define SIMDJSON_FEATURE_ONDEMAND_API 1
+#endif
+
+#if !SIMDJSON_FEATURE_DOM_API && !SIMDJSON_FEATURE_ONDEMAND_API
+#error "simdjson: at least one of SIMDJSON_FEATURE_DOM_API or SIMDJSON_FEATURE_ONDEMAND_API must be enabled."
+#endif

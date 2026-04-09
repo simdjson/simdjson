@@ -1,3 +1,7 @@
+#include "simdjson/feature_macros.h"
+
+#if SIMDJSON_FEATURE_ONDEMAND_API
+
 #if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
@@ -47,4 +51,6 @@
 
 // JSON path accessor (compile-time) - must be after inline definitions
 #include "simdjson/generic/ondemand/compile_time_accessors.h"
+
+#endif // SIMDJSON_FEATURE_ONDEMAND_API
 
