@@ -74,6 +74,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth > SIMDJSON_MAX_DEPTH) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
