@@ -33,6 +33,9 @@ inline error_code document::allocate(size_t capacity) noexcept {
     allocated_capacity = 0;
     return SUCCESS;
   }
+  if (capacity > SIMDJSON_MAXSIZE_BYTES) {
+    return CAPACITY;
+  }
 
   // a pathological input like "[[[[..." would generate capacity tape elements, so
   // need a capacity of at least capacity + 1, but it is also possible to do
