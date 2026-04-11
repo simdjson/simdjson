@@ -384,14 +384,21 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         depth--;
         break;
       default:    // Scalar value document
-        // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
           auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
-          while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0')) {
+          // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
+          // json_sequence mode the scanner classifies RS as a scalar
+          // character, so an RS-prefixed scalar document (number / true /
+          // false / null / string) has no closing structural index and the
+          // slice runs all the way up to the next document's RS. RS cannot
+          // legally appear in a JSON value at the source level (control
+          // characters in strings must be escaped as \u001E), so stripping
+          // it is safe in every stream_format.
+          while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0' || static_cast<uint8_t>(start[svlen-1]) == 0x1E)) {
             svlen--;
           }
           return std::string_view(start, svlen);

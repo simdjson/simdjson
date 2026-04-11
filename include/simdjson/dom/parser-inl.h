@@ -188,6 +188,24 @@ inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, s
     buf += 3;
     len -= 3;
   }
+  if (format == stream_format::comma_delimited_array) {
+    // Strip leading JSON whitespace.
+    while (len > 0 && (buf[0] == ' ' || buf[0] == '\t' || buf[0] == '\n' || buf[0] == '\r')) {
+      buf++; len--;
+    }
+    // Expect the opening '['.
+    if (len == 0 || buf[0] != '[') { return TAPE_ERROR; }
+    buf++; len--;
+    // Strip trailing JSON whitespace.
+    while (len > 0 && (buf[len-1] == ' ' || buf[len-1] == '\t' || buf[len-1] == '\n' || buf[len-1] == '\r')) {
+      len--;
+    }
+    // Expect the closing ']'.
+    if (len == 0 || buf[len-1] != ']') { return TAPE_ERROR; }
+    len--;
+    // Fall through to comma_delimited over the array contents.
+    format = stream_format::comma_delimited;
+  }
   return document_stream(*this, buf, len, batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size, stream_format format) noexcept {

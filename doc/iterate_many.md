@@ -366,8 +366,42 @@ The `stream_format` enum has the following values:
 - `stream_format::whitespace_delimited` (default): Standard NDJSON/JSON Lines format
 - `stream_format::json_sequence`: RFC 7464 format with RS delimiters
 - `stream_format::comma_delimited`: Comma-separated JSON documents
+- `stream_format::comma_delimited_array`: A single JSON array whose elements are iterated as comma-delimited documents (see below)
 
 The trailing LF after each JSON text is optional but recommended by the RFC for robustness.
+
+JSON Array As A Document Stream
+-------------------------------
+
+Sometimes an input is a single, well-formed JSON array — `[{"a":1},{"b":2},{"c":3}]` — but you want to iterate its elements one at a time without materializing the whole array. Use `stream_format::comma_delimited_array`:
+
+```cpp
+auto json = R"([{"a":1},{"b":2},{"c":3}])"_padded;
+ondemand::parser parser;
+ondemand::document_stream stream;
+auto error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,
+                                 simdjson::stream_format::comma_delimited_array).get(stream);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto doc : stream) {
+    std::cout << doc << std::endl;
+}
+// Prints: {"a":1}
+//         {"b":2}
+//         {"c":3}
+```
+
+The parser strips the outer `[` and `]` plus any surrounding JSON whitespace (space, tab, LF, CR) and then behaves exactly like `stream_format::comma_delimited` over the remaining bytes. All comma-delimited features are inherited: multi-batch processing, threading, mixed scalar types, and nested commas preserved inside inner objects and arrays.
+
+```cpp
+// All of these work:
+auto a = R"([1, "x", true, null, {"k":"v"}, [1,2]])"_padded;  // mixed scalars
+auto b = R"(  [ 1, 2, 3 ] )"_padded;                          // whitespace
+auto c = R"([])"_padded;                                      // empty array → 0 docs
+```
+
+If the input is not a well-formed outer array (missing `[`, missing `]`, or empty / all-whitespace), `iterate_many` returns `TAPE_ERROR`. Content **inside** the array is not validated up front — individual document parse errors surface when you iterate, just like `comma_delimited`.
+
+Positions reported via `current_index()` are relative to the **stripped** buffer (the bytes between `[` and `]`), not the original input, for consistency with the existing BOM-stripping behavior.
 
 
 C++20 features

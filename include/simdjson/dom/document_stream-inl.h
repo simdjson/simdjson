@@ -227,7 +227,14 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
   } else {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index];
     size_t svlen = next_doc_index - current_index();
-    while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0')) {
+    // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464 json_sequence
+    // mode the scanner classifies RS as a scalar character, so an RS-prefixed
+    // scalar document (number/true/false/null/string) has no closing structural
+    // index and the slice runs all the way up to the next document's RS. RS
+    // cannot legally appear in a JSON value at the source level (control
+    // characters in strings must be escaped as \u001E), so stripping it is
+    // safe in every stream_format.
+    while(svlen > 1 && (std::isspace(start[svlen-1]) || start[svlen-1] == '\0' || static_cast<uint8_t>(start[svlen-1]) == 0x1E)) {
       svlen--;
     }
     return std::string_view(start, svlen);
