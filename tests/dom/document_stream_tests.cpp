@@ -1312,7 +1312,7 @@ namespace document_stream_tests {
         // If it parses as an integer, verify the value is plausible
         // (matches an integer we emitted). We don't check sequencing or
         // count because empty records may drop documents.
-        int64_t v;
+        int64_t v = 0;
         if (doc.get(v) == simdjson::SUCCESS) {
           ASSERT_TRUE(v >= 0 && v < static_cast<int64_t>(N) && (v % 4) == 0);
         }
@@ -1345,7 +1345,7 @@ namespace document_stream_tests {
       ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
       for (auto doc : stream) {
         if (doc.error()) { continue; }
-        int64_t v;
+        int64_t v = 0;
         if (doc.get(v) != simdjson::SUCCESS) { continue; }
         ASSERT_TRUE(v == 1 || v == 2);
       }
