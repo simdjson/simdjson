@@ -102,9 +102,13 @@ inline std::string make_object(std::mt19937_64 &rng, int depth) {
     if (i > 0) {
       out.push_back(',');
     }
-    out += quote_json_string(
-        "k" + std::to_string(depth) + "_" + std::to_string(i) + "_" + make_ascii_text(rng, 1, 6)
-    );
+    std::string key = "k";
+    key += std::to_string(depth);
+    key += '_';
+    key += std::to_string(i);
+    key += '_';
+    key += make_ascii_text(rng, 1, 6);
+    out += quote_json_string(key);
     out.push_back(':');
     out += make_value(rng, depth + 1);
   }

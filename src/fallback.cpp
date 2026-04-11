@@ -226,9 +226,15 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       add_structural();
     // Primitive or invalid character (invalid characters will be checked in stage 2)
     } else {
-      // Anything else, add the structural and go until we find the next one
+      // Anything else, add the structural and go until we find the next one.
+      // We also stop on RS (0x1E) so that RFC 7464 json_sequence inputs
+      // like `\x1e"a"\x1e"b"` produce a separate structural for each RS
+      // rather than being absorbed into a single primitive run. RS is a
+      // control character that is invalid in normal JSON, so breaking
+      // the run here has no effect on well-formed non-json_sequence
+      // inputs.
       add_structural();
-      while (idx+1<len && !char_is_space_or_operator(buf[idx+1])) {
+      while (idx+1<len && !char_is_space_or_operator(buf[idx+1]) && buf[idx+1] != 0x1e) {
         idx++;
       };
     }
