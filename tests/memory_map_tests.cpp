@@ -1,8 +1,8 @@
 // On Windows, padded_memory_map is an opt-in feature gated on the
 // SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS macro. When that macro is set, the
 // consumer must also include <windows.h> before <simdjson.h>. We include
-// the Win32 header here so that — in configurations that turned the
-// feature on — the test actually exercises the Windows path.
+// the Win32 header here so that -- in configurations that turned the
+// feature on -- the test actually exercises the Windows path.
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
