@@ -1337,6 +1337,263 @@ namespace document_stream_tests {
       return true;
     }()));
 
+    // -------- RS spacing variants --------
+    // The scanner classifies 0x1E as a scalar character, so the way an RS
+    // is positioned relative to surrounding whitespace affects what
+    // structural_indexes look like after stage1. These tests lock down
+    // every reasonable arrangement: RS followed by the canonical LF, by
+    // CRLF, by space, by tab, by mixed whitespace, with whitespace on both
+    // sides, and tight (no surrounding whitespace at all) around
+    // containers and strings.
+
+    SUBTEST("RS followed by LF then value (canonical RFC)", ([&]() {
+      // bytes: 1e 31 0a 1e 32 0a 1e 33 0a
+      auto input = simdjson::padded_string("\x1e" "1\n" "\x1e" "2\n" "\x1e" "3\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[3] = {1, 2, 3};
+      size_t expected_idx[3] = {1, 4, 7};
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("RS followed by CRLF then value", ([&]() {
+      // bytes: 1e 31 0d 0a 1e 32 0d 0a 1e 33 0d 0a
+      auto input = simdjson::padded_string("\x1e" "1\r\n" "\x1e" "2\r\n" "\x1e" "3\r\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[3] = {1, 2, 3};
+      size_t expected_idx[3] = {1, 5, 9};
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("RS followed by single space then value", ([&]() {
+      // bytes: 1e 20 31 0a 1e 20 32 0a 1e 20 33 0a
+      auto input = simdjson::padded_string("\x1e 1\n\x1e 2\n\x1e 3\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[3] = {1, 2, 3};
+      size_t expected_idx[3] = {2, 6, 10};  // value sits after RS + 1 space
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("RS followed by tab then value", ([&]() {
+      // bytes: 1e 09 31 0a 1e 09 32 0a 1e 09 33 0a
+      auto input = simdjson::padded_string("\x1e\t1\n\x1e\t2\n\x1e\t3\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[3] = {1, 2, 3};
+      size_t expected_idx[3] = {2, 6, 10};  // value sits after RS + 1 tab
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("RS followed by mixed whitespace then value", ([&]() {
+      // All four JSON whitespace characters between the RS and the value.
+      // bytes: 1e 20 09 0d 0a 31 0a 1e 20 09 0d 0a 32 0a
+      auto input = simdjson::padded_string("\x1e \t\r\n1\n\x1e \t\r\n2\n"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[2] = {1, 2};
+      size_t expected_idx[2] = {5, 12};  // value sits after RS + 4 ws chars
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 2);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(2));
+      return true;
+    }()));
+
+    SUBTEST("RS with whitespace on both sides of scalar value", ([&]() {
+      // Whitespace after the RS AND between the value and the next RS.
+      // bytes: 1e 20 31 20 1e 20 32 20 1e 20 33
+      auto input = simdjson::padded_string("\x1e 1 \x1e 2 \x1e 3"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[3] = {1, 2, 3};
+      size_t expected_idx[3] = {2, 6, 10};
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("tight RS around arrays (no whitespace anywhere)", ([&]() {
+      // No whitespace between RS and value, between values, or anywhere
+      // else. Arrays survive because their closing ']' is a structural
+      // character that naturally terminates the preceding scalar run.
+      // bytes: 1e 5b 31 2c 32 5d 1e 5b 33 2c 34 5d 1e 5b 35 2c 36 5d
+      auto input = simdjson::padded_string("\x1e[1,2]\x1e[3,4]\x1e[5,6]"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      size_t expected_idx[3] = {1, 7, 13};
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        simdjson::dom::array arr;
+        ASSERT_SUCCESS(doc.get(arr));
+        size_t n = 0;
+        for (auto e : arr) { (void)e; n++; }
+        ASSERT_EQUAL(n, size_t(2));
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("tight RS around string scalars (no whitespace anywhere)", ([&]() {
+      // bytes: 1e 22 61 22 1e 22 62 22 1e 22 63 22
+      auto input = simdjson::padded_string("\x1e\"a\"\x1e\"b\"\x1e\"c\""s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      const char* expected[3] = {"a", "b", "c"};
+      size_t expected_idx[3] = {1, 5, 9};
+      size_t i = 0;
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 3);
+        ASSERT_EQUAL(it.current_index(), expected_idx[i]);
+        std::string_view sv;
+        ASSERT_SUCCESS(doc.get(sv));
+        ASSERT_EQUAL(sv, std::string_view(expected[i]));
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(3));
+      return true;
+    }()));
+
+    SUBTEST("tight RS around mixed containers (no whitespace anywhere)", ([&]() {
+      // Object, array, object - all back-to-back with only RS between.
+      // bytes: 1e 7b 22 61 22 3a 31 7d 1e 5b 31 2c 32 5d 1e 7b 22 62 22 3a 32 7d
+      auto input = simdjson::padded_string("\x1e{\"a\":1}\x1e[1,2]\x1e{\"b\":2}"s);
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      auto it = stream.begin();
+
+      // doc 0: {"a":1}
+      ASSERT_EQUAL(it.current_index(), size_t(1));
+      int64_t a; ASSERT_SUCCESS((*it)["a"].get(a)); ASSERT_EQUAL(a, int64_t(1));
+      ++it;
+
+      // doc 1: [1,2]
+      ASSERT_EQUAL(it.current_index(), size_t(9));
+      simdjson::dom::array arr;
+      ASSERT_SUCCESS((*it).get(arr));
+      size_t arr_count = 0;
+      for (auto e : arr) { (void)e; arr_count++; }
+      ASSERT_EQUAL(arr_count, size_t(2));
+      ++it;
+
+      // doc 2: {"b":2}
+      ASSERT_EQUAL(it.current_index(), size_t(15));
+      int64_t b; ASSERT_SUCCESS((*it)["b"].get(b)); ASSERT_EQUAL(b, int64_t(2));
+      return true;
+    }()));
+
+    SUBTEST("tight RS multibatch: 100 objects no whitespace, bs=32", ([&]() {
+      // 100 tight objects `\x1e{"i":0}\x1e{"i":1}...` with a small batch
+      // size to stress the multibatch path. Objects are delimited by their
+      // closing '}' so this case works without any whitespace.
+      constexpr size_t N = 100;
+      std::string bytes;
+      for (size_t i = 0; i < N; i++) {
+        bytes += '\x1e';
+        bytes += "{\"i\":";
+        bytes += std::to_string(i);
+        bytes += "}";
+      }
+      auto input = simdjson::padded_string(bytes);
+      ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) {
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < N);
+        int64_t v;
+        ASSERT_SUCCESS(doc["i"].get(v));
+        ASSERT_EQUAL(v, int64_t(i));
+        i++;
+      }
+      ASSERT_EQUAL(i, N);
+      return true;
+    }()));
+
+    SUBTEST("spaced RS multibatch: 100 int scalars RS+space+value+LF, bs=32", ([&]() {
+      // 100 int scalars shaped as `\x1e <n>\n` each. Small batch size
+      // (32) forces ~16 stage1 invocations over the ~500 byte input.
+      constexpr size_t N = 100;
+      std::string bytes;
+      for (size_t i = 0; i < N; i++) {
+        bytes += '\x1e';
+        bytes += ' ';
+        bytes += std::to_string(i);
+        bytes += '\n';
+      }
+      auto input = simdjson::padded_string(bytes);
+      ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) {
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < N);
+        int64_t v;
+        ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, int64_t(i));
+        i++;
+      }
+      ASSERT_EQUAL(i, N);
+      return true;
+    }()));
+
     SUBTEST("leading/trailing/repeated RS separators around scalars", ([&]() {
       // RFC 7464 says each JSON text is preceded by exactly one RS. The
       // sensible interpretation of degenerate inputs:
