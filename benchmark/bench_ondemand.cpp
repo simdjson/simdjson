@@ -124,6 +124,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "kostya/boostjson.h"
 
 #include "large_random/simdjson_ondemand.h"
+#include "large_random/simdjson_ondemand_ranges.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_UNORDERED
 #include "large_random/simdjson_ondemand_unordered.h"
 #endif // SIMDJSON_COMPETITION_ONDEMAND_UNORDERED

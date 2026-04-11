@@ -1876,6 +1876,66 @@ if (!error) {
 
 This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.
 
+## C++20 Ranges Support (On-Demand)
+
+When compiling with C++20 (or later), you can use `std::ranges` with the On-Demand API
+via the `get_range()` helper. This enables use of range adaptors such as `std::views::transform`.
+
+```cpp
+#include "simdjson.h"
+#include <ranges>
+#include <string>
+#include <vector>
+
+auto json = R"([
+  { "name": "Alice", "age": 30 },
+  { "name": "Bob",   "age": 25 },
+  { "name": "Carol", "age": 35 }
+])"_padded;
+
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+auto arr = doc.get_array().value();
+
+// Use std::views::transform to extract names
+auto names = ondemand::get_range(arr)
+  | std::views::transform([](auto elem) -> std::string {
+      return std::string(std::string_view(elem["name"]));
+    });
+
+for (auto name : names) {
+  std::cout << name << std::endl;  // Alice, Bob, Carol
+}
+```
+
+The `get_range()` and `get_key_value_range()` functions wrap an `ondemand::array`
+or `ondemand::object` in a `std::ranges::view` that satisfies `std::ranges::input_range`.
+They work with both exception and non-exception code:
+
+```cpp
+// With exceptions:
+auto range = ondemand::get_range(doc.get_array());
+
+// Without exceptions:
+ondemand::array arr;
+if (doc.get_array().get(arr) == SUCCESS) {
+  auto range = ondemand::get_range(arr);
+  for (auto elem : range) { /* ... */ }
+}
+```
+
+Object iteration uses `get_key_value_range()` and yields `simdjson_result<ondemand::field>` elements:
+
+```cpp
+auto obj = doc.get_object().value();
+for (auto field_result : ondemand::get_key_value_range(obj)) {
+  std::cout << std::string_view(field_result.escaped_key()) << std::endl;
+}
+```
+
+The range wrappers are zero-cost: they forward directly to the underlying
+On-Demand iterators with no value buffering or extra per-element overhead.
+
 ## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
 The simdjson library provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression

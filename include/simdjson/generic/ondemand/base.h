@@ -40,6 +40,13 @@ class token_iterator;
 class value;
 class value_iterator;
 
+#if SIMDJSON_SUPPORTS_RANGES
+class array_range;
+class array_range_iterator;
+class object_range;
+class object_range_iterator;
+#endif // SIMDJSON_SUPPORTS_RANGES
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson

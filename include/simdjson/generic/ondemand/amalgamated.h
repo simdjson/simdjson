@@ -22,6 +22,7 @@
 #include "simdjson/generic/ondemand/field.h"
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/object_iterator.h"
+#include "simdjson/generic/ondemand/ranges.h"
 #include "simdjson/generic/ondemand/serialization.h"
 
 // Deserialization for standard types
@@ -39,6 +40,7 @@
 #include "simdjson/generic/ondemand/logger-inl.h"
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/object_iterator-inl.h"
+#include "simdjson/generic/ondemand/ranges-inl.h"
 #include "simdjson/generic/ondemand/parser-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
