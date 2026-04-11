@@ -17,6 +17,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+// On Windows, `padded_memory_map` (when it is enabled) depends on types and
+// functions declared in <windows.h>. We deliberately do NOT include that
+// header here: users of simdjson who want `padded_memory_map` on Windows
+// must include <windows.h> themselves *before* including this header. See
+// padded_string.h for the detection logic.
 
 namespace simdjson {
 namespace internal {
@@ -385,6 +390,8 @@ inline bool padded_string_builder::reserve(size_t additional) noexcept {
 }
 
 
+#if SIMDJSON_HAS_PADDED_MEMORY_MAP
+
 #ifndef _WIN32
 simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexcept {
 
@@ -421,7 +428,141 @@ simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
     munmap(const_cast<char *>(data), size + simdjson::SIMDJSON_PADDING);
   }
 }
+#else // _WIN32
+// Windows 11+ implementation.
+//
+// We use the modern Windows memory APIs (CreateFileMapping2 + MapViewOfFile3,
+// available since Windows 10 1803 and gated on Windows 11 in our build) to
+// map the file directly into the process address space with zero copies.
+//
+// Windows guarantees that after a file view is mapped, any bytes in the
+// trailing partial page beyond the end of the file are zero-filled. As long
+// as the file does not end exactly on (or within SIMDJSON_PADDING bytes of)
+// a page boundary, we therefore get SIMDJSON_PADDING accessible zero bytes
+// for free at the tail of the view. In the rare edge cases where the tail
+// is not large enough (about 1.5% of file sizes if sizes were uniformly
+// distributed), we fall back to reading the file into a heap-allocated
+// padded buffer. That fallback is still correct — it just performs one
+// memory copy instead of a zero-copy mapping.
+simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexcept {
+  HANDLE file_handle = ::CreateFileA(
+      filename, GENERIC_READ,
+      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (file_handle == INVALID_HANDLE_VALUE) {
+    return; // file not found or cannot be opened
+  }
+  LARGE_INTEGER file_size_li;
+  if (!::GetFileSizeEx(file_handle, &file_size_li) || file_size_li.QuadPart < 0) {
+    ::CloseHandle(file_handle);
+    return; // failed to get file size
+  }
+#if SIMDJSON_IS_32BITS
+  if (static_cast<unsigned long long>(file_size_li.QuadPart) >
+      static_cast<unsigned long long>(SIZE_MAX - simdjson::SIMDJSON_PADDING)) {
+    ::CloseHandle(file_handle);
+    return; // file too large to map on a 32-bit system
+  }
+#endif
+  size = static_cast<size_t>(file_size_li.QuadPart);
 
+  // Fast zero-copy path: only usable when the last partial page of the file
+  // gives us at least SIMDJSON_PADDING bytes of zero-filled slack.
+  if (size > 0) {
+    SYSTEM_INFO sys_info;
+    ::GetSystemInfo(&sys_info);
+    const size_t page_size = static_cast<size_t>(sys_info.dwPageSize);
+    const size_t tail_in_page = size % page_size;
+    const size_t tail_zero_fill = (tail_in_page == 0)
+        ? size_t{0}
+        : (page_size - tail_in_page);
+
+    if (tail_zero_fill >= simdjson::SIMDJSON_PADDING) {
+      // Create the section with the new CreateFileMapping2 API.
+      HANDLE mapping = ::CreateFileMapping2(
+          file_handle, /*SecurityAttributes=*/ NULL,
+          /*DesiredAccess=*/ FILE_MAP_READ,
+          /*PageProtection=*/ PAGE_READONLY,
+          /*AllocationAttributes=*/ 0,
+          /*MaximumSize=*/ 0, // 0 => entire file
+          /*Name=*/ NULL,
+          /*ExtendedParameters=*/ NULL, /*ParameterCount=*/ 0);
+      if (mapping != NULL) {
+        // Map the view with the new MapViewOfFile3 API.
+        PVOID view_ptr = ::MapViewOfFile3(
+            mapping, ::GetCurrentProcess(),
+            /*BaseAddress=*/ NULL,
+            /*Offset=*/ 0,
+            /*ViewSize=*/ size,
+            /*AllocationType=*/ 0,
+            /*PageProtection=*/ PAGE_READONLY,
+            /*ExtendedParameters=*/ NULL, /*ParameterCount=*/ 0);
+        ::CloseHandle(mapping);
+        if (view_ptr != NULL) {
+          ::CloseHandle(file_handle);
+          data = static_cast<const char *>(view_ptr);
+          owns_heap_buffer_ = false;
+          return;
+        }
+      }
+      // Fall through to the buffered-read fallback if the mapping failed.
+    }
+  }
+
+  // Fallback path: the file ends too close to a page boundary (or the
+  // mapping APIs refused) — read the file contents into a heap-allocated
+  // padded buffer. This preserves the class' padding invariant at the cost
+  // of one copy.
+  size_t total_size = size + simdjson::SIMDJSON_PADDING;
+  if (total_size < size) { // overflow guard
+    ::CloseHandle(file_handle);
+    size = 0;
+    return;
+  }
+  char *buffer = new (std::nothrow) char[total_size];
+  if (buffer == nullptr) {
+    ::CloseHandle(file_handle);
+    size = 0;
+    return;
+  }
+  size_t total_read = 0;
+  while (total_read < size) {
+    size_t remaining = size - total_read;
+    const size_t chunk_limit = static_cast<size_t>(0x40000000UL); // 1 GiB per call
+    DWORD to_read = remaining > chunk_limit
+        ? static_cast<DWORD>(chunk_limit)
+        : static_cast<DWORD>(remaining);
+    DWORD bytes_read = 0;
+    if (!::ReadFile(file_handle, buffer + total_read, to_read, &bytes_read, NULL)) {
+      delete[] buffer;
+      ::CloseHandle(file_handle);
+      size = 0;
+      return;
+    }
+    if (bytes_read == 0) {
+      // Unexpected EOF: the file shrank while we were reading it.
+      delete[] buffer;
+      ::CloseHandle(file_handle);
+      size = 0;
+      return;
+    }
+    total_read += bytes_read;
+  }
+  std::memset(buffer + size, 0, simdjson::SIMDJSON_PADDING);
+  data = buffer;
+  owns_heap_buffer_ = true;
+  ::CloseHandle(file_handle);
+}
+
+simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
+  if (data == nullptr) { return; }
+  if (owns_heap_buffer_) {
+    delete[] const_cast<char *>(data);
+  } else {
+    ::UnmapViewOfFile(data);
+  }
+}
+#endif // _WIN32
 
 simdjson_inline simdjson::padded_string_view padded_memory_map::view() const noexcept simdjson_lifetime_bound {
   if(!is_valid()) {
@@ -433,7 +574,8 @@ simdjson_inline simdjson::padded_string_view padded_memory_map::view() const noe
 simdjson_inline bool padded_memory_map::is_valid() const noexcept {
   return data != nullptr;
 }
-#endif // _WIN32
+
+#endif // SIMDJSON_HAS_PADDED_MEMORY_MAP
 
 } // namespace simdjson
 

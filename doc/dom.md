@@ -127,11 +127,29 @@ codepage, and they may call SetFileApisToOEM accordingly.
 
 
 **Advanced feature:**
-On non-Windows systems, you can use memory-file mapping to create a `simdjson::padded_string_view`
-from a file on disk.
+You can use `simdjson::padded_memory_map` to create a `simdjson::padded_string_view`
+from a file on disk without copying the file contents into your own buffer.
+On POSIX systems (Linux, macOS, BSD, ...) it uses `mmap` for true zero-copy
+access. It is also available on Windows, but only when two conditions are
+met:
+
+1. You **must `#include <windows.h>` before `#include "simdjson.h"`** in every
+   translation unit where you want to use `padded_memory_map`.
+2. Your compilation must target **Windows 11 or later**
+   (`NTDDI_VERSION >= NTDDI_WIN10_CO`).
+
+On Windows 11, the implementation uses `CreateFileMapping2` and
+`MapViewOfFile3` for true zero-copy mapping whenever the file does not end
+within `SIMDJSON_PADDING` bytes of a page boundary; otherwise it falls back
+to reading the file into a padded heap buffer. If those requirements are
+not met, the class is not declared and the code below will fail to compile.
 
 ```cpp
-// if the macro _WIN32 is defined, this will not work since we do not support Windows
+#ifdef _WIN32
+#include <windows.h> // Must come BEFORE <simdjson.h> on Windows
+#endif
+#include "simdjson.h"
+// ...
 simdjson::padded_memory_map map(TWITTER_JSON);
 if (!map.is_valid()) { /* handle error */ }
 simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope

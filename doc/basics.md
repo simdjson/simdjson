@@ -269,10 +269,25 @@ ondemand::document doc = parser.iterate(simdjson::pad(json));
 We recommend against creating many `std::string` or many `std::padded_string` instances in your application to store your JSON data.
 Consider reusing the same buffers and limiting memory allocations.
 
-**Memory-file mapping (non-Windows).** You can use memory-file mapping to create a `simdjson::padded_string_view`
-from a file on disk:
+**Memory-file mapping.** You can use `simdjson::padded_memory_map` to create a
+`simdjson::padded_string_view` from a file on disk. On POSIX systems (Linux,
+macOS, BSD, ...) it uses `mmap` for true zero-copy access and is always
+available. On Windows, it is also available but **only when** (1) you
+`#include <windows.h>` before including simdjson, and (2) your compilation
+targets Windows 11 or later (`NTDDI_VERSION >= NTDDI_WIN10_CO`). The Windows
+implementation uses the modern `CreateFileMapping2` / `MapViewOfFile3` APIs
+for true zero-copy access whenever possible, with a transparent buffered-read
+fallback for files that end too close to a page boundary.
+
+The availability of the class can be tested with the preprocessor macro
+`SIMDJSON_HAS_PADDED_MEMORY_MAP`.
 
 ```cpp
+#ifdef _WIN32
+#include <windows.h> // Must come BEFORE <simdjson.h> on Windows
+#endif
+#include "simdjson.h"
+// ...
 simdjson::padded_memory_map map(myfilename);
 if (!map.is_valid()) { /* handle error */ }
 simdjson::padded_string_view view = map.view();
@@ -305,7 +320,7 @@ Some users may want to browse code along with the compiled assembly:
 | `simdjson::pad(std::string&)`                | Adds padding if needed                                                              | Returns `padded_string_view` pointing to the (possibly resized) string                 | References original string                   | Recommended to silence sanitizers when using `std::string`.                      |
 | `padded_string(data, length)` or `padded_string(std::string)` | Automatic (copies into padded buffer)                                              | Explicit copy into owned padded buffer                                                 | Owned by `padded_string`                     | Safe when you want full ownership and padding guaranteed.                        |
 | `padded_string_view` (manual)                | User guarantees `SIMDJSON_PADDING` extra bytes after the viewed length             | User provides pointer + length + capacity                                              | Non-owning view                              | Low-level; requires careful buffer management.                                   |
-| Memory-mapped file (`padded_memory_map`)     | Automatic via mapping (non-Windows only)                                            | Creates view with sufficient padding                                                   | Non-owning (tied to map lifetime)            | Advanced; efficient for large files on Linux/macOS/etc.                          |
+| Memory-mapped file (`padded_memory_map`)     | Automatic via mapping / padded read                                                 | Creates view with sufficient padding                                                   | Non-owning (tied to map lifetime)            | Always available on POSIX (zero-copy `mmap`). On Windows, requires `#include <windows.h>` before simdjson **and** Windows 11 (`NTDDI_VERSION >= NTDDI_WIN10_CO`); uses `CreateFileMapping2` + `MapViewOfFile3`. |
 
 
 Documents are iterators

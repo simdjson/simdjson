@@ -18,6 +18,7 @@ Contents
 - [How it works](#how-it-works)
 - [Support](#support)
 - [API](#api)
+- [Streaming directly from a memory-mapped file](#streaming-directly-from-a-memory-mapped-file)
 - [Use cases](#use-cases)
 - [Tracking your position](#tracking-your-position)
 - [Incomplete streams](#incomplete-streams)
@@ -218,17 +219,79 @@ got full document at 29
 
 
 
-**Advanced feature:**
-On non-Windows systems, you can use memory-file mapping to create a `simdjson::padded_string_view`
-from a file on disk.
+Streaming directly from a memory-mapped file
+--------------------------------------------
+
+When your input is a large NDJSON / JSON-lines file on disk, the most
+efficient way to feed `parse_many` is to use `simdjson::padded_memory_map`.
+It returns a `padded_string_view` with the right amount of trailing padding,
+so you can pass it directly to `parse_many` without copying the file content
+into your own buffer first.
+
+`padded_memory_map` is available on POSIX systems (Linux, macOS, BSD, ...) by
+default. On Windows, it is also available but with two extra requirements:
+
+1. You **must `#include <windows.h>` before `#include "simdjson.h"`** in every
+   translation unit where you want to use `padded_memory_map`. simdjson
+   deliberately does not pull in `<windows.h>` itself, so the class is only
+   declared when the Win32 types are already visible.
+2. Your compilation must target **Windows 11 or later** (the Windows SDK
+   must define `NTDDI_VERSION >= NTDDI_WIN10_CO`, i.e. `0x0A00000B`).
+   The Windows implementation uses the modern memory APIs
+   `CreateFileMapping2` / `MapViewOfFile3`, which are available on this
+   version of Windows.
+
+If either requirement is not met on Windows, the `padded_memory_map` class is
+not declared at all and any code that references it fails to compile with an
+"unknown identifier" error. The availability of the class can be tested with
+the macro `SIMDJSON_HAS_PADDED_MEMORY_MAP`.
+
+On POSIX, `padded_memory_map` uses `mmap` to map the file directly into
+memory with zero copies. On Windows 11, it uses `CreateFileMapping2` +
+`MapViewOfFile3` for true zero-copy mapping whenever the file does not end
+within `SIMDJSON_PADDING` bytes of a page boundary; for those rare cases, it
+transparently falls back to reading the file into a heap-allocated padded
+buffer so that the returned view always has `SIMDJSON_PADDING` accessible
+zero bytes after the file content.
 
 ```cpp
-// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping
-// under Windows at this time.
+#ifdef _WIN32
+#include <windows.h> // Must come BEFORE <simdjson.h> on Windows
+#endif
+#include "simdjson.h"
+
+// ...
+
+simdjson::padded_memory_map map("huge_stream.ndjson");
+if (!map.is_valid()) { /* file missing, unreadable, too large, ... */ return; }
+
+simdjson::dom::parser parser;
+simdjson::dom::document_stream stream;
+auto error = parser.parse_many(map.view()).get(stream);
+if (error) { std::cerr << error << std::endl; return; }
+
+for (auto doc : stream) {
+  // process each JSON document in the stream
+  std::cout << doc << std::endl;
+}
+```
+
+Important lifetime rule: the `padded_string_view` returned by `map.view()` is
+only valid while the `padded_memory_map` instance is alive, so keep `map`
+alive for as long as you are iterating the stream.
+
+The file must not be modified while the memory map is in use. If you need a
+fully independent copy of the data, use `simdjson::padded_string::load(...)`
+instead.
+
+If you prefer single-document parsing on a memory-mapped file, the same
+pattern applies to `parser.parse(...)`:
+
+```cpp
 simdjson::padded_memory_map map(myfilename);
 if (!map.is_valid()) { /* handle error */ }
 simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope
-ondemand::document doc = parser.iterate(view); // parse the JSON
+simdjson::dom::element doc = parser.parse(view); // parse the JSON
 ```
 
 Incomplete streams

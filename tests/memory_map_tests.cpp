@@ -1,12 +1,27 @@
+// On Windows, padded_memory_map requires <windows.h> to be included before
+// simdjson.h and a build targeting Windows 11 or later. Include the Win32
+// header here so that the test exercises the Windows path when compiled
+// against the Windows 11 SDK.
 #ifdef _WIN32
-#include <cstdlib>
-// This test is not supported on Windows because it relies on POSIX APIs like
-// mmap. Please run it on a POSIX-compliant system.
-int main() { return EXIT_SUCCESS; }
-#else
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 #include "simdjson.h"
 #include "test_macros.h"
+
+// Fail the build on Windows if padded_memory_map ended up disabled: it would
+// mean the Windows SDK used is older than Windows 11 and this test would
+// silently degrade into a no-op. Users compiling against an older SDK should
+// update NTDDI_VERSION / WINVER.
+#if defined(_WIN32) && !SIMDJSON_HAS_PADDED_MEMORY_MAP
+#error "padded_memory_map is not available; update to the Windows 11 SDK (NTDDI_VERSION >= NTDDI_WIN10_CO)"
+#endif
 
 #if SIMDJSON_EXCEPTIONS
 bool test_memory_map_exception() {
@@ -37,11 +52,80 @@ bool test_memory_map_noexception() {
     TEST_SUCCEED();
 }
 
-int main() {
-#if SIMDJSON_EXCEPTIONS
-    return (test_memory_map_exception() && test_memory_map_noexception()) ? EXIT_SUCCESS : EXIT_FAILURE;
-#else
-    return test_memory_map_noexception() ? EXIT_SUCCESS : EXIT_FAILURE;
-#endif
+// Verifies that padded_memory_map can feed a streaming parser (iterate_many)
+// with JSON documents read from a file. This exercises the API that parse_many
+// / iterate_many users typically want: no extra copy on POSIX, portable fallback
+// on Windows. The AMAZON_CELLPHONES_NDJSON resource is an NDJSON file so it is
+// a realistic stress-test for streaming from a memory-mapped file.
+bool test_memory_map_iterate_many() {
+    TEST_START();
+    simdjson::padded_memory_map map(AMAZON_CELLPHONES_NDJSON);
+    if (!map.is_valid()) {
+        std::cerr << "Failed to memory-map the file " << AMAZON_CELLPHONES_NDJSON << std::endl;
+        return false;
+    }
+    simdjson::padded_string_view view = map.view();
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document_stream stream;
+    ASSERT_SUCCESS( parser.iterate_many(view).get(stream) );
+    size_t count = 0;
+    for (auto doc : stream) {
+        simdjson_unused auto err = doc.error();
+        count++;
+    }
+    if (count == 0) {
+        std::cerr << "Expected at least one document in " << AMAZON_CELLPHONES_NDJSON << std::endl;
+        return false;
+    }
+    TEST_SUCCEED();
 }
+
+// Verifies that padded_memory_map also works with the DOM streaming parser
+// (parse_many). Same rationale as the ondemand variant above.
+bool test_memory_map_parse_many() {
+    TEST_START();
+    simdjson::padded_memory_map map(AMAZON_CELLPHONES_NDJSON);
+    if (!map.is_valid()) {
+        std::cerr << "Failed to memory-map the file " << AMAZON_CELLPHONES_NDJSON << std::endl;
+        return false;
+    }
+    simdjson::padded_string_view view = map.view();
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(view).get(stream) );
+    size_t count = 0;
+    for (auto doc : stream) {
+        simdjson_unused auto err = doc.error();
+        count++;
+    }
+    if (count == 0) {
+        std::cerr << "Expected at least one document in " << AMAZON_CELLPHONES_NDJSON << std::endl;
+        return false;
+    }
+    TEST_SUCCEED();
+}
+
+// Ensures that trying to memory-map a file that does not exist leaves the map
+// in the "invalid" state rather than crashing. This is important on Windows
+// where the underlying implementation path differs from POSIX.
+bool test_memory_map_missing_file() {
+    TEST_START();
+    simdjson::padded_memory_map map("this_file_definitely_does_not_exist_123456789.json");
+    if (map.is_valid()) {
+        std::cerr << "Expected is_valid() == false for missing file" << std::endl;
+        return false;
+    }
+    TEST_SUCCEED();
+}
+
+int main() {
+    bool ok = true;
+#if SIMDJSON_EXCEPTIONS
+    ok = ok && test_memory_map_exception();
 #endif
+    ok = ok && test_memory_map_noexception();
+    ok = ok && test_memory_map_iterate_many();
+    ok = ok && test_memory_map_parse_many();
+    ok = ok && test_memory_map_missing_file();
+    return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+}
