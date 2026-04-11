@@ -4,6 +4,10 @@ include(${PROJECT_SOURCE_DIR}/cmake/add_cpp_test.cmake)
 add_subdirectory(dom)
 add_subdirectory(ondemand)
 
+# compilation_failure_tests is added before the global link_libraries(simdjson) so that
+# multiple_include/myexe does not receive a duplicate simdjson entry alongside the one
+# already propagated by mylib PUBLIC simdjson::simdjson.
+add_subdirectory(compilation_failure_tests)
 
 # All remaining tests link with simdjson proper
 link_libraries(simdjson)
@@ -27,6 +31,5 @@ endif()
 # SIMDJSON_FORCE_IMPLEMENTATION, so we know we're testing what we think we're testing
 add_cpp_test(checkimplementation LABELS other per_implementation)
 
-add_subdirectory(compilation_failure_tests)
 add_subdirectory(builder)
 add_subdirectory(compile_time)

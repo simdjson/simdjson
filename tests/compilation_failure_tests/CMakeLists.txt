@@ -14,6 +14,17 @@ function(add_dual_compile_test TEST_NAME)
 endfunction(add_dual_compile_test)
 
 
+if(NOT BUILD_SHARED_LIBS)
+  # Add multiple_include BEFORE link_libraries(simdjson) so that myexe only receives
+  # simdjson once (through mylib PUBLIC simdjson::simdjson) and not a second time from
+  # a directory-wide link entry.
+  add_subdirectory(multiple_include)
+endif()
+
+# Dual-compile tests build executables that reference simdjson symbols, so they need
+# the library linked in.
+link_libraries(simdjson)
+
 add_dual_compile_test(example_compiletest)
 # These don't compile with exceptions off
 if (SIMDJSON_EXCEPTIONS)
@@ -24,9 +35,4 @@ if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(dangling_parser_parse_stdstring)
   add_dual_compile_test(dangling_parser_parse_padstring)
   add_dual_compile_test(unsafe_parse_many)
-endif()
-
-if(NOT BUILD_SHARED_LIBS)
-  # We only check that it builds
-  add_subdirectory(multiple_include)
 endif()

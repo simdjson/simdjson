@@ -147,28 +147,66 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   for (uint32_t read_idx = 0; read_idx < parser.n_structural_indexes; read_idx++) {
     const uint32_t pos = parser.structural_indexes[read_idx];
     if (parser.buf[pos] == 0x1E) {
-      // This is an RS character - find the actual JSON value start
+      // This is an RS character - find the actual JSON value start.
       last_rs_pos = pos;
       rs_count++;
-      // Skip RS and any whitespace to find the actual value start
+      // Skip past this RS and any whitespace *and any additional RSes*
+      // to locate the real value. Consecutive RSes are degenerate
+      // "empty records" per RFC 7464; we collapse them here. They do
+      // not always appear as separate entries in structural_indexes
+      // because the scanner groups runs of adjacent non-whitespace
+      // scalar bytes (including RS) into a single scalar start.
       uint32_t value_start = pos + 1;
       while (value_start < len) {
         const uint8_t c = parser.buf[value_start];
-        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') { value_start++; }
-        else { break; }
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+          value_start++;
+        } else if (c == 0x1E) {
+          // Collapsed empty record. Still count it so rs_count reflects
+          // the true number of record markers and last_rs_pos tracks
+          // the final one.
+          last_rs_pos = value_start;
+          rs_count++;
+          value_start++;
+        } else {
+          break;
+        }
       }
-      // Check if the value start is an operator (already in structural_indexes),
-      // another RS (empty record), or a scalar (needs to be added).
+      // If the scanner emitted additional structurals inside the
+      // whitespace+RS run we just walked over (i.e., isolated RSes
+      // separated by whitespace), skip past them so we do not
+      // double-count or double-emit.
+      while (read_idx + 1 < parser.n_structural_indexes &&
+             parser.structural_indexes[read_idx + 1] < value_start) {
+        read_idx++;
+      }
+      // Check if the value start is an operator (always present in
+      // scanner structural_indexes) or a scalar-like start (which may
+      // be missing from structural_indexes and must be added here).
+      // Note: '"' is NOT always in structural_indexes. The scanner
+      // classifies '"' as a scalar character and emits it as a
+      // structural only when it is a *scalar start* (preceded by
+      // whitespace or an operator). When '"' immediately follows an
+      // RS (which the scanner also classifies as scalar), it is
+      // treated as a scalar continuation and not emitted - so we
+      // must add it here just like any other scalar value.
       if (value_start < len) {
         const uint8_t c = parser.buf[value_start];
-        const bool is_operator = (c == '{' || c == '}' || c == '[' || c == ']' || c == ':' || c == ',');
-        const bool is_rs = (c == 0x1E);
-        if (!is_operator && !is_rs) {
-          // Scalar value - add its position since scanner missed it
+        const bool is_operator =
+            (c == '{' || c == '}' || c == '[' || c == ']' ||
+             c == ':' || c == ',');
+        // If the next scanner structural is exactly at value_start,
+        // the scanner already emitted it (it followed whitespace) and
+        // we must not add a duplicate - a subsequent iteration will
+        // copy it into write_idx.
+        const bool already_emitted =
+            (read_idx + 1 < parser.n_structural_indexes &&
+             parser.structural_indexes[read_idx + 1] == value_start);
+        if (!is_operator && !already_emitted) {
+          // Scalar value (number/true/false/null/string) - add its
+          // position since scanner missed it.
           parser.structural_indexes[write_idx++] = value_start;
         }
-        // For operators, they will appear later in structural_indexes
-        // For RS, it will be processed in a subsequent iteration
       }
     } else {
       // Not RS, copy to output

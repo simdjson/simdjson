@@ -1196,7 +1196,7 @@ namespace document_stream_tests {
       // doc 1: true
       ASSERT_EQUAL(it.current_index(), size_t(4));
       ASSERT_EQUAL(it.source(), std::string_view("true"));
-      bool b; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
+      bool b{}; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
       ++it;
 
       // doc 2: "x"
@@ -1221,7 +1221,7 @@ namespace document_stream_tests {
 
       ASSERT_EQUAL(it.current_index(), size_t(4));
       ASSERT_EQUAL(it.source(), std::string_view("true"));
-      bool b; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
+      bool b{}; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
       ++it;
 
       ASSERT_EQUAL(it.current_index(), size_t(10));
@@ -1285,12 +1285,9 @@ namespace document_stream_tests {
     SUBTEST("large synthetic scalar stream multibatch with separator noise", ([&]() {
       // Same as the large stress test, but with extra RSes sprinkled every
       // 7 documents (empty leading record within a valid record sequence)
-      // plus a trailing bare RS. Tolerant assertions only: the current
-      // implementation silently drops documents near empty records in the
-      // json_sequence path, so we can't lock down a strict count. We do
-      // assert that (a) parse_many succeeds, (b) no document reports a
-      // parse error, and (c) every emitted integer value is one of the
-      // integers we generated (no garbage / wrong values).
+      // plus a trailing bare RS. Strict assertions: every document must
+      // come through and parse cleanly, and the integer documents must
+      // match the values we emitted.
       constexpr size_t N = 256;
       std::string bytes;
       for (size_t i = 0; i < N; i++) {
@@ -1307,16 +1304,36 @@ namespace document_stream_tests {
       bytes += '\x1e';  // trailing bare RS
       auto input = simdjson::padded_string(bytes);
       ASSERT_SUCCESS(parser.parse_many(input, 64, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
       for (auto doc : stream) {
-        if (doc.error()) { continue; }
-        // If it parses as an integer, verify the value is plausible
-        // (matches an integer we emitted). We don't check sequencing or
-        // count because empty records may drop documents.
-        int64_t v = 0;
-        if (doc.get(v) == simdjson::SUCCESS) {
-          ASSERT_TRUE(v >= 0 && v < static_cast<int64_t>(N) && (v % 4) == 0);
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < N);
+        switch (i % 4) {
+          case 0: {
+            int64_t v; ASSERT_SUCCESS(doc.get(v));
+            ASSERT_EQUAL(v, int64_t(i));
+            break;
+          }
+          case 1: {
+            bool v; ASSERT_SUCCESS(doc.get(v));
+            ASSERT_EQUAL(v, bool(i & 1));
+            break;
+          }
+          case 2: {
+            std::string_view v; ASSERT_SUCCESS(doc.get(v));
+            std::string want = "s" + std::to_string(i);
+            ASSERT_EQUAL(v, std::string_view(want));
+            break;
+          }
+          case 3: {
+            simdjson::dom::element e; ASSERT_SUCCESS(doc.get(e));
+            ASSERT_TRUE(e.is_null());
+            break;
+          }
         }
+        i++;
       }
+      ASSERT_EQUAL(i, N);
       return true;
     }()));
 
@@ -1327,28 +1344,19 @@ namespace document_stream_tests {
       //   - repeated RSes between two scalars (empty intermediate record):
       //     skip the empty record, both real scalars are reported
       //   - trailing bare RS with no payload: skip, no phantom document
-      //
-      // The current implementation does NOT achieve this on the combined
-      // case below - empty records can swallow neighboring scalars and a
-      // trailing bare RS can produce a phantom TAPE_ERROR document. This
-      // test is intentionally tolerant: it asserts only that
-      //   (a) parse_many itself succeeds (no crash / propagated error),
-      //   (b) no successful document reports a value outside {1, 2}.
-      // It does NOT lock down a count, because the buggy behavior would
-      // make the test impossible to pair with follow-up tests in the same
-      // run. A stricter version (count == 2, both 1 and 2 emitted, no
-      // phantom errors) is the desired regression target once the
-      // separator handling in find_next_document_index_json_sequence is
-      // hardened.
       // Layout: RS(0) RS(1) 1(2) LF(3) RS(4) RS(5) RS(6) 2(7) LF(8) RS(9)
       auto input = simdjson::padded_string("\x1e\x1e" "1\n" "\x1e\x1e\x1e" "2\n" "\x1e"s);
       ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected[] = {1, 2};
+      size_t i = 0;
       for (auto doc : stream) {
-        if (doc.error()) { continue; }
-        int64_t v = 0;
-        if (doc.get(v) != simdjson::SUCCESS) { continue; }
-        ASSERT_TRUE(v == 1 || v == 2);
+        ASSERT_SUCCESS(doc.error());
+        ASSERT_TRUE(i < 2);
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected[i]);
+        i++;
       }
+      ASSERT_EQUAL(i, size_t(2));
       return true;
     }()));
 
@@ -1520,7 +1528,7 @@ namespace document_stream_tests {
 
       // doc 3: true
       ASSERT_EQUAL(it.current_index(), size_t(8));
-      bool b; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
+      bool b{}; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
       ASSERT_TRUE(src_matches(it.source(), "true"));
       ++it;
 
