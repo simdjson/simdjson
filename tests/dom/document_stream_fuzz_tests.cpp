@@ -66,8 +66,10 @@ bool verify_case(const document_stream_fuzz::stream_case &test_case) {
     for (auto doc : stream) {
       ASSERT_SUCCESS(doc.error());
       ASSERT_TRUE(index < expected.size());
+      simdjson::dom::element el;
+      ASSERT_SUCCESS(doc.get(el));
       ASSERT_EQUAL(
-          canonicalize_document(test_case.format, simdjson::minify(doc)),
+          canonicalize_document(test_case.format, simdjson::minify(el)),
           canonicalize_document(test_case.format, expected[index])
       );
       index++;
