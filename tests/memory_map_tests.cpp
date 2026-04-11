@@ -71,7 +71,7 @@ bool test_memory_map_iterate_many() {
     ASSERT_SUCCESS( parser.iterate_many(view).get(stream) );
     size_t count = 0;
     for (auto doc : stream) {
-        simdjson_unused auto err = doc.error();
+        ASSERT_SUCCESS( doc.error() );
         count++;
     }
     if (count == 0) {
@@ -96,7 +96,7 @@ bool test_memory_map_parse_many() {
     ASSERT_SUCCESS( parser.parse_many(view).get(stream) );
     size_t count = 0;
     for (auto doc : stream) {
-        simdjson_unused auto err = doc.error();
+        ASSERT_SUCCESS( doc.error() );
         count++;
     }
     if (count == 0) {
