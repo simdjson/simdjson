@@ -283,17 +283,28 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 // On POSIX platforms the class is always available: the implementation uses
 // `mmap` (and a trailing anonymous page for padding) from <sys/mman.h>.
 //
-// On Windows the class is only available when all of the following hold:
-//   1. <windows.h> has been included *before* <simdjson.h> (so that this
-//      header can see the Win32 types and the `_WINDOWS_` include guard),
-//   2. the compilation targets Windows 11 or later (NTDDI_VERSION
-//      >= NTDDI_WIN10_CO, 0x0A00000B). This is required because the
-//      implementation relies on the modern memory APIs introduced with
-//      that version (CreateFileMapping2 / MapViewOfFile3).
+// On Windows the class is disabled by default and must be explicitly
+// opted into by defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`. Enabling
+// it requires:
+//   1. `<windows.h>` has been included *before* `<simdjson.h>` (so that
+//      this header can see the Win32 types and the `_WINDOWS_` include
+//      guard),
+//   2. the compilation targets Windows 10, version 1803 or later
+//      (i.e. `NTDDI_VERSION >= NTDDI_WIN10_RS4`, `0x0A000005`). This is
+//      required because the implementation relies on the modern memory
+//      APIs introduced with that version (`CreateFileMapping2` /
+//      `MapViewOfFile3`),
+//   3. the link step pulls in an import library that exports those APIs,
+//      typically `onecore.lib` (or `mincore.lib`).
 //
-// If those conditions are not met on Windows, `padded_memory_map` simply
-// does not exist — any attempt to use it fails at compile time with an
-// "unknown identifier" diagnostic rather than silently degrading.
+// The `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS` CMake option arranges (1)-(3)
+// automatically when building simdjson with its own CMake. Consumers using
+// simdjson as a pre-built library are responsible for setting the macro,
+// the Windows version macros, and the link library themselves.
+//
+// If the opt-in conditions are not met on Windows, `padded_memory_map`
+// simply does not exist — any attempt to use it fails at compile time
+// with an "unknown identifier" diagnostic rather than silently degrading.
 //
 // The SIMDJSON_HAS_PADDED_MEMORY_MAP macro reflects whether the class is
 // available in the current translation unit. Users may test this macro to
@@ -301,7 +312,7 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
 #ifndef SIMDJSON_HAS_PADDED_MEMORY_MAP
   #if !defined(_WIN32)
     #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
-  #elif defined(_WINDOWS_) && defined(NTDDI_VERSION) && (NTDDI_VERSION >= 0x0A00000B /* NTDDI_WIN10_CO — Windows 11 */)
+  #elif defined(_WINDOWS_) && defined(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS) && SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS
     #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
   #else
     #define SIMDJSON_HAS_PADDED_MEMORY_MAP 0
@@ -315,13 +326,15 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
  * On POSIX systems (Linux, macOS, BSD, ...), this uses `mmap` to map the file
  * contents directly into memory, which is efficient for large files (no copy).
  *
- * On Windows, this class is only available when `<windows.h>` is included
- * before `<simdjson.h>` and the compilation targets Windows 11 or later
- * (NTDDI_VERSION >= NTDDI_WIN10_CO). The Windows implementation uses the
- * modern memory APIs (`CreateFileMapping2` / `MapViewOfFile3`) to map the
- * file with true zero-copy semantics whenever the last page of the file
- * provides enough trailing zero-fill for SIMDJSON_PADDING bytes; otherwise
- * it falls back to a heap-allocated padded buffer populated with `ReadFile`.
+ * On Windows, this class is disabled by default and must be opted into at
+ * build time by defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`. When
+ * enabled, `<windows.h>` must also be included before `<simdjson.h>` and
+ * the compilation must target Windows 10, version 1803 or later. The
+ * Windows implementation uses the modern memory APIs (`CreateFileMapping2`
+ * / `MapViewOfFile3`) to map the file with true zero-copy semantics
+ * whenever the last page of the file provides enough trailing zero-fill
+ * for SIMDJSON_PADDING bytes; otherwise it falls back to a heap-allocated
+ * padded buffer populated with `ReadFile`.
  *
  * Either way, the resulting `padded_string_view` carries at least
  * `SIMDJSON_PADDING` bytes of accessible zero-filled padding after the file

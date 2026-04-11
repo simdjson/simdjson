@@ -1,7 +1,8 @@
-// On Windows, padded_memory_map requires <windows.h> to be included before
-// simdjson.h and a build targeting Windows 11 or later. Include the Win32
-// header here so that the test exercises the Windows path when compiled
-// against the Windows 11 SDK.
+// On Windows, padded_memory_map is an opt-in feature gated on the
+// SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS macro. When that macro is set, the
+// consumer must also include <windows.h> before <simdjson.h>. We include
+// the Win32 header here so that — in configurations that turned the
+// feature on — the test actually exercises the Windows path.
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -15,13 +16,13 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
-// Fail the build on Windows if padded_memory_map ended up disabled: it would
-// mean the Windows SDK used is older than Windows 11 and this test would
-// silently degrade into a no-op. Users compiling against an older SDK should
-// update NTDDI_VERSION / WINVER.
-#if defined(_WIN32) && !SIMDJSON_HAS_PADDED_MEMORY_MAP
-#error "padded_memory_map is not available; update to the Windows 11 SDK (NTDDI_VERSION >= NTDDI_WIN10_CO)"
-#endif
+// When SIMDJSON_HAS_PADDED_MEMORY_MAP is 0 (e.g. Windows builds without
+// SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS, or MinGW configurations that lack
+// the required SDK gating), compile the test body out and make main()
+// report success so the test suite still runs as a no-op. This is not a
+// silent downgrade: users who want the Windows path must explicitly
+// enable the CMake option `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS`.
+#if SIMDJSON_HAS_PADDED_MEMORY_MAP
 
 #if SIMDJSON_EXCEPTIONS
 bool test_memory_map_exception() {
@@ -118,7 +119,10 @@ bool test_memory_map_missing_file() {
     TEST_SUCCEED();
 }
 
+#endif // SIMDJSON_HAS_PADDED_MEMORY_MAP
+
 int main() {
+#if SIMDJSON_HAS_PADDED_MEMORY_MAP
     bool ok = true;
 #if SIMDJSON_EXCEPTIONS
     ok = ok && test_memory_map_exception();
@@ -128,4 +132,10 @@ int main() {
     ok = ok && test_memory_map_parse_many();
     ok = ok && test_memory_map_missing_file();
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
+#else
+    std::cout << "padded_memory_map is disabled in this configuration; "
+                 "set SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON in CMake to "
+                 "enable it on Windows. Test skipped." << std::endl;
+    return EXIT_SUCCESS;
+#endif
 }

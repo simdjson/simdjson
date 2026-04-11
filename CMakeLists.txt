@@ -75,6 +75,41 @@ if(SIMDJSON_DEVELOPMENT_CHECKS)
   )
 endif()
 
+# padded_memory_map is always available on POSIX. On Windows it is disabled
+# by default because it depends on the `CreateFileMapping2` / `MapViewOfFile3`
+# APIs, which require Windows 10 version 1803 or later and are exported via
+# onecore.lib rather than the default kernel32.lib. Turn this option ON to
+# opt into the feature on Windows; simdjson will then set the appropriate
+# Windows version macros and link onecore, so everything that links
+# simdjson picks up both the compile-time declarations and the import
+# library automatically. The option is a no-op on POSIX (where the feature
+# is unconditionally enabled).
+option(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS
+  "Enable simdjson::padded_memory_map on Windows (requires Windows 10 \
+version 1803 or later). Always enabled on POSIX." OFF)
+if(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS)
+  simdjson_add_props(
+      target_compile_definitions PUBLIC
+      SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1
+  )
+  if(WIN32)
+    # Raise the Windows version floor so that <windows.h> declares the
+    # modern memory-mapping APIs, and link the import library that
+    # actually exports them. _WIN32_WINNT / WINVER / NTDDI_VERSION together
+    # tell <sdkddkver.h> which APIs to light up.
+    simdjson_add_props(
+        target_compile_definitions PUBLIC
+        _WIN32_WINNT=0x0A00
+        WINVER=0x0A00
+        NTDDI_VERSION=0x0A000005 # NTDDI_WIN10_RS4, Windows 10 version 1803
+    )
+    simdjson_add_props(
+        target_link_libraries PUBLIC
+        onecore
+    )
+  endif()
+endif()
+
 if(is_top_project)
   option(SIMDJSON_INSTALL "Enable target install" ON)
   option(SIMDJSON_DEVELOPER_MODE "Enable targets for developing simdjson" OFF)

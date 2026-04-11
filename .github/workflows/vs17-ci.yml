@@ -13,18 +13,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 17 2022, arch: Win32, shared: ON, build_type: Release}
-          - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF, build_type: Release}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: ON, build_type: Release, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF, build_type: Release, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: OFF}
+          # Exercise the opt-in Windows memory-file mapping path at least once in CI.
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON}
     steps:
     - name: checkout
       uses: actions/checkout@v4
     - name: Configure
       run: |
-        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -B build
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=${{matrix.memory_map}} -B build
     - name: Build Debug
       run: cmake --build build --config ${{matrix.build_type}} --verbose
     - name: Run tests

@@ -130,15 +130,17 @@ codepage, and they may call SetFileApisToOEM accordingly.
 You can use `simdjson::padded_memory_map` to create a `simdjson::padded_string_view`
 from a file on disk without copying the file contents into your own buffer.
 On POSIX systems (Linux, macOS, BSD, ...) it uses `mmap` for true zero-copy
-access. It is also available on Windows, but only when two conditions are
-met:
+access. On Windows it is available as an **opt-in** feature and requires:
 
-1. You **must `#include <windows.h>` before `#include "simdjson.h"`** in every
+1. Building simdjson with `-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON`, or
+   defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1` and raising
+   `NTDDI_VERSION` to at least `NTDDI_WIN10_RS4` (Windows 10, version 1803)
+   and linking `onecore.lib` manually if you are consuming simdjson as a
+   pre-built library.
+2. `#include <windows.h>` before `#include "simdjson.h"` in every
    translation unit where you want to use `padded_memory_map`.
-2. Your compilation must target **Windows 11 or later**
-   (`NTDDI_VERSION >= NTDDI_WIN10_CO`).
 
-On Windows 11, the implementation uses `CreateFileMapping2` and
+When enabled on Windows, the implementation uses `CreateFileMapping2` and
 `MapViewOfFile3` for true zero-copy mapping whenever the file does not end
 within `SIMDJSON_PADDING` bytes of a page boundary; otherwise it falls back
 to reading the file into a padded heap buffer. If those requirements are

@@ -229,17 +229,21 @@ so you can pass it directly to `parse_many` without copying the file content
 into your own buffer first.
 
 `padded_memory_map` is available on POSIX systems (Linux, macOS, BSD, ...) by
-default. On Windows, it is also available but with two extra requirements:
+default. On Windows it is an **opt-in** feature with the following
+requirements:
 
-1. You **must `#include <windows.h>` before `#include "simdjson.h"`** in every
+1. Build simdjson with `-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON`, or — if
+   you consume simdjson as a pre-built library — define
+   `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`, raise `NTDDI_VERSION` to at
+   least `NTDDI_WIN10_RS4` (`0x0A000005`, Windows 10 version 1803), and
+   add `onecore.lib` to your link line yourself. The Windows
+   implementation uses the modern memory APIs `CreateFileMapping2` /
+   `MapViewOfFile3`, which are available starting with that version of
+   Windows and are exported by `onecore.lib`.
+2. `#include <windows.h>` before `#include "simdjson.h"` in every
    translation unit where you want to use `padded_memory_map`. simdjson
-   deliberately does not pull in `<windows.h>` itself, so the class is only
-   declared when the Win32 types are already visible.
-2. Your compilation must target **Windows 11 or later** (the Windows SDK
-   must define `NTDDI_VERSION >= NTDDI_WIN10_CO`, i.e. `0x0A00000B`).
-   The Windows implementation uses the modern memory APIs
-   `CreateFileMapping2` / `MapViewOfFile3`, which are available on this
-   version of Windows.
+   deliberately does not pull in `<windows.h>` itself, so the class is
+   only declared when the Win32 types are already visible.
 
 If either requirement is not met on Windows, the `padded_memory_map` class is
 not declared at all and any code that references it fails to compile with an
@@ -247,12 +251,12 @@ not declared at all and any code that references it fails to compile with an
 the macro `SIMDJSON_HAS_PADDED_MEMORY_MAP`.
 
 On POSIX, `padded_memory_map` uses `mmap` to map the file directly into
-memory with zero copies. On Windows 11, it uses `CreateFileMapping2` +
-`MapViewOfFile3` for true zero-copy mapping whenever the file does not end
-within `SIMDJSON_PADDING` bytes of a page boundary; for those rare cases, it
-transparently falls back to reading the file into a heap-allocated padded
-buffer so that the returned view always has `SIMDJSON_PADDING` accessible
-zero bytes after the file content.
+memory with zero copies. On Windows (when enabled), it uses
+`CreateFileMapping2` + `MapViewOfFile3` for true zero-copy mapping
+whenever the file does not end within `SIMDJSON_PADDING` bytes of a page
+boundary; for those rare cases, it transparently falls back to reading
+the file into a heap-allocated padded buffer so that the returned view
+always has `SIMDJSON_PADDING` accessible zero bytes after the file content.
 
 ```cpp
 #ifdef _WIN32
