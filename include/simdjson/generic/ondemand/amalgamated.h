@@ -20,6 +20,7 @@
 #include "simdjson/generic/ondemand/document.h"
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/field.h"
+#include "simdjson/generic/ondemand/key_selector.h"
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/object_iterator.h"
 #include "simdjson/generic/ondemand/ranges.h"

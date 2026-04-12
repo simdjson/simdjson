@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include "simdjson/generic/ondemand/key_selector.h"
 #include <vector>
 #if SIMDJSON_STATIC_REFLECTION && SIMDJSON_SUPPORTS_CONCEPTS
 #include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
@@ -121,6 +122,23 @@ public:
   simdjson_inline simdjson_result<value> operator[](std::string_view key) & noexcept;
   /** @overload simdjson_inline simdjson_result<value> find_field_unordered(std::string_view key) & noexcept; */
   simdjson_inline simdjson_result<value> operator[](std::string_view key) && noexcept;
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  /**
+   * Look up a field by name using a key_selector. This method is similar to find_field_unordered()
+   * but uses a compile-time generated perfect hash table for efficient lookup.
+   *
+   * @tparam Selector The key_selector type
+   * @param selector The key selector instance
+   * @returns A pair containing the key identifier (index in the selector) and the value,
+   *          or NO_SUCH_FIELD if the field is not in the object.
+   */
+  template <concepts::key_selector_type Selector>
+  simdjson_inline std::pair<std::size_t, simdjson_result<value>> find_field(const Selector& selector) & noexcept;
+  /** @overload template <concepts::key_selector_type Selector> simdjson_inline std::pair<std::size_t, simdjson_result<value>> find_field(const Selector& selector) & noexcept; */
+  template <concepts::key_selector_type Selector>
+  simdjson_inline std::pair<std::size_t, simdjson_result<value>> find_field(const Selector& selector) && noexcept;
+#endif
 
   /**
    * Get the value associated with the given JSON pointer. We use the RFC 6901
@@ -332,6 +350,12 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) && noexcept;
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  template <concepts::key_selector_type Selector>
+  simdjson_inline std::pair<std::size_t, simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>> find_field(const Selector& selector) & noexcept;
+  template <concepts::key_selector_type Selector>
+  simdjson_inline std::pair<std::size_t, simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>> find_field(const Selector& selector) && noexcept;
+#endif
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
