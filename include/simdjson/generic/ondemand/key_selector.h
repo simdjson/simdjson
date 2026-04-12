@@ -283,30 +283,16 @@ public:
 
     [[nodiscard]] constexpr simdjson_really_inline std::size_t compute_hash(std::string_view key) const noexcept {
         std::size_t h = key.size();
-        if constexpr (N >= 64) {
-            const char* kp = key.data();
-            const std::size_t klen = key.size();
-            for (std::uint8_t i = 0; i < num_positions_; ++i) {
-                std::size_t pos = positions_[i];
-                std::size_t idx = (pos == POS_LAST_CHAR)
-                    ? (klen - std::size_t{1})
-                    : static_cast<std::size_t>(pos);
-                std::size_t has = static_cast<std::size_t>(idx < klen);
-                std::size_t safe_idx = idx & -has;
-                unsigned char byte_val = static_cast<unsigned char>(kp[safe_idx]);
-                h += static_cast<std::size_t>(asso_values_[i][byte_val]) & -has;
+        const char* kp = key.data();
+        for (std::uint8_t i = 0; i < num_positions_; ++i) {
+            std::size_t pos = positions_[i];
+            std::size_t ch;
+            if (pos == POS_LAST_CHAR) {
+                ch = static_cast<unsigned char>(key.back());
+            } else {
+                ch = static_cast<unsigned char>(kp[pos]);
             }
-        } else {
-            for (std::uint8_t i = 0; i < num_positions_; ++i) {
-                std::size_t pos = positions_[i];
-                std::size_t ch;
-                if (pos == POS_LAST_CHAR) {
-                    ch = key.empty() ? 256 : static_cast<unsigned char>(key.back());
-                } else {
-                    ch = (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
-                }
-                if (ch < 256) h += asso_values_[i][ch];
-            }
+            h += asso_values_[i][ch];
         }
         return h & (table_size_ - 1);
     }
