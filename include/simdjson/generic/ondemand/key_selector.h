@@ -28,11 +28,15 @@ class key_selector {
     static_assert(N > 0, "key_selector requires at least one key");
     static_assert(N <= 100, "key_selector supports at most 100 keys");
 
-    // Perfect hash table data
-    std::array<std::array<std::uint8_t, 256>, 16> asso_values_{};
+    // Perfect hash table data (gperf-style)
+    static constexpr std::size_t MAX_POSITIONS = 16;
+    static constexpr std::size_t POS_LAST_CHAR = std::size_t(-1);
+    static constexpr std::size_t MAX_TABLE_SIZE = 256; // Power of 2, fits in uint8_t
+
+    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso_values_{};
     std::uint8_t num_positions_{};
-    std::array<std::uint8_t, 16> positions_{};
-    std::array<std::uint8_t, 100> slot_to_key_{}; // Max table size
+    std::array<std::size_t, MAX_POSITIONS> positions_{};
+    std::array<std::uint8_t, MAX_TABLE_SIZE> slot_to_key_{};
     std::array<std::uint8_t, N> key_to_slot_{};
     std::array<std::array<char, 64>, N> key_data_{};
     std::array<std::uint8_t, N> key_lengths_{};
@@ -60,54 +64,206 @@ public:
         }
     }
 
-    // Simple perfect hash generation using polynomial rolling hash
+    // Gperf-style perfect hash generation using partition-based algorithm
     constexpr void generate_hash_table(const std::array<std::string_view, N>& keys) {
-        // Use polynomial hash: hash = sum(key[i] * 31^(len-1-i)) % table_size
-        const std::size_t prime = 31;
-
-        // Find minimum table size that works
-        std::size_t table_size = N;
-        bool success = false;
-        while (!success && table_size <= 100) { // Max table size
-            success = true;
-            std::array<std::uint8_t, 100> used_slots{};
-            std::fill(used_slots.begin(), used_slots.begin() + table_size, 0);
-            // Initialize slot_to_key_ to invalid values
-            std::fill(slot_to_key_.begin(), slot_to_key_.begin() + table_size, static_cast<std::uint8_t>(N));
-
-            for (std::size_t i = 0; i < N && success; ++i) {
-                std::size_t hash = 0;
-                std::size_t power = 1;
-                for (std::size_t j = keys[i].size(); j > 0; --j) {
-                    unsigned char ch = static_cast<unsigned char>(keys[i][j-1]);
-                    hash = (hash + ch * power) % table_size;
-                    power = (power * prime) % table_size;
+        // Try power-of-two table sizes starting from next_power_of_2(N)
+        constexpr std::size_t START_M = next_power_of_2(N);
+        if constexpr (START_M <= MAX_TABLE_SIZE) {
+            if (try_compute_phf<START_M>(keys)) return;
+            if constexpr (START_M * 2 <= MAX_TABLE_SIZE) {
+                if (try_compute_phf<START_M * 2>(keys)) return;
+                if constexpr (START_M * 4 <= MAX_TABLE_SIZE) {
+                    if (try_compute_phf<START_M * 4>(keys)) return;
+                    if constexpr (START_M * 8 <= MAX_TABLE_SIZE) {
+                        if (try_compute_phf<START_M * 8>(keys)) return;
+                    }
                 }
-                std::size_t slot = hash;
-
-                if (used_slots[slot]) {
-                    success = false;
-                } else {
-                    used_slots[slot] = 1;
-                    slot_to_key_[slot] = static_cast<std::uint8_t>(i);
-                }
-            }
-
-            if (!success) {
-                table_size++;
             }
         }
 
-        table_size_ = table_size;
-
-        // Build key_to_slot mapping
-        for (std::size_t slot = 0; slot < table_size_; ++slot) {
-            std::uint8_t key_idx = slot_to_key_[slot];
-            if (key_idx < N) {
-                key_to_slot_[key_idx] = static_cast<std::uint8_t>(slot);
-            }
+        // Fallback: linear table
+        table_size_ = N;
+        num_positions_ = 0;
+        std::fill(slot_to_key_.begin(), slot_to_key_.begin() + MAX_TABLE_SIZE, static_cast<std::uint8_t>(N));
+        for (std::size_t i = 0; i < N; ++i) {
+            slot_to_key_[i] = static_cast<std::uint8_t>(i);
+            key_to_slot_[i] = static_cast<std::uint8_t>(i);
         }
     }
+
+private:
+    // Helper functions for gperf algorithm
+    static constexpr std::size_t next_power_of_2(std::size_t n) {
+        if (n == 0) return 1;
+        std::size_t p = 1;
+        while (p < n) p <<= 1;
+        return p;
+    }
+
+    static constexpr std::size_t char_at(std::string_view key, std::size_t pos) {
+        if (pos == POS_LAST_CHAR) {
+            return key.empty() ? 256 : static_cast<unsigned char>(key.back());
+        }
+        return (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
+    }
+
+    template <std::size_t M>
+    constexpr bool try_compute_phf(const std::array<std::string_view, N>& keys) {
+        // Initialize
+        std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
+        std::size_t npos = 0;
+        std::array<std::size_t, MAX_POSITIONS> pos{};
+        std::array<std::size_t, M> s2k{};
+
+        // Try to generate gperf
+        if (try_generate_gperf<M>(keys, asso, npos, pos, s2k)) {
+            table_size_ = M;
+            num_positions_ = static_cast<std::uint8_t>(npos);
+            for (std::size_t p = 0; p < MAX_POSITIONS; ++p) {
+                positions_[p] = pos[p];
+                for (std::size_t c = 0; c < 256; ++c) {
+                    asso_values_[p][c] = static_cast<std::uint8_t>(asso[p][c]);
+                }
+            }
+            for (std::size_t i = 0; i < M; ++i) {
+                slot_to_key_[i] = static_cast<std::uint8_t>(s2k[i]);
+            }
+            // Fill remaining slots with sentinel
+            for (std::size_t i = M; i < MAX_TABLE_SIZE; ++i) {
+                slot_to_key_[i] = static_cast<std::uint8_t>(N);
+            }
+
+            // Build key_to_slot mapping
+            for (std::size_t i = 0; i < N; ++i) {
+                key_to_slot_[i] = static_cast<std::uint8_t>(N); // Initialize
+            }
+            for (std::size_t slot = 0; slot < M; ++slot) {
+                std::size_t key_idx = s2k[slot];
+                if (key_idx < N) {
+                    key_to_slot_[key_idx] = static_cast<std::uint8_t>(slot);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    template <std::size_t M>
+    static constexpr bool try_generate_gperf(
+        const std::array<std::string_view, N>& keys,
+        std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
+        std::size_t& num_positions,
+        std::array<std::size_t, MAX_POSITIONS>& positions,
+        std::array<std::size_t, M>& slot_to_key)
+    {
+        // Initialize
+        for (std::size_t p = 0; p < MAX_POSITIONS; ++p) {
+            for (std::size_t c = 0; c < 256; ++c) {
+                asso_values[p][c] = 0;
+            }
+        }
+        for (std::size_t i = 0; i < M; ++i) {
+            slot_to_key[i] = N;
+        }
+
+        // Try length-only hashing first
+        bool success = true;
+        for (std::size_t i = 0; i < N && success; ++i) {
+            std::size_t slot = keys[i].size() % M;
+            if (slot_to_key[slot] != N) {
+                success = false;
+            } else {
+                slot_to_key[slot] = i;
+            }
+        }
+
+        if (success) {
+            num_positions = 0;
+            return true;
+        }
+
+        // Try with position 0
+        positions[0] = 0;
+        num_positions = 1;
+
+        // Find a working assignment of asso_values for position 0
+        // Use a simple approach: try different offsets
+        for (std::size_t offset = 0; offset < M; ++offset) {
+            // Reset
+            for (std::size_t i = 0; i < M; ++i) {
+                slot_to_key[i] = N;
+            }
+
+            // Assign asso_values based on offset
+            for (std::size_t c = 0; c < 256; ++c) {
+                asso_values[0][c] = (c + offset) % M;
+            }
+
+            success = true;
+            for (std::size_t i = 0; i < N && success; ++i) {
+                std::size_t h = keys[i].size();
+                std::size_t ch = char_at(keys[i], 0);
+                if (ch < 256) h += asso_values[0][ch];
+                std::size_t slot = h % M;
+
+                if (slot_to_key[slot] != N) {
+                    success = false;
+                } else {
+                    slot_to_key[slot] = i;
+                }
+            }
+
+            if (success) {
+                return true;
+            }
+        }
+
+        // Try with positions {0, last_char}
+        if (N <= 50) { // Only for smaller N to avoid complexity
+            positions[0] = 0;
+            positions[1] = POS_LAST_CHAR;
+            num_positions = 2;
+
+            for (std::size_t offset1 = 0; offset1 < 4 && !success; ++offset1) {
+                for (std::size_t offset2 = 0; offset2 < 4 && !success; ++offset2) {
+                    // Reset
+                    for (std::size_t i = 0; i < M; ++i) {
+                        slot_to_key[i] = N;
+                    }
+
+                    // Assign asso_values
+                    for (std::size_t c = 0; c < 256; ++c) {
+                        asso_values[0][c] = (c + offset1) % M;
+                        asso_values[1][c] = (c + offset2) % M;
+                    }
+
+                    success = true;
+                    for (std::size_t i = 0; i < N && success; ++i) {
+                        std::size_t h = keys[i].size();
+                        std::size_t ch1 = char_at(keys[i], 0);
+                        if (ch1 < 256) h += asso_values[0][ch1];
+                        std::size_t ch2 = char_at(keys[i], POS_LAST_CHAR);
+                        if (ch2 < 256) h += asso_values[1][ch2];
+                        std::size_t slot = h % M;
+
+                        if (slot_to_key[slot] != N) {
+                            success = false;
+                        } else {
+                            slot_to_key[slot] = i;
+                        }
+                    }
+
+                    if (success) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+
 
 public:
     constexpr key_selector(const std::array<std::string_view, N>& keys) {
@@ -125,15 +281,33 @@ public:
     [[nodiscard]] constexpr std::size_t size() const noexcept { return N; }
 
     [[nodiscard]] constexpr std::size_t compute_hash(std::string_view key) const noexcept {
-        const std::size_t prime = 31;
-        std::size_t hash = 0;
-        std::size_t power = 1;
-        for (std::size_t j = key.size(); j > 0; --j) {
-            unsigned char ch = static_cast<unsigned char>(key[j-1]);
-            hash = (hash + ch * power) % table_size_;
-            power = (power * prime) % table_size_;
+        std::size_t h = key.size();
+        if constexpr (N >= 64) {
+            const char* kp = key.data();
+            const std::size_t klen = key.size();
+            for (std::uint8_t i = 0; i < num_positions_; ++i) {
+                std::size_t pos = positions_[i];
+                std::size_t idx = (pos == POS_LAST_CHAR)
+                    ? (klen - std::size_t{1})
+                    : static_cast<std::size_t>(pos);
+                std::size_t has = static_cast<std::size_t>(idx < klen);
+                std::size_t safe_idx = idx & -has;
+                unsigned char byte_val = static_cast<unsigned char>(kp[safe_idx]);
+                h += static_cast<std::size_t>(asso_values_[i][byte_val]) & -has;
+            }
+        } else {
+            for (std::uint8_t i = 0; i < num_positions_; ++i) {
+                std::size_t pos = positions_[i];
+                std::size_t ch;
+                if (pos == POS_LAST_CHAR) {
+                    ch = key.empty() ? 256 : static_cast<unsigned char>(key.back());
+                } else {
+                    ch = (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
+                }
+                if (ch < 256) h += asso_values_[i][ch];
+            }
         }
-        return hash;
+        return h & (table_size_ - 1);
     }
 
     [[nodiscard]] constexpr bool contains(std::string_view key) const noexcept {
