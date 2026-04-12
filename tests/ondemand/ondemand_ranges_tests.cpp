@@ -21,7 +21,7 @@ bool array_get_range_basic() {
   auto json = R"([10, 20, 30])"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto arr = doc.get_array().value();
+  auto arr = doc.get_array();
   auto range = ondemand::get_range(arr);
 
   std::vector<int64_t> values;
@@ -40,7 +40,7 @@ bool array_range_with_transform() {
   auto json = R"([1, 2, 3, 4, 5])"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto arr = doc.get_array().value();
+  auto arr = doc.get_array();
 
   auto doubled = ondemand::get_range(arr)
     | std::views::transform([](auto v) -> int64_t { return int64_t(v) * 2; });
@@ -63,7 +63,7 @@ bool array_range_strings() {
   auto json = R"(["alpha", "beta", "gamma"])"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto arr = doc.get_array().value();
+  auto arr = doc.get_array();
 
   auto to_string = [](auto v) -> std::string {
     return std::string(std::string_view(v));
@@ -86,7 +86,7 @@ bool array_range_empty() {
   auto json = R"([])"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto arr = doc.get_array().value();
+  auto arr = doc.get_array();
   auto range = ondemand::get_range(arr);
 
   int count = 0;
@@ -102,7 +102,7 @@ bool array_range_nested() {
   auto json = R"([{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}])"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto arr = doc.get_array().value();
+  auto arr = doc.get_array();
 
   auto get_name = [](auto v) -> std::string {
     return std::string(std::string_view(v["name"]));
@@ -124,7 +124,7 @@ bool object_get_range_basic() {
   auto json = R"({"a": 1, "b": 2, "c": 3})"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto obj = doc.get_object().value();
+  auto obj = doc.get_object();
   auto range = ondemand::get_key_value_range(obj);
 
   std::vector<std::string> keys;
@@ -148,7 +148,7 @@ bool object_range_with_transform() {
   auto json = R"({"x": 10, "y": 20, "z": 30})"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto obj = doc.get_object().value();
+  auto obj = doc.get_object();
 
   auto get_key = [](auto field_result) -> std::string {
     return std::string(std::string_view(field_result.escaped_key()));
@@ -171,7 +171,7 @@ bool object_range_empty() {
   auto json = R"({})"_padded;
   ondemand::parser parser;
   auto doc = parser.iterate(json);
-  auto obj = doc.get_object().value();
+  auto obj = doc.get_object();
   auto range = ondemand::get_key_value_range(obj);
 
   int count = 0;
@@ -199,6 +199,32 @@ bool get_range_from_result() {
   ASSERT_EQUAL(values[0], int64_t(100));
   ASSERT_EQUAL(values[1], int64_t(200));
   ASSERT_EQUAL(values[2], int64_t(300));
+  TEST_SUCCEED();
+}
+
+bool object_range_key_iteration() {
+  TEST_START();
+  auto json = R"({"name": "Alice", "age": 30, "city": "New York"})"_padded;
+  ondemand::parser parser;
+  auto doc = parser.iterate(json);
+  auto obj = doc.get_object();
+
+  // Test the specific pattern: iterating over field_result.key()
+  std::vector<std::string> keys;
+  for (auto field_result : ondemand::get_key_value_range(obj)) {
+    keys.push_back(std::string(field_result.escaped_key().value()));
+  }
+
+  ASSERT_EQUAL(keys.size(), size_t(3));
+  bool has_name = false, has_age = false, has_city = false;
+  for (const auto& key : keys) {
+    if (key == "name") has_name = true;
+    else if (key == "age") has_age = true;
+    else if (key == "city") has_city = true;
+  }
+  ASSERT_TRUE(has_name);
+  ASSERT_TRUE(has_age);
+  ASSERT_TRUE(has_city);
   TEST_SUCCEED();
 }
 
@@ -272,6 +298,7 @@ bool run() {
     object_range_with_transform() &&
     object_range_empty() &&
     get_range_from_result() &&
+    object_range_key_iteration() &&
 #endif // SIMDJSON_EXCEPTIONS
     true;
 }

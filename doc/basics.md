@@ -1895,7 +1895,7 @@ auto json = R"([
 
 ondemand::parser parser;
 auto doc = parser.iterate(json);
-auto arr = doc.get_array().value();
+auto arr = doc.get_array();
 
 // Use std::views::transform to extract names
 auto names = ondemand::get_range(arr)
@@ -1927,9 +1927,9 @@ if (doc.get_array().get(arr) == SUCCESS) {
 Object iteration uses `get_key_value_range()` and yields `simdjson_result<ondemand::field>` elements:
 
 ```cpp
-auto obj = doc.get_object().value();
+auto obj = doc.get_object();
 for (auto field_result : ondemand::get_key_value_range(obj)) {
-  std::cout << std::string_view(field_result.escaped_key()) << std::endl;
+  std::cout << field_result.key() << std::endl;
 }
 ```
 
