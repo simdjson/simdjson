@@ -1,7 +1,8 @@
 #ifndef BENCHMARK_HELPERS_H
 #define BENCHMARK_HELPERS_H
 
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 #include <atomic>
 
 event_collector collector;

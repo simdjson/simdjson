@@ -1,7 +1,8 @@
 #ifndef __BENCHMARKER_H
 #define __BENCHMARKER_H
 
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 #include "simdjson.h"
 
 #include <cassert>
@@ -28,11 +29,9 @@
 #include <string>
 #include <vector>
 
-#include "linux-perf-events.h"
 #ifdef __linux__
 #include <libgen.h>
 #endif
-#include "simdjson.h"
 
 #include <functional>
 
@@ -423,18 +422,12 @@ struct benchmarker {
         stage.instructions() / static_cast<double>(stats->structurals),
         stage.instructions() / static_cast<double>(stage.cycles())
       );
-#if !SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-      // NOTE: removed cycles/miss because it is a somewhat misleading stat
-      printf("%s%-13s: %7.0f branch misses (%6.2f%%) - %.0f cache misses (%6.2f%%) - %.2f cache references\n",
+      printf("%s%-13s: %7.0f branch misses (%6.2f%%)\n",
         prefix,
         "Misses",
         stage.branch_misses(),
-        percent(stage.branch_misses(), all_stages_without_allocation.branch_misses()),
-        stage.cache_misses(),
-        percent(stage.cache_misses(), all_stages_without_allocation.cache_misses()),
-        stage.cache_references()
+        percent(stage.branch_misses(), all_stages_without_allocation.branch_misses())
       );
-#endif
     }
   }
 

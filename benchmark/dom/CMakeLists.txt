@@ -1,11 +1,12 @@
-include_directories( .. ../linux )
+include_directories( .. )
 link_libraries(simdjson-windows-headers test-data)
 link_libraries(simdjson)
+link_libraries(counters)
 
 add_executable(perfdiff perfdiff.cpp)
 add_executable(parse parse.cpp)
 add_executable(parse_stream parse_stream.cpp)
-add_executable(statisticalmodel statisticalmodel.cpp)
+
 
 add_executable(parse_noutf8validation parse.cpp)
 target_compile_definitions(parse_noutf8validation PRIVATE SIMDJSON_SKIPUTF8VALIDATION)

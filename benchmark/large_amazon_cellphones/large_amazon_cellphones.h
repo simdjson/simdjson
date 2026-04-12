@@ -1,6 +1,7 @@
 #pragma once
 
 #include "json_benchmark/string_runner.h"
+#include <fstream>
 #include <map>
 #include <string>
 

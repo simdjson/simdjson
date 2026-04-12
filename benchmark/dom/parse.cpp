@@ -1,4 +1,5 @@
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 
 #include <cassert>
 #include <cctype>
@@ -24,7 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "linux-perf-events.h"
 #ifdef __linux__
 #include <libgen.h>
 #endif

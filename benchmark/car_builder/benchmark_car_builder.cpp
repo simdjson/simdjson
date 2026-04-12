@@ -1,4 +1,5 @@
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 #include <random>
 #include <vector>
 

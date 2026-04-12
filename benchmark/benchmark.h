@@ -1,7 +1,8 @@
 #ifndef _BENCHMARK_H_
 #define _BENCHMARK_H_
 
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 
 /*
  * Prints the best number of operations per cycle where

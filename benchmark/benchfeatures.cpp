@@ -1,4 +1,5 @@
-#include "event_counter.h"
+#include <counters/event_counter.h>
+using namespace counters;
 
 #include <cassert>
 #include <cctype>
@@ -25,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "linux-perf-events.h"
 #ifdef __linux__
 #include <libgen.h>
 #endif
@@ -204,12 +204,8 @@ struct feature_benchmarker {
   }
   // Rate of 1-7-structural misses per 8-structural flip
   double struct1_7_miss_rate(BenchmarkStage stage) const {
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-    return 1;
-#else
     if (!has_events()) { return 1; }
     return struct7_miss[stage].best.branch_misses() - struct7[stage].best.branch_misses() / double(struct7_miss.stats->blocks_with_1_structural_flipped);
-#endif
   }
   // Extra cost of an 8-15 structural block over a 1-7 structural block
   double struct8_15_cost(BenchmarkStage stage) const {
@@ -221,12 +217,8 @@ struct feature_benchmarker {
   }
   // Rate of 8-15-structural misses per 8-structural flip
   double struct8_15_miss_rate(BenchmarkStage stage) const {
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-    return 1;
-#else
     if (!has_events()) { return 1; }
     return double(struct15_miss[stage].best.branch_misses() - struct15[stage].best.branch_misses()) / double(struct15_miss.stats->blocks_with_8_structurals_flipped);
-#endif
   }
 
   // Extra cost of a 16+-structural block over an 8-15 structural block (actual varies based on # of structurals!)
@@ -239,12 +231,8 @@ struct feature_benchmarker {
   }
   // Rate of 16-structural misses per 16-structural flip
   double struct16_miss_rate(BenchmarkStage stage) const {
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-    return 1;
-#else
     if (!has_events()) { return 1; }
     return double(struct23_miss[stage].best.branch_misses() - struct23[stage].best.branch_misses()) / double(struct23_miss.stats->blocks_with_16_structurals_flipped);
-#endif
   }
 
 
@@ -258,12 +246,8 @@ struct feature_benchmarker {
   }
   // Rate of UTF-8 misses per UTF-8 flip
   double utf8_miss_rate(BenchmarkStage stage) const {
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-    return 1;
-#else
     if (!has_events()) { return 1; }
     return double(utf8_miss[stage].best.branch_misses() - utf8[stage].best.branch_misses()) / double(utf8_miss.stats->blocks_with_utf8_flipped);
-#endif
   }
   // Extra cost of having escapes in a block
   double escape_cost(BenchmarkStage stage) const {
@@ -275,12 +259,8 @@ struct feature_benchmarker {
   }
   // Rate of escape misses per escape flip
   double escape_miss_rate(BenchmarkStage stage) const {
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-    return 1;
-#else
     if (!has_events()) { return 1; }
     return double(escape_miss[stage].best.branch_misses() - escape[stage].best.branch_misses()) / double(escape_miss.stats->blocks_with_escapes_flipped);
-#endif
   }
 
 
@@ -378,22 +358,6 @@ struct feature_benchmarker {
   }
 };
 
-#if SIMDJSON_SIMPLE_PERFORMANCE_COUNTERS
-void print_file_effectiveness(BenchmarkStage stage, const char* filename, const benchmarker& results, const feature_benchmarker& features) {
-  double actual = results[stage].best.elapsed_ns() / double(results.stats->blocks);
-  double calc = features.calc_expected(stage, results);
-  double calc_misses = features.calc_expected_misses(stage, results);
-  double calc_miss_cost = features.calc_expected_miss_cost(stage, results);
-  printf("        | %-8s ", benchmark_stage_name(stage));
-  printf("| %-15s ",   filename);
-  printf("|    %8.3g ", features.calc_expected_feature_cost(stage, results));
-  printf("|    %8.3g ", calc_miss_cost);
-  printf("| %8.3g ",  calc);
-  printf("| %8.3g ",  actual);
-  printf("| %+8.3g ", actual - calc);
-  printf("| %13llu ", (long long unsigned)(calc_misses));
-}
-#else
 void print_file_effectiveness(BenchmarkStage stage, const char* filename, const benchmarker& results, const feature_benchmarker& features) {
   double actual = results[stage].best.elapsed_ns() / double(results.stats->blocks);
   double calc = features.calc_expected(stage, results);
@@ -417,7 +381,6 @@ void print_file_effectiveness(BenchmarkStage stage, const char* filename, const 
   }
   printf("|\n");
 }
-#endif
 
 int main(int argc, char *argv[]) {
   // Read options

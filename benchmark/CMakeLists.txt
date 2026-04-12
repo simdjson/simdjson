@@ -1,9 +1,10 @@
 add_subdirectory(dom)
 
 
-include_directories( . linux )
+include_directories( . )
 link_libraries(simdjson-windows-headers test-data)
 link_libraries(simdjson)
+link_libraries(counters)
 if(SIMDJSON_STATIC_REFLECTION)
   add_compile_definitions(SIMDJSON_STATIC_REFLECTION=1)
 endif(SIMDJSON_STATIC_REFLECTION)

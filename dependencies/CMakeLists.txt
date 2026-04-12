@@ -21,6 +21,14 @@ if(SIMDJSON_GOOGLE_BENCHMARKS)
 endif()
 
 CPMAddPackage(
+        NAME counters
+        URL https://github.com/lemire/counters/archive/refs/tags/v3.1.0.zip
+        OPTIONS
+        "COUNTERS_BUILD_TESTS OFF"
+        "COUNTERS_INSTALL OFF"
+)
+
+CPMAddPackage(
         NAME simdjson-data
         URL https://github.com/simdjson/simdjson-data/archive/351949906abde446f0314bf79606fb5d884f5be7.zip
 )
