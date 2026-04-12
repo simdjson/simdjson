@@ -285,5 +285,53 @@ using std::size_t;
 #endif
 #endif
 
+#ifndef SIMDJSON_HAS_UNISTD_H
+#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+#define SIMDJSON_HAS_UNISTD_H 1
+#else
+#define SIMDJSON_HAS_UNISTD_H 0
+#endif
+#endif
+
+// padded_memory_map availability.
+//
+// On POSIX platforms the class is always available: the implementation uses
+// `mmap` (and a trailing anonymous page for padding) from <sys/mman.h>.
+//
+// On Windows the class is disabled by default and must be explicitly
+// opted into by defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`. Enabling
+// it requires:
+//   1. `<windows.h>` has been included *before* `<simdjson.h>` (so that
+//      this header can see the Win32 types and the `_WINDOWS_` include
+//      guard),
+//   2. the compilation targets Windows 10, version 1803 or later
+//      (i.e. `NTDDI_VERSION >= NTDDI_WIN10_RS4`, `0x0A000005`). This is
+//      required because the implementation relies on the modern memory
+//      APIs introduced with that version (`CreateFileMapping2` /
+//      `MapViewOfFile3`),
+//   3. the link step pulls in an import library that exports those APIs,
+//      typically `onecore.lib` (or `mincore.lib`).
+//
+// The `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS` CMake option arranges (1)-(3)
+// automatically when building simdjson with its own CMake. Consumers using
+// simdjson as a pre-built library are responsible for setting the macro,
+// the Windows version macros, and the link library themselves.
+//
+// If the opt-in conditions are not met on Windows, `padded_memory_map`
+// simply does not exist — any attempt to use it fails at compile time
+// with an "unknown identifier" diagnostic rather than silently degrading.
+//
+// The SIMDJSON_HAS_PADDED_MEMORY_MAP macro reflects whether the class is
+// available in the current translation unit. Users may test this macro to
+// conditionally compile code that depends on padded_memory_map.
+#ifndef SIMDJSON_HAS_PADDED_MEMORY_MAP
+  #if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
+  #elif defined(_WINDOWS_) && defined(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS) && SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS
+    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
+  #else
+    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 0
+  #endif
+#endif
 
 #endif // SIMDJSON_PORTABILITY_H

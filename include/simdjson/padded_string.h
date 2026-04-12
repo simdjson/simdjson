@@ -277,48 +277,6 @@ inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { ret
 inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
 #endif
 
-
-// padded_memory_map availability.
-//
-// On POSIX platforms the class is always available: the implementation uses
-// `mmap` (and a trailing anonymous page for padding) from <sys/mman.h>.
-//
-// On Windows the class is disabled by default and must be explicitly
-// opted into by defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`. Enabling
-// it requires:
-//   1. `<windows.h>` has been included *before* `<simdjson.h>` (so that
-//      this header can see the Win32 types and the `_WINDOWS_` include
-//      guard),
-//   2. the compilation targets Windows 10, version 1803 or later
-//      (i.e. `NTDDI_VERSION >= NTDDI_WIN10_RS4`, `0x0A000005`). This is
-//      required because the implementation relies on the modern memory
-//      APIs introduced with that version (`CreateFileMapping2` /
-//      `MapViewOfFile3`),
-//   3. the link step pulls in an import library that exports those APIs,
-//      typically `onecore.lib` (or `mincore.lib`).
-//
-// The `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS` CMake option arranges (1)-(3)
-// automatically when building simdjson with its own CMake. Consumers using
-// simdjson as a pre-built library are responsible for setting the macro,
-// the Windows version macros, and the link library themselves.
-//
-// If the opt-in conditions are not met on Windows, `padded_memory_map`
-// simply does not exist — any attempt to use it fails at compile time
-// with an "unknown identifier" diagnostic rather than silently degrading.
-//
-// The SIMDJSON_HAS_PADDED_MEMORY_MAP macro reflects whether the class is
-// available in the current translation unit. Users may test this macro to
-// conditionally compile code that depends on padded_memory_map.
-#ifndef SIMDJSON_HAS_PADDED_MEMORY_MAP
-  #if !defined(_WIN32)
-    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
-  #elif defined(_WINDOWS_) && defined(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS) && SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS
-    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 1
-  #else
-    #define SIMDJSON_HAS_PADDED_MEMORY_MAP 0
-  #endif
-#endif
-
 #if SIMDJSON_HAS_PADDED_MEMORY_MAP
 /**
  * A class representing a memory-mapped file with padding.
@@ -330,11 +288,10 @@ inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string
  * build time by defining `SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1`. When
  * enabled, `<windows.h>` must also be included before `<simdjson.h>` and
  * the compilation must target Windows 10, version 1803 or later. The
- * Windows implementation uses the modern memory APIs (`CreateFileMapping2`
- * / `MapViewOfFile3`) to map the file with true zero-copy semantics
- * whenever the last page of the file provides enough trailing zero-fill
- * for SIMDJSON_PADDING bytes; otherwise it falls back to a heap-allocated
- * padded buffer populated with `ReadFile`.
+ * Windows implementation uses the modern memory APIs (`VirtualAlloc2`,
+ * `CreateFileMapping2`, `MapViewOfFile3`) with the placeholder virtual
+ * memory mechanism to always achieve true zero-copy mapping with
+ * contiguous zero-filled padding.
  *
  * Either way, the resulting `padded_string_view` carries at least
  * `SIMDJSON_PADDING` bytes of accessible zero-filled padding after the file
@@ -348,8 +305,7 @@ public:
    * After creating the memory map, you can call view() to get a padded_string_view of the file content.
    * The memory map will be automatically released when the padded_memory_map instance is destroyed.
    * On POSIX systems, the file content is not copied, so this is efficient for large files.
-   * On Windows, the file is mapped into memory via `MapViewOfFile3` whenever possible
-   * (zero-copy) and otherwise read into a heap-allocated padded buffer.
+   * On Windows, the file is mapped into memory via `MapViewOfFile3` (zero-copy).
    * In all cases, the file must remain unchanged while the memory map is in use.
    * In case of error (e.g., file not found, permission denied, etc.), the memory map will be
    * invalid and view() will return an empty view.
@@ -390,10 +346,10 @@ private:
   const char *data{nullptr};
   size_t size{0};
 #ifdef _WIN32
-  // On Windows the underlying storage may either be a memory-mapped view
-  // (released with UnmapViewOfFile) or a heap-allocated padded buffer
-  // (released with delete[]). This flag distinguishes the two cases.
-  bool owns_heap_buffer_{false};
+  // When the file ends near an allocation-granularity boundary, we use the
+  // placeholder API to append zero-filled padding pages. This pointer tracks
+  // that region so the destructor can release it with VirtualFree.
+  void *padding_view_{nullptr};
 #endif
 };
 #endif // SIMDJSON_HAS_PADDED_MEMORY_MAP

@@ -7,7 +7,7 @@
 #include <cstring> /* memcmp */
 
 // for page size computation.
-#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+#if SIMDJSON_HAS_UNISTD_H
   #include <unistd.h>
   #if defined(__APPLE__)
     #include <sys/sysctl.h>
@@ -113,7 +113,7 @@ inline uint32_t get_page_size() noexcept {
       return static_cast<std::uint32_t>(si.dwPageSize);
     }();
     return cached;
-#elif defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+#elif SIMDJSON_HAS_UNISTD_H
     static const uint32_t cached = []() -> uint32_t {
       long page_size = sysconf(_SC_PAGESIZE);
       if (page_size > 0) {
