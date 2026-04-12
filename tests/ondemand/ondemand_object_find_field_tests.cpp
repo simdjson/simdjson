@@ -173,6 +173,36 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  bool object_find_field_key_selector() {
+    TEST_START();
+    auto json = R"({ "name": "John", "age": 30, "city": "New York" })"_padded;
+    constexpr std::array<std::string_view, 3> keys = {"name", "age", "city"};
+    constexpr auto selector = ondemand::key_selector<3>(keys);
+
+    SUBTEST("ondemand::object with key_selector", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+
+      auto [index, value_result] = object.find_field(selector);
+      ASSERT_TRUE(index < 3);
+      ASSERT_SUCCESS(value_result);
+      std::string_view str_val;
+      ASSERT_SUCCESS(value_result.get(str_val));
+      ASSERT_EQUAL(str_val, "John");
+
+      // Test that we can find different keys
+      ASSERT_EQUAL(selector.index_of("name"), 0);
+      ASSERT_EQUAL(selector.index_of("age"), 1);
+      ASSERT_EQUAL(selector.index_of("city"), 2);
+      ASSERT_EQUAL(selector.index_of("invalid"), 3); // Not found
+
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+#endif
+
   bool run() {
     return
            object_find_field_unordered() &&
@@ -181,6 +211,9 @@ namespace object_tests {
            object_find_field() &&
            document_object_find_field() &&
            value_object_find_field() &&
+#if SIMDJSON_SUPPORTS_CONCEPTS
+           object_find_field_key_selector() &&
+#endif
            true;
   }
 
