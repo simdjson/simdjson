@@ -32,9 +32,11 @@ simdjson_inline array_range_iterator& array_range_iterator::operator++() noexcep
   return *this;
 }
 
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 simdjson_inline void array_range_iterator::operator++(int) noexcept {
   ++*this;
 }
+SIMDJSON_POP_DISABLE_WARNINGS
 
 //
 // array_range
@@ -71,9 +73,12 @@ simdjson_inline object_range_iterator& object_range_iterator::operator++() noexc
   return *this;
 }
 
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 simdjson_inline void object_range_iterator::operator++(int) noexcept {
   ++*this;
 }
+SIMDJSON_POP_DISABLE_WARNINGS
+
 
 //
 // object_range

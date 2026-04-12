@@ -44,8 +44,9 @@ public:
    */
   simdjson_inline simdjson_result<value> operator*() const noexcept;
   simdjson_inline array_range_iterator& operator++() noexcept;
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
   simdjson_inline void operator++(int) noexcept;
-
+SIMDJSON_POP_DISABLE_WARNINGS
   /**
    * Comparison delegates to array_iterator::operator==, which checks
    * whether the underlying parser has finished the array (depth-based).
@@ -111,8 +112,9 @@ public:
 
   simdjson_inline simdjson_result<field> operator*() const noexcept;
   simdjson_inline object_range_iterator& operator++() noexcept;
+SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
   simdjson_inline void operator++(int) noexcept;
-
+SIMDJSON_POP_DISABLE_WARNINGS
   simdjson_inline friend bool operator==(const object_range_iterator& a,
                                          const object_range_iterator& b) noexcept {
     return a.iter_ == b.iter_;

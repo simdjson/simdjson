@@ -128,7 +128,7 @@ endif()
 #   2. GCC v14.0.0 or later (GCC v13.0.0 cannot handle pipe operator of lambda)
 #   3. Clang v15.0.0 or later (certain version C++ headers occur error when compiling)
 if(
-  (MSVC AND MSVC_VERSION LESS 1930) OR
+  (MSVC AND MSVC_VERSION GREATER_EQUAL 1930) OR
   (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "14.0.0") OR
   (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15.0.0")
   )

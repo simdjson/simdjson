@@ -45,15 +45,22 @@ if(NOT SIMDJSON_SANITIZE)
   add_cpp_test(ondemand_cacheline              LABELS ondemand acceptance per_implementation)
 endif()
 
+# Add the tests if we're on:
+#   1. Visual Studio 2022 v17.6 or later
+#   2. GCC v14.0.0 or later (GCC v13.0.0 cannot handle pipe operator of lambda)
+#   3. Clang v15.0.0 or later (certain version C++ headers occur error when compiling)
 if(
+  (MSVC AND MSVC_VERSION GREATER_EQUAL 1930) OR
   (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "14.0.0") OR
   (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15.0.0")
   )
+  message(STATUS "compiler id: ${CMAKE_CXX_COMPILER_ID} version: ${CMAKE_CXX_COMPILER_VERSION}")
   add_cpp_test(ondemand_ranges_tests LABELS ondemand acceptance per_implementation)
   if(NOT SIMDJSON_STATIC_REFLECTION)
      set_target_properties(ondemand_ranges_tests PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
   endif()
 endif()
+
 
 if(HAVE_POSIX_FORK AND HAVE_POSIX_WAIT) # assert tests use fork and wait, which aren't on MSVC
   add_cpp_test(ondemand_assert_out_of_order_values LABELS assert per_implementation explicitonly ondemand)
