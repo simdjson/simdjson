@@ -101,7 +101,7 @@ if(SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS)
         target_compile_definitions PUBLIC
         _WIN32_WINNT=0x0A00
         WINVER=0x0A00
-        NTDDI_VERSION=0x0A000005 # NTDDI_WIN10_RS4, Windows 10 version 1803
+        NTDDI_VERSION=0x0A000006 # NTDDI_WIN10_RS5, Windows 10 version 1809
     )
     simdjson_add_props(
         target_link_libraries PUBLIC
