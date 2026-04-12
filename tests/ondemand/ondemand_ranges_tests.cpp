@@ -188,7 +188,7 @@ bool get_range_from_result() {
   ondemand::parser parser;
   auto doc = parser.iterate(json);
 
-  // get_range with simdjson_result<array> — unwraps automatically
+  // get_range with simdjson_result<array> - unwraps automatically
   auto range = ondemand::get_range(doc.get_array());
 
   std::vector<int64_t> values;
