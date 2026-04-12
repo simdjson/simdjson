@@ -2,6 +2,7 @@
 #define SIMDJSON_GENERIC_ONDEMAND_KEY_SELECTOR_H
 
 #include "simdjson/base.h"
+#include "simdjson/common_defs.h"
 #include <array>
 #include <string_view>
 #include <cstddef>
@@ -280,7 +281,7 @@ public:
 
     [[nodiscard]] constexpr std::size_t size() const noexcept { return N; }
 
-    [[nodiscard]] constexpr std::size_t compute_hash(std::string_view key) const noexcept {
+    [[nodiscard]] constexpr simdjson_really_inline std::size_t compute_hash(std::string_view key) const noexcept {
         std::size_t h = key.size();
         if constexpr (N >= 64) {
             const char* kp = key.data();
@@ -310,7 +311,7 @@ public:
         return h & (table_size_ - 1);
     }
 
-    [[nodiscard]] constexpr bool contains(std::string_view key) const noexcept {
+    [[nodiscard]] constexpr simdjson_really_inline  bool contains(std::string_view key) const noexcept {
         std::size_t slot = compute_hash(key);
         if (slot >= table_size_) return false;
 
@@ -322,7 +323,7 @@ public:
         return std::equal(key.begin(), key.end(), key_data_[key_idx].begin());
     }
 
-    [[nodiscard]] constexpr std::size_t index_of(std::string_view key) const noexcept {
+    [[nodiscard]] constexpr simdjson_really_inline std::size_t index_of(std::string_view key) const noexcept {
         std::size_t slot = compute_hash(key);
         if (slot >= table_size_) return N; // Invalid index
 
