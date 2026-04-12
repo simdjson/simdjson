@@ -28,6 +28,9 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
 - [JSON Pointer](#json-pointer)
 - [JSONPath](#jsonpath)
+  * [Using `at_path_with_wildcard` for JSONPath Queries (On-Demand)](#using-at_path_with_wildcard-for-jsonpath-queries-on-demand)
+    + [Example Usage](#example-usage)
+- [C++20 Ranges Support](#c20-ranges-support)
 - [Compile-Time JSONPath and JSON Pointer (C++26 Reflection)](#compile-time-jsonpath-and-json-pointer-c26-reflection)
 - [Error handling](#error-handling)
   * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
@@ -1876,7 +1879,7 @@ if (!error) {
 
 This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.
 
-## C++20 Ranges Support (On-Demand)
+## C++20 Ranges Support
 
 When compiling with C++20 (or later), you can use `std::ranges` with the On-Demand API
 via the `get_range()` helper. This enables use of range adaptors such as `std::views::transform`.
