@@ -50,7 +50,7 @@ struct phf_data {
     std::uint8_t                                             num_positions{};
     std::array<std::uint8_t, TableSize>                      slot_to_key{};
     // slot_key_bytes[s] holds the key stored at slot s, zero-padded to MaxKeyLenPadded.
-    std::array<std::array<char, ((MaxKeyLen + 15) / 16) * 16>, TableSize> slot_key_bytes{};
+    std::array<std::array<char, ((MaxKeyLen + 31) / 32) * 32>, TableSize> slot_key_bytes{};
     std::array<std::uint8_t, TableSize>                      slot_key_len{};
 };
 
@@ -337,18 +337,46 @@ struct key_selector {
 
     static constexpr std::size_t size() noexcept { return N; }
 
+    static constexpr std::uint8_t tbl_masks[17][16] = {
+        {0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,0x80,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,0x80,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,0x80,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,0x80,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,11,0x80,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,11,12,0x80,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,0x80,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0x80},
+        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
+    };
     /**
      * Look up a JSON key. rjs must point just after an opening quote in a padded
      * simdjson buffer. Returns the selector index in [0, N) on match, or N on miss.
      */
     static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
         const char* p = rjs.raw();
-        std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
+        //std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
+        uint8x16_t v0 = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
+        uint8x16_t v1 = vld1q_u8(reinterpret_cast<const uint8_t*>(p)+16);
+        uint8x16_t cmp0 = vceqq_u8(v0, vdupq_n_u8('"'));
+        uint8x16_t cmp1 = vceqq_u8(v1, vdupq_n_u8('"'));
+        uint64_t m0 = vget_lane_u64(
+            vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp0), 4)), 0);
+        uint64_t m1 = vget_lane_u64(
+            vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp1), 4)), 0);
+        size_t len = m0 ? std::size_t(__builtin_ctzll(m0)) >> 2 : (m1 ? 16 + (std::size_t(__builtin_ctzll(m1)) >> 2) : max_key_len + 1);
         if (len == 0 || len > max_key_len) return N;
-
         // Compute hash. positions / num_positions / asso_values are compile-time
         // constants, so this fully unrolls.
         std::size_t h = len;
+        //printf("len=%zu\n", len);
         for (std::uint8_t i = 0; i < phf.num_positions; ++i) {
             std::uint8_t pos = phf.positions[i];
             std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
@@ -362,12 +390,25 @@ struct key_selector {
         }
 
         std::size_t slot = h & (table_size - 1);
+        //printf("len=%zu phf.slot_key_len[slot]=%zu\n", len, phf.slot_key_len[slot]);
+
+        //if(phf.slot_key_len[slot] != len) return N;
+
+        size_t len1 = len <= 16 ? len : 16;
+        uint8x16_t input1 = vqtbl1q_u8(v0, vld1q_u8(tbl_masks[len1]));
+        //std::size_t tail_len = len > 16 ? len - 16 : 0;
+        //uint8x16_t input2 = vqtbl1q_u8(v1, vld1q_u8(tbl_masks[tail_len]));
 
         std::uint8_t ki = phf.slot_to_key[slot];
         if (ki >= N) return N;
-        if (phf.slot_key_len[slot] != len) return N;
-        if (!key_selector_detail::compare_key_bytes<max_key_len>(
-                p, phf.slot_key_bytes[slot].data(), len)) return N;
+        uint8x16_t k0 = vld1q_u8(reinterpret_cast<const uint8_t*>(phf.slot_key_bytes[slot].data()));
+        //uint8x16_t k1 = vld1q_u8(reinterpret_cast<const uint8_t*>(phf.slot_key_bytes[slot].data())+16);
+        uint8x16_t cmpk0 = veorq_u8(input1, k0);
+        //uint8x16_t cmpk1 = veorq_u8(input2, k1);
+        //uint8x16_t cmpk = vorrq_u8(cmpk0, cmpk1);
+
+        uint8x16_t cmpk = cmpk0;
+        if((vmaxvq_u32(cmpk) != 0) | ( (phf.slot_key_len[slot] != len))) return N;
         return ki;
     }
 
