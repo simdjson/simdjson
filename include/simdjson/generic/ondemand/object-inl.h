@@ -64,38 +64,13 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-template <concepts::key_selector_type Selector>
-simdjson_inline std::pair<std::size_t, simdjson_result<value>> object::find_field(const Selector& selector) & noexcept {
-  // Try to find any of the keys in the selector
-  for (std::size_t i = 0; i < selector.size(); ++i) {
-    std::string_view key = selector.get_key(i);
-    auto result = iter.find_field_unordered_raw(key);
-    if (result.error()) {
-      return {selector.size(), result.error()};
-    }
-    bool has_value = result.value();
-    if (has_value) {
-      return {i, value(iter.child())};
-    }
-  }
-  return {selector.size(), NO_SUCH_FIELD}; // Return size() as invalid index
+template <typename Selector>
+simdjson_inline selector_range<Selector> object::select() & noexcept {
+  return selector_range<Selector>{*this};
 }
-
-template <concepts::key_selector_type Selector>
-simdjson_inline std::pair<std::size_t, simdjson_result<value>> object::find_field(const Selector& selector) && noexcept {
-  // Try to find any of the keys in the selector
-  for (std::size_t i = 0; i < selector.size(); ++i) {
-    std::string_view key = selector.get_key(i);
-    auto result = iter.find_field_unordered_raw(key);
-    if (result.error()) {
-      return {selector.size(), result.error()};
-    }
-    bool has_value = result.value();
-    if (has_value) {
-      return {i, value(iter.child())};
-    }
-  }
-  return {selector.size(), NO_SUCH_FIELD}; // Return size() as invalid index
+template <typename Selector>
+simdjson_inline selector_range<Selector> object::select() && noexcept {
+  return selector_range<Selector>{std::move(*this)};
 }
 #endif
 
@@ -371,16 +346,18 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-template <concepts::key_selector_type Selector>
-simdjson_inline std::pair<std::size_t, simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field(const Selector& selector) & noexcept {
-  if (error()) { return {0, error()}; }
-  return first.find_field(selector);
+template <typename Selector>
+simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector>
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::select() & noexcept {
+  // On error, construct a range over a default (invalid) object; iteration will
+  // yield the stored error at first dereference via the underlying iterator path.
+  return first.template select<Selector>();
 }
 
-template <concepts::key_selector_type Selector>
-simdjson_inline std::pair<std::size_t, simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::find_field(const Selector& selector) && noexcept {
-  if (error()) { return {0, error()}; }
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(selector);
+template <typename Selector>
+simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector>
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::select() && noexcept {
+  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).template select<Selector>();
 }
 #endif
 

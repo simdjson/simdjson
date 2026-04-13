@@ -40,6 +40,7 @@
 #include "simdjson/generic/ondemand/logger-inl.h"
 #include "simdjson/generic/ondemand/object-inl.h"
 #include "simdjson/generic/ondemand/object_iterator-inl.h"
+#include "simdjson/generic/ondemand/key_selector_iterator.h"
 #include "simdjson/generic/ondemand/parser-inl.h"
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
