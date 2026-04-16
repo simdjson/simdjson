@@ -176,26 +176,23 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;
   // Wildcard case
-  if(key=="*"){
-    for(auto element: *this){
-
-      if(element.error()){
-        return element.error();
-      }
-
-      if(remaining_path.empty()){
-        callback(std::move(element).value_unsafe());
-      }else{
+  if (key=="*"){
+    for(auto element: *this) {
+      value val;
+        SIMDJSON_TRY(element.get(val));
+      if (remaining_path.empty()) {
+        callback(val);
+      } else {
         error_code err = element.for_each_at_path_with_wildcard(remaining_path, callback);
-        if(err){ return err; }
+        if(err) { return err; }
       }
     }
     return SUCCESS;
-  }else{
+  } else {
     // Specific index case in which we access the element at the given index
-    size_t idx=0;
+    size_t idx = 0;
 
-    for(char c:key){
+    for (char c : key) {
       if(c < '0' || c > '9'){
         return INVALID_JSON_POINTER;
       }
@@ -203,15 +200,12 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
     }
 
     auto element = at(idx);
-
-    if(element.error()){
-      return element.error();
-    }
-
-    if(remaining_path.empty()){
-      callback(std::move(element).value_unsafe());
+    value val;
+    SIMDJSON_TRY(element.get(val));
+    if (remaining_path.empty()){
+      callback(val);
       return SUCCESS;
-    }else{
+    } else {
       return element.for_each_at_path_with_wildcard(remaining_path, callback);
     }
   }

@@ -188,9 +188,8 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
     for (auto field : *this) {
       value val;
       SIMDJSON_TRY(field.value().get(val));
-
       if (remaining_path.empty()) {
-        callback(std::move(val));
+        callback(val);
       } else {
         SIMDJSON_TRY(val.for_each_at_path_with_wildcard(remaining_path, callback));
       }
@@ -201,7 +200,7 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
     SIMDJSON_TRY(find_field(key).get(val));
 
     if (remaining_path.empty()) {
-      callback(std::move(val));
+      callback(val);
       return SUCCESS;
     } else {
       return val.for_each_at_path_with_wildcard(remaining_path, callback);
