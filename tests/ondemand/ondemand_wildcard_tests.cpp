@@ -317,6 +317,25 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  bool wildcard_raw_json_container_boundary() {
+    TEST_START();
+    auto json = R"([{"tag_meta":{"meta_code":2000211,"meta_value":""},"tag_value":""}])"_padded;
+
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+
+    std::vector<ondemand::value> matches;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard("$[*].tag_meta").get(matches));
+    ASSERT_EQUAL(matches.size(), 1);
+
+    std::string_view raw;
+    ASSERT_SUCCESS(matches[0].raw_json().get(raw));
+    ASSERT_EQUAL(raw, R"({"meta_code":2000211,"meta_value":""})");
+    ASSERT_TRUE(raw.find("tag_value") == std::string_view::npos);
+
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
@@ -329,7 +348,8 @@ namespace wildcard_tests {
            wildcard_with_nested_objects() &&
            mixed_types_in_array() &&
            wildcard_nonexistent_field() &&
-           root_array_wildcard();
+           root_array_wildcard() &&
+           wildcard_raw_json_container_boundary();
   }
 }
 

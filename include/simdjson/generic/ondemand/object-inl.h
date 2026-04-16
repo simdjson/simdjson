@@ -98,10 +98,20 @@ simdjson_warn_unused simdjson_inline error_code object::consume() noexcept {
 }
 
 simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
-  const uint8_t * starting_point{iter.peek_start()};
-  auto error = consume();
-  if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek()};
+  // compute boundaries from a snapshot anchored to this value's start token so
+  // the span is stable even if the shared iterator has advanced elsewhere.
+  const token_position start_position{iter.start_position()};
+  const depth_t value_depth{iter.depth()};
+  const uint8_t * starting_point{iter._json_iter->peek(start_position)};
+
+  json_iterator boundary_iter(iter.json_iter());
+  boundary_iter.token.set_position(start_position);
+  boundary_iter._depth = value_depth;
+  auto boundary_error = boundary_iter.skip_child(value_depth - 1);
+  if (boundary_error) { return boundary_error; }
+    const uint8_t * final_point{boundary_iter.peek(-1) + boundary_iter.peek_length(-1)};
+
+  iter.json_iter() = std::move(boundary_iter);
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
