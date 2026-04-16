@@ -365,7 +365,12 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
   }
 }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, value>
+#else
+template <typename Func>
+#endif
 simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   rewind(); // Rewind the document each time for_each_at_path_with_wildcard is called
   if (json_path.empty()) {
@@ -714,7 +719,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return first.at_path(json_path);
 }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, SIMDJSON_IMPLEMENTATION::ondemand::value>
+#else
+template <typename Func>
+#endif
 simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   if (error()) { return error(); }
   return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
@@ -828,7 +838,12 @@ simdjson_inline simdjson_result<number> document_reference::get_number() noexcep
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json_token() noexcept { return doc->raw_json_token(); }
 simdjson_inline simdjson_result<value> document_reference::at_pointer(std::string_view json_pointer) noexcept { return doc->at_pointer(json_pointer); }
 simdjson_inline simdjson_result<value> document_reference::at_path(std::string_view json_path) noexcept { return doc->at_path(json_path); }
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, value>
+#else
+template <typename Func>
+#endif
 simdjson_inline error_code document_reference::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept { return doc->for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback)); }
 simdjson_inline simdjson_result<std::string_view> document_reference::raw_json() noexcept { return doc->raw_json();}
 simdjson_inline document_reference::operator document&() const noexcept { return *doc; }
@@ -1094,7 +1109,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   }
   return first.at_path(json_path);
 }
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, SIMDJSON_IMPLEMENTATION::ondemand::value>
+#else
+template <typename Func>
+#endif
 simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   if (error()) {
       return error();

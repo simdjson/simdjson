@@ -170,7 +170,12 @@ inline simdjson_result<value> array::at_path(std::string_view json_path) noexcep
   return at_pointer(json_pointer);
 }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, value>
+#else
+template <typename Func>
+#endif
 inline error_code array::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
@@ -269,7 +274,12 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
   if (error()) { return error(); }
   return first.at_path(json_path);
 }
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Func>
+  requires std::invocable<Func, SIMDJSON_IMPLEMENTATION::ondemand::value>
+#else
+template <typename Func>
+#endif
 simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   if (error()) { return error(); }
   return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
