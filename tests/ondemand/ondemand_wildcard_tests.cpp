@@ -21,20 +21,16 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> titles;
+    std::vector<std::string_view> titles;
     ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.books[*].title", [&](ondemand::value v) {
-      titles.push_back(std::move(v));
+      std::string_view sv;
+      if (v.get_string().get(sv) == SUCCESS) { titles.push_back(sv); }
     }));
 
     ASSERT_EQUAL(titles.size(), 3);
-
-    std::string_view title;
-    ASSERT_SUCCESS(titles[0].get_string().get(title));
-    ASSERT_EQUAL(title, "Book A");
-    ASSERT_SUCCESS(titles[1].get_string().get(title));
-    ASSERT_EQUAL(title, "Book B");
-    ASSERT_SUCCESS(titles[2].get_string().get(title));
-    ASSERT_EQUAL(title, "Book C");
+    ASSERT_EQUAL(titles[0], "Book A");
+    ASSERT_EQUAL(titles[1], "Book B");
+    ASSERT_EQUAL(titles[2], "Book C");
 
     TEST_SUCCEED();
   }
@@ -48,20 +44,16 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> prices;
+    std::vector<uint64_t> prices;
     ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.prices[*]", [&](ondemand::value v) {
-      prices.push_back(std::move(v));
+      uint64_t p;
+      if (v.get_uint64().get(p) == SUCCESS) { prices.push_back(p); }
     }));
 
     ASSERT_EQUAL(prices.size(), 5);
-
-    uint64_t price;
-    ASSERT_SUCCESS(prices[0].get_uint64().get(price));
-    ASSERT_EQUAL(price, 10);
-    ASSERT_SUCCESS(prices[2].get_uint64().get(price));
-    ASSERT_EQUAL(price, 30);
-    ASSERT_SUCCESS(prices[4].get_uint64().get(price));
-    ASSERT_EQUAL(price, 50);
+    ASSERT_EQUAL(prices[0], 10);
+    ASSERT_EQUAL(prices[2], 30);
+    ASSERT_EQUAL(prices[4], 50);
 
     TEST_SUCCEED();
   }
@@ -79,21 +71,14 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> names;
+    std::set<std::string_view> name_set;
     auto error = doc.for_each_at_path_with_wildcard("$.users.*.name", [&](ondemand::value v) {
-      names.push_back(std::move(v));
+      std::string_view sv;
+      if (v.get_string().get(sv) == SUCCESS) { name_set.insert(sv); }
     });
     ASSERT_SUCCESS(error);
 
-    ASSERT_EQUAL(names.size(), 3);
-
-    // Verify we got all three names (order may vary)
-    std::set<std::string_view> name_set;
-    for (auto& name : names) {
-      std::string_view view;
-      ASSERT_SUCCESS(name.get_string().get(view));
-      name_set.insert(view);
-    }
+    ASSERT_EQUAL(name_set.size(), 3);
     ASSERT_TRUE(name_set.count("Alice") > 0);
     ASSERT_TRUE(name_set.count("Bob") > 0);
     ASSERT_TRUE(name_set.count("Charlie") > 0);
@@ -123,21 +108,15 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> salaries;
+    uint64_t total = 0;
+    size_t count = 0;
     auto error = doc.for_each_at_path_with_wildcard("$.departments.*.employees[*].salary", [&](ondemand::value v) {
-      salaries.push_back(std::move(v));
+      uint64_t s;
+      if (v.get_uint64().get(s) == SUCCESS) { total += s; count++; }
     });
     ASSERT_SUCCESS(error);
 
-    ASSERT_EQUAL(salaries.size(), 4);
-
-    // Check sum of all salaries
-    uint64_t total = 0;
-    for (auto& salary : salaries) {
-      uint64_t value;
-      ASSERT_SUCCESS(salary.get_uint64().get(value));
-      total += value;
-    }
+    ASSERT_EQUAL(count, 4);
     ASSERT_EQUAL(total, 360000);
 
     TEST_SUCCEED();
@@ -150,13 +129,12 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> items;
-    auto error = doc.for_each_at_path_with_wildcard("$.items[*].name", [&](ondemand::value v) {
-      items.push_back(std::move(v));
+    size_t count = 0;
+    auto error = doc.for_each_at_path_with_wildcard("$.items[*].name", [&](ondemand::value) {
+      count++;
     });
     ASSERT_SUCCESS(error);
-
-    ASSERT_EQUAL(items.size(), 0);
+    ASSERT_EQUAL(count, 0);
 
     TEST_SUCCEED();
   }
@@ -168,13 +146,12 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> names;
-    auto error = doc.for_each_at_path_with_wildcard("$.users.*.name", [&](ondemand::value v) {
-      names.push_back(std::move(v));
+    size_t count = 0;
+    auto error = doc.for_each_at_path_with_wildcard("$.users.*.name", [&](ondemand::value) {
+      count++;
     });
     ASSERT_SUCCESS(error);
-
-    ASSERT_EQUAL(names.size(), 0);
+    ASSERT_EQUAL(count, 0);
 
     TEST_SUCCEED();
   }
@@ -206,14 +183,12 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    // Get all nested arrays
-    std::vector<ondemand::value> arrays;
-    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.matrix[*]", [&](ondemand::value v) {
-      arrays.push_back(std::move(v));
+    size_t count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.matrix[*]", [&](ondemand::value) {
+      count++;
     }));
 
-    // Verify we got 3 arrays
-    ASSERT_EQUAL(arrays.size(), 3);
+    ASSERT_EQUAL(count, 3);
 
     TEST_SUCCEED();
   }
@@ -231,20 +206,16 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> statuses;
+    std::vector<std::string_view> statuses;
     ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.data[*].info.status", [&](ondemand::value v) {
-      statuses.push_back(std::move(v));
+      std::string_view sv;
+      if (v.get_string().get(sv) == SUCCESS) { statuses.push_back(sv); }
     }));
 
     ASSERT_EQUAL(statuses.size(), 3);
-
-    std::string_view status;
-    ASSERT_SUCCESS(statuses[0].get_string().get(status));
-    ASSERT_EQUAL(status, "active");
-    ASSERT_SUCCESS(statuses[1].get_string().get(status));
-    ASSERT_EQUAL(status, "inactive");
-    ASSERT_SUCCESS(statuses[2].get_string().get(status));
-    ASSERT_EQUAL(status, "active");
+    ASSERT_EQUAL(statuses[0], "active");
+    ASSERT_EQUAL(statuses[1], "inactive");
+    ASSERT_EQUAL(statuses[2], "active");
 
     TEST_SUCCEED();
   }
@@ -265,15 +236,12 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> values;
-    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.mixed[*]", [&](ondemand::value v) {
-      values.push_back(std::move(v));
+    size_t count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.mixed[*]", [&](ondemand::value) {
+      count++;
     }));
 
-    // Just verify we got all 6 elements
-    ASSERT_EQUAL(values.size(), 6);
-
-    // Don't try to access the values - they've been consumed by the OnDemand API
+    ASSERT_EQUAL(count, 6);
 
     TEST_SUCCEED();
   }
@@ -292,9 +260,10 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     // Third element doesn't have "name" field
-    std::vector<ondemand::value> names;
+    std::vector<std::string_view> names;
     auto error = doc.for_each_at_path_with_wildcard("$.data[*].name", [&](ondemand::value v) {
-      names.push_back(std::move(v));
+      std::string_view sv;
+      if (v.get_string().get(sv) == SUCCESS) { names.push_back(sv); }
     });
 
     // This might error or return partial results
@@ -320,20 +289,16 @@ namespace wildcard_tests {
     ondemand::parser parser;
     auto doc = parser.iterate(json);
 
-    std::vector<ondemand::value> names;
+    std::vector<std::string_view> names;
     ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$[*].name", [&](ondemand::value v) {
-      names.push_back(std::move(v));
+      std::string_view sv;
+      if (v.get_string().get(sv) == SUCCESS) { names.push_back(sv); }
     }));
 
     ASSERT_EQUAL(names.size(), 3);
-
-    std::string_view name;
-    ASSERT_SUCCESS(names[0].get_string().get(name));
-    ASSERT_EQUAL(name, "Item 1");
-    ASSERT_SUCCESS(names[1].get_string().get(name));
-    ASSERT_EQUAL(name, "Item 2");
-    ASSERT_SUCCESS(names[2].get_string().get(name));
-    ASSERT_EQUAL(name, "Item 3");
+    ASSERT_EQUAL(names[0], "Item 1");
+    ASSERT_EQUAL(names[1], "Item 2");
+    ASSERT_EQUAL(names[2], "Item 3");
 
     TEST_SUCCEED();
   }
