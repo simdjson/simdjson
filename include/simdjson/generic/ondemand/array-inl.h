@@ -170,9 +170,8 @@ inline simdjson_result<value> array::at_path(std::string_view json_path) noexcep
   return at_pointer(json_pointer);
 }
 
-inline simdjson_result<std::vector<value>> array::at_path_with_wildcard(std::string_view json_path) noexcept {
-  std::vector<value> result;
-
+template <typename Func>
+inline error_code array::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;
@@ -185,26 +184,13 @@ inline simdjson_result<std::vector<value>> array::at_path_with_wildcard(std::str
       }
 
       if(remaining_path.empty()){
-        // Use value_unsafe() because we've already checked for errors above.
-        // The 'element' is a simdjson_result<value> wrapper, and we need to extract
-        // the underlying value. value_unsafe() is safe here because error() returned false.
-        result.push_back(std::move(element).value_unsafe());
-
+        callback(std::move(element).value_unsafe());
       }else{
-        auto nested_result = element.at_path_with_wildcard(remaining_path);
-
-        if(nested_result.error()){
-          return nested_result.error();
-        }
-        // Same logic as above.
-        std::vector<value> nested_matches = std::move(nested_result).value_unsafe();
-
-        result.insert(result.end(),
-                      std::make_move_iterator(nested_matches.begin()),
-                      std::make_move_iterator(nested_matches.end()));
+        error_code err = element.for_each_at_path_with_wildcard(remaining_path, callback);
+        if(err){ return err; }
       }
     }
-    return result;
+    return SUCCESS;
   }else{
     // Specific index case in which we access the element at the given index
     size_t idx=0;
@@ -223,10 +209,10 @@ inline simdjson_result<std::vector<value>> array::at_path_with_wildcard(std::str
     }
 
     if(remaining_path.empty()){
-      result.push_back(std::move(element).value_unsafe());
-      return result;
+      callback(std::move(element).value_unsafe());
+      return SUCCESS;
     }else{
-      return element.at_path_with_wildcard(remaining_path);
+      return element.for_each_at_path_with_wildcard(remaining_path, callback);
     }
   }
 }
@@ -289,9 +275,10 @@ simdjson_inline  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdj
   if (error()) { return error(); }
   return first.at_path(json_path);
 }
-simdjson_inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::at_path_with_wildcard(std::string_view json_path) noexcept {
+template <typename Func>
+simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   if (error()) { return error(); }
-  return first.at_path_with_wildcard(json_path);
+  return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
 }
 simdjson_inline  simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::raw_json() noexcept {
   if (error()) { return error(); }

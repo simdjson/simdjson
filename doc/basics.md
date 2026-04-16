@@ -28,7 +28,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
 - [JSON Pointer](#json-pointer)
 - [JSONPath](#jsonpath)
-  * [Using `at_path_with_wildcard` for JSONPath Queries (On-Demand)](#using-at_path_with_wildcard-for-jsonpath-queries-on-demand)
+  * [Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)](#using-for_each_at_path_with_wildcard-for-jsonpath-queries-on-demand)
     + [Example Usage](#example-usage)
 - [C++20 Ranges Support](#c20-ranges-support)
 - [Compile-Time JSONPath and JSON Pointer (C++26 Reflection)](#compile-time-jsonpath-and-json-pointer-c26-reflection)
@@ -1842,15 +1842,15 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 ```
 
-## Using `at_path_with_wildcard` for JSONPath Queries (On-Demand)
+## Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)
 
-The `at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.
+The `for_each_at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. It calls a user-provided callback for each matching element, avoiding the need to materialize all results into a vector. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.
 
-The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level. You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the function returns an empty result. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield an empty set.
+The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level. You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the callback is simply never called. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield no callbacks.
 
 ### Example Usage
 
-Here is an example demonstrating the use of `at_path_with_wildcard`:
+Here is an example demonstrating the use of `for_each_at_path_with_wildcard`:
 
 ```cpp
 simdjson::padded_string json_string = R"(
@@ -1879,27 +1879,22 @@ ondemand::parser parser;
 ondemand::document doc = parser.iterate(json_string);
 
 // Fetch all fields in the address object
-std::vector<ondemand::value> values;
-auto error = doc.at_path_with_wildcard("$.address.*").get(values);
-if (!error) {
-  for (auto value : values) {
-    std::string_view field;
-    if (value.get(field) == SUCCESS) {
-      std::cout << field << std::endl;
-    }
-  }
-}
+auto error = doc.for_each_at_path_with_wildcard("$.address.*",
+    [](ondemand::value value) {
+      std::string_view field;
+      if (value.get(field) == SUCCESS) {
+        std::cout << field << std::endl;
+      }
+    });
 
 // Fetch all phone numbers
-error = doc.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
-if (!error) {
-  for (auto value : values) {
-    std::string_view number;
-    if (value.get(number) == SUCCESS) {
-      std::cout << number << std::endl;
-    }
-  }
-}
+doc.for_each_at_path_with_wildcard("$.phoneNumbers[*].numbers[*]",
+    [](ondemand::value value) {
+      std::string_view number;
+      if (value.get(number) == SUCCESS) {
+        std::cout << number << std::endl;
+      }
+    });
 ```
 
 This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.

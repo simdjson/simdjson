@@ -314,14 +314,15 @@ simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path
   }
 }
 
-inline simdjson_result<std::vector<value>> value::at_path_with_wildcard(std::string_view json_path) noexcept {
+template <typename Func>
+inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
   case json_type::array:
-      return (*this).get_array().at_path_with_wildcard(json_path);
+      return (*this).get_array().for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
   case json_type::object:
-      return (*this).get_object().at_path_with_wildcard(json_path);
+      return (*this).get_object().for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
   default:
       return INVALID_JSON_POINTER;
   }
@@ -585,12 +586,13 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return first.at_path(json_path);
 }
 
-inline simdjson_result<std::vector<SIMDJSON_IMPLEMENTATION::ondemand::value>> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::at_path_with_wildcard(
-      std::string_view json_path) noexcept {
+template <typename Func>
+inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::for_each_at_path_with_wildcard(
+      std::string_view json_path, Func&& callback) noexcept {
   if (error()) {
     return error();
   }
-  return first.at_path_with_wildcard(json_path);
+  return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
 }
 
 } // namespace simdjson

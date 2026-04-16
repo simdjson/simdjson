@@ -22,7 +22,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> titles;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.books[*].title").get(titles));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.books[*].title", [&](ondemand::value v) {
+      titles.push_back(std::move(v));
+    }));
 
     ASSERT_EQUAL(titles.size(), 3);
 
@@ -47,7 +49,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> prices;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.prices[*]").get(prices));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.prices[*]", [&](ondemand::value v) {
+      prices.push_back(std::move(v));
+    }));
 
     ASSERT_EQUAL(prices.size(), 5);
 
@@ -76,7 +80,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> names;
-    auto error = doc.at_path_with_wildcard("$.users.*.name").get(names);
+    auto error = doc.for_each_at_path_with_wildcard("$.users.*.name", [&](ondemand::value v) {
+      names.push_back(std::move(v));
+    });
     ASSERT_SUCCESS(error);
 
     ASSERT_EQUAL(names.size(), 3);
@@ -118,7 +124,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> salaries;
-    auto error = doc.at_path_with_wildcard("$.departments.*.employees[*].salary").get(salaries);
+    auto error = doc.for_each_at_path_with_wildcard("$.departments.*.employees[*].salary", [&](ondemand::value v) {
+      salaries.push_back(std::move(v));
+    });
     ASSERT_SUCCESS(error);
 
     ASSERT_EQUAL(salaries.size(), 4);
@@ -143,7 +151,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> items;
-    auto error = doc.at_path_with_wildcard("$.items[*].name").get(items);
+    auto error = doc.for_each_at_path_with_wildcard("$.items[*].name", [&](ondemand::value v) {
+      items.push_back(std::move(v));
+    });
     ASSERT_SUCCESS(error);
 
     ASSERT_EQUAL(items.size(), 0);
@@ -159,7 +169,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> names;
-    auto error = doc.at_path_with_wildcard("$.users.*.name").get(names);
+    auto error = doc.for_each_at_path_with_wildcard("$.users.*.name", [&](ondemand::value v) {
+      names.push_back(std::move(v));
+    });
     ASSERT_SUCCESS(error);
 
     ASSERT_EQUAL(names.size(), 0);
@@ -175,8 +187,7 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     // Can't use array wildcard on scalar
-    std::vector<ondemand::value> values;
-    auto error = doc.at_path_with_wildcard("$.data[*]").get(values);
+    auto error = doc.for_each_at_path_with_wildcard("$.data[*]", [](ondemand::value) {});
     ASSERT_ERROR(error, INVALID_JSON_POINTER);
 
     TEST_SUCCEED();
@@ -197,7 +208,9 @@ namespace wildcard_tests {
 
     // Get all nested arrays
     std::vector<ondemand::value> arrays;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.matrix[*]").get(arrays));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.matrix[*]", [&](ondemand::value v) {
+      arrays.push_back(std::move(v));
+    }));
 
     // Verify we got 3 arrays
     ASSERT_EQUAL(arrays.size(), 3);
@@ -219,7 +232,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> statuses;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.data[*].info.status").get(statuses));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.data[*].info.status", [&](ondemand::value v) {
+      statuses.push_back(std::move(v));
+    }));
 
     ASSERT_EQUAL(statuses.size(), 3);
 
@@ -251,7 +266,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> values;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$.mixed[*]").get(values));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.mixed[*]", [&](ondemand::value v) {
+      values.push_back(std::move(v));
+    }));
 
     // Just verify we got all 6 elements
     ASSERT_EQUAL(values.size(), 6);
@@ -276,7 +293,9 @@ namespace wildcard_tests {
 
     // Third element doesn't have "name" field
     std::vector<ondemand::value> names;
-    auto error = doc.at_path_with_wildcard("$.data[*].name").get(names);
+    auto error = doc.for_each_at_path_with_wildcard("$.data[*].name", [&](ondemand::value v) {
+      names.push_back(std::move(v));
+    });
 
     // This might error or return partial results
     if (error) {
@@ -302,7 +321,9 @@ namespace wildcard_tests {
     auto doc = parser.iterate(json);
 
     std::vector<ondemand::value> names;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard("$[*].name").get(names));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$[*].name", [&](ondemand::value v) {
+      names.push_back(std::move(v));
+    }));
 
     ASSERT_EQUAL(names.size(), 3);
 
@@ -313,6 +334,37 @@ namespace wildcard_tests {
     ASSERT_EQUAL(name, "Item 2");
     ASSERT_SUCCESS(names[2].get_string().get(name));
     ASSERT_EQUAL(name, "Item 3");
+
+    TEST_SUCCEED();
+  }
+
+  // https://github.com/simdjson/simdjson/issues/2684
+  bool wildcard_raw_json_issue_2684() {
+    TEST_START();
+    auto json = R"([{"tag_meta":{"meta_code":2000211,"meta_value":""},"tag_value":""}])"_padded;
+
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+
+    size_t count = 0;
+    bool raw_json_ok = true;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$[*].tag_meta", [&](ondemand::value v) {
+      count++;
+      std::string_view raw;
+      if (v.raw_json().get(raw) != SUCCESS) {
+        raw_json_ok = false;
+        return;
+      }
+      // raw_json() must not leak sibling fields or outer array delimiters
+      std::string_view expected = R"({"meta_code":2000211,"meta_value":""})";
+      if (raw != expected || raw.find("tag_value") != std::string_view::npos) {
+        std::cerr << "  raw_json() returned: " << raw << std::endl;
+        raw_json_ok = false;
+      }
+    }));
+
+    ASSERT_EQUAL(count, 1);
+    ASSERT_TRUE(raw_json_ok);
 
     TEST_SUCCEED();
   }
@@ -329,7 +381,8 @@ namespace wildcard_tests {
            wildcard_with_nested_objects() &&
            mixed_types_in_array() &&
            wildcard_nonexistent_field() &&
-           root_array_wildcard();
+           root_array_wildcard() &&
+           wildcard_raw_json_issue_2684();
   }
 }
 
