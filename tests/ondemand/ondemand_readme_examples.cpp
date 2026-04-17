@@ -205,6 +205,68 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexc
 
 #if SIMDJSON_EXCEPTIONS
 
+// Test matching the doc example in doc/basics.md
+// "Using for_each_at_path_with_wildcard for JSONPath Queries (On-Demand)"
+bool wildcard_basics_example() {
+  TEST_START();
+  simdjson::padded_string json_string = R"(
+{
+  "firstName": "John",
+  "lastName": "doe",
+  "age": 26,
+  "address": {
+    "streetAddress": "naist street",
+    "city": "Nara",
+    "postalCode": "630-0192"
+  },
+  "phoneNumbers": [
+    {
+      "type": "iPhone",
+      "numbers": ["0123-4567-8888", "0123-4567-8788"]
+    },
+    {
+      "type": "home",
+      "numbers": ["0123-4567-8910"]
+    }
+  ]
+})"_padded;
+
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json_string);
+
+  // Fetch all fields in the address object
+  std::vector<std::string_view> fields;
+  auto error = doc.for_each_at_path_with_wildcard("$.address.*",
+      [&](ondemand::value value) {
+        std::string_view field;
+        if (value.get(field) == SUCCESS) {
+          fields.push_back(field);
+        }
+      });
+  ASSERT_SUCCESS(error);
+  ASSERT_EQUAL(fields.size(), 3);
+  ASSERT_EQUAL(fields[0], "naist street");
+  ASSERT_EQUAL(fields[1], "Nara");
+  ASSERT_EQUAL(fields[2], "630-0192");
+
+  // Fetch all phone numbers
+  std::vector<std::string_view> numbers;
+  error = doc.for_each_at_path_with_wildcard("$.phoneNumbers[*].numbers[*]",
+      [&](ondemand::value value) {
+        std::string_view number;
+        if (value.get(number) == SUCCESS) {
+          numbers.push_back(number);
+        }
+      });
+  ASSERT_SUCCESS(error);
+  ASSERT_EQUAL(numbers.size(), 3);
+  ASSERT_EQUAL(numbers[0], "0123-4567-8888");
+  ASSERT_EQUAL(numbers[1], "0123-4567-8788");
+  ASSERT_EQUAL(numbers[2], "0123-4567-8910");
+
+  TEST_SUCCEED();
+}
+
 void main_capture() {
   padded_string json_padded = "{\"a\":[1,2,3], \"b\": 2, \"c\": \"hello\"}"_padded;
   std::vector<std::string_view> fields;
@@ -2042,68 +2104,6 @@ bool value_raw_json_object() {
 
 #endif
 
-// Test matching the doc example in doc/basics.md
-// "Using for_each_at_path_with_wildcard for JSONPath Queries (On-Demand)"
-bool wildcard_basics_example() {
-  TEST_START();
-  simdjson::padded_string json_string = R"(
-{
-  "firstName": "John",
-  "lastName": "doe",
-  "age": 26,
-  "address": {
-    "streetAddress": "naist street",
-    "city": "Nara",
-    "postalCode": "630-0192"
-  },
-  "phoneNumbers": [
-    {
-      "type": "iPhone",
-      "numbers": ["0123-4567-8888", "0123-4567-8788"]
-    },
-    {
-      "type": "home",
-      "numbers": ["0123-4567-8910"]
-    }
-  ]
-})"_padded;
-
-  ondemand::parser parser;
-  ondemand::document doc = parser.iterate(json_string);
-
-  // Fetch all fields in the address object
-  std::vector<std::string_view> fields;
-  auto error = doc.for_each_at_path_with_wildcard("$.address.*",
-      [&](ondemand::value value) {
-        std::string_view field;
-        if (value.get(field) == SUCCESS) {
-          fields.push_back(field);
-        }
-      });
-  ASSERT_SUCCESS(error);
-  ASSERT_EQUAL(fields.size(), 3);
-  ASSERT_EQUAL(fields[0], "naist street");
-  ASSERT_EQUAL(fields[1], "Nara");
-  ASSERT_EQUAL(fields[2], "630-0192");
-
-  // Fetch all phone numbers
-  std::vector<std::string_view> numbers;
-  error = doc.for_each_at_path_with_wildcard("$.phoneNumbers[*].numbers[*]",
-      [&](ondemand::value value) {
-        std::string_view number;
-        if (value.get(number) == SUCCESS) {
-          numbers.push_back(number);
-        }
-      });
-  ASSERT_SUCCESS(error);
-  ASSERT_EQUAL(numbers.size(), 3);
-  ASSERT_EQUAL(numbers[0], "0123-4567-8888");
-  ASSERT_EQUAL(numbers[1], "0123-4567-8788");
-  ASSERT_EQUAL(numbers[2], "0123-4567-8910");
-
-  TEST_SUCCEED();
-}
-
 bool run() {
   return true
     && fatal_error()
@@ -2162,8 +2162,8 @@ bool run() {
     && current_location_out_of_bounds()
     && current_location_no_error()
     && to_string_example_no_except()
-    && wildcard_basics_example()
   #if SIMDJSON_EXCEPTIONS
+    && wildcard_basics_example()
     && issue2215()
     && to_string_example()
     && raw_string()
