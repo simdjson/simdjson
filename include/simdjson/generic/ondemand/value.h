@@ -914,6 +914,14 @@ public:
   simdjson_inline error_code for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept;
 };
 
+// Forward-declare explicit specializations so MSVC /permissive- sees them before
+// any template instantiation that would resolve element.get(val) to the primary.
+template<> simdjson_inline error_code
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get<SIMDJSON_IMPLEMENTATION::ondemand::value>(
+    SIMDJSON_IMPLEMENTATION::ondemand::value &out) noexcept;
+template<> simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get<SIMDJSON_IMPLEMENTATION::ondemand::value>() noexcept;
+
 } // namespace simdjson
 
 #endif // SIMDJSON_GENERIC_ONDEMAND_VALUE_H
