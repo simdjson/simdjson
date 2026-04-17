@@ -3,7 +3,7 @@ var searchData=
   ['data_0',['data',['../structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef',1,'simdjson::padded_string::data() const noexcept'],['../structsimdjson_1_1padded__string.html#aa833ecdbe40c220c5baf7a29c472c972',1,'simdjson::padded_string::data() noexcept']]],
   ['default_5fmax_5fdepth_1',['DEFAULT_MAX_DEPTH',['../namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d',1,'simdjson']]],
   ['delimited_20json_20ndjson_20and_20json_20lines_2',['Newline-Delimited JSON (ndjson) and JSON lines',['../md_doc_2basics.html#autotoc_md32',1,'']]],
-  ['demand_3',['demand',['../md_doc_2dom.html#autotoc_md86',1,'DOM vs On-Demand'],['../md_doc_2basics.html#autotoc_md22',1,'Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)']]],
+  ['demand_3',['demand',['../md_doc_2dom.html#autotoc_md86',1,'DOM vs On-Demand'],['../md_doc_2basics.html#autotoc_md22',1,'Using &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)']]],
   ['demand_20approach_4',['demand approach',['../md_doc_2ondemand__design.html#autotoc_md135',1,'Applicability of the On-Demand Approach'],['../md_doc_2ondemand__design.html#autotoc_md133',1,'Benefits of the On-Demand Approach'],['../md_doc_2ondemand__design.html#autotoc_md134',1,'Limitations of the On-Demand Approach']]],
   ['dependency_5',['Using simdjson as a CMake dependency',['../md_doc_2basics.html#autotoc_md3',1,'']]],
   ['deprecated_20list_6',['Deprecated List',['../deprecated.html',1,'']]],

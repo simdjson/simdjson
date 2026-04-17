@@ -52,7 +52,7 @@ var NAVTREE =
       [ "UTF-8 validation (alone)", "md_doc_2basics.html#autotoc_md19", null ],
       [ "JSON Pointer", "md_doc_2basics.html#autotoc_md20", null ],
       [ "JSONPath", "md_doc_2basics.html#autotoc_md21", null ],
-      [ "Using <tt>at_path_with_wildcard</tt> for JSONPath Queries (On-Demand)", "md_doc_2basics.html#autotoc_md22", [
+      [ "Using <tt>for_each_at_path_with_wildcard</tt> for JSONPath Queries (On-Demand)", "md_doc_2basics.html#autotoc_md22", [
         [ "Example Usage", "md_doc_2basics.html#autotoc_md23", null ]
       ] ],
       [ "Compile-Time JSONPath and JSON Pointer (C++26 Reflection)", "md_doc_2basics.html#autotoc_md24", null ],

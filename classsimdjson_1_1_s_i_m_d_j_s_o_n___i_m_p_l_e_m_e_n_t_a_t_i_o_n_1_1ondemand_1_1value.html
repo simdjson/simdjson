@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -270,9 +270,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6f6c6d98a3605c8e04cad16fce05c16c" id="r_a6f6c6d98a3605c8e04cad16fce05c16c"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a6f6c6d98a3605c8e04cad16fce05c16c">at_path</a> (std::string_view at_path) noexcept</td></tr>
 <tr class="memdesc:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <br /></td></tr>
 <tr class="separator:a6f6c6d98a3605c8e04cad16fce05c16c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a34b0fc44070d8f1e87ef2f7176d97ddc" id="r_a34b0fc44070d8f1e87ef2f7176d97ddc"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a34b0fc44070d8f1e87ef2f7176d97ddc">at_path_with_wildcard</a> (std::string_view json_path) noexcept</td></tr>
-<tr class="memdesc:a34b0fc44070d8f1e87ef2f7176d97ddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get all values matching the given JSONPath expression with wildcard support.  <br /></td></tr>
-<tr class="separator:a34b0fc44070d8f1e87ef2f7176d97ddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abcaa5b09c1c50928c8cf4d368fb2875e" id="r_abcaa5b09c1c50928c8cf4d368fb2875e"><td class="memTemplParams" colspan="2">template&lt;typename Func &gt; </td></tr>
+<tr class="memitem:abcaa5b09c1c50928c8cf4d368fb2875e"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#abcaa5b09c1c50928c8cf4d368fb2875e">for_each_at_path_with_wildcard</a> (std::string_view json_path, Func &amp;&amp;callback) noexcept</td></tr>
+<tr class="memdesc:abcaa5b09c1c50928c8cf4d368fb2875e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call the provided callback for each value matching the given JSONPath expression with wildcard support.  <br /></td></tr>
+<tr class="separator:abcaa5b09c1c50928c8cf4d368fb2875e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a7a44aacb24ef22a39cdecf61e2c51b" id="r_a1a7a44aacb24ef22a39cdecf61e2c51b"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
 <tr class="memitem:a1a7a44aacb24ef22a39cdecf61e2c51b"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1array.html">array</a> &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a1a7a44aacb24ef22a39cdecf61e2c51b">get</a> () noexcept</td></tr>
 <tr class="separator:a1a7a44aacb24ef22a39cdecf61e2c51b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -339,6 +340,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af8617304382258c2be6d1dbba80799d0" id="r_af8617304382258c2be6d1dbba80799d0"><td class="memItemLeft" align="right" valign="top">template&lt;&gt; </td></tr>
 <tr class="memitem:af8617304382258c2be6d1dbba80799d0"><td class="memTemplItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#af8617304382258c2be6d1dbba80799d0">get</a> (bool &amp;out) noexcept</td></tr>
 <tr class="separator:af8617304382258c2be6d1dbba80799d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bb53724c98cc058f61be7e76fcd05ed" id="r_a5bb53724c98cc058f61be7e76fcd05ed"><td class="memTemplParams" colspan="2">template&lt;typename Func &gt; </td></tr>
+<tr class="memitem:a5bb53724c98cc058f61be7e76fcd05ed"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a5bb53724c98cc058f61be7e76fcd05ed">for_each_at_path_with_wildcard</a> (std::string_view json_path, Func &amp;&amp;callback) noexcept</td></tr>
+<tr class="separator:a5bb53724c98cc058f61be7e76fcd05ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -502,44 +506,6 @@ Protected Attributes</h2></td></tr>
 </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00304">304</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
-
-</div>
-</div>
-<a id="a34b0fc44070d8f1e87ef2f7176d97ddc" name="a34b0fc44070d8f1e87ef2f7176d97ddc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a34b0fc44070d8f1e87ef2f7176d97ddc">&#9670;&#160;</a></span>at_path_with_wildcard()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value::at_path_with_wildcard </td>
-          <td>(</td>
-          <td class="paramtype">std::string_view&#160;</td>
-          <td class="paramname"><em>json_path</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Get all values matching the given JSONPath expression with wildcard support. </p>
-<p>Supports wildcard character (*) for arrays or ".*" for objects.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">json_path</td><td>JSONPath expression with wildcards </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>Vector of values matching the wildcard pattern </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00317">317</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
 
 </div>
 </div>
@@ -915,6 +881,95 @@ Protected Attributes</h2></td></tr>
 <p>This is an overloaded member function, provided for convenience. It differs from the above function only in what argument(s) it accepts. </p>
 
 <p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00187">187</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a5bb53724c98cc058f61be7e76fcd05ed" name="a5bb53724c98cc058f61be7e76fcd05ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5bb53724c98cc058f61be7e76fcd05ed">&#9670;&#160;</a></span>for_each_at_path_with_wildcard() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Func &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value::for_each_at_path_with_wildcard </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Func &amp;&amp;&#160;</td>
+          <td class="paramname"><em>callback</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="value-inl_8h_source.html#l00323">323</a> of file <a class="el" href="value-inl_8h_source.html">value-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="abcaa5b09c1c50928c8cf4d368fb2875e" name="abcaa5b09c1c50928c8cf4d368fb2875e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abcaa5b09c1c50928c8cf4d368fb2875e">&#9670;&#160;</a></span>for_each_at_path_with_wildcard() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Func &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value::for_each_at_path_with_wildcard </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Func &amp;&amp;&#160;</td>
+          <td class="paramname"><em>callback</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Call the provided callback for each value matching the given JSONPath expression with wildcard support. </p>
+<p>Supports wildcard character (*) for arrays or ".*" for objects.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">json_path</td><td>JSONPath expression with wildcards </td></tr>
+    <tr><td class="paramname">callback</td><td>Function called for each matching value </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>error_code indicating success or failure </dd></dl>
 
 </div>
 </div>
@@ -2914,7 +2969,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="value_8h_source.html#l00740">740</a> of file <a class="el" href="value_8h_source.html">value.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value_8h_source.html#l00748">748</a> of file <a class="el" href="value_8h_source.html">value.h</a>.</p>
 
 </div>
 </div>

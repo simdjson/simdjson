@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -139,9 +139,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae1bb196ae5f2aeabd8d95accdcd73498" id="r_ae1bb196ae5f2aeabd8d95accdcd73498"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae1bb196ae5f2aeabd8d95accdcd73498">at_path</a> (std::string_view json_path) noexcept</td></tr>
 <tr class="memdesc:ae1bb196ae5f2aeabd8d95accdcd73498"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the value associated with the given JSONPath expression.  <br /></td></tr>
 <tr class="separator:ae1bb196ae5f2aeabd8d95accdcd73498"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab2a70298fc22607f0478d05e53eb5749" id="r_ab2a70298fc22607f0478d05e53eb5749"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ab2a70298fc22607f0478d05e53eb5749">at_path_with_wildcard</a> (std::string_view json_path) noexcept</td></tr>
-<tr class="memdesc:ab2a70298fc22607f0478d05e53eb5749"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get all values matching the given JSONPath expression with wildcard support.  <br /></td></tr>
-<tr class="separator:ab2a70298fc22607f0478d05e53eb5749"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b7dbef786eba3eada6fb461518b0df1" id="r_a0b7dbef786eba3eada6fb461518b0df1"><td class="memTemplParams" colspan="2">template&lt;typename Func &gt; </td></tr>
+<tr class="memitem:a0b7dbef786eba3eada6fb461518b0df1"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a0b7dbef786eba3eada6fb461518b0df1">for_each_at_path_with_wildcard</a> (std::string_view json_path, Func &amp;&amp;callback) noexcept</td></tr>
+<tr class="memdesc:a0b7dbef786eba3eada6fb461518b0df1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Call the provided callback for each value matching the given JSONPath expression with wildcard support.  <br /></td></tr>
+<tr class="separator:a0b7dbef786eba3eada6fb461518b0df1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae0bc6b9803e0c989e9defaf3edcaaae4" id="r_ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4">reset</a> () &amp;noexcept</td></tr>
 <tr class="memdesc:ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the iterator so that we are pointing back at the beginning of the object.  <br /></td></tr>
 <tr class="separator:ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -282,44 +283,6 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="ab2a70298fc22607f0478d05e53eb5749" name="ab2a70298fc22607f0478d05e53eb5749"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab2a70298fc22607f0478d05e53eb5749">&#9670;&#160;</a></span>at_path_with_wildcard()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; std::vector&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html">value</a> &gt; &gt; simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object::at_path_with_wildcard </td>
-          <td>(</td>
-          <td class="paramtype">std::string_view&#160;</td>
-          <td class="paramname"><em>json_path</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Get all values matching the given JSONPath expression with wildcard support. </p>
-<p>Supports wildcard patterns like ".*" to match all object fields.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">json_path</td><td>JSONPath expression with wildcards </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>Vector of values matching the wildcard pattern </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00180">180</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
-
-</div>
-</div>
 <a id="ae3d80f8e7f31c319fe6ee09c0860df83" name="ae3d80f8e7f31c319fe6ee09c0860df83"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae3d80f8e7f31c319fe6ee09c0860df83">&#9670;&#160;</a></span>at_pointer()</h2>
 
@@ -454,7 +417,7 @@ Protected Attributes</h2></td></tr>
 <p>To check that an object is empty, it is more performant to use the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ad210f9115679a625ada433add55eff51" title="This method scans the beginning of the object and checks whether the object is empty.">is_empty()</a> method.</p>
 <p>Performance hint: You should only call <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aef6872e07743217fe2e2abe790a21d4c" title="This method scans the object and counts the number of key-value pairs.">count_fields()</a> as a last resort as it may require scanning the document twice or more. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00224">224</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00216">216</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -635,6 +598,57 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a0b7dbef786eba3eada6fb461518b0df1" name="a0b7dbef786eba3eada6fb461518b0df1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b7dbef786eba3eada6fb461518b0df1">&#9670;&#160;</a></span>for_each_at_path_with_wildcard()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Func &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object::for_each_at_path_with_wildcard </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view&#160;</td>
+          <td class="paramname"><em>json_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Func &amp;&amp;&#160;</td>
+          <td class="paramname"><em>callback</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Call the provided callback for each value matching the given JSONPath expression with wildcard support. </p>
+<p>Supports wildcard patterns like ".*" to match all object fields.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">json_path</td><td>JSONPath expression with wildcards </td></tr>
+    <tr><td class="paramname">callback</td><td>Function called for each matching value </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>error_code indicating success or failure </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00186">186</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+
+</div>
+</div>
 <a id="ad210f9115679a625ada433add55eff51" name="ad210f9115679a625ada433add55eff51"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad210f9115679a625ada433add55eff51">&#9670;&#160;</a></span>is_empty()</h2>
 
@@ -661,7 +675,7 @@ Protected Attributes</h2></td></tr>
 <p>This method scans the beginning of the object and checks whether the object is empty. </p>
 <p>The runtime complexity is constant time. After calling this function, if successful, the object is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00236">236</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00228">228</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -778,7 +792,7 @@ Protected Attributes</h2></td></tr>
 <p>You should still consume values only once even if you can iterate through the object more than once. If you unescape a string or a key within the object more than once, you have unsafe code. Note that rewinding an object means that you may need to reparse it anew: it is not a free operation.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the object contains some elements (not empty) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00243">243</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00235">235</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -915,7 +929,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00301">301</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00309">309</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
 
 </div>
 </div>

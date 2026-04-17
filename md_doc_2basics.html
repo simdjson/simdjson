@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -128,7 +128,13 @@ $(document).ready(function(){initNavTree('md_doc_2basics.html',''); initResizabl
 <li>Minifying JSON strings without parsing</li>
 <li>UTF-8 validation (alone)</li>
 <li>JSON Pointer</li>
-<li>JSONPath</li>
+<li>JSONPath<ul>
+<li>Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)<ul>
+<li>Example Usage</li>
+</ul>
+</li>
+</ul>
+</li>
 <li>Compile-Time JSONPath and JSON Pointer (C++26 Reflection)</li>
 <li>Error handling<ul>
 <li>Error handling examples without exceptions</li>
@@ -1263,15 +1269,15 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 @endicode 
 
-@section autotoc_md22 Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)
+@section autotoc_md22 Using &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)
 
-The &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (&lt;tt&gt;*&lt;/tt&gt;) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use &lt;tt&gt;\$.address.*&lt;/tt&gt; to fetch all fields within the &lt;tt&gt;address&lt;/tt&gt; object or &lt;tt&gt;\$.phoneNumbers[*].numbers[*]&lt;/tt&gt; to retrieve all phone numbers across multiple objects in an array.
+The &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt; function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (&lt;tt&gt;*&lt;/tt&gt;) in JSON paths. It calls a user-provided callback for each matching element, avoiding the need to materialize all results into a vector. For example, you can use &lt;tt&gt;\$.address.*&lt;/tt&gt; to fetch all fields within the &lt;tt&gt;address&lt;/tt&gt; object or &lt;tt&gt;\$.phoneNumbers[*].numbers[*]&lt;/tt&gt; to retrieve all phone numbers across multiple objects in an array.
 
-The &lt;tt&gt;*&lt;/tt&gt; wildcard matches all elements at a specific level. For instance, &lt;tt&gt;\$.address.*&lt;/tt&gt; retrieves all key-value pairs in the &lt;tt&gt;address&lt;/tt&gt; object, while &lt;tt&gt;\$.*.streetAddress&lt;/tt&gt; fetches all &lt;tt&gt;streetAddress&lt;/tt&gt; fields across objects at the root level. You can combine wildcards with array indexing. For example, &lt;tt&gt;\$.phoneNumbers[*].numbers[1]&lt;/tt&gt; retrieves the second number from each &lt;tt&gt;numbers&lt;/tt&gt; array in the &lt;tt&gt;phoneNumbers&lt;/tt&gt; array. If no elements match the wildcard query, the function returns an empty result. For instance, querying &lt;tt&gt;\$.empty_object.*&lt;/tt&gt; or &lt;tt&gt;\$.empty_array.*&lt;/tt&gt; will yield an empty set.
+The &lt;tt&gt;*&lt;/tt&gt; wildcard matches all elements at a specific level. For instance, &lt;tt&gt;\$.address.*&lt;/tt&gt; retrieves all key-value pairs in the &lt;tt&gt;address&lt;/tt&gt; object, while &lt;tt&gt;\$.*.streetAddress&lt;/tt&gt; fetches all &lt;tt&gt;streetAddress&lt;/tt&gt; fields across objects at the root level. You can combine wildcards with array indexing. For example, &lt;tt&gt;\$.phoneNumbers[*].numbers[1]&lt;/tt&gt; retrieves the second number from each &lt;tt&gt;numbers&lt;/tt&gt; array in the &lt;tt&gt;phoneNumbers&lt;/tt&gt; array. If no elements match the wildcard query, the callback is simply never called. For instance, querying &lt;tt&gt;\$.empty_object.*&lt;/tt&gt; or &lt;tt&gt;\$.empty_array.*&lt;/tt&gt; will yield no callbacks.
 
 @subsection autotoc_md23 Example Usage
 
-Here is an example demonstrating the use of &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt;:
+Here is an example demonstrating the use of &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt;:
 
 @icode{cpp} 
 simdjson::padded_string json_string = R"( { "firstName": "John", "lastName": "doe", "age": 26, "address": { "streetAddress": "naist street", "city": "Nara", "postalCode": "630-0192" }, "phoneNumbers": [ { "type": "iPhone", "numbers": ["0123-4567-8888", "0123-4567-8788"] }, { "type": "home", "numbers": ["0123-4567-8910"] } ] })"_padded;
@@ -1280,27 +1286,22 @@ ondemand::parser parser;
 ondemand::document doc = parser.iterate(json_string);
 
 // Fetch all fields in the address object
-std::vector&lt;ondemand::value&gt; values;
-auto error = doc.at_path_with_wildcard("$.address.*").get(values);
-if (!error) {
-  for (auto value : values) {
-    std::string_view field;
-    if (value.get(field) == SUCCESS) {
-      std::cout &lt;&lt; field &lt;&lt; std::endl;
-    }
-  }
-}
+auto error = doc.for_each_at_path_with_wildcard("$.address.*",
+    [](ondemand::value value) {
+      std::string_view field;
+      if (value.get(field) == SUCCESS) {
+        std::cout &lt;&lt; field &lt;&lt; std::endl;
+      }
+    });
 
 // Fetch all phone numbers
-error = doc.at_path_with_wildcard("$.phoneNumbers[*].numbers[*]").get(values);
-if (!error) {
-  for (auto value : values) {
-    std::string_view number;
-    if (value.get(number) == SUCCESS) {
-      std::cout &lt;&lt; number &lt;&lt; std::endl;
-    }
-  }
-}
+doc.for_each_at_path_with_wildcard("$.phoneNumbers[*].numbers[*]",
+    [](ondemand::value value) {
+      std::string_view number;
+      if (value.get(number) == SUCCESS) {
+        std::cout &lt;&lt; number &lt;&lt; std::endl;
+      }
+    });
 @endicode 
 
 This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.

@@ -24,7 +24,7 @@ var searchData=
   ['jsonpath_20and_20json_20pointer_20c_2026_20reflection_21',['Compile-Time JSONPath and JSON Pointer (C++26 Reflection)',['../md_doc_2basics.html#autotoc_md24',1,'']]],
   ['jsonpath_20functions_22',['JSONPath Functions',['../md_doc_2compile__time__accessors.html#autotoc_md74',1,'']]],
   ['jsonpath_20queries_23',['Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries',['../md_doc_2dom.html#autotoc_md94',1,'']]],
-  ['jsonpath_20queries_20on_20demand_24',['Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)',['../md_doc_2basics.html#autotoc_md22',1,'']]],
+  ['jsonpath_20queries_20on_20demand_24',['Using &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)',['../md_doc_2basics.html#autotoc_md22',1,'']]],
   ['jsonpath_20syntax_25',['JSONPath Syntax',['../md_doc_2compile__time__accessors.html#autotoc_md67',1,'']]],
   ['just_20some_20fields_26',['Extracting just some fields',['../md_doc_2builder.html#autotoc_md50',1,'']]]
 ];

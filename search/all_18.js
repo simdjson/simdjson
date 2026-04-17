@@ -25,7 +25,7 @@ var searchData=
   ['using_20the_20parsed_20json_22',['using the parsed json',['../md_doc_2dom.html#autotoc_md88',1,'Using the Parsed JSON'],['../md_doc_2basics.html#autotoc_md10',1,'Using the parsed JSON']]],
   ['using_20the_20parsed_20json_3a_20additional_20examples_23',['Using the parsed JSON: additional examples',['../md_doc_2basics.html#autotoc_md11',1,'']]],
   ['using_20tt_20at_5fpath_5fwith_5fwildcard_20tt_20for_20jsonpath_20queries_24',['Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries',['../md_doc_2dom.html#autotoc_md94',1,'']]],
-  ['using_20tt_20at_5fpath_5fwith_5fwildcard_20tt_20for_20jsonpath_20queries_20on_20demand_25',['Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)',['../md_doc_2basics.html#autotoc_md22',1,'']]],
+  ['using_20tt_20for_5feach_5fat_5fpath_5fwith_5fwildcard_20tt_20for_20jsonpath_20queries_20on_20demand_25',['Using &lt;tt&gt;for_each_at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries (On-Demand)',['../md_doc_2basics.html#autotoc_md22',1,'']]],
   ['utf_208_20validation_20alone_26',['UTF-8 validation (alone)',['../md_doc_2basics.html#autotoc_md19',1,'']]],
   ['utf8_5ferror_27',['UTF8_ERROR',['../namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a398a5389d6e20c39e8880b0101b66f56',1,'simdjson']]]
 ];
