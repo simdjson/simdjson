@@ -38,55 +38,43 @@ namespace {
 using namespace simd;
 
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
-  // Functional programming causes trouble with Visual Studio.
-  // Keeping this version in comments since it is much nicer:
-  // auto v = in.map<uint8_t>([&](simd8<uint8_t> chunk) {
-  //  auto nib_lo = chunk & 0xf;
-  //  auto nib_hi = chunk.shr<4>();
-  //  auto shuf_lo = nib_lo.lookup_16<uint8_t>(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  //  auto shuf_hi = nib_hi.lookup_16<uint8_t>(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
-  //  return shuf_lo & shuf_hi;
-  // });
-  const simd8<uint8_t> table1(16, 0, 0, 0, 0, 0, 0, 0, 0, 8, 12, 1, 2, 9, 0, 0);
-  const simd8<uint8_t> table2(8, 0, 18, 4, 0, 1, 0, 1, 0, 0, 0, 3, 2, 1, 0, 0);
-
-  simd8x64<uint8_t> v(
-     (in.chunks[0] & 0xf).lookup_16(table1) & (in.chunks[0].shr<4>()).lookup_16(table2),
-     (in.chunks[1] & 0xf).lookup_16(table1) & (in.chunks[1].shr<4>()).lookup_16(table2),
-     (in.chunks[2] & 0xf).lookup_16(table1) & (in.chunks[2].shr<4>()).lookup_16(table2),
-     (in.chunks[3] & 0xf).lookup_16(table1) & (in.chunks[3].shr<4>()).lookup_16(table2)
+  const uint8x16_t op_table = simd8<uint8_t>(
+    0xff, 0, ',', ':', 0, '[', ']', '{', '}', 0, 0, 0, 0, 0, 0, 0
+  );
+  const uint8x16_t ws_table = simd8<uint8_t>(
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0, 0
   );
 
+  const uint8x16_t d0_0 = in.chunks[0];
+  const uint8x16_t d0_1 = in.chunks[1];
+  const uint8x16_t d0_2 = in.chunks[2];
+  const uint8x16_t d0_3 = in.chunks[3];
 
-  // We compute whitespace and op separately. If the code later only use one or the
-  // other, given the fact that all functions are aggressively inlined, we can
-  // hope that useless computations will be omitted. This is namely case when
-  // minifying (we only need whitespace). *However* if we only need spaces,
-  // it is likely that we will still compute 'v' above with two lookup_16: one
-  // could do it a bit cheaper. This is in contrast with the x64 implementations
-  // where we can, efficiently, do the white space and structural matching
-  // separately. One reason for this difference is that on ARM NEON, the table
-  // lookups either zero or leave unchanged the characters exceeding 0xF whereas
-  // on x64, the equivalent instruction (pshufb) automatically applies a mask,
-  // ignoring the 4 most significant bits. Thus the x64 implementation is
-  // optimized differently. This being said, if you use this code strictly
-  // just for minification (or just to identify the structural characters),
-  // there is a small untaken optimization opportunity here. We deliberately
-  // do not pick it up.
+  const uint8x16_t match_op_0 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_0, vdupq_n_u8(3)), 4)), d0_0);
+  const uint8x16_t match_op_1 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_1, vdupq_n_u8(3)), 4)), d0_1);
+  const uint8x16_t match_op_2 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_2, vdupq_n_u8(3)), 4)), d0_2);
+  const uint8x16_t match_op_3 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_3, vdupq_n_u8(3)), 4)), d0_3);
 
-  uint64_t op = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x7),
-        v.chunks[1].any_bits_set(0x7),
-        v.chunks[2].any_bits_set(0x7),
-        v.chunks[3].any_bits_set(0x7)
-  ).to_bitmask();
+  const uint8x16_t match_ws_0 = vqtbx1q_u8(vceqq_u8(d0_0, vdupq_n_u8(' ')), ws_table, d0_0);
+  const uint8x16_t match_ws_1 = vqtbx1q_u8(vceqq_u8(d0_1, vdupq_n_u8(' ')), ws_table, d0_1);
+  const uint8x16_t match_ws_2 = vqtbx1q_u8(vceqq_u8(d0_2, vdupq_n_u8(' ')), ws_table, d0_2);
+  const uint8x16_t match_ws_3 = vqtbx1q_u8(vceqq_u8(d0_3, vdupq_n_u8(' ')), ws_table, d0_3);
 
-  uint64_t whitespace = simd8x64<bool>(
-        v.chunks[0].any_bits_set(0x18),
-        v.chunks[1].any_bits_set(0x18),
-        v.chunks[2].any_bits_set(0x18),
-        v.chunks[3].any_bits_set(0x18)
-  ).to_bitmask();
+  const uint8x16_t bit_mask = {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
+  };
+
+  uint8x16_t op_sum0 = vpaddq_u8(vandq_u8(match_op_0, bit_mask), vandq_u8(match_op_1, bit_mask));
+  uint8x16_t ws_sum0 = vpaddq_u8(vandq_u8(match_ws_0, bit_mask), vandq_u8(match_ws_1, bit_mask));
+  uint8x16_t op_sum1 = vpaddq_u8(vandq_u8(match_op_2, bit_mask), vandq_u8(match_op_3, bit_mask));
+  uint8x16_t ws_sum1 = vpaddq_u8(vandq_u8(match_ws_2, bit_mask), vandq_u8(match_ws_3, bit_mask));
+  op_sum0 = vpaddq_u8(op_sum0, op_sum1);
+  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum1);
+  op_sum0 = vpaddq_u8(op_sum0, op_sum0);
+  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum0);
+  const uint64_t op = vgetq_lane_u64(vreinterpretq_u64_u8(op_sum0), 0);
+  const uint64_t whitespace = vgetq_lane_u64(vreinterpretq_u64_u8(ws_sum0), 0);
 
   return { whitespace, op };
 }
@@ -132,7 +120,7 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
   return arm64::stage1::json_minifier::minify<64>(buf, len, dst, dst_len);
 }
 
-simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
+simdjson_flatten simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
   return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);

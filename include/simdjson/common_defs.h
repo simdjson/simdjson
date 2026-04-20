@@ -52,6 +52,7 @@ double from_chars(const char *first, const char* end) noexcept;
 
   #define simdjson_really_inline __forceinline
   #define simdjson_never_inline __declspec(noinline)
+  #define simdjson_really_flatten [[msvc::flatten]]
 
   #define simdjson_unused
   #define simdjson_warn_unused
@@ -92,6 +93,7 @@ double from_chars(const char *first, const char* end) noexcept;
 
   #define simdjson_really_inline inline __attribute__((always_inline))
   #define simdjson_never_inline inline __attribute__((noinline))
+  #define simdjson_really_flatten [[gnu::flatten]]
 
   #define simdjson_unused __attribute__((unused))
   #define simdjson_warn_unused __attribute__((warn_unused_result))
@@ -166,6 +168,15 @@ double from_chars(const char *first, const char* end) noexcept;
 #else
   // Force inlining for most simdjson functions.
   #define simdjson_inline simdjson_really_inline
+#endif
+
+#if defined(simdjson_flatten)
+  // Prefer the user's definition of simdjson_flatten; don't define it ourselves.
+#elif (defined(__GNUC__) && !defined(__OPTIMIZE__)) || (defined(_DEBUG) && _MSC_VER )
+  // Flattening can lead to significant code bloat and high compile times. Don't use it for unoptimized builds.
+  #define simdjson_flatten
+#else
+  #define simdjson_flatten simdjson_really_flatten
 #endif
 
 #if SIMDJSON_VISUAL_STUDIO
