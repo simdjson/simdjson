@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.2</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.3</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -190,9 +190,9 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aec43b71b933ef5ba27fcc398f079e6e8" id="r_aec43b71b933ef5ba27fcc398f079e6e8"><td class="memItemLeft" align="right" valign="top">static simdjson_inline simdjson_warn_unused ondemand::parser &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec43b71b933ef5ba27fcc398f079e6e8">get_parser</a> ()</td></tr>
 <tr class="memdesc:aec43b71b933ef5ba27fcc398f079e6e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a unique parser instance corresponding to the current thread.  <br /></td></tr>
 <tr class="separator:aec43b71b933ef5ba27fcc398f079e6e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1479bc4313e7a9cc0fd44ddf3dba70a8" id="r_a1479bc4313e7a9cc0fd44ddf3dba70a8"><td class="memItemLeft" align="right" valign="top">static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a1479bc4313e7a9cc0fd44ddf3dba70a8">release_parser</a> ()</td></tr>
-<tr class="memdesc:a1479bc4313e7a9cc0fd44ddf3dba70a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release the parser instance initialized by <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec43b71b933ef5ba27fcc398f079e6e8" title="Get a unique parser instance corresponding to the current thread.">get_parser()</a> and all the associated resources (memory).  <br /></td></tr>
-<tr class="separator:a1479bc4313e7a9cc0fd44ddf3dba70a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a375c3e1df1387754d319f9b4907b5d12" id="r_a375c3e1df1387754d319f9b4907b5d12"><td class="memItemLeft" align="right" valign="top">static simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a375c3e1df1387754d319f9b4907b5d12">release_parser</a> ()</td></tr>
+<tr class="memdesc:a375c3e1df1387754d319f9b4907b5d12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release the parser instance initialized by <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec43b71b933ef5ba27fcc398f079e6e8" title="Get a unique parser instance corresponding to the current thread.">get_parser()</a> and all the associated resources (memory).  <br /></td></tr>
+<tr class="separator:a375c3e1df1387754d319f9b4907b5d12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -343,7 +343,7 @@ Public Attributes</h2></td></tr>
 <p>This instance can be safely used within the current thread, but it should not be passed to other threads.</p>
 <p>A parser should only be used for one document at a time.</p>
 <p>Our simdjson::from functions use this parser instance.</p>
-<p>You can free the related parser by calling <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a1479bc4313e7a9cc0fd44ddf3dba70a8" title="Release the parser instance initialized by get_parser() and all the associated resources (memory).">release_parser()</a>. </p>
+<p>You can free the related parser by calling <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a375c3e1df1387754d319f9b4907b5d12" title="Release the parser instance initialized by get_parser() and all the associated resources (memory).">release_parser()</a>. </p>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html#l00198">198</a> of file <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
@@ -1027,8 +1027,8 @@ Parser Capacity</h3>
 
 </div>
 </div>
-<a id="a1479bc4313e7a9cc0fd44ddf3dba70a8" name="a1479bc4313e7a9cc0fd44ddf3dba70a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1479bc4313e7a9cc0fd44ddf3dba70a8">&#9670;&#160;</a></span>release_parser()</h2>
+<a id="a375c3e1df1387754d319f9b4907b5d12" name="a375c3e1df1387754d319f9b4907b5d12"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a375c3e1df1387754d319f9b4907b5d12">&#9670;&#160;</a></span>release_parser()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1037,7 +1037,7 @@ Parser Capacity</h3>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static simdjson_inline bool simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::release_parser </td>
+          <td class="memname">simdjson_inline bool simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::release_parser </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1052,6 +1052,8 @@ Parser Capacity</h3>
 
 <p>Release the parser instance initialized by <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#aec43b71b933ef5ba27fcc398f079e6e8" title="Get a unique parser instance corresponding to the current thread.">get_parser()</a> and all the associated resources (memory). </p>
 <p>Returns true if a parser instance was released. </p>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html#l00202">202</a> of file <a class="el" href="generic_2ondemand_2parser-inl_8h_source.html">parser-inl.h</a>.</p>
 
 </div>
 </div>
