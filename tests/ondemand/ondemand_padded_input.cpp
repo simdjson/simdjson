@@ -1,3 +1,12 @@
+#ifdef __FILC__
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+  printf("This test is not relevant for FILC.\n");
+  return EXIT_SUCCESS;
+}
+#else // This test is not relevant for FILC
+
 #include "simdjson.h"
 #include "simdjson/padded_string_view.h"
 #include <cstdio>
@@ -195,3 +204,5 @@ int main() {
 }
 
 #endif // SIMDJSON_CPLUSPLUS17
+
+#endif // This test is not relevant for FILC
