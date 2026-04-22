@@ -1,3 +1,12 @@
+#ifdef __FILC__
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+  printf("This test is not relevant for FILC.\n");
+  return EXIT_SUCCESS;
+}
+#else // This test is not relevant for FILC
+
 #ifdef _WIN32
 #include <windows.h>
 #include <sysinfoapi.h>
@@ -87,3 +96,5 @@ int main() {
   }
   return EXIT_SUCCESS;
 }
+
+#endif // This test is not relevant for FILC
