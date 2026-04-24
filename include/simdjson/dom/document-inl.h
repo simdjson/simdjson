@@ -9,6 +9,7 @@
 #include "simdjson/internal/tape_ref-inl.h"
 #include "simdjson/internal/jsonformatutils.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace simdjson {
@@ -26,7 +27,7 @@ inline size_t document::capacity() const noexcept {
 }
 
 simdjson_warn_unused
-inline error_code document::allocate(size_t capacity) noexcept {
+inline error_code document::allocate(size_t capacity) {
   if (capacity == 0) {
     string_buf.reset();
     tape.reset();
@@ -52,17 +53,22 @@ inline error_code document::allocate(size_t capacity) noexcept {
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (capacity / 3) + SIMDJSON_PADDING, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
-  if(!(string_buf && tape)) {
-    allocated_capacity = 0;
-    string_buf.reset();
-    tape.reset();
-    return MEMALLOC;
-  }
-  // Technically the allocated_capacity might be larger than capacity
-  // so the next line is pessimistic.
-  allocated_capacity = capacity;
+
+  // Allocate into locals first (strong exception safety): if either
+  // allocation throws, the original string_buf/tape/allocated_capacity are
+  // untouched.
+  auto new_string_buf = internal::make_allocated_buffer<uint8_t>(string_capacity, *_allocator);
+  auto new_tape = internal::make_allocated_buffer<uint64_t>(tape_capacity, *_allocator);
+  if (!new_string_buf || !new_tape) { return MEMALLOC; }
+
+  string_buf = std::move(new_string_buf);
+  tape = std::move(new_tape);
+  // Inverse of the forward formulas above. The forward step uses
+  // 5*floor(c/3); the inverse maximises c such that 5*floor(c/3) <= cap-PAD,
+  // which is 3*floor((cap-PAD)/5) + 2.
+  size_t cap_s = 3 * ((string_buf.capacity() - SIMDJSON_PADDING) / 5) + 2;
+  size_t cap_t = tape.capacity() - 3;
+  allocated_capacity = std::min(cap_t, cap_s);
   return SUCCESS;
 }
 

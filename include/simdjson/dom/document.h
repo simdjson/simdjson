@@ -2,6 +2,7 @@
 #define SIMDJSON_DOM_DOCUMENT_H
 
 #include "simdjson/dom/base.h"
+#include "simdjson/internal/allocated_buffer.h"
 
 #include <memory>
 
@@ -19,8 +20,12 @@ public:
    * Create a document container with zero capacity.
    *
    * The parser will allocate capacity as needed.
+   *
+   * @param alloc The allocator used for the tape and string buffer. The allocator must
+   *    outlive this document.
    */
-  document() noexcept = default;
+  document(simdjson::allocator& alloc = get_default_allocator()) noexcept
+      : _allocator{&alloc}, allocated_capacity{0} {}
   ~document() noexcept = default;
 
   /**
@@ -54,13 +59,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape{};
+  internal::allocated_buffer<uint64_t> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf{};
+  internal::allocated_buffer<uint8_t> string_buf{};
   /** @private Allocate memory to support
    * input JSON documents of up to len bytes.
    *
@@ -71,8 +76,10 @@ public:
    * can you use this function to increase
    * or lower the amount of allocated memory.
    * Passing zero clears the memory.
+   *
+   * May propagate exceptions from the allocator (e.g. std::bad_alloc).
    */
-  error_code allocate(size_t len) noexcept;
+  error_code allocate(size_t len);
   /** @private Capacity in bytes, in terms
    * of how many bytes of input JSON we can
    * support.
@@ -81,7 +88,8 @@ public:
 
 
 private:
-  size_t allocated_capacity{0};
+  simdjson::allocator* _allocator;
+  size_t allocated_capacity;
   friend class parser;
 }; // class document
 

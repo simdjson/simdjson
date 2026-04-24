@@ -3,6 +3,7 @@
 
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/document.h"
+#include "simdjson/internal/allocated_buffer.h"
 
 namespace simdjson {
 
@@ -41,6 +42,19 @@ public:
    *    Defaults to SIMDJSON_MAXSIZE_BYTES (the largest single document simdjson can process).
    */
   simdjson_inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
+  /**
+   * Create a JSON parser with a custom allocator.
+   *
+   * The new parser will have zero capacity. All buffers (scratch buffers and
+   * the internal `doc`) will be allocated through `alloc`. The allocator must
+   * outlive the parser.
+   *
+   * @param alloc The allocator used for this parser's scratch buffers and its
+   *     internal document.
+   * @param max_capacity See the single-argument constructor.
+   */
+  simdjson_inline explicit parser(simdjson::allocator& alloc,
+                                  size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
   /**
    * Take another parser's buffers and state.
    *
@@ -102,7 +116,7 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> load(std::string_view path) & noexcept;
+  inline simdjson_result<element> load(std::string_view path) &;
   inline simdjson_result<element> load(std::string_view path) &&  = delete ;
 
   /**
@@ -148,7 +162,7 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> load_into_document(document& doc, std::string_view path) & noexcept;
+  inline simdjson_result<element> load_into_document(document& doc, std::string_view path) &;
   inline simdjson_result<element> load_into_document(document& doc, std::string_view path) && =delete;
 
   /**
@@ -231,19 +245,19 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) &;
   inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) &;
   simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse(const std::string &) */
-  simdjson_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const std::string &s) &;
   simdjson_inline simdjson_result<element> parse(const std::string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const padded_string &s) &;
   simdjson_inline simdjson_result<element> parse(const padded_string &s) && =delete;
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse(const padded_string_view &v) & noexcept;
+  simdjson_inline simdjson_result<element> parse(const padded_string_view &v) &;
   simdjson_inline simdjson_result<element> parse(const padded_string_view &v) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
@@ -293,16 +307,16 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) &;
   inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) &;
   simdjson_inline simdjson_result<element> parse_into_document(document& doc, const char *buf, size_t len, bool realloc_if_needed = true) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) &;
   simdjson_inline simdjson_result<element> parse_into_document(document& doc, const std::string &s) && =delete;
   /** @overload parse_into_document(const uint8_t *buf, size_t len, bool realloc_if_needed) */
-  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) & noexcept;
+  simdjson_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) &;
   simdjson_inline simdjson_result<element> parse_into_document(document& doc, const padded_string &s) && =delete;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
@@ -383,7 +397,7 @@ public:
    *         - other json errors if parsing fails. You should not rely on these errors to always the same for the
    *           same document: they may vary under runtime dispatch (so they may vary depending on your system and hardware).
    */
-  inline simdjson_result<document_stream> load_many(std::string_view path, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
+  inline simdjson_result<document_stream> load_many(std::string_view path, size_t batch_size = dom::DEFAULT_BATCH_SIZE);
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -531,7 +545,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH);
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
   /**
@@ -546,7 +560,7 @@ public:
    * @return true if successful, false if allocation failed.
    */
   [[deprecated("Use allocate() instead.")]]
-  simdjson_warn_unused inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused inline bool allocate_capacity(size_t capacity, size_t max_depth = DEFAULT_MAX_DEPTH);
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
   /**
    * The largest document this parser can support without reallocating.
@@ -648,6 +662,11 @@ public:
 
 private:
   /**
+   * The allocator used for this parser.
+   */
+  simdjson::allocator* _allocator;
+
+  /**
    * The maximum document length this parser will automatically support.
    *
    * The parser will not be automatically allocated above this amount.
@@ -658,12 +677,11 @@ private:
   bool _number_as_string{false};
 
   /**
-   * The loaded buffer (reused each time load() is called)
+   * The loaded buffer (reused each time load() is called).
+   * Allocated through `_allocator`. The usable length (excluding the trailing
+   * SIMDJSON_PADDING bytes) is `loaded_bytes.capacity() - SIMDJSON_PADDING`.
    */
-  std::unique_ptr<char[]> loaded_bytes;
-
-  /** Capacity of loaded_bytes buffer. */
-  size_t _loaded_bytes_capacity{0};
+  internal::allocated_buffer<char> loaded_bytes{};
 
   // all nodes are stored on the doc.tape using a 64-bit word.
   //
@@ -684,13 +702,25 @@ private:
    * and auto-allocate if not. This also allocates memory if needed in the
    * internal document.
    */
-  inline error_code ensure_capacity(size_t desired_capacity) noexcept;
+  inline error_code ensure_capacity(size_t desired_capacity);
   /**
    * Ensure we have enough capacity to handle at least desired_capacity bytes,
    * and auto-allocate if not. This also allocates memory if needed in the
    * provided document.
    */
-  inline error_code ensure_capacity(document& doc, size_t desired_capacity) noexcept;
+  inline error_code ensure_capacity(document& doc, size_t desired_capacity);
+
+  /**
+   * Allocate a fresh `loaded_bytes` buffer through `_allocator` sized to hold
+   * `len` bytes plus `SIMDJSON_PADDING` trailing zero-filled padding. Any
+   * previous contents of `loaded_bytes` are dropped -- this is not a
+   * `realloc`-style grow.
+   *
+   * Mirrors `internal::allocate_padded_buffer` but routes through the parser's
+   * allocator instead of plain `new[]`. Returns `MEMALLOC` on overflow or
+   * allocation failure. May propagate allocator exceptions.
+   */
+  inline error_code allocate_loaded_bytes(size_t len);
 
   /** Read the file into loaded_bytes */
   inline simdjson_result<size_t> read_file(std::string_view path) noexcept;

@@ -9,6 +9,7 @@ testing and get the best performance.
 * [NDEBUG macro](#ndebug-macro)
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Reusing string buffers](#reusing-string-buffers)
+* [Custom allocators](#custom-allocators)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Large files and huge page support](#large-files-and-huge-page-support)
 * [Number parsing](#number-parsing)
@@ -81,6 +82,106 @@ or simply
 ```cpp
  auto doc = parser.iterate(json_str, length, capacity);
 ```
+
+
+Custom allocators
+-----------------
+
+By default, simdjson uses `new[]` / `delete[]` for its internal buffers. If you
+want to use a custom allocator instead, you can do so by subclassing
+`simdjson::allocator`:
+
+```cpp
+class my_allocator : public simdjson::allocator {
+public:
+  simdjson::allocation_result allocate(size_t size) override {
+    // Return {nullptr, 0} on failure, OR throw (e.g. std::bad_alloc). Either is fine.
+    void* ptr = ::operator new(size, std::nothrow);
+    return {ptr, ptr ? size : 0};
+  }
+  void deallocate(void* ptr, size_t /*size*/) noexcept override {
+    ::operator delete(ptr);
+  }
+};
+```
+
+Then pass an instance to the parser or builder:
+
+```cpp
+my_allocator alloc;
+
+// DOM parser
+simdjson::dom::parser dom_parser(alloc);
+auto e1 = dom_parser.parse(json);
+
+// On-Demand parser
+simdjson::ondemand::parser od_parser(alloc);
+auto e2 = od_parser.iterate(json);
+
+// String builder
+simdjson::builder::string_builder sb(alloc);
+sb.append("hello");
+```
+
+`padded_string` and `padded_string_builder` do not support custom allocators.
+If you want to allocate a padded string with a custom allocator, you can do
+so in your own code, and then pass it into the simdjson library as a
+`padded_string_view`.
+
+Key points:
+
+- The allocator must outlive every parser, document, and builder that holds a
+  reference to it.
+- `allocate()` may either return `{nullptr, 0}` on failure (mapped to `MEMALLOC`
+  or `is_valid = false` on the builder) or throw. Exceptions are not caught by
+  simdjson: they propagate out of whichever call triggered the allocation.
+- `allocate()` may over-allocate: the returned `allocation_result::size` is the
+  true number of bytes handed out and may exceed the requested `size`
+  (modelled on C++23 `allocate_at_least`). simdjson may use the full returned
+  range.
+- `deallocate()` is called with the same byte count that the corresponding
+  `allocate()` returned in `allocation_result::size`, not necessarily the
+  originally requested size. Allocators that round up to buckets or slabs and
+  hand back a larger `size` receive that same larger value back on
+  `deallocate()`.
+- Returned memory must be aligned to at least `alignof(std::max_align_t)`. This
+  matches the guarantee of `malloc`, `::operator new`, and all mainstream pool
+  allocators.
+- The thread-local parser returned by `simdjson::ondemand::parser::get_parser()`
+  always uses the default allocator. Use your own parser instance if you need
+  a custom allocator.
+
+### Adapting a C++ standard allocator
+
+If you already have a type that models the C++ `Allocator` named requirement
+(e.g. `std::allocator<T>`, `std::pmr::polymorphic_allocator<T>`, or a
+third-party pool's allocator), you can use it directly via
+`simdjson::allocator_adapter<Alloc>` instead of subclassing
+`simdjson::allocator` yourself:
+
+```cpp
+#include <simdjson/allocator_adapter.h>
+
+// std::allocator
+simdjson::allocator_adapter<std::allocator<uint8_t>> a1;
+simdjson::dom::parser p1(a1);
+
+// std::pmr
+std::pmr::monotonic_buffer_resource mbr;
+simdjson::allocator_adapter<std::pmr::polymorphic_allocator<uint8_t>> a2(
+    std::pmr::polymorphic_allocator<uint8_t>{&mbr});
+simdjson::dom::parser p2(a2);
+```
+
+The adapter rebinds the wrapped allocator to `uint8_t`, forwards
+`allocate` / `deallocate`, and uses `allocate_at_least` when available
+(C++23).
+
+Alignment caveat: Your allocator must return memory that is aligned to at
+least `alignof(std::max_align_t)`. All standard-library-provided resources
+and every mainstream pool allocator already do so, but for custom allocators,
+you need to ensure that your allocator returns memory that is aligned to at
+least `alignof(std::max_align_t)`.
 
 
 Server Loops: Long-Running Processes and Memory Capacity

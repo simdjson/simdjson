@@ -25,8 +25,9 @@ public:
 
   simdjson_warn_unused error_code create_dom_parser_implementation(
       size_t capacity, size_t max_length,
-      std::unique_ptr<internal::dom_parser_implementation> &dst)
-      const noexcept final;
+      std::unique_ptr<internal::dom_parser_implementation> &dst,
+      simdjson::allocator& alloc)
+      const final;
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len,
                                          uint8_t *dst,
                                          size_t &dst_len) const noexcept final;

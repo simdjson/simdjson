@@ -21,8 +21,13 @@ namespace dom {
 // parser inline implementation
 //
 simdjson_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity},
-    loaded_bytes(nullptr) {
+  : parser{get_default_allocator(), max_capacity} {
+}
+simdjson_inline parser::parser(simdjson::allocator& alloc, size_t max_capacity) noexcept
+  : doc{alloc},
+    _allocator{&alloc},
+    _max_capacity{max_capacity},
+    loaded_bytes{} {
 }
 simdjson_inline parser::parser(parser &&other) noexcept = default;
 simdjson_inline parser &parser::operator=(parser &&other) noexcept = default;
@@ -72,17 +77,14 @@ inline simdjson_result<size_t> parser::read_file(std::string_view path) noexcept
   }
 #endif
 
-  // Make sure we have enough capacity to load the file
-  if (_loaded_bytes_capacity < size_t(len)) {
-    loaded_bytes.reset( internal::allocate_padded_buffer(len) );
-    if (!loaded_bytes) {
+  if (loaded_bytes.capacity() < size_t(len) + SIMDJSON_PADDING) {
+    error_code err = allocate_loaded_bytes(size_t(len));
+    if (err) {
       std::fclose(fp);
-      return MEMALLOC;
+      return err;
     }
-    _loaded_bytes_capacity = len;
   }
 
-  // Read the string
   std::rewind(fp);
   size_t bytes_read = std::fread(loaded_bytes.get(), 1, len, fp);
   if (std::fclose(fp) != 0 || bytes_read != size_t(len)) {
@@ -92,18 +94,31 @@ inline simdjson_result<size_t> parser::read_file(std::string_view path) noexcept
   return bytes_read;
 }
 
-inline simdjson_result<element> parser::load(std::string_view path) & noexcept {
+inline error_code parser::allocate_loaded_bytes(size_t len) {
+  const size_t padded_len = len + SIMDJSON_PADDING;
+  if (padded_len < len) { return MEMALLOC; }
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+  if (padded_len > (1UL << 20)) { return MEMALLOC; }
+#endif
+  auto new_bytes = internal::make_allocated_buffer<char>(padded_len, *_allocator);
+  if (!new_bytes) { return MEMALLOC; }
+  std::memset(new_bytes.get() + len, 0, SIMDJSON_PADDING);
+  loaded_bytes = std::move(new_bytes);
+  return SUCCESS;
+}
+
+inline simdjson_result<element> parser::load(std::string_view path) & {
   return load_into_document(doc, path);
 }
 
-inline simdjson_result<element> parser::load_into_document(document& provided_doc, std::string_view path) & noexcept {
+inline simdjson_result<element> parser::load_into_document(document& provided_doc, std::string_view path) & {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
   return parse_into_document(provided_doc, loaded_bytes.get(), len, false);
 }
 
-inline simdjson_result<document_stream> parser::load_many(std::string_view path, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::load_many(std::string_view path, size_t batch_size) {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
@@ -111,19 +126,14 @@ inline simdjson_result<document_stream> parser::load_many(std::string_view path,
   return document_stream(*this, reinterpret_cast<const uint8_t*>(loaded_bytes.get()), len, batch_size);
 }
 
-inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const uint8_t *buf, size_t len, bool realloc_if_needed) & {
   // Important: we need to ensure that document has enough capacity.
   // Important: It is possible that provided_doc is actually the internal 'doc' within the parser!!!
   error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
   if (realloc_if_needed) {
-    // Make sure we have enough capacity to copy len bytes
-    if (!loaded_bytes || _loaded_bytes_capacity < len) {
-      loaded_bytes.reset( internal::allocate_padded_buffer(len) );
-      if (!loaded_bytes) {
-        return MEMALLOC;
-      }
-      _loaded_bytes_capacity = len;
+    if (loaded_bytes.capacity() < len + SIMDJSON_PADDING) {
+      SIMDJSON_TRY(allocate_loaded_bytes(len));
     }
     std::memcpy(static_cast<void *>(loaded_bytes.get()), buf, len);
     buf = reinterpret_cast<const uint8_t*>(loaded_bytes.get());
@@ -141,31 +151,31 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
   return provided_doc.root();
 }
 
-simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const char *buf, size_t len, bool realloc_if_needed) & {
   return parse_into_document(provided_doc, reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
 }
-simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const std::string &s) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const std::string &s) & {
   return parse_into_document(provided_doc, s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const padded_string &s) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const padded_string &s) & {
   return parse_into_document(provided_doc, s.data(), s.length(), false);
 }
 
 
-inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & {
   return parse_into_document(doc, buf, len, realloc_if_needed);
 }
 
-simdjson_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & {
   return parse(reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
 }
-simdjson_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse(const std::string &s) & {
   return parse(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
 }
-simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) & {
   return parse(s.data(), s.length(), false);
 }
-simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
+simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & {
   return parse(v.data(), v.length(), false);
 }
 
@@ -235,15 +245,12 @@ simdjson_pure simdjson_inline size_t parser::max_depth() const noexcept {
 }
 
 simdjson_warn_unused
-inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
-  //
-  // Reallocate implementation if needed
-  //
+inline error_code parser::allocate(size_t capacity, size_t max_depth) {
   error_code err;
   if (implementation) {
     err = implementation->allocate(capacity, max_depth);
   } else {
-    err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation);
+    err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation, *_allocator);
   }
   if (err) { return err; }
   return SUCCESS;
@@ -251,17 +258,17 @@ inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
 simdjson_warn_unused
-inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) noexcept {
+inline bool parser::allocate_capacity(size_t capacity, size_t max_depth) {
   return !allocate(capacity, max_depth);
 }
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
 
-inline error_code parser::ensure_capacity(size_t desired_capacity) noexcept {
+inline error_code parser::ensure_capacity(size_t desired_capacity) {
   return ensure_capacity(doc, desired_capacity);
 }
 
 
-inline error_code parser::ensure_capacity(document& target_document, size_t desired_capacity) noexcept {
+inline error_code parser::ensure_capacity(document& target_document, size_t desired_capacity) {
   // 1. It is wasteful to allocate a document and a parser for documents spanning less than MINIMAL_DOCUMENT_CAPACITY bytes.
   // 2. If we allow desired_capacity = 0 then it is possible to exit this function with implementation == nullptr.
   if(desired_capacity < MINIMAL_DOCUMENT_CAPACITY) { desired_capacity = MINIMAL_DOCUMENT_CAPACITY; }
