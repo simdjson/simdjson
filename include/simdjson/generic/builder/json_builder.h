@@ -89,14 +89,18 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
+  // Coalesce the per-field separator+key+colon writes into a single
+  // append_raw, so each field does one capacity_check + one memcpy instead of
+  // three. The leading-comma variant is selected at runtime by the compile-time
+  // peeled `i` counter, which clang folds away after the template-for unroll.
   int i = 0;
   b.append('{');
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if (i != 0)
-      b.append(',');
-    constexpr auto key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
-    b.append_raw(key);
-    b.append(':');
+    constexpr auto first_key = std::define_static_string(
+        constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
+    constexpr auto rest_key = std::define_static_string(
+        std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
+    b.append_raw(i == 0 ? first_key : rest_key);
     atom(b, t.[:dm:]);
     i++;
   };
@@ -224,14 +228,15 @@ template <class Z>
            !std::is_same_v<Z, const char*> &&
            !std::is_same_v<Z, char> && !require_custom_serialization<Z>)
 void append(string_builder &b, const Z &z) {
+  // Same coalescing as the atom() overload above.
   int i = 0;
   b.append('{');
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^Z, std::meta::access_context::unchecked()))) {
-    if (i != 0)
-      b.append(',');
-    constexpr auto key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)));
-    b.append_raw(key);
-    b.append(':');
+    constexpr auto first_key = std::define_static_string(
+        constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
+    constexpr auto rest_key = std::define_static_string(
+        std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
+    b.append_raw(i == 0 ? first_key : rest_key);
     atom(b, z.[:dm:]);
     i++;
   };
@@ -304,15 +309,13 @@ void extract_from(string_builder &b, const T &obj) {
 
       // Only serialize this field if it's in our list of requested fields
       if constexpr (((FieldNames.view() == key) || ...)) {
-        if (!first) {
-          b.append(',');
-        }
+        // Same coalescing as the atom() / append() struct overloads.
+        static constexpr auto first_key = std::define_static_string(
+            constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)) + ":");
+        static constexpr auto rest_key = std::define_static_string(
+            std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)) + ":");
+        b.append_raw(first ? first_key : rest_key);
         first = false;
-
-        // Serialize the key
-        static constexpr auto quoted_key = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(mem)));
-        b.append_raw(quoted_key);
-        b.append(':');
 
         // Serialize the value
         atom(b, obj.[:mem:]);
