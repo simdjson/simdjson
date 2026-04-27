@@ -42,3 +42,14 @@ jobs:
           echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
           cd ../tests/installation_tests/find &&
           mkdir buildshared && cd buildshared && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../buildshared/destination .. &&  cmake --build .
+      - name: Use cmake (parsing for NaN/Infinity enabled)
+        run: |
+          mkdir build_nan_inf &&
+          cd build_nan_inf &&
+          cmake  -DSIMDJSON_ENABLE_NAN_INF=ON -DSIMDJSON_GOOGLE_BENCHMARKS=ON -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX:PATH=destination ..  &&
+          cmake --build .   &&
+          ctest --output-on-failure -LE explicitonly -j   &&
+          cmake --install . &&
+          echo -e '#include <simdjson.h>\nint main(int argc,char**argv) {simdjson::dom::parser parser;simdjson::dom::element tweets = parser.load(argv[1]); }' > tmp.cpp && c++ -Idestination/include -Ldestination/lib -std=c++17 -Wl,-rpath,destination/lib -o linkandrun tmp.cpp -lsimdjson && ./linkandrun jsonexamples/twitter.json &&
+          cd ../tests/installation_tests/find &&
+          mkdir build_nan_inf && cd build_nan_inf && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build_nan_inf/destination .. &&  cmake --build .

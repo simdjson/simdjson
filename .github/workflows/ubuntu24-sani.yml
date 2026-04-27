@@ -21,6 +21,13 @@ jobs:
           cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j
+      - name: Use cmake with address sanitizer (Parsing of NaN/Infinity enabled)
+        run: |
+          mkdir builddebug_nan_inf &&
+          cd builddebug_nan_inf &&
+          cmake -DSIMDJSON_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_ENABLE_NAN_INF=ON ..  &&
+          cmake --build .   &&
+          ctest --output-on-failure -LE explicitonly -j
   ubuntu-build-undefined-sanitizer:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
@@ -37,5 +44,12 @@ jobs:
           mkdir builddebugundefsani &&
           cd builddebugundefsani &&
           cmake -DSIMDJSON_SANITIZE_UNDEFINED=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF ..  &&
+          cmake --build .   &&
+          ctest --output-on-failure -LE explicitonly -j
+      - name: Use cmake with undefined sanitizer (Parsing of NaN/Infinity enabled)
+        run: |
+          mkdir builddebugundefsani_nan_inf &&
+          cd builddebugundefsani_nan_inf &&
+          cmake -DSIMDJSON_SANITIZE_UNDEFINED=ON -DCMAKE_BUILD_TYPE=Debug -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_DEVELOPER_MODE=ON -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_ENABLE_NAN_INF=ON ..  &&
           cmake --build .   &&
           ctest --output-on-failure -LE explicitonly -j

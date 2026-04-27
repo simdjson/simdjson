@@ -13,20 +13,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 17 2022, arch: Win32, shared: ON, build_type: Release, memory_map: OFF}
-          - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF, build_type: Release, memory_map: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release, memory_map: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: OFF}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: ON, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF, nan_inf: ON}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: ON}
           # Exercise the opt-in Windows memory-file mapping path at least once in CI.
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: OFF}
     steps:
     - name: checkout
       uses: actions/checkout@v4
     - name: Configure
       run: |
-        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=${{matrix.memory_map}} -B build
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=${{matrix.memory_map}} -DSIMDJSON_ENABLE_NAN_INF=${{matrix.nan_inf}} -B build
     - name: Build Debug
       run: cmake --build build --config ${{matrix.build_type}} --verbose
     - name: Run tests
