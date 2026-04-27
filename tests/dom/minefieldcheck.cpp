@@ -60,6 +60,26 @@ bool validate_minefield(const char *dirname) {
       char *fullpath = static_cast<char *>(malloc(fullpathlen));
       snprintf(fullpath, fullpathlen, "%s%s%s", dirname, needsep ? "/" : "", name);
 
+      // Skip any files that have invalid names
+      if (namelen < 2 || name[1] != '_') {
+        printf("warning: file %s should begin with 'y_', 'n_', or 'i_' (skipping)\n", name);
+        continue;
+      }
+
+      // Determines if the file should pass.
+      // 'y' for 'expected to pass', 'n' for 'expected to fail', 'i' for 'ignore'
+      char should_pass = name[0];
+
+#if SIMDJSON_ENABLE_NAN_INF
+      // If nan/infinity are enabled, these files should pass (rather than failing).
+      //
+      // Therefore, we mark them as 'should_pass'
+      bool is_nan_inf_test = contains("NaN", name) || contains("_Inf", name) || contains("_infinity", name);
+      if (is_nan_inf_test && should_pass == 'n') {
+        should_pass = 'y';
+      }
+#endif
+
       simdjson::padded_string p;
       auto error = simdjson::padded_string::load(fullpath).get(p);
       if (error) {
@@ -72,16 +92,16 @@ bool validate_minefield(const char *dirname) {
       auto errorcode = parser.parse(p).error();
       ++how_many;
       printf("%s\n", errorcode == simdjson::error_code::SUCCESS ? "ok" : "invalid");
-      if (starts_with("i_", name) ) {
+      if (should_pass == 'i') {
         // skipping
         how_many--;
-      } else if (starts_with("y_", name) && errorcode != simdjson::error_code::SUCCESS) {
+      } else if (should_pass == 'y' && errorcode != simdjson::error_code::SUCCESS) {
         is_file_as_expected[i] = false;
         printf("warning: file %s should pass but it fails. Error is: %s\n",
                name, simdjson::error_message(errorcode));
         printf("size of file in bytes: %zu \n", p.size());
         everything_fine = false;
-      } else if (starts_with("n_", name) && errorcode == simdjson::error_code::SUCCESS) {
+      } else if (should_pass == 'n' && errorcode == simdjson::error_code::SUCCESS) {
         is_file_as_expected[i] = false;
         printf("warning: file %s should fail but it passes.\n", name);
         printf("size of file in bytes: %zu \n", p.size());
