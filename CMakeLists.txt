@@ -254,6 +254,12 @@ if(SIMDJSON_MINUS_ZERO_AS_FLOAT)
   simdjson_add_props(target_compile_definitions PRIVATE SIMDJSON_MINUS_ZERO_AS_FLOAT=1)
 endif(SIMDJSON_MINUS_ZERO_AS_FLOAT)
 
+option(SIMDJSON_ENABLE_NAN_INF "Allow parsing of NaN and Infinity JSON values" OFF)
+if(SIMDJSON_ENABLE_NAN_INF)
+  message(STATUS "simdjson NaN and Infinity parsing is enabled.")
+  simdjson_add_props(target_compile_definitions PUBLIC SIMDJSON_ENABLE_NAN_INF=1)
+endif()
+
 # GCC and Clang have horrendous Debug builds when using SIMD.
 # A common fix is to use '-Og' instead.
 # bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412

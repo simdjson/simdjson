@@ -30,6 +30,10 @@ double from_chars(const char *first, const char* end) noexcept;
 #endif
 #endif
 
+#ifndef SIMDJSON_ENABLE_NAN_INF
+#define SIMDJSON_ENABLE_NAN_INF 0
+#endif
+
 } // namespace simdjson
 
 #if defined(__GNUC__)
