@@ -291,7 +291,20 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_root_primit
     case '"': return visitor.visit_root_string(*this, value);
     case 't': return visitor.visit_root_true_atom(*this, value);
     case 'f': return visitor.visit_root_false_atom(*this, value);
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'n': {
+      auto err = visitor.visit_root_null_atom(*this, value);
+      if (err == SUCCESS) { return err; }
+      // propagate the error value returned by a bad 'null' atom if parsing 'nan' fails
+      return visitor.visit_root_nan_atom(*this, value, err);
+    }
+    // 'N' isn't a canonically recognized atom, so we return a TAPE_ERROR if failure occurs
+    case 'N': return visitor.visit_root_nan_atom(*this, value, TAPE_ERROR);
+    case 'i':
+    case 'I': return visitor.visit_root_inf_atom(*this, value);
+#else
     case 'n': return visitor.visit_root_null_atom(*this, value);
+#endif
     case '-':
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
@@ -313,7 +326,20 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
   switch (*value) {
     case 't': return visitor.visit_true_atom(*this, value);
     case 'f': return visitor.visit_false_atom(*this, value);
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'n': {
+      auto err = visitor.visit_null_atom(*this, value);
+      if (err == SUCCESS) { return err; }
+      // propagate the error value returned by a bad 'null' atom if parsing 'nan' fails
+      return visitor.visit_nan_atom(*this, value, err);
+    }
+    // 'N' isn't a canonically recognized atom, so we return a TAPE_ERROR if failure occurs
+    case 'N': return visitor.visit_nan_atom(*this, value, TAPE_ERROR);
+    case 'i':
+    case 'I': return visitor.visit_inf_atom(*this, value);
+#else
     case 'n': return visitor.visit_null_atom(*this, value);
+#endif
     default:
       log_error("Non-value found when value was expected!");
       return TAPE_ERROR;

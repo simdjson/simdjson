@@ -4,6 +4,7 @@
 #define SIMDJSON_GENERIC_NUMBERPARSING_H
 #include "simdjson/generic/base.h"
 #include "simdjson/generic/jsoncharutils.h"
+#include "simdjson/generic/atomparsing.h"
 #include "simdjson/internal/numberparsing_tables.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -298,6 +299,24 @@ simdjson_inline bool compute_float_64(int64_t power, uint64_t i, bool negative, 
   d = to_double(mantissa, real_exponent, negative);
   return true;
 }
+
+#if SIMDJSON_ENABLE_NAN_INF
+// Parses a nan or infinity. Returns true on success, false on failure.
+simdjson_unused simdjson_inline bool compute_nan_inf(const uint8_t* src, bool negative, double& d) noexcept {
+  if (atomparsing::is_valid_inf_atom(src)) {
+    double inf = std::numeric_limits<double>::infinity();
+    d = negative ? -inf : inf;
+    return true;
+  }
+
+  if (atomparsing::is_valid_nan_atom(src)) {
+    d = std::numeric_limits<double>::quiet_NaN();
+    return true;
+  }
+
+  return false;
+}
+#endif
 
 // We call a fallback floating-point parser that might be slow. Note
 // it will accept JSON numbers, but the JSON spec. is more restrictive so
@@ -600,7 +619,21 @@ simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *cons
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
   size_t digit_count = size_t(p - start_digits);
-  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) { return INVALID_NUMBER(src); }
+  if (digit_count == 0 || ('0' == *start_digits && digit_count > 1)) {
+
+#if SIMDJSON_ENABLE_NAN_INF
+    // By this point, we know that our input does not begin with a digit. We will attempt
+    // to handle NaN/Infinity.
+
+    double d;
+    if (compute_nan_inf(p, negative, d)) {
+      writer.append_double(d);
+      return SUCCESS;
+    }
+#endif
+
+    return INVALID_NUMBER(src);
+  }
 
   //
   // Handle floats if there is a . or e (or both)
@@ -1031,7 +1064,17 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
+  if ( p == src ) {
+
+#if SIMDJSON_ENABLE_NAN_INF
+    // If there are no loading digits, the number may be nan or infinity.
+    // Attempt to compute those, and return on success.
+    double d;
+    if (compute_nan_inf(p, negative, d)) { return d; }
+#endif
+
+    return INCORRECT_TYPE;
+  }
   if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //
@@ -1249,7 +1292,22 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   bool leading_zero = (i == 0);
   while (parse_digit(*p, i)) { p++; }
   // no integer digits, or 0123 (zero must be solo)
-  if ( p == src ) { return INCORRECT_TYPE; }
+  if ( p == src ) {
+#if SIMDJSON_ENABLE_NAN_INF
+    // If there are no leading digits, attempt to parse numbers that are either
+    // NaN or Infinity
+    if (atomparsing::is_valid_inf_in_string(src)) {
+      double inf = std::numeric_limits<double>::infinity();
+      return negative ? -inf : inf;
+    }
+
+    if (atomparsing::is_valid_nan_in_string(src)) {
+      return std::numeric_limits<double>::quiet_NaN();
+    }
+#endif
+
+    return INCORRECT_TYPE;
+  }
   if ( (leading_zero && p != src+1)) { return NUMBER_ERROR; }
 
   //

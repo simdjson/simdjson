@@ -76,6 +76,15 @@ struct tape_builder {
   simdjson_warn_unused simdjson_inline error_code visit_root_false_atom(json_iterator &iter, const uint8_t *value) noexcept;
   simdjson_warn_unused simdjson_inline error_code visit_root_null_atom(json_iterator &iter, const uint8_t *value) noexcept;
 
+#if SIMDJSON_ENABLE_NAN_INF
+  simdjson_warn_unused simdjson_inline error_code visit_nan_atom(json_iterator &iter, const uint8_t *value, error_code errc) noexcept;
+  simdjson_warn_unused simdjson_inline error_code visit_root_nan_atom(json_iterator &iter, const uint8_t *value, error_code errc) noexcept;
+  // Attempts to parse 'inf' or 'infinity' (case insensitive). Because neither are canonical atoms,
+  // this returns a tape error on failure.
+  simdjson_warn_unused simdjson_inline error_code visit_inf_atom(json_iterator &iter, const uint8_t *value) noexcept;
+  simdjson_warn_unused simdjson_inline error_code visit_root_inf_atom(json_iterator &iter, const uint8_t *value) noexcept;
+#endif
+
   /** Called each time a new field or element in an array or object is found. */
   simdjson_warn_unused simdjson_inline error_code increment_count(json_iterator &iter) noexcept;
 
@@ -254,6 +263,38 @@ simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_null_at
   tape.append(0, internal::tape_type::NULL_VALUE);
   return SUCCESS;
 }
+
+#if SIMDJSON_ENABLE_NAN_INF
+simdjson_warn_unused simdjson_inline error_code tape_builder::visit_nan_atom(json_iterator &iter, const uint8_t *value, error_code errc) noexcept {
+  iter.log_value("nan");
+  if (!atomparsing::is_valid_nan_atom(value)) { return errc; }
+  tape.append_double(std::numeric_limits<double>::quiet_NaN());
+  return SUCCESS;
+}
+
+simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_nan_atom(json_iterator &iter, const uint8_t *value, error_code errc) noexcept {
+  iter.log_value("nan");
+  if (!atomparsing::is_valid_nan_atom(value, iter.remaining_len())) { return errc; }
+  tape.append_double(std::numeric_limits<double>::quiet_NaN());
+  return SUCCESS;
+}
+
+simdjson_warn_unused simdjson_inline error_code tape_builder::visit_inf_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("inf");
+  // Because 'inf' is an extension, non a canonical atom, a tape error should be returned on failure
+  if (!atomparsing::is_valid_inf_atom(value)) { return TAPE_ERROR; }
+  tape.append_double(std::numeric_limits<double>::infinity());
+  return SUCCESS;
+}
+
+simdjson_warn_unused simdjson_inline error_code tape_builder::visit_root_inf_atom(json_iterator &iter, const uint8_t *value) noexcept {
+  iter.log_value("inf");
+  // Because 'inf' is an extension, non a canonical atom, a tape error should be returned on failure
+  if (!atomparsing::is_valid_inf_atom(value, iter.remaining_len())) { return TAPE_ERROR; }
+  tape.append_double(std::numeric_limits<double>::infinity());
+  return SUCCESS;
+}
+#endif // SIMDJSON_ENABLE_NAN_INF
 
 // private:
 
