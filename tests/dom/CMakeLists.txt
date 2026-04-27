@@ -13,6 +13,7 @@ add_cpp_test(errortests                 LABELS dom acceptance per_implementation
 add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation)
 add_cpp_test(integer_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(big_integer_tests          LABELS dom acceptance per_implementation)
+add_cpp_test(nan_inf_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
 add_cpp_test(json_path_tests            LABELS dom acceptance per_implementation)
 add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)

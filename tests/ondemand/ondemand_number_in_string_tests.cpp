@@ -1,5 +1,6 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
+#include <limits>
 #include <string>
 
 using namespace simdjson;
@@ -335,7 +336,12 @@ namespace number_in_string_tests {
         double d;
         std::string_view view;
         ASSERT_SUCCESS(doc.find_field("ticker").find_field("change").get(value));
+#if SIMDJSON_ENABLE_NAN_INF
+        ASSERT_SUCCESS(value.get_double_in_string().get(d));
+        ASSERT_EQUAL(d, std::numeric_limits<double>::infinity());
+#else
         ASSERT_ERROR(value.get_double_in_string().get(d), INCORRECT_TYPE);
+#endif
         ASSERT_SUCCESS(value.get_string().get(view));
         ASSERT_EQUAL(view,"Infinity");
         TEST_SUCCEED();
