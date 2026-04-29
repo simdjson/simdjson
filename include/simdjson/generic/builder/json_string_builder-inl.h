@@ -534,6 +534,10 @@ simdjson_inline size_t string_builder::size() const noexcept {
   return position;
 }
 
+simdjson_inline bool string_builder::reserve(size_t upcoming_bytes) noexcept {
+  return capacity_check(upcoming_bytes);
+}
+
 simdjson_inline void string_builder::append(char c) noexcept {
   if (capacity_check(1)) {
     buffer.get()[position++] = c;
@@ -637,6 +641,36 @@ static const char decimal_table[200] = {
     0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
 };
 } // namespace internal
+
+template <typename UInt>
+simdjson_inline void string_builder::unsafe_append_uint(UInt v) noexcept {
+  static_assert(std::is_unsigned_v<UInt>, "unsafe_append_uint requires unsigned");
+  // Same 4-digit-batched algorithm as the checked path in append, but skips
+  // capacity_check. Caller must have reserved at least 20 bytes.
+  size_t dc = internal::digit_count(v);
+  char *write_pointer = buffer.get() + position + dc - 1;
+  while (v >= 10000) {
+    UInt q = v / 10000;
+    UInt r = v % 10000;
+    UInt r_hi = r / 100;
+    UInt r_lo = r % 100;
+    std::memcpy(write_pointer - 1, &internal::decimal_table[r_lo * 2], 2);
+    std::memcpy(write_pointer - 3, &internal::decimal_table[r_hi * 2], 2);
+    write_pointer -= 4;
+    v = q;
+  }
+  while (v >= 100) {
+    std::memcpy(write_pointer - 1, &internal::decimal_table[(v % 100) * 2], 2);
+    write_pointer -= 2;
+    v /= 100;
+  }
+  if (v >= 10) {
+    *write_pointer-- = char('0' + (v % 10));
+    v /= 10;
+  }
+  *write_pointer = char('0' + v);
+  position += dc;
+}
 
 template <typename number_type, typename>
 simdjson_inline void string_builder::append(number_type v) noexcept {

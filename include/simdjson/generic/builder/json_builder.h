@@ -89,22 +89,71 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
 constexpr void atom(string_builder &b, const T &t) {
-  // Coalesce the per-field separator+key+colon writes into a single
-  // append_raw, so each field does one capacity_check + one memcpy instead of
-  // three. The leading-comma variant is selected at runtime by the compile-time
-  // peeled `i` counter, which clang folds away after the template-for unroll.
+  // Hoist the write position into a local register for each run of fixed
+  // bytes (separator, key, colon, brace, and arithmetic field values). The
+  // position is synced back to the builder before any call that may grow the
+  // buffer, and reloaded after, so unsafe writes between syncs avoid the
+  // per-call capacity_check + memory traffic that string_builder member
+  // access would otherwise impose.
+  if (!b.reserve(1)) { return; }
+  char *buf = b.unsafe_data();
+  size_t pos = b.unsafe_position();
+  buf[pos++] = '{';
   int i = 0;
-  b.append('{');
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    // The two key forms (with and without leading comma) are precomputed at
+    // consteval, then their lengths are kept as separate constants so that
+    // the runtime memcpy uses an explicit known size rather than strlen.
     constexpr auto first_key = std::define_static_string(
         constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
     constexpr auto rest_key = std::define_static_string(
         std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
-    b.append_raw(i == 0 ? first_key : rest_key);
-    atom(b, t.[:dm:]);
+    constexpr size_t quoted_size =
+        constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)).size();
+    constexpr size_t first_key_len = quoted_size + 1;            // "key":
+    constexpr size_t rest_key_len = quoted_size + 2;             // ,"key":
+    using FieldT = [: std::meta::type_of(dm) :];
+    constexpr bool is_unsigned_int_field =
+        std::is_unsigned_v<FieldT> && !std::is_same_v<FieldT, bool> &&
+        !std::is_same_v<FieldT, char>;
+    constexpr size_t max_value_size =
+        is_unsigned_int_field ? string_builder::MAX_UINT64_DIGITS : 0;
+    // Reserve enough for the key plus (for arithmetic fields) the value. If
+    // reserve grew the buffer the local `buf` pointer is stale and must be
+    // refetched.
+    b.unsafe_position() = pos;
+    if (!b.reserve(rest_key_len + max_value_size)) { return; }
+    buf = b.unsafe_data();
+    pos = b.unsafe_position();
+    if (i == 0) {
+      std::memcpy(buf + pos, first_key, first_key_len);
+      pos += first_key_len;
+    } else {
+      std::memcpy(buf + pos, rest_key, rest_key_len);
+      pos += rest_key_len;
+    }
+    if constexpr (is_unsigned_int_field) {
+      // Capacity for the value was reserved above; just sync, write, reload.
+      b.unsafe_position() = pos;
+      b.unsafe_append_uint(t.[:dm:]);
+      pos = b.unsafe_position();
+    } else {
+      // The inner atom() may grow the buffer, invalidating both `buf` and
+      // any remaining unwritten reservation. Sync, recurse, reload.
+      b.unsafe_position() = pos;
+      atom(b, t.[:dm:]);
+      buf = b.unsafe_data();
+      pos = b.unsafe_position();
+    }
     i++;
   };
-  b.append('}');
+  // Closing brace.
+  b.unsafe_position() = pos;
+  if (!b.reserve(1)) { return; }
+  buf = b.unsafe_data();
+  pos = b.unsafe_position();
+  buf[pos++] = '}';
+  b.unsafe_position() = pos;
 }
 
 // Support for optional types (std::optional, etc.)

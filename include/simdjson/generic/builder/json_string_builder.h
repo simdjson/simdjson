@@ -236,6 +236,43 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    */
   simdjson_inline size_t size() const noexcept;
 
+  /**
+   * Reserve at least `upcoming_bytes` of capacity, growing the buffer if
+   * needed. Returns true on success. After this returns true, callers may use
+   * the `unsafe_*` helpers below to write up to `upcoming_bytes` bytes without
+   * further bounds checking. Calling any other method that may grow the
+   * buffer (anything not prefixed `unsafe_`) invalidates the reservation, so
+   * the caller must re-reserve before continuing with unsafe writes.
+   */
+  simdjson_inline bool reserve(size_t upcoming_bytes) noexcept;
+
+  /**
+   * Pointer to the underlying buffer. Valid until the next call that may
+   * grow the buffer (capacity_check, append, append_raw, ...). The reflection
+   * serializer holds this in a local register across runs of fixed-byte
+   * writes to amortize the OOP method-call overhead.
+   */
+  simdjson_inline char *unsafe_data() noexcept { return buffer.get(); }
+
+  /**
+   * Reference to the current write offset. Allows the caller to update the
+   * position after a sequence of unsafe writes done through `unsafe_data()`.
+   */
+  simdjson_inline size_t &unsafe_position() noexcept { return position; }
+
+  /**
+   * Write `v` as decimal ASCII at the current position. The caller must have
+   * reserved at least `MAX_UINT64_DIGITS` bytes of capacity.
+   */
+  template <typename UInt>
+  simdjson_inline void unsafe_append_uint(UInt v) noexcept;
+
+  /**
+   * The maximum number of decimal digits a uint64_t can occupy. Used as the
+   * worst-case reservation size before a call to `unsafe_append_uint`.
+   */
+  static constexpr size_t MAX_UINT64_DIGITS = 20;
+
 private:
   /**
    * Returns true if we can write at least upcoming_bytes bytes.
