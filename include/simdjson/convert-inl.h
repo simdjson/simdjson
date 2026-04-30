@@ -19,6 +19,12 @@ inline auto_parser<parser_type>::auto_parser(parser_type &&parser, padded_string
 }
 
 template <typename parser_type>
+inline auto_parser<parser_type>::auto_parser(parser_type &&parser, padded_string &&str) noexcept requires(!std::is_pointer_v<parser_type>)
+  : m_parser{std::move(parser)}, m_owned_input{std::move(str)}, m_doc{}, m_error{SUCCESS} {
+  m_error = m_parser.iterate(m_owned_input).get(m_doc);
+}
+
+template <typename parser_type>
 inline auto_parser<parser_type>::auto_parser(std::remove_pointer_t<parser_type> &parser, ondemand::document &&doc) noexcept requires(std::is_pointer_v<parser_type>)
   : m_parser{&parser}, m_doc{std::move(doc)} {}
 
@@ -29,8 +35,18 @@ inline auto_parser<parser_type>::auto_parser(std::remove_pointer_t<parser_type> 
 }
 
 template <typename parser_type>
+inline auto_parser<parser_type>::auto_parser(std::remove_pointer_t<parser_type> &parser, padded_string &&str) noexcept requires(std::is_pointer_v<parser_type>)
+  : m_parser{&parser}, m_owned_input{std::move(str)}, m_doc{}, m_error{SUCCESS} {
+  m_error = m_parser->iterate(m_owned_input).get(m_doc);
+}
+
+template <typename parser_type>
 inline auto_parser<parser_type>::auto_parser(padded_string_view const str) noexcept requires(std::is_pointer_v<parser_type>)
   : auto_parser{ondemand::parser::get_parser(), str} {}
+
+template <typename parser_type>
+inline auto_parser<parser_type>::auto_parser(padded_string &&str) noexcept requires(std::is_pointer_v<parser_type>)
+  : auto_parser{ondemand::parser::get_parser(), std::move(str)} {}
 
 template <typename parser_type>
 inline auto_parser<parser_type>::auto_parser(parser_type parser, ondemand::document &&doc) noexcept requires(std::is_pointer_v<parser_type>)
@@ -115,18 +131,28 @@ inline auto to_adaptor<T>::operator()(padded_string_view const str) const noexce
 }
 
 template <typename T>
+inline auto to_adaptor<T>::operator()(padded_string &&str) const noexcept {
+  return auto_parser<ondemand::parser *>{std::move(str)};
+}
+
+template <typename T>
 inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_view const str) const noexcept {
   return auto_parser<ondemand::parser *>{parser, str};
 }
 
 template <typename T>
+inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string &&str) const noexcept {
+  return auto_parser<ondemand::parser *>{parser, std::move(str)};
+}
+
+template <typename T>
 inline auto to_adaptor<T>::operator()(std::string str) const noexcept {
-  return auto_parser<ondemand::parser *>{pad_with_reserve(str)};
+  return auto_parser<ondemand::parser *>{padded_string(std::string_view(str))};
 }
 
 template <typename T>
 inline auto to_adaptor<T>::operator()(ondemand::parser &parser, std::string str) const noexcept {
-  return auto_parser<ondemand::parser *>{parser, pad_with_reserve(str)};
+  return auto_parser<ondemand::parser *>{parser, padded_string(std::string_view(str))};
 }
 } // namespace internal
 } // namespace convert

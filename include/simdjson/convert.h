@@ -3,6 +3,7 @@
 #define SIMDJSON_CONVERT_H
 
 #include "simdjson/ondemand.h"
+#include "simdjson/padded_string.h"
 #include <optional>
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
@@ -22,6 +23,7 @@ template <typename parser_type = ondemand::parser*>
 struct auto_parser {
 private:
 	parser_type m_parser;
+	padded_string m_owned_input{};
 	ondemand::document m_doc;
 	error_code m_error{SUCCESS};
 
@@ -32,9 +34,12 @@ private:
 public:
 	explicit auto_parser(parser_type &&parser, ondemand::document &&doc) noexcept requires(!std::is_pointer_v<parser_type>);
 	explicit auto_parser(parser_type &&parser, padded_string_view const str) noexcept requires(!std::is_pointer_v<parser_type>);
+	explicit auto_parser(parser_type &&parser, padded_string &&str) noexcept requires(!std::is_pointer_v<parser_type>);
 	explicit auto_parser(std::remove_pointer_t<parser_type> &parser, ondemand::document &&doc) noexcept requires(std::is_pointer_v<parser_type>);
 	explicit auto_parser(std::remove_pointer_t<parser_type> &parser, padded_string_view const str) noexcept requires(std::is_pointer_v<parser_type>);
+	explicit auto_parser(std::remove_pointer_t<parser_type> &parser, padded_string &&str) noexcept requires(std::is_pointer_v<parser_type>);
 	explicit auto_parser(padded_string_view const str) noexcept requires(std::is_pointer_v<parser_type>);
+	explicit auto_parser(padded_string &&str) noexcept requires(std::is_pointer_v<parser_type>);
 	explicit auto_parser(parser_type parser, ondemand::document &&doc) noexcept requires(std::is_pointer_v<parser_type>);
 		auto_parser(auto_parser const &) = delete;
 		auto_parser &operator=(auto_parser const &) = delete;
@@ -74,7 +79,9 @@ template <typename T = void>
 struct to_adaptor {
 	T operator()(simdjson_result<ondemand::value> &val) const noexcept;
 	auto operator()(padded_string_view const str) const noexcept;
+	auto operator()(padded_string &&str) const noexcept;
 	auto operator()(ondemand::parser &parser, padded_string_view const str) const noexcept;
+	auto operator()(ondemand::parser &parser, padded_string &&str) const noexcept;
 	// The std::string is padded with reserve to ensure there is enough space for padding.
 	// Some sanitizers may not like this, so you can use simdjson::pad instead.
 	// simdjson::from(simdjson::pad(str))

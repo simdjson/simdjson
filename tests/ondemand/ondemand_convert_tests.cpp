@@ -140,6 +140,82 @@ simdjson::padded_string json_cars =
     }
     TEST_SUCCEED();
   }
+
+  std::string make_large_car_json() {
+    std::string make(4096, 'T');
+    return R"({"make":")" + make + R"(","model":"Camry","year":2018,"tire_pressure":[40.1,39.9]})";
+  }
+
+  bool from_std_string_keeps_input_alive() {
+    TEST_START();
+    std::string json = make_large_car_json();
+    const size_t json_size = json.size();
+    auto parser = simdjson::from(std::move(json));
+
+    // Reuse recently freed heap blocks before consuming the auto_parser.
+    std::vector<std::string> heap_churn;
+    heap_churn.reserve(256);
+    for (size_t i = 0; i < 256; i++) {
+      heap_churn.emplace_back(json_size + (i % simdjson::SIMDJSON_PADDING), 'x');
+    }
+
+    Car car;
+    ASSERT_SUCCESS(std::move(parser).get(car));
+    ASSERT_EQUAL(car.make, std::string(4096, 'T'));
+    ASSERT_EQUAL(car.model, "Camry");
+    ASSERT_EQUAL(car.year, 2018);
+    TEST_SUCCEED();
+  }
+
+  bool from_std_string_with_parser_keeps_input_alive() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    std::string json = make_large_car_json();
+    const size_t json_size = json.size();
+    auto auto_parser = simdjson::from(parser, std::move(json));
+
+    std::vector<std::string> heap_churn;
+    heap_churn.reserve(256);
+    for (size_t i = 0; i < 256; i++) {
+      heap_churn.emplace_back(json_size + (i % simdjson::SIMDJSON_PADDING), 'x');
+    }
+
+    Car car;
+    ASSERT_SUCCESS(std::move(auto_parser).get(car));
+    ASSERT_EQUAL(car.make, std::string(4096, 'T'));
+    ASSERT_EQUAL(car.model, "Camry");
+    ASSERT_EQUAL(car.year, 2018);
+    TEST_SUCCEED();
+  }
+
+  bool from_padded_string_moves_input() {
+    TEST_START();
+    simdjson::padded_string json(make_large_car_json());
+    auto auto_parser = simdjson::from(std::move(json));
+    ASSERT_EQUAL(json.size(), 0);
+
+    Car car;
+    ASSERT_SUCCESS(std::move(auto_parser).get(car));
+    ASSERT_EQUAL(car.make, std::string(4096, 'T'));
+    ASSERT_EQUAL(car.model, "Camry");
+    ASSERT_EQUAL(car.year, 2018);
+    TEST_SUCCEED();
+  }
+
+  bool from_padded_string_with_parser_moves_input() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string json(make_large_car_json());
+    auto auto_parser = simdjson::from(parser, std::move(json));
+    ASSERT_EQUAL(json.size(), 0);
+
+    Car car;
+    ASSERT_SUCCESS(std::move(auto_parser).get(car));
+    ASSERT_EQUAL(car.make, std::string(4096, 'T'));
+    ASSERT_EQUAL(car.model, "Camry");
+    ASSERT_EQUAL(car.year, 2018);
+    TEST_SUCCEED();
+  }
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 
@@ -501,7 +577,10 @@ bool run() {
       missing_key_optional_player() && missing_key_player() && meeting_time_test() && meeting_test() && bad_player() && good_player() && complicated_weather_test() &&
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
-      simple_no_except() &&
+      simple_no_except() && from_std_string_keeps_input_alive() &&
+      from_std_string_with_parser_keeps_input_alive() &&
+      from_padded_string_moves_input() &&
+      from_padded_string_with_parser_moves_input() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
