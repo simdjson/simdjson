@@ -37,9 +37,6 @@ inline auto_parser<parser_type>::auto_parser(parser_type parser, ondemand::docum
   : auto_parser{*parser, std::move(doc)} {}
 
 
-
-
-
 template <typename parser_type>
 inline std::remove_pointer_t<parser_type> &auto_parser<parser_type>::parser() noexcept {
   if constexpr (std::is_pointer_v<parser_type>) {
@@ -117,16 +114,6 @@ inline auto to_adaptor<T>::operator()(padded_string_view const str) const noexce
 template <typename T>
 inline auto to_adaptor<T>::operator()(ondemand::parser &parser, padded_string_view const str) const noexcept {
   return auto_parser<ondemand::parser *>{parser, str};
-}
-
-template <typename T>
-inline auto to_adaptor<T>::operator()(std::string str) const noexcept {
-  return auto_parser<ondemand::parser *>{pad_with_reserve(str)};
-}
-
-template <typename T>
-inline auto to_adaptor<T>::operator()(ondemand::parser &parser, std::string str) const noexcept {
-  return auto_parser<ondemand::parser *>{parser, pad_with_reserve(str)};
 }
 } // namespace internal
 } // namespace convert

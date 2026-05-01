@@ -1602,6 +1602,10 @@ type without a document instance like so:
 Car car = simdjson::from(json);
 ```
 
+The string must be a `simdjson::padded_string_view`, which can be created from an std::string
+instance with `simdjson::pad()` function, from a `simdjson::padded_string` instance, or string literal using the `_padded`  user-defined literal.
+
+
 You can also use the `simdjson::from` syntax without exceptions, like so:
 ```cpp
 Car car;

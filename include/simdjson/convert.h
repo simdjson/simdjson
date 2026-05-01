@@ -36,12 +36,12 @@ public:
 	explicit auto_parser(std::remove_pointer_t<parser_type> &parser, padded_string_view const str) noexcept requires(std::is_pointer_v<parser_type>);
 	explicit auto_parser(padded_string_view const str) noexcept requires(std::is_pointer_v<parser_type>);
 	explicit auto_parser(parser_type parser, ondemand::document &&doc) noexcept requires(std::is_pointer_v<parser_type>);
-		auto_parser(auto_parser const &) = delete;
-		auto_parser &operator=(auto_parser const &) = delete;
-		auto_parser(auto_parser &&) noexcept = default;
-		auto_parser &operator=(auto_parser &&) noexcept = default;
-		~auto_parser() = default;
-
+	auto_parser(auto_parser const &) = delete;
+	auto_parser &operator=(auto_parser const &) = delete;
+	~auto_parser() = default;
+    // Prevent moving
+    auto_parser(auto_parser&&) = delete;
+	auto_parser &operator=(auto_parser &&) noexcept = delete;
 	simdjson_warn_unused std::remove_pointer_t<parser_type> &parser() noexcept;
 
 	template <typename T>
@@ -75,11 +75,6 @@ struct to_adaptor {
 	T operator()(simdjson_result<ondemand::value> &val) const noexcept;
 	auto operator()(padded_string_view const str) const noexcept;
 	auto operator()(ondemand::parser &parser, padded_string_view const str) const noexcept;
-	// The std::string is padded with reserve to ensure there is enough space for padding.
-	// Some sanitizers may not like this, so you can use simdjson::pad instead.
-	// simdjson::from(simdjson::pad(str))
-	auto operator()(std::string str) const noexcept;
-	auto operator()(ondemand::parser &parser, std::string str) const noexcept;
 };
 // deduction guide
 auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
@@ -90,7 +85,12 @@ auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
  * The simdjson::from instance is EXPERIMENTAL AND SUBJECT TO CHANGES.
  *
  * The `from` instance is a utility adaptor for parsing JSON strings into objects.
- * It provides a convenient way to convert JSON data into C++ objects using the `auto_parser`.
+ *
+ * The string must be a simdjson::padded_string_view, which can be created from a std::string
+ * with simdjson::pad(), from a simdjson::padded_string, or string literal using the `_padded`
+ * user-defined literal.
+ *
+ * The `from` instance provides a convenient way to convert JSON data into C++ objects using the `auto_parser`.
  *
  * Example usage:
  *
