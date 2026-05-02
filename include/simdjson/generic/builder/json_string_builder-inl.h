@@ -644,7 +644,7 @@ static const char decimal_table[200] = {
 
 template <typename UInt>
 simdjson_inline void string_builder::unsafe_append_uint(UInt v) noexcept {
-  static_assert(std::is_unsigned_v<UInt>, "unsafe_append_uint requires unsigned");
+  static_assert(std::is_unsigned<UInt>::value, "unsafe_append_uint requires unsigned");
   // Same 4-digit-batched algorithm as the checked path in append, but skips
   // capacity_check. Caller must have reserved at least 20 bytes.
   size_t dc = internal::digit_count(v);
