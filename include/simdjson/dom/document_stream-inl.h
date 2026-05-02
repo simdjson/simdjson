@@ -234,7 +234,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
     // cannot legally appear in a JSON value at the source level (control
     // characters in strings must be escaped as \u001E), so stripping it is
     // safe in every stream_format.
-    while(svlen > 1 && (std::isspace(static_cast<unsigned char>(start[svlen-1])) || start[svlen-1] == '\0' || static_cast<uint8_t>(start[svlen-1]) == 0x1E)) {
+    while(svlen > 1 && (std::isspace(static_cast<unsigned char>(start[svlen-1])) || start[svlen-1] == '\0' || static_cast<uint8_t>(start[svlen-1]) == 0x1E || (stream->format == stream_format::comma_delimited && start[svlen-1] == ','))) {
       svlen--;
     }
     return std::string_view(start, svlen);

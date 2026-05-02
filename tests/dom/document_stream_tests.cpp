@@ -1771,41 +1771,36 @@ namespace document_stream_tests {
       // Note on source(): the comma_delimited filter strips root-level
       // commas from structural_indexes but the bytes remain in the buffer.
       // source() for a scalar slices [current_index, next_doc_index) and
-      // strips trailing whitespace, so it currently includes the trailing
-      // separator comma (e.g. doc 0 source = "1,"). This is the analogous
-      // bug to the json_sequence RS-trailing source bug. The assertions
-      // below lock down current_index() and parsed values strictly, and
-      // accept source() either with or without a single trailing comma.
+      // strips trailing whitespace; trailing delimiter is stripped for
+      // consistency with json_sequence. The assertions below lock down
+      // current_index() and parsed values strictly, and source() returns the
+      // JSON value without trailing delimiter.
       auto input = R"(1,2,"x",true,null)"_padded;
       ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::comma_delimited).get(stream));
       auto it = stream.begin();
 
-      auto src_matches = [](std::string_view src, std::string_view want) {
-        return src == want || src == std::string(want) + ",";
-      };
-
       // doc 0: 1
       ASSERT_EQUAL(it.current_index(), size_t(0));
       int64_t i1; ASSERT_SUCCESS((*it).get(i1)); ASSERT_EQUAL(i1, int64_t(1));
-      ASSERT_TRUE(src_matches(it.source(), "1"));
+      ASSERT_EQUAL(it.source(), std::string_view("1"));
       ++it;
 
       // doc 1: 2
       ASSERT_EQUAL(it.current_index(), size_t(2));
       int64_t i2; ASSERT_SUCCESS((*it).get(i2)); ASSERT_EQUAL(i2, int64_t(2));
-      ASSERT_TRUE(src_matches(it.source(), "2"));
+      ASSERT_EQUAL(it.source(), std::string_view("2"));
       ++it;
 
       // doc 2: "x"
       ASSERT_EQUAL(it.current_index(), size_t(4));
       std::string_view sv; ASSERT_SUCCESS((*it).get(sv)); ASSERT_EQUAL(sv, std::string_view("x"));
-      ASSERT_TRUE(src_matches(it.source(), "\"x\""));
+      ASSERT_EQUAL(it.source(), std::string_view("\"x\""));
       ++it;
 
       // doc 3: true
       ASSERT_EQUAL(it.current_index(), size_t(8));
       bool b{}; ASSERT_SUCCESS((*it).get(b)); ASSERT_TRUE(b);
-      ASSERT_TRUE(src_matches(it.source(), "true"));
+      ASSERT_EQUAL(it.source(), std::string_view("true"));
       ++it;
 
       // doc 4: null (last doc, no trailing comma in source either way)
