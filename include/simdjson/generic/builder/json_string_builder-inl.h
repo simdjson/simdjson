@@ -561,62 +561,6 @@ simdjson_inline void string_builder::clear() noexcept {
 
 namespace internal {
 
-template <typename number_type, typename = typename std::enable_if<
-                                    std::is_unsigned<number_type>::value>::type>
-simdjson_really_inline int int_log2(number_type x) {
-  return 63 - leading_zeroes(uint64_t(x) | 1);
-}
-
-simdjson_really_inline int fast_digit_count_32(uint32_t x) {
-  static uint64_t table[] = {
-      4294967296,  8589934582,  8589934582,  8589934582,  12884901788,
-      12884901788, 12884901788, 17179868184, 17179868184, 17179868184,
-      21474826480, 21474826480, 21474826480, 21474826480, 25769703776,
-      25769703776, 25769703776, 30063771072, 30063771072, 30063771072,
-      34349738368, 34349738368, 34349738368, 34349738368, 38554705664,
-      38554705664, 38554705664, 41949672960, 41949672960, 41949672960,
-      42949672960, 42949672960};
-  return uint32_t((x + table[int_log2(x)]) >> 32);
-}
-
-simdjson_really_inline int fast_digit_count_64(uint64_t x) {
-  static uint64_t table[] = {9,
-                             99,
-                             999,
-                             9999,
-                             99999,
-                             999999,
-                             9999999,
-                             99999999,
-                             999999999,
-                             9999999999,
-                             99999999999,
-                             999999999999,
-                             9999999999999,
-                             99999999999999,
-                             999999999999999ULL,
-                             9999999999999999ULL,
-                             99999999999999999ULL,
-                             999999999999999999ULL,
-                             9999999999999999999ULL};
-  int y = (19 * int_log2(x) >> 6);
-  y += x > table[y];
-  return y + 1;
-}
-
-template <typename number_type, typename = typename std::enable_if<
-                                    std::is_unsigned<number_type>::value>::type>
-simdjson_really_inline size_t digit_count(number_type v) noexcept {
-  static_assert(sizeof(number_type) == 8 || sizeof(number_type) == 4 ||
-                    sizeof(number_type) == 2 || sizeof(number_type) == 1,
-                "We only support 8-bit, 16-bit, 32-bit and 64-bit numbers");
-  SIMDJSON_IF_CONSTEXPR(sizeof(number_type) <= 4) {
-    return fast_digit_count_32(static_cast<uint32_t>(v));
-  }
-  else {
-    return fast_digit_count_64(static_cast<uint64_t>(v));
-  }
-}
 static const char decimal_table[200] = {
     0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
     0x30, 0x36, 0x30, 0x37, 0x30, 0x38, 0x30, 0x39, 0x31, 0x30, 0x31, 0x31,
@@ -745,45 +689,21 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_integral<number_type>::value) {
-    // Same 4-digit batching as unsigned path for signed integers
+    // 19 digits (max abs value of int64_t) + optional minus sign.
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       bool negative = v < 0;
-      unsigned_type pv = static_cast<unsigned_type>(v);
-      if (negative) {
-        pv = 0 - pv; // the 0 is for Microsoft
-      }
-      size_t dc = internal::digit_count(pv);
-      // by always writing the minus sign, we avoid the branch.
+      // 0 - pv (rather than -pv) avoids an MSVC unary-minus warning.
+      unsigned_type pv = negative
+          ? unsigned_type(0) - static_cast<unsigned_type>(v)
+          : static_cast<unsigned_type>(v);
+      // Branchless: always write '-', advance only if negative.
       buffer.get()[position] = '-';
-      position += negative ? 1 : 0;
-      char *write_pointer = buffer.get() + position + dc - 1;
-
-      // Process 4 digits per iteration for large numbers
-      while (pv >= 10000) {
-        unsigned_type q = pv / 10000;
-        unsigned_type r = pv % 10000;
-        unsigned_type r_hi = r / 100;
-        unsigned_type r_lo = r % 100;
-        memcpy(write_pointer - 1, &internal::decimal_table[r_lo * 2], 2);
-        memcpy(write_pointer - 3, &internal::decimal_table[r_hi * 2], 2);
-        write_pointer -= 4;
-        pv = q;
-      }
-
-      // Handle remaining 1-4 digits
-      while (pv >= 100) {
-        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
-        write_pointer -= 2;
-        pv /= 100;
-      }
-      if (pv >= 10) {
-        *write_pointer-- = char('0' + (pv % 10));
-        pv /= 10;
-      }
-      *write_pointer = char('0' + pv);
-      position += dc;
+      position += negative;
+      char* end = internal::write_uint_jeaiii(
+          buffer.get() + position, static_cast<uint64_t>(pv));
+      position = end - buffer.get();
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_floating_point<number_type>::value) {
