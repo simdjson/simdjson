@@ -638,55 +638,74 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Caller must guarantee at least 20 bytes available at p. Returns pointer past
-// the last digit written.
+// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// refuse to inline recursive `always_inline`/`__forceinline` functions.
+// Caller must guarantee at least 20 bytes available at p. All helpers
+// return pointer past the last digit written.
+
+// Caller guarantees v < 100. Writes 1-2 digits.
+simdjson_really_inline char* write_lt100(char* p, uint64_t v) noexcept {
+  if (v < 10) { *p++ = char('0' + v); return p; }
+  std::memcpy(p, &decimal_table[v * 2], 2);
+  return p + 2;
+}
+
+// Caller guarantees v < 10000. Writes 1-4 digits.
+simdjson_really_inline char* write_lt10000(char* p, uint64_t v) noexcept {
+  if (v < 100) return write_lt100(p, v);
+  uint64_t hi = v / 100, lo = v % 100;
+  if (v < 1000) {
+    *p++ = char('0' + hi);
+  } else {
+    std::memcpy(p, &decimal_table[hi * 2], 2);
+    p += 2;
+  }
+  std::memcpy(p, &decimal_table[lo * 2], 2);
+  return p + 2;
+}
+
+// Caller guarantees v < 10000. Always writes exactly 4 digits.
+simdjson_really_inline void write_4_digits(char* p, uint64_t v) noexcept {
+  uint64_t hi = v / 100, lo = v % 100;
+  std::memcpy(p,     &decimal_table[hi * 2], 2);
+  std::memcpy(p + 2, &decimal_table[lo * 2], 2);
+}
+
+// Caller guarantees v < 10^8. Writes 1-8 digits.
+simdjson_really_inline char* write_lt1e8(char* p, uint64_t v) noexcept {
+  if (v < 10000) return write_lt10000(p, v);
+  uint64_t hi = v / 10000, lo = v % 10000;
+  p = write_lt10000(p, hi);
+  write_4_digits(p, lo);
+  return p + 4;
+}
+
 simdjson_really_inline char* write_uint_jeaiii(char* p, uint64_t v) noexcept {
-  if (v < 100ULL) {
-    if (v < 10ULL) { *p++ = char('0' + v); return p; }
-    std::memcpy(p, &decimal_table[v * 2], 2);
-    return p + 2;
-  }
-  if (v < 10000ULL) {
-    uint64_t hi = v / 100, lo = v % 100;
-    if (v < 1000ULL) {
-      *p++ = char('0' + hi);
-    } else {
-      std::memcpy(p, &decimal_table[hi * 2], 2);
-      p += 2;
-    }
-    std::memcpy(p, &decimal_table[lo * 2], 2);
-    return p + 2;
-  }
-  if (v < 100000000ULL) {
+  if (v < 10000ULL) return write_lt10000(p, v);
+  if (v < 100000000ULL) {                   // 5-8 digits
     uint64_t hi = v / 10000, lo = v % 10000;
-    p = write_uint_jeaiii(p, hi);
-    std::memcpy(p,     &decimal_table[(lo / 100) * 2], 2);
-    std::memcpy(p + 2, &decimal_table[(lo % 100) * 2], 2);
+    p = write_lt10000(p, hi);
+    write_4_digits(p, lo);
     return p + 4;
   }
-  if (v < 10000000000000000ULL) {
+  if (v < 10000000000000000ULL) {           // 9-16 digits
     uint64_t hi = v / 100000000ULL, lo = v % 100000000ULL;
-    p = write_uint_jeaiii(p, hi);
+    p = write_lt1e8(p, hi);
     uint64_t lo_hi = lo / 10000, lo_lo = lo % 10000;
-    std::memcpy(p,     &decimal_table[(lo_hi / 100) * 2], 2);
-    std::memcpy(p + 2, &decimal_table[(lo_hi % 100) * 2], 2);
-    std::memcpy(p + 4, &decimal_table[(lo_lo / 100) * 2], 2);
-    std::memcpy(p + 6, &decimal_table[(lo_lo % 100) * 2], 2);
+    write_4_digits(p,     lo_hi);
+    write_4_digits(p + 4, lo_lo);
     return p + 8;
   }
+  // 17-20 digits
   uint64_t hi = v / 10000000000000000ULL, lo = v % 10000000000000000ULL;
-  p = write_uint_jeaiii(p, hi);
+  p = write_lt10000(p, hi);
   uint64_t lo_a = lo / 100000000ULL, lo_b = lo % 100000000ULL;
   uint64_t lo_a_hi = lo_a / 10000, lo_a_lo = lo_a % 10000;
   uint64_t lo_b_hi = lo_b / 10000, lo_b_lo = lo_b % 10000;
-  std::memcpy(p,      &decimal_table[(lo_a_hi / 100) * 2], 2);
-  std::memcpy(p + 2,  &decimal_table[(lo_a_hi % 100) * 2], 2);
-  std::memcpy(p + 4,  &decimal_table[(lo_a_lo / 100) * 2], 2);
-  std::memcpy(p + 6,  &decimal_table[(lo_a_lo % 100) * 2], 2);
-  std::memcpy(p + 8,  &decimal_table[(lo_b_hi / 100) * 2], 2);
-  std::memcpy(p + 10, &decimal_table[(lo_b_hi % 100) * 2], 2);
-  std::memcpy(p + 12, &decimal_table[(lo_b_lo / 100) * 2], 2);
-  std::memcpy(p + 14, &decimal_table[(lo_b_lo % 100) * 2], 2);
+  write_4_digits(p,      lo_a_hi);
+  write_4_digits(p + 4,  lo_a_lo);
+  write_4_digits(p + 8,  lo_b_hi);
+  write_4_digits(p + 12, lo_b_lo);
   return p + 16;
 }
 } // namespace internal
