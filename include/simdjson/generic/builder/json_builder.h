@@ -23,7 +23,7 @@ namespace builder {
 
 template <class T>
   requires(concepts::container_but_not_string<T> && ! concepts::optional_type<T> && !require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &t) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
   auto it = t.begin();
   auto end = t.end();
   if (it == end) {
@@ -45,7 +45,7 @@ template <class T>
            std::is_same_v<T, std::string_view> ||
            std::is_same_v<T, const char *> ||
            std::is_same_v<T, char>)
-constexpr void atom(string_builder &b, const T &t) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
   b.escape_and_append_with_quotes(t);
 }
 
@@ -74,7 +74,7 @@ constexpr void atom(string_builder &b, const T &m) {
 
 template<typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
-constexpr void atom(string_builder &b, const number_type t) {
+simdjson_really_inline constexpr void atom(string_builder &b, const number_type t) {
   b.append(t);
 }
 
@@ -88,7 +88,7 @@ template <class T>
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &t) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
   // Coalesce the per-field separator+key+colon writes into a single
   // append_raw, so each field does one capacity_check + one memcpy instead of
   // three. The leading-comma variant is selected at runtime by the compile-time
@@ -110,7 +110,7 @@ constexpr void atom(string_builder &b, const T &t) {
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &opt) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &opt) {
   if (opt) {
     atom(b, opt.value());
   } else {
@@ -156,7 +156,7 @@ template <concepts::appendable_containers T>
            !concepts::optional_type<T> && !concepts::smart_pointer<T> &&
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> && !std::is_same_v<T, const char*> && !require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &container) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &container) {
   if (container.empty()) {
     b.append_raw("[]");
     return;

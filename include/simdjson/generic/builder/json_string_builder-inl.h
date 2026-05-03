@@ -636,6 +636,59 @@ static const char decimal_table[200] = {
     0x39, 0x30, 0x39, 0x31, 0x39, 0x32, 0x39, 0x33, 0x39, 0x34, 0x39, 0x35,
     0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
 };
+
+// Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
+// Caller must guarantee at least 20 bytes available at p. Returns pointer past
+// the last digit written.
+simdjson_really_inline char* write_uint_jeaiii(char* p, uint64_t v) noexcept {
+  if (v < 100ULL) {
+    if (v < 10ULL) { *p++ = char('0' + v); return p; }
+    std::memcpy(p, &decimal_table[v * 2], 2);
+    return p + 2;
+  }
+  if (v < 10000ULL) {
+    uint64_t hi = v / 100, lo = v % 100;
+    if (v < 1000ULL) {
+      *p++ = char('0' + hi);
+    } else {
+      std::memcpy(p, &decimal_table[hi * 2], 2);
+      p += 2;
+    }
+    std::memcpy(p, &decimal_table[lo * 2], 2);
+    return p + 2;
+  }
+  if (v < 100000000ULL) {
+    uint64_t hi = v / 10000, lo = v % 10000;
+    p = write_uint_jeaiii(p, hi);
+    std::memcpy(p,     &decimal_table[(lo / 100) * 2], 2);
+    std::memcpy(p + 2, &decimal_table[(lo % 100) * 2], 2);
+    return p + 4;
+  }
+  if (v < 10000000000000000ULL) {
+    uint64_t hi = v / 100000000ULL, lo = v % 100000000ULL;
+    p = write_uint_jeaiii(p, hi);
+    uint64_t lo_hi = lo / 10000, lo_lo = lo % 10000;
+    std::memcpy(p,     &decimal_table[(lo_hi / 100) * 2], 2);
+    std::memcpy(p + 2, &decimal_table[(lo_hi % 100) * 2], 2);
+    std::memcpy(p + 4, &decimal_table[(lo_lo / 100) * 2], 2);
+    std::memcpy(p + 6, &decimal_table[(lo_lo % 100) * 2], 2);
+    return p + 8;
+  }
+  uint64_t hi = v / 10000000000000000ULL, lo = v % 10000000000000000ULL;
+  p = write_uint_jeaiii(p, hi);
+  uint64_t lo_a = lo / 100000000ULL, lo_b = lo % 100000000ULL;
+  uint64_t lo_a_hi = lo_a / 10000, lo_a_lo = lo_a % 10000;
+  uint64_t lo_b_hi = lo_b / 10000, lo_b_lo = lo_b % 10000;
+  std::memcpy(p,      &decimal_table[(lo_a_hi / 100) * 2], 2);
+  std::memcpy(p + 2,  &decimal_table[(lo_a_hi % 100) * 2], 2);
+  std::memcpy(p + 4,  &decimal_table[(lo_a_lo / 100) * 2], 2);
+  std::memcpy(p + 6,  &decimal_table[(lo_a_lo % 100) * 2], 2);
+  std::memcpy(p + 8,  &decimal_table[(lo_b_hi / 100) * 2], 2);
+  std::memcpy(p + 10, &decimal_table[(lo_b_hi % 100) * 2], 2);
+  std::memcpy(p + 12, &decimal_table[(lo_b_lo / 100) * 2], 2);
+  std::memcpy(p + 14, &decimal_table[(lo_b_lo % 100) * 2], 2);
+  return p + 16;
+}
 } // namespace internal
 
 template <typename number_type, typename>
@@ -663,40 +716,13 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_unsigned<number_type>::value) {
-    // Process 4 digits at a time instead of 2, reducing store operations
-    // and divisions by approximately half for large numbers.
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
-      unsigned_type pv = static_cast<unsigned_type>(v);
-      size_t dc = internal::digit_count(pv);
-      char *write_pointer = buffer.get() + position + dc - 1;
-
-      // Process 4 digits per iteration for large numbers
-      while (pv >= 10000) {
-        unsigned_type q = pv / 10000;
-        unsigned_type r = pv % 10000;
-        unsigned_type r_hi = r / 100;  // High 2 digits of remainder
-        unsigned_type r_lo = r % 100;  // Low 2 digits of remainder
-        // Write low 2 digits first (rightmost), then high 2 digits
-        memcpy(write_pointer - 1, &internal::decimal_table[r_lo * 2], 2);
-        memcpy(write_pointer - 3, &internal::decimal_table[r_hi * 2], 2);
-        write_pointer -= 4;
-        pv = q;
-      }
-
-      // Handle remaining 1-4 digits with original 2-digit loop
-      while (pv >= 100) {
-        memcpy(write_pointer - 1, &internal::decimal_table[(pv % 100) * 2], 2);
-        write_pointer -= 2;
-        pv /= 100;
-      }
-      if (pv >= 10) {
-        *write_pointer-- = char('0' + (pv % 10));
-        pv /= 10;
-      }
-      *write_pointer = char('0' + pv);
-      position += dc;
+      char* end = internal::write_uint_jeaiii(
+          buffer.get() + position,
+          static_cast<uint64_t>(static_cast<unsigned_type>(v)));
+      position = end - buffer.get();
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_integral<number_type>::value) {
