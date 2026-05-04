@@ -230,7 +230,7 @@ simdjson::padded_string json_cars =
         .location = "Denver",
         .is_recurring = true
     });
-    Meeting m2 = simdjson::from(json);
+    Meeting m2 = simdjson::from(simdjson::pad(json));
     std::cout << m2.title << std::endl;
     TEST_SUCCEED();
   }
@@ -245,7 +245,7 @@ simdjson::padded_string json_cars =
         .is_recurring = true
     });
     std::cout << json << std::endl;
-    MeetingTime m2 = simdjson::from(json);
+    MeetingTime m2 = simdjson::from(simdjson::pad(json));
     //ASSERT_EQUAL(m2.start_time, start_time);
     std::cout << m2.title << std::endl;
     TEST_SUCCEED();
