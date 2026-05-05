@@ -52,7 +52,7 @@ class string_builder {
 public:
   simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
 
-  static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
+  static constexpr size_t DEFAULT_INITIAL_CAPACITY = 262144;
 
   /**
    * Append number (includes Booleans). Booleans are mapped to the strings
