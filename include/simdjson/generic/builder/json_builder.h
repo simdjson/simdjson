@@ -51,7 +51,7 @@ simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
 
 template <concepts::string_view_keyed_map T>
   requires(!require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &m) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &m) {
   if (m.empty()) {
     b.append_raw("{}");
     return;
@@ -100,7 +100,12 @@ simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
         constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
     constexpr auto rest_key = std::define_static_string(
         std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
-    b.append_raw(i == 0 ? first_key : rest_key);
+    // Pass size explicitly so we avoid the runtime strlen() in
+    // append_raw(const char*) — these keys are compile-time constants.
+    constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
+    constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
+    if (i == 0) b.append_raw(first_key, first_key_len);
+    else        b.append_raw(rest_key, rest_key_len);
     atom(b, t.[:dm:]);
     i++;
   };
@@ -121,7 +126,7 @@ simdjson_really_inline constexpr void atom(string_builder &b, const T &opt) {
 // Support for smart pointers (std::unique_ptr, std::shared_ptr, etc.)
 template <concepts::smart_pointer T>
   requires(!require_custom_serialization<T>)
-constexpr void atom(string_builder &b, const T &ptr) {
+simdjson_really_inline constexpr void atom(string_builder &b, const T &ptr) {
   if (ptr) {
     atom(b, *ptr);
   } else {
@@ -132,7 +137,7 @@ constexpr void atom(string_builder &b, const T &ptr) {
 // Support for enums - serialize as string representation using expand approach from P2996R12
 template <typename T>
   requires(std::is_enum_v<T> && !require_custom_serialization<T>)
-void atom(string_builder &b, const T &e) {
+simdjson_really_inline void atom(string_builder &b, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   static constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
   template for (constexpr auto enum_val : enumerators) {
