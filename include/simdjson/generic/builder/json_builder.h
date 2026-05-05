@@ -100,12 +100,12 @@ simdjson_really_inline constexpr void atom(string_builder &b, const T &t) {
         constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
     constexpr auto rest_key = std::define_static_string(
         std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
-    // Pass size explicitly so we avoid the runtime strlen() in
-    // append_raw(const char*) — these keys are compile-time constants.
+    // Pass size as template parameter so memcpy is fully inlined with
+    // a compile-time-constant size.
     constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
     constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
-    if (i == 0) b.append_raw(first_key, first_key_len);
-    else        b.append_raw(rest_key, rest_key_len);
+    if (i == 0) b.template append_raw_n<first_key_len>(first_key);
+    else        b.template append_raw_n<rest_key_len>(rest_key);
     atom(b, t.[:dm:]);
     i++;
   };

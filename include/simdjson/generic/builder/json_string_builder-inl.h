@@ -780,6 +780,14 @@ simdjson_inline void string_builder::append_raw(const char *str,
     position += len;
   }
 }
+
+template <size_t N>
+simdjson_inline void string_builder::append_raw_n(const char *str) noexcept {
+  if (capacity_check(N)) {
+    std::memcpy(buffer.get() + position, str, N);
+    position += N;
+  }
+}
 #if SIMDJSON_SUPPORTS_CONCEPTS
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>

@@ -185,6 +185,15 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * There is no UTF-8 validation.
    */
   simdjson_inline void append_raw(const char *str, size_t len) noexcept;
+
+  /**
+   * Append exactly N characters from str. The length is a template parameter
+   * so the compiler can fully inline the memcpy with a compile-time-constant
+   * size, avoiding the libc call. Used for compile-time-constant keys in the
+   * reflection struct atom.
+   */
+  template <size_t N>
+  simdjson_inline void append_raw_n(const char *str) noexcept;
 #if SIMDJSON_EXCEPTIONS
   /**
    * Creates an std::string from the written JSON buffer.
