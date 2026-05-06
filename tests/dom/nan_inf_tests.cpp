@@ -27,8 +27,10 @@ bool parse_nan() {
 
 bool parse_infinity() {
   TEST_START();
-  for (auto json_str :
-       {"infinity", "Infinity", "INFINITY", "inf", "Inf", "INF"}) {
+  for (auto json_str : {"infinity", "Infinity", "INFINITY", "inf", "Inf", "INF",
+                        // Check that 'Inf' parses correctly even when padded to
+                        // the same length as 'Infinity'
+                        "inf     ", "Inf     ", "INF     "}) {
     dom::parser parser;
     dom::element doc;
     ASSERT_SUCCESS(
