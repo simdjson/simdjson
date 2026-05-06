@@ -1,0 +1,26 @@
+name: gcc 16
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: 'gcc:16'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          apt -y update
+          apt -y --no-install-recommends install cmake ninja-build
+      - name: Build and test
+        run: |
+          cmake -B build -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -GNinja
+          cmake --build build
+          ctest --test-dir build --parallel $(nproc)
