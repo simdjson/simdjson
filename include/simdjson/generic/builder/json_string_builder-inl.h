@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <limits>
 #include <type_traits>
@@ -710,6 +711,29 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
   else SIMDJSON_IF_CONSTEXPR(std::is_floating_point<number_type>::value) {
     constexpr size_t max_number_size = 24;
     if (capacity_check(max_number_size)) {
+#if SIMDJSON_ENABLE_NAN_INF
+      // Check if the input might be NaN or infinity
+      if (simdjson_unlikely(!std::isfinite(v))) {
+        if (std::isnan(v)) {
+          constexpr char nan_literal[] = "NaN";
+          constexpr size_t nan_len = sizeof(nan_literal) - 1;
+
+          std::memcpy(buffer.get() + position, nan_literal, nan_len);
+          position += nan_len;
+        } else {
+          constexpr char inf_literal[] = "Infinity";
+          constexpr size_t inf_len = sizeof(inf_literal) - 1;
+          if (v < 0) {
+            buffer.get()[position] = '-';
+            ++position;
+          }
+          std::memcpy(buffer.get() + position, inf_literal, inf_len);
+          position += inf_len;
+        }
+        return;
+      }
+#endif
+
       // We could specialize for float.
       char *end = simdjson::internal::to_chars(buffer.get() + position, nullptr,
                                                double(v));
