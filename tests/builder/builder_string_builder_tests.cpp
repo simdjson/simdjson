@@ -1,5 +1,8 @@
 #include "simdjson.h"
 #include "test_builder.h"
+#include <array>
+#include <cmath>
+#include <limits>
 #include <map>
 #include <string>
 #include <string_view>
@@ -17,28 +20,27 @@ struct Car {
   std::vector<double> tire_pressure;
 }; // Car
 
-
 #if SIMDJSON_SUPPORTS_CONCEPTS
 struct Car2549 {
-	std::string make;
-	std::string model;
-	int64_t year;
-	std::vector<float> tire_pressure;
+  std::string make;
+  std::string model;
+  int64_t year;
+  std::vector<float> tire_pressure;
 };
 namespace simdjson {
-  // we intentionally pass by non-const reference to car.
-	template <typename builder_type>
-	void tag_invoke(serialize_tag, builder_type& builder,  Car2549& car) {
-		builder.start_object();
-		builder.append_key_value("make", car.make);
-		builder.append_comma();
-		builder.append_key_value("model", car.model);
-		builder.append_comma();
-		builder.append_key_value("year", car.year);
-		builder.append_comma();
-		builder.append_key_value("tire_pressure", car.tire_pressure);
-		builder.end_object();
-	}
+// we intentionally pass by non-const reference to car.
+template <typename builder_type>
+void tag_invoke(serialize_tag, builder_type &builder, Car2549 &car) {
+  builder.start_object();
+  builder.append_key_value("make", car.make);
+  builder.append_comma();
+  builder.append_key_value("model", car.model);
+  builder.append_comma();
+  builder.append_key_value("year", car.year);
+  builder.append_comma();
+  builder.append_key_value("tire_pressure", car.tire_pressure);
+  builder.end_object();
+}
 } // namespace simdjson
 
 static_assert(simdjson::require_custom_serialization<Car2549>);
@@ -159,6 +161,140 @@ bool append_float() {
   ASSERT_EQUAL(p, "1.1");
   TEST_SUCCEED();
 }
+
+#if SIMDJSON_ENABLE_NAN_INF
+bool append_nan() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "NaN");
+  TEST_SUCCEED();
+}
+
+bool append_positive_infinity() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append(std::numeric_limits<double>::infinity());
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "Infinity");
+  TEST_SUCCEED();
+}
+
+bool append_negative_infinity() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append(-std::numeric_limits<double>::infinity());
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "-Infinity");
+  TEST_SUCCEED();
+}
+
+bool append_float_nan_inf() {
+  TEST_START();
+  {
+    simdjson::builder::string_builder sb;
+    sb.append(std::numeric_limits<float>::quiet_NaN());
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, "NaN");
+  }
+  {
+    simdjson::builder::string_builder sb;
+    sb.append(std::numeric_limits<float>::infinity());
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, "Infinity");
+  }
+  {
+    simdjson::builder::string_builder sb;
+    sb.append(-std::numeric_limits<float>::infinity());
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, "-Infinity");
+  }
+  TEST_SUCCEED();
+}
+
+bool nan_inf_in_array() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_array();
+  sb.append(1.5);
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(2.5);
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[1.5,NaN,Infinity,-Infinity,2.5]");
+  TEST_SUCCEED();
+}
+
+bool nan_inf_in_object() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_object();
+  sb.append_key_value("a", std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append_key_value("b", std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append_key_value("c", -std::numeric_limits<double>::infinity());
+  sb.end_object();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "{\"a\":NaN,\"b\":Infinity,\"c\":-Infinity}");
+  TEST_SUCCEED();
+}
+
+bool nan_inf_roundtrip() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_array();
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<double>::infinity());
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+
+  simdjson::padded_string output{p};
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  ASSERT_SUCCESS(parser.parse(output).get(doc));
+  simdjson::dom::array arr;
+  ASSERT_SUCCESS(doc.get_array().get(arr));
+
+  std::array<double, 3> expected{
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+  };
+  size_t index = 0;
+  for (auto val : arr) {
+    double parsed;
+    ASSERT_SUCCESS(val.get_double().get(parsed));
+    if (std::isnan(expected[index])) {
+      ASSERT_TRUE(std::isnan(parsed));
+    } else {
+      ASSERT_EQUAL(parsed, expected[index]);
+    }
+    index++;
+  }
+  ASSERT_EQUAL(index, expected.size());
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_ENABLE_NAN_INF
 
 bool append_null() {
   TEST_START();
@@ -459,14 +595,15 @@ bool car_test() {
 bool issue2549() {
   TEST_START();
   simdjson::builder::string_builder sb;
-	Car2549 c = { "Toyota", "Corolla", 2017, {1.0f,2.0f,3.0f} };
+  Car2549 c = {"Toyota", "Corolla", 2017, {1.0f, 2.0f, 3.0f}};
   sb.start_object();
   sb.append_key_value("car", c);
   sb.end_object();
   std::string_view p;
   auto result = sb.view().get(p);
   ASSERT_SUCCESS(result);
-  ASSERT_EQUAL(p, "{\"car\":{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,\"tire_pressure\":[1.0,2.0,3.0]}}");
+  ASSERT_EQUAL(p, "{\"car\":{\"make\":\"Toyota\",\"model\":\"Corolla\","
+                  "\"year\":2017,\"tire_pressure\":[1.0,2.0,3.0]}}");
   TEST_SUCCEED();
 }
 
@@ -661,6 +798,11 @@ bool run() {
          issue2549() && car_test_template() && serialize_optional() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&
+#if SIMDJSON_ENABLE_NAN_INF
+         append_nan() && append_positive_infinity() &&
+         append_negative_infinity() && append_float_nan_inf() &&
+         nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
+#endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
          append_raw() && raw_with_length() && string_convertion() &&
          buffer_growth() && unicode_validation() && true;
