@@ -227,8 +227,18 @@ inline size_t structure_analyzer::estimate_string_length(std::string_view s) con
 }
 
 inline size_t structure_analyzer::estimate_number_length(double d) const {
-  if (std::isnan(d) || std::isinf(d)) {
+  if (!std::isfinite(d)) {
+#if SIMDJSON_ENABLE_NAN_INF
+    if (std::isnan(d)) {
+      return 3; // "NaN"
+    } else if (d < 0) {
+      return 9; // "-Infinity"
+    } else {
+      return 8; // "Infinity"
+    }
+#else
     return 4; // "null" for invalid numbers
+#endif
   }
   // Rough estimate: up to 17 significant digits + sign + decimal point + exponent
   char buf[32];
@@ -950,6 +960,14 @@ inline size_t fractured_string_builder::measure_value_length(const dom::element&
     case dom::element_type::DOUBLE: {
       double val;
       if (elem.get_double().get(val) == SUCCESS) {
+#if SIMDJSON_ENABLE_NAN_INF
+        if (!std::isfinite(val)) {
+          if (std::isnan(val))
+            return 3; // "NaN"
+          // "-Infinity" (9) or "Infinity" (8)
+          return val < 0 ? 9 : 8;
+        }
+#endif
         char buf[32];
         int len = snprintf(buf, sizeof(buf), "%.17g", val);
         return len > 0 ? static_cast<size_t>(len) : 1;

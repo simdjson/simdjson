@@ -373,6 +373,65 @@ bool print_roundtrip() {
   TEST_SUCCEED();
 }
 
+// FracturedJson aligns values into columns in table mode. The column width
+// is driven by the estimator for unseen elements and by measure_value_length
+// for the chosen cells; if either undercounts NaN/Infinity, column 1's
+// padding won't match column 2's emitted width and rows visibly misalign.
+// Force table mode with min_table_rows = 2 and max_inline_length = 0.
+
+bool table_aligns_nan() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": NaN, "b": 1}])"_padded).get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1  , \"b\": 1 },\n"
+               "    { \"a\": NaN, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
+bool table_aligns_inf() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": Infinity, "b": 1}])"_padded)
+          .get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1       , \"b\": 1 },\n"
+               "    { \"a\": Infinity, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
+bool table_aligns_neg_inf() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": -Infinity, "b": 1}])"_padded)
+          .get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1        , \"b\": 1 },\n"
+               "    { \"a\": -Infinity, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
 bool run() {
   return parse_nan()                  //
          && parse_infinity()          //
@@ -390,6 +449,9 @@ bool run() {
          && print_nan_in_array()      //
          && print_nan_in_object()     //
          && print_roundtrip()         //
+         && table_aligns_nan()        //
+         && table_aligns_inf()        //
+         && table_aligns_neg_inf()    //
       ;
 }
 
