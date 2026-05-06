@@ -11,6 +11,8 @@
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/parser.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
+
+#include <algorithm>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -18,31 +20,69 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_inline parser::parser(size_t max_capacity) noexcept
-  : _max_capacity{max_capacity} {
+  : parser{simdjson::get_default_allocator(), max_capacity} {
 }
 
-simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
-  if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+simdjson_inline parser::parser(simdjson::allocator& alloc, size_t max_capacity) noexcept
+  : _allocator{&alloc}, _max_capacity{max_capacity} {
+}
 
-  // string_capacity copied from document::allocate
-  _capacity = 0;
+simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) {
+  if (new_capacity > max_capacity()) { return CAPACITY; }
+  // Only grow: with allocator over-allocation propagated into _capacity /
+  // _max_depth, a re-request for the same (or smaller) size is a no-op
+  // rather than a shrink-and-reallocate.
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
+
+  // Allocate into locals first (strong exception safety): if any allocation
+  // below fails, the parser's previous state is left untouched.
+  // string_capacity copied from document::allocate.
   if(5 * (new_capacity / 3) + SIMDJSON_PADDING < SIMDJSON_PADDING) {
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (new_capacity / 3) + SIMDJSON_PADDING, 64);
-  string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
+  auto new_string_buf = simdjson::internal::make_allocated_buffer<uint8_t>(string_capacity, *_allocator);
+  if (!new_string_buf) { return MEMALLOC; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  start_positions.reset(new (std::nothrow) token_position[new_max_depth]);
+  auto new_start_positions = simdjson::internal::make_allocated_buffer<token_position>(new_max_depth, *_allocator);
+  if (!new_start_positions) { return MEMALLOC; }
 #endif
-  if (implementation) {
+  std::unique_ptr<simdjson::internal::dom_parser_implementation> new_implementation;
+  if (!implementation) {
+    SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, new_implementation, *_allocator) );
+  } else {
+    // set_capacity / set_max_depth each have their own strong exception
+    // safety internally; committing them here still precedes the member
+    // move-assigns below so parser-level state is only mutated on success.
     SIMDJSON_TRY( implementation->set_capacity(new_capacity) );
     SIMDJSON_TRY( implementation->set_max_depth(new_max_depth) );
-  } else {
-    SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
   }
-  _capacity = new_capacity;
+
+  // Commit: no more failure paths below.
+  if (new_implementation) { implementation = std::move(new_implementation); }
+  string_buf = std::move(new_string_buf);
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  start_positions = std::move(new_start_positions);
+  // start_positions is the only buffer sized by max_depth at this layer
+  // (the implementation's open_containers/is_array are only used by the DOM
+  // stage2, which on-demand never calls). Derive _max_depth from the buffer's
+  // actual capacity so any allocator over-allocation is exposed via
+  // parser.max_depth(); this also preserves the invariant that the bounds
+  // checks `depth < parser->max_depth()` in json_iterator imply
+  // `start_positions[depth]` is in range.
+  _max_depth = start_positions.capacity();
+#else
   _max_depth = new_max_depth;
+#endif
+  // Inverse of the forward formulas above. The forward step uses
+  // 5*floor(c/3); the inverse maximises c such that 5*floor(c/3) <= cap-PAD,
+  // which is 3*floor((cap-PAD)/5) + 2. The string_buf-derived capacity and
+  // the implementation's structural-indexes capacity may diverge under an
+  // over-allocating allocator; iterate() only checks `capacity() < len`, so
+  // the user-visible capacity must be the smaller of the two for stage1 to
+  // be safe.
+  size_t cap_from_string_buf = 3 * ((string_buf.capacity() - SIMDJSON_PADDING) / 5) + 2;
+  _capacity = std::min(cap_from_string_buf, implementation->capacity());
   return SUCCESS;
 }
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -51,7 +91,7 @@ simdjson_inline simdjson_warn_unused bool parser::string_buffer_overflow(const u
 }
 #endif
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(padded_string_view json) & {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
 
   json.remove_utf8_bom();
@@ -67,7 +107,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 }
 
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
 
   json.remove_utf8_bom();
@@ -87,41 +127,41 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_a
 }
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const char *json, size_t len, size_t allocated) & {
   return iterate(padded_string_view(json, len, allocated));
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const uint8_t *json, size_t len, size_t allocated) & {
   return iterate(padded_string_view(json, len, allocated));
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string_view json, size_t allocated) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string_view json, size_t allocated) & {
   return iterate(padded_string_view(json, allocated));
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(std::string &json) & {
   return iterate(pad_with_reserve(json));
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const std::string &json) & {
   return iterate(padded_string_view(json));
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string_view> &result) & {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   padded_string_view json = result.value_unsafe();
   return iterate(json);
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(const simdjson_result<padded_string> &result) & {
   // We don't presently have a way to temporarily get a const T& from a simdjson_result<T> without throwing an exception
   SIMDJSON_TRY( result.error() );
   const padded_string &json = result.value_unsafe();
   return iterate(json);
 }
 
-simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
+simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
 
   json.remove_utf8_bom();

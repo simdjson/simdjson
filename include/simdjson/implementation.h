@@ -89,16 +89,21 @@ public:
    *     const implementation *impl = simdjson::get_active_implementation();
    *     cout << "simdjson is optimized for " << impl->name() << "(" << impl->description() << ")" << endl;
    *
+   * May propagate exceptions from the allocator (e.g. std::bad_alloc).
+   *
    * @param capacity The largest document that will be passed to the parser.
    * @param max_depth The maximum JSON object/array nesting this parser is expected to handle.
    * @param dst The place to put the resulting parser implementation.
+   * @param alloc The allocator that internal buffers will be routed through.
+   *              Must outlive the resulting parser implementation.
    * @return the error code, or SUCCESS if there was no error.
    */
   virtual error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_depth,
-    std::unique_ptr<internal::dom_parser_implementation> &dst
-  ) const noexcept = 0;
+    std::unique_ptr<internal::dom_parser_implementation> &dst,
+    simdjson::allocator& alloc
+  ) const = 0;
 
   /**
    * @private For internal implementation use

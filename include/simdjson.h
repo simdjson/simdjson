@@ -42,6 +42,8 @@
 
 #include "simdjson/base.h"
 
+#include "simdjson/allocator.h"
+#include "simdjson/allocator_adapter.h"
 #include "simdjson/error.h"
 #include "simdjson/error-inl.h"
 #include "simdjson/implementation.h"

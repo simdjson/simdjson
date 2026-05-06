@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/internal/allocated_buffer.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -50,9 +51,21 @@ namespace builder {
  */
 class string_builder {
 public:
-  simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
-
   static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
+
+  /**
+   * Construct a builder using the default allocator.
+   */
+  simdjson_inline explicit string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+
+  /**
+   * Construct a builder using a caller-supplied allocator.
+   *
+   * The allocator must outlive the builder. Allocator exceptions propagate
+   * out of the constructor and out of every allocating method below.
+   */
+  simdjson_inline explicit string_builder(simdjson::allocator& alloc,
+                                          size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
 
   /**
    * Append number (includes Booleans). Booleans are mapped to the strings
@@ -62,17 +75,17 @@ public:
    */
   template<typename number_type,
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
-  simdjson_inline void append(number_type v) noexcept;
+  simdjson_inline void append(number_type v);
 
   /**
    * Append character c.
    */
-  simdjson_inline void append(char c)  noexcept;
+  simdjson_inline void append(char c);
 
   /**
    * Append the string 'null'.
    */
-  simdjson_inline void append_null()  noexcept;
+  simdjson_inline void append_null();
 
   /**
    * Clear the content.
@@ -83,64 +96,64 @@ public:
    * Append the std::string_view, after escaping it.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void escape_and_append(std::string_view input)  noexcept;
+  simdjson_inline void escape_and_append(std::string_view input);
 
   /**
    * Append the std::string_view surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void escape_and_append_with_quotes(std::string_view input)  noexcept;
+  simdjson_inline void escape_and_append_with_quotes(std::string_view input);
 #if SIMDJSON_SUPPORTS_CONCEPTS
   template<constevalutil::fixed_string key>
-  simdjson_inline void escape_and_append_with_quotes()  noexcept;
+  simdjson_inline void escape_and_append_with_quotes();
 #endif
   /**
    * Append the character surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void escape_and_append_with_quotes(char input)  noexcept;
+  simdjson_inline void escape_and_append_with_quotes(char input);
 
   /**
    * Append the character surrounded by double quotes, after escaping it.
    * There is no UTF-8 validation.
    */
-   simdjson_inline void escape_and_append_with_quotes(const char* input)  noexcept;
+   simdjson_inline void escape_and_append_with_quotes(const char* input);
 
   /**
    * Append the C string directly, without escaping.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void append_raw(const char *c)  noexcept;
+  simdjson_inline void append_raw(const char *c);
 
   /**
    * Append "{" to the buffer.
    */
-  simdjson_inline void start_object()  noexcept;
+  simdjson_inline void start_object();
 
   /**
    * Append "}" to the buffer.
    */
-  simdjson_inline void end_object()  noexcept;
+  simdjson_inline void end_object();
 
   /**
    * Append "[" to the buffer.
    */
-  simdjson_inline void start_array()  noexcept;
+  simdjson_inline void start_array();
 
   /**
    * Append "]" to the buffer.
    */
-  simdjson_inline void end_array()  noexcept;
+  simdjson_inline void end_array();
 
   /**
    * Append "," to the buffer.
    */
-  simdjson_inline void append_comma()  noexcept;
+  simdjson_inline void append_comma();
 
   /**
    * Append ":" to the buffer.
    */
-  simdjson_inline void append_colon()  noexcept;
+  simdjson_inline void append_colon();
 
   /**
    * Append a key-value pair to the buffer.
@@ -148,10 +161,10 @@ public:
    * The value is escaped if it is a string.
    */
   template<typename key_type, typename value_type>
-  simdjson_inline void append_key_value(key_type key, value_type value) noexcept;
+  simdjson_inline void append_key_value(key_type key, value_type value);
 #if SIMDJSON_SUPPORTS_CONCEPTS
   template<constevalutil::fixed_string key, typename value_type>
-  simdjson_inline void append_key_value(value_type value) noexcept;
+  simdjson_inline void append_key_value(value_type value);
 
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
@@ -172,19 +185,19 @@ public:
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
 requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R>)
-  simdjson_inline void append(const R &range) noexcept;
+  simdjson_inline void append(const R &range);
 #endif
   /**
    * Append the std::string_view directly, without escaping.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void append_raw(std::string_view input)  noexcept;
+  simdjson_inline void append_raw(std::string_view input);
 
   /**
    * Append len characters from str.
    * There is no UTF-8 validation.
    */
-  simdjson_inline void append_raw(const char *str, size_t len) noexcept;
+  simdjson_inline void append_raw(const char *str, size_t len);
 #if SIMDJSON_EXCEPTIONS
   /**
    * Creates an std::string from the written JSON buffer.
@@ -223,7 +236,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content.
    */
-  simdjson_inline simdjson_result<const char *> c_str() noexcept;
+  simdjson_inline simdjson_result<const char *> c_str();
 
   /**
    * Return true if the content is valid UTF-8.
@@ -256,10 +269,10 @@ private:
    */
   simdjson_inline void set_valid(bool valid) noexcept;
 
-  std::unique_ptr<char[]> buffer{};
-  size_t position{0};
-  size_t capacity{0};
-  bool is_valid{true};
+  simdjson::allocator* _allocator;
+  simdjson::internal::allocated_buffer<char> buffer;
+  size_t position;
+  bool is_valid;
 };
 
 
@@ -271,8 +284,8 @@ private:
 #if !SIMDJSON_STATIC_REFLECTION
 // fallback implementation until we have static reflection
 template <class Z>
-simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, simdjson::allocator& alloc, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(alloc, initial_capacity);
   b.append(z);
   std::string_view s;
   auto e = b.view().get(s);
@@ -280,8 +293,12 @@ simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t ini
   return std::string(s);
 }
 template <class Z>
-simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  return to_json(z, simdjson::get_default_allocator(), initial_capacity);
+}
+template <class Z>
+simdjson_warn_unused error_code to_json(const Z &z, std::string &s, simdjson::allocator& alloc, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(alloc, initial_capacity);
   b.append(z);
   std::string_view sv;
   auto e = b.view().get(sv);
@@ -289,10 +306,11 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
   s.assign(sv.data(), sv.size());
   return simdjson::SUCCESS;
 }
+template <class Z>
+simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  return to_json(z, s, simdjson::get_default_allocator(), initial_capacity);
+}
 #endif
-
-#if SIMDJSON_SUPPORTS_CONCEPTS
-#endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace simdjson
 

@@ -4,6 +4,7 @@
 
 SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS
 
+#include <allocator.cpp>
 #include <to_chars.cpp>
 #include <from_chars.cpp>
 #include <internal/error_tables.cpp>

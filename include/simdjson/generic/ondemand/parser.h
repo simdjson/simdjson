@@ -4,6 +4,7 @@
 #define SIMDJSON_GENERIC_ONDEMAND_PARSER_H
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/internal/allocated_buffer.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <memory>
@@ -42,6 +43,15 @@ public:
    * The new parser will have zero capacity.
    */
   inline explicit parser(size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
+
+  /**
+   * Create a JSON parser with a custom allocator.
+   *
+   * The new parser will have zero capacity. All buffers allocated by the
+   * parser will go through `alloc`, which must outlive the parser.
+   */
+  inline explicit parser(simdjson::allocator& alloc,
+                         size_t max_capacity = SIMDJSON_MAXSIZE_BYTES) noexcept;
 
   inline parser(parser &&other) noexcept = default;
   simdjson_inline parser(const parser &other) = delete;
@@ -114,28 +124,28 @@ public:
    *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
-  simdjson_warn_unused simdjson_result<document> iterate(padded_string_view json) & noexcept;
+  simdjson_warn_unused simdjson_result<document> iterate(padded_string_view json) &;
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
-  simdjson_warn_unused simdjson_result<document> iterate_allow_incomplete_json(padded_string_view json) & noexcept;
+  simdjson_warn_unused simdjson_result<document> iterate_allow_incomplete_json(padded_string_view json) &;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len, size_t capacity) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(const uint8_t *json, size_t len, size_t capacity) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(const char *json, size_t len, size_t capacity) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(const uint8_t *json, size_t len, size_t capacity) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(std::string_view json, size_t capacity) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(const std::string &json) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) &
       The string instance might be have its capacity extended. Note that this can still
       result in AddressSanitizer: container-overflow in some cases. */
-  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string_view> &json) & noexcept;
-  /** @overload simdjson_result<document> iterate(padded_string_view json) & noexcept */
-  simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & noexcept = delete;
+  simdjson_warn_unused simdjson_result<document> iterate(std::string &json) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string> &json) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(const simdjson_result<padded_string_view> &json) &;
+  /** @overload simdjson_result<document> iterate(padded_string_view json) & */
+  simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & = delete;
 
   /**
    * @private
@@ -177,7 +187,7 @@ public:
    *         - UNESCAPED_CHARS if a string contains control characters that must be escaped
    *         - UNCLOSED_STRING if there is an unclosed string in the document.
    */
-  simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
+  simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) &;
 
 
   /**
@@ -266,7 +276,7 @@ public:
   /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept;
   /** @private We do not want to allow implicit conversion from C string to std::string. */
-  simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) noexcept = delete;
+  simdjson_result<document_stream> iterate_many(const char *buf, size_t batch_size = DEFAULT_BATCH_SIZE) = delete;
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
   /**
@@ -329,7 +339,7 @@ public:
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH) noexcept;
+  simdjson_warn_unused error_code allocate(size_t capacity, size_t max_depth=DEFAULT_MAX_DEPTH);
 
   #ifdef SIMDJSON_THREADS_ENABLED
   /**
@@ -412,6 +422,10 @@ public:
    * Our simdjson::from functions use this parser instance.
    *
    * You can free the related parser by calling release_parser().
+   *
+   * Note: the thread-local parser always uses the default allocator.
+   * There is no API for customizing the thread-local parser's allocator.
+   * Users who need a custom allocator must own and pass their own parser instance.
    */
   static simdjson_inline simdjson_warn_unused ondemand::parser& get_parser();
   /**
@@ -426,15 +440,16 @@ private:
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
   /** Get the thread-local parser instance, it might be null */
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
+  simdjson::allocator* _allocator{&get_default_allocator()};
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
-  std::unique_ptr<uint8_t[]> string_buf{};
+  simdjson::internal::allocated_buffer<uint8_t> string_buf{};
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  std::unique_ptr<token_position[]> start_positions{};
+  simdjson::internal::allocated_buffer<token_position> start_positions{};
 #endif
 
   friend class json_iterator;

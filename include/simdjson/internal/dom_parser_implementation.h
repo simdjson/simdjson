@@ -3,6 +3,7 @@
 
 #include "simdjson/base.h"
 #include "simdjson/error.h"
+#include "simdjson/internal/allocated_buffer.h"
 #include <memory>
 
 namespace simdjson {
@@ -147,22 +148,26 @@ public:
    *
    * Generally used for reallocation.
    *
+   * May propagate exceptions from the allocator (e.g. std::bad_alloc).
+   *
    * @param capacity The new capacity.
    * @param max_depth The new max_depth.
    * @return The error code, or SUCCESS if there was no error.
    */
-  virtual error_code set_capacity(size_t capacity) noexcept = 0;
+  virtual error_code set_capacity(size_t capacity) = 0;
 
   /**
    * Change the max depth of this parser.
    *
    * Generally used for reallocation.
    *
+   * May propagate exceptions from the allocator (e.g. std::bad_alloc).
+   *
    * @param capacity The new capacity.
    * @param max_depth The new max_depth.
    * @return The error code, or SUCCESS if there was no error.
    */
-  virtual error_code set_max_depth(size_t max_depth) noexcept = 0;
+  virtual error_code set_max_depth(size_t max_depth) = 0;
 
   /**
    * Deallocate this parser.
@@ -172,7 +177,7 @@ public:
   /** Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
+  internal::allocated_buffer<uint32_t> structural_indexes{};
   /** Next structural index to parse */
   uint32_t next_structural_index{0};
 
@@ -194,11 +199,13 @@ public:
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    *
+   * May propagate exceptions from the allocator (e.g. std::bad_alloc).
+   *
    * @param capacity The new capacity.
    * @param max_depth The new max_depth. Defaults to DEFAULT_MAX_DEPTH.
    * @return The error, if there is one.
    */
-  simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth) noexcept;
+  simdjson_warn_unused inline error_code allocate(size_t capacity, size_t max_depth);
 
 
 protected:
@@ -216,6 +223,15 @@ protected:
    */
   size_t _max_depth{0};
 
+  /**
+   * The allocator used for this parser.
+   *
+   * Set once at construction; only rebound via move-assign (which also
+   * transfers the RAII buffers). No public setter. Stored as a pointer
+   * (not a reference) so the compiler-generated move-assign can rebind it.
+   */
+  simdjson::allocator* _allocator;
+
 public:
   /** Whether to store big integers as strings instead of returning BIGINT_ERROR */
   bool _number_as_string{false};
@@ -223,7 +239,9 @@ public:
 protected:
 
   // Declaring these so that subclasses can use them to implement their constructors.
-  simdjson_inline dom_parser_implementation() noexcept;
+  // No default argument: internal classes must have the allocator threaded
+  // through explicitly by the owning parser.
+  simdjson_inline explicit dom_parser_implementation(simdjson::allocator& alloc) noexcept;
   simdjson_inline dom_parser_implementation(dom_parser_implementation &&other) noexcept;
   simdjson_inline dom_parser_implementation &operator=(dom_parser_implementation &&other) noexcept;
 
@@ -231,7 +249,8 @@ protected:
   simdjson_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
 }; // class dom_parser_implementation
 
-simdjson_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
+simdjson_inline dom_parser_implementation::dom_parser_implementation(simdjson::allocator& alloc) noexcept
+    : _allocator{&alloc} {}
 simdjson_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &&other) noexcept = default;
 simdjson_inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parser_implementation &&other) noexcept = default;
 
@@ -244,12 +263,15 @@ simdjson_pure simdjson_inline size_t dom_parser_implementation::max_depth() cons
 }
 
 simdjson_warn_unused
-inline error_code dom_parser_implementation::allocate(size_t capacity, size_t max_depth) noexcept {
-  if (this->max_depth() != max_depth) {
+inline error_code dom_parser_implementation::allocate(size_t capacity, size_t max_depth) {
+  // Only grow: with allocator over-allocation, _capacity / _max_depth may legitimately
+  // exceed the most-recently-requested values, and a re-request for the same (or smaller)
+  // size is a no-op rather than a shrink.
+  if (this->max_depth() < max_depth) {
     error_code err = set_max_depth(max_depth);
     if (err) { return err; }
   }
-  if (_capacity != capacity) {
+  if (this->capacity() < capacity) {
     error_code err = set_capacity(capacity);
     if (err) { return err; }
   }

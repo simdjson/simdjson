@@ -191,9 +191,10 @@ public:
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
     size_t max_length,
-    std::unique_ptr<internal::dom_parser_implementation>& dst
-  ) const noexcept final {
-    return set_best()->create_dom_parser_implementation(capacity, max_length, dst);
+    std::unique_ptr<internal::dom_parser_implementation>& dst,
+    simdjson::allocator& alloc
+  ) const final {
+    return set_best()->create_dom_parser_implementation(capacity, max_length, dst, alloc);
   }
   simdjson_warn_unused error_code minify(const uint8_t *buf, size_t len, uint8_t *dst, size_t &dst_len) const noexcept final {
     return set_best()->minify(buf, len, dst, dst_len);
@@ -247,8 +248,9 @@ public:
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t,
     size_t,
-    std::unique_ptr<internal::dom_parser_implementation>&
-  ) const noexcept final {
+    std::unique_ptr<internal::dom_parser_implementation>&,
+    simdjson::allocator&
+  ) const final {
     return UNSUPPORTED_ARCHITECTURE;
   }
   simdjson_warn_unused error_code minify(const uint8_t *, size_t, uint8_t *, size_t &) const noexcept final override {
