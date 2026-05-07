@@ -147,7 +147,9 @@ simdjson_inline bool is_valid_inf_in_string(const uint8_t *src) {
 simdjson_warn_unused
 simdjson_inline bool is_valid_inf_atom(const uint8_t *src, size_t len) {
   if (len > 8) { return is_valid_inf_atom(src); }
-  if (len == 8) { return str8ncmp_case_insensitive(src, "infinity") == 0; }
+  if (len == 8 && str8ncmp_case_insensitive(src, "infinity") == 0) {
+    return true;
+  }
   if (len > 3) {
     return (str3ncmp_case_insensitive(src, "inf")
           | jsoncharutils::is_not_structural_or_whitespace(src[3])) == 0;

@@ -1,7 +1,9 @@
 #include "simdjson.h"
 #include "test_macros.h"
 #include "test_main.h"
+#include <array>
 #include <cmath>
+#include <limits>
 #include <string>
 
 using namespace simdjson;
@@ -25,8 +27,10 @@ bool parse_nan() {
 
 bool parse_infinity() {
   TEST_START();
-  for (auto json_str :
-       {"infinity", "Infinity", "INFINITY", "inf", "Inf", "INF"}) {
+  for (auto json_str : {"infinity", "Infinity", "INFINITY", "inf", "Inf", "INF",
+                        // Check that 'Inf' parses correctly even when padded to
+                        // the same length as 'Infinity'
+                        "inf     ", "Inf     ", "INF     "}) {
     dom::parser parser;
     dom::element doc;
     ASSERT_SUCCESS(
@@ -280,6 +284,154 @@ bool reject_truncated_atoms() {
   TEST_SUCCEED();
 }
 
+// DOM printer (to_string / minify / prettify) tests. When NaN/Infinity
+// parsing is enabled, the writer must emit the same literals on output so
+// that round-tripping through the parser preserves the value.
+
+bool print_nan() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse("NaN"_padded).get(doc));
+  ASSERT_EQUAL(simdjson::to_string(doc), "NaN");
+  ASSERT_EQUAL(simdjson::minify(doc), "NaN");
+  TEST_SUCCEED();
+}
+
+bool print_infinity() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse("Infinity"_padded).get(doc));
+  ASSERT_EQUAL(simdjson::to_string(doc), "Infinity");
+  ASSERT_EQUAL(simdjson::minify(doc), "Infinity");
+  TEST_SUCCEED();
+}
+
+bool print_negative_infinity() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse("-Infinity"_padded).get(doc));
+  ASSERT_EQUAL(simdjson::to_string(doc), "-Infinity");
+  ASSERT_EQUAL(simdjson::minify(doc), "-Infinity");
+  TEST_SUCCEED();
+}
+
+bool print_nan_in_array() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse("[1.5, NaN, Infinity, -Infinity, 2.5]"_padded).get(doc));
+  ASSERT_EQUAL(simdjson::to_string(doc), "[1.5,NaN,Infinity,-Infinity,2.5]");
+  TEST_SUCCEED();
+}
+
+bool print_nan_in_object() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"({"a": NaN, "b": Infinity, "c": -Infinity})"_padded)
+          .get(doc));
+  ASSERT_EQUAL(simdjson::to_string(doc),
+               "{\"a\":NaN,\"b\":Infinity,\"c\":-Infinity}");
+  TEST_SUCCEED();
+}
+
+bool print_roundtrip() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse("[NaN, Infinity, -Infinity]"_padded).get(doc));
+  std::string serialized = simdjson::to_string(doc);
+
+  dom::parser parser2;
+  dom::element doc2;
+  ASSERT_SUCCESS(parser2.parse(padded_string(serialized)).get(doc2));
+  dom::array arr;
+  ASSERT_SUCCESS(doc2.get_array().get(arr));
+
+  std::array<double, 3> expected{
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+  };
+  size_t index = 0;
+  for (auto val : arr) {
+    double parsed;
+    ASSERT_SUCCESS(val.get_double().get(parsed));
+    if (std::isnan(expected[index])) {
+      ASSERT_TRUE(std::isnan(parsed));
+    } else {
+      ASSERT_EQUAL(parsed, expected[index]);
+    }
+    index++;
+  }
+  ASSERT_EQUAL(index, expected.size());
+  TEST_SUCCEED();
+}
+
+// FracturedJson aligns values into columns in table mode. The column width
+// is driven by the estimator for unseen elements and by measure_value_length
+// for the chosen cells; if either undercounts NaN/Infinity, column 1's
+// padding won't match column 2's emitted width and rows visibly misalign.
+// Force table mode with min_table_rows = 2 and max_inline_length = 0.
+
+bool table_aligns_nan() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": NaN, "b": 1}])"_padded).get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1  , \"b\": 1 },\n"
+               "    { \"a\": NaN, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
+bool table_aligns_inf() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": Infinity, "b": 1}])"_padded)
+          .get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1       , \"b\": 1 },\n"
+               "    { \"a\": Infinity, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
+bool table_aligns_neg_inf() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(
+      parser.parse(R"([{"a": 1, "b": 1},{"a": -Infinity, "b": 1}])"_padded)
+          .get(doc));
+  fractured_json_options opts;
+  opts.min_table_rows = 2;
+  opts.max_inline_length = 0;
+  ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+               "[\n"
+               "    { \"a\": 1        , \"b\": 1 },\n"
+               "    { \"a\": -Infinity, \"b\": 1 }\n"
+               "]");
+  TEST_SUCCEED();
+}
+
 bool run() {
   return parse_nan()                  //
          && parse_infinity()          //
@@ -291,6 +443,15 @@ bool run() {
          && reject_trailing_junk()    //
          && reject_similar_prefix()   //
          && reject_truncated_atoms()  //
+         && print_nan()               //
+         && print_infinity()          //
+         && print_negative_infinity() //
+         && print_nan_in_array()      //
+         && print_nan_in_object()     //
+         && print_roundtrip()         //
+         && table_aligns_nan()        //
+         && table_aligns_inf()        //
+         && table_aligns_neg_inf()    //
       ;
 }
 

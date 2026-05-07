@@ -11,6 +11,7 @@
 #include "simdjson/dom/object-inl.h"
 #include "simdjson/internal/tape_ref-inl.h"
 
+#include <cmath>
 #include <cstring>
 
 namespace simdjson {
@@ -181,6 +182,22 @@ simdjson_inline void base_formatter<formatter>::number(int64_t x) {
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(double x) {
+#if SIMDJSON_ENABLE_NAN_INF
+  if (simdjson_unlikely(!std::isfinite(x))) {
+    if (std::isnan(x)) {
+      char const *s = "NaN";
+      chars(s, s + 3);
+    } else {
+      if (x < 0) {
+        one_char('-');
+      }
+      char const *s = "Infinity";
+      chars(s, s + 8);
+    }
+    return;
+  }
+#endif
+
   char number_buffer[24];
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
