@@ -185,6 +185,15 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * There is no UTF-8 validation.
    */
   simdjson_inline void append_raw(const char *str, size_t len) noexcept;
+
+  /**
+   * Append exactly N characters from str. The length is a template parameter
+   * so the compiler can fully inline the memcpy with a compile-time-constant
+   * size, avoiding the libc call. Used for compile-time-constant keys in the
+   * reflection struct atom.
+   */
+  template <size_t N>
+  simdjson_inline void append_raw_n(const char *str) noexcept;
 #if SIMDJSON_EXCEPTIONS
   /**
    * Creates an std::string from the written JSON buffer.
@@ -235,6 +244,26 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * If an error occurred, returns 0.
    */
   simdjson_inline size_t size() const noexcept;
+
+  // ============================================================
+  // Internal hooks for the position-as-local writer in json_builder.h.
+  // These exist so the reflection atom code can hold buffer pointer,
+  // position and capacity in registers across long write chains rather
+  // than reloading them after every char* write (strict aliasing
+  // forces those reloads when accessed via members of *this). User
+  // code should NOT call these directly.
+  // ============================================================
+  simdjson_inline char *unsafe_data() noexcept { return buffer.get(); }
+  simdjson_inline size_t unsafe_position() const noexcept { return position; }
+  simdjson_inline size_t unsafe_capacity() const noexcept { return capacity; }
+  simdjson_inline void unsafe_set_position(size_t p) noexcept { position = p; }
+  /// Make capacity available for at least `n` more bytes after the current
+  /// position. Returns false if the allocation failed.
+  simdjson_inline bool unsafe_grow(size_t needed_total_capacity) noexcept {
+    grow_buffer(needed_total_capacity);
+    return is_valid;
+  }
+  simdjson_inline bool unsafe_is_valid() const noexcept { return is_valid; }
 
 private:
   /**

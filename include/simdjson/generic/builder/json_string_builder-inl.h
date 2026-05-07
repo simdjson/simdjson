@@ -794,7 +794,9 @@ simdjson_inline void string_builder::escape_and_append_with_quotes() noexcept {
 #endif
 
 simdjson_inline void string_builder::append_raw(const char *c) noexcept {
-  size_t len = std::strlen(c);
+  // char_traits::length is constexpr; lets the compiler fold the length
+  // when called with a pointer to a compile-time-constant string.
+  size_t len = std::char_traits<char>::length(c);
   append_raw(c, len);
 }
 
@@ -811,6 +813,14 @@ simdjson_inline void string_builder::append_raw(const char *str,
   if (capacity_check(len)) {
     std::memcpy(buffer.get() + position, str, len);
     position += len;
+  }
+}
+
+template <size_t N>
+simdjson_inline void string_builder::append_raw_n(const char *str) noexcept {
+  if (capacity_check(N)) {
+    std::memcpy(buffer.get() + position, str, N);
+    position += N;
   }
 }
 #if SIMDJSON_SUPPORTS_CONCEPTS
