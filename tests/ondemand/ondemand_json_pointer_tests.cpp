@@ -509,6 +509,7 @@ namespace json_pointer_tests {
                 run_failure_test(TEST_JSON, "/~01abc", NO_SUCH_FIELD) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/01", INVALID_JSON_POINTER) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) &&
+                run_failure_test(TEST_JSON, "/~1~001abc/18446744073709551616", INDEX_OUT_OF_BOUNDS) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) &&
                 many_json_pointers() &&
                 document_as_scalar() &&

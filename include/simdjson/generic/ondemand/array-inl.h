@@ -135,21 +135,9 @@ inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) n
   // We don't support this, because we're returning a real element, not a position.
   if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
 
-  // Read the array index
   size_t array_index = 0;
   size_t i;
-  for (i = 0; i < json_pointer.length() && json_pointer[i] != '/'; i++) {
-    uint8_t digit = uint8_t(json_pointer[i] - '0');
-    // Check for non-digit in array index. If it's there, we're trying to get a field in an object
-    if (digit > 9) { return INCORRECT_TYPE; }
-    array_index = array_index*10 + digit;
-  }
-
-  // 0 followed by other digits is invalid
-  if (i > 1 && json_pointer[0] == '0') { return INVALID_JSON_POINTER; } // "JSON pointer array index has other characters after 0"
-
-  // Empty string is invalid; so is a "/" with no digits before it
-  if (i == 0) { return INVALID_JSON_POINTER; } // "Empty string in JSON pointer array index"
+  SIMDJSON_TRY(internal::parse_json_pointer_array_index(json_pointer, array_index, i));
   // Get the child
   auto child = at(array_index);
   // If there is an error, it ends here

@@ -257,6 +257,7 @@ int main() {
     && json_pointer_failure_test(TEST_JSON, "/~01abc", NO_SUCH_FIELD) // Test that we don't try to compare the literal key
     && json_pointer_failure_test(TEST_JSON, "/~1~001abc/01", INVALID_JSON_POINTER) // Leading 0 in integer index
     && json_pointer_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) // Empty index to array
+    && json_pointer_failure_test(TEST_JSON, "/~1~001abc/18446744073709551616", INDEX_OUT_OF_BOUNDS) // Overflowed index
     && json_pointer_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) // End index is always out of bounds
   ) {
     std::cout << "Success!" << std::endl;

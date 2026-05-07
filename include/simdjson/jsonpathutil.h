@@ -1,12 +1,55 @@
 #ifndef SIMDJSON_JSONPATHUTIL_H
 #define SIMDJSON_JSONPATHUTIL_H
 
+#include "simdjson/error.h"
 #include <string>
 #include "simdjson/common_defs.h"
 
+#include <limits>
 #include <utility>
 
 namespace simdjson {
+namespace internal {
+/**
+ * Parses the next JSON Pointer array index token.
+ *
+ * The caller passes a pointer fragment with no leading '/', such as "123/foo".
+ * On success, array_index receives the parsed index and token_length receives
+ * the number of bytes consumed before the next '/' or the end of the fragment.
+ */
+simdjson_inline error_code parse_json_pointer_array_index(std::string_view json_pointer,
+                                                          size_t &array_index,
+                                                          size_t &token_length) noexcept {
+  array_index = 0;
+  token_length = 0;
+
+  for (; token_length < json_pointer.length() && json_pointer[token_length] != '/';
+       token_length++) {
+    uint8_t digit = uint8_t(json_pointer[token_length] - '0');
+    // Check for non-digit in array index. If it's there, we're trying to get a field in an object.
+    if (digit > 9) {
+      return INCORRECT_TYPE;
+    }
+    // 0 followed by other digits is invalid.
+    if (token_length > 0 && json_pointer[0] == '0') {
+      return INVALID_JSON_POINTER;
+    }
+    if (array_index >
+        (((std::numeric_limits<size_t>::max)() - digit) / 10)) {
+      return INDEX_OUT_OF_BOUNDS;
+    }
+    array_index = array_index * 10 + digit;
+  }
+
+  // Empty string is invalid; so is a "/" with no digits before it.
+  if (token_length == 0) {
+    return INVALID_JSON_POINTER;
+  }
+
+  return SUCCESS;
+}
+} // namespace internal
+
 /**
  * Converts JSONPath to JSON Pointer.
  * @param json_path The JSONPath string to be converted.
