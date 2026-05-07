@@ -497,7 +497,7 @@ simdjson_inline size_t significant_digits(const uint8_t * start_digits, size_t d
 } // unnamed namespace
 
 /** @private */
-static error_code slow_float_parsing(simdjson_unused const uint8_t * src, double* answer) {
+inline error_code slow_float_parsing(simdjson_unused const uint8_t * src, double* answer) {
   if (parse_float_fallback(src, answer)) {
     return SUCCESS;
   }
