@@ -67,7 +67,10 @@ struct writer {
   // underlying buffer if needed (rare path). Returns false on
   // allocation failure.
   simdjson_really_inline bool ensure(size_t n) noexcept {
-    if (simdjson_likely(pos + n <= cap)) return true;
+    // Use subtraction (relying on the pos <= cap invariant) so a huge n
+    // cannot wrap pos + n to a small value that spuriously passes the test.
+    // This is pedantic except maybe on 32-bit targets.
+    if (simdjson_likely(n <= cap - pos)) return true;
     return grow_slow(n);
   }
 
@@ -75,8 +78,11 @@ struct writer {
   // simdjson_really_inline) to keep the hot path short.
   simdjson_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
+    // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
     sb->unsafe_set_position(pos);
+    // even if 2*capacity overflows, the (std::max) below will pick the needed value,
+    // so we do not need a separate overflow check here.
     if (!sb->unsafe_grow((std::max)(cap * 2, pos + n))) {
       return false;
     }
@@ -140,7 +146,12 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  if (!w.ensure(2 + 6 * input.size())) return;
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // wrapped to a small value, ensure() would spuriously succeed and the
+  // subsequent escape would overflow the buffer.
+  // Note that this is pedantic except maybe on 32-bit targets.
+  if (simdjson_unlikely(input.size() > ((std::numeric_limits<size_t>::max)() - 2) / 6)) { return; }
+  if (!w.ensure(2 + 6 * input.size())) { return; }
   w.ptr[w.pos++] = '"';
   w.pos += write_string_escaped(input, w.ptr + w.pos);
   w.ptr[w.pos++] = '"';
@@ -166,7 +177,12 @@ simdjson_really_inline constexpr void atom(writer &w, const T &m) {
     first = false;
     // Keys must be convertible to string_view per the concept.
     std::string_view key_sv(key);
-    if (!w.ensure(2 + 6 * key_sv.size() + 1)) return;
+    // Guard against 3 + 6 * key_sv.size() wrapping for huge keys, if it
+    // wrapped to a small value, ensure() would spuriously succeed and the
+    // subsequent escape would overflow the buffer.
+    // Note that this is pedantic except maybe on 32-bit targets.
+    if (simdjson_unlikely(key_sv.size() > ((std::numeric_limits<size_t>::max)() - 3) / 6)) { return; }
+    if (!w.ensure(2 + 6 * key_sv.size() + 1)) { return; }
     w.ptr[w.pos++] = '"';
     w.pos += write_string_escaped(key_sv, w.ptr + w.pos);
     w.ptr[w.pos++] = '"';
