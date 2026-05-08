@@ -1,6 +1,13 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 
+#include <cstring>
+
+#if SIMDJSON_HAS_UNISTD_H
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 using namespace simdjson;
 
 namespace parse_api_tests {
@@ -161,6 +168,58 @@ namespace parse_api_tests {
     TEST_SUCCEED();
   }
 
+  bool parser_iterate_trailing_whitespace_is_not_padding() {
+    TEST_START();
+
+    {
+      std::string json = "{}";
+      json.append(SIMDJSON_PADDING, ' ');
+      padded_string_view padded = pad(json);
+      ASSERT_EQUAL(padded.length(), 2);
+      ASSERT_EQUAL(padded.padding(), SIMDJSON_PADDING);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.iterate(padded));
+    }
+
+#if SIMDJSON_HAS_UNISTD_H
+    long page = sysconf(_SC_PAGESIZE);
+    if (page <= 0) {
+      std::cout << "Warning: could not get page size; skipping guard-page test." << std::endl;
+      TEST_SUCCEED();
+    }
+
+    char *region = static_cast<char *>(
+        mmap(nullptr, static_cast<size_t>(page) * 2, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    if (region == MAP_FAILED) {
+      std::cout << "Warning: mmap failed; skipping guard-page test." << std::endl;
+      TEST_SUCCEED();
+    }
+    if (mprotect(region + page, static_cast<size_t>(page), PROT_NONE) != 0) {
+      munmap(region, static_cast<size_t>(page) * 2);
+      std::cout << "Warning: mprotect failed; skipping guard-page test." << std::endl;
+      TEST_SUCCEED();
+    }
+
+    const size_t len = 2 + SIMDJSON_PADDING;
+    char *buf = region + page - static_cast<long>(len);
+    std::memcpy(buf, "{}", 2);
+    std::memset(buf + 2, ' ', SIMDJSON_PADDING);
+
+    padded_string_view unpadded(buf, len, len);
+    ASSERT_EQUAL(unpadded.padding(), 0);
+    ASSERT_EQUAL(unpadded.has_sufficient_padding(), false);
+
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_ERROR(parser.iterate(buf, len, len).get(doc), INSUFFICIENT_PADDING);
+
+    munmap(region, static_cast<size_t>(page) * 2);
+#endif
+
+    TEST_SUCCEED();
+  }
+
 #if SIMDJSON_EXCEPTIONS
   bool parser_iterate_exception() {
     TEST_START();
@@ -270,6 +329,7 @@ namespace parse_api_tests {
            parser_iterate_padded() &&
            parser_iterate_padded_string_view() &&
            parser_iterate_insufficient_padding() &&
+           parser_iterate_trailing_whitespace_is_not_padding() &&
 #if SIMDJSON_EXCEPTIONS
            parser_document_reuse() &&
            parser_iterate_exception() &&

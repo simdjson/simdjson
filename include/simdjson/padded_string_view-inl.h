@@ -45,19 +45,7 @@ inline padded_string_view::padded_string_view(std::string_view s, size_t capacit
 }
 
 inline bool padded_string_view::has_sufficient_padding() const noexcept {
-  if (padding() >= SIMDJSON_PADDING) {
-    return true;
-  }
-  size_t missing_padding = SIMDJSON_PADDING - padding();
-  if(length() < missing_padding) { return false; }
-
-  for (size_t i = length() - missing_padding; i < length(); i++) {
-    char c = data()[i];
-    if (c != ' ' && c != '\t' && c != '\n' && c != '\r') {
-      return false;
-    }
-  }
-  return true;
+  return padding() >= SIMDJSON_PADDING;
 }
 
 inline size_t padded_string_view::capacity() const noexcept { return _capacity; }
@@ -94,7 +82,7 @@ inline padded_string_view pad(std::string& s) noexcept {
     s.append(needed_padding, ' ');
   }
 
-  return padded_string_view(s.data(), s.size() - needed_padding, s.size());
+  return padded_string_view(s.data(), s.size() - SIMDJSON_PADDING, s.size());
 }
 
 inline padded_string_view pad_with_reserve(std::string& s) noexcept {
