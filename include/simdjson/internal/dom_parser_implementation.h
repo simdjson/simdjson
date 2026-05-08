@@ -3,6 +3,7 @@
 
 #include "simdjson/base.h"
 #include "simdjson/error.h"
+#include <limits>
 #include <memory>
 
 namespace simdjson {
@@ -37,6 +38,43 @@ inline bool is_streaming(stage1_mode mode) {
 }
 
 namespace internal {
+
+simdjson_inline bool add_overflow(size_t a, size_t b, size_t &out) noexcept {
+  if (a > (std::numeric_limits<size_t>::max)() - b) {
+    return true;
+  }
+  out = a + b;
+  return false;
+}
+
+simdjson_inline bool multiply_overflow(size_t a, size_t b, size_t &out) noexcept {
+  if (a != 0 && b > (std::numeric_limits<size_t>::max)() / a) {
+    return true;
+  }
+  out = a * b;
+  return false;
+}
+
+simdjson_inline bool roundup_64_overflow(size_t value, size_t &out) noexcept {
+  size_t rounded;
+  if (add_overflow(value, size_t(63), rounded)) {
+    return true;
+  }
+  out = rounded & ~size_t(63);
+  return false;
+}
+
+simdjson_inline bool dom_string_capacity(size_t capacity, size_t &string_capacity) noexcept {
+  size_t max_strings;
+  if (multiply_overflow(capacity / 3, size_t(5), max_strings)) {
+    return true;
+  }
+  size_t padded_capacity;
+  if (add_overflow(max_strings, SIMDJSON_PADDING, padded_capacity)) {
+    return true;
+  }
+  return roundup_64_overflow(padded_capacity, string_capacity);
+}
 
 
 /**

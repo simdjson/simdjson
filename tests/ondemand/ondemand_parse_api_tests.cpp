@@ -1,6 +1,8 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 
+#include <limits>
+
 using namespace simdjson;
 
 namespace parse_api_tests {
@@ -161,6 +163,25 @@ namespace parse_api_tests {
     TEST_SUCCEED();
   }
 
+  bool parser_allocate_rejects_internal_capacity_overflow() {
+    TEST_START();
+    ondemand::parser parser((std::numeric_limits<size_t>::max)());
+    ASSERT_ERROR(parser.allocate((std::numeric_limits<size_t>::max)()), CAPACITY);
+    ASSERT_EQUAL(parser.capacity(), 0);
+    TEST_SUCCEED();
+  }
+
+  bool parser_allocate_rejects_above_maxsize_before_growth() {
+    TEST_START();
+    // This targets the fail-order bug: capacities above SIMDJSON_MAXSIZE_BYTES
+    // must be rejected up front, independent of caller-supplied max_capacity.
+    ondemand::parser parser((std::numeric_limits<size_t>::max)());
+    const size_t invalid_capacity = simdjson::SIMDJSON_MAXSIZE_BYTES + size_t(1);
+    ASSERT_ERROR(parser.allocate(invalid_capacity), CAPACITY);
+    ASSERT_EQUAL(parser.capacity(), 0);
+    TEST_SUCCEED();
+  }
+
 #if SIMDJSON_EXCEPTIONS
   bool parser_iterate_exception() {
     TEST_START();
@@ -270,6 +291,8 @@ namespace parse_api_tests {
            parser_iterate_padded() &&
            parser_iterate_padded_string_view() &&
            parser_iterate_insufficient_padding() &&
+           parser_allocate_rejects_internal_capacity_overflow() &&
+           parser_allocate_rejects_above_maxsize_before_growth() &&
 #if SIMDJSON_EXCEPTIONS
            parser_document_reuse() &&
            parser_iterate_exception() &&
