@@ -267,6 +267,22 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T>);
 
 
+// Compile-time predicate: does T have any std::optional member?
+// Used to decide whether single-pass dispatch is worth it.
+template <typename T>
+consteval bool struct_has_optional_member() {
+  bool result = false;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+      using FieldT = [: std::meta::type_of(mem) :];
+      if constexpr (concepts::optional_type<FieldT>) {
+        result = true;
+      }
+    }
+  };
+  return result;
+}
+
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
@@ -276,25 +292,42 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
-  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
-      if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
-        // for optional members, it's ok if the key is missing
-        auto error = obj[key].get(out.[:mem:]);
-        if (error && error != NO_SUCH_FIELD) {
-          if(error == NO_SUCH_FIELD) {
-            out.[:mem:].reset();
-            continue;
+  if constexpr (struct_has_optional_member<T>()) {
+    // Single-pass dispatch: walk each JSON object field once, dispatching
+    // to the matching struct member via a compile-time-generated key
+    // comparison chain (with length pre-filter). This avoids the O(K)
+    // full-object scan that obj[key] does for *absent* optional fields.
+    // Worth it when the struct has optionals because some are usually missing.
+    for (auto field : obj) {
+      std::string_view key;
+      SIMDJSON_TRY(field.unescaped_key().get(key));
+      bool matched = false;
+      const size_t key_size = key.size();
+      template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+          constexpr std::string_view name = std::define_static_string(std::meta::identifier_of(mem));
+          constexpr size_t name_size = name.size();
+          if (!matched && key_size == name_size && key == name) {
+            SIMDJSON_TRY(field.value().get(out.[:mem:]));
+            matched = true;
           }
-          return error;
         }
-      } else {
-        // for non-optional members, the key must be present
+      };
+      // Unmatched value is skipped automatically by object_iterator::operator++().
+      (void)matched;
+    }
+  } else {
+    // Per-field obj[key] dispatch: for structs with all-required fields,
+    // this is O(1) per field when the JSON keys are in declaration order
+    // (find_field_unordered's fast path). Beats single-pass on dense
+    // structs (e.g. Twitter Status with 22 always-present fields).
+    template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+      if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
+        constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
         SIMDJSON_TRY(obj[key].get(out.[:mem:]));
       }
-    }
-  };
+    };
+  }
   return simdjson::SUCCESS;
 }
 
