@@ -42,6 +42,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
+- [Infinity and NaN support](#infinity-and-nan-support)
 - [Raw strings from keys](#raw-strings-from-keys)
 - [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
@@ -455,7 +456,7 @@ We also have a generic ephemeral type (`simdjson::ondemand::value`) which repres
 array or object, or scalar type (`double`, `uint64_t`, `int64_t`, `bool`, `null`, string) inside
 an array or an object. Both generic types (`simdjson::ondemand::document` and
 `simdjson::ondemand::value`) have a `type()` method returning a `json_type` value describing indicating the type (`json_type::array`, `json_type::object`, `json_type::number`, `json_type::string`,
-`json_type::boolean`, `json_type::null`, and `json_type::unknown` for unrecognized types). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens such as the `NaN` token in `{"key":NaN}`. A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
+`json_type::boolean`, `json_type::null`, and `json_type::unknown` for unrecognized types). The `type()` method does not consume nor validate the value: e.g., you must still call `is_null()` to check that the value is a `null` even if `json_type::null` is returned. Starting with simdjson 4.0, we return `json_type::unknown` for bad tokens (such as the `NaN` token in `{"key":NaN}` when using the default strict parsing behavior). A `json_type::unknown` type value indicates an error in the JSON document but you might still be able to proceed, see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string). A generic value (`simdjson::ondemand::value`)
 is only valid temporarily, as soon as you access other values, other keys in objects, etc.
 it becomes invalid: you should therefore consume the value immediately by converting it to a
 scalar type, an array or an object.
@@ -2647,7 +2648,7 @@ Market: btce    Price: 432.89   Volume: 8561.06
 */
 ```
 
-Finally, here is an example dealing with errors where the user wants to convert the string `"Infinity"`(`"change"` key) to a float with infinity value.
+Finally, here is an example dealing with errors where the user wants to convert the string `"Infinity"`(`"change"` key) to a float with infinity value when using the default strict parsing behavior:
 
 ```cpp
 ondemand::parser parser;
@@ -2662,13 +2663,22 @@ if (error) {
   error = value.get_string().get(view);
   if (error) { /* Handle error */ }
   else if (view == "Infinity") {
-    d = std::numeric_limits::infinity();
+    d = std::numeric_limits<double>::infinity();
   }
   else { /* Handle wrong value */ }
 }
 ```
 It is also important to note that when dealing an invalid number inside a string, simdjson will report a `NUMBER_ERROR` error if the string begins with a number whereas simdjson
 will report an `INCORRECT_TYPE` error otherwise.
+
+When `SIMDJSON_ENABLE_NAN_INF` is enabled, simdjson can parse `"Infinity"`, `"-Infinity"`, and `"NaN"` from a string using `get_double_in_string` without needing extra error handling:
+
+```cpp
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+// Get "change"/"Infinity" key/value pair as a double.
+double d = doc["ticker"]["change"].get_double_in_string();
+```
 
 The `*_in_string` methods can also be called on a single document instance:
 e.g., when your document consist solely of a quoted number.
@@ -2809,6 +2819,53 @@ This code prints the following:
 '99999999999999999999999 '
 ```
 
+
+Infinity and NaN support
+------------------------------
+
+The JSON specification does not support `Infinity` and `NaN` literals. However, some engineers use literal `Infinity` and `NaN` tokens when serializing floating-point values to JSON.
+
+The simdjson library achieves maximum JSON parsing performance by adhering to a strict interpretation of the JSON specification. Therefore strict parsing is enabled by default - `Infinity` and `NaN` literals are not parsed as valid JSON.
+
+Users can opt-in to parsing `Infinity`, `-Infinity`, and `NaN` as `double` values by setting the `SIMDJSON_ENABLE_NAN_INF` flag to `ON` when building simdjson: `cmake -B build -D SIMDJSON_ENABLE_NAN_INF=ON` and setting `SIMDJSON_ENABLE_NAN_INF` to 1 before including `"simdjson.h"`. When enabled, `Infinity`, `-Infinity`, `Inf`, `-Inf`, and `NaN` literals are case-insensitively matched and parsed as `double`:
+
+```cpp
+// The SIMDJSON_ENABLE_NAN_INF flag also needs to be set before including simdjson.h
+#define SIMDJSON_ENABLE_NAN_INF 1
+#include "simdjson.h"
+using namespace simdjson;
+
+// ...
+
+ondemand::parser parser;
+auto inf_nan_literals = "[Infinity, -Infinity, NaN, inf, -inf, nan]"_padded;
+ondemand::document doc = parser.iterate(inf_nan_literals);
+
+// Parse and iterate through the array of literal inf/nan values.
+for (ondemand::value val: doc.get_array()) {
+  ondemand::number num = val.get_number();
+  ondemand::number_type t = num.get_number_type();
+
+  if (t == ondemand::number_type::floating_point_number) {
+    std::cout << "Parsed floating-point number: " << num.get_double() << std::endl;
+  } else {
+    std::cout << "Failed to parse." << std::endl;
+  }
+}
+```
+
+produces the following output:
+
+```
+Parsed floating-point number: inf
+Parsed floating-point number: -inf
+Parsed floating-point number: nan
+Parsed floating-point number: inf
+Parsed floating-point number: -inf
+Parsed floating-point number: nan
+```
+
+
 Raw strings from keys
 -----------
 
@@ -2907,7 +2964,7 @@ std::string_view noquote(std::string_view v) { return {v.data()+1, v.find_last_o
 
 
 The `raw_json_token()` method can enable you to provide fallbacks when parsing fails.
-Consider the following example.
+Consider the following example under the default strict parsing behavior (`NaN` parsing is disabled):
 
 ```cpp
     padded_string json = "{\"key\": NaN}"_padded;
@@ -2928,6 +2985,9 @@ Consider the following example.
 
 The NaN is not supported in JSON. However, in the On-Demand API, you can check
 the string corresponding to the JSON token and determine how to handle it.
+
+In this particular case, `SIMDJSON_ENABLE_NAN_INF` can be enabled to parse `Infinity` and `NaN` tokens.
+However other tokens will still need to be handled via the `raw_json_token()` method.
 
 ### Raw JSON string for objects and arrays
 
