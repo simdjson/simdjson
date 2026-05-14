@@ -243,6 +243,20 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+    bool incomplete_string_value_with_allow_incomplete_json() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        std::string_view val;
+
+        auto incomplete_string_value = R"({"key":")"_padded;
+
+        ASSERT_SUCCESS(parser.iterate_allow_incomplete_json(incomplete_string_value).get(doc));
+        ASSERT_ERROR(doc.at_path(".key").get_string().get(val), simdjson::STRING_ERROR);
+        TEST_SUCCEED();
+    }
+#endif
 
     bool many_json_paths_object_array() {
         TEST_START();
@@ -442,6 +456,9 @@ namespace json_path_tests {
                 many_json_paths_object_array() &&
                 many_json_paths_with_prefix() &&
                 run_broken_tests() &&
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+                incomplete_string_value_with_allow_incomplete_json() &&
+#endif
                 json_path_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
