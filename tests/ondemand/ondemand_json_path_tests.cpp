@@ -251,9 +251,17 @@ namespace json_path_tests {
         std::string_view val;
 
         auto incomplete_string_value = R"({"key":")"_padded;
+        auto complete_string_before_incomplete_value = R"({"key":"ok","incomplete":")"_padded;
 
         ASSERT_SUCCESS(parser.iterate_allow_incomplete_json(incomplete_string_value).get(doc));
         ASSERT_ERROR(doc.at_path(".key").get_string().get(val), simdjson::STRING_ERROR);
+
+        ASSERT_SUCCESS(parser.iterate_allow_incomplete_json(complete_string_before_incomplete_value).get(doc));
+        ASSERT_SUCCESS(doc.at_path(".key").get_string().get(val));
+        ASSERT_EQUAL(val, "ok");
+
+        ASSERT_SUCCESS(parser.iterate_allow_incomplete_json(complete_string_before_incomplete_value).get(doc));
+        ASSERT_ERROR(doc.at_path(".incomplete").get_string().get(val), simdjson::STRING_ERROR);
         TEST_SUCCEED();
     }
 #endif

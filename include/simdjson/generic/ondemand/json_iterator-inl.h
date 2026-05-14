@@ -24,6 +24,9 @@ simdjson_inline json_iterator::json_iterator(json_iterator &&other) noexcept
     _depth{other._depth},
     _root{other._root},
     _streaming{other._streaming}
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+    , _allow_incomplete_json{other._allow_incomplete_json}
+#endif
 {
   other.parser = nullptr;
 }
@@ -35,6 +38,9 @@ simdjson_inline json_iterator &json_iterator::operator=(json_iterator &&other) n
   _depth = other._depth;
   _root = other._root;
   _streaming = other._streaming;
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  _allow_incomplete_json = other._allow_incomplete_json;
+#endif
   other.parser = nullptr;
   return *this;
 }
@@ -61,7 +67,8 @@ simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parse
       _string_buf_loc{parser->string_buf.get()},
       _depth{1},
       _root{parser->implementation->structural_indexes.get()},
-      _streaming{streaming}
+      _streaming{streaming},
+      _allow_incomplete_json{true}
 
 {
   logger::log_headers();
@@ -192,6 +199,17 @@ simdjson_inline bool json_iterator::is_single_token() const noexcept {
 simdjson_inline bool json_iterator::streaming() const noexcept {
   return _streaming;
 }
+
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+simdjson_inline bool json_iterator::allow_incomplete_json() const noexcept {
+  return _allow_incomplete_json;
+}
+
+simdjson_inline size_t json_iterator::remaining_input_length(const uint8_t *json) const noexcept {
+  const uint8_t *end = token.buf + parser->_document_len;
+  return json < end ? size_t(end - json) : 0;
+}
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 simdjson_inline token_position json_iterator::root_position() const noexcept {
   return _root;
