@@ -11,6 +11,7 @@ import re
 import shutil
 import datetime
 import json
+import argparse
 from typing import Dict, List, Optional, Set, TextIO, Union, cast
 
 # Pre-compile regex patterns for performance
@@ -29,6 +30,18 @@ version_re = re.compile(r'\d+\.\d+\.\d+')
 if sys.version_info < (3, 0):
     sys.stdout.write("Sorry, requires Python 3.x or better\n")
     sys.exit(1)
+
+# Parse command-line arguments.
+arg_parser = argparse.ArgumentParser(description="Creates the amalgamated source files.")
+arg_parser.add_argument("--quiet", action="store_true",
+                        help="Suppress informational output (errors and warnings are still printed).")
+args = arg_parser.parse_args()
+QUIET = args.quiet
+
+def log(*log_args, **log_kwargs):
+    """Print informational output unless --quiet was passed."""
+    if not QUIET:
+        print(*log_args, **log_kwargs)
 
 rules = """
 
@@ -99,11 +112,11 @@ If adding a new implementation, edit the IMPLEMENTATIONS list in this script.
 
 SCRIPTPATH = os.path.dirname(os.path.abspath(sys.argv[0]))
 PROJECTPATH = os.path.dirname(SCRIPTPATH)
-print(f"SCRIPTPATH={SCRIPTPATH} PROJECTPATH={PROJECTPATH}")
+log(f"SCRIPTPATH={SCRIPTPATH} PROJECTPATH={PROJECTPATH}")
 
 
-print("We are about to amalgamate all simdjson files into one source file.")
-print("See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.")
+log("We are about to amalgamate all simdjson files into one source file.")
+log("See https://www.sqlite.org/amalgamation.html and https://en.wikipedia.org/wiki/Single_Compilation_Unit for rationale.")
 if "AMALGAMATE_SOURCE_PATH" not in os.environ:
     AMALGAMATE_SOURCE_PATH = os.path.join(PROJECTPATH, "src")
 else:
@@ -265,7 +278,7 @@ class SimdjsonFile:
         return self.filename == 'dependencies.h'
 
     def add_include(self, include: 'SimdjsonFile'):
-        print(f"    Adding include: {self} includes {include}")
+        log(f"    Adding include: {self} includes {include}")
         if self.is_conditional_include:
             # If I have a dependency file, I can only include something that has a dependency file.
             if not include.is_conditional_include:
@@ -371,7 +384,7 @@ class SimdjsonRepository:
 class Amalgamator:
     @classmethod
     def amalgamate(cls, output_path: str, filename: str, roots: List[RelativeRoot], timestamp: str, version: str):
-        print(f"Creating {output_path}")
+        log(f"Creating {output_path}")
         fid = open(output_path, 'w')
         print(f"/* auto-generated on {timestamp}. version {version} Do not edit! */", file=fid)
         amalgamator = cls(fid, SimdjsonRepository(PROJECTPATH, roots))
@@ -577,12 +590,12 @@ class Amalgamator:
 try:
     proc = subprocess.run(['git', 'show', '-s', '--format=%ci', 'HEAD'],
                            stdout=subprocess.PIPE)
-    print("the commandline is {}".format(proc.args))
+    log("the commandline is {}".format(proc.args))
     timestamp = proc.stdout.decode('utf-8').strip()
 except:
     print("git not found, timestamp based on current time")
     timestamp = str(datetime.datetime.now())
-print(f"timestamp is {timestamp}")
+log(f"timestamp is {timestamp}")
 
 os.makedirs(AMALGAMATE_OUTPUT_PATH, exist_ok=True)
 AMAL_H = os.path.join(AMALGAMATE_OUTPUT_PATH, "simdjson.h")
@@ -625,7 +638,7 @@ if not validate_implementations():
     print("Validation failed. Please update IMPLEMENTATIONS list in amalgamate.py.")
     sys.exit(1)
 else:
-    print("implementation validated")
+    log("implementation validated")
 Amalgamator.amalgamate(AMAL_H, "simdjson.h", ['include'], timestamp, version).validate_all_files_used('include')
 Amalgamator.amalgamate(AMAL_C, "simdjson.cpp", ['src', 'include'], timestamp, version).validate_all_files_used('src')
 
@@ -642,20 +655,20 @@ def create_zip():
     outdir = AMALGAMATE_OUTPUT_PATH
 
     path = os.path.join(outdir, "singleheader.zip")
-    print(f"Creating {path}")
+    log(f"Creating {path}")
     with zipfile.ZipFile(path, 'w') as zf:
         for name in ["simdjson.cpp", "simdjson.h"]:
             source = os.path.join(outdir, name)
-            print(f"Adding {source}")
+            log(f"Adding {source}")
             zf.write(source, name)
-    print(f"Created {path}")
+    log(f"Created {path}")
 create_zip()
-print("Done with all files generation.")
+log("Done with all files generation.")
 
-print(f"Files have been written to directory: {AMALGAMATE_OUTPUT_PATH}/")
-print(subprocess.run(['ls', '-la', AMAL_C, AMAL_H, DEMOCPP, README],
-                     stdout=subprocess.PIPE).stdout.decode('utf-8').strip())
-print("Done with all files generation.")
+log(f"Files have been written to directory: {AMALGAMATE_OUTPUT_PATH}/")
+log(subprocess.run(['ls', '-la', AMAL_C, AMAL_H, DEMOCPP, README],
+                   stdout=subprocess.PIPE).stdout.decode('utf-8').strip())
+log("Done with all files generation.")
 
 
 
@@ -664,7 +677,7 @@ print("Done with all files generation.")
 # Instructions to create demo
 #
 
-print("\nGiving final instructions:")
+log("\nGiving final instructions:")
 with open(README) as r:
     for line in r:
-        print(line)
+        log(line)

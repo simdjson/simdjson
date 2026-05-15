@@ -25,7 +25,7 @@ if (Python3_Interpreter_FOUND AND (NOT WIN32))
       AMALGAMATE_SOURCE_PATH=${PROJECT_SOURCE_DIR}/src
       AMALGAMATE_INPUT_PATH=${PROJECT_SOURCE_DIR}/include
       AMALGAMATE_OUTPUT_PATH=${CMAKE_CURRENT_BINARY_DIR}
-      ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
+      ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py --quiet
       #
       # This is the best way I could find to make amalgamation trigger whenever source files or
       # header files change: since the "simdjson" library has to get rebuilt when that happens, we
