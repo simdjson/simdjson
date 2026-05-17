@@ -173,6 +173,35 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
   }
   return _mm_movemask_epi8(running) != 0;
 }
+#elif SIMDJSON_EXPERIMENTAL_HAS_LSX
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
+  if (view.size() < 16) {
+    return simple_needs_escaping(view);
+  }
+  size_t i = 0;
+  __m128i running = __lsx_vreplgr2vr_b(0);
+  __m128i v34 = __lsx_vreplgr2vr_b(34);
+  __m128i v92 = __lsx_vreplgr2vr_b(92);
+  __m128i v32 = __lsx_vreplgr2vr_b(32);
+
+  for (; i + 15 < view.size(); i += 16) {
+    __m128i word =
+        __lsx_vld(reinterpret_cast<const char *>(view.data() + i), 0);
+    __m128i chunk = __lsx_vseq_b(word, v34);
+    chunk = __lsx_vor_v(chunk, __lsx_vseq_b(word, v92));
+    chunk = __lsx_vor_v(chunk, __lsx_vslt_bu(word, v32));
+    running = __lsx_vor_v(running, chunk);
+  }
+  if (i < view.size()) {
+    __m128i word = __lsx_vld(
+        reinterpret_cast<const char *>(view.data() + view.length() - 16), 0);
+    __m128i chunk = __lsx_vseq_b(word, v34);
+    chunk = __lsx_vor_v(chunk, __lsx_vseq_b(word, v92));
+    chunk = __lsx_vor_v(chunk, __lsx_vslt_bu(word, v32));
+    running = __lsx_vor_v(running, chunk);
+  }
+  return !__lsx_bz_v(running);
+}
 #elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
   if (view.size() < 16) {
