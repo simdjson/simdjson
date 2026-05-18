@@ -15,6 +15,27 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+simdjson_inline bool raw_json_string_is_quote_terminated(const uint8_t *json, uint32_t max_len) noexcept {
+  bool escaping{false};
+  for (uint32_t i = 1; i < max_len; i++) {
+    switch (json[i]) {
+      case '"':
+        if (!escaping) { return true; }
+        escaping = false;
+        break;
+      case '\\':
+        escaping = !escaping;
+        break;
+      default:
+        escaping = false;
+        break;
+    }
+  }
+  return false;
+}
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+
 simdjson_inline value_iterator::value_iterator(
   json_iterator *json_iter,
   depth_t depth,
@@ -530,6 +551,15 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::get_raw_json_string() noexcept {
   auto json = peek_scalar("string");
   if (*json != '"') { return incorrect_type_error("Not a string"); }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json()) {
+    const size_t remaining_input_length = _json_iter->remaining_input_length(json);
+    const uint32_t max_len = remaining_input_length < peek_start_length() ? uint32_t(remaining_input_length) : peek_start_length();
+    if (!raw_json_string_is_quote_terminated(json, max_len)) {
+      return STRING_ERROR;
+    }
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   advance_scalar("string");
   return raw_json_string(json+1);
 }
@@ -677,6 +707,15 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   auto json = peek_scalar("string");
   if (*json != '"') { return incorrect_type_error("Not a string"); }
   if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json()) {
+    const size_t remaining_input_length = _json_iter->remaining_input_length(json);
+    const uint32_t max_len = remaining_input_length < peek_root_length() ? uint32_t(remaining_input_length) : peek_root_length();
+    if (!raw_json_string_is_quote_terminated(json, max_len)) {
+      return STRING_ERROR;
+    }
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   advance_scalar("string");
   return raw_json_string(json+1);
 }

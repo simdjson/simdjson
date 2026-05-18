@@ -60,6 +60,9 @@ protected:
    * value of this attribute.
    */
   bool _streaming{false};
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  bool _allow_incomplete_json{false};
+#endif
 
 public:
   simdjson_inline json_iterator() noexcept = default;
@@ -84,6 +87,10 @@ public:
    * start_root_array() and start_root_object().
    */
   simdjson_inline bool streaming() const noexcept;
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  simdjson_inline bool allow_incomplete_json() const noexcept;
+  simdjson_inline size_t remaining_input_length(const uint8_t *json) const noexcept;
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
   /**
    * Get the root value iterator

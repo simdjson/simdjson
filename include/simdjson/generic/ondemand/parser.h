@@ -431,6 +431,7 @@ private:
   size_t _capacity{0};
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
+  size_t _document_len{0};
   std::unique_ptr<uint8_t[]> string_buf{};
 
 #if SIMDJSON_DEVELOPMENT_CHECKS

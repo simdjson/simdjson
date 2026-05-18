@@ -55,6 +55,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
 
   json.remove_utf8_bom();
+  _document_len = json.length();
 
   // Allocate if needed
   if (capacity() < json.length() || !string_buf) {
@@ -71,6 +72,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_a
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
 
   json.remove_utf8_bom();
+  _document_len = json.length();
 
   // Allocate if needed
   if (capacity() < json.length() || !string_buf) {
