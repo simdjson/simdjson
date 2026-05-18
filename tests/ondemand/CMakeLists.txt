@@ -17,7 +17,6 @@ add_cpp_test(ondemand_error_tests                    LABELS ondemand acceptance 
 add_cpp_test(ondemand_error_location_tests           LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_json_pointer_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_json_path_tests                LABELS ondemand acceptance per_implementation)
-target_compile_definitions(ondemand_json_path_tests PRIVATE SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON)
 target_sources(ondemand_json_path_tests PRIVATE ${PROJECT_SOURCE_DIR}/src/simdjson.cpp)
 add_cpp_test(compile_time_json_path_tests            LABELS ondemand acceptance per_implementation)
 add_cpp_test(compile_time_json_pointer_tests         LABELS ondemand acceptance per_implementation)
