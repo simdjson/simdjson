@@ -17,7 +17,7 @@ public:
   simdjson_inline implementation() : simdjson::implementation(
       "rvv_vls",
       "RISC-V V extension",
-      0
+      internal::instruction_set::RVV_VLS
   ) {}
   simdjson_warn_unused error_code create_dom_parser_implementation(
     size_t capacity,
