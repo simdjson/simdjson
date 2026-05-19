@@ -15,14 +15,12 @@ jobs:
         include:
           - {gen: Visual Studio 17 2022, arch: Win32, shared: ON, build_type: Release, memory_map: OFF, nan_inf: OFF}
           - {gen: Visual Studio 17 2022, arch: Win32, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release, memory_map: OFF, nan_inf: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF, nan_inf: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: OFF, nan_inf: OFF}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: OFF, nan_inf: ON}
-          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: ON}
-          # Exercise the opt-in Windows memory-file mapping path at least once in CI.
+          - {gen: Visual Studio 17 2022, arch: x64, shared: ON, build_type: Release, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: ON, nan_inf: OFF}
           - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Debug, memory_map: ON, nan_inf: ON}
+          - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: ON}
     steps:
     - name: checkout
       uses: actions/checkout@v4
