@@ -283,32 +283,88 @@ class SimdjsonFile:
             # If I have a dependency file, I can only include something that has a dependency file.
             if not include.is_conditional_include:
                 dep = self.dependency_file
-                dep_hint = f" and add it to the dependency file '{dep}'" if dep else ""
+                if dep:
+                    step2 = (
+                        f"  2. Add '{include}' to the dependency manifest so the amalgamator\n"
+                        f"     emits it before any file that needs it:\n\n"
+                        f"        // in '{dep}'\n"
+                        f"        #include \"{include}\"\n\n"
+                    )
+                else:
+                    step2 = (
+                        f"  2. '{self}' has no associated dependencies.h file, so the\n"
+                        f"     amalgamator cannot be told to emit '{include}' earlier.\n"
+                        f"     Either give '{self}' a dependencies.h, or restructure so\n"
+                        f"     the include is not needed here.\n\n"
+                    )
                 raise AssertionError(
-                    f"Error: Amalgamated file '{self}' is trying to include '{include}', "
-                    f"but '{include}' is not an amalgamated file.\n\n"
-                    f"FIX: Wrap the #include \"{include}\" in a conditional block:\n\n"
-                    f"    #ifndef SIMDJSON_CONDITIONAL_INCLUDE\n"
-                    f"    #include \"{include}\"\n"
-                    f"    #endif // SIMDJSON_CONDITIONAL_INCLUDE\n\n"
-                    f"This makes the include editor-only (skipped during amalgamation){dep_hint}.\n\n"
-                    f"During amalgamation, '{include}' is already included earlier in the "
-                    f"amalgamated output, so it does not need to be included again.\n\n"
-                    f"{rules}"
+                    f"Error: amalgamated file '{self}' includes non-amalgamated header '{include}'.\n\n"
+                    f"  Why: '{self}' is stitched into the single-header output. Top-level\n"
+                    f"       headers like '{include}' are already emitted earlier in that\n"
+                    f"       output, so re-including them inside an amalgamated file would\n"
+                    f"       either duplicate content or break include ordering.\n\n"
+                    f"FIX (two steps):\n\n"
+                    f"  1. In '{self}', wrap the include so it is skipped during amalgamation\n"
+                    f"     but still visible to your editor/IDE:\n\n"
+                    f"        #ifndef SIMDJSON_CONDITIONAL_INCLUDE\n"
+                    f"        #include \"{include}\"\n"
+                    f"        #endif // SIMDJSON_CONDITIONAL_INCLUDE\n\n"
+                    f"     Place it alongside the existing '#ifndef SIMDJSON_CONDITIONAL_INCLUDE'\n"
+                    f"     block near the top of the file, if there is one.\n\n"
+                    f"{step2}"
+                    f"After both edits, re-run:\n\n"
+                    f"    python3 singleheader/amalgamate.py\n\n"
+                    f"See HACKING.md for the full amalgamation rules.\n"
                 )
             # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
             # if include.amalgamator_file:
             #     assert include.amalgamator_file == self, f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
         else:
-            assert include.is_amalgamator or not include.is_conditional_include, f"Error: Free dependency file '{self}' is trying to include '{include}', which is an amalgamated file. Free dependency files (top-level headers) can only include amalgamator files or other free files, not amalgamated files directly. This prevents improper layering. Move the include to an amalgamator or restructure dependencies. {rules}"
+            if not (include.is_amalgamator or not include.is_conditional_include):
+                raise AssertionError(
+                    f"Error: free (top-level) header '{self}' includes amalgamated file '{include}'.\n\n"
+                    f"  Why: top-level headers are emitted once into the single-header output\n"
+                    f"       and form the public API surface. Amalgamated files are emitted\n"
+                    f"       multiple times (once per CPU implementation), so including one\n"
+                    f"       from the top level would either duplicate them or pin them to a\n"
+                    f"       single implementation.\n\n"
+                    f"FIX: move the include to an amalgamator file (e.g. simdjson/arm64.h,\n"
+                    f"     simdjson/generic/amalgamated.h) or, if you actually need the\n"
+                    f"     declarations at the top level, factor them out into a top-level\n"
+                    f"     header that '{self}' can include instead.\n\n"
+                    f"After editing, re-run:\n\n"
+                    f"    python3 singleheader/amalgamate.py\n\n"
+                    f"See HACKING.md for the full amalgamation rules.\n"
+                )
 
         self.includes.append(include)
         include.included_from.add(self)
 
     def add_editor_only_include(self, include: 'SimdjsonFile'):
-        assert self.is_conditional_include, f"Error: File '{self}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE', but '{self}' is not an amalgamated file. Conditional include blocks are only allowed in amalgamated files (those with dependencies). Remove the conditional block or ensure the file is amalgamated. {rules}"
-        if not include.is_conditional_include:
-            assert self.dependency_file, f"Error: In '{self}', editor-only include of '{include}' requires a dependency file, but '{self}' has none. Ensure '{self}' has an associated dependencies.h file. {rules}"
+        if not self.is_conditional_include:
+            raise AssertionError(
+                f"Error: '{self}' uses '#ifndef SIMDJSON_CONDITIONAL_INCLUDE',\n"
+                f"       but '{self}' is not an amalgamated file (it has no\n"
+                f"       associated dependencies.h).\n\n"
+                f"  Why: conditional-include blocks only make sense in amalgamated files,\n"
+                f"       because the SIMDJSON_CONDITIONAL_INCLUDE macro is only defined\n"
+                f"       while the amalgamator is emitting them.\n\n"
+                f"FIX: either remove the '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' block from\n"
+                f"     '{self}' (and include the headers unconditionally), or — if '{self}'\n"
+                f"     really should be amalgamated — give it an associated dependencies.h\n"
+                f"     file under the same directory.\n\n"
+                f"See HACKING.md for the full amalgamation rules.\n"
+            )
+        if not include.is_conditional_include and not self.dependency_file:
+            raise AssertionError(
+                f"Error: '{self}' editor-only-includes '{include}', but '{self}' has no\n"
+                f"       associated dependencies.h, so the amalgamator has nowhere to record\n"
+                f"       that '{include}' must be emitted earlier in the single-header output.\n\n"
+                f"FIX: add a 'dependencies.h' file in the same directory as '{self}',\n"
+                f"     and list '{include}' inside it:\n\n"
+                f"        #include \"{include}\"\n\n"
+                f"See HACKING.md for the full amalgamation rules.\n"
+            )
         # TODO make sure we only include amalgamated files that are guaranteed to be included with us (or before us)
         # elif include.amalgamator_file:
         #     assert self.is_amalgamated_before(self.amalgamator_file), f"{self} cannot include {include}: it should be included from {include.amalgamator_file} instead."
@@ -323,11 +379,40 @@ class SimdjsonFile:
                 if file.dependency_file == self:
                     for editor_only_include in file.editor_only_includes:
                         if not editor_only_include.is_conditional_include:
-                            assert editor_only_include in self.includes, f"Error: Dependency file '{self}' is missing an include for '{editor_only_include}', which is editor-only included in '{file}'. Add '{editor_only_include}' to '{self}' to ensure completeness. {rules}"
+                            if editor_only_include not in self.includes:
+                                raise AssertionError(
+                                    f"Error: dependency manifest '{self}' is missing\n"
+                                    f"       '{editor_only_include}'.\n\n"
+                                    f"       It is editor-only-included by '{file}'\n"
+                                    f"       (inside a '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' block),\n"
+                                    f"       which means the amalgamator does NOT see that include —\n"
+                                    f"       so unless '{self}' lists it, '{editor_only_include}' will\n"
+                                    f"       never be emitted in the single-header build.\n\n"
+                                    f"FIX: add this line to '{self}':\n\n"
+                                    f"        #include \"{editor_only_include}\"\n\n"
+                                    f"Then re-run:\n\n"
+                                    f"    python3 singleheader/amalgamate.py\n\n"
+                                    f"See HACKING.md for the full amalgamation rules.\n"
+                                )
                             if editor_only_include in extra_include_set:
                                 extra_include_set.remove(editor_only_include)
 
-            assert len(extra_include_set) == 0, f"Error: Dependency file '{self}' includes {extra_include_set}, which are not used in any amalgamated files. Remove these unnecessary includes to clean up dependencies. {rules}"
+            if len(extra_include_set) > 0:
+                extras = sorted(str(f) for f in extra_include_set)
+                bullet_list = "\n".join(f"        #include \"{e}\"" for e in extras)
+                raise AssertionError(
+                    f"Error: dependency manifest '{self}' lists includes that no\n"
+                    f"       amalgamated file actually needs:\n\n"
+                    f"{bullet_list}\n\n"
+                    f"  Why: every include in a dependencies.h file should correspond to a\n"
+                    f"       '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' block in some amalgamated\n"
+                    f"       sibling file. Stale entries here pull unused headers into the\n"
+                    f"       single-header build.\n\n"
+                    f"FIX: either delete the unused entries from '{self}', or, if they were\n"
+                    f"     supposed to support a real consumer, add the matching editor-only\n"
+                    f"     '#ifndef SIMDJSON_CONDITIONAL_INCLUDE' block to that consumer.\n\n"
+                    f"See HACKING.md for the full amalgamation rules.\n"
+                )
 
 class SimdjsonRepository:
     def __init__(self, project_path: str, relative_roots: List[RelativeRoot]):
@@ -379,7 +464,23 @@ class SimdjsonRepository:
         used_files = set([file.include_path for file in self if file.root == root])
         all_files.difference_update(used_files)
         all_files.difference_update(DEPRECATED_FILES)
-        assert len(all_files) == 0, f"Error: The following files in '{root}' are not used in the amalgamation: {sorted(all_files)}. All .h and .cpp files must be included or added to DEPRECATED_FILES. Check for missing includes or deprecate unused files."
+        if len(all_files) > 0:
+            bullet_list = "\n".join(f"        {root}/{f}" for f in sorted(all_files))
+            raise AssertionError(
+                f"Error: the following files under '{root}/' exist on disk but are not\n"
+                f"       reachable from any #include chain seen by the amalgamator:\n\n"
+                f"{bullet_list}\n\n"
+                f"  Why: every .h/.cpp file in the tree must either be transitively included\n"
+                f"       from the amalgamation roots, or explicitly listed in DEPRECATED_FILES\n"
+                f"       in singleheader/amalgamate.py. This catches files that were forgotten\n"
+                f"       after a rename, or were added without a corresponding #include.\n\n"
+                f"FIX: pick one for each file above:\n"
+                f"     - Add an #include for it in the appropriate amalgamator/dependencies file.\n"
+                f"     - If the file is genuinely obsolete, delete it.\n"
+                f"     - If the file is a deprecated public header kept only for source\n"
+                f"       compatibility, add it to the DEPRECATED_FILES set in\n"
+                f"       singleheader/amalgamate.py.\n"
+            )
 
 class Amalgamator:
     @classmethod
@@ -438,7 +539,17 @@ class Amalgamator:
 
     def write_file(self, file: SimdjsonFile):
         # Detect cyclic dependencies
-        assert file not in self.include_stack, f"Error: Cyclic include detected: {self.include_stack} -> {file}. Remove the circular dependency by restructuring includes."
+        if file in self.include_stack:
+            cycle_start = self.include_stack.index(file)
+            chain = self.include_stack[cycle_start:] + [file]
+            arrow_chain = "\n       -> ".join(str(f) for f in chain)
+            raise AssertionError(
+                f"Error: cyclic include detected:\n\n"
+                f"          {arrow_chain}\n\n"
+                f"FIX: break the cycle by moving the shared declarations into a separate\n"
+                f"     header that both ends of the cycle can include, or by forward-declaring\n"
+                f"     instead of including.\n"
+            )
         self.include_stack.append(file)
 
         file.processed = False
