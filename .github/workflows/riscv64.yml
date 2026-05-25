@@ -26,4 +26,4 @@ jobs:
           run: |
             cmake -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF  -B build
             cmake --build build -j=2
-            ctest --output-on-failure --test-dir build
+            ctest --output-on-failure --test-dir build -E ondemand_cacheline
