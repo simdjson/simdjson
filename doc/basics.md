@@ -23,6 +23,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
   * [3. Using static reflection (C++26)](#3-using-static-reflection-c26)
     + [Special cases](#special-cases)
+    + [Renaming and skipping fields with annotations](#renaming-and-skipping-fields-with-annotations)
   * [The simdjson::from shortcut (experimental, C++20)](#the-simdjsonfrom-shortcut-experimental-c20)
 - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
 - [UTF-8 validation (alone)](#utf-8-validation-alone)
@@ -1591,6 +1592,49 @@ functions.
 You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).
 
+
+#### Renaming fields and skipping fields with annotations
+
+C++26 annotations provide a convenient way to customize (de)serialization
+without writing `tag_invoke` functions. You can rename the JSON key that
+corresponds to a C++ data member, or skip a member entirely.
+
+The syntax is:
+
+```cpp
+// rename cppFieldName (in C++) to json_key_name (in JSON)
+[[= simdjson::rename<"json_key_name">]] std::string cppFieldName;
+// do not serialize or deserialize this field
+[[= simdjson::skip]] int internalState;
+```
+
+Full examples:
+
+```cpp
+struct RenamedFields {
+  [[= simdjson::rename<"first_name">]] std::string firstName = "";
+  [[= simdjson::rename<"last_name">]]  std::string lastName = "";
+  int age = 0;
+};
+
+struct SkippedField {
+  std::string name = "";
+  [[= simdjson::skip]] int internalCache = 0;
+};
+
+struct MixedAnnotations {
+  [[= simdjson::rename<"user_name">]] std::string userName = "";
+  [[= simdjson::skip]] int sessionToken = 0;
+  int age = 0;
+};
+```
+
+- Serialization via `simdjson::to_json(r)` or `builder << r` will use the renamed
+  keys and omit skipped fields.
+- Deserialization via `doc.get<RenamedFields>()` will map the JSON keys back
+  to the C++ fields. Skipped fields are never written during deserialization
+  (they keep their default-initialized value), and keys matching skipped fields
+  in the JSON input are ignored.
 
 
 ### The simdjson::from shortcut (experimental, C++20)

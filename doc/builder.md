@@ -12,6 +12,7 @@ speed and high convenience.
   * [Overview: string_builder](#overview--string-builder)
   * [Example: string_builder](#example--string-builder)
   * [C++26 static reflection](#c--26-static-reflection)
+    + [Renaming fields and skipping fields with annotations](#renaming-fields-and-skipping-fields-with-annotations)
     + [Without `string_buffer` instance](#without--string-buffer--instance)
     + [Without `string_buffer` instance but with explicit error handling](#without--string-buffer--instance-but-with-explicit-error-handling)
     + [Pretty formatted (fractured JSON)](#pretty-formatted-fractured-json)
@@ -259,6 +260,45 @@ automatically. In most cases, it should work automatically:
     }
 ```
 
+
+#### Renaming fields and skipping fields with annotations
+
+When using C++26 static reflection for automatic serialization (and deserialization),
+you can annotate your struct members to rename the corresponding JSON keys or to
+exclude fields from the JSON representation.
+
+
+The syntax is:
+
+```cpp
+// rename cppFieldName (in C++) to json_key_name (in JSON)
+[[= simdjson::rename<"json_key_name">]] std::string cppFieldName;
+// do not serialize or deserialize this field
+[[= simdjson::skip]] int internalState;
+```
+
+For example:
+
+```cpp
+struct Person {
+    [[= simdjson::rename<"first_name">]] std::string firstName = "";
+    [[= simdjson::rename<"last_name">]]  std::string lastName = "";
+    [[= simdjson::skip]] int internalCache = 0;
+    int age = 0;
+};
+```
+
+Serialization then produces:
+
+```cpp
+Person p{"Alice", "Smith", 999, 30};
+std::string json = simdjson::to_json(p);
+// json == R"({"first_name":"Alice","last_name":"Smith","age":30})"
+// Note: internalCache is omitted entirely.
+```
+
+The `skip` annotation also affects deserialization: the field keeps its default value
+and any corresponding key in the input JSON is ignored.
 
 ### Without `string_buffer` instance
 
