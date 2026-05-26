@@ -378,15 +378,15 @@ Furthermore, if you have installed LLVM clang on Windows, for example as a compo
 ## Various References
 
 - [How to implement atoi using SIMD?](https://stackoverflow.com/questions/35127060/how-to-implement-atoi-using-simd)
-- [Parsing JSON is a Minefield 💣](http://seriot.ch/parsing_json.php)
+- [Parsing JSON is a Minefield 💣](https://seriot.ch/parsing_json.php)
 - https://tools.ietf.org/html/rfc7159
-- http://rapidjson.org/md_doc_sax.html
+- https://rapidjson.org/md_doc_sax.html
 - https://github.com/Geal/parser_benchmarks/tree/master/json
 - Gron: A command line tool that makes JSON greppable https://news.ycombinator.com/item?id=16727665
 - GoogleGson https://github.com/google/gson
 - Jackson https://github.com/FasterXML/jackson
 - https://www.yelp.com/dataset_challenge
-- RapidJSON. http://rapidjson.org/
+- RapidJSON. https://rapidjson.org/
 
 Inspiring links:
 
