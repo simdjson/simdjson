@@ -6,6 +6,7 @@
 #include "simdjson/generic/ondemand/object.h"
 #include "simdjson/generic/ondemand/array.h"
 #include "simdjson/generic/ondemand/base.h"
+#include "simdjson/annotations.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <concepts>
@@ -277,8 +278,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
   template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)) {
-      constexpr std::string_view key = std::define_static_string(std::meta::identifier_of(mem));
+    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)
+               && std::meta::annotations_of_with_type(mem, ^^simdjson::detail::skip_tag).empty()) {
+      constexpr std::string_view key = simdjson::get_json_key_name<mem>();
       if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
         // for optional members, it's ok if the key is missing
         auto error = obj[key].get(out.[:mem:]);

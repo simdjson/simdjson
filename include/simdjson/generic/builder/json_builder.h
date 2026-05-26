@@ -4,6 +4,7 @@
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/builder/json_string_builder.h"
 #include "simdjson/concepts.h"
+#include "simdjson/annotations.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #if SIMDJSON_STATIC_REFLECTION
 
@@ -246,26 +247,29 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // through the writer's local pos. For arithmetic fields, the integer
   // write happens directly via write_uint_jeaiii on w.ptr+w.pos, so pos
   // never round-trips through memory.
-  int i = 0;
+  bool first = true;
   if (!w.ensure(1)) return;
   w.ptr[w.pos++] = '{';
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    constexpr auto first_key = std::define_static_string(
-        constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
-    constexpr auto rest_key = std::define_static_string(
-        std::string(",") + constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(dm)) + ":");
-    constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
-    constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
-    if (!w.ensure(rest_key_len)) return;
-    if (i == 0) {
-      std::memcpy(w.ptr + w.pos, first_key, first_key_len);
-      w.pos += first_key_len;
-    } else {
-      std::memcpy(w.ptr + w.pos, rest_key, rest_key_len);
-      w.pos += rest_key_len;
+    if constexpr (std::meta::annotations_of_with_type(dm, ^^simdjson::detail::skip_tag).empty()) {
+      constexpr const char* key_name = simdjson::get_json_key_name<dm>();
+      constexpr auto first_key = std::define_static_string(
+          constevalutil::consteval_to_quoted_escaped(key_name) + ":");
+      constexpr auto rest_key = std::define_static_string(
+          std::string(",") + constevalutil::consteval_to_quoted_escaped(key_name) + ":");
+      constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
+      constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
+      if (!w.ensure(rest_key_len)) return;
+      if (first) {
+        std::memcpy(w.ptr + w.pos, first_key, first_key_len);
+        w.pos += first_key_len;
+      } else {
+        std::memcpy(w.ptr + w.pos, rest_key, rest_key_len);
+        w.pos += rest_key_len;
+      }
+      first = false;
+      atom(w, t.[:dm:]);
     }
-    atom(w, t.[:dm:]);
-    i++;
   };
   if (!w.ensure(1)) return;
   w.ptr[w.pos++] = '}';
