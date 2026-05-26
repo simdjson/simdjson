@@ -263,6 +263,9 @@ automatically. In most cases, it should work automatically:
 
 #### Renaming fields and skipping fields with annotations
 
+
+**This is experimental: the syntax may change slightly in the future.**
+
 When using C++26 static reflection for automatic serialization (and deserialization),
 you can annotate your struct members to rename the corresponding JSON keys or to
 exclude fields from the JSON representation.

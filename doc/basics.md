@@ -1595,6 +1595,8 @@ our [Builder documentation](builder.md).
 
 #### Renaming fields and skipping fields with annotations
 
+**This is experimental: the syntax may change slightly in the future.**
+
 C++26 annotations provide a convenient way to customize (de)serialization
 without writing `tag_invoke` functions. You can rename the JSON key that
 corresponds to a C++ data member, or skip a member entirely.
