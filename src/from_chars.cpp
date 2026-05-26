@@ -172,7 +172,7 @@ decimal parse_decimal(const char *&p, const char * end) noexcept {
     // if we have not yet encountered a zero, we have to skip it as well
     if (answer.num_digits == 0) {
       // skip zeros
-      while (*p == '0') {
+      while ((p != end) && (*p == '0')) {
         ++p;
       }
     }
