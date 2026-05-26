@@ -10,5 +10,6 @@
 // Otherwise, amalgamation will fail.
 #include "simdjson/concepts.h"
 #include "simdjson/dom/fractured_json.h"
+#include "simdjson/annotations.h"
 
 #endif // SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H
