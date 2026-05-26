@@ -132,7 +132,7 @@ Whitespace Characters:
 
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec)
-- [JSON lines (JSONL)](http://jsonlines.org/)
+- [JSON lines (JSONL)](https://jsonlines.org/)
 - [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464)
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
@@ -143,7 +143,7 @@ See [basics.md](basics.md#newline-delimited-json-ndjson-and-json-lines) for an o
 
 ## Use cases
 
-From [jsonlines.org](http://jsonlines.org/examples/):
+From [jsonlines.org](https://jsonlines.org/examples/):
 
 - **Better than CSV**
     ```json

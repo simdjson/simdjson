@@ -2494,7 +2494,7 @@ write out multiple records as independent JSON documents, to be read one-by-one.
 
 The simdjson library also supports multithreaded JSON streaming through a large file
 containing many smaller JSON documents in either [ndjson](https://github.com/ndjson/ndjson-spec)
-or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays
+or [JSON lines](https://jsonlines.org) format. If your JSON documents all contain arrays
 or objects, we even support direct file concatenation without whitespace. However, if there
 is content between your JSON documents, it should be exclusively ASCII white-space characters.
 
@@ -3570,4 +3570,4 @@ Further reading
 --------
 
 
-- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](https://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
