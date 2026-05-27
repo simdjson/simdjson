@@ -1593,7 +1593,7 @@ You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).
 
 
-#### Renaming fields and skipping fields with annotations
+#### Renaming and skipping fields with annotations
 
 **This is experimental: the syntax may change slightly in the future.**
 
