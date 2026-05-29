@@ -61,22 +61,29 @@ struct yyjson_base {
 };
 
 struct yyjson : yyjson_base {
+  // The document owns the string memory that result's string_views point into,
+  // so it must outlive each run() (the verification diff happens after run()
+  // returns). Free it on the next run() / at destruction, not before the views
+  // are read.
+  yyjson_doc *doc{};
+  ~yyjson() { if (doc != nullptr) { yyjson_doc_free(doc); } }
   bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
-    yyjson_doc *doc = yyjson_read(json.data(), json.size(), 0);
-    bool b = yyjson_base::run(doc, result);
-    yyjson_doc_free(doc);
-    return b;
+    if (doc != nullptr) { yyjson_doc_free(doc); doc = nullptr; }
+    doc = yyjson_read(json.data(), json.size(), 0);
+    return yyjson_base::run(doc, result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, yyjson)->UseManualTime();
 
 #if SIMDJSON_COMPETITION_ONDEMAND_INSITU
 struct yyjson_insitu : yyjson_base {
+  // See the note on yyjson above: the document must outlive result's views.
+  yyjson_doc *doc{};
+  ~yyjson_insitu() { if (doc != nullptr) { yyjson_doc_free(doc); } }
   bool run(simdjson::padded_string &json, std::vector<tweet<std::string_view>> &result) {
-    yyjson_doc *doc = yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0);
-    bool b = yyjson_base::run(doc, result);
-    yyjson_doc_free(doc);
-    return b;
+    if (doc != nullptr) { yyjson_doc_free(doc); doc = nullptr; }
+    doc = yyjson_read_opts(json.data(), json.size(), YYJSON_READ_INSITU, 0, 0);
+    return yyjson_base::run(doc, result);
   }
 };
 BENCHMARK_TEMPLATE(partial_tweets, yyjson_insitu)->UseManualTime();
