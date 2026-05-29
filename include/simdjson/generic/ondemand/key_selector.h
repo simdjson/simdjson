@@ -1,13 +1,31 @@
 #ifndef SIMDJSON_GENERIC_ONDEMAND_KEY_SELECTOR_H
 #define SIMDJSON_GENERIC_ONDEMAND_KEY_SELECTOR_H
 
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/base.h"
 #include "simdjson/common_defs.h"
+#include "simdjson/constevalutil.h"
+#include "simdjson/generic/ondemand/raw_json_string.h"
+#endif
+
 #include <array>
 #include <string_view>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
+#if defined(__aarch64__) || defined(__ARM_NEON)
+  #include <arm_neon.h>
+  #define SIMDJSON_KEY_SELECTOR_HAS_NEON 1
+#else
+  #define SIMDJSON_KEY_SELECTOR_HAS_NEON 0
+#endif
+#if defined(__SSE2__)
+  #include <emmintrin.h>
+  #define SIMDJSON_KEY_SELECTOR_HAS_SSE2 1
+#else
+  #define SIMDJSON_KEY_SELECTOR_HAS_SSE2 0
+#endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 
@@ -15,320 +33,357 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+namespace key_selector_detail {
 
+inline constexpr std::size_t MAX_POSITIONS   = 4;
+inline constexpr std::size_t MAX_TABLE_SIZE  = 256;
+inline constexpr std::uint8_t POS_LAST_CHAR  = 0xFF;
+inline constexpr std::uint8_t SENTINEL_KEY   = 0xFF;
 
-// Forward declaration
-class object;
+// All PHF tables live inside this structural type; a single instance becomes a
+// static constexpr member of key_selector<Keys...>, so every field below is a
+// compile-time constant at every call site.
+template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
+struct phf_data {
+    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso_values{};
+    std::array<std::uint8_t, MAX_POSITIONS>                  positions{};
+    std::uint8_t                                             num_positions{};
+    std::array<std::uint8_t, TableSize>                      slot_to_key{};
+    // slot_key_bytes[s] holds the key stored at slot s, zero-padded to MaxKeyLenPadded.
+    std::array<std::array<char, ((MaxKeyLen + 15) / 16) * 16>, TableSize> slot_key_bytes{};
+    std::array<std::uint8_t, TableSize>                      slot_key_len{};
+};
 
-/**
- * A compile-time key selector for efficient JSON object field lookup.
- * Uses perfect hashing (gperf-style) to map keys to identifiers.
- */
+constexpr std::size_t next_pow2(std::size_t n) noexcept {
+    std::size_t p = 1;
+    while (p < n) p <<= 1;
+    return p;
+}
+
+// Returns the chosen TableSize (power of two >= N, up to MAX_TABLE_SIZE).
 template <std::size_t N>
-class key_selector {
-    static_assert(N > 0, "key_selector requires at least one key");
-    static_assert(N <= 100, "key_selector supports at most 100 keys");
+constexpr std::size_t pick_table_size() noexcept {
+    std::size_t t = next_pow2(N);
+    if (t < 2) t = 2;
+    return t;
+}
 
-    // Perfect hash table data (gperf-style)
-    static constexpr std::size_t MAX_POSITIONS = 16;
-    static constexpr std::size_t POS_LAST_CHAR = std::size_t(-1);
-    static constexpr std::size_t MAX_TABLE_SIZE = 256; // Power of 2, fits in uint8_t
-
-    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso_values_{};
-    std::uint8_t num_positions_{};
-    std::array<std::size_t, MAX_POSITIONS> positions_{};
-    std::array<std::uint8_t, MAX_TABLE_SIZE> slot_to_key_{};
-    std::array<std::uint8_t, N> key_to_slot_{};
-    std::array<std::array<char, 64>, N> key_data_{};
-    std::array<std::uint8_t, N> key_lengths_{};
-    std::size_t table_size_{};
-
-public:
-    // Validate keys at compile time
-    constexpr void validate_keys(const std::array<std::string_view, N>& keys) {
-        for (std::size_t i = 0; i < N; ++i) {
-            auto key = keys[i];
-            if (key.empty()) {
-                throw "Empty keys are not allowed in key_selector";
-            }
-            if (key.size() > SIMDJSON_PADDING) {
-                throw "Key length exceeds SIMDJSON_PADDING (64 bytes)";
-            }
-            for (char c : key) {
-                if (c == '\\') {
-                    throw "Escape characters (\\) are not allowed in key_selector keys";
-                }
-                if (c == '\0') {
-                    throw "Null characters are not allowed in key_selector keys";
-                }
-            }
-        }
+template <std::size_t N>
+constexpr std::size_t char_at(std::string_view key, std::uint8_t pos) noexcept {
+    if (pos == POS_LAST_CHAR) {
+        return key.empty() ? 256 : static_cast<unsigned char>(key.back());
     }
+    return (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
+}
 
-    // Gperf-style perfect hash generation using partition-based algorithm
-    constexpr void generate_hash_table(const std::array<std::string_view, N>& keys) {
-        // Try power-of-two table sizes starting from next_power_of_2(N)
-        constexpr std::size_t START_M = next_power_of_2(N);
-        if constexpr (START_M <= MAX_TABLE_SIZE) {
-            if (try_compute_phf<START_M>(keys)) return;
-            if constexpr (START_M * 2 <= MAX_TABLE_SIZE) {
-                if (try_compute_phf<START_M * 2>(keys)) return;
-                if constexpr (START_M * 4 <= MAX_TABLE_SIZE) {
-                    if (try_compute_phf<START_M * 4>(keys)) return;
-                    if constexpr (START_M * 8 <= MAX_TABLE_SIZE) {
-                        if (try_compute_phf<START_M * 8>(keys)) return;
-                    }
-                }
-            }
-        }
+// Try one gperf-style PHF configuration. Returns true if a perfect assignment was found.
+template <std::size_t N, std::size_t TableSize>
+constexpr bool try_phf(
+    const std::array<std::string_view, N>& keys,
+    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS>& asso,
+    std::array<std::uint8_t, MAX_POSITIONS>& positions,
+    std::uint8_t& num_positions,
+    std::array<std::uint8_t, TableSize>& slot_to_key) noexcept
+{
+    // Helper: reset mapping.
+    auto reset = [&]() {
+        for (std::size_t i = 0; i < TableSize; ++i) slot_to_key[i] = SENTINEL_KEY;
+    };
 
-        // Fallback: linear table
-        table_size_ = N;
-        num_positions_ = 0;
-        std::fill(slot_to_key_.begin(), slot_to_key_.begin() + MAX_TABLE_SIZE, static_cast<std::uint8_t>(N));
-        for (std::size_t i = 0; i < N; ++i) {
-            slot_to_key_[i] = static_cast<std::uint8_t>(i);
-            key_to_slot_[i] = static_cast<std::uint8_t>(i);
-        }
-    }
-
-private:
-    // Helper functions for gperf algorithm
-    static constexpr std::size_t next_power_of_2(std::size_t n) {
-        if (n == 0) return 1;
-        std::size_t p = 1;
-        while (p < n) p <<= 1;
-        return p;
-    }
-
-    static constexpr std::size_t char_at(std::string_view key, std::size_t pos) {
-        if (pos == POS_LAST_CHAR) {
-            return key.empty() ? 256 : static_cast<unsigned char>(key.back());
-        }
-        return (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
-    }
-
-    template <std::size_t M>
-    constexpr bool try_compute_phf(const std::array<std::string_view, N>& keys) {
-        // Initialize
-        std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
-        std::size_t npos = 0;
-        std::array<std::size_t, MAX_POSITIONS> pos{};
-        std::array<std::size_t, M> s2k{};
-
-        // Try to generate gperf
-        if (try_generate_gperf<M>(keys, asso, npos, pos, s2k)) {
-            table_size_ = M;
-            num_positions_ = static_cast<std::uint8_t>(npos);
-            for (std::size_t p = 0; p < MAX_POSITIONS; ++p) {
-                positions_[p] = pos[p];
-                for (std::size_t c = 0; c < 256; ++c) {
-                    asso_values_[p][c] = static_cast<std::uint8_t>(asso[p][c]);
-                }
-            }
-            for (std::size_t i = 0; i < M; ++i) {
-                slot_to_key_[i] = static_cast<std::uint8_t>(s2k[i]);
-            }
-            // Fill remaining slots with sentinel
-            for (std::size_t i = M; i < MAX_TABLE_SIZE; ++i) {
-                slot_to_key_[i] = static_cast<std::uint8_t>(N);
-            }
-
-            // Build key_to_slot mapping
-            for (std::size_t i = 0; i < N; ++i) {
-                key_to_slot_[i] = static_cast<std::uint8_t>(N); // Initialize
-            }
-            for (std::size_t slot = 0; slot < M; ++slot) {
-                std::size_t key_idx = s2k[slot];
-                if (key_idx < N) {
-                    key_to_slot_[key_idx] = static_cast<std::uint8_t>(slot);
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    template <std::size_t M>
-    static constexpr bool try_generate_gperf(
-        const std::array<std::string_view, N>& keys,
-        std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
-        std::size_t& num_positions,
-        std::array<std::size_t, MAX_POSITIONS>& positions,
-        std::array<std::size_t, M>& slot_to_key)
+    // Attempt 1: length-only.
+    reset();
     {
-        // Initialize
-        for (std::size_t p = 0; p < MAX_POSITIONS; ++p) {
-            for (std::size_t c = 0; c < 256; ++c) {
-                asso_values[p][c] = 0;
-            }
+        bool ok = true;
+        for (std::size_t i = 0; i < N && ok; ++i) {
+            std::size_t slot = keys[i].size() % TableSize;
+            if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
+            slot_to_key[slot] = static_cast<std::uint8_t>(i);
         }
-        for (std::size_t i = 0; i < M; ++i) {
-            slot_to_key[i] = N;
-        }
+        if (ok) { num_positions = 0; return true; }
+    }
 
-        // Try length-only hashing first
-        bool success = true;
-        for (std::size_t i = 0; i < N && success; ++i) {
-            std::size_t slot = keys[i].size() % M;
-            if (slot_to_key[slot] != N) {
-                success = false;
-            } else {
-                slot_to_key[slot] = i;
-            }
-        }
-
-        if (success) {
-            num_positions = 0;
-            return true;
-        }
-
-        // Try with position 0
+    // Attempt 2: single position (0), vary offset.
+    for (std::size_t offset = 0; offset < TableSize; ++offset) {
+        reset();
+        for (std::size_t c = 0; c < 256; ++c)
+            asso[0][c] = static_cast<std::uint8_t>((c + offset) % TableSize);
         positions[0] = 0;
         num_positions = 1;
-
-        // Find a working assignment of asso_values for position 0
-        // Use a simple approach: try different offsets
-        for (std::size_t offset = 0; offset < M; ++offset) {
-            // Reset
-            for (std::size_t i = 0; i < M; ++i) {
-                slot_to_key[i] = N;
-            }
-
-            // Assign asso_values based on offset
-            for (std::size_t c = 0; c < 256; ++c) {
-                asso_values[0][c] = (c + offset) % M;
-            }
-
-            success = true;
-            for (std::size_t i = 0; i < N && success; ++i) {
-                std::size_t h = keys[i].size();
-                std::size_t ch = char_at(keys[i], 0);
-                if (ch < 256) h += asso_values[0][ch];
-                std::size_t slot = h % M;
-
-                if (slot_to_key[slot] != N) {
-                    success = false;
-                } else {
-                    slot_to_key[slot] = i;
-                }
-            }
-
-            if (success) {
-                return true;
-            }
+        bool ok = true;
+        for (std::size_t i = 0; i < N && ok; ++i) {
+            std::size_t h = keys[i].size();
+            std::size_t ch = char_at<N>(keys[i], 0);
+            if (ch < 256) h += asso[0][ch];
+            std::size_t slot = h % TableSize;
+            if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
+            slot_to_key[slot] = static_cast<std::uint8_t>(i);
         }
+        if (ok) return true;
+    }
 
-        // Try with positions {0, last_char}
-        if (N <= 50) { // Only for smaller N to avoid complexity
+    // Attempt 3: positions {0, last_char}.
+    for (std::size_t o1 = 0; o1 < TableSize; ++o1) {
+        for (std::size_t o2 = 0; o2 < TableSize; ++o2) {
+            reset();
+            for (std::size_t c = 0; c < 256; ++c) {
+                asso[0][c] = static_cast<std::uint8_t>((c + o1) % TableSize);
+                asso[1][c] = static_cast<std::uint8_t>((c + o2) % TableSize);
+            }
             positions[0] = 0;
             positions[1] = POS_LAST_CHAR;
             num_positions = 2;
-
-            for (std::size_t offset1 = 0; offset1 < 4 && !success; ++offset1) {
-                for (std::size_t offset2 = 0; offset2 < 4 && !success; ++offset2) {
-                    // Reset
-                    for (std::size_t i = 0; i < M; ++i) {
-                        slot_to_key[i] = N;
-                    }
-
-                    // Assign asso_values
-                    for (std::size_t c = 0; c < 256; ++c) {
-                        asso_values[0][c] = (c + offset1) % M;
-                        asso_values[1][c] = (c + offset2) % M;
-                    }
-
-                    success = true;
-                    for (std::size_t i = 0; i < N && success; ++i) {
-                        std::size_t h = keys[i].size();
-                        std::size_t ch1 = char_at(keys[i], 0);
-                        if (ch1 < 256) h += asso_values[0][ch1];
-                        std::size_t ch2 = char_at(keys[i], POS_LAST_CHAR);
-                        if (ch2 < 256) h += asso_values[1][ch2];
-                        std::size_t slot = h % M;
-
-                        if (slot_to_key[slot] != N) {
-                            success = false;
-                        } else {
-                            slot_to_key[slot] = i;
-                        }
-                    }
-
-                    if (success) {
-                        return true;
-                    }
-                }
+            bool ok = true;
+            for (std::size_t i = 0; i < N && ok; ++i) {
+                std::size_t h = keys[i].size();
+                std::size_t c1 = char_at<N>(keys[i], 0);
+                if (c1 < 256) h += asso[0][c1];
+                std::size_t c2 = char_at<N>(keys[i], POS_LAST_CHAR);
+                if (c2 < 256) h += asso[1][c2];
+                std::size_t slot = h % TableSize;
+                if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
+                slot_to_key[slot] = static_cast<std::uint8_t>(i);
             }
+            if (ok) return true;
+        }
+    }
+    return false;
+}
+
+template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
+consteval phf_data<N, TableSize, MaxKeyLen>
+compute_phf(const std::array<std::string_view, N>& keys) {
+    // Validate.
+    for (std::size_t i = 0; i < N; ++i) {
+        if (keys[i].empty())        throw "empty keys are not allowed in key_selector";
+        if (keys[i].size() > MaxKeyLen) throw "key length exceeds MaxKeyLen";
+        for (char c : keys[i]) {
+            if (c == '\\')          throw "backslash not allowed in key_selector keys";
+            if (c == '"')           throw "quote not allowed in key_selector keys";
+            if (c == '\0')          throw "null byte not allowed in key_selector keys";
+        }
+        for (std::size_t j = i + 1; j < N; ++j)
+            if (keys[i] == keys[j]) throw "duplicate keys in key_selector";
+    }
+
+    phf_data<N, TableSize, MaxKeyLen> out{};
+    for (std::size_t s = 0; s < TableSize; ++s) out.slot_to_key[s] = SENTINEL_KEY;
+
+    if (!try_phf<N, TableSize>(keys, out.asso_values, out.positions,
+                               out.num_positions, out.slot_to_key))
+        throw "key_selector PHF generation failed";
+
+    // Populate slot key bytes (zero-padded) and lengths.
+    for (std::size_t s = 0; s < TableSize; ++s) {
+        std::uint8_t ki = out.slot_to_key[s];
+        if (ki < N) {
+            auto k = keys[ki];
+            out.slot_key_len[s] = static_cast<std::uint8_t>(k.size());
+            for (std::size_t c = 0; c < k.size(); ++c)
+                out.slot_key_bytes[s][c] = k[c];
+        } else {
+            out.slot_key_len[s] = 0; // sentinel: no length can match
+        }
+    }
+    return out;
+}
+
+// --- SIMD primitives --------------------------------------------------------
+
+// Scan for the terminating '"' starting at p. Returns its byte offset (= key length).
+// Reads at most 16 bytes (if MaxKeyLen <= 15) else up to MaxKeyLen+1 bytes.
+// Caller guarantees SIMDJSON_PADDING bytes past the JSON buffer, so the load is safe.
+template <std::size_t MaxKeyLen>
+simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
+#if SIMDJSON_KEY_SELECTOR_HAS_NEON
+    uint8x16_t v0 = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
+    uint8x16_t cmp0 = vceqq_u8(v0, vdupq_n_u8('"'));
+    uint64_t m0 = vget_lane_u64(
+        vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp0), 4)), 0);
+    if constexpr (MaxKeyLen < 16) {
+        // Only the first 16 bytes are relevant.
+        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
+        return MaxKeyLen + 1;
+    } else {
+        uint8x16_t v1 = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + 16);
+        uint8x16_t cmp1 = vceqq_u8(v1, vdupq_n_u8('"'));
+        uint64_t m1 = vget_lane_u64(
+            vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp1), 4)), 0);
+        // Combine into a single 128-bit-ish mask. If m0 != 0, first-byte lives there.
+        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
+        if (m1 != 0) return 16 + (std::size_t(__builtin_ctzll(m1)) >> 2);
+        return MaxKeyLen + 1;
+    }
+#elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
+    __m128i v0   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+    __m128i cmp0 = _mm_cmpeq_epi8(v0, _mm_set1_epi8('"'));
+    unsigned m0  = static_cast<unsigned>(_mm_movemask_epi8(cmp0));
+    if constexpr (MaxKeyLen < 16) {
+        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctz(m0));
+        return MaxKeyLen + 1;
+    } else {
+        __m128i v1   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + 16));
+        __m128i cmp1 = _mm_cmpeq_epi8(v1, _mm_set1_epi8('"'));
+        unsigned m1  = static_cast<unsigned>(_mm_movemask_epi8(cmp1));
+        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctz(m0));
+        if (m1 != 0) return 16 + std::size_t(__builtin_ctz(m1));
+        return MaxKeyLen + 1;
+    }
+#else
+    for (std::size_t i = 0; i <= MaxKeyLen; ++i)
+        if (p[i] == '"') return i;
+    return MaxKeyLen + 1;
+#endif
+}
+
+// Byte-equal of p[0..len) against stored[0..len). stored is zero-padded past `len`.
+// Input is read over 16 or 32 bytes (padded JSON buffer guaranteed).
+template <std::size_t MaxKeyLen>
+simdjson_really_inline bool compare_key_bytes(
+    const char* p, const char* stored, std::size_t len) noexcept
+{
+    alignas(16) static constexpr uint8_t idx16[16] =
+        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    if constexpr (MaxKeyLen <= 16) {
+#if SIMDJSON_KEY_SELECTOR_HAS_NEON
+        uint8x16_t vp = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
+        uint8x16_t vs = vld1q_u8(reinterpret_cast<const uint8_t*>(stored));
+        uint8x16_t mask = vcltq_u8(vld1q_u8(idx16), vdupq_n_u8(static_cast<uint8_t>(len)));
+        uint8x16_t diff = veorq_u8(vandq_u8(vp, mask), vs);
+        return vmaxvq_u8(diff) == 0;
+#elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
+        __m128i vp = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+        __m128i vs = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored));
+        __m128i idx = _mm_load_si128(reinterpret_cast<const __m128i*>(idx16));
+        __m128i mask = _mm_cmplt_epi8(idx, _mm_set1_epi8(static_cast<char>(len)));
+        __m128i eq = _mm_cmpeq_epi8(_mm_and_si128(vp, mask), vs);
+        return _mm_movemask_epi8(eq) == 0xFFFF;
+#else
+        for (std::size_t i = 0; i < len; ++i)
+            if (p[i] != stored[i]) return false;
+        return true;
+#endif
+    } else if constexpr (MaxKeyLen <= 32) {
+        // Two 16-byte lanes. JSON buffer is padded so the second load is safe.
+        alignas(16) static constexpr uint8_t idx32_hi[16] =
+            {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+#if SIMDJSON_KEY_SELECTOR_HAS_NEON
+        uint8x16_t vp_lo = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
+        uint8x16_t vp_hi = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + 16);
+        uint8x16_t vs_lo = vld1q_u8(reinterpret_cast<const uint8_t*>(stored));
+        uint8x16_t vs_hi = vld1q_u8(reinterpret_cast<const uint8_t*>(stored) + 16);
+        uint8x16_t lenv = vdupq_n_u8(static_cast<uint8_t>(len));
+        uint8x16_t m_lo = vcltq_u8(vld1q_u8(idx16),    lenv);
+        uint8x16_t m_hi = vcltq_u8(vld1q_u8(idx32_hi), lenv);
+        uint8x16_t d_lo = veorq_u8(vandq_u8(vp_lo, m_lo), vs_lo);
+        uint8x16_t d_hi = veorq_u8(vandq_u8(vp_hi, m_hi), vs_hi);
+        return vmaxvq_u8(vorrq_u8(d_lo, d_hi)) == 0;
+#elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
+        __m128i vp_lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+        __m128i vp_hi = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + 16));
+        __m128i vs_lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored));
+        __m128i vs_hi = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored + 16));
+        __m128i lenv = _mm_set1_epi8(static_cast<char>(len));
+        __m128i m_lo = _mm_cmplt_epi8(_mm_load_si128(reinterpret_cast<const __m128i*>(idx16)),    lenv);
+        __m128i m_hi = _mm_cmplt_epi8(_mm_load_si128(reinterpret_cast<const __m128i*>(idx32_hi)), lenv);
+        __m128i eq_lo = _mm_cmpeq_epi8(_mm_and_si128(vp_lo, m_lo), vs_lo);
+        __m128i eq_hi = _mm_cmpeq_epi8(_mm_and_si128(vp_hi, m_hi), vs_hi);
+        return (_mm_movemask_epi8(eq_lo) & _mm_movemask_epi8(eq_hi)) == 0xFFFF;
+#else
+        for (std::size_t i = 0; i < len; ++i)
+            if (p[i] != stored[i]) return false;
+        return true;
+#endif
+    } else {
+        // MaxKeyLen > 32: byte loop.
+        for (std::size_t i = 0; i < len; ++i)
+            if (p[i] != stored[i]) return false;
+        return true;
+    }
+}
+
+template <std::size_t N>
+constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>& keys) noexcept {
+    std::size_t m = 0;
+    for (std::size_t i = 0; i < N; ++i) if (keys[i].size() > m) m = keys[i].size();
+    return m;
+}
+
+} // namespace key_selector_detail
+
+/**
+ * Stateless, compile-time key selector.
+ *
+ * Usage:
+ *   using sel_t = decltype(make_key_selector<"id", "text", "user">());
+ *   std::size_t i = sel_t::match_raw(raw_key); // returns sel_t::size() on miss
+ *
+ * All PHF tables are static constexpr — the compiler sees them as compile-time
+ * constants at every call site and fully unrolls compute_hash / compare.
+ */
+template <constevalutil::fixed_string... Keys>
+struct key_selector {
+    static constexpr std::size_t N = sizeof...(Keys);
+    static_assert(N > 0,   "key_selector requires at least one key");
+    static_assert(N <= 100,"key_selector supports at most 100 keys");
+
+    static constexpr std::array<std::string_view, N> keys{ Keys.view()... };
+    static constexpr std::size_t table_size  = key_selector_detail::pick_table_size<N>();
+    static constexpr std::size_t max_key_len = key_selector_detail::compute_max_key_len<N>(keys);
+    static_assert(max_key_len <= SIMDJSON_PADDING,
+                  "key longer than SIMDJSON_PADDING is not supported");
+
+    static constexpr auto phf =
+        key_selector_detail::compute_phf<N, table_size, max_key_len>(keys);
+
+    static constexpr std::size_t size() noexcept { return N; }
+
+    /**
+     * Look up a JSON key. rjs must point just after an opening quote in a padded
+     * simdjson buffer. Returns the selector index in [0, N) on match, or N on miss.
+     */
+    static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
+        const char* p = rjs.raw();
+        std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
+        if (len == 0 || len > max_key_len) return N;
+
+        // Compute hash. positions / num_positions / asso_values are compile-time
+        // constants, so this fully unrolls.
+        std::size_t h = len;
+        for (std::uint8_t i = 0; i < phf.num_positions; ++i) {
+            std::uint8_t pos = phf.positions[i];
+            std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
+                              ? (len - std::size_t{1})
+                              : static_cast<std::size_t>(pos);
+            std::size_t has = static_cast<std::size_t>(idx < len);
+            std::size_t mask = std::size_t{0} - has;
+            std::size_t safe_idx = idx & mask;
+            unsigned char b = static_cast<unsigned char>(p[safe_idx]);
+            h += static_cast<std::size_t>(phf.asso_values[i][b]) & mask;
         }
 
-        return false;
+        std::size_t slot = h & (table_size - 1);
+
+        std::uint8_t ki = phf.slot_to_key[slot];
+        if (ki >= N) return N;
+        if (phf.slot_key_len[slot] != len) return N;
+        if (!key_selector_detail::compare_key_bytes<max_key_len>(
+                p, phf.slot_key_bytes[slot].data(), len)) return N;
+        return ki;
     }
 
-
-
-public:
-    constexpr key_selector(const std::array<std::string_view, N>& keys) {
-        validate_keys(keys);
-
-        // Store key data
-        for (std::size_t i = 0; i < N; ++i) {
-            key_lengths_[i] = static_cast<std::uint8_t>(keys[i].size());
-            std::copy(keys[i].begin(), keys[i].end(), key_data_[i].begin());
-        }
-
-        generate_hash_table(keys);
-    }
-
-    [[nodiscard]] constexpr std::size_t size() const noexcept { return N; }
-
-    [[nodiscard]] constexpr simdjson_really_inline std::size_t compute_hash(std::string_view key) const noexcept {
-        std::size_t h = key.size();
-        const char* kp = key.data();
-        for (std::uint8_t i = 0; i < num_positions_; ++i) {
-            std::size_t pos = positions_[i];
-            std::size_t ch;
-            if (pos == POS_LAST_CHAR) {
-                ch = static_cast<unsigned char>(key.back());
-            } else {
-                ch = static_cast<unsigned char>(kp[pos]);
-            }
-            h += asso_values_[i][ch];
-        }
-        return h & (table_size_ - 1);
-    }
-
-    [[nodiscard]] constexpr simdjson_really_inline  bool contains(std::string_view key) const noexcept {
-        std::size_t slot = compute_hash(key);
-        if (slot >= table_size_) return false;
-
-        std::uint8_t key_idx = slot_to_key_[slot];
-        if (key_idx >= N) return false;
-
-        // Compare key
-        if (key_lengths_[key_idx] != key.size()) return false;
-        return std::equal(key.begin(), key.end(), key_data_[key_idx].begin());
-    }
-
-    [[nodiscard]] constexpr simdjson_really_inline std::size_t index_of(std::string_view key) const noexcept {
-        std::size_t slot = compute_hash(key);
-        if (slot >= table_size_) return N; // Invalid index
-
-        std::uint8_t key_idx = slot_to_key_[slot];
-        if (key_idx >= N) return N;
-
-        // Compare key
-        if (key_lengths_[key_idx] != key.size()) return N;
-        if (!std::equal(key.begin(), key.end(), key_data_[key_idx].begin())) return N;
-
-        return key_idx;
-    }
-
-    // Accessors for key data (used by object::find_field)
-    [[nodiscard]] constexpr std::string_view get_key(std::size_t index) const noexcept {
-        if (index >= N) return {};
-        return std::string_view(key_data_[index].data(), key_lengths_[index]);
+    /** Return the key text at selector index i (i in [0, N)). */
+    static constexpr std::string_view key_at(std::size_t i) noexcept {
+        return keys[i];
     }
 };
+
+/**
+ * Factory for readability, matching make_perfect_set in ConstexprCore.
+ */
+template <constevalutil::fixed_string... Keys>
+consteval auto make_key_selector() noexcept {
+    return key_selector<Keys...>{};
+}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

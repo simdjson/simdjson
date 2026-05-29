@@ -39,6 +39,10 @@ class raw_json_string;
 class token_iterator;
 class value;
 class value_iterator;
+#if SIMDJSON_SUPPORTS_CONCEPTS
+template <typename Selector> class selector_iterator;
+template <typename Selector> class selector_range;
+#endif
 
 #if SIMDJSON_SUPPORTS_RANGES
 class array_range;
