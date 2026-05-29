@@ -76,7 +76,7 @@ public:
 
 private:
   fractured_json_options options_;
-  layout_mode current_layout_ = layout_mode::EXPANDED;
+  layout_mode current_layout_ = layout_mode::expanded;
   size_t current_depth_ = 0;
   size_t current_line_length_ = 0;
 

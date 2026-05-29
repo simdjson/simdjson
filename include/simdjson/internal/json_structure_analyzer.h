@@ -20,10 +20,10 @@ namespace internal {
  * Layout mode for fractured JSON formatting.
  */
 enum class layout_mode {
-  INLINE,              // Single line: [1, 2, 3] or {"a": 1}
-  COMPACT_MULTILINE,   // Multiple items per line with breaks
-  TABLE,               // Tabular format for arrays of similar objects
-  EXPANDED             // Traditional multi-line with indentation
+  single_line,         // Single line: [1, 2, 3] or {"a": 1}
+  compact_multiline,   // Multiple items per line with breaks
+  table,               // Tabular format for arrays of similar objects
+  expanded             // Traditional multi-line with indentation
 };
 
 /**
@@ -50,7 +50,7 @@ struct element_metrics {
   std::vector<std::string> common_keys{};
 
   /** Recommended layout mode based on analysis */
-  layout_mode recommended_layout = layout_mode::EXPANDED;
+  layout_mode recommended_layout = layout_mode::expanded;
 
   /** Child metrics for arrays and objects (in order of iteration) */
   std::vector<element_metrics> children{};
