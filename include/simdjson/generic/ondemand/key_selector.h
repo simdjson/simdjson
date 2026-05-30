@@ -347,6 +347,16 @@ constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>&
  *
  * All PHF tables are static constexpr — the compiler sees them as compile-time
  * constants at every call site and fully unrolls compute_hash / compare.
+ *
+ * Limitations:
+ *   - Each key must be at most 32 characters long (and no longer than
+ *     SIMDJSON_PADDING). Longer keys trigger a compile-time error.
+ *   - The number of keys should be moderate. The hard limit is 100 keys, but the
+ *     compile-time perfect-hash construction may fail (compile-time error) for
+ *     large or awkward key sets, and compilation time grows with the number of
+ *     keys, so prefer a handful of keys per selector.
+ *   - Keys must be distinct, non-empty, and free of backslash, double-quote and
+ *     null bytes (matching is done against the raw, unescaped JSON key bytes).
  */
 template <constevalutil::fixed_string... Keys>
 struct key_selector {

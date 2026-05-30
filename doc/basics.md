@@ -2071,6 +2071,21 @@ error encountered while walking the object).
 Because the selector index is a small integer, a `switch` is the natural way to
 dispatch on the matched field.
 
+
+Key selectors are subject to a few compile-time restrictions:
+
+- Key length. We currently limit keys to at most 32 characters long.
+  A longer key produces a compile-time error. This limitations could be
+  eased in the future but we expect longer keys to be unusual.
+- Number of keys. The hard limit is 100 keys, but the compile-time perfect-hash
+  construction may fail (again, a compile-time error) for large or awkward key sets,
+  and compilation time grows with the number of keys. For compilation speed,
+  you may use precompiled headers if you have dozens of keys.
+- Key contents. Keys must be distinct, non-empty, and must not contain a
+  backslash, a double quote, or a null byte. Matching is performed against the
+  raw, unescaped JSON key bytes, so a selector key has to equal the key exactly
+  as it appears in the document (no JSON escape processing is applied).
+
 This example uses exceptions (see [Disabling exceptions](#disabling-exceptions)
 for the error-code style). The `"age"` field is not selected, so it is skipped.
 
@@ -2116,7 +2131,6 @@ user.for_each<user_fields>([&](std::size_t i, ondemand::value v) {
 // id == 1186275104, handle == "ayuu0123"
 ```
 
-### Example 3: a selected value that is itself an object
 
 A selected value can be any JSON value, including a nested object. Because the
 value is consumed inside the callback, you can simply turn it into an
