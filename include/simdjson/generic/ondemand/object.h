@@ -138,6 +138,11 @@ public:
    *     switch (i) { case 0: ...; case 1: ...; }
    *   });
    *
+   * Limitations (see key_selector): each key must be at most 32 characters long,
+   * and the number of keys should be moderate (hard limit 100; a handful is
+   * best, as the compile-time perfect hash may fail or slow compilation for
+   * large key sets).
+   *
    * @returns SUCCESS, or the first error encountered while walking the object.
    */
   template <typename Selector, typename Func>
