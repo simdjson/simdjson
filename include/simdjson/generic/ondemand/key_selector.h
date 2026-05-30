@@ -6,7 +6,7 @@
 #include "simdjson/common_defs.h"
 #include "simdjson/constevalutil.h"
 #include "simdjson/generic/ondemand/raw_json_string.h"
-#endif
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <array>
 #include <string_view>
@@ -194,6 +194,7 @@ compute_phf(const std::array<std::string_view, N>& keys) {
 // Caller guarantees SIMDJSON_PADDING bytes past the JSON buffer, so the load is safe.
 template <std::size_t MaxKeyLen>
 simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
+    static_assert(MaxKeyLen <= 32, "MaxKeyLen must be <= 32 for current SIMD implementations");
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
     uint8x16_t v0 = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
     uint8x16_t cmp0 = vceqq_u8(v0, vdupq_n_u8('"'));
@@ -345,7 +346,6 @@ struct key_selector {
         const char* p = rjs.raw();
         std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
         if (len == 0 || len > max_key_len) return N;
-
         // Compute hash. positions / num_positions / asso_values are compile-time
         // constants, so this fully unrolls.
         std::size_t h = len;
@@ -354,15 +354,10 @@ struct key_selector {
             std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
                               ? (len - std::size_t{1})
                               : static_cast<std::size_t>(pos);
-            std::size_t has = static_cast<std::size_t>(idx < len);
-            std::size_t mask = std::size_t{0} - has;
-            std::size_t safe_idx = idx & mask;
-            unsigned char b = static_cast<unsigned char>(p[safe_idx]);
-            h += static_cast<std::size_t>(phf.asso_values[i][b]) & mask;
+            h += phf.asso_values[i][p[idx]];
         }
 
         std::size_t slot = h & (table_size - 1);
-
         std::uint8_t ki = phf.slot_to_key[slot];
         if (ki >= N) return N;
         if (phf.slot_key_len[slot] != len) return N;

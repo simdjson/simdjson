@@ -125,23 +125,23 @@ public:
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
   /**
-   * Iterate over this object, yielding every field whose key is in the compile-time
-   * key_selector Selector. Yields std::pair<std::size_t, simdjson_result<value>>
-   * (selector_index, value) in JSON order. Duplicate keys in the JSON are skipped
-   * (first occurrence wins). Iteration ends when all Selector::size() keys have
-   * matched or the object ends.
+   * Walk this object once and invoke on_match(selector_index, value) for each
+   * field whose key is in the compile-time key_selector Selector, in JSON order
+   * (first occurrence of a duplicate key wins). Iteration stops once all
+   * Selector::size() keys have matched or the object ends. The value is consumed
+   * in place, so this is a low-overhead way to extract a known set of fields
+   * regardless of their order in the JSON.
    *
    * Usage:
    *   using sel_t = decltype(make_key_selector<"id", "text", "user">());
-   *   for (auto [i, v] : obj.select<sel_t>()) { ... }
+   *   obj.for_each<sel_t>([&](std::size_t i, ondemand::value v) {
+   *     switch (i) { case 0: ...; case 1: ...; }
+   *   });
    *
-   * @tparam Selector A stateless key_selector type (see key_selector.h).
+   * @returns SUCCESS, or the first error encountered while walking the object.
    */
-  template <typename Selector>
-  simdjson_inline selector_range<Selector> select() & noexcept;
-  /** @overload */
-  template <typename Selector>
-  simdjson_inline selector_range<Selector> select() && noexcept;
+  template <typename Selector, typename Func>
+  simdjson_inline error_code for_each(Func&& on_match) noexcept;
 #endif
 
   /**
@@ -354,12 +354,6 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) && noexcept;
-#if SIMDJSON_SUPPORTS_CONCEPTS
-  template <typename Selector>
-  simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector> select() & noexcept;
-  template <typename Selector>
-  simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector> select() && noexcept;
-#endif
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
