@@ -35,190 +35,683 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
-inline constexpr std::size_t MAX_POSITIONS   = 4;
-inline constexpr std::size_t MAX_TABLE_SIZE  = 256;
-inline constexpr std::uint8_t POS_LAST_CHAR  = 0xFF;
-inline constexpr std::uint8_t SENTINEL_KEY   = 0xFF;
+// ============================================================================
+// Compile-time perfect-hash generator.
+//
+// This is a port of the ConstexprCore perfect-hash generator
+// (https://github.com/ConstexprCore/perfect_hash). It scales to ~100 keys at
+// compile time by determining association values one (position, character)
+// symbol at a time (gperf-style) instead of an exhaustive offset search, and
+// falls back to a Hash-and-Displace construction for large/awkward key sets.
+//
+// Only flat tables survive to runtime; the lookup is a few additions plus a
+// single SIMD key comparison (see match_raw below).
+// ============================================================================
 
-// All PHF tables live inside this structural type; a single instance becomes a
-// static constexpr member of key_selector<Keys...>, so every field below is a
-// compile-time constant at every call site.
-template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
-struct phf_data {
-    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso_values{};
-    std::array<std::uint8_t, MAX_POSITIONS>                  positions{};
-    std::uint8_t                                             num_positions{};
-    std::array<std::uint8_t, TableSize>                      slot_to_key{};
-    // slot_key_bytes[s] holds the key stored at slot s, zero-padded to MaxKeyLenPadded.
-    std::array<std::array<char, ((MaxKeyLen + 15) / 16) * 16>, TableSize> slot_key_bytes{};
-    std::array<std::uint8_t, TableSize>                      slot_key_len{};
-};
+// Maximum number of character positions the gperf hash may combine.
+static constexpr std::size_t MAX_POSITIONS = 16;
+// Sentinel "position" meaning "the last character of the key".
+static constexpr std::size_t LAST_CHAR = std::size_t(-1);
+// Runtime-encoded sentinels (stored in uint8 tables).
+static constexpr std::uint8_t POS_LAST_CHAR = 0xFF; // positions_[i] == last char
+static constexpr std::uint8_t HD_MODE       = 0xFF; // num_positions == H&D mode
+// Flags stored in positions[2] in H&D mode to select the key-hash variant.
+static constexpr std::size_t HD_HASH_2BYTE_FLAG = 2;
+static constexpr std::size_t HD_HASH_4BYTE_FLAG = 4;
 
-constexpr std::size_t next_pow2(std::size_t n) noexcept {
+constexpr std::size_t next_power_of_2(std::size_t n) noexcept {
+    if (n == 0) { return 1; }
     std::size_t p = 1;
-    while (p < n) p <<= 1;
+    while (p < n) { p <<= 1; }
     return p;
 }
 
-// Returns the chosen TableSize (power of two >= N, up to MAX_TABLE_SIZE).
-template <std::size_t N>
-constexpr std::size_t pick_table_size() noexcept {
-    std::size_t t = next_pow2(N);
-    if (t < 2) t = 2;
-    return t;
-}
-
-template <std::size_t N>
-constexpr std::size_t char_at(std::string_view key, std::uint8_t pos) noexcept {
-    if (pos == POS_LAST_CHAR) {
-        return key.empty() ? 256 : static_cast<unsigned char>(key.back());
+// Character at a given position (LAST_CHAR means last character), or 256 if out
+// of bounds.
+constexpr std::size_t char_at(std::string_view key, std::size_t pos) noexcept {
+    if (pos == LAST_CHAR) {
+        if (key.empty()) { return 256; }
+        return static_cast<unsigned char>(key[key.size() - 1]);
     }
-    return (pos < key.size()) ? static_cast<unsigned char>(key[pos]) : 256;
+    if (pos >= key.size()) { return 256; }
+    return static_cast<unsigned char>(key[pos]);
 }
 
-// Try one gperf-style PHF configuration. Returns true if a perfect assignment was found.
-template <std::size_t N, std::size_t TableSize>
-constexpr bool try_phf(
+// Count key pairs that a set of positions fails to distinguish. Keys whose
+// lengths differ modulo the table size are separated by the length term in the
+// hash, so they need no position coverage.
+template <std::size_t N>
+consteval std::size_t count_undistinguished_pairs(
     const std::array<std::string_view, N>& keys,
-    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS>& asso,
-    std::array<std::uint8_t, MAX_POSITIONS>& positions,
-    std::uint8_t& num_positions,
-    std::array<std::uint8_t, TableSize>& slot_to_key) noexcept
-{
-    // Helper: reset mapping.
-    auto reset = [&]() {
-        for (std::size_t i = 0; i < TableSize; ++i) slot_to_key[i] = SENTINEL_KEY;
-    };
-
-    // Attempt 1: length-only.
-    reset();
-    {
-        bool ok = true;
-        for (std::size_t i = 0; i < N && ok; ++i) {
-            std::size_t slot = keys[i].size() % TableSize;
-            if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
-            slot_to_key[slot] = static_cast<std::uint8_t>(i);
-        }
-        if (ok) { num_positions = 0; return true; }
-    }
-
-    // Attempt 2: single position (0), vary offset.
-    for (std::size_t offset = 0; offset < TableSize; ++offset) {
-        reset();
-        for (std::size_t c = 0; c < 256; ++c)
-            asso[0][c] = static_cast<std::uint8_t>((c + offset) % TableSize);
-        positions[0] = 0;
-        num_positions = 1;
-        bool ok = true;
-        for (std::size_t i = 0; i < N && ok; ++i) {
-            std::size_t h = keys[i].size();
-            std::size_t ch = char_at<N>(keys[i], 0);
-            if (ch < 256) h += asso[0][ch];
-            std::size_t slot = h % TableSize;
-            if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
-            slot_to_key[slot] = static_cast<std::uint8_t>(i);
-        }
-        if (ok) return true;
-    }
-
-    // Attempt 3: positions {0, last_char}.
-    for (std::size_t o1 = 0; o1 < TableSize; ++o1) {
-        for (std::size_t o2 = 0; o2 < TableSize; ++o2) {
-            reset();
-            for (std::size_t c = 0; c < 256; ++c) {
-                asso[0][c] = static_cast<std::uint8_t>((c + o1) % TableSize);
-                asso[1][c] = static_cast<std::uint8_t>((c + o2) % TableSize);
+    const std::size_t* positions,
+    std::size_t num_positions,
+    std::size_t modulus) {
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t j = i + 1; j < N; ++j) {
+            if (keys[i].size() % modulus != keys[j].size() % modulus) { continue; }
+            bool distinguished = false;
+            for (std::size_t p = 0; p < num_positions; ++p) {
+                if (char_at(keys[i], positions[p]) != char_at(keys[j], positions[p])) {
+                    distinguished = true;
+                    break;
+                }
             }
-            positions[0] = 0;
-            positions[1] = POS_LAST_CHAR;
-            num_positions = 2;
-            bool ok = true;
-            for (std::size_t i = 0; i < N && ok; ++i) {
-                std::size_t h = keys[i].size();
-                std::size_t c1 = char_at<N>(keys[i], 0);
-                if (c1 < 256) h += asso[0][c1];
-                std::size_t c2 = char_at<N>(keys[i], POS_LAST_CHAR);
-                if (c2 < 256) h += asso[1][c2];
-                std::size_t slot = h % TableSize;
-                if (slot_to_key[slot] != SENTINEL_KEY) { ok = false; break; }
-                slot_to_key[slot] = static_cast<std::uint8_t>(i);
+            if (!distinguished) { ++count; }
+        }
+    }
+    return count;
+}
+
+template <std::size_t N>
+consteval bool positions_distinguish(
+    const std::array<std::string_view, N>& keys,
+    const std::size_t* positions,
+    std::size_t num_positions,
+    std::size_t modulus) {
+    return count_undistinguished_pairs<N>(keys, positions, num_positions, modulus) == 0;
+}
+
+// Number of distinct (length % modulus, char_at(key, pos)) pairs at a position.
+template <std::size_t N>
+consteval std::size_t discriminating_power(
+    const std::array<std::string_view, N>& keys,
+    std::size_t pos,
+    std::size_t modulus) {
+    struct pair { std::size_t len_mod; std::size_t ch; };
+    std::array<pair, N> pairs{};
+    for (std::size_t i = 0; i < N; ++i) {
+        pairs[i] = {keys[i].size() % modulus, char_at(keys[i], pos)};
+    }
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        bool dup = false;
+        for (std::size_t j = 0; j < i; ++j) {
+            if (pairs[i].len_mod == pairs[j].len_mod && pairs[i].ch == pairs[j].ch) {
+                dup = true;
+                break;
             }
-            if (ok) return true;
+        }
+        if (!dup) { ++count; }
+    }
+    return count;
+}
+
+template <std::size_t N>
+consteval std::size_t max_key_length(const std::array<std::string_view, N>& keys) {
+    std::size_t m = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        if (keys[i].size() > m) { m = keys[i].size(); }
+    }
+    return m;
+}
+
+// Bounded backtracking DFS for a minimal set of distinguishing positions.
+template <std::size_t N>
+consteval bool backtracking_search(
+    const std::array<std::string_view, N>& keys,
+    const std::size_t* candidates,
+    std::size_t num_candidates,
+    std::size_t* positions,
+    std::size_t& num_positions_out,
+    std::size_t& budget,
+    std::size_t modulus) {
+    constexpr std::size_t MAX_DEPTH = 8;
+    std::size_t breadth = num_candidates < 20 ? num_candidates : 20;
+
+    struct frame { std::size_t depth; std::size_t next_ci; std::size_t parent_count; };
+    std::array<frame, MAX_DEPTH + 1> stack{};
+    std::size_t sp = 0;
+
+    std::size_t initial_count = count_undistinguished_pairs<N>(keys, positions, 0, modulus);
+    if (budget > 0) { --budget; }
+    if (initial_count == 0) { num_positions_out = 0; return true; }
+
+    stack[0] = {0, 0, initial_count};
+
+    while (budget > 0) {
+        if (sp > MAX_DEPTH) {
+            if (sp == 0) { break; }
+            --sp;
+            ++stack[sp].next_ci;
+            continue;
+        }
+        auto& f = stack[sp];
+        if (f.next_ci >= breadth) {
+            if (sp == 0) { break; }
+            --sp;
+            ++stack[sp].next_ci;
+            continue;
+        }
+        positions[sp] = candidates[f.next_ci];
+        --budget;
+        std::size_t new_count = count_undistinguished_pairs<N>(keys, positions, sp + 1, modulus);
+        if (new_count == 0) { num_positions_out = sp + 1; return true; }
+        if (new_count < f.parent_count && sp + 1 < MAX_DEPTH) {
+            stack[sp + 1] = {sp + 1, f.next_ci + 1, new_count};
+            ++sp;
+        } else {
+            ++f.next_ci;
         }
     }
     return false;
 }
 
+// Phase 1: select character positions that distinguish all colliding pairs.
+template <std::size_t N>
+consteval std::size_t select_positions(
+    const std::array<std::string_view, N>& keys,
+    std::array<std::size_t, MAX_POSITIONS>& positions,
+    std::size_t modulus) {
+    if (positions_distinguish<N>(keys, positions.data(), 0, modulus)) { return 0; }
+
+    std::size_t max_len = max_key_length(keys);
+    constexpr std::size_t MAX_CANDIDATES = 256;
+    std::array<std::size_t, MAX_CANDIDATES> candidates{};
+    std::array<std::size_t, MAX_CANDIDATES> powers{};
+    std::size_t num_candidates = 0;
+    for (std::size_t p = 0; p < max_len && num_candidates < MAX_CANDIDATES - 1; ++p) {
+        candidates[num_candidates] = p;
+        powers[num_candidates] = discriminating_power(keys, p, modulus);
+        ++num_candidates;
+    }
+    if (num_candidates < MAX_CANDIDATES) {
+        candidates[num_candidates] = LAST_CHAR;
+        powers[num_candidates] = discriminating_power(keys, LAST_CHAR, modulus);
+        ++num_candidates;
+    }
+    for (std::size_t i = 0; i < num_candidates; ++i) {
+        for (std::size_t j = i + 1; j < num_candidates; ++j) {
+            if (powers[j] > powers[i]) {
+                auto tc = candidates[i]; candidates[i] = candidates[j]; candidates[j] = tc;
+                auto tp = powers[i]; powers[i] = powers[j]; powers[j] = tp;
+            }
+        }
+    }
+
+    positions[0] = candidates[0];
+    if (positions_distinguish<N>(keys, positions.data(), 1, modulus)) { return 1; }
+
+    positions[0] = 0;
+    positions[1] = LAST_CHAR;
+    if (positions_distinguish<N>(keys, positions.data(), 2, modulus)) { return 2; }
+
+    {
+        std::size_t budget = 5000;
+        std::size_t num_found = 0;
+        if (backtracking_search<N>(keys, candidates.data(), num_candidates,
+                                   positions.data(), num_found, budget, modulus)) {
+            return num_found;
+        }
+    }
+
+    std::size_t num_pos = 0;
+    for (std::size_t ci = 0; ci < num_candidates && num_pos < MAX_POSITIONS; ++ci) {
+        bool already = false;
+        for (std::size_t p = 0; p < num_pos; ++p) {
+            if (positions[p] == candidates[ci]) { already = true; break; }
+        }
+        if (already) { continue; }
+        positions[num_pos] = candidates[ci];
+        ++num_pos;
+        if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
+    }
+
+    throw "Failed to find distinguishing positions for perfect hash";
+}
+
+// Result of PHF computation. A max-sized slot_to_key array lets the same struct
+// type carry any chosen table size.
+template <std::size_t N>
+struct phf_result {
+    // Allow up to 8x the minimum table size. Sparser tables solve faster.
+    static constexpr std::size_t MAX_TABLE_SIZE = next_power_of_2(N) * 8;
+    std::size_t table_size{};
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso_values{};
+    std::size_t num_positions{};
+    std::array<std::size_t, MAX_POSITIONS> positions{};
+    std::array<std::size_t, MAX_TABLE_SIZE> slot_to_key{};
+};
+
+// Partition-based asso_values search (gperf-style). Determines asso_values one
+// (position, character) symbol at a time; never revisits a value. Equivalence
+// classes (keys sharing the same undetermined symbols) keep the search cheap.
+template <std::size_t N, std::size_t M>
+consteval bool try_generate_gperf(
+    const std::array<std::string_view, N>& keys,
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
+    std::size_t& num_positions,
+    std::array<std::size_t, MAX_POSITIONS>& positions,
+    std::array<std::size_t, M>& slot_to_key) {
+    num_positions = select_positions<N>(keys, positions, M);
+
+    for (std::size_t p = 0; p < MAX_POSITIONS; ++p) {
+        for (std::size_t c = 0; c < 256; ++c) { asso_values[p][c] = 0; }
+    }
+
+    if (num_positions == 0) {
+        for (std::size_t i = 0; i < M; ++i) { slot_to_key[i] = N; }
+        for (std::size_t i = 0; i < N; ++i) {
+            std::size_t slot = keys[i].size() % M;
+            if (slot_to_key[slot] != N) { return false; }
+            slot_to_key[slot] = i;
+        }
+        return true;
+    }
+
+    std::array<std::array<std::size_t, MAX_POSITIONS>, N> kchars{};
+    for (std::size_t k = 0; k < N; ++k) {
+        for (std::size_t p = 0; p < num_positions; ++p) {
+            kchars[k][p] = char_at(keys[k], positions[p]);
+        }
+    }
+
+    struct sym_t { std::size_t pos; std::size_t ch; std::size_t freq; };
+    constexpr std::size_t MAX_SYMS = MAX_POSITIONS * 256;
+    std::array<sym_t, MAX_SYMS> syms{};
+    std::size_t nsyms = 0;
+    for (std::size_t p = 0; p < num_positions; ++p) {
+        std::array<std::size_t, 256> freq{};
+        for (std::size_t k = 0; k < N; ++k) {
+            std::size_t c = kchars[k][p];
+            if (c < 256) { freq[c]++; }
+        }
+        for (std::size_t c = 0; c < 256; ++c) {
+            if (freq[c] > 0) { syms[nsyms++] = {p, c, freq[c]}; }
+        }
+    }
+    for (std::size_t i = 0; i < nsyms; ++i) {
+        for (std::size_t j = i + 1; j < nsyms; ++j) {
+            if (syms[j].freq > syms[i].freq) {
+                auto tmp = syms[i]; syms[i] = syms[j]; syms[j] = tmp;
+            }
+        }
+    }
+
+    std::array<std::size_t, N> phash{};
+    for (std::size_t k = 0; k < N; ++k) { phash[k] = keys[k].size(); }
+
+    // Equivalence-class signatures: sig[k] = XOR of a per-symbol salt over the
+    // key's undetermined symbols. Updated incrementally as symbols are fixed.
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS> salt{};
+    {
+        std::size_t s = 0x9e3779b97f4a7c15ULL;
+        for (std::size_t p = 0; p < num_positions; ++p) {
+            for (std::size_t c = 0; c < 256; ++c) {
+                s = s * 6364136223846793005ULL + 1442695040888963407ULL;
+                salt[p][c] = s;
+            }
+        }
+    }
+    std::array<std::size_t, N> sig{};
+    for (std::size_t k = 0; k < N; ++k) {
+        std::size_t s = 0;
+        for (std::size_t p = 0; p < num_positions; ++p) {
+            std::size_t c = kchars[k][p];
+            if (c < 256) { s ^= salt[p][c]; }
+        }
+        sig[k] = s;
+    }
+    std::array<std::size_t, N> order{};
+    for (std::size_t k = 0; k < N; ++k) { order[k] = k; }
+
+    std::array<std::size_t, M> slot_gen{};
+    std::size_t gen = 0;
+
+    std::size_t search_limit = next_power_of_2(M);
+    if (search_limit < 32) { search_limit = 32; }
+
+    for (std::size_t si = 0; si < nsyms; ++si) {
+        std::size_t sp = syms[si].pos;
+        std::size_t sc = syms[si].ch;
+
+        std::size_t sp_salt = salt[sp][sc];
+        for (std::size_t k = 0; k < N; ++k) {
+            if (kchars[k][sp] == sc) { sig[k] ^= sp_salt; }
+        }
+
+        for (std::size_t i = 1; i < N; ++i) {
+            std::size_t x = order[i];
+            std::size_t xs = sig[x];
+            std::size_t j = i;
+            while (j > 0 && sig[order[j - 1]] > xs) {
+                order[j] = order[j - 1];
+                --j;
+            }
+            order[j] = x;
+        }
+
+        bool found = false;
+        for (std::size_t v = 0; v < search_limit && !found; ++v) {
+            bool collision = false;
+            std::size_t ci = 0;
+            while (ci < N && !collision) {
+                std::size_t class_sig = sig[order[ci]];
+                std::size_t cj = ci;
+                while (cj < N && sig[order[cj]] == class_sig) { ++cj; }
+                if (cj - ci > 1) {
+                    ++gen;
+                    for (std::size_t x = ci; x < cj; ++x) {
+                        std::size_t k = order[x];
+                        std::size_t h = phash[k];
+                        if (kchars[k][sp] == sc) { h += v; }
+                        h %= M;
+                        if (slot_gen[h] == gen) { collision = true; break; }
+                        slot_gen[h] = gen;
+                    }
+                }
+                ci = cj;
+            }
+            if (!collision) {
+                asso_values[sp][sc] = v;
+                for (std::size_t k = 0; k < N; ++k) {
+                    if (kchars[k][sp] == sc) { phash[k] += v; }
+                }
+                found = true;
+            }
+        }
+        if (!found) { return false; }
+    }
+
+    for (std::size_t i = 0; i < M; ++i) { slot_to_key[i] = N; }
+    for (std::size_t i = 0; i < N; ++i) {
+        std::size_t slot = phash[i] % M;
+        if (slot_to_key[slot] != N) { return false; }
+        slot_to_key[slot] = i;
+    }
+    std::size_t filled = 0;
+    for (std::size_t i = 0; i < M; ++i) {
+        if (slot_to_key[i] != N) { ++filled; }
+    }
+    return filled == N;
+}
+
+template <std::size_t N, std::size_t M>
+consteval bool try_compute_phf(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+    static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
+    std::size_t npos{};
+    std::array<std::size_t, MAX_POSITIONS> pos{};
+    std::array<std::size_t, M> s2k{};
+    if (try_generate_gperf<N, M>(keys, asso, npos, pos, s2k)) {
+        result.table_size = M;
+        result.asso_values = asso;
+        result.num_positions = npos;
+        result.positions = pos;
+        for (std::size_t i = 0; i < M; ++i) { result.slot_to_key[i] = s2k[i]; }
+        for (std::size_t i = M; i < phf_result<N>::MAX_TABLE_SIZE; ++i) { result.slot_to_key[i] = N; }
+        return true;
+    }
+    return false;
+}
+
+template <std::size_t N, std::size_t M, std::size_t MaxM>
+consteval bool try_gperf_po2(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+    if (try_compute_phf<N, M>(keys, result)) { return true; }
+    constexpr std::size_t NextM = M * 2;
+    if constexpr (NextM <= MaxM) { return try_gperf_po2<N, NextM, MaxM>(keys, result); }
+    return false;
+}
+
+// --- Hash-and-Displace fallback --------------------------------------------
+
+constexpr std::size_t hd_bucket_hash(std::string_view key) noexcept {
+    std::size_t c0 = key.empty() ? 0 : static_cast<unsigned char>(key[0]);
+    std::size_t c1 = key.empty() ? 0 : static_cast<unsigned char>(key[key.size() - 1]);
+    return (c0 + c1 * 3 + key.size() * 17) & 0xFF;
+}
+constexpr std::size_t hd_safe_char(const char* p, std::size_t len, std::size_t idx) noexcept {
+    std::size_t has = static_cast<std::size_t>(idx < len);
+    std::size_t si = idx & (std::size_t{0} - has);
+    return static_cast<unsigned char>(p[si]) & (std::size_t{0} - has);
+}
+constexpr std::size_t hd_key_hash_2(std::string_view key) noexcept {
+    std::size_t kc = key.size();
+    kc = kc * 31 + static_cast<unsigned char>(key[0]);
+    kc = kc * 31 + hd_safe_char(key.data(), key.size(), 1);
+    return kc;
+}
+constexpr std::size_t hd_key_hash_4(std::string_view key) noexcept {
+    std::size_t kc = key.size();
+    kc = kc * 31 + static_cast<unsigned char>(key[0]);
+    kc = kc * 31 + hd_safe_char(key.data(), key.size(), 1);
+    kc = kc * 31 + hd_safe_char(key.data(), key.size(), 2);
+    kc = kc * 31 + hd_safe_char(key.data(), key.size(), 3);
+    return kc;
+}
+
+template <std::size_t N, std::size_t M>
+consteval bool try_hash_and_displace(
+    const std::array<std::string_view, N>& keys,
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
+    std::size_t& num_positions,
+    std::array<std::size_t, MAX_POSITIONS>& positions,
+    std::array<std::size_t, M>& slot_to_key) {
+    num_positions = select_positions<N>(keys, positions, M);
+
+    if (num_positions == 0) {
+        for (std::size_t i = 0; i < 256; ++i) { asso_values[0][i] = 0; }
+        for (std::size_t i = 0; i < M; ++i) { slot_to_key[i] = N; }
+        for (std::size_t i = 0; i < N; ++i) {
+            std::size_t slot = keys[i].size() % M;
+            if (slot_to_key[slot] != N) { return false; }
+            slot_to_key[slot] = i;
+        }
+        return true;
+    }
+
+    for (std::size_t i = 0; i < 256; ++i) { asso_values[0][i] = 0; }
+    num_positions = HD_MODE; // sentinel for H&D mode
+    positions[0] = 0;
+    positions[1] = LAST_CHAR;
+
+    std::array<std::size_t, N> key_bucket{};
+    for (std::size_t i = 0; i < N; ++i) { key_bucket[i] = hd_bucket_hash(keys[i]); }
+
+    struct bucket_info { std::size_t ch; std::size_t count; };
+    std::array<bucket_info, N> buckets{};
+    std::size_t num_buckets = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        std::size_t bk = key_bucket[i];
+        bool found = false;
+        for (std::size_t b = 0; b < num_buckets; ++b) {
+            if (buckets[b].ch == bk) { ++buckets[b].count; found = true; break; }
+        }
+        if (!found) { buckets[num_buckets++] = {bk, 1}; }
+    }
+    for (std::size_t i = 0; i < num_buckets; ++i) {
+        for (std::size_t j = i + 1; j < num_buckets; ++j) {
+            if (buckets[j].count > buckets[i].count) {
+                auto tmp = buckets[i]; buckets[i] = buckets[j]; buckets[j] = tmp;
+            }
+        }
+    }
+
+    auto try_placement = [&](auto key_hash_fn) -> bool {
+        for (std::size_t i = 0; i < M; ++i) { slot_to_key[i] = N; }
+        for (std::size_t i = 0; i < 256; ++i) { asso_values[0][i] = 0; }
+        for (std::size_t b = 0; b < num_buckets; ++b) {
+            std::size_t ch = buckets[b].ch;
+            std::array<std::size_t, N> bucket_keys{};
+            std::size_t bk_count = 0;
+            for (std::size_t i = 0; i < N; ++i) {
+                if (key_bucket[i] == ch) { bucket_keys[bk_count++] = i; }
+            }
+            bool placed = false;
+            std::size_t max_d = M < 255 ? M : 255;
+            for (std::size_t d = 0; d < max_d; ++d) {
+                bool ok = true;
+                std::array<std::size_t, N> bucket_slots{};
+                for (std::size_t k = 0; k < bk_count; ++k) {
+                    std::size_t slot = (d + key_hash_fn(keys[bucket_keys[k]])) % M;
+                    if (slot_to_key[slot] != N) { ok = false; break; }
+                    for (std::size_t k2 = 0; k2 < k; ++k2) {
+                        if (bucket_slots[k2] == slot) { ok = false; break; }
+                    }
+                    if (!ok) { break; }
+                    bucket_slots[k] = slot;
+                }
+                if (ok) {
+                    asso_values[0][ch] = d;
+                    for (std::size_t k = 0; k < bk_count; ++k) {
+                        slot_to_key[bucket_slots[k]] = bucket_keys[k];
+                    }
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) { return false; }
+        }
+        std::size_t filled = 0;
+        for (std::size_t i = 0; i < M; ++i) {
+            if (slot_to_key[i] != N) { ++filled; }
+        }
+        return filled == N;
+    };
+
+    if (try_placement([](std::string_view k) { return hd_key_hash_2(k); })) {
+        positions[2] = HD_HASH_2BYTE_FLAG;
+        return true;
+    }
+    if (try_placement([](std::string_view k) { return hd_key_hash_4(k); })) {
+        positions[2] = HD_HASH_4BYTE_FLAG;
+        return true;
+    }
+    return false;
+}
+
+template <std::size_t N, std::size_t M>
+consteval bool try_compute_phf_hd(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+    static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
+    std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
+    std::size_t npos{};
+    std::array<std::size_t, MAX_POSITIONS> pos{};
+    std::array<std::size_t, M> s2k{};
+    if (try_hash_and_displace<N, M>(keys, asso, npos, pos, s2k)) {
+        result.table_size = M;
+        result.asso_values = asso;
+        result.num_positions = npos;
+        result.positions = pos;
+        for (std::size_t i = 0; i < M; ++i) { result.slot_to_key[i] = s2k[i]; }
+        for (std::size_t i = M; i < phf_result<N>::MAX_TABLE_SIZE; ++i) { result.slot_to_key[i] = N; }
+        return true;
+    }
+    return false;
+}
+
+template <std::size_t N, std::size_t M>
+consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>& keys) {
+    static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
+    phf_result<N> result{};
+    if (try_compute_phf_hd<N, M>(keys, result)) { return result; }
+    constexpr std::size_t NextM = M * 2;
+    if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
+        return compute_phf_hd_po2<N, NextM>(keys);
+    } else {
+        throw "Hash-and-Displace: failed to find valid table size";
+    }
+}
+
+// Compute a perfect hash for `keys`: try gperf at power-of-two sizes (capped so
+// the runtime tables stay within uint8 indices), then fall back to H&D.
+template <std::size_t N>
+consteval phf_result<N> compute_phf(const std::array<std::string_view, N>& keys) {
+    constexpr std::size_t StartM = next_power_of_2(N);
+    constexpr std::size_t GPERF_MAX_TABLE =
+        phf_result<N>::MAX_TABLE_SIZE < 256 ? phf_result<N>::MAX_TABLE_SIZE : 256;
+    if constexpr (StartM <= GPERF_MAX_TABLE) {
+        phf_result<N> result{};
+        if (try_gperf_po2<N, StartM, GPERF_MAX_TABLE>(keys, result)) { return result; }
+    }
+    return compute_phf_hd_po2<N, StartM>(keys);
+}
+
+// ============================================================================
+// Runtime tables (flat, uint8) derived from a phf_result.
+// ============================================================================
+
+template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
+struct phf_data {
+    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso_values{};
+    std::array<std::uint8_t, MAX_POSITIONS>                  positions{};
+    std::uint8_t                                             num_positions{};
+    std::uint8_t                                             hd_hash_variant{}; // 2 or 4 (H&D only)
+    std::array<std::uint8_t, TableSize>                      slot_to_key{};
+    // slot_key_bytes[s] holds the key stored at slot s, zero-padded to a 16-byte
+    // multiple so the SIMD comparison can read a whole register.
+    std::array<std::array<char, ((MaxKeyLen + 15) / 16) * 16>, TableSize> slot_key_bytes{};
+    std::array<std::uint8_t, TableSize>                      slot_key_len{};
+};
+
+template <std::size_t N>
+constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>& keys) noexcept {
+    std::size_t m = 0;
+    for (std::size_t i = 0; i < N; ++i) { if (keys[i].size() > m) { m = keys[i].size(); } }
+    return m;
+}
+
+// Validate keys and build the runtime tables from the computed perfect hash.
 template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
-compute_phf(const std::array<std::string_view, N>& keys) {
-    // Validate.
+build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())        throw "empty keys are not allowed in key_selector";
-        if (keys[i].size() > MaxKeyLen) throw "key length exceeds MaxKeyLen";
+        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
+        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
         for (char c : keys[i]) {
-            if (c == '\\')          throw "backslash not allowed in key_selector keys";
-            if (c == '"')           throw "quote not allowed in key_selector keys";
-            if (c == '\0')          throw "null byte not allowed in key_selector keys";
+            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
+            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
+            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
         }
-        for (std::size_t j = i + 1; j < N; ++j)
-            if (keys[i] == keys[j]) throw "duplicate keys in key_selector";
+        for (std::size_t j = i + 1; j < N; ++j) {
+            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+        }
     }
 
     phf_data<N, TableSize, MaxKeyLen> out{};
-    for (std::size_t s = 0; s < TableSize; ++s) out.slot_to_key[s] = SENTINEL_KEY;
 
-    if (!try_phf<N, TableSize>(keys, out.asso_values, out.positions,
-                               out.num_positions, out.slot_to_key))
-        throw "key_selector PHF generation failed";
+    if (result.num_positions == HD_MODE) {
+        // H&D mode: single displacement table in asso_values[0].
+        for (std::size_t c = 0; c < 256; ++c) {
+            out.asso_values[0][c] = static_cast<std::uint8_t>(result.asso_values[0][c]);
+        }
+        out.num_positions   = static_cast<std::uint8_t>(HD_MODE);
+        out.hd_hash_variant = static_cast<std::uint8_t>(result.positions[2]);
+    } else {
+        for (std::size_t pi = 0; pi < result.num_positions; ++pi) {
+            for (std::size_t c = 0; c < 256; ++c) {
+                out.asso_values[pi][c] = static_cast<std::uint8_t>(result.asso_values[pi][c] % TableSize);
+            }
+        }
+        out.num_positions = static_cast<std::uint8_t>(result.num_positions);
+        for (std::size_t i = 0; i < result.num_positions; ++i) {
+            out.positions[i] = (result.positions[i] == LAST_CHAR)
+                ? POS_LAST_CHAR
+                : static_cast<std::uint8_t>(result.positions[i]);
+        }
+    }
 
-    // Populate slot key bytes (zero-padded) and lengths.
     for (std::size_t s = 0; s < TableSize; ++s) {
-        std::uint8_t ki = out.slot_to_key[s];
+        out.slot_to_key[s] = static_cast<std::uint8_t>(result.slot_to_key[s]);
+    }
+
+    for (std::size_t s = 0; s < TableSize; ++s) {
+        std::size_t ki = result.slot_to_key[s];
         if (ki < N) {
             auto k = keys[ki];
             out.slot_key_len[s] = static_cast<std::uint8_t>(k.size());
-            for (std::size_t c = 0; c < k.size(); ++c)
-                out.slot_key_bytes[s][c] = k[c];
+            for (std::size_t c = 0; c < k.size(); ++c) { out.slot_key_bytes[s][c] = k[c]; }
         } else {
-            out.slot_key_len[s] = 0; // sentinel: no length can match
+            out.slot_key_len[s] = 0; // empty slot: no length can match
         }
     }
     return out;
 }
 
-// True if a perfect hash function exists for `keys` at the given table size.
-template <std::size_t N, std::size_t TableSize>
-consteval bool phf_exists(const std::array<std::string_view, N>& keys) {
-    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso{};
-    std::array<std::uint8_t, MAX_POSITIONS>                  positions{};
-    std::uint8_t                                             num_positions{};
-    std::array<std::uint8_t, TableSize>                      slot_to_key{};
-    return try_phf<N, TableSize>(keys, asso, positions, num_positions, slot_to_key);
-}
+// --- SIMD runtime primitives ------------------------------------------------
 
-// Smallest power-of-two table size (up to MAX_TABLE_SIZE) for which a perfect
-// hash of `keys` exists. The minimal size next_pow2(N) does not always admit one
-// (e.g. two keys whose lengths collide modulo 2), so we grow the table until a
-// perfect hash is found.
-template <std::size_t N>
-consteval std::size_t choose_table_size(const std::array<std::string_view, N>& keys) {
-    if constexpr (N <=   2) { if (phf_exists<N,   2>(keys)) { return   2; } }
-    if constexpr (N <=   4) { if (phf_exists<N,   4>(keys)) { return   4; } }
-    if constexpr (N <=   8) { if (phf_exists<N,   8>(keys)) { return   8; } }
-    if constexpr (N <=  16) { if (phf_exists<N,  16>(keys)) { return  16; } }
-    if constexpr (N <=  32) { if (phf_exists<N,  32>(keys)) { return  32; } }
-    if constexpr (N <=  64) { if (phf_exists<N,  64>(keys)) { return  64; } }
-    if constexpr (N <= 128) { if (phf_exists<N, 128>(keys)) { return 128; } }
-    if (phf_exists<N, 256>(keys)) { return 256; }
-    throw "key_selector PHF generation failed";
-}
-
-// --- SIMD primitives --------------------------------------------------------
-
-// Scan for the terminating '"' starting at p. Returns its byte offset (= key length).
-// Reads at most 16 bytes (if MaxKeyLen <= 15) else up to MaxKeyLen+1 bytes.
-// Caller guarantees SIMDJSON_PADDING bytes past the JSON buffer, so the load is safe.
+// Scan for the terminating '"' starting at p. Returns its byte offset (= key
+// length). Caller guarantees SIMDJSON_PADDING bytes past the JSON buffer, so the
+// load is safe.
 template <std::size_t MaxKeyLen>
 simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
     static_assert(MaxKeyLen <= 32, "MaxKeyLen must be <= 32 for current SIMD implementations");
@@ -228,7 +721,6 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
     uint64_t m0 = vget_lane_u64(
         vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp0), 4)), 0);
     if constexpr (MaxKeyLen < 16) {
-        // Only the first 16 bytes are relevant.
         if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
         return MaxKeyLen + 1;
     } else {
@@ -236,7 +728,6 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
         uint8x16_t cmp1 = vceqq_u8(v1, vdupq_n_u8('"'));
         uint64_t m1 = vget_lane_u64(
             vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp1), 4)), 0);
-        // Combine into a single 128-bit-ish mask. If m0 != 0, first-byte lives there.
         if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
         if (m1 != 0) return 16 + (std::size_t(__builtin_ctzll(m1)) >> 2);
         return MaxKeyLen + 1;
@@ -263,12 +754,11 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
 #endif
 }
 
-// Byte-equal of p[0..len) against stored[0..len). stored is zero-padded past `len`.
-// Input is read over 16 or 32 bytes (padded JSON buffer guaranteed).
+// Byte-equal of p[0..len) against stored[0..len). stored is zero-padded past
+// `len`. Input is read over 16 or 32 bytes (padded JSON buffer guaranteed).
 template <std::size_t MaxKeyLen>
 simdjson_really_inline bool compare_key_bytes(
-    const char* p, const char* stored, std::size_t len) noexcept
-{
+    const char* p, const char* stored, std::size_t len) noexcept {
     alignas(16) static constexpr uint8_t idx16[16] =
         {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     if constexpr (MaxKeyLen <= 16) {
@@ -291,7 +781,6 @@ simdjson_really_inline bool compare_key_bytes(
         return true;
 #endif
     } else if constexpr (MaxKeyLen <= 32) {
-        // Two 16-byte lanes. JSON buffer is padded so the second load is safe.
         alignas(16) static constexpr uint8_t idx32_hi[16] =
             {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
@@ -322,18 +811,17 @@ simdjson_really_inline bool compare_key_bytes(
         return true;
 #endif
     } else {
-        // MaxKeyLen > 32: byte loop.
         for (std::size_t i = 0; i < len; ++i)
             if (p[i] != stored[i]) return false;
         return true;
     }
 }
 
-template <std::size_t N>
-constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>& keys) noexcept {
-    std::size_t m = 0;
-    for (std::size_t i = 0; i < N; ++i) if (keys[i].size() > m) m = keys[i].size();
-    return m;
+// Branchless byte load: p[idx] if idx < len, else 0. Always reads a valid byte.
+simdjson_really_inline std::size_t runtime_safe_char(const char* p, std::size_t len, std::size_t idx) noexcept {
+    std::size_t has = static_cast<std::size_t>(idx < len);
+    std::size_t si = idx & (std::size_t{0} - has);
+    return static_cast<unsigned char>(p[si]) & (std::size_t{0} - has);
 }
 
 } // namespace key_selector_detail
@@ -345,16 +833,16 @@ constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>&
  *   using sel_t = key_selector<"id", "text", "user">;
  *   std::size_t i = sel_t::match_raw(raw_key); // returns sel_t::size() on miss
  *
- * All PHF tables are static constexpr — the compiler sees them as compile-time
- * constants at every call site and fully unrolls compute_hash / compare.
+ * The perfect hash is built at compile time (gperf-style, with a
+ * Hash-and-Displace fallback) and only flat tables survive to runtime. All
+ * tables are static constexpr, so the lookup fully inlines.
  *
  * Limitations:
  *   - Each key must be at most 32 characters long (and no longer than
  *     SIMDJSON_PADDING). Longer keys trigger a compile-time error.
- *   - The number of keys should be moderate. The hard limit is 100 keys, but the
- *     compile-time perfect-hash construction may fail (compile-time error) for
- *     large or awkward key sets, and compilation time grows with the number of
- *     keys, so prefer a handful of keys per selector.
+ *   - The number of keys should be moderate. The hard limit is 255 keys;
+ *     compilation time grows with the number of keys, so prefer a few dozen at
+ *     most per selector.
  *   - Keys must be distinct, non-empty, and free of backslash, double-quote and
  *     null bytes (matching is done against the raw, unescaped JSON key bytes).
  */
@@ -362,16 +850,18 @@ template <constevalutil::fixed_string... Keys>
 struct key_selector {
     static constexpr std::size_t N = sizeof...(Keys);
     static_assert(N > 0,   "key_selector requires at least one key");
-    static_assert(N <= 100,"key_selector supports at most 100 keys");
+    static_assert(N <= 255,"key_selector supports at most 255 keys");
 
     static constexpr std::array<std::string_view, N> keys{ Keys.view()... };
-    static constexpr std::size_t table_size  = key_selector_detail::choose_table_size<N>(keys);
     static constexpr std::size_t max_key_len = key_selector_detail::compute_max_key_len<N>(keys);
     static_assert(max_key_len <= SIMDJSON_PADDING,
                   "key longer than SIMDJSON_PADDING is not supported");
 
+    static constexpr auto result = key_selector_detail::compute_phf<N>(keys);
+    static constexpr std::size_t table_size = result.table_size;
+
     static constexpr auto phf =
-        key_selector_detail::compute_phf<N, table_size, max_key_len>(keys);
+        key_selector_detail::build_phf_data<N, table_size, max_key_len>(keys, result);
 
     static constexpr std::size_t size() noexcept { return N; }
 
@@ -382,23 +872,41 @@ struct key_selector {
     static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
         const char* p = rjs.raw();
         std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
-        if (len == 0 || len > max_key_len) return N;
-        // Compute hash. positions / num_positions / asso_values are compile-time
-        // constants, so this fully unrolls.
-        std::size_t h = len;
-        for (std::uint8_t i = 0; i < phf.num_positions; ++i) {
-            std::uint8_t pos = phf.positions[i];
-            std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
-                              ? (len - std::size_t{1})
-                              : static_cast<std::size_t>(pos);
-            h += phf.asso_values[i][p[idx]];
+        if (len == 0 || len > max_key_len) { return N; }
+
+        std::size_t slot;
+        if (phf.num_positions == key_selector_detail::HD_MODE) {
+            // Hash-and-Displace: bucket displacement + per-key hash.
+            std::string_view key(p, len);
+            std::size_t bucket = key_selector_detail::hd_bucket_hash(key);
+            std::size_t kh = (phf.hd_hash_variant == key_selector_detail::HD_HASH_2BYTE_FLAG)
+                ? key_selector_detail::hd_key_hash_2(key)
+                : key_selector_detail::hd_key_hash_4(key);
+            slot = (phf.asso_values[0][bucket] + kh) & (table_size - 1);
+        } else {
+            // gperf: h = len + sum of asso_values over the selected positions.
+            // positions / num_positions / asso_values are compile-time constants,
+            // so this loop fully unrolls. The idx < len guard mirrors the
+            // generator's char_at()-> 256 -> skip behavior for out-of-range
+            // positions (required: arbitrary positions may exceed a key's length).
+            std::size_t h = len;
+            for (std::uint8_t i = 0; i < phf.num_positions; ++i) {
+                std::uint8_t pos = phf.positions[i];
+                std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
+                                  ? (len - std::size_t{1})
+                                  : static_cast<std::size_t>(pos);
+                if (idx < len) {
+                    h += phf.asso_values[i][static_cast<unsigned char>(p[idx])];
+                }
+            }
+            slot = h & (table_size - 1);
         }
-        std::size_t slot = h & (table_size - 1);
+
         std::uint8_t ki = phf.slot_to_key[slot];
-        if (ki >= N) return N;
-        if (phf.slot_key_len[slot] != len) return N;
+        if (ki >= N) { return N; }
+        if (phf.slot_key_len[slot] != len) { return N; }
         if (!key_selector_detail::compare_key_bytes<max_key_len>(
-                p, phf.slot_key_bytes[slot].data(), len)) return N;
+                p, phf.slot_key_bytes[slot].data(), len)) { return N; }
         return ki;
     }
 
