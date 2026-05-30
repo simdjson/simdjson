@@ -38,7 +38,7 @@ jobs:
         chmod +x llvm.sh
         sudo ./llvm.sh $CLANGVERSION
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - uses: actions/cache@v4
       with:

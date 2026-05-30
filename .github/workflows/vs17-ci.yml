@@ -23,7 +23,7 @@ jobs:
           - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: ON}
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Configure
       run: |
         cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=${{matrix.memory_map}} -DSIMDJSON_ENABLE_NAN_INF=${{matrix.nan_inf}} -B build

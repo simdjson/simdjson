@@ -11,7 +11,7 @@ jobs:
         platform:
           - { toolchain-version: 2023.08.08 }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install build requirements
         run: |
           sudo apt-get update -y
