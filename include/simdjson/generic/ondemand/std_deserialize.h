@@ -13,6 +13,7 @@
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <meta>
+#include <vector>
 // #include <static_reflection> // for std::define_static_string - header not available yet
 #endif
 
@@ -268,6 +269,80 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T>);
 
 
+#if defined(SIMDJSON_USE_KEY_SELECTOR_REFLECTION) && SIMDJSON_USE_KEY_SELECTOR_REFLECTION
+
+// Experimental: deserialize a reflected struct using a compile-time key_selector
+// and a single object::for_each pass (perfect-hash key matching) instead of one
+// obj[key] lookup per member. Enable with -DSIMDJSON_USE_KEY_SELECTOR_REFLECTION=1.
+namespace key_selector_reflection_detail {
+
+// A member participates if it is public, non-const, and not annotated to skip.
+consteval bool is_eligible_member(std::meta::info mem) {
+  return !std::meta::is_const(mem) && std::meta::is_public(mem)
+      && std::meta::annotations_of_with_type(mem, ^^simdjson::detail::skip_tag).empty();
+}
+
+// JSON key name for `mem`, as a constevalutil::fixed_string usable as an NTTP.
+template <auto mem>
+consteval auto member_key_fixed_string() {
+  constexpr std::string_view key{ simdjson::get_json_key_name<mem>() };
+  char buffer[key.size() + 1] = {};
+  for (std::size_t i = 0; i < key.size(); ++i) { buffer[i] = key[i]; }
+  return constevalutil::fixed_string<key.size() + 1>(buffer);
+}
+
+// key_selector template arguments (one fixed_string per eligible member), in
+// declaration order.
+template <typename T>
+consteval std::vector<std::meta::info> selector_key_args() {
+  std::vector<std::meta::info> args;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_eligible_member(mem)) {
+      args.push_back(std::meta::reflect_constant(member_key_fixed_string<mem>()));
+    }
+  }
+  return args;
+}
+
+// key_selector whose keys are exactly T's eligible members (index i <-> i-th).
+template <typename T>
+using selector_for = typename [: std::meta::substitute(
+    ^^SIMDJSON_IMPLEMENTATION::ondemand::key_selector, selector_key_args<T>()) :];
+
+} // namespace key_selector_reflection_detail
+
+template <typename T, typename ValT>
+  requires(user_defined_type<T> && std::is_class_v<T>)
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
+    obj = val;
+  } else {
+    SIMDJSON_TRY(val.get_object().get(obj));
+  }
+  using selector = key_selector_reflection_detail::selector_for<T>;
+  error_code field_error = SUCCESS;
+  // Single pass over the object: each field whose key matches a member yields its
+  // selector index, which we map back to the corresponding member.
+  error_code walk_error = obj.template for_each<selector>(
+      [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) {
+    std::size_t counter = 0;
+    template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+      if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
+        if (matched_index == counter) {
+          error_code e = field_value.get(out.[:mem:]);
+          if (e) { field_error = e; }
+        }
+        ++counter;
+      }
+    }
+  });
+  if (walk_error) { return walk_error; }
+  return field_error;
+}
+
+#else
+
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
@@ -299,6 +374,8 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   };
   return simdjson::SUCCESS;
 }
+
+#endif // SIMDJSON_USE_KEY_SELECTOR_REFLECTION
 
 // Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
 template <typename T, typename ValT>

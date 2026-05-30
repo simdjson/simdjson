@@ -38,6 +38,10 @@ add_cpp_test(ondemand_wrong_type_error_tests         LABELS ondemand acceptance 
 add_cpp_test(ondemand_iterate_many_csv               LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_document_tests    LABELS ondemand acceptance per_implementation)
+# Reflective deserialization through the experimental key-selector path. The
+# SIMDJSON_USE_KEY_SELECTOR_REFLECTION macro is defined at the top of the test
+# source itself, so this is an ordinary test target.
+add_cpp_test(ondemand_key_selector_reflection_tests  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)
