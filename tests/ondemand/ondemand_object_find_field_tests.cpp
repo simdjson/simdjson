@@ -177,25 +177,36 @@ namespace object_tests {
   bool object_find_field_key_selector() {
     TEST_START();
     auto json = R"({ "name": "John", "age": 30, "city": "New York" })"_padded;
-    constexpr std::array<std::string_view, 3> keys = {"name", "age", "city"};
-    constexpr auto selector = ondemand::key_selector<3>(keys);
+    using sel_t = decltype(ondemand::make_key_selector<"name", "age", "city">());
 
-    SUBTEST("ondemand::object with key_selector", test_ondemand_doc(json, [&](auto doc_result) {
+    // The selector maps keys to compile-time indices.
+    ASSERT_EQUAL(sel_t::size(), 3);
+    ASSERT_EQUAL(sel_t::key_at(0), "name");
+    ASSERT_EQUAL(sel_t::key_at(1), "age");
+    ASSERT_EQUAL(sel_t::key_at(2), "city");
+
+    SUBTEST("ondemand::object with key_selector for_each", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
 
-      auto [index, value_result] = object.find_field(selector);
-      ASSERT_TRUE(index < 3);
-      ASSERT_SUCCESS(value_result);
-      std::string_view str_val;
-      ASSERT_SUCCESS(value_result.get(str_val));
-      ASSERT_EQUAL(str_val, "John");
+      std::array<bool, 3> seen{};
+      std::string_view name_val{};
+      uint64_t age_val{};
+      std::string_view city_val{};
+      // for_each only yields indices in [0, size()), so index is always < 3 here.
+      ASSERT_SUCCESS( object.for_each<sel_t>([&](std::size_t index, ondemand::value v) {
+        seen[index] = true;
+        switch (index) {
+          case 0: { std::string_view s; if (!v.get(s)) { name_val = s; } break; }
+          case 1: { uint64_t n;         if (!v.get(n)) { age_val  = n; } break; }
+          case 2: { std::string_view s; if (!v.get(s)) { city_val = s; } break; }
+        }
+      }) );
 
-      // Test that we can find different keys
-      ASSERT_EQUAL(selector.index_of("name"), 0);
-      ASSERT_EQUAL(selector.index_of("age"), 1);
-      ASSERT_EQUAL(selector.index_of("city"), 2);
-      ASSERT_EQUAL(selector.index_of("invalid"), 3); // Not found
+      ASSERT_TRUE(seen[0] && seen[1] && seen[2]);
+      ASSERT_EQUAL(name_val, "John");
+      ASSERT_EQUAL(age_val, 30);
+      ASSERT_EQUAL(city_val, "New York");
 
       return true;
     }));

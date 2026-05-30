@@ -10,6 +10,9 @@
 // Otherwise, amalgamation will fail.
 #include "simdjson/dom/base.h" // for MINIMAL_DOCUMENT_CAPACITY
 #include "simdjson/implementation.h"
+#include "simdjson/base.h"
+#include "simdjson/common_defs.h"
+#include "simdjson/constevalutil.h"
 #include "simdjson/padded_string.h"
 #include "simdjson/padded_string_view.h"
 #include "simdjson/internal/dom_parser_implementation.h"

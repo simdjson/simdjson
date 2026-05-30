@@ -64,13 +64,27 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-template <typename Selector>
-simdjson_inline selector_range<Selector> object::select() & noexcept {
-  return selector_range<Selector>{*this};
-}
-template <typename Selector>
-simdjson_inline selector_range<Selector> object::select() && noexcept {
-  return selector_range<Selector>{std::move(*this)};
+template <typename Selector, typename Func>
+simdjson_inline error_code object::for_each(Func&& on_match) noexcept {
+  auto first = this->begin();
+  if (first.error()) { return first.error(); }
+  object_iterator it = first.value_unsafe();
+  object_iterator last{};
+  std::array<bool, Selector::size()> seen{};
+  std::size_t matched = 0;
+  while (it != last) {
+    auto field_res = *it;
+    if (field_res.error()) { return field_res.error(); }
+    field f = field_res.value_unsafe();
+    std::size_t idx = Selector::match_raw(f.key());
+    if (idx < Selector::size() && !seen[idx]) {
+      seen[idx] = true;
+      on_match(idx, f.value());
+      if (++matched >= Selector::size()) { break; }
+    }
+    ++it;
+  }
+  return SUCCESS;
 }
 #endif
 
@@ -337,21 +351,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(key);
 }
 
-#if SIMDJSON_SUPPORTS_CONCEPTS
-template <typename Selector>
-simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector>
-simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::select() & noexcept {
-  // On error, construct a range over a default (invalid) object; iteration will
-  // yield the stored error at first dereference via the underlying iterator path.
-  return first.template select<Selector>();
-}
-
-template <typename Selector>
-simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::selector_range<Selector>
-simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::select() && noexcept {
-  return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).template select<Selector>();
-}
-#endif
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
