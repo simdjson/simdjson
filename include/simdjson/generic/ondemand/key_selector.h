@@ -187,6 +187,33 @@ compute_phf(const std::array<std::string_view, N>& keys) {
     return out;
 }
 
+// True if a perfect hash function exists for `keys` at the given table size.
+template <std::size_t N, std::size_t TableSize>
+consteval bool phf_exists(const std::array<std::string_view, N>& keys) {
+    std::array<std::array<std::uint8_t, 256>, MAX_POSITIONS> asso{};
+    std::array<std::uint8_t, MAX_POSITIONS>                  positions{};
+    std::uint8_t                                             num_positions{};
+    std::array<std::uint8_t, TableSize>                      slot_to_key{};
+    return try_phf<N, TableSize>(keys, asso, positions, num_positions, slot_to_key);
+}
+
+// Smallest power-of-two table size (up to MAX_TABLE_SIZE) for which a perfect
+// hash of `keys` exists. The minimal size next_pow2(N) does not always admit one
+// (e.g. two keys whose lengths collide modulo 2), so we grow the table until a
+// perfect hash is found.
+template <std::size_t N>
+consteval std::size_t choose_table_size(const std::array<std::string_view, N>& keys) {
+    if constexpr (N <=   2) { if (phf_exists<N,   2>(keys)) { return   2; } }
+    if constexpr (N <=   4) { if (phf_exists<N,   4>(keys)) { return   4; } }
+    if constexpr (N <=   8) { if (phf_exists<N,   8>(keys)) { return   8; } }
+    if constexpr (N <=  16) { if (phf_exists<N,  16>(keys)) { return  16; } }
+    if constexpr (N <=  32) { if (phf_exists<N,  32>(keys)) { return  32; } }
+    if constexpr (N <=  64) { if (phf_exists<N,  64>(keys)) { return  64; } }
+    if constexpr (N <= 128) { if (phf_exists<N, 128>(keys)) { return 128; } }
+    if (phf_exists<N, 256>(keys)) { return 256; }
+    throw "key_selector PHF generation failed";
+}
+
 // --- SIMD primitives --------------------------------------------------------
 
 // Scan for the terminating '"' starting at p. Returns its byte offset (= key length).
@@ -315,7 +342,7 @@ constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>&
  * Stateless, compile-time key selector.
  *
  * Usage:
- *   using sel_t = decltype(make_key_selector<"id", "text", "user">());
+ *   using sel_t = key_selector<"id", "text", "user">;
  *   std::size_t i = sel_t::match_raw(raw_key); // returns sel_t::size() on miss
  *
  * All PHF tables are static constexpr — the compiler sees them as compile-time
@@ -328,7 +355,7 @@ struct key_selector {
     static_assert(N <= 100,"key_selector supports at most 100 keys");
 
     static constexpr std::array<std::string_view, N> keys{ Keys.view()... };
-    static constexpr std::size_t table_size  = key_selector_detail::pick_table_size<N>();
+    static constexpr std::size_t table_size  = key_selector_detail::choose_table_size<N>(keys);
     static constexpr std::size_t max_key_len = key_selector_detail::compute_max_key_len<N>(keys);
     static_assert(max_key_len <= SIMDJSON_PADDING,
                   "key longer than SIMDJSON_PADDING is not supported");
@@ -356,7 +383,6 @@ struct key_selector {
                               : static_cast<std::size_t>(pos);
             h += phf.asso_values[i][p[idx]];
         }
-
         std::size_t slot = h & (table_size - 1);
         std::uint8_t ki = phf.slot_to_key[slot];
         if (ki >= N) return N;
@@ -371,14 +397,6 @@ struct key_selector {
         return keys[i];
     }
 };
-
-/**
- * Factory for readability, matching make_perfect_set in ConstexprCore.
- */
-template <constevalutil::fixed_string... Keys>
-consteval auto make_key_selector() noexcept {
-    return key_selector<Keys...>{};
-}
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

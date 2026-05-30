@@ -133,7 +133,7 @@ public:
    * regardless of their order in the JSON.
    *
    * Usage:
-   *   using sel_t = decltype(make_key_selector<"id", "text", "user">());
+   *   using sel_t = ondemand::key_selector<"id", "text", "user">;
    *   obj.for_each<sel_t>([&](std::size_t i, ondemand::value v) {
    *     switch (i) { case 0: ...; case 1: ...; }
    *   });

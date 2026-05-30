@@ -177,7 +177,7 @@ namespace object_tests {
   bool object_find_field_key_selector() {
     TEST_START();
     auto json = R"({ "name": "John", "age": 30, "city": "New York" })"_padded;
-    using sel_t = decltype(ondemand::make_key_selector<"name", "age", "city">());
+    using sel_t = ondemand::key_selector<"name", "age", "city">;
 
     // The selector maps keys to compile-time indices.
     ASSERT_EQUAL(sel_t::size(), 3);
@@ -214,6 +214,94 @@ namespace object_tests {
   }
 #endif
 
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
+  // Mirrors doc/basics.md "Key selectors", Example 1 (top-level fields).
+  bool key_selector_example_toplevel() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object obj = doc.get_object();
+
+    using fields = ondemand::key_selector<"name", "city">;
+
+    std::string_view name, city;
+    obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
+      switch (i) {
+        case 0: name = std::string_view(v); break; // "name"
+        case 1: city = std::string_view(v); break; // "city"
+      }
+    });
+    ASSERT_EQUAL(name, "Daniel");
+    ASSERT_EQUAL(city, "Montreal");
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors", Example 2 (nested object).
+  bool key_selector_example_nested() {
+    TEST_START();
+    auto json = R"({ "user": { "id": 1186275104, "screen_name": "ayuu0123", "verified": false } })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object user = doc.find_field("user").get_object();
+
+    using user_fields = ondemand::key_selector<"id", "screen_name">;
+
+    uint64_t id = 0;
+    std::string_view handle;
+    user.for_each<user_fields>([&](std::size_t i, ondemand::value v) {
+      switch (i) {
+        case 0: id     = uint64_t(v);         break; // "id"
+        case 1: handle = std::string_view(v); break; // "screen_name"
+      }
+    });
+    ASSERT_EQUAL(id, 1186275104);
+    ASSERT_EQUAL(handle, "ayuu0123");
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors", Example 3 (a selected value that is
+  // itself an object, processed with a nested for_each).
+  bool key_selector_example_inner_object() {
+    TEST_START();
+    auto json = R"({
+      "id": 42,
+      "author": { "name": "Daniel", "handle": "lemire" },
+      "title": "On Demand"
+    })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object obj = doc.get_object();
+
+    using post_fields   = ondemand::key_selector<"id", "author", "title">;
+    using author_fields = ondemand::key_selector<"name", "handle">;
+
+    uint64_t id = 0;
+    std::string_view title, author_name, author_handle;
+    obj.for_each<post_fields>([&](std::size_t i, ondemand::value v) {
+      switch (i) {
+        case 0: id = uint64_t(v); break;                       // "id"
+        case 1: {                                              // "author" is itself an object
+          ondemand::object author = v.get_object();
+          author.for_each<author_fields>([&](std::size_t j, ondemand::value av) {
+            switch (j) {
+              case 0: author_name   = std::string_view(av); break; // "name"
+              case 1: author_handle = std::string_view(av); break; // "handle"
+            }
+          });
+          break;
+        }
+        case 2: title = std::string_view(v); break;            // "title"
+      }
+    });
+    ASSERT_EQUAL(id, 42);
+    ASSERT_EQUAL(title, "On Demand");
+    ASSERT_EQUAL(author_name, "Daniel");
+    ASSERT_EQUAL(author_handle, "lemire");
+    TEST_SUCCEED();
+  }
+#endif
+
   bool run() {
     return
            object_find_field_unordered() &&
@@ -224,6 +312,11 @@ namespace object_tests {
            value_object_find_field() &&
 #if SIMDJSON_SUPPORTS_CONCEPTS
            object_find_field_key_selector() &&
+#endif
+#if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
+           key_selector_example_toplevel() &&
+           key_selector_example_nested() &&
+           key_selector_example_inner_object() &&
 #endif
            true;
   }

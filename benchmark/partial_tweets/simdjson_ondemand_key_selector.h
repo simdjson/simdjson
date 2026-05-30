@@ -15,10 +15,10 @@ struct simdjson_ondemand_key_selector {
 
   // Compile-time selectors — all PHF tables are static constexpr, so every
   // call to match_raw fully inlines.
-  using tweet_sel_t = decltype(ondemand::make_key_selector<
+  using tweet_sel_t = ondemand::key_selector<
       "created_at", "id", "text", "in_reply_to_status_id",
-      "user", "retweet_count", "favorite_count">());
-  using user_sel_t = decltype(ondemand::make_key_selector<"id", "screen_name">());
+      "user", "retweet_count", "favorite_count">;
+  using user_sel_t = ondemand::key_selector<"id", "screen_name">;
 
   simdjson_inline uint64_t nullable_int(ondemand::value value) {
     if (value.is_null()) { return 0; }

@@ -32,6 +32,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)](#using-for_each_at_path_with_wildcard-for-jsonpath-queries-on-demand)
     + [Example Usage](#example-usage)
 - [C++20 Ranges Support](#c20-ranges-support)
+- [Key selectors](#key-selectors)
 - [Compile-Time JSONPath and JSON Pointer (C++26 Reflection)](#compile-time-jsonpath-and-json-pointer-c26-reflection)
 - [Error handling](#error-handling)
   * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
@@ -1446,7 +1447,9 @@ that are not made by Toyota.
 
 
 **Performance tip**: You will get better performance if you order the attributes (make, model)
-in the order they appear in the JSON document.
+in the order they appear in the JSON document. Alternatively, [key selectors](#key-selectors)
+let you extract a fixed, known set of fields in a single pass, independently of the
+order in which they appear in the document.
 
 
 ### 3. Using static reflection (C++26)
@@ -1525,7 +1528,9 @@ void f() {
 
 
 **Performance tip**: You will get better performance if you order the attributes (make, model)
-in the order they appear in the JSON document.
+in the order they appear in the JSON document. Alternatively, [key selectors](#key-selectors)
+let you extract a fixed, known set of fields in a single pass, independently of the
+order in which they appear in the document.
 
 #### Special cases
 
@@ -2009,6 +2014,151 @@ for (auto field_result : ondemand::get_key_value_range(obj)) {
 
 The range wrappers are zero-cost: they forward directly to the underlying
 On-Demand iterators with no value buffering or extra per-element overhead.
+
+## Key selectors
+
+> **Experimental.** Key selectors are an experimental feature: the API may change
+> in a future release.
+
+When you need to extract a known, fixed set of fields from a JSON object and you
+do not care about the order in which they appear in the document, *key selectors*
+let you do it in a single pass: each selected key is mapped to a small integer
+index, and you dispatch on that index (typically with a `switch`) instead of
+repeatedly looking up keys by string.
+
+**Requirements.** Key selectors rely on C++20 features (concepts and class-type
+non-type template parameters), so they are only available when simdjson is
+compiled in C++20 mode or later. When that support is present, the macro
+`SIMDJSON_SUPPORTS_CONCEPTS` is defined.
+
+Key selection works with hashing.
+A *hash function* maps keys (here, JSON field names such as `"id"` or `"name"`)
+to small integers. A *perfect* hash function is one that, for a fixed and known
+set of keys, maps each key to a distinct slot with no collisions, so a single
+hash computation plus one comparison suffices to identify a key, there is no
+probing and no collision chains.
+
+Because the set of keys is known at compile time, the simdjson library builds the perfect
+hash function during compilation (using `consteval`). All of its lookup tables
+become `static constexpr` data, which the compiler treats as constants at every
+call site and can fully inline. At run time, recognizing a field name reduces to:
+scan its length, compute a hash from a couple of bytes, and perform one
+length-and-bytes comparison, branch-light and SIMD-accelerated.
+
+You declare a selector type from a list of string literals:
+
+```cpp
+using sel = simdjson::ondemand::key_selector<"id", "name", "email">;
+```
+
+`sel` is a stateless type. Each key is assigned a fixed index, in declaration
+order: `"id"` is 0, `"name"` is 1, `"email"` is 2. The type exposes a couple of
+compile-time helpers:
+
+- `sel::size()` — the number of keys in the selector (here, 3);
+- `sel::key_at(i)` — the key text at index `i`.
+
+You then walk an object with `object::for_each<sel>(callback)`. The callback is
+invoked once for each field whose key belongs to the selector, **in JSON order**,
+with two arguments: the selector index of the matched key, and the field's value
+(an `ondemand::value` that you must consume inside the callback, before the next
+field is visited, as usual with On Demand). Fields whose keys are not in the
+selector are skipped without being parsed; duplicate keys are ignored after the
+first match; and iteration stops as soon as every selector key has matched or the
+object ends. The `for_each` call returns a `simdjson::error_code` (`SUCCESS`, or the first
+error encountered while walking the object).
+
+Because the selector index is a small integer, a `switch` is the natural way to
+dispatch on the matched field.
+
+This example uses exceptions (see [Disabling exceptions](#disabling-exceptions)
+for the error-code style). The `"age"` field is not selected, so it is skipped.
+
+```cpp
+using namespace simdjson;
+auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object obj = doc.get_object();
+
+using fields = ondemand::key_selector<"name", "city">;
+
+std::string_view name, city;
+obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
+  switch (i) {
+    case 0: name = std::string_view(v); break; // "name"
+    case 1: city = std::string_view(v); break; // "city"
+  }
+});
+// name == "Daniel", city == "Montreal"
+```
+
+Key selectors work on any object and we do not have
+to include all keys. Here the `"verified"` field is skipped.
+
+```cpp
+using namespace simdjson;
+auto json = R"({ "user": { "id": 1186275104, "screen_name": "ayuu0123", "verified": false } })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object user = doc["user"].get_object();
+
+using user_fields = ondemand::key_selector<"id", "screen_name">;
+
+uint64_t id = 0;
+std::string_view handle;
+user.for_each<user_fields>([&](std::size_t i, ondemand::value v) {
+  switch (i) {
+    case 0: id     = uint64_t(v);         break; // "id"
+    case 1: handle = std::string_view(v); break; // "screen_name"
+  }
+});
+// id == 1186275104, handle == "ayuu0123"
+```
+
+### Example 3: a selected value that is itself an object
+
+A selected value can be any JSON value, including a nested object. Because the
+value is consumed inside the callback, you can simply turn it into an
+`ondemand::object` and call `for_each` again with another selector. As always
+with On Demand, the inner object must be fully consumed before the outer
+iteration continues, which the nested `for_each` does for you.
+
+```cpp
+using namespace simdjson;
+auto json = R"({
+  "id": 42,
+  "author": { "name": "Daniel", "handle": "lemire" },
+  "title": "On Demand"
+})"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object obj = doc.get_object();
+
+using post_fields   = ondemand::key_selector<"id", "author", "title">;
+using author_fields = ondemand::key_selector<"name", "handle">;
+
+uint64_t id = 0;
+std::string_view title, author_name, author_handle;
+obj.for_each<post_fields>([&](std::size_t i, ondemand::value v) {
+  switch (i) {
+    case 0: id = uint64_t(v); break;                       // "id"
+    case 1: {                                              // "author" is itself an object
+      ondemand::object author = v.get_object();
+      author.for_each<author_fields>([&](std::size_t j, ondemand::value av) {
+        switch (j) {
+          case 0: author_name   = std::string_view(av); break; // "name"
+          case 1: author_handle = std::string_view(av); break; // "handle"
+        }
+      });
+      break;
+    }
+    case 2: title = std::string_view(v); break;            // "title"
+  }
+});
+// id == 42, title == "On Demand", author_name == "Daniel", author_handle == "lemire"
+```
+
 
 ## Compile-Time JSONPath and JSON Pointer (C++26 Reflection)
 
@@ -3610,7 +3760,7 @@ Performance tips
 	std::string_view year = data["year"];
 	std::string_view rating = data["rating"];
   ```
-- You will get better performance if you seek the keys in the order in which they appear in the document. So if processing `{"a":1, "b":2, "c":3}`, do `value1 = data["a"]; value2 = data["b"]; value3 data["c"];` and not `value2 = data["b"]; value1 = data["a"]; value3 data["c"];`. Of course, it is not always possible to know for sure in which order the keys appear.
+- You will get better performance if you seek the keys in the order in which they appear in the document. So if processing `{"a":1, "b":2, "c":3}`, do `value1 = data["a"]; value2 = data["b"]; value3 data["c"];` and not `value2 = data["b"]; value1 = data["a"]; value3 data["c"];`. Of course, it is not always possible to know for sure in which order the keys appear. See also [key selectors](#key-selectors), which extract a fixed, known set of fields in a single pass regardless of their order in the document.
 
 
 
