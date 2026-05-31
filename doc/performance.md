@@ -2,7 +2,7 @@ Performance Notes
 =================
 
 simdjson strives to be at its fastest *without tuning*, and generally achieves this. However, there
-are still some scenarios where tuning can enhance performance.
+are still some scenarios where tuning can enhance performance. See [thread safety](basics.md#thread-safety) when sharing parsers across threads.
 Once your code is tested, we
 further encourage you to define `NDEBUG` in your release builds to disable additional runtime
 testing and get the best performance.
