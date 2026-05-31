@@ -2128,7 +2128,7 @@ dispatch on the matched field.
 
 Key selectors are subject to a few compile-time restrictions:
 
-- Key length. We currently limit keys to at most 32 characters long.
+- Key length. We currently limit keys to at most 31 characters long.
   A longer key produces a compile-time error. This limitations could be
   eased in the future but we expect longer keys to be unusual.
 - Number of keys. The hard limit is 255 keys, but the compile-time perfect-hash
