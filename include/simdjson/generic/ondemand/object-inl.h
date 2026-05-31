@@ -79,7 +79,18 @@ simdjson_inline error_code object::for_each(Func&& on_match) noexcept {
     std::size_t idx = Selector::match_raw(f.key());
     if (idx < Selector::size() && !seen[idx]) {
       seen[idx] = true;
-      on_match(idx, f.value());
+      value matched_value = f.value();
+      // The callback may return either void or an error_code. When it returns an
+      // error_code, we stop at the first non-SUCCESS result and propagate it so
+      // the caller can surface value-parse errors (for example, a type mismatch
+      // on a matched field). A void-returning callback is responsible for
+      // handling its own errors.
+      if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
+        error_code e = on_match(idx, matched_value);
+        if (e) { return e; }
+      } else {
+        on_match(idx, matched_value);
+      }
       if (++matched >= Selector::size()) { break; }
     }
     ++it;

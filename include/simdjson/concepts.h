@@ -59,15 +59,6 @@ concept appendable_containers =
     details::supports_add<T> || details::supports_append<T> ||
     details::supports_insert<T>) && !string_view_keyed_map<T>;
 
-/// Check if T is a key_selector type for efficient JSON field lookup.
-/// T must expose a compile-time N (number of keys) and static match_raw that
-/// returns [0, N) on hit or N on miss.
-template <typename T>
-concept key_selector_type = requires {
-    { T::size() } -> std::same_as<std::size_t>;
-    { T::N } -> std::convertible_to<std::size_t>;
-};
-
 /// Insert into the container however possible
 template <appendable_containers T, typename... Args>
 constexpr decltype(auto) emplace_one(T &vec, Args &&...args) {

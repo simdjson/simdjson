@@ -321,24 +321,40 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
   using selector = key_selector_reflection_detail::selector_for<T>;
-  error_code field_error = SUCCESS;
+  std::array<bool, selector::size()> seen_member{};
   // Single pass over the object: each field whose key matches a member yields its
-  // selector index, which we map back to the corresponding member.
+  // selector index, which we map back to the corresponding member. The callback
+  // returns an error_code so that a value-parse error (e.g. a type mismatch on a
+  // matched field) is propagated by for_each instead of being silently dropped.
   error_code walk_error = obj.template for_each<selector>(
-      [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) {
+      [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) -> error_code {
     std::size_t counter = 0;
+    error_code field_error = SUCCESS;
     template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
       if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
         if (matched_index == counter) {
-          error_code e = field_value.get(out.[:mem:]);
-          if (e) { field_error = e; }
+          seen_member[counter] = true;
+          field_error = field_value.get(out.[:mem:]);
         }
         ++counter;
       }
     }
+    return field_error;
   });
   if (walk_error) { return walk_error; }
-  return field_error;
+  // Required (non-optional) members must be present: a missing one is reported as
+  // NO_SUCH_FIELD, mirroring the ordered obj[key] path. Optional members may be
+  // absent.
+  std::size_t check_counter = 0;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
+      if constexpr (!concepts::optional_type<decltype(out.[:mem:])>) {
+        if (!seen_member[check_counter]) { return NO_SUCH_FIELD; }
+      }
+      ++check_counter;
+    }
+  }
+  return SUCCESS;
 }
 
 #else
