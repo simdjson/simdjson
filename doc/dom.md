@@ -322,18 +322,28 @@ for (dom::key_value_pair field : object) {
 C++20 Support
 ------------
 
-simdjson library also supports some C++20 feature including `std::ranges`:
+simdjson supports `std::ranges` with the DOM API. You can pipe a `dom::array` into
+range adaptors such as `std::views::transform`. For the On-Demand API, see
+[C++20 Ranges Support](basics.md#c20-ranges-support) in the basics guide.
 
 ```cpp
-auto cars_json = R"( [
+#include "simdjson.h"
+#include <iostream>
+#include <ranges>
+
+using namespace simdjson;
+
+int main() {
+  auto cars_json = R"( [
   { "make": "Toyota", "model": "Camry",  "year": 2018, "tire_pressure": [ 40.1, 39.9, 37.7, 40.4 ] },
   { "make": "Kia",    "model": "Soul",   "year": 2012, "tire_pressure": [ 30.1, 31.0, 28.6, 28.7 ] },
   { "make": "Toyota", "model": "Tercel", "year": 1999, "tire_pressure": [ 29.8, 30.0, 30.2, 30.5 ] }
 ] )"_padded;
-dom::parser parser;
-auto justmodel = [](auto car) { return car["model"]; };
-for (auto car : parser.parse(cars_json).get_array() | std::views::transform(justmodel)) {
-  std::cout << car << std::endl;
+  dom::parser parser;
+  auto justmodel = [](auto car) { return car["model"]; };
+  for (auto car : parser.parse(cars_json).get_array() | std::views::transform(justmodel)) {
+    std::cout << car << std::endl;
+  }
 }
 ```
 
