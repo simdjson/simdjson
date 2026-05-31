@@ -188,7 +188,7 @@ Once you have an element, you can navigate it with idiomatic C++ iterators, oper
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to `1` when building simdjson, you can get that `-0` is mapped to `-0.0`
   as in JavaScript. You can get the desired effect by building simdjson with cmake setting the
   `SIMDJSON_MINUS_ZERO_AS_FLOAT` to on: `cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON`.
-* **Big Integer Support (opt-in):** By default, integers that exceed the 64-bit range cause parsing to fail with `BIGINT_ERROR`. You can opt in to big integer support so that these numbers are stored as raw digit strings on the tape instead:
+* **Big Integer Support (opt-in):** By default, integers that exceed the 64-bit range cause parsing to fail with `BIGINT_ERROR`. You can opt in to big integer support so that these numbers are stored as raw digit strings on the [internal DOM tape](tape.md) instead:
   ```cpp
   simdjson::dom::parser parser;
   parser.number_as_string(true); // opt-in, default false
