@@ -767,7 +767,10 @@ simdjson_really_inline bool compare_key_bytes(
         uint8x16_t vs = vld1q_u8(reinterpret_cast<const uint8_t*>(stored));
         uint8x16_t mask = vcltq_u8(vld1q_u8(idx16), vdupq_n_u8(static_cast<uint8_t>(len)));
         uint8x16_t diff = veorq_u8(vandq_u8(vp, mask), vs);
-        return vmaxvq_u8(diff) == 0;
+        // A 32-bit-lane horizontal max is enough to decide "all bytes equal"
+        // (diff is zero iff every 32-bit word is zero) and is cheaper than a
+        // byte-wide reduction.
+        return vmaxvq_u32(vreinterpretq_u32_u8(diff)) == 0;
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
         __m128i vp = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
         __m128i vs = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored));
@@ -793,7 +796,7 @@ simdjson_really_inline bool compare_key_bytes(
         uint8x16_t m_hi = vcltq_u8(vld1q_u8(idx32_hi), lenv);
         uint8x16_t d_lo = veorq_u8(vandq_u8(vp_lo, m_lo), vs_lo);
         uint8x16_t d_hi = veorq_u8(vandq_u8(vp_hi, m_hi), vs_hi);
-        return vmaxvq_u8(vorrq_u8(d_lo, d_hi)) == 0;
+        return vmaxvq_u32(vreinterpretq_u32_u8(vorrq_u8(d_lo, d_hi))) == 0;
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
         __m128i vp_lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
         __m128i vp_hi = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + 16));
