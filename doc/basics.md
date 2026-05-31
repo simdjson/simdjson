@@ -4,7 +4,7 @@ The Basics
 
 An overview of what you need to know to use simdjson to parse JSON documents, with examples.
 [Our documentation regarding the generation (serialization) of JSON documents is in a
-separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
+separate document](builder.md).
 
 - [Requirements](#requirements)
 - [Including simdjson](#including-simdjson)
