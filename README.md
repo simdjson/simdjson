@@ -257,6 +257,7 @@ Contributing to simdjson
 
 Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing to simdjson, and
 [HACKING.md](HACKING.md) for information on source, building, and architecture/design.
+User guides are listed in [doc/README.md](doc/README.md) ([#801](https://github.com/simdjson/simdjson/issues/801)).
 
 
 Stars
