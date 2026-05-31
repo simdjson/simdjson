@@ -3,6 +3,7 @@ The Basics
 
 
 An overview of what you need to know to use simdjson to parse JSON documents, with examples.
+See the [documentation index](README.md) for all guides, including [HACKING.md](../HACKING.md) for contributors ([#801](https://github.com/simdjson/simdjson/issues/801)).
 [Our documentation regarding the generation (serialization) of JSON documents is in a
 separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
 
