@@ -17,6 +17,7 @@ to parse JSON 4x  faster than RapidJSON and 25x faster than JSON for Modern C++.
 * **Easy:** First-class, easy to use and carefully documented APIs.
 * **Strict:** Full JSON and UTF-8 validation, lossless parsing. Performance with no compromises.
 * **Automatic:** Selects a CPU-tailored parser at runtime. No configuration needed.
+* **Thread-aware:** Documented concurrency model; see [thread safety](doc/basics.md#thread-safety) (use one parser per thread).
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
 * **Peer Reviewed:** Our research appears in venues like VLDB Journal, Software: Practice and Experience.
 
@@ -120,6 +121,8 @@ Usage documentation is available:
   how you can work with it.
 * [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
 * [Compile-Time Parsing](doc/compile_time.md) presents our compile-time parsing function (C++26 only).
+* [Thread safety](doc/basics.md#thread-safety) summarizes which APIs are safe to use from multiple threads.
+* [HACKING.md](HACKING.md) is a guide for contributors (building, testing, and project layout).
 
 
 Godbolt
