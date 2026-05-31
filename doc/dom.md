@@ -3,7 +3,7 @@ The Document-Object-Model (DOM) front-end
 
 An overview of what you need to know to use simdjson to parse JSON documents with
 our DOM API, with examples. [Our documentation regarding the generation (serialization) of JSON documents is in a
-separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
+separate document](builder.md).
 
 
 * [DOM vs On-Demand](#dom-vs-on-demand)
