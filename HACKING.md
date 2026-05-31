@@ -5,6 +5,7 @@ Hacking simdjson
 Here is wisdom about how to build, test and run simdjson from within the repository. This is mostly useful for people who plan to contribute simdjson, or maybe study the design.
 
 If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://github.com/simdjson/simdjson/blob/master/CONTRIBUTING.md) guide.
+User-facing guides are indexed in [doc/README.md](doc/README.md) ([#801](https://github.com/simdjson/simdjson/issues/801)).
 
 - [Hacking simdjson](#hacking-simdjson)
   - [Build Quickstart](#build-quickstart)
