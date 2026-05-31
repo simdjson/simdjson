@@ -2,7 +2,8 @@ Builder
 ==========
 
 Sometimes you want to generate JSON string outputs efficiently.
-The simdjson library provides high-performance low-level facilities.
+The simdjson library provides high-performance low-level facilities for **JSON serialization** (writing JSON text), complementing the DOM and On-Demand APIs used for **deserialization** (reading JSON). See [`doc/basics.md`](basics.md) for parsing.
+
 When using these low-level functionalities, you are responsible to
 define the structure of your JSON document. Our more advanced interface
 automates the process using C++26 static reflection: you get both high
