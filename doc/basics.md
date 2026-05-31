@@ -514,7 +514,7 @@ in skipped content are not reported until you access those values.
 - Missing or extra `,` or `:`, key type checks, and matching of opening/closing `]`/`}` are
   validated only when you iterate or index the array or object, or when you fully iterate it.
 
-See also [On-Demand design notes](ondemand_design.md#validate-what-you-use) and
+See also [On-Demand design notes](ondemand_design.md) and
 [#1640](https://github.com/simdjson/simdjson/issues/1640).
 
 * **Extracting Values:** You can cast a JSON element to a native type:
