@@ -113,6 +113,7 @@ Documentation
 
 Usage documentation is available:
 
+* [Documentation index](doc/README.md) lists all guides in `doc/` ([#801](https://github.com/simdjson/simdjson/issues/801)).
 * [Basics](doc/basics.md) is an overview of how to use simdjson and its APIs.
 * [Builder](doc/builder.md) is an overview of how to efficiently write JSON strings using simdjson.
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
