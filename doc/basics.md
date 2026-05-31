@@ -354,6 +354,30 @@ We refer to "On-Demand" as a front-end component since it is an interface betwee
 low-level parsing functions and the user. It hides much of the complexity of parsing JSON
 documents.
 
+### Depth model
+
+On-Demand parsing tracks a **depth** counter as it walks the JSON text. Depth starts at
+**1** at the document root and increases when you enter an object or array (`{` or `[`),
+then decreases when that value is fully consumed (matching `}` or `]`). Field lookup,
+array iteration, and skipping all rely on this counter to know where the current value
+ends and whether nested content remains.
+
+Practical rules:
+
+* Entering an `ondemand::object` or `ondemand::array` (or casting to one) validates the
+  opening bracket and increases depth.
+* Finishing iteration, consuming a value, or skipping nested content decreases depth back
+  to the enclosing context.
+* When you skip a field or array element without using it, simdjson advances until depth
+  returns to the previous level—without fully validating unused inner values (see
+  [On-Demand design notes](ondemand_design.md)).
+* By default, documents with nesting depth above **1024** are rejected (see
+  [Standard compliance](#standard-compliance)).
+
+For a step-by-step walkthrough with depth annotations at each API call, see
+[On-Demand design notes](ondemand_design.md). Related: [#1533](https://github.com/simdjson/simdjson/issues/1533).
+
+
 ### Parser, document and JSON scope
 
 For code safety, you should keep (1) the `parser` instance, (2) the input string and (3) the document instance alive throughout your parsing. Additionally, you should follow the following rules:

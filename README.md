@@ -120,6 +120,7 @@ Usage documentation is available:
   how you can work with it.
 * [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
 * [Compile-Time Parsing](doc/compile_time.md) presents our compile-time parsing function (C++26 only).
+* [On-Demand design](doc/ondemand_design.md) walks through parsing logic including the depth model ([#1533](https://github.com/simdjson/simdjson/issues/1533)).
 
 
 Godbolt
