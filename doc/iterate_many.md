@@ -133,7 +133,7 @@ E.g., `[1,2]{"32":1}` is recognized as two documents.
 
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec/)
-- [JSON lines (JSONL)](http://jsonlines.org/)
+- [JSON lines (JSONL)](https://jsonlines.org/)
 - [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464)
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
@@ -238,7 +238,7 @@ ondemand::document doc = parser.iterate(view); // parse the JSON
 
 ## Use cases
 
-From [jsonlines.org](http://jsonlines.org/examples/):
+From [jsonlines.org](https://jsonlines.org/examples/):
 
 - **Better than CSV**
     ```json
