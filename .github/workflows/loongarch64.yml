@@ -17,7 +17,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends cmake
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         id: restore-cache
         with:
           path: /opt/cross-tools
@@ -33,7 +33,7 @@ jobs:
           mkdir -p /opt
           tar -C /opt -x -f /tmp/toolchain.tar.xz
 
-      - uses: actions/cache/save@v3
+      - uses: actions/cache/save@v5
         if: ${{ !steps.restore-cache.outputs.cache-hit }}
         with:
           path: /opt/cross-tools

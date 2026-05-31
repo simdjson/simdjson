@@ -40,12 +40,12 @@ jobs:
 
     - uses: actions/checkout@v6
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v5
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v5
       id: cache-corpus
       with:
         path: out/
