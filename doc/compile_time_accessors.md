@@ -2,6 +2,8 @@
 
 **Note:** This feature requires C++26 Static Reflection support (P2996) and is currently only available with experimental compilers. You must enable it with `-DSIMDJSON_STATIC_REFLECTION=ON` when building.
 
+For compile-time parsing of whole JSON documents, see [compile_time.md](compile_time.md).
+
 ## Overview
 
 simdjson provides compile-time JSONPath and JSON Pointer accessors that validate paths against struct definitions at compile time and generate optimized accessor code with zero runtime overhead. This combines the safety of compile-time type checking with the performance of pre-parsed, pre-validated access paths.
