@@ -12,6 +12,8 @@ library provides high-speed access to files or streams containing multiple small
 ```
 ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.
 
+For the threaded `parse_many()` API over the same kind of input, see [parse_many.md](parse_many.md).
+
 Contents
 --------
 
@@ -133,7 +135,7 @@ E.g., `[1,2]{"32":1}` is recognized as two documents.
 
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec/)
-- [JSON lines (JSONL)](http://jsonlines.org/)
+- [JSON lines (JSONL)](https://jsonlines.org/)
 - [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464)
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
@@ -238,7 +240,7 @@ ondemand::document doc = parser.iterate(view); // parse the JSON
 
 ## Use cases
 
-From [jsonlines.org](http://jsonlines.org/examples/):
+From [jsonlines.org](https://jsonlines.org/examples/):
 
 - **Better than CSV**
     ```json

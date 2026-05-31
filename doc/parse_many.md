@@ -10,6 +10,8 @@ An interface providing features to work with files or streams containing multipl
 ```
 ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.
 
+For a streaming iterator interface over the same kind of input, see [iterate_many.md](iterate_many.md).
+
 Contents
 --------
 
@@ -132,7 +134,7 @@ Whitespace Characters:
 
 Some official formats **(non-exhaustive list)**:
 - [Newline-Delimited JSON (NDJSON)](https://github.com/ndjson/ndjson-spec)
-- [JSON lines (JSONL)](http://jsonlines.org/)
+- [JSON lines (JSONL)](https://jsonlines.org/)
 - [Record separator-delimited JSON (RFC 7464)](https://tools.ietf.org/html/rfc7464)
 - [More on Wikipedia...](https://en.wikipedia.org/wiki/JSON_streaming)
 
@@ -143,7 +145,7 @@ See [basics.md](basics.md#newline-delimited-json-ndjson-and-json-lines) for an o
 
 ## Use cases
 
-From [jsonlines.org](http://jsonlines.org/examples/):
+From [jsonlines.org](https://jsonlines.org/examples/):
 
 - **Better than CSV**
     ```json
