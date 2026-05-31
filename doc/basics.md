@@ -485,6 +485,38 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   not a valid Unicode (UTF-8) string or if there is an unclosed string, an error may be reported right away.
   However, it is not fully validated. On-Demand only fully validates the values you use and the
   structure leading to it. It means that at every step as you traverse the document, you may encounter an error. You can handle errors either with exceptions or with error codes.
+
+### What gets validated when you skip values
+
+When you skip JSON values (by not accessing them), simdjson still validates enough
+structure that skipped content cannot corrupt the values you do use. You should never
+get the wrong value just because something you skipped contains an error—but many errors
+in skipped content are not reported until you access those values.
+
+**Strings**
+
+- Boundaries are always validated (proper closing quotes, respecting `\"`), even for skipped strings.
+- String characters are always validated (newlines and control characters are disallowed).
+- Escape sequences are validated only when you unescape a string (for example with
+  `get_string()` or `unescaped_key()`). Invalid escapes such as `\p`, or `\u` not followed
+  by hex digits, are errors when unescaping.
+
+**Numbers, booleans, and null**
+
+- For structural purposes, any contiguous run of non-whitespace characters except
+  `{`, `}`, `[`, `]`, `:`, and `,` is treated as a single number/boolean/null token,
+  whether or not you use the value.
+- The *content* of numbers, booleans, and null is validated only when you actually use them.
+
+**Arrays and objects**
+
+- Skipped arrays and objects are always validated to be properly closed before parsing continues.
+- Missing or extra `,` or `:`, key type checks, and matching of opening/closing `]`/`}` are
+  validated only when you iterate or index the array or object, or when you fully iterate it.
+
+See also [On-Demand design notes](ondemand_design.md#validate-what-you-use) and
+[#1640](https://github.com/simdjson/simdjson/issues/1640).
+
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
@@ -2299,6 +2331,49 @@ The simdjson can be build with exceptions entirely disabled. It checks the `__cp
 target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
 ```
 
+#### API when exceptions are disabled
+
+When `SIMDJSON_EXCEPTIONS` is off, simdjson APIs return a `simdjson_result<T>`
+instead of throwing. You must check errors explicitly; implicit conversions to
+`T` that would throw in exception mode are not available.
+
+**On-Demand API (recommended):**
+
+```cpp
+simdjson::ondemand::parser parser;
+simdjson::padded_string json = simdjson::padded_string::load("twitter.json");
+simdjson::ondemand::document doc;
+auto error = parser.iterate(json).get(doc);
+if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+
+uint64_t identifier{};
+error = doc["statuses"].at(0)["id"].get(identifier);
+if (error) {
+  std::cerr << error << " near " << doc.current_location() << std::endl;
+  return EXIT_FAILURE;
+}
+```
+
+You can also chain operations and check once at the end, or use
+`if (auto x = doc["key"]; x.error()) { ... }` as described in
+[Error handling examples without exceptions](#error-handling-examples-without-exceptions).
+
+**DOM API:**
+
+```cpp
+simdjson::dom::parser parser;
+simdjson::dom::element doc;
+auto error = parser.load("twitter.json").get(doc);
+if (error) { return EXIT_FAILURE; }
+
+uint64_t identifier{};
+error = doc["statuses"].at(0)["id"].get(identifier);
+if (error) { return EXIT_FAILURE; }
+```
+
+See also the [DOM documentation](dom.md#error-handling) and the
+[Godbolt examples without exceptions](https://godbolt.org/z/e9dWb9E4v).
+
 ### Exceptions
 
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
@@ -2540,7 +2615,7 @@ write out multiple records as independent JSON documents, to be read one-by-one.
 
 The simdjson library also supports multithreaded JSON streaming through a large file
 containing many smaller JSON documents in either [ndjson](https://github.com/ndjson/ndjson-spec)
-or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays
+or [JSON lines](https://jsonlines.org) format. If your JSON documents all contain arrays
 or objects, we even support direct file concatenation without whitespace. However, if there
 is content between your JSON documents, it should be exclusively ASCII white-space characters.
 
@@ -3618,4 +3693,4 @@ Further reading
 --------
 
 
-- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](https://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
