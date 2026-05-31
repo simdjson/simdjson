@@ -2117,7 +2117,10 @@ field is visited, as usual with On Demand). Fields whose keys are not in the
 selector are skipped without being parsed; duplicate keys are ignored after the
 first match; and iteration stops as soon as every selector key has matched or the
 object ends. The `for_each` call returns a `simdjson::error_code` (`SUCCESS`, or the first
-error encountered while walking the object).
+error encountered while walking the object). Your callback may itself return a
+`simdjson::error_code`: when it does, the walk stops at the first non-`SUCCESS`
+result and `for_each` returns it. That is the recommended way to report a
+value-parsing error (e.g. a type mismatch) from inside the callback.
 
 Because the selector index is a small integer, a `switch` is the natural way to
 dispatch on the matched field.
@@ -2128,7 +2131,7 @@ Key selectors are subject to a few compile-time restrictions:
 - Key length. We currently limit keys to at most 32 characters long.
   A longer key produces a compile-time error. This limitations could be
   eased in the future but we expect longer keys to be unusual.
-- Number of keys. The hard limit is 100 keys, but the compile-time perfect-hash
+- Number of keys. The hard limit is 255 keys, but the compile-time perfect-hash
   construction may fail (again, a compile-time error) for large or awkward key sets,
   and compilation time grows with the number of keys. For compilation speed,
   you may use precompiled headers if you have dozens of keys.

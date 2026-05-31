@@ -139,11 +139,16 @@ public:
    *   });
    *
    * Limitations (see key_selector): each key must be at most 32 characters long,
-   * and the number of keys should be moderate (hard limit 100; a handful is
+   * and the number of keys should be moderate (hard limit 255; a handful is
    * best, as the compile-time perfect hash may fail or slow compilation for
    * large key sets).
    *
-   * @returns SUCCESS, or the first error encountered while walking the object.
+   * The callback may return either void or an error_code. When it returns an
+   * error_code, the walk stops at the first non-SUCCESS result and that error is
+   * returned, which lets the callback surface value-parse errors.
+   *
+   * @returns SUCCESS, or the first error encountered while walking the object
+   *          (including any error returned by the callback).
    */
   template <typename Selector, typename Func>
   simdjson_inline error_code for_each(Func&& on_match) noexcept;

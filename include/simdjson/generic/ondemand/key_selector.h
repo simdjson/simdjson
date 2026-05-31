@@ -817,13 +817,6 @@ simdjson_really_inline bool compare_key_bytes(
     }
 }
 
-// Branchless byte load: p[idx] if idx < len, else 0. Always reads a valid byte.
-simdjson_really_inline std::size_t runtime_safe_char(const char* p, std::size_t len, std::size_t idx) noexcept {
-    std::size_t has = static_cast<std::size_t>(idx < len);
-    std::size_t si = idx & (std::size_t{0} - has);
-    return static_cast<unsigned char>(p[si]) & (std::size_t{0} - has);
-}
-
 } // namespace key_selector_detail
 
 /**

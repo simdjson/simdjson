@@ -212,6 +212,48 @@ namespace object_tests {
     }));
     TEST_SUCCEED();
   }
+
+  // Regression test for the for_each callback error contract: when the callback
+  // returns an error_code, for_each stops at the first non-SUCCESS result and
+  // returns it (so a value-parse error is no longer silently dropped).
+  bool object_for_each_callback_error() {
+    TEST_START();
+    using sel_t = ondemand::key_selector<"id", "name">;
+    auto json = R"({ "id": 7, "name": "Daniel" })"_padded;
+
+    // Happy path: an error_code-returning callback extracts the values and
+    // for_each returns SUCCESS.
+    SUBTEST("error_code callback success", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      uint64_t id{};
+      std::string_view name{};
+      ASSERT_SUCCESS( object.for_each<sel_t>([&](std::size_t index, ondemand::value v) -> simdjson::error_code {
+        switch (index) {
+          case 0: { return v.get(id); }
+          case 1: { return v.get(name); }
+          default: { return SUCCESS; }
+        }
+      }) );
+      ASSERT_EQUAL(id, 7);
+      ASSERT_EQUAL(name, "Daniel");
+      return true;
+    }));
+
+    // Error path: a value-parse error inside the callback (here, reading the
+    // integer "id" as a string) is propagated by for_each.
+    SUBTEST("error_code callback propagates error", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      ASSERT_ERROR( object.for_each<sel_t>([&](std::size_t index, ondemand::value v) -> simdjson::error_code {
+        std::string_view s;
+        if (index == 0) { return v.get(s); } // wrong type on purpose
+        return SUCCESS;
+      }), INCORRECT_TYPE );
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
@@ -312,6 +354,7 @@ namespace object_tests {
            value_object_find_field() &&
 #if SIMDJSON_SUPPORTS_CONCEPTS
            object_find_field_key_selector() &&
+           object_for_each_callback_error() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
            key_selector_example_toplevel() &&
