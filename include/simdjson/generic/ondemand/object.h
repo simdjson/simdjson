@@ -138,10 +138,11 @@ public:
    *     switch (i) { case 0: ...; case 1: ...; }
    *   });
    *
-   * Limitations (see key_selector): each key must be at most 32 characters long,
+   * Limitations (see key_selector): each key must be at most 31 characters long,
    * and the number of keys should be moderate (hard limit 255; a handful is
    * best, as the compile-time perfect hash may fail or slow compilation for
-   * large key sets).
+   * large key sets). They keys must be distinct, non-empty, and free of backslash, double-quote and
+   * null bytes.
    *
    * The callback may return either void or an error_code. When it returns an
    * error_code, the walk stops at the first non-SUCCESS result and that error is

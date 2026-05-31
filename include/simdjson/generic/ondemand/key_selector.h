@@ -714,7 +714,10 @@ build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>&
 // load is safe.
 template <std::size_t MaxKeyLen>
 simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
-    static_assert(MaxKeyLen <= 32, "MaxKeyLen must be <= 32 for current SIMD implementations");
+    // The SIMD paths scan only two 16-byte blocks (offsets 0..31), so a key
+    // whose closing quote sits at offset 32 would be missed. Cap at 31 to keep
+    // SIMD and scalar builds in agreement.
+    static_assert(MaxKeyLen <= 31, "MaxKeyLen must be <= 31 for current SIMD implementations");
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
     uint8x16_t v0 = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
     uint8x16_t cmp0 = vceqq_u8(v0, vdupq_n_u8('"'));
@@ -834,7 +837,7 @@ simdjson_really_inline bool compare_key_bytes(
  * tables are static constexpr, so the lookup fully inlines.
  *
  * Limitations:
- *   - Each key must be at most 32 characters long (and no longer than
+ *   - Each key must be at most 31 characters long (and no longer than
  *     SIMDJSON_PADDING). Longer keys trigger a compile-time error.
  *   - The number of keys should be moderate. The hard limit is 255 keys;
  *     compilation time grows with the number of keys, so prefer a few dozen at
@@ -852,6 +855,12 @@ struct key_selector {
     static constexpr std::size_t max_key_len = key_selector_detail::compute_max_key_len<N>(keys);
     static_assert(max_key_len <= SIMDJSON_PADDING,
                   "key longer than SIMDJSON_PADDING is not supported");
+    // The SIMD key-length scan covers offsets 0..31 only; a 32-character key's
+    // closing quote lands at offset 32 and would be silently missed on
+    // NEON/SSE2 while still matching in scalar builds. Cap at 31 so the result
+    // is identical across implementations.
+    static_assert(max_key_len <= 31,
+                  "key_selector keys must be at most 31 characters long");
 
     static constexpr auto result = key_selector_detail::compute_phf<N>(keys);
     static constexpr std::size_t table_size = result.table_size;
