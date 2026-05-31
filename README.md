@@ -17,6 +17,7 @@ to parse JSON 4x  faster than RapidJSON and 25x faster than JSON for Modern C++.
 * **Easy:** First-class, easy to use and carefully documented APIs.
 * **Strict:** Full JSON and UTF-8 validation, lossless parsing. Performance with no compromises.
 * **Automatic:** Selects a CPU-tailored parser at runtime. No configuration needed.
+* **Thread-aware:** Documented concurrency model; see [thread safety](doc/basics.md#thread-safety) (use one parser per thread).
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
 * **Peer Reviewed:** Our research appears in venues like VLDB Journal, Software: Practice and Experience.
 
@@ -114,12 +115,19 @@ Documentation
 Usage documentation is available:
 
 * [Basics](doc/basics.md) is an overview of how to use simdjson and its APIs.
-* [Builder](doc/builder.md) is an overview of how to efficiently write JSON strings using simdjson.
+* [DOM API](doc/dom.md) documents the DOM parser for fully materialized JSON trees.
+* [Builder](doc/builder.md) covers JSON **serialization** (writing JSON strings); see also [#1327](https://github.com/simdjson/simdjson/issues/1327).
+* [parse_many](doc/parse_many.md) and [iterate_many](doc/iterate_many.md) describe multithreaded NDJSON/JSON-lines parsing.
 * [Performance](doc/performance.md) shows some more advanced scenarios and how to tune for them.
 * [Implementation Selection](doc/implementation-selection.md) describes runtime CPU detection and
   how you can work with it.
 * [API](https://simdjson.github.io/simdjson/) contains the automatically generated API documentation.
 * [Compile-Time Parsing](doc/compile_time.md) presents our compile-time parsing function (C++26 only).
+* [Thread safety](doc/basics.md#thread-safety) summarizes which APIs are safe to use from multiple threads.
+* [HACKING.md](HACKING.md) is a guide for contributors (building, testing, and project layout).
+* [C++20 ranges (DOM)](doc/dom.md#c20-support) and [On-Demand ranges](doc/basics.md#c20-ranges-support) show range adaptor usage.
+* [Raw JSON access](doc/basics.md#raw-json-string-for-objects-and-arrays) explains `raw_json()` / `raw_json_token()`.
+* [On-Demand design](doc/ondemand_design.md) walks through parsing logic including the depth model ([#1533](https://github.com/simdjson/simdjson/issues/1533)).
 
 
 Godbolt
