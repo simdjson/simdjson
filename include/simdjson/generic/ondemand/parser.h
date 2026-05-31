@@ -33,6 +33,9 @@ static constexpr size_t MINIMAL_BATCH_SIZE = 32;
  * A JSON fragment iterator.
  *
  * This holds the actual iterator as well as the buffer for writing strings.
+ *
+ * @note Not thread-safe: use one parser (and its documents) per thread. CPU
+ *       dispatch is thread-safe. See doc/basics.md#thread-safety.
  */
 class parser {
 public:

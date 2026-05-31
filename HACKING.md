@@ -9,6 +9,7 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
 - [Hacking simdjson](#hacking-simdjson)
   - [Build Quickstart](#build-quickstart)
   - [Design notes](#design-notes)
+  - [Thread safety](#thread-safety)
   - [Developer mode](#developer-mode)
   - [Directory Structure and Source](#directory-structure-and-source)
   - [Runtime Dispatching](#runtime-dispatching)
@@ -16,6 +17,24 @@ If you plan to contribute to simdjson, please read our [CONTRIBUTING](https://gi
   - [Usage (CMake on 64-bit platforms like Linux, FreeBSD or macOS)](#usage-cmake-on-64-bit-platforms-like-linux-freebsd-or-macos)
   - [Usage (CMake on 64-bit Windows using Visual Studio 2019 or better)](#usage-cmake-on-64-bit-windows-using-visual-studio-2019-or-better)
   - [Various References](#various-references)
+
+Thread safety
+-------------
+
+Simdjson is intended for multi-threaded programs when a few rules are followed.
+The full user-facing guide is in [Thread safety](doc/basics.md#thread-safety)
+in `doc/basics.md`. In short:
+
+- Use one `ondemand::parser` (or `dom::parser`) per thread; documents and field
+  iterators are not thread-safe because they advance internal state.
+- `iterate_many` / `parse_many` may use an internal worker thread when the
+  library is built with thread support (`SIMDJSON_THREADS_ENABLED`).
+- Runtime CPU dispatch runs once and is thread-safe; avoid using the library
+  from other threads while the main thread is shutting down (see `quick_exit`
+  note in the basics doc).
+
+When adding mutable state to on-demand values (for example array/object
+iterators), document whether callers must serialize access.
 
 Build Quickstart
 ------------------------------
