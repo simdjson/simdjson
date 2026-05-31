@@ -352,7 +352,7 @@ immediately (e.g., see [General direct access to the raw JSON string](#general-d
 
 We refer to "On-Demand" as a front-end component since it is an interface between the
 low-level parsing functions and the user. It hides much of the complexity of parsing JSON
-documents.
+documents. For a walkthrough of On-Demand parsing including the depth model, see [On-Demand design notes](ondemand_design.md) ([#1533](https://github.com/simdjson/simdjson/issues/1533)).
 
 ### Parser, document and JSON scope
 
