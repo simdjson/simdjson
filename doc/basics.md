@@ -2299,6 +2299,49 @@ The simdjson can be build with exceptions entirely disabled. It checks the `__cp
 target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)
 ```
 
+#### API when exceptions are disabled
+
+When `SIMDJSON_EXCEPTIONS` is off, simdjson APIs return a `simdjson_result<T>`
+instead of throwing. You must check errors explicitly; implicit conversions to
+`T` that would throw in exception mode are not available.
+
+**On-Demand API (recommended):**
+
+```cpp
+simdjson::ondemand::parser parser;
+simdjson::padded_string json = simdjson::padded_string::load("twitter.json");
+simdjson::ondemand::document doc;
+auto error = parser.iterate(json).get(doc);
+if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
+
+uint64_t identifier{};
+error = doc["statuses"].at(0)["id"].get(identifier);
+if (error) {
+  std::cerr << error << " near " << doc.current_location() << std::endl;
+  return EXIT_FAILURE;
+}
+```
+
+You can also chain operations and check once at the end, or use
+`if (auto x = doc["key"]; x.error()) { ... }` as described in
+[Error handling examples without exceptions](#error-handling-examples-without-exceptions).
+
+**DOM API:**
+
+```cpp
+simdjson::dom::parser parser;
+simdjson::dom::element doc;
+auto error = parser.load("twitter.json").get(doc);
+if (error) { return EXIT_FAILURE; }
+
+uint64_t identifier{};
+error = doc["statuses"].at(0)["id"].get(identifier);
+if (error) { return EXIT_FAILURE; }
+```
+
+See also the [DOM documentation](dom.md#error-handling) and the
+[Godbolt examples without exceptions](https://godbolt.org/z/e9dWb9E4v).
+
 ### Exceptions
 
 Users more comfortable with an exception flow may choose to directly cast the `simdjson_result<T>` to the desired type:
@@ -2540,7 +2583,7 @@ write out multiple records as independent JSON documents, to be read one-by-one.
 
 The simdjson library also supports multithreaded JSON streaming through a large file
 containing many smaller JSON documents in either [ndjson](https://github.com/ndjson/ndjson-spec)
-or [JSON lines](http://jsonlines.org) format. If your JSON documents all contain arrays
+or [JSON lines](https://jsonlines.org) format. If your JSON documents all contain arrays
 or objects, we even support direct file concatenation without whitespace. However, if there
 is content between your JSON documents, it should be exclusively ASCII white-space characters.
 
@@ -3618,4 +3661,4 @@ Further reading
 --------
 
 
-- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](http://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
+- John Keiser, Daniel Lemire, [On-Demand JSON: A Better Way to Parse Documents?](https://arxiv.org/abs/2312.17149), Software: Practice and Experience 54 (6), 2024
