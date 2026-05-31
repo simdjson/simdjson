@@ -13,6 +13,8 @@ efficient as the schema-based or event-based approaches. We call this new approa
 simdjson On-Demand API offers a familiar, friendly DOM API and
 provides the performance of just-in-time parsing on top of the simdjson superior performance.
 
+For usage and API examples, see [basics.md](basics.md). The depth model is discussed in [#1533](https://github.com/simdjson/simdjson/issues/1533).
+
 To achieve ease of use, we mimicked the *form* of a traditional DOM API: you can iterate over
 arrays, look up fields in objects, and extract native values like `double`, `uint64_t`, `string` and `bool`.
 
