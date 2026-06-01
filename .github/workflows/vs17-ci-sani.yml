@@ -18,7 +18,7 @@ jobs:
           - {gen: Visual Studio 17 2022, arch: x64, shared: OFF, build_type: RelWithDebInfo}
     steps:
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Configure
       run: |
         cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSANITIZE=ON -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -B build

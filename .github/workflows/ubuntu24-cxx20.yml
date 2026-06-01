@@ -11,7 +11,7 @@ jobs:
       matrix:
         cxx: [g++-13, clang++-16]
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@v6
       - name: Prepare
         run: cmake -DSIMDJSON_CXX_STANDARD=20 -DSIMDJSON_DEVELOPER_MODE=ON  -B build
         env:
