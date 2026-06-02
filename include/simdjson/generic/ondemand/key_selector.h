@@ -37,10 +37,7 @@ namespace key_selector_detail {
 
 // ============================================================================
 // Compile-time perfect-hash generator.
-//
-// This is a port of the ConstexprCore perfect-hash generator
-// (https://github.com/ConstexprCore/perfect_hash). It scales to ~100 keys at
-// compile time by determining association values one (position, character)
+// It scales to ~100 keys at compile time by determining association values one (position, character)
 // symbol at a time (gperf-style) instead of an exhaustive offset search, and
 // falls back to a Hash-and-Displace construction for large/awkward key sets.
 //
