@@ -344,6 +344,48 @@ namespace object_tests {
   }
 #endif
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+  // The key_selector exposes two matchers -- the perfect hash (match_raw) and the
+  // unrolled linear scan (match_linear) -- and match() dispatches between them by
+  // size. They must return identical selector indices for every key, including
+  // tricky cases: keys that are prefixes of one another, keys that extend a real
+  // key, a long key, and misses. This guards the linear matcher's prefix/length
+  // disambiguation (the trailing-quote check) against the hash.
+  bool key_selector_matchers_agree() {
+    TEST_START();
+    // Probe builds "<key>\"" in a padded buffer and checks the three matchers agree.
+    auto probe = [](auto sel_tag, std::string_view key) -> bool {
+      using sel = decltype(sel_tag);
+      char buf[64] = {};
+      for (size_t i = 0; i < key.size(); ++i) { buf[i] = key[i]; }
+      buf[key.size()] = '"';
+      ondemand::raw_json_string r(reinterpret_cast<const uint8_t*>(buf));
+      std::size_t raw = sel::match_raw(r);
+      ASSERT_EQUAL(sel::match_linear(r), raw);
+      ASSERT_EQUAL(sel::match(r), raw);
+      return true;
+    };
+    // Small selector (<= linear_match_max, so match() uses the linear scan),
+    // with prefix keys and a 30-character key.
+    using small_sel = ondemand::key_selector<"a", "ab", "abc", "id", "name",
+                                              "abcdefghijklmnopqrstuvwxyz1234">;
+    for (auto k : {"a", "ab", "abc", "id", "name", "abcdefghijklmnopqrstuvwxyz1234"}) {
+      if (!probe(small_sel{}, k)) { return false; }
+    }
+    for (auto k : {"x", "abcd", "nam", "names", "i", "ids", "zzzzz", ""}) {
+      if (!probe(small_sel{}, k)) { return false; }
+    }
+    // Large selector (> linear_match_max, so match() uses the perfect hash);
+    // match_linear must still agree with the hash.
+    using big_sel = ondemand::key_selector<"k00","k01","k02","k03","k04","k05",
+                                            "k06","k07","k08","k09","k10","k11">;
+    for (auto k : {"k00","k05","k11","k12","nope",""}) {
+      if (!probe(big_sel{}, k)) { return false; }
+    }
+    TEST_SUCCEED();
+  }
+#endif
+
   bool run() {
     return
            object_find_field_unordered() &&
@@ -355,6 +397,7 @@ namespace object_tests {
 #if SIMDJSON_SUPPORTS_CONCEPTS
            object_find_field_key_selector() &&
            object_for_each_callback_error() &&
+           key_selector_matchers_agree() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
            key_selector_example_toplevel() &&

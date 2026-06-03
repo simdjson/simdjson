@@ -16,6 +16,22 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+/**
+ * Result of object::for_each: the first error encountered (SUCCESS if none) and
+ * the number of distinct selector keys that matched during the walk. A
+ * matched_count equal to Selector::size() means every selected key was present
+ * in the object. Implicitly converts to error_code so existing callers that only
+ * care about the error (including SIMDJSON_TRY and the test ASSERT_* macros) keep
+ * working unchanged.
+ */
+struct for_each_result {
+  error_code error{SUCCESS};
+  std::size_t matched_count{0};
+  constexpr operator error_code() const noexcept { return error; }
+};
+#endif
+
 /**
  * A forward-only JSON object field iterator.
  */
@@ -148,11 +164,14 @@ public:
    * error_code, the walk stops at the first non-SUCCESS result and that error is
    * returned, which lets the callback surface value-parse errors.
    *
-   * @returns SUCCESS, or the first error encountered while walking the object
-   *          (including any error returned by the callback).
+   * @returns a for_each_result holding the first error encountered while walking
+   *          the object (including any error returned by the callback, SUCCESS if
+   *          none) and the number of distinct selector keys that matched. The
+   *          result converts implicitly to error_code, so callers that only need
+   *          the error can ignore the count.
    */
   template <typename Selector, typename Func>
-  simdjson_inline error_code for_each(Func&& on_match) noexcept;
+  simdjson_inline for_each_result for_each(Func&& on_match) noexcept;
 #endif
 
   /**

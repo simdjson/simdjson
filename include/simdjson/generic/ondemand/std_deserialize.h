@@ -309,6 +309,22 @@ template <typename T>
 using selector_for = typename [: std::meta::substitute(
     ^^SIMDJSON_IMPLEMENTATION::ondemand::key_selector, selector_key_args<T>()) :];
 
+// True when none of T's eligible members is an optional type, i.e. every member
+// is required. In that case presence can be checked with a single match count
+// instead of a per-member "seen" array.
+template <typename T>
+consteval bool all_eligible_members_required() {
+  bool all_required = true;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_eligible_member(mem)) {
+      if constexpr (concepts::optional_type<typename [: std::meta::type_of(mem) :]>) {
+        all_required = false;
+      }
+    }
+  }
+  return all_required;
+}
+
 } // namespace key_selector_reflection_detail
 
 template <typename T, typename ValT>
@@ -321,40 +337,63 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
   using selector = key_selector_reflection_detail::selector_for<T>;
-  std::array<bool, selector::size()> seen_member{};
-  // Single pass over the object: each field whose key matches a member yields its
-  // selector index, which we map back to the corresponding member. The callback
-  // returns an error_code so that a value-parse error (e.g. a type mismatch on a
-  // matched field) is propagated by for_each instead of being silently dropped.
-  error_code walk_error = obj.template for_each<selector>(
-      [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) -> error_code {
-    std::size_t counter = 0;
-    error_code field_error = SUCCESS;
+  if constexpr (key_selector_reflection_detail::all_eligible_members_required<T>()) {
+    // Fast path: every member is required. A single for_each pass parses each
+    // matched field; the returned match count then tells us whether every member
+    // was present (matched_count == selector::size()) without a per-member "seen"
+    // array. A value-parse error (e.g. a type mismatch) is propagated by for_each.
+    auto walk = obj.template for_each<selector>(
+        [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) -> error_code {
+      std::size_t counter = 0;
+      template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
+          if (matched_index == counter) { return field_value.get(out.[:mem:]); }
+          ++counter;
+        }
+      }
+      return SUCCESS;
+    });
+    if (walk.error) { return walk.error; }
+    // A missing required member shows up as a short match count and is reported as
+    // NO_SUCH_FIELD, mirroring the ordered obj[key] path.
+    if (walk.matched_count != selector::size()) { return NO_SUCH_FIELD; }
+    return SUCCESS;
+  } else {
+    std::array<bool, selector::size()> seen_member{};
+    // Single pass over the object: each field whose key matches a member yields its
+    // selector index, which we map back to the corresponding member. The callback
+    // returns an error_code so that a value-parse error (e.g. a type mismatch on a
+    // matched field) is propagated by for_each instead of being silently dropped.
+    error_code walk_error = obj.template for_each<selector>(
+        [&](std::size_t matched_index, SIMDJSON_IMPLEMENTATION::ondemand::value field_value) -> error_code {
+      std::size_t counter = 0;
+      error_code field_error = SUCCESS;
+      template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+        if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
+          if (matched_index == counter) {
+            seen_member[counter] = true;
+            field_error = field_value.get(out.[:mem:]);
+          }
+          ++counter;
+        }
+      }
+      return field_error;
+    });
+    if (walk_error) { return walk_error; }
+    // Required (non-optional) members must be present: a missing one is reported as
+    // NO_SUCH_FIELD, mirroring the ordered obj[key] path. Optional members may be
+    // absent.
+    std::size_t check_counter = 0;
     template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
       if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
-        if (matched_index == counter) {
-          seen_member[counter] = true;
-          field_error = field_value.get(out.[:mem:]);
+        if constexpr (!concepts::optional_type<decltype(out.[:mem:])>) {
+          if (!seen_member[check_counter]) { return NO_SUCH_FIELD; }
         }
-        ++counter;
+        ++check_counter;
       }
     }
-    return field_error;
-  });
-  if (walk_error) { return walk_error; }
-  // Required (non-optional) members must be present: a missing one is reported as
-  // NO_SUCH_FIELD, mirroring the ordered obj[key] path. Optional members may be
-  // absent.
-  std::size_t check_counter = 0;
-  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (key_selector_reflection_detail::is_eligible_member(mem)) {
-      if constexpr (!concepts::optional_type<decltype(out.[:mem:])>) {
-        if (!seen_member[check_counter]) { return NO_SUCH_FIELD; }
-      }
-      ++check_counter;
-    }
+    return SUCCESS;
   }
-  return SUCCESS;
 }
 
 #else

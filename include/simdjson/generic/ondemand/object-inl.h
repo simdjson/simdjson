@@ -65,18 +65,18 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
-simdjson_inline error_code object::for_each(Func&& on_match) noexcept {
+simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_match) noexcept {
   auto first = this->begin();
-  if (first.error()) { return first.error(); }
+  if (first.error()) { return {first.error(), 0}; }
   object_iterator it = first.value_unsafe();
   object_iterator last{};
   std::array<bool, Selector::size()> seen{};
   std::size_t matched = 0;
   while (it != last) {
     auto field_res = *it;
-    if (field_res.error()) { return field_res.error(); }
+    if (field_res.error()) { return {field_res.error(), matched}; }
     field f = field_res.value_unsafe();
-    std::size_t idx = Selector::match_raw(f.key());
+    std::size_t idx = Selector::match(f.key());
     if (idx < Selector::size() && !seen[idx]) {
       seen[idx] = true;
       value matched_value = f.value();
@@ -87,7 +87,7 @@ simdjson_inline error_code object::for_each(Func&& on_match) noexcept {
       // handling its own errors.
       if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
         error_code e = on_match(idx, matched_value);
-        if (e) { return e; }
+        if (e) { return {e, matched}; }
       } else {
         on_match(idx, matched_value);
       }
@@ -95,7 +95,7 @@ simdjson_inline error_code object::for_each(Func&& on_match) noexcept {
     }
     ++it;
   }
-  return SUCCESS;
+  return {SUCCESS, matched};
 }
 #endif
 
