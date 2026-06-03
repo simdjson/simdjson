@@ -66,34 +66,41 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
 simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_match) noexcept {
-  auto first = this->begin();
-  if (first.error()) { return {first.error(), 0}; }
-  object_iterator it = first.value_unsafe();
-  object_iterator last{};
+  // Single pass driven directly by the value_iterator, mirroring
+  // find_field_unordered_raw + value(iter.child()). Compared to walking via
+  // object_iterator/field, this avoids constructing a simdjson_result<field> and
+  // a field (key + value) for every field -- and the development-check bookkeeping
+  // in object_iterator -- building a value only for the fields that actually match.
+  // We operate on a copy of the iterator, as object::begin() would.
+  value_iterator it = iter;
   std::array<bool, Selector::size()> seen{};
   std::size_t matched = 0;
-  while (it != last) {
-    auto field_res = *it;
-    if (field_res.error()) { return {field_res.error(), matched}; }
-    field f = field_res.value_unsafe();
-    std::size_t idx = Selector::match(f.key());
+  while (it.is_open()) {
+    raw_json_string key;
+    error_code error = it.field_key().get(key);
+    if (error) { it.abandon(); return {error, matched}; }
+    // Advance past the ':' and descend onto the value.
+    if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
+    std::size_t idx = Selector::match(key);
     if (idx < Selector::size() && !seen[idx]) {
       seen[idx] = true;
-      value matched_value = f.value();
+      value matched_value(it.child());
       // The callback may return either void or an error_code. When it returns an
       // error_code, we stop at the first non-SUCCESS result and propagate it so
       // the caller can surface value-parse errors (for example, a type mismatch
       // on a matched field). A void-returning callback is responsible for
       // handling its own errors.
       if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
-        error_code e = on_match(idx, matched_value);
-        if (e) { return {e, matched}; }
+        if ((error = on_match(idx, matched_value))) { return {error, matched}; }
       } else {
         on_match(idx, matched_value);
       }
       if (++matched >= Selector::size()) { break; }
     }
-    ++it;
+    // Skip the value (a no-op if the callback consumed it) and step to the next
+    // field; has_next_field() ends the container on '}', which closes the loop.
+    if ((error = it.skip_child())) { it.abandon(); return {error, matched}; }
+    if ((error = it.has_next_field().error())) { return {error, matched}; }
   }
   return {SUCCESS, matched};
 }
