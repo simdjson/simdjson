@@ -81,7 +81,7 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
     if (error) { it.abandon(); return {error, matched}; }
     // Advance past the ':' and descend onto the value.
     if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
-    std::size_t idx = Selector::match(key);
+    std::size_t idx = Selector::match_raw(key);
     if (idx < Selector::size() && !seen[idx]) {
       seen[idx] = true;
       value matched_value(it.child());
