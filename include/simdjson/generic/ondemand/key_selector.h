@@ -12,8 +12,6 @@
 #include <string_view>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
-#include <utility>
 
 #if defined(__aarch64__) || defined(__ARM_NEON)
   #include <arm_neon.h>
@@ -911,57 +909,6 @@ struct key_selector {
         if (!key_selector_detail::compare_key_bytes<max_key_len>(
                 p, phf.slot_key_bytes[slot].data(), len)) { return N; }
         return ki;
-    }
-
-    /**
-     * Compare the JSON key at `p` (just past the opening quote, in a padded
-     * buffer) against the compile-time key at selector index I. Because keys[I]
-     * has a compile-time-constant length and bytes, the length check and memcmp
-     * fully inline to a handful of fixed-width loads/compares -- the same cheap
-     * comparison the ordered obj[key] path performs. The trailing-quote check
-     * disambiguates keys that are prefixes of one another and of longer JSON keys.
-     */
-    template <std::size_t I>
-    static simdjson_really_inline bool matches_at(const char* p) noexcept {
-        constexpr std::string_view k = keys[I];
-        return p[k.size()] == '"' && std::memcmp(p, k.data(), k.size()) == 0;
-    }
-
-    /**
-     * Order-independent linear match: try each key in turn with a fully inlined,
-     * compile-time-sized comparison, stopping at the first hit. For a small number
-     * of keys this is cheaper than the perfect hash (no length scan, no table
-     * loads), which matters because deserialization is dominated by many small
-     * structs. Returns the selector index in [0, N) on match, or N on miss.
-     */
-    static simdjson_really_inline std::size_t match_linear(raw_json_string rjs) noexcept {
-        const char* p = rjs.raw();
-        std::size_t idx = N;
-        [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-            (void)((matches_at<Is>(p) ? (idx = Is, true) : false) || ...);
-        }(std::make_index_sequence<N>{});
-        return idx;
-    }
-
-    // Selectors no larger than this use the unrolled linear matcher; larger ones
-    // use the perfect hash. The crossover comes from a microbenchmark of both
-    // matchers: for in-order hits (the deserialization case) linear wins up to
-    // ~N=10, and for a pure miss the crossover is ~N=8, so 8 captures the small-
-    // struct win without regressing larger or miss-heavy selectors. match_raw and
-    // match_linear remain available if a caller wants to force one.
-    static constexpr std::size_t linear_match_max = 8;
-
-    /**
-     * Look up a JSON key, choosing the cheaper matcher for this selector's size:
-     * the unrolled linear comparison for small selectors, the perfect hash for
-     * large ones. Returns the selector index in [0, N) on match, or N on miss.
-     */
-    static simdjson_really_inline std::size_t match(raw_json_string rjs) noexcept {
-        if constexpr (N <= linear_match_max) {
-            return match_linear(rjs);
-        } else {
-            return match_raw(rjs);
-        }
     }
 
     /** Return the key text at selector index i (i in [0, N)). */

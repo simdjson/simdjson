@@ -345,42 +345,41 @@ namespace object_tests {
 #endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
-  // The key_selector exposes two matchers -- the perfect hash (match_raw) and the
-  // unrolled linear scan (match_linear) -- and match() dispatches between them by
-  // size. They must return identical selector indices for every key, including
-  // tricky cases: keys that are prefixes of one another, keys that extend a real
-  // key, a long key, and misses. This guards the linear matcher's prefix/length
-  // disambiguation (the trailing-quote check) against the hash.
+  // The key_selector's matcher (match_raw, the perfect hash) must return the
+  // right selector index for every key, including tricky cases: keys that are
+  // prefixes of one another, keys that extend a real key, a long key, and misses.
+  // This guards the prefix/length disambiguation against the hash.
   bool key_selector_matchers_agree() {
     TEST_START();
-    // Probe builds "<key>\"" in a padded buffer and checks the three matchers agree.
-    auto probe = [](auto sel_tag, std::string_view key) -> bool {
+    // Probe builds "<key>\"" in a padded buffer and checks match_raw returns the
+    // expected selector index (or N for a miss).
+    auto probe = [](auto sel_tag, std::string_view key, std::size_t expected) -> bool {
       using sel = decltype(sel_tag);
       char buf[64] = {};
       for (size_t i = 0; i < key.size(); ++i) { buf[i] = key[i]; }
       buf[key.size()] = '"';
       ondemand::raw_json_string r(reinterpret_cast<const uint8_t*>(buf));
-      std::size_t raw = sel::match_raw(r);
-      ASSERT_EQUAL(sel::match_linear(r), raw);
-      ASSERT_EQUAL(sel::match(r), raw);
+      ASSERT_EQUAL(sel::match_raw(r), expected);
       return true;
     };
-    // Small selector (<= linear_match_max, so match() uses the linear scan),
-    // with prefix keys and a 30-character key.
+    // Selector with prefix keys and a 30-character key.
     using small_sel = ondemand::key_selector<"a", "ab", "abc", "id", "name",
                                               "abcdefghijklmnopqrstuvwxyz1234">;
+    std::size_t i = 0;
     for (auto k : {"a", "ab", "abc", "id", "name", "abcdefghijklmnopqrstuvwxyz1234"}) {
-      if (!probe(small_sel{}, k)) { return false; }
+      if (!probe(small_sel{}, k, i++)) { return false; }
     }
     for (auto k : {"x", "abcd", "nam", "names", "i", "ids", "zzzzz", ""}) {
-      if (!probe(small_sel{}, k)) { return false; }
+      if (!probe(small_sel{}, k, small_sel::size())) { return false; }
     }
-    // Large selector (> linear_match_max, so match() uses the perfect hash);
-    // match_linear must still agree with the hash.
+    // Larger selector exercising the same matcher.
     using big_sel = ondemand::key_selector<"k00","k01","k02","k03","k04","k05",
                                             "k06","k07","k08","k09","k10","k11">;
-    for (auto k : {"k00","k05","k11","k12","nope",""}) {
-      if (!probe(big_sel{}, k)) { return false; }
+    if (!probe(big_sel{}, "k00", 0)) { return false; }
+    if (!probe(big_sel{}, "k05", 5)) { return false; }
+    if (!probe(big_sel{}, "k11", 11)) { return false; }
+    for (auto k : {"k12","nope",""}) {
+      if (!probe(big_sel{}, k, big_sel::size())) { return false; }
     }
     TEST_SUCCEED();
   }
