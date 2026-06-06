@@ -73,29 +73,41 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
   // in object_iterator -- building a value only for the fields that actually match.
   // We operate on a copy of the iterator, as object::begin() would.
   value_iterator it = iter;
-  std::array<bool, Selector::size()> seen{};
+  // Track which selector indices have already matched, as a compile-time bitset:
+  // a single 64-bit word for up to 64 keys (the common case), more words as
+  // needed. Initializing one (or a few) registers to zero is cheaper than zeroing
+  // a per-key byte array on every call, and the test/set become register bit ops.
+  constexpr std::size_t seen_words = (Selector::size() + 63) / 64;
+  std::array<std::uint64_t, seen_words> seen{};
   std::size_t matched = 0;
   while (it.is_open()) {
     raw_json_string key;
-    error_code error = it.field_key().get(key);
+    std::size_t key_len;
+    // field_key_with_length derives the key length from the structural index (the
+    // following ':' token), avoiding a forward SIMD scan for the closing quote.
+    error_code error = it.field_key_with_length(key, key_len);
     if (error) { it.abandon(); return {error, matched}; }
     // Advance past the ':' and descend onto the value.
     if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
-    std::size_t idx = Selector::match_raw(key);
-    if (idx < Selector::size() && !seen[idx]) {
-      seen[idx] = true;
-      value matched_value(it.child());
-      // The callback may return either void or an error_code. When it returns an
-      // error_code, we stop at the first non-SUCCESS result and propagate it so
-      // the caller can surface value-parse errors (for example, a type mismatch
-      // on a matched field). A void-returning callback is responsible for
-      // handling its own errors.
-      if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
-        if ((error = on_match(idx, matched_value))) { return {error, matched}; }
-      } else {
-        on_match(idx, matched_value);
+    std::size_t idx = Selector::match_raw(key.raw(), key_len);
+    if (idx < Selector::size()) {
+      const std::uint64_t seen_bit = std::uint64_t{1} << (idx & 63);
+      std::uint64_t &seen_word = seen[idx >> 6];
+      if (!(seen_word & seen_bit)) {
+        seen_word |= seen_bit;
+        value matched_value(it.child());
+        // The callback may return either void or an error_code. When it returns an
+        // error_code, we stop at the first non-SUCCESS result and propagate it so
+        // the caller can surface value-parse errors (for example, a type mismatch
+        // on a matched field). A void-returning callback is responsible for
+        // handling its own errors.
+        if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
+          if ((error = on_match(idx, matched_value))) { return {error, matched}; }
+        } else {
+          on_match(idx, matched_value);
+        }
+        if (++matched >= Selector::size()) { break; }
       }
-      if (++matched >= Selector::size()) { break; }
     }
     // Skip the value (a no-op if the callback consumed it) and step to the next
     // field; has_next_field() ends the container on '}', which closes the loop.

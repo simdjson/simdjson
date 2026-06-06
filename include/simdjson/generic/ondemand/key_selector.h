@@ -867,12 +867,16 @@ struct key_selector {
     static constexpr std::size_t size() noexcept { return N; }
 
     /**
-     * Look up a JSON key. rjs must point just after an opening quote in a padded
-     * simdjson buffer. Returns the selector index in [0, N) on match, or N on miss.
+     * Look up a JSON key whose length is already known. p must point at the first
+     * key byte (just after the opening quote) in a padded simdjson buffer, and len
+     * must be the number of raw key bytes (the distance to the closing quote).
+     * Returns the selector index in [0, N) on match, or N on miss.
+     *
+     * Prefer this overload when the caller can obtain the key length cheaply (for
+     * example, object::for_each derives it from the structural index rather than
+     * re-scanning for the closing quote).
      */
-    static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
-        const char* p = rjs.raw();
-        std::size_t len = key_selector_detail::scan_key_length<max_key_len>(p);
+    static simdjson_really_inline std::size_t match_raw(const char* p, std::size_t len) noexcept {
         if (len == 0 || len > max_key_len) { return N; }
 
         std::size_t slot;
@@ -909,6 +913,17 @@ struct key_selector {
         if (!key_selector_detail::compare_key_bytes<max_key_len>(
                 p, phf.slot_key_bytes[slot].data(), len)) { return N; }
         return ki;
+    }
+
+    /**
+     * Look up a JSON key. rjs must point just after an opening quote in a padded
+     * simdjson buffer. Returns the selector index in [0, N) on match, or N on miss.
+     * The key length is recovered with a SIMD scan for the closing quote; callers
+     * that already know the length should use the (p, len) overload above.
+     */
+    static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
+        const char* p = rjs.raw();
+        return match_raw(p, key_selector_detail::scan_key_length<max_key_len>(p));
     }
 
     /** Return the key text at selector index i (i in [0, N)). */

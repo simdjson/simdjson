@@ -423,6 +423,22 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   return raw_json_string(key);
 }
 
+simdjson_warn_unused simdjson_inline error_code value_iterator::field_key_with_length(raw_json_string &key, std::size_t &len) noexcept {
+  assert_at_next();
+
+  const uint8_t *k = _json_iter->return_current_and_advance();
+  if (*(k++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
+  // After return_current_and_advance(), the current token is the ':' that follows
+  // the key. The closing quote sits just before it (only JSON whitespace may
+  // intervene), so step back from the ':' to the closing quote to get the length.
+  // In minified JSON this is a single back-step.
+  const char *q = reinterpret_cast<const char *>(_json_iter->peek());
+  do { --q; } while (*q != '"');
+  key = raw_json_string(k);
+  len = static_cast<std::size_t>(q - reinterpret_cast<const char *>(k));
+  return SUCCESS;
+}
+
 simdjson_warn_unused simdjson_inline error_code value_iterator::field_value() noexcept {
   assert_at_next();
 
