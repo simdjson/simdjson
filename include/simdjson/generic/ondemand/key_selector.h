@@ -327,11 +327,9 @@ consteval bool try_generate_gperf(
     std::array<std::size_t, N> phash{};
     for (std::size_t k = 0; k < N; ++k) { phash[k] = keys[k].size(); }
 
-    // Equivalence-class signatures: sig[k] = XOR of a per-symbol salt over the
-    // key's undetermined symbols. Updated incrementally as symbols are fixed.
-    std::array<std::array<std::size_t, 256>, MAX_POSITIONS> salt{};
+    std::array<std::array<uint64_t, 256>, MAX_POSITIONS> salt{};
     {
-        std::size_t s = 0x9e3779b97f4a7c15ULL;
+        uint64_t s = 0x9e3779b97f4a7c15ULL;
         for (std::size_t p = 0; p < num_positions; ++p) {
             for (std::size_t c = 0; c < 256; ++c) {
                 s = s * 6364136223846793005ULL + 1442695040888963407ULL;
@@ -339,9 +337,9 @@ consteval bool try_generate_gperf(
             }
         }
     }
-    std::array<std::size_t, N> sig{};
+    std::array<uint64_t, N> sig{};
     for (std::size_t k = 0; k < N; ++k) {
-        std::size_t s = 0;
+        uint64_t s = 0;
         for (std::size_t p = 0; p < num_positions; ++p) {
             std::size_t c = kchars[k][p];
             if (c < 256) { s ^= salt[p][c]; }
@@ -361,14 +359,14 @@ consteval bool try_generate_gperf(
         std::size_t sp = syms[si].pos;
         std::size_t sc = syms[si].ch;
 
-        std::size_t sp_salt = salt[sp][sc];
+        uint64_t sp_salt = salt[sp][sc];
         for (std::size_t k = 0; k < N; ++k) {
             if (kchars[k][sp] == sc) { sig[k] ^= sp_salt; }
         }
 
         for (std::size_t i = 1; i < N; ++i) {
             std::size_t x = order[i];
-            std::size_t xs = sig[x];
+            uint64_t xs = sig[x];
             std::size_t j = i;
             while (j > 0 && sig[order[j - 1]] > xs) {
                 order[j] = order[j - 1];
@@ -382,7 +380,7 @@ consteval bool try_generate_gperf(
             bool collision = false;
             std::size_t ci = 0;
             while (ci < N && !collision) {
-                std::size_t class_sig = sig[order[ci]];
+                uint64_t class_sig = sig[order[ci]];
                 std::size_t cj = ci;
                 while (cj < N && sig[order[cj]] == class_sig) { ++cj; }
                 if (cj - ci > 1) {
@@ -758,7 +756,9 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
 template <std::size_t MaxKeyLen>
 simdjson_really_inline bool compare_key_bytes(
     const char* p, const char* stored, std::size_t len) noexcept {
-    alignas(16) static constexpr uint8_t idx16[16] =
+    // [[maybe_unused]]: only the NEON/SSE2 branches read these; the scalar
+    // fallback build (no SIMD) leaves them unused, which is an error under -Werror.
+    [[maybe_unused]] alignas(16) static constexpr uint8_t idx16[16] =
         {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     if constexpr (MaxKeyLen <= 16) {
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
@@ -783,7 +783,7 @@ simdjson_really_inline bool compare_key_bytes(
         return true;
 #endif
     } else if constexpr (MaxKeyLen <= 32) {
-        alignas(16) static constexpr uint8_t idx32_hi[16] =
+        [[maybe_unused]] alignas(16) static constexpr uint8_t idx32_hi[16] =
             {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
         uint8x16_t vp_lo = vld1q_u8(reinterpret_cast<const uint8_t*>(p));

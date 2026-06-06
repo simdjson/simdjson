@@ -1725,13 +1725,9 @@ auto error = doc.get(t); // uses the key-selector path under the macro
 ```
 
 **This is not a universal speedup — run your own benchmarks before adopting it.**
-In our measurements the key-selector path is roughly on par with the default on
-small structs (e.g. the Twitter user/tweet objects) but **slower** on documents
-dominated by many small nested objects (e.g. the CITM catalog), because walking
-every field of every object and hashing each key costs more than ordered,
-short-circuiting lookups when the keys *are* in order. Only consider enabling the
-macro when (a) your inputs really do present keys out of order, and (b) your own
-benchmarks on your own data show a win. Otherwise, leave it off.
+ When the JSON keys reliably match declaration order,
+the default ordered path can still edge ahead, and throughput numbers carry some
+run-to-run noise — so measure on your own data before enabling the macro.
 
 
 Minifying JSON strings without parsing
