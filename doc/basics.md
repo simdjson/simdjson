@@ -1684,29 +1684,23 @@ std::map<std::string, std::string> obj =
 
 The `simdjson::from` construction is EXPERIMENTAL and subject to changes.
 
-### Order-independent reflective deserialization (experimental)
+### Order-independent reflective deserialization
 
-> **Experimental and opt-in.** This feature is disabled by default. Enable it by
-> defining the macro `SIMDJSON_USE_KEY_SELECTOR_REFLECTION=1` before including
-> simdjson (e.g. as a compiler flag `-DSIMDJSON_USE_KEY_SELECTOR_REFLECTION=1`).
-> It requires C++26 static reflection (`SIMDJSON_STATIC_REFLECTION`).
+> **Default.** Reflective deserialization uses an order-independent, single-pass
+> key-selector strategy by default. You can opt out — falling back to the
+> per-member ordered-lookup path — by defining the macro
+> `SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1` before including simdjson (e.g. as
+> a compiler flag `-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1`). It requires
+> C++26 static reflection (`SIMDJSON_STATIC_REFLECTION`).
 
-By default, reflective deserialization (`doc.get<T>()` / `simdjson::from`) reads
-each struct member with an ordered field lookup. This is fastest when the JSON
-keys appear in the same order as the struct's members, which is the common case.
-
-When you genuinely cannot rely on the JSON key order — for example when the data
-comes from a producer that emits members in an arbitrary or varying order — the
-ordered lookups degrade, because each out-of-order key forces a rescan of the
-object. For that situation simdjson offers an optional, order-independent
-strategy: when `SIMDJSON_USE_KEY_SELECTOR_REFLECTION=1` is defined, the
-reflective deserializer builds a compile-time [key selector](#key-selectors)
-from the struct's members and walks each object **once** with
-`object::for_each`, classifying every key through a perfect hash regardless of
-its position.
+By default, reflective deserialization (`doc.get<T>()` / `simdjson::from`) builds
+a compile-time [key selector](#key-selectors) from the struct's members and walks
+each object **once** with `object::for_each`, classifying every key through a
+perfect hash regardless of its position. This deserializes structs correctly even
+when the JSON keys are not in declaration order, without forcing a rescan of the
+object per out-of-order key.
 
 ```cpp
-// Compile this translation unit with -DSIMDJSON_USE_KEY_SELECTOR_REFLECTION=1
 #include "simdjson.h"
 using namespace simdjson;
 
@@ -1721,13 +1715,15 @@ auto json = R"({ "retweet_count": 7, "id": 12345, "text": "hello" })"_padded;
 ondemand::parser parser;
 ondemand::document doc = parser.iterate(json);
 Tweet t;
-auto error = doc.get(t); // uses the key-selector path under the macro
+auto error = doc.get(t); // uses the key-selector path by default
 ```
 
-**This is not a universal speedup — run your own benchmarks before adopting it.**
- When the JSON keys reliably match declaration order,
-the default ordered path can still edge ahead, and throughput numbers carry some
-run-to-run noise — so measure on your own data before enabling the macro.
+The alternative, opt-out path reads each struct member with an ordered field
+lookup. This can edge ahead when the JSON keys reliably match declaration order,
+which is a common case. **Neither path is a universal speedup — run your own
+benchmarks before switching.** Throughput numbers carry some run-to-run noise, so
+measure on your own data before defining
+`-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1`.
 
 
 Minifying JSON strings without parsing

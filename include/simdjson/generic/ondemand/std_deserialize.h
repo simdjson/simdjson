@@ -269,11 +269,12 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T>);
 
 
-#if defined(SIMDJSON_USE_KEY_SELECTOR_REFLECTION) && SIMDJSON_USE_KEY_SELECTOR_REFLECTION
+#if !(defined(SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION) && SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION)
 
-// Experimental: deserialize a reflected struct using a compile-time key_selector
+// Default: deserialize a reflected struct using a compile-time key_selector
 // and a single object::for_each pass (perfect-hash key matching) instead of one
-// obj[key] lookup per member. Enable with -DSIMDJSON_USE_KEY_SELECTOR_REFLECTION=1.
+// obj[key] lookup per member. Disable (falling back to the per-member obj[key]
+// path below) with -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1.
 namespace key_selector_reflection_detail {
 
 // A member participates if it is public, non-const, and not annotated to skip.
@@ -398,6 +399,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 
 #else
 
+// Opt-out path (-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1): deserialize a
+// reflected struct with one obj[key] lookup per member, instead of the default
+// single-pass object::for_each path above.
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
@@ -430,7 +434,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   return simdjson::SUCCESS;
 }
 
-#endif // SIMDJSON_USE_KEY_SELECTOR_REFLECTION
+#endif // SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION
 
 // Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
 template <typename T, typename ValT>

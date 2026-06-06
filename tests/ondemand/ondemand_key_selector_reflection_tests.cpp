@@ -1,11 +1,10 @@
-// Exercises the experimental key-selector-based reflective deserializer.
-//
-// We enable the option here (before including simdjson) so the reflective
-// tag_invoke uses a compile-time key_selector + object::for_each single pass
-// instead of one obj[key] lookup per member. The point of the option is to
-// deserialize structs correctly even when the JSON keys are NOT in declaration
-// order, so the tests below deliberately scramble the key order.
-#define SIMDJSON_USE_KEY_SELECTOR_REFLECTION 1
+// Exercises the key-selector-based reflective deserializer, which is the
+// default for reflective tag_invoke: a compile-time key_selector +
+// object::for_each single pass instead of one obj[key] lookup per member.
+// (It can be disabled with -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1.) The
+// point of this path is to deserialize structs correctly even when the JSON
+// keys are NOT in declaration order, so the tests below deliberately scramble
+// the key order.
 #include "simdjson.h"
 #include <optional>
 #include <string>
