@@ -1528,10 +1528,6 @@ void f() {
 ```
 
 
-**Performance tip**: You will get better performance if you order the attributes (make, model)
-in the order they appear in the JSON document. Alternatively, [key selectors](#key-selectors)
-let you extract a fixed, known set of fields in a single pass, independently of the
-order in which they appear in the document.
 
 #### Special cases
 
