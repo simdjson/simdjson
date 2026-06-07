@@ -310,6 +310,21 @@ template <typename T>
 using selector_for = typename [: std::meta::substitute(
     ^^SIMDJSON_IMPLEMENTATION::ondemand::key_selector, selector_key_args<T>()) :];
 
+// Number of members that participate in deserialization. A class can have zero
+// eligible members (e.g. std::chrono::time_point, whose only data member is
+// private): an empty key_selector cannot be built, so the tag_invoke below
+// special-cases this count.
+template <typename T>
+consteval std::size_t eligible_member_count() {
+  std::size_t count = 0;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_eligible_member(mem)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 // True when none of T's eligible members is an optional type, i.e. every member
 // is required. In that case presence can be checked with a single match count
 // instead of a per-member "seen" array.
@@ -337,6 +352,14 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
+  if constexpr (key_selector_reflection_detail::eligible_member_count<T>() == 0) {
+    // No members to deserialize: an empty key_selector cannot be built, so just
+    // validate that the input is an object (done above) and succeed. Mirrors the
+    // opt-out per-member path, which iterates over zero members.
+    (void)out;
+    (void)obj;
+    return SUCCESS;
+  } else {
   using selector = key_selector_reflection_detail::selector_for<T>;
   if constexpr (key_selector_reflection_detail::all_eligible_members_required<T>()) {
     // Fast path: every member is required. A single for_each pass parses each
@@ -394,6 +417,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
       }
     }
     return SUCCESS;
+  }
   }
 }
 
