@@ -73,23 +73,31 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
   // in object_iterator -- building a value only for the fields that actually match.
   // We operate on a copy of the iterator, as object::begin() would.
   value_iterator it = iter;
-  // Track which selector indices have already matched, as a compile-time bitset:
-  // a single 64-bit word for up to 64 keys (the common case), more words as
-  // needed. Initializing one (or a few) registers to zero is cheaper than zeroing
-  // a per-key byte array on every call, and the test/set become register bit ops.
+  std::size_t matched = 0;
+  // Track which selector indices have already matched, as a compile-time bitset
+  // (one 64-bit word per 64 keys): the callback fires once per key, on its first
+  // occurrence, and we stop as soon as every key has matched.
   constexpr std::size_t seen_words = (Selector::size() + 63) / 64;
   std::array<std::uint64_t, seen_words> seen{};
-  std::size_t matched = 0;
   while (it.is_open()) {
     raw_json_string key;
-    std::size_t key_len;
-    // field_key_with_length derives the key length from the structural index (the
-    // following ':' token), avoiding a forward SIMD scan for the closing quote.
-    error_code error = it.field_key_with_length(key, key_len);
-    if (error) { it.abandon(); return {error, matched}; }
-    // Advance past the ':' and descend onto the value.
-    if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
-    std::size_t idx = Selector::match_raw(key.raw(), key_len);
+    error_code error;
+    std::size_t idx;
+    if constexpr (Selector::window.ok) {
+      // A window selector confirms a key from its raw bytes alone (the closing
+      // quote bounds it), so we take the length-free path: field_key (no backward
+      // scan, mirroring the ordered find_field) feeding match_raw(raw_json_string).
+      if ((error = it.field_key().get(key))) { it.abandon(); return {error, matched}; }
+      if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
+      idx = Selector::match_raw(key);
+    } else {
+      // Otherwise derive the key length from the structural index (the following
+      // ':' token) to feed the length-aware hash, avoiding a forward SIMD scan.
+      std::size_t key_len;
+      if ((error = it.field_key_with_length(key, key_len))) { it.abandon(); return {error, matched}; }
+      if ((error = it.field_value())) { it.abandon(); return {error, matched}; }
+      idx = Selector::match_raw(key.raw(), key_len);
+    }
     if (idx < Selector::size()) {
       const std::uint64_t seen_bit = std::uint64_t{1} << (idx & 63);
       std::uint64_t &seen_word = seen[idx >> 6];

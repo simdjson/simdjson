@@ -381,6 +381,37 @@ namespace object_tests {
     for (auto k : {"k12","nope",""}) {
       if (!probe(big_sel{}, k, big_sel::size())) { return false; }
     }
+    // Single-byte discriminator: position 0 tells "id" from "screen_name".
+    using id_sel = ondemand::key_selector<"id", "screen_name">;
+    if (!probe(id_sel{}, "id", 0)) { return false; }
+    if (!probe(id_sel{}, "screen_name", 1)) { return false; }
+    // Misses that share the discriminating byte must still be rejected: "info"
+    // and "i" share 'i' with "id"; "set" shares 's' with "screen_name";
+    // "identifier" has "id" as a prefix and must fail on the closing quote.
+    for (auto k : {"info", "i", "identifier", "set", "screen", "screen_names", "", "x"}) {
+      if (!probe(id_sel{}, k, id_sel::size())) { return false; }
+    }
+    // Prefix keys split by the quote terminator at position 2 ("jo" vs "joe").
+    using jo_sel = ondemand::key_selector<"jo", "joe">;
+    if (!probe(jo_sel{}, "jo", 0)) { return false; }
+    if (!probe(jo_sel{}, "joe", 1)) { return false; }
+    for (auto k : {"j", "joey", "jp", "", "joel"}) {
+      if (!probe(jo_sel{}, k, jo_sel::size())) { return false; }
+    }
+    // The partial_tweets keys: no aligned byte separates them, but an unaligned
+    // 8-bit window does. Exercise the window fast path end to end.
+    using tweet_sel = ondemand::key_selector<"created_at", "id", "text",
+        "in_reply_to_status_id", "user", "retweet_count", "favorite_count">;
+    const char* tweet_keys[] = {"created_at", "id", "text",
+        "in_reply_to_status_id", "user", "retweet_count", "favorite_count"};
+    for (std::size_t t = 0; t < tweet_sel::size(); ++t) {
+      if (!probe(tweet_sel{}, tweet_keys[t], t)) { return false; }
+    }
+    // Misses, including ones that share a prefix with a real key.
+    for (auto k : {"ide", "i", "id_str", "use", "users", "favorite_countX",
+                   "in_reply_to_status_id_str", "created", "", "zzz"}) {
+      if (!probe(tweet_sel{}, k, tweet_sel::size())) { return false; }
+    }
     TEST_SUCCEED();
   }
 #endif

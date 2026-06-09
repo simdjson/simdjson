@@ -12,6 +12,8 @@
 #include <string_view>
 #include <cstddef>
 #include <cstdint>
+#include <utility>     // std::index_sequence (window candidate dispatch)
+#include <type_traits> // std::integral_constant (window candidate dispatch)
 
 #if defined(__aarch64__) || defined(__ARM_NEON)
   #include <arm_neon.h>
@@ -819,6 +821,145 @@ simdjson_really_inline bool compare_key_bytes(
     }
 }
 
+// --- Single 8-bit window fast path ------------------------------------------
+//
+// Many small key sets can be told apart by inspecting a *single* 8-bit window of
+// the key bytes -- and that window need not be byte-aligned. Because every JSON
+// key is terminated by a '"', the bytes at and before a key's length are well
+// defined for any key at least that long: byte i is the key character when i is
+// inside the key and the closing quote when i == len. So we read two bytes at a
+// fixed offset, extract 8 consecutive bits at a fixed intra-byte shift, and if
+// that value is distinct for every key, a 256-entry table maps it straight to a
+// candidate key. The match then needs no hash and -- in the length-free overload
+// -- no SIMD length scan: load two bytes, shift, mask, index the table, and
+// confirm the candidate with one comparison.
+//
+// Allowing an *unaligned* window (a shift of 1..7) mixes bits from two adjacent
+// bytes and discriminates key sets that no single aligned byte can. For example,
+// the partial_tweets keys {created_at,id,text,in_reply_to_status_id,user,
+// retweet_count,favorite_count} share a colliding byte at every aligned position
+// 0,1,2, yet the 8 bits starting at bit offset 2 are unique across all seven.
+// Simpler cases fall out as the shift==0 special case: {"id","screen_name"}
+// splits on byte 0, {"jo","joe"} on the quote at byte 2.
+//
+// The window is confined to the first (shortest key length + 1) bytes so the
+// two-byte read never crosses a key's closing quote into uncontrolled value
+// bytes; that final byte is the shortest key's quote.
+template <std::size_t N, std::size_t MaxKeyLen>
+struct window_data {
+    static constexpr std::size_t KEY_STRIDE = ((MaxKeyLen + 15) / 16) * 16;
+    bool                                            ok{false};
+    std::uint8_t                                    byte_offset{0}; // first byte of the 2-byte read
+    std::uint8_t                                    shift{0};       // intra-byte bit shift (0..7)
+    std::array<std::uint8_t, 256>                   window_to_key{}; // window byte -> key index, N if none
+    std::array<std::uint8_t, N>                     key_len{};
+    std::array<std::array<char, KEY_STRIDE>, N>     key_bytes{};     // zero-padded
+};
+
+// Byte seen at `idx` for key `i`: a key character when idx is inside the key, or
+// the closing '"' when idx == len (callers keep idx <= every key's length).
+template <std::size_t N>
+constexpr unsigned window_byte_at(const std::array<std::string_view, N>& keys,
+                                  std::size_t i, std::size_t idx) noexcept {
+    if (idx < keys[i].size()) { return static_cast<unsigned char>(keys[i][idx]); }
+    return static_cast<unsigned>('"');
+}
+
+// The 8-bit window value for key `i` at (byte_offset, shift): the little-endian
+// pair (byte[off], byte[off+1]) shifted right by `shift` and truncated. Matches
+// the runtime read exactly.
+template <std::size_t N>
+constexpr unsigned window_value(const std::array<std::string_view, N>& keys,
+                                std::size_t i, std::size_t byte_offset, std::size_t shift) noexcept {
+    unsigned lo = window_byte_at<N>(keys, i, byte_offset);
+    unsigned hi = window_byte_at<N>(keys, i, byte_offset + 1);
+    return ((lo | (hi << 8)) >> shift) & 0xFFu;
+}
+
+template <std::size_t N, std::size_t MaxKeyLen>
+consteval window_data<N, MaxKeyLen>
+compute_window(const std::array<std::string_view, N>& keys) {
+    window_data<N, MaxKeyLen> out{};
+
+    std::size_t min_len = keys[0].size();
+    for (std::size_t i = 1; i < N; ++i) {
+        if (keys[i].size() < min_len) { min_len = keys[i].size(); }
+    }
+
+    // Iterate windows nearest the front first (cheapest to read, smallest shift).
+    for (std::size_t off = 0; off <= min_len; ++off) {
+        for (std::size_t shift = 0; shift < 8; ++shift) {
+            // The read touches byte off, and byte off+1 when shift != 0. Both must
+            // stay within the safe region [0, min_len] (min_len is the shortest
+            // key's quote index).
+            if (shift != 0 && off + 1 > min_len) { continue; }
+            if (off > min_len) { continue; }
+
+            bool distinct = true;
+            for (std::size_t i = 0; i < N && distinct; ++i) {
+                for (std::size_t j = i + 1; j < N; ++j) {
+                    if (window_value<N>(keys, i, off, shift) == window_value<N>(keys, j, off, shift)) {
+                        distinct = false;
+                        break;
+                    }
+                }
+            }
+            if (!distinct) { continue; }
+
+            out.ok          = true;
+            out.byte_offset = static_cast<std::uint8_t>(off);
+            out.shift       = static_cast<std::uint8_t>(shift);
+            for (std::size_t b = 0; b < 256; ++b) { out.window_to_key[b] = static_cast<std::uint8_t>(N); }
+            for (std::size_t i = 0; i < N; ++i) {
+                out.window_to_key[window_value<N>(keys, i, off, shift)] = static_cast<std::uint8_t>(i);
+                out.key_len[i] = static_cast<std::uint8_t>(keys[i].size());
+                for (std::size_t c = 0; c < keys[i].size(); ++c) { out.key_bytes[i][c] = keys[i][c]; }
+            }
+            return out;
+        }
+    }
+    return out; // ok == false: no single 8-bit window distinguishes the keys
+}
+
+// Read the 8-bit window at (byte_offset, shift) from a padded key pointer.
+simdjson_really_inline std::uint8_t read_window(const char* p, std::size_t byte_offset,
+                                                std::size_t shift) noexcept {
+    std::uint16_t w;
+    // Two controlled bytes (within the shortest key + its quote, hence within the
+    // padded buffer). memcpy is the portable little-endian unaligned load.
+    __builtin_memcpy(&w, p + byte_offset, sizeof(w));
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+    w = static_cast<std::uint16_t>((w >> 8) | (w << 8));
+#endif
+    return static_cast<std::uint8_t>((w >> shift) & 0xFFu);
+}
+
+// Verify a window candidate. The window table already mapped the key to the
+// single possible index `ki` (< N); here we confirm it. Folding over 0..N-1
+// turns the runtime `ki` into a compile-time index in the matching arm, so the
+// candidate's length and bytes are constants for compare_key_bytes -- the same
+// specialization the ordered find_field path gets from a CT-length
+// unsafe_is_equal, and what keeps this path competitive. The closing-quote check
+// (p[L] == '"') both confirms the key ends exactly at the candidate's length and
+// rejects a wrong-length key, so this works whether or not the caller knew len.
+template <std::size_t N, std::size_t MaxKeyLen, std::size_t... Is>
+simdjson_really_inline std::size_t
+match_window_candidate(const char* p, std::uint8_t ki,
+                       const window_data<N, MaxKeyLen>& w,
+                       std::index_sequence<Is...>) noexcept {
+  std::size_t result = N;
+  auto try_match = [&](auto Ic) {
+    constexpr std::size_t i = decltype(Ic)::value;
+    if (ki == i && p[w.key_len[i]] == '"' &&
+        key_selector_detail::compare_key_bytes<MaxKeyLen>(
+            p, w.key_bytes[i].data(), w.key_len[i])) {
+      result = i;
+    }
+  };
+  (try_match(std::integral_constant<std::size_t, Is>{}), ...);
+  return result;
+}
+
 } // namespace key_selector_detail
 
 /**
@@ -864,6 +1005,13 @@ struct key_selector {
     static constexpr auto phf =
         key_selector_detail::build_phf_data<N, table_size, max_key_len>(keys, result);
 
+    // Single 8-bit-window discriminator (when one exists). Detected at compile
+    // time and selected with `if constexpr` below, so the hash path is compiled
+    // out for key sets that qualify, and this is compiled out for those that do
+    // not.
+    static constexpr auto window =
+        key_selector_detail::compute_window<N, max_key_len>(keys);
+
     static constexpr std::size_t size() noexcept { return N; }
 
     /**
@@ -878,6 +1026,19 @@ struct key_selector {
      */
     static simdjson_really_inline std::size_t match_raw(const char* p, std::size_t len) noexcept {
         if (len == 0 || len > max_key_len) { return N; }
+
+        if constexpr (window.ok) {
+            // One 8-bit window selects the only possible candidate key;
+            // match_window_candidate confirms it (bytes + closing quote). p sits
+            // in a padded buffer and the window stays within the shortest key +
+            // quote, so the two-byte read is always in bounds. len is unused here
+            // because the quote check already pins the key's end.
+            std::uint8_t ki = window.window_to_key[
+                key_selector_detail::read_window(p, window.byte_offset, window.shift)];
+            if (ki >= N) { return N; }
+            return key_selector_detail::match_window_candidate(
+                p, ki, window, std::make_index_sequence<N>{});
+        }
 
         std::size_t slot;
         if (phf.num_positions == key_selector_detail::HD_MODE) {
@@ -923,6 +1084,17 @@ struct key_selector {
      */
     static simdjson_really_inline std::size_t match_raw(raw_json_string rjs) noexcept {
         const char* p = rjs.raw();
+        if constexpr (window.ok) {
+            // One 8-bit window picks the candidate; verifying the candidate's
+            // bytes and its closing '"' confirms the full key, so the length scan
+            // is unnecessary. The window read is in bounds (padding), and the
+            // candidate length is at most max_key_len.
+            std::uint8_t ki = window.window_to_key[
+                key_selector_detail::read_window(p, window.byte_offset, window.shift)];
+            if (ki >= N) { return N; }
+            return key_selector_detail::match_window_candidate(
+                p, ki, window, std::make_index_sequence<N>{});
+        }
         return match_raw(p, key_selector_detail::scan_key_length<max_key_len>(p));
     }
 
