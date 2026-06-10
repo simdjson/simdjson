@@ -12,6 +12,7 @@
 #include <string_view>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>     // std::memcpy (portable unaligned window load)
 #include <utility>     // std::index_sequence (window candidate dispatch)
 #include <type_traits> // std::integral_constant (window candidate dispatch)
 
@@ -927,7 +928,7 @@ simdjson_really_inline std::uint8_t read_window(const char* p, std::size_t byte_
     std::uint16_t w;
     // Two controlled bytes (within the shortest key + its quote, hence within the
     // padded buffer). memcpy is the portable little-endian unaligned load.
-    __builtin_memcpy(&w, p + byte_offset, sizeof(w));
+    std::memcpy(&w, p + byte_offset, sizeof(w));
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
     w = static_cast<std::uint16_t>((w >> 8) | (w << 8));
 #endif
