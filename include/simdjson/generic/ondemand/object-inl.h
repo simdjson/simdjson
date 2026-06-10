@@ -65,13 +65,20 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
-simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_match) noexcept {
+  requires key_selector_type<Selector>
+simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_match)
+    noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, value>) {
   // Single pass driven directly by the value_iterator, mirroring
   // find_field_unordered_raw + value(iter.child()). Compared to walking via
   // object_iterator/field, this avoids constructing a simdjson_result<field> and
   // a field (key + value) for every field -- and the development-check bookkeeping
   // in object_iterator -- building a value only for the fields that actually match.
   // We operate on a copy of the iterator, as object::begin() would.
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // Mirror object::begin(): for_each must start at the beginning of the object,
+  // not from some position left behind by a prior find_field on the same object.
+  if (!iter.is_at_iterator_start()) { return {OUT_OF_ORDER_ITERATION, 0}; }
+#endif
   value_iterator it = iter;
   std::size_t matched = 0;
   // Track which selector indices have already matched, as a compile-time bitset
@@ -110,6 +117,9 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
         // on a matched field). A void-returning callback is responsible for
         // handling its own errors.
         if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
+          // Unlike the internal-error paths above, a callback error does not
+          // abandon the iterator: we leave it recoverable so the caller can keep
+          // using the object (or its parent) after handling the error.
           if ((error = on_match(idx, matched_value))) { return {error, matched}; }
         } else {
           on_match(idx, matched_value);
@@ -117,6 +127,11 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
         if (++matched >= Selector::size()) { break; }
       }
     }
+    // Mirror object_iterator::operator++'s safety rail: if the callback consumed
+    // the value and left the iterator closed or in error (e.g. a void callback
+    // that swallowed a fatal sub-iteration error), stop here rather than calling
+    // skip_child on a closed iterator.
+    if (!it.is_open()) { break; }
     // Skip the value (a no-op if the callback consumed it) and step to the next
     // field; has_next_field() ends the container on '}', which closes the loop.
     if ((error = it.skip_child())) { it.abandon(); return {error, matched}; }
@@ -389,7 +404,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjs
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::object>(first).find_field(key);
 }
 
-
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::at_pointer(std::string_view json_pointer) noexcept {
   if (error()) { return error(); }
   return first.at_pointer(json_pointer);
@@ -412,6 +426,15 @@ template <typename Func>
 simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
   if (error()) { return error(); }
   return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
+}
+
+template <typename Selector, typename Func>
+  requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector>
+simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Func&& on_match)
+    noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>) {
+  if (error()) { return {error(), 0}; }
+  return first.template for_each<Selector>(std::forward<Func>(on_match));
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {

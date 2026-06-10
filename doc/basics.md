@@ -1640,7 +1640,6 @@ struct MixedAnnotations {
   (they keep their default-initialized value), and keys matching skipped fields
   in the JSON input are ignored.
 
-
 ### The simdjson::from shortcut (experimental, C++20)
 
 
@@ -1680,14 +1679,8 @@ std::map<std::string, std::string> obj =
 
 The `simdjson::from` construction is EXPERIMENTAL and subject to changes.
 
-### Order-independent reflective deserialization
 
-> **Default.** Reflective deserialization uses an order-independent, single-pass
-> key-selector strategy by default. You can opt out — falling back to the
-> per-member ordered-lookup path — by defining the macro
-> `SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1` before including simdjson (e.g. as
-> a compiler flag `-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1`). It requires
-> C++26 static reflection (`SIMDJSON_STATIC_REFLECTION`).
+#### Order-independent reflective deserialization (C++26)
 
 By default, reflective deserialization (`doc.get<T>()` / `simdjson::from`) builds
 a compile-time [key selector](#key-selectors) from the struct's members and walks
@@ -1714,13 +1707,20 @@ Tweet t;
 auto error = doc.get(t); // uses the key-selector path by default
 ```
 
-The alternative, opt-out path reads each struct member with an ordered field
-lookup. This can edge ahead when the JSON keys reliably match declaration order,
-which is a common case. **Neither path is a universal speedup — run your own
-benchmarks before switching.** Throughput numbers carry some run-to-run noise, so
-measure on your own data before defining
-`-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1`.
 
+The key-selector path inherits the [key selector](#key-selectors) compile-time
+limits: each member (or renamed) key must be at most 63 characters, there can be
+at most 255 members, the keys must be distinct, and keys must not contain
+a backslash, a double quote, or a null byte. You do not have to track these
+limits yourself: when a struct's members do not fit them (for example, a member
+name longer than 63 characters), the deserializer detects this at compile time
+and automatically falls back to the per-member lookup path for that type.
+
+The alternative, opt-out path reads each struct member with a per-member field
+lookup. This can edge ahead when the JSON keys reliably match declaration order,
+which is a common case. Neither path is a universal speedup, run your own
+benchmarks before switching. Measure on your own data before defining
+`-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1`.
 
 Minifying JSON strings without parsing
 ----------------------
@@ -2116,8 +2116,8 @@ dispatch on the matched field.
 
 Key selectors are subject to a few compile-time restrictions:
 
-- Key length. We currently limit keys to at most 31 characters long.
-  A longer key produces a compile-time error. This limitations could be
+- Key length. We currently limit keys to at most 63 characters long.
+  A longer key produces a compile-time error. This limitation could be
   eased in the future but we expect longer keys to be unusual.
 - Number of keys. The hard limit is 255 keys, but the compile-time perfect-hash
   construction may fail (again, a compile-time error) for large or awkward key sets,
@@ -2213,6 +2213,102 @@ obj.for_each<post_fields>([&](std::size_t i, ondemand::value v) {
   }
 });
 // id == 42, title == "On Demand", author_name == "Daniel", author_handle == "lemire"
+```
+
+### Inspecting the matching algorithm with `describe()`
+
+A selector picks one of a few matching strategies at compile time depending on
+its keys. The static member function `key_selector<...>::describe()` returns a
+human-readable, multi-line `std::string` explaining exactly how the selector
+classifies a key: which strategy was chosen, which bytes (or character positions)
+it inspects, and the contents of the lookup tables. Because it is derived entirely
+from the compile-time tables, `describe()` is itself a constant expression — you
+can use it in a `static_assert`, or simply print it at runtime.
+
+The most common strategy is a **single 8-bit window**: the matcher reads two bytes
+of the key at a fixed offset, extracts eight bits, and uses them to index a table
+that maps directly to a key. For a two-key selector whose keys differ in their
+first byte:
+
+```cpp
+using fields = ondemand::key_selector<"name", "city">;
+std::cout << fields::describe();
+```
+
+prints:
+
+```
+key_selector: 2 keys, max key length 4
+keys:
+  [0] "name" (length 4)
+  [1] "city" (length 4)
+algorithm: single 8-bit window
+  step 1: read 2 bytes at offset 0, interpret them as a little-endian 16-bit value, shift right by 0 bits, and keep the low 8 bits
+  step 2: map that byte through a 256-entry table to a key index (2 means no match):
+    byte 99 ('c') -> key 1
+    byte 110 ('n') -> key 0
+  step 3: confirm the candidate by checking the closing quote sits at the key's length and comparing the key bytes
+```
+
+When no single window separates the keys, the selector falls back to a
+**gperf-style perfect hash** (a small set of character positions whose association
+values, added to the key length, index a slot table) or, for awkward key sets, to
+a **hash-and-displace** perfect hash. In those cases `describe()` lists the
+positions (or hash) used, the resulting slot for each key, and the occupied slots
+of the table.
+
+For example, the six keys below are all anagrams of `"abc"`, so no single
+character position is unique to a key and no window can tell them apart — the
+selector uses a gperf-style hash over two positions instead:
+
+```cpp
+using fields = ondemand::key_selector<"abc", "acb", "bac", "bca", "cab", "cba">;
+std::cout << fields::describe();
+```
+
+prints:
+
+```
+key_selector: 6 keys, max key length 3
+keys:
+  [0] "abc" (length 3)
+  [1] "acb" (length 3)
+  [2] "bac" (length 3)
+  [3] "bca" (length 3)
+  [4] "cab" (length 3)
+  [5] "cba" (length 3)
+algorithm: gperf-style perfect hash over 2 character position(s)
+  step 1: h = key length
+  step 2: for each position below, add its association value for the key byte there (a position past the key's length contributes 0):
+    position byte index 0
+    position last character
+  step 3: slot = h mod 8 (a power of two, applied as a bitmask)
+  step 4: slot_to_key[slot] gives the candidate key index
+  per-key derivation:
+    "abc": h=9 slot=1
+    "acb": h=6 slot=6
+    "bac": h=10 slot=2
+    "bca": h=4 slot=4
+    "cab": h=8 slot=0
+    "cba": h=5 slot=5
+  occupied slots (slot -> key):
+    slot 0 -> key 4 ("cab", length 3)
+    slot 1 -> key 0 ("abc", length 3)
+    slot 2 -> key 2 ("bac", length 3)
+    slot 4 -> key 3 ("bca", length 3)
+    slot 5 -> key 5 ("cba", length 3)
+    slot 6 -> key 1 ("acb", length 3)
+  confirm the candidate by checking the key length matches and comparing the key bytes
+```
+
+(The exact association values, slots, and table size are chosen by the
+compile-time hash construction; what matters is that each key lands in a distinct
+slot.)
+
+Since the description is a constant expression, it can be checked at compile time:
+
+```cpp
+static_assert(!ondemand::key_selector<"name", "city">::describe().empty());
 ```
 
 

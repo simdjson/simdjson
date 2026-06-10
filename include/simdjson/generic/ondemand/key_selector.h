@@ -9,6 +9,7 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <array>
+#include <string>      // std::string (key_selector::describe)
 #include <string_view>
 #include <cstddef>
 #include <cstdint>
@@ -27,6 +28,12 @@
   #define SIMDJSON_KEY_SELECTOR_HAS_SSE2 1
 #else
   #define SIMDJSON_KEY_SELECTOR_HAS_SSE2 0
+#endif
+#if defined(__loongarch_sx)
+  #include <lsxintrin.h>
+  #define SIMDJSON_KEY_SELECTOR_HAS_LSX 1
+#else
+  #define SIMDJSON_KEY_SELECTOR_HAS_LSX 0
 #endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
@@ -706,47 +713,51 @@ build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>&
 
 // --- SIMD runtime primitives ------------------------------------------------
 
+// The runtime matchers read whole 16-byte blocks up to offset 63 (four blocks)
+// for keys as long as the 63-character maximum. That read must stay within the
+// buffer's trailing padding, so the padding has to exceed the largest offset we
+// touch.
+static_assert(SIMDJSON_PADDING > 63,
+              "key_selector requires SIMDJSON_PADDING > 63 for its SIMD key reads");
+
 // Scan for the terminating '"' starting at p. Returns its byte offset (= key
-// length). Caller guarantees SIMDJSON_PADDING bytes past the JSON buffer, so the
-// load is safe.
+// length). Caller guarantees SIMDJSON_PADDING (== 64) bytes past the JSON buffer,
+// so reading whole 16-byte blocks up to offset 63 is always safe.
 template <std::size_t MaxKeyLen>
 simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
-    // The SIMD paths scan only two 16-byte blocks (offsets 0..31), so a key
-    // whose closing quote sits at offset 32 would be missed. Cap at 31 to keep
-    // SIMD and scalar builds in agreement.
-    static_assert(MaxKeyLen <= 31, "MaxKeyLen must be <= 31 for current SIMD implementations");
+    // The closing quote of the longest key sits at most at offset MaxKeyLen, so we
+    // scan as many 16-byte blocks as it takes to cover offsets 0..MaxKeyLen. The
+    // cap (63) keeps every covered offset within the 64-byte padding guarantee, so
+    // the SIMD and scalar builds agree.
+    static_assert(MaxKeyLen <= 63, "MaxKeyLen must be <= 63 for current SIMD implementations");
+    constexpr std::size_t num_blocks = MaxKeyLen / 16 + 1;
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
-    uint8x16_t v0 = vld1q_u8(reinterpret_cast<const uint8_t*>(p));
-    uint8x16_t cmp0 = vceqq_u8(v0, vdupq_n_u8('"'));
-    uint64_t m0 = vget_lane_u64(
-        vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp0), 4)), 0);
-    if constexpr (MaxKeyLen < 16) {
-        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
-        return MaxKeyLen + 1;
-    } else {
-        uint8x16_t v1 = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + 16);
-        uint8x16_t cmp1 = vceqq_u8(v1, vdupq_n_u8('"'));
-        uint64_t m1 = vget_lane_u64(
-            vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp1), 4)), 0);
-        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctzll(m0)) >> 2;
-        if (m1 != 0) return 16 + (std::size_t(__builtin_ctzll(m1)) >> 2);
-        return MaxKeyLen + 1;
+    for (std::size_t b = 0; b < num_blocks; ++b) {
+        uint8x16_t v = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + b * 16);
+        uint8x16_t cmp = vceqq_u8(v, vdupq_n_u8('"'));
+        uint64_t m = vget_lane_u64(
+            vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(cmp), 4)), 0);
+        if (simdjson_likely(m != 0)) { return b * 16 + (std::size_t(__builtin_ctzll(m)) >> 2); }
     }
+    return MaxKeyLen + 1;
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
-    __m128i v0   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
-    __m128i cmp0 = _mm_cmpeq_epi8(v0, _mm_set1_epi8('"'));
-    unsigned m0  = static_cast<unsigned>(_mm_movemask_epi8(cmp0));
-    if constexpr (MaxKeyLen < 16) {
-        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctz(m0));
-        return MaxKeyLen + 1;
-    } else {
-        __m128i v1   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + 16));
-        __m128i cmp1 = _mm_cmpeq_epi8(v1, _mm_set1_epi8('"'));
-        unsigned m1  = static_cast<unsigned>(_mm_movemask_epi8(cmp1));
-        if (simdjson_likely(m0 != 0)) return std::size_t(__builtin_ctz(m0));
-        if (m1 != 0) return 16 + std::size_t(__builtin_ctz(m1));
-        return MaxKeyLen + 1;
+    for (std::size_t b = 0; b < num_blocks; ++b) {
+        __m128i v   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + b * 16));
+        __m128i cmp = _mm_cmpeq_epi8(v, _mm_set1_epi8('"'));
+        unsigned m  = static_cast<unsigned>(_mm_movemask_epi8(cmp));
+        if (simdjson_likely(m != 0)) { return b * 16 + std::size_t(__builtin_ctz(m)); }
     }
+    return MaxKeyLen + 1;
+#elif SIMDJSON_KEY_SELECTOR_HAS_LSX
+    for (std::size_t b = 0; b < num_blocks; ++b) {
+        __m128i v   = __lsx_vld(reinterpret_cast<const void*>(p + b * 16), 0);
+        __m128i cmp = __lsx_vseq_b(v, __lsx_vreplgr2vr_b('"'));
+        // vmskltz_b gathers the per-byte sign bits (set where the byte equals '"')
+        // into the low 16 bits of lane 0, the LSX equivalent of movemask.
+        unsigned m  = static_cast<unsigned>(__lsx_vpickve2gr_w(__lsx_vmskltz_b(cmp), 0)) & 0xFFFFu;
+        if (simdjson_likely(m != 0)) { return b * 16 + std::size_t(__builtin_ctz(m)); }
+    }
+    return MaxKeyLen + 1;
 #else
     for (std::size_t i = 0; i <= MaxKeyLen; ++i)
         if (p[i] == '"') return i;
@@ -755,11 +766,12 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
 }
 
 // Byte-equal of p[0..len) against stored[0..len). stored is zero-padded past
-// `len`. Input is read over 16 or 32 bytes (padded JSON buffer guaranteed).
+// `len`. Input is read over 16, 32, 48, or 64 bytes (padded JSON buffer
+// guaranteed; SIMDJSON_PADDING == 64).
 template <std::size_t MaxKeyLen>
 simdjson_really_inline bool compare_key_bytes(
     const char* p, const char* stored, std::size_t len) noexcept {
-    // [[maybe_unused]]: only the NEON/SSE2 branches read these; the scalar
+    // [[maybe_unused]]: only the NEON/SSE2/LSX branches read these; the scalar
     // fallback build (no SIMD) leaves them unused, which is an error under -Werror.
     [[maybe_unused]] alignas(16) static constexpr uint8_t idx16[16] =
         {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
@@ -780,6 +792,13 @@ simdjson_really_inline bool compare_key_bytes(
         __m128i mask = _mm_cmplt_epi8(idx, _mm_set1_epi8(static_cast<char>(len)));
         __m128i eq = _mm_cmpeq_epi8(_mm_and_si128(vp, mask), vs);
         return _mm_movemask_epi8(eq) == 0xFFFF;
+#elif SIMDJSON_KEY_SELECTOR_HAS_LSX
+        __m128i vp = __lsx_vld(reinterpret_cast<const void*>(p), 0);
+        __m128i vs = __lsx_vld(reinterpret_cast<const void*>(stored), 0);
+        __m128i idx = __lsx_vld(reinterpret_cast<const void*>(idx16), 0);
+        __m128i mask = __lsx_vslt_b(idx, __lsx_vreplgr2vr_b(static_cast<int>(len)));
+        __m128i eq = __lsx_vseq_b(__lsx_vand_v(vp, mask), vs);
+        return (static_cast<unsigned>(__lsx_vpickve2gr_w(__lsx_vmskltz_b(eq), 0)) & 0xFFFFu) == 0xFFFFu;
 #else
         for (std::size_t i = 0; i < len; ++i)
             if (p[i] != stored[i]) return false;
@@ -810,6 +829,65 @@ simdjson_really_inline bool compare_key_bytes(
         __m128i eq_lo = _mm_cmpeq_epi8(_mm_and_si128(vp_lo, m_lo), vs_lo);
         __m128i eq_hi = _mm_cmpeq_epi8(_mm_and_si128(vp_hi, m_hi), vs_hi);
         return (_mm_movemask_epi8(eq_lo) & _mm_movemask_epi8(eq_hi)) == 0xFFFF;
+#elif SIMDJSON_KEY_SELECTOR_HAS_LSX
+        __m128i lenv = __lsx_vreplgr2vr_b(static_cast<int>(len));
+        __m128i vp_lo = __lsx_vld(reinterpret_cast<const void*>(p), 0);
+        __m128i vp_hi = __lsx_vld(reinterpret_cast<const void*>(p + 16), 0);
+        __m128i vs_lo = __lsx_vld(reinterpret_cast<const void*>(stored), 0);
+        __m128i vs_hi = __lsx_vld(reinterpret_cast<const void*>(stored + 16), 0);
+        __m128i m_lo = __lsx_vslt_b(__lsx_vld(reinterpret_cast<const void*>(idx16), 0),    lenv);
+        __m128i m_hi = __lsx_vslt_b(__lsx_vld(reinterpret_cast<const void*>(idx32_hi), 0), lenv);
+        __m128i eq_lo = __lsx_vseq_b(__lsx_vand_v(vp_lo, m_lo), vs_lo);
+        __m128i eq_hi = __lsx_vseq_b(__lsx_vand_v(vp_hi, m_hi), vs_hi);
+        unsigned mlo = static_cast<unsigned>(__lsx_vpickve2gr_w(__lsx_vmskltz_b(eq_lo), 0)) & 0xFFFFu;
+        unsigned mhi = static_cast<unsigned>(__lsx_vpickve2gr_w(__lsx_vmskltz_b(eq_hi), 0)) & 0xFFFFu;
+        return (mlo & mhi) == 0xFFFFu;
+#else
+        for (std::size_t i = 0; i < len; ++i)
+            if (p[i] != stored[i]) return false;
+        return true;
+#endif
+    } else if constexpr (MaxKeyLen <= 64) {
+        // 3 or 4 16-byte blocks (33..48 -> 3, 49..64 -> 4). stored is zero-padded
+        // to exactly num_blocks*16 bytes (KEY_STRIDE), so neither load overruns it.
+        constexpr std::size_t num_blocks = (MaxKeyLen + 15) / 16;
+#if SIMDJSON_KEY_SELECTOR_HAS_NEON
+        uint8x16_t base = vld1q_u8(idx16);
+        uint8x16_t lenv = vdupq_n_u8(static_cast<uint8_t>(len));
+        uint8x16_t acc  = vdupq_n_u8(0);
+        for (std::size_t b = 0; b < num_blocks; ++b) {
+            uint8x16_t vp   = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + b * 16);
+            uint8x16_t vs   = vld1q_u8(reinterpret_cast<const uint8_t*>(stored) + b * 16);
+            uint8x16_t idxv = vaddq_u8(base, vdupq_n_u8(static_cast<uint8_t>(b * 16)));
+            uint8x16_t mask = vcltq_u8(idxv, lenv);
+            acc = vorrq_u8(acc, veorq_u8(vandq_u8(vp, mask), vs));
+        }
+        return vmaxvq_u32(vreinterpretq_u32_u8(acc)) == 0;
+#elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
+        __m128i base = _mm_load_si128(reinterpret_cast<const __m128i*>(idx16));
+        __m128i lenv = _mm_set1_epi8(static_cast<char>(len));
+        int eq = 0xFFFF;
+        for (std::size_t b = 0; b < num_blocks; ++b) {
+            __m128i vp   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + b * 16));
+            __m128i vs   = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored + b * 16));
+            __m128i idxv = _mm_add_epi8(base, _mm_set1_epi8(static_cast<char>(b * 16)));
+            __m128i mask = _mm_cmplt_epi8(idxv, lenv);
+            eq &= _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_and_si128(vp, mask), vs));
+        }
+        return eq == 0xFFFF;
+#elif SIMDJSON_KEY_SELECTOR_HAS_LSX
+        __m128i base = __lsx_vld(reinterpret_cast<const void*>(idx16), 0);
+        __m128i lenv = __lsx_vreplgr2vr_b(static_cast<int>(len));
+        unsigned acc = 0xFFFFu;
+        for (std::size_t b = 0; b < num_blocks; ++b) {
+            __m128i vp   = __lsx_vld(reinterpret_cast<const void*>(p + b * 16), 0);
+            __m128i vs   = __lsx_vld(reinterpret_cast<const void*>(stored + b * 16), 0);
+            __m128i idxv = __lsx_vadd_b(base, __lsx_vreplgr2vr_b(static_cast<int>(b * 16)));
+            __m128i mask = __lsx_vslt_b(idxv, lenv);
+            __m128i eq   = __lsx_vseq_b(__lsx_vand_v(vp, mask), vs);
+            acc &= static_cast<unsigned>(__lsx_vpickve2gr_w(__lsx_vmskltz_b(eq), 0)) & 0xFFFFu;
+        }
+        return acc == 0xFFFFu;
 #else
         for (std::size_t i = 0; i < len; ++i)
             if (p[i] != stored[i]) return false;
@@ -892,9 +970,8 @@ compute_window(const std::array<std::string_view, N>& keys) {
         for (std::size_t shift = 0; shift < 8; ++shift) {
             // The read touches byte off, and byte off+1 when shift != 0. Both must
             // stay within the safe region [0, min_len] (min_len is the shortest
-            // key's quote index).
+            // key's quote index). off <= min_len is guaranteed by the loop bound.
             if (shift != 0 && off + 1 > min_len) { continue; }
-            if (off > min_len) { continue; }
 
             bool distinct = true;
             for (std::size_t i = 0; i < N && distinct; ++i) {
@@ -961,6 +1038,28 @@ match_window_candidate(const char* p, std::uint8_t ki,
   return result;
 }
 
+// --- describe() string helpers (constexpr; no std::to_string, which is not) ---
+
+// Append the decimal form of v to s.
+constexpr void append_uint(std::string& s, std::size_t v) {
+    if (v == 0) { s.push_back('0'); return; }
+    char buf[20];
+    std::size_t n = 0;
+    while (v > 0) { buf[n++] = static_cast<char>('0' + (v % 10)); v /= 10; }
+    while (n > 0) { s.push_back(buf[--n]); }
+}
+
+// Append a byte as its decimal value, plus the printable character in quotes
+// when it is in the printable ASCII range (e.g. "110 ('n')").
+constexpr void append_byte(std::string& s, unsigned b) {
+    append_uint(s, b);
+    if (b >= 0x20 && b < 0x7f) {
+        s += " ('";
+        s.push_back(static_cast<char>(b));
+        s += "')";
+    }
+}
+
 } // namespace key_selector_detail
 
 /**
@@ -975,7 +1074,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
  * tables are static constexpr, so the lookup fully inlines.
  *
  * Limitations:
- *   - Each key must be at most 31 characters long (and no longer than
+ *   - Each key must be at most 63 characters long (and no longer than
  *     SIMDJSON_PADDING). Longer keys trigger a compile-time error.
  *   - The number of keys should be moderate. The hard limit is 255 keys;
  *     compilation time grows with the number of keys, so prefer a few dozen at
@@ -993,12 +1092,12 @@ struct key_selector {
     static constexpr std::size_t max_key_len = key_selector_detail::compute_max_key_len<N>(keys);
     static_assert(max_key_len <= SIMDJSON_PADDING,
                   "key longer than SIMDJSON_PADDING is not supported");
-    // The SIMD key-length scan covers offsets 0..31 only; a 32-character key's
-    // closing quote lands at offset 32 and would be silently missed on
-    // NEON/SSE2 while still matching in scalar builds. Cap at 31 so the result
-    // is identical across implementations.
-    static_assert(max_key_len <= 31,
-                  "key_selector keys must be at most 31 characters long");
+    // The SIMD key-length scan covers offsets 0..63 (four 16-byte blocks), which
+    // stays within the 64-byte padding guarantee. A 64-character key's closing
+    // quote would land at offset 64 and be missed on NEON/SSE2/LSX while still
+    // matching in scalar builds, so cap at 63 to keep implementations in agreement.
+    static_assert(max_key_len <= 63,
+                  "key_selector keys must be at most 63 characters long");
 
     static constexpr auto result = key_selector_detail::compute_phf<N>(keys);
     static constexpr std::size_t table_size = result.table_size;
@@ -1103,7 +1202,166 @@ struct key_selector {
     static constexpr std::string_view key_at(std::size_t i) noexcept {
         return keys[i];
     }
+
+    /**
+     * Return a complete, human-readable, multi-line description of how this
+     * selector classifies a key: which algorithm was selected at compile time
+     * (single 8-bit window, gperf-style perfect hash, or hash-and-displace), the
+     * exact bytes/positions it inspects, and the contents of the lookup tables
+     * (which window bytes or hash slots map to which key). The text mirrors what
+     * match_raw() does step by step.
+     *
+     * Everything it reports is derived from the compile-time tables, so describe()
+     * is itself usable in a constant expression:
+     *
+     *   static_assert(!key_selector<"name", "city">::describe().empty());
+     *
+     * It allocates a std::string and is meant for documentation, debugging and
+     * tests, not for any hot path.
+     */
+    static constexpr std::string describe() {
+        std::string s;
+        s += "key_selector: ";
+        key_selector_detail::append_uint(s, N);
+        s += " keys, max key length ";
+        key_selector_detail::append_uint(s, max_key_len);
+        s += "\nkeys:\n";
+        for (std::size_t i = 0; i < N; ++i) {
+            s += "  [";
+            key_selector_detail::append_uint(s, i);
+            s += "] \"";
+            s += keys[i];
+            s += "\" (length ";
+            key_selector_detail::append_uint(s, keys[i].size());
+            s += ")\n";
+        }
+        if constexpr (window.ok) {
+            // Mirrors the window fast path of match_raw().
+            s += "algorithm: single 8-bit window\n";
+            s += "  step 1: read 2 bytes at offset ";
+            key_selector_detail::append_uint(s, window.byte_offset);
+            s += ", interpret them as a little-endian 16-bit value, shift right by ";
+            key_selector_detail::append_uint(s, window.shift);
+            s += " bits, and keep the low 8 bits\n";
+            s += "  step 2: map that byte through a 256-entry table to a key index (";
+            key_selector_detail::append_uint(s, N);
+            s += " means no match):\n";
+            for (std::size_t b = 0; b < 256; ++b) {
+                if (window.window_to_key[b] < N) {
+                    s += "    byte ";
+                    key_selector_detail::append_byte(s, static_cast<unsigned>(b));
+                    s += " -> key ";
+                    key_selector_detail::append_uint(s, window.window_to_key[b]);
+                    s += "\n";
+                }
+            }
+            s += "  step 3: confirm the candidate by checking the closing quote sits at the key's length and comparing the key bytes\n";
+        } else {
+            // Mirrors the perfect-hash path of match_raw().
+            if constexpr (phf.num_positions == key_selector_detail::HD_MODE) {
+                s += "algorithm: hash-and-displace perfect hash\n";
+                s += "  step 1: bucket = (first_byte + last_byte*3 + length*17) mod 256\n";
+                s += "  step 2: keyhash = base-31 rolling hash of the length and the first ";
+                key_selector_detail::append_uint(s, phf.hd_hash_variant);
+                s += " bytes\n";
+                s += "  step 3: slot = (displacement[bucket] + keyhash) mod ";
+                key_selector_detail::append_uint(s, table_size);
+                s += "\n  step 4: slot_to_key[slot] gives the candidate key index\n";
+                s += "  per-key derivation:\n";
+                for (std::size_t i = 0; i < N; ++i) {
+                    std::string_view k = keys[i];
+                    std::size_t bucket = key_selector_detail::hd_bucket_hash(k);
+                    std::size_t kh = (phf.hd_hash_variant == key_selector_detail::HD_HASH_2BYTE_FLAG)
+                        ? key_selector_detail::hd_key_hash_2(k)
+                        : key_selector_detail::hd_key_hash_4(k);
+                    std::size_t slot = (phf.asso_values[0][bucket] + kh) & (table_size - 1);
+                    s += "    \"";
+                    s += k;
+                    s += "\": bucket=";
+                    key_selector_detail::append_uint(s, bucket);
+                    s += " displacement=";
+                    key_selector_detail::append_uint(s, phf.asso_values[0][bucket]);
+                    s += " keyhash=";
+                    key_selector_detail::append_uint(s, kh);
+                    s += " slot=";
+                    key_selector_detail::append_uint(s, slot);
+                    s += "\n";
+                }
+            } else {
+                s += "algorithm: gperf-style perfect hash over ";
+                key_selector_detail::append_uint(s, phf.num_positions);
+                s += " character position(s)\n";
+                s += "  step 1: h = key length\n";
+                s += "  step 2: for each position below, add its association value for the key byte there (a position past the key's length contributes 0):\n";
+                for (std::size_t i = 0; i < phf.num_positions; ++i) {
+                    s += "    position ";
+                    if (phf.positions[i] == key_selector_detail::POS_LAST_CHAR) {
+                        s += "last character";
+                    } else {
+                        s += "byte index ";
+                        key_selector_detail::append_uint(s, phf.positions[i]);
+                    }
+                    s += "\n";
+                }
+                s += "  step 3: slot = h mod ";
+                key_selector_detail::append_uint(s, table_size);
+                s += " (a power of two, applied as a bitmask)\n";
+                s += "  step 4: slot_to_key[slot] gives the candidate key index\n";
+                s += "  per-key derivation:\n";
+                for (std::size_t i = 0; i < N; ++i) {
+                    std::string_view k = keys[i];
+                    std::size_t h = k.size();
+                    for (std::size_t pi = 0; pi < phf.num_positions; ++pi) {
+                        std::size_t pos = phf.positions[pi];
+                        std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)
+                                          ? (k.size() - 1) : pos;
+                        if (idx < k.size()) {
+                            h += phf.asso_values[pi][static_cast<unsigned char>(k[idx])];
+                        }
+                    }
+                    std::size_t slot = h & (table_size - 1);
+                    s += "    \"";
+                    s += k;
+                    s += "\": h=";
+                    key_selector_detail::append_uint(s, h);
+                    s += " slot=";
+                    key_selector_detail::append_uint(s, slot);
+                    s += "\n";
+                }
+            }
+            s += "  occupied slots (slot -> key):\n";
+            for (std::size_t slot = 0; slot < table_size; ++slot) {
+                if (phf.slot_to_key[slot] < N) {
+                    s += "    slot ";
+                    key_selector_detail::append_uint(s, slot);
+                    s += " -> key ";
+                    key_selector_detail::append_uint(s, phf.slot_to_key[slot]);
+                    s += " (\"";
+                    s += keys[phf.slot_to_key[slot]];
+                    s += "\", length ";
+                    key_selector_detail::append_uint(s, phf.slot_key_len[slot]);
+                    s += ")\n";
+                }
+            }
+            s += "  confirm the candidate by checking the key length matches and comparing the key bytes\n";
+        }
+        return s;
+    }
 };
+
+namespace key_selector_detail {
+template <typename> struct is_key_selector : std::false_type {};
+template <constevalutil::fixed_string... Keys>
+struct is_key_selector<key_selector<Keys...>> : std::true_type {};
+} // namespace key_selector_detail
+
+/**
+ * Matches any instantiation of key_selector<Keys...>. Used to constrain
+ * object::for_each so that passing a non-selector type yields a clear
+ * constraint error rather than a cascade of failures inside for_each.
+ */
+template <typename T>
+concept key_selector_type = key_selector_detail::is_key_selector<T>::value;
 
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION

@@ -154,15 +154,22 @@ public:
    *     switch (i) { case 0: ...; case 1: ...; }
    *   });
    *
-   * Limitations (see key_selector): each key must be at most 31 characters long,
+   * Limitations (see key_selector): each key must be at most 63 characters long,
    * and the number of keys should be moderate (hard limit 255; a handful is
    * best, as the compile-time perfect hash may fail or slow compilation for
-   * large key sets). They keys must be distinct, non-empty, and free of backslash, double-quote and
+   * large key sets). The keys must be distinct, non-empty, and free of backslash, double-quote and
    * null bytes.
    *
    * The callback may return either void or an error_code. When it returns an
    * error_code, the walk stops at the first non-SUCCESS result and that error is
    * returned, which lets the callback surface value-parse errors.
+   *
+   * This function is conditionally noexcept: it is noexcept exactly when invoking
+   * the callback is noexcept. The callback runs inside this frame, so a throwing
+   * callback (e.g. one using the exception-throwing conversions like
+   * std::string_view(value) or uint64_t(value)) makes for_each potentially
+   * throwing too -- the exception propagates to the caller instead of crossing a
+   * noexcept boundary and calling std::terminate.
    *
    * @returns a for_each_result holding the first error encountered while walking
    *          the object (including any error returned by the callback, SUCCESS if
@@ -171,7 +178,9 @@ public:
    *          the error can ignore the count.
    */
   template <typename Selector, typename Func>
-  simdjson_inline for_each_result for_each(Func&& on_match) noexcept;
+    requires key_selector_type<Selector>
+  simdjson_inline for_each_result for_each(Func&& on_match)
+      noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, value>);
 #endif
 
   /**
@@ -420,6 +429,18 @@ public:
     }
     return SUCCESS;
   }
+
+  /**
+   * Forwards to object::for_each on the underlying object, so error-code-style
+   * chains (e.g. doc["x"].get_object()) can call for_each without first
+   * extracting the object. If this result holds an error, that error is returned
+   * (with a zero match count) and the callback is not invoked. See
+   * object::for_each for the semantics.
+   */
+  template <typename Selector, typename Func>
+    requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector>
+  simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Func&& on_match)
+      noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>);
 
 #if SIMDJSON_STATIC_REFLECTION
   // TODO: move this code into object-inl.h

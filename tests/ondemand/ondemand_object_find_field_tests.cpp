@@ -210,6 +210,21 @@ namespace object_tests {
 
       return true;
     }));
+
+    // for_each forwards on a simdjson_result<object>, so an error-code-style
+    // chain can call it without first extracting the object.
+    SUBTEST("simdjson_result<ondemand::object> with key_selector for_each", test_ondemand_doc(json, [&](auto doc_result) {
+      std::string_view name_val{};
+      std::size_t matched = 0;
+      auto walk = doc_result.get_object().template for_each<sel_t>([&](std::size_t index, ondemand::value v) {
+        ++matched;
+        if (index == 0) { std::string_view s; if (!v.get(s)) { name_val = s; } }
+      });
+      ASSERT_SUCCESS( walk.error );
+      ASSERT_EQUAL(matched, 3);
+      ASSERT_EQUAL(name_val, "John");
+      return true;
+    }));
     TEST_SUCCEED();
   }
 
@@ -223,6 +238,12 @@ namespace object_tests {
 
     // Happy path: an error_code-returning callback extracts the values and
     // for_each returns SUCCESS.
+    // A non-throwing callback keeps for_each noexcept (the conditional-noexcept
+    // counterpart to for_each_throwing_callback_propagates below).
+    static_assert(noexcept(std::declval<ondemand::object&>().for_each<sel_t>(
+        [](std::size_t, ondemand::value) noexcept {})),
+        "for_each must be noexcept when the callback is noexcept");
+
     SUBTEST("error_code callback success", test_ondemand_doc(json, [&](auto doc_result) {
       ondemand::object object;
       ASSERT_SUCCESS( doc_result.get(object) );
@@ -342,6 +363,40 @@ namespace object_tests {
     ASSERT_EQUAL(author_handle, "lemire");
     TEST_SUCCEED();
   }
+
+  // Regression test for the conditionally-noexcept for_each: the documented
+  // callback style uses throwing conversions (std::string_view(v), uint64_t(v)),
+  // and the callback runs inside for_each's frame. On a type mismatch the
+  // exception must propagate out to the caller (catchable) instead of crossing a
+  // noexcept boundary and calling std::terminate.
+  bool for_each_throwing_callback_propagates() {
+    TEST_START();
+    // "name" is a number, but the callback converts it to std::string_view,
+    // which throws INCORRECT_TYPE.
+    auto json = R"({ "name": 123, "city": "Montreal" })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object obj = doc.get_object();
+    using fields = ondemand::key_selector<"name", "city">;
+    // for_each must NOT be noexcept here: the callback can throw.
+    static_assert(!noexcept(obj.for_each<fields>(
+        [&](std::size_t, ondemand::value v) { (void)std::string_view(v); })),
+        "for_each must be potentially-throwing when the callback can throw");
+    std::string_view name, city;
+    bool threw = false;
+    try {
+      obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
+        switch (i) {
+          case 0: name = std::string_view(v); break; // throws INCORRECT_TYPE
+          case 1: city = std::string_view(v); break;
+        }
+      });
+    } catch (simdjson_error &) {
+      threw = true;
+    }
+    ASSERT_TRUE(threw);
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
@@ -414,6 +469,199 @@ namespace object_tests {
     }
     TEST_SUCCEED();
   }
+
+  // Keys longer than the old 31-character limit (now up to 63) must match across
+  // every 16-byte block boundary, on both the window fast path and the perfect-
+  // hash path, and via both match_raw overloads.
+  bool key_selector_long_keys() {
+    TEST_START();
+    // Larger buffer than key_selector_matchers_agree's probe: a 63-char key plus
+    // the closing quote, with room for the 64-byte SIMD reads.
+    auto probe = [](auto sel_tag, std::string_view key, std::size_t expected) -> bool {
+      using sel = decltype(sel_tag);
+      char buf[128] = {};
+      for (size_t i = 0; i < key.size(); ++i) { buf[i] = key[i]; }
+      buf[key.size()] = '"';
+      ondemand::raw_json_string r(reinterpret_cast<const uint8_t*>(buf));
+      // The length-scanning overload and the precomputed-length overload must
+      // agree, and both must return the expected index.
+      ASSERT_EQUAL(sel::match_raw(r), expected);
+      ASSERT_EQUAL(sel::match_raw(buf, key.size()), expected);
+      return true;
+    };
+
+    // Distinct first bytes => a single aligned 8-bit window separates them: the
+    // window fast path with key lengths straddling the 16/32/48/63 boundaries.
+    using win_sel = ondemand::key_selector<
+        "aaaaaaaaaaaaaaaa",                                                // 16
+        "bbbbbbbbbbbbbbbbb",                                               // 17
+        "ccccccccccccccccccccccccccccccc",                                // 31
+        "dddddddddddddddddddddddddddddddd",                               // 32
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",                              // 33
+        "ffffffffffffffffffffffffffffffffffffffffffffffff",              // 48
+        "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg">; // 63
+    static_assert(win_sel::window.ok, "expected the window fast path here");
+    static_assert(win_sel::max_key_len == 63, "expected a 63-char max key");
+    const char* win_keys[] = {
+        "aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbb",
+        "ccccccccccccccccccccccccccccccc", "dddddddddddddddddddddddddddddddd",
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "ffffffffffffffffffffffffffffffffffffffffffffffff",
+        "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"};
+    for (std::size_t i = 0; i < win_sel::size(); ++i) {
+      ASSERT_EQUAL(win_sel::key_at(i).size(),
+                   (std::array<std::size_t, 7>{16,17,31,32,33,48,63})[i]);
+      if (!probe(win_sel{}, win_keys[i], i)) { return false; }
+    }
+    // Misses: a truncated 63-char key (quote one byte early), an extended one
+    // (quote one byte late, so the key is longer than any selector key), a
+    // wrong-character key of a matching length, and the empty key.
+    for (auto k : {"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",   // 62 g's
+                   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg", // 64 g's
+                   "cccccccccccccccccccccccccccccch",                                  // 31, last differs
+                   ""}) {
+      if (!probe(win_sel{}, k, win_sel::size())) { return false; }
+    }
+
+    // Same length (63), differing only at offsets 1-2: no 8-bit window separates
+    // them, so this exercises the perfect-hash path -- and its SIMD length scan
+    // and byte compare -- with long keys.
+    using phf_sel = ondemand::key_selector<
+        "k00aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k01aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k03aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k04aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k05aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k10aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "k11aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">;
+    static_assert(!phf_sel::window.ok, "expected the perfect-hash path here");
+    static_assert(phf_sel::max_key_len == 63, "expected a 63-char max key");
+    for (std::size_t i = 0; i < phf_sel::size(); ++i) {
+      ASSERT_EQUAL(phf_sel::key_at(i).size(), std::size_t(63));
+      if (!probe(phf_sel{}, phf_sel::key_at(i), i)) { return false; }
+    }
+    // Misses on the perfect-hash path: a key that matches the common suffix but
+    // has an unknown prefix ("k20..."), and a key sharing a 62-char prefix with
+    // index 0 but differing in the final byte.
+    if (!probe(phf_sel{}, "k20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", phf_sel::size())) { return false; }
+    if (!probe(phf_sel{}, "k00aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", phf_sel::size())) { return false; }
+    TEST_SUCCEED();
+  }
+
+  // End-to-end for_each over an object whose keys are 63 characters long (the new
+  // maximum), so the full walk -- field_key_with_length deriving the length and
+  // match_raw classifying it -- works past the old 31-character limit.
+  bool key_selector_long_keys_for_each() {
+    TEST_START();
+    using sel_t = ondemand::key_selector<
+        "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",   // 63
+        "ccccccccccccccccccccccccccccccc">;                                  // 31
+    auto json = R"({
+      "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg": 7,
+      "ignored_key": 99,
+      "ccccccccccccccccccccccccccccccc": 5
+    })"_padded;
+    SUBTEST("for_each with 63-char keys", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object object;
+      ASSERT_SUCCESS( doc_result.get(object) );
+      uint64_t g_val = 0, c_val = 0;
+      std::size_t matched = 0;
+      ASSERT_SUCCESS( object.for_each<sel_t>([&](std::size_t index, ondemand::value v) -> simdjson::error_code {
+        ++matched;
+        switch (index) {
+          case 0: return v.get(g_val);
+          case 1: return v.get(c_val);
+          default: return SUCCESS;
+        }
+      }) );
+      ASSERT_EQUAL(matched, 2);
+      ASSERT_EQUAL(g_val, 7);
+      ASSERT_EQUAL(c_val, 5);
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
+
+  // key_selector::describe() returns a complete, compile-time-derived description
+  // of the matching algorithm. This checks the window-mode example used verbatim
+  // in doc/basics.md, that describe() is a constant expression, and the stable
+  // structural parts of the perfect-hash form.
+  bool key_selector_describe() {
+    TEST_START();
+    using fields = ondemand::key_selector<"name", "city">;
+    // describe() is usable in a constant expression.
+    static_assert(!fields::describe().empty(),
+                  "describe() must be usable at compile time");
+    // The exact text shown in doc/basics.md (keys differ in their first byte, so a
+    // single 8-bit window at offset 0 distinguishes them).
+    const std::string expected =
+        "key_selector: 2 keys, max key length 4\n"
+        "keys:\n"
+        "  [0] \"name\" (length 4)\n"
+        "  [1] \"city\" (length 4)\n"
+        "algorithm: single 8-bit window\n"
+        "  step 1: read 2 bytes at offset 0, interpret them as a little-endian 16-bit value, shift right by 0 bits, and keep the low 8 bits\n"
+        "  step 2: map that byte through a 256-entry table to a key index (2 means no match):\n"
+        "    byte 99 ('c') -> key 1\n"
+        "    byte 110 ('n') -> key 0\n"
+        "  step 3: confirm the candidate by checking the closing quote sits at the key's length and comparing the key bytes\n";
+    ASSERT_EQUAL(fields::describe(), expected);
+
+    // gperf example from doc/basics.md: six anagrams of "abc" -- no character
+    // position is unique to a key, so no window works and a gperf-style perfect
+    // hash over two positions is used. The hash construction is deterministic, so
+    // the slots/h-values are checked verbatim (and match the documentation).
+    using anagrams = ondemand::key_selector<"abc","acb","bac","bca","cab","cba">;
+    static_assert(!anagrams::window.ok, "anagram example must use the perfect-hash path");
+    const std::string expected_gperf =
+        "key_selector: 6 keys, max key length 3\n"
+        "keys:\n"
+        "  [0] \"abc\" (length 3)\n"
+        "  [1] \"acb\" (length 3)\n"
+        "  [2] \"bac\" (length 3)\n"
+        "  [3] \"bca\" (length 3)\n"
+        "  [4] \"cab\" (length 3)\n"
+        "  [5] \"cba\" (length 3)\n"
+        "algorithm: gperf-style perfect hash over 2 character position(s)\n"
+        "  step 1: h = key length\n"
+        "  step 2: for each position below, add its association value for the key byte there (a position past the key's length contributes 0):\n"
+        "    position byte index 0\n"
+        "    position last character\n"
+        "  step 3: slot = h mod 8 (a power of two, applied as a bitmask)\n"
+        "  step 4: slot_to_key[slot] gives the candidate key index\n"
+        "  per-key derivation:\n"
+        "    \"abc\": h=9 slot=1\n"
+        "    \"acb\": h=6 slot=6\n"
+        "    \"bac\": h=10 slot=2\n"
+        "    \"bca\": h=4 slot=4\n"
+        "    \"cab\": h=8 slot=0\n"
+        "    \"cba\": h=5 slot=5\n"
+        "  occupied slots (slot -> key):\n"
+        "    slot 0 -> key 4 (\"cab\", length 3)\n"
+        "    slot 1 -> key 0 (\"abc\", length 3)\n"
+        "    slot 2 -> key 2 (\"bac\", length 3)\n"
+        "    slot 4 -> key 3 (\"bca\", length 3)\n"
+        "    slot 5 -> key 5 (\"cba\", length 3)\n"
+        "    slot 6 -> key 1 (\"acb\", length 3)\n"
+        "  confirm the candidate by checking the key length matches and comparing the key bytes\n";
+    ASSERT_EQUAL(anagrams::describe(), expected_gperf);
+
+    // A selector whose keys share their first byte cannot use a single window and
+    // falls back to a perfect hash. The exact slot numbers depend on the hash, so
+    // we check only the stable structural parts (and that every key is listed).
+    using big = ondemand::key_selector<"k00","k01","k02","k03","k04","k05",
+                                        "k06","k07","k08","k09","k10","k11">;
+    const std::string d = big::describe();
+    ASSERT_TRUE(d.find("key_selector: 12 keys, max key length 3\n") != std::string::npos);
+    ASSERT_TRUE(d.find("perfect hash") != std::string::npos);
+    ASSERT_TRUE(d.find("occupied slots (slot -> key):\n") != std::string::npos);
+    ASSERT_TRUE(d.find("confirm the candidate") != std::string::npos);
+    for (auto k : {"\"k00\"", "\"k05\"", "\"k11\""}) {
+      ASSERT_TRUE(d.find(k) != std::string::npos);
+    }
+    TEST_SUCCEED();
+  }
 #endif
 
   bool run() {
@@ -428,11 +676,15 @@ namespace object_tests {
            object_find_field_key_selector() &&
            object_for_each_callback_error() &&
            key_selector_matchers_agree() &&
+           key_selector_long_keys() &&
+           key_selector_long_keys_for_each() &&
+           key_selector_describe() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
            key_selector_example_toplevel() &&
            key_selector_example_nested() &&
            key_selector_example_inner_object() &&
+           for_each_throwing_callback_propagates() &&
 #endif
            true;
   }

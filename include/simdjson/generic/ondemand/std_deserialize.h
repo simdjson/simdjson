@@ -269,12 +269,11 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T>);
 
 
-#if !(defined(SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION) && SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION)
-
-// Default: deserialize a reflected struct using a compile-time key_selector
-// and a single object::for_each pass (perfect-hash key matching) instead of one
-// obj[key] lookup per member. Disable (falling back to the per-member obj[key]
-// path below) with -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1.
+// key_selector_reflection_detail is defined unconditionally (it only requires
+// static reflection). It provides both the compile-time machinery for building a
+// key_selector from a struct's members and the ordered per-member fallback used
+// by the opt-out build and as an automatic fallback (see deserialize_struct_ordered
+// and keys_fit_selector below).
 namespace key_selector_reflection_detail {
 
 // A member participates if it is public, non-const, and not annotated to skip.
@@ -341,8 +340,67 @@ consteval bool all_eligible_members_required() {
   return all_required;
 }
 
+// True when T's eligible member keys satisfy every key_selector requirement, so
+// a key_selector can be built for T without a compile-time error. This mirrors
+// the key_selector limits (see key_selector.h): at most 255 keys, each key
+// non-empty and at most 63 characters, no backslash / double-quote / null byte,
+// and all keys distinct. When this returns false the deserializer falls back to
+// the ordered per-member path instead of failing to compile.
+template <typename T>
+consteval bool keys_fit_selector() {
+  std::vector<std::string_view> keys;
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_eligible_member(mem)) {
+      keys.push_back(std::string_view{ simdjson::get_json_key_name<mem>() });
+    }
+  }
+  if (keys.size() > 255) { return false; }
+  for (std::size_t i = 0; i < keys.size(); ++i) {
+    if (keys[i].empty() || keys[i].size() > 63) { return false; }
+    for (char c : keys[i]) {
+      if (c == '\\' || c == '"' || c == '\0') { return false; }
+    }
+    for (std::size_t j = i + 1; j < keys.size(); ++j) {
+      if (keys[i] == keys[j]) { return false; }
+    }
+  }
+  return true;
+}
+
+// Ordered, per-member deserialization: one obj[key] lookup per eligible member.
+// This is the opt-out path (-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1) and the
+// automatic fallback for structs whose keys do not fit the key_selector limits
+// (see keys_fit_selector).
+template <typename T>
+simdjson_warn_unused error_code deserialize_struct_ordered(
+    SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept {
+  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_eligible_member(mem)) {
+      constexpr std::string_view key = simdjson::get_json_key_name<mem>();
+      if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
+        // For optional members, a missing key is not an error: leave the member
+        // at its current (default) value.
+        auto error = obj[key].get(out.[:mem:]);
+        if (error && error != NO_SUCH_FIELD) { return error; }
+      } else {
+        // For non-optional members, the key must be present.
+        SIMDJSON_TRY(obj[key].get(out.[:mem:]));
+      }
+    }
+  }
+  return SUCCESS;
+}
+
 } // namespace key_selector_reflection_detail
 
+// Deserialize a reflected struct. By default this builds a compile-time
+// key_selector from the struct's members and walks each object once with
+// object::for_each (perfect-hash key matching), instead of one obj[key] lookup
+// per member. There are two ways the ordered per-member path is used instead:
+//   - globally, by defining -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1;
+//   - automatically and per-type, when the struct's member keys do not fit the
+//     key_selector limits (see keys_fit_selector), so that long member names and
+//     the like keep compiling rather than tripping a static_assert.
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
@@ -352,13 +410,23 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
   } else {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
+#if defined(SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION) && SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION
+  // Opt-out build: always use the ordered per-member path.
+  return key_selector_reflection_detail::deserialize_struct_ordered(obj, out);
+#else
   if constexpr (key_selector_reflection_detail::eligible_member_count<T>() == 0) {
     // No members to deserialize: an empty key_selector cannot be built, so just
     // validate that the input is an object (done above) and succeed. Mirrors the
-    // opt-out per-member path, which iterates over zero members.
+    // ordered per-member path, which iterates over zero members.
     (void)out;
     (void)obj;
     return SUCCESS;
+  } else if constexpr (!key_selector_reflection_detail::keys_fit_selector<T>()) {
+    // Automatic fallback: T's eligible member keys do not fit the key_selector
+    // limits (e.g. a member name longer than 63 characters), so building a
+    // selector would be a compile error. Use the ordered per-member path instead,
+    // so the default never breaks a struct that the opt-out path would accept.
+    return key_selector_reflection_detail::deserialize_struct_ordered(obj, out);
   } else {
   using selector = key_selector_reflection_detail::selector_for<T>;
   if constexpr (key_selector_reflection_detail::all_eligible_members_required<T>()) {
@@ -419,46 +487,8 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
     return SUCCESS;
   }
   }
-}
-
-#else
-
-// Opt-out path (-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1): deserialize a
-// reflected struct with one obj[key] lookup per member, instead of the default
-// single-pass object::for_each path above.
-template <typename T, typename ValT>
-  requires(user_defined_type<T> && std::is_class_v<T>)
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
-  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
-  if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
-    obj = val;
-  } else {
-    SIMDJSON_TRY(val.get_object().get(obj));
-  }
-  template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (!std::meta::is_const(mem) && std::meta::is_public(mem)
-               && std::meta::annotations_of_with_type(mem, ^^simdjson::detail::skip_tag).empty()) {
-      constexpr std::string_view key = simdjson::get_json_key_name<mem>();
-      if constexpr (concepts::optional_type<decltype(out.[:mem:])>) {
-        // for optional members, it's ok if the key is missing
-        auto error = obj[key].get(out.[:mem:]);
-        if (error && error != NO_SUCH_FIELD) {
-          if(error == NO_SUCH_FIELD) {
-            out.[:mem:].reset();
-            continue;
-          }
-          return error;
-        }
-      } else {
-        // for non-optional members, the key must be present
-        SIMDJSON_TRY(obj[key].get(out.[:mem:]));
-      }
-    }
-  };
-  return simdjson::SUCCESS;
-}
-
 #endif // SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION
+}
 
 // Support for enum deserialization - deserialize from string representation using expand approach from P2996R12
 template <typename T, typename ValT>
