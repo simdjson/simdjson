@@ -337,40 +337,6 @@ Some users may want to browse code along with the compiled assembly:
 | `padded_string_view` (manual)                | User guarantees `SIMDJSON_PADDING` extra bytes after the viewed length             | User provides pointer + length + capacity                                              | Non-owning view                              | Low-level; requires careful buffer management.                                   |
 | Memory-mapped file (`padded_memory_map`)     | Automatic via mapping / padded read                                                 | Creates view with sufficient padding                                                   | Non-owning (tied to map lifetime)            | Always available on POSIX (zero-copy `mmap`). On Windows, opt-in via `-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON` (requires Windows 10 1803+ and links `onecore.lib`) and `#include <windows.h>` before simdjson; uses `CreateFileMapping2` + `MapViewOfFile3`. |
 
-**Parsing without padding (DOM).** If you have a buffer with **no** trailing
-padding and you do not want the library to copy it into a padded buffer, the DOM
-API offers `dom::parser::parse_unpadded`:
-
-```cpp
-dom::parser parser;
-std::string_view json = get_json();          // exactly json.size() bytes, no padding
-dom::element doc = parser.parse_unpadded(json);
-```
-
-`parse_unpadded` parses directly from your buffer of exactly `len` bytes and is
-guaranteed never to read past `buf + len`. It is the zero-copy alternative to
-`parser.parse(buf, len, /* realloc_if_needed */ true)`, which instead allocates a
-padded copy of the whole input. As with `parse(buf, len, false)`, the input is
-read (never written) and must stay alive, together with the parser, while you use
-the returned document. Overloads accept `std::string_view`, `const char*`/length,
-and `const uint8_t*`/length, and `parse_into_document_unpadded` lets you supply
-your own `dom::document`.
-
-> **There is a performance penalty.** `parse_unpadded` is slower than parsing an
-> already-padded buffer with `parse()`. simdjson's value parsers normally read a
-> few bytes (up to `SIMDJSON_PADDING`) past the end of each value, relying on the
-> padding; near the end of an unpadded buffer that would read out of bounds, so
-> `parse_unpadded` parses values in the final stretch of the buffer with extra
-> care (it finishes the last string, and copies near-the-end numbers/atoms into a
-> small padded scratch). This is **stage 2 only** — stage 1 (structure finding) is
-> unaffected. On a string-heavy document such as `twitter.json` the penalty is on
-> the order of **a few percent of total parsing time** (about +7% of stage-2
-> instructions); it varies with how much string/number content sits near the very
-> end of the buffer. The standard padded `parse()` path is *not* affected: it is
-> compiled separately and runs exactly as before. **Prefer padding your input when
-> you can; reach for `parse_unpadded` only when you genuinely cannot pad and want
-> to avoid the `O(n)` copy that `parse(buf, len, true)` performs.**
-
 
 Documents are iterators
 -----------------------
