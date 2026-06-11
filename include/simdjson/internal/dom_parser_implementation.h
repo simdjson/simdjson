@@ -124,6 +124,23 @@ public:
   simdjson_warn_unused virtual uint8_t *parse_string(const uint8_t *src, uint8_t *dst, bool allow_replacement) const noexcept = 0;
 
   /**
+   * Bounds-safe variant of parse_string for input buffers that are NOT padded to
+   * SIMDJSON_PADDING. `buf_end` points one past the last byte of the input. It behaves
+   * exactly like parse_string but never reads at or beyond buf_end (the closing quote
+   * is guaranteed by stage 1 to lie within [src, buf_end)). Used by On Demand's
+   * iterate_unpadded; the padded paths keep using parse_string.
+   *
+   * Overridden by each implementation.
+   *
+   * @param src pointer to the beginning of a valid UTF-8 JSON string, must end with an unescaped quote.
+   * @param dst pointer to a destination buffer, it must point a region in memory of sufficient size.
+   * @param allow_replacement whether we allow a replacement character when the UTF-8 contains unmatched surrogate pairs.
+   * @param buf_end one past the last readable byte of the input buffer.
+   * @return end of the of the written region (exclusive) or nullptr in case of error.
+   */
+  simdjson_warn_unused virtual uint8_t *parse_string_safe(const uint8_t *src, uint8_t *dst, bool allow_replacement, const uint8_t *buf_end) const noexcept = 0;
+
+  /**
    * Unescape a NON-valid UTF-8 string from src to dst, stopping at a final unescaped quote. There
    * must be an unescaped quote terminating the string. It returns the final output
    * position as pointer. In case of error (e.g., the string has bad escaped codes),
@@ -138,6 +155,12 @@ public:
    * @return end of the of the written region (exclusive) or nullptr in case of error.
    */
   simdjson_warn_unused virtual uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept = 0;
+
+  /**
+   * Bounds-safe variant of parse_wobbly_string for unpadded input; `buf_end` is one
+   * past the last readable input byte. Used by On Demand's iterate_unpadded.
+   */
+  simdjson_warn_unused virtual uint8_t *parse_wobbly_string_safe(const uint8_t *src, uint8_t *dst, const uint8_t *buf_end) const noexcept = 0;
 
   /**
    * Change the capacity of this parser.

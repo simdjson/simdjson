@@ -87,11 +87,29 @@ public:
    * start_root_array() and start_root_object().
    */
   simdjson_inline bool streaming() const noexcept;
+  /**
+   * Number of input bytes from `json` to the end of the document buffer (0 if json
+   * is at or past the end). Used to bound value parsing in unpadded mode.
+   */
+  simdjson_inline size_t remaining_input_length(const uint8_t *json) const noexcept;
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   simdjson_inline bool allow_incomplete_json() const noexcept;
-  simdjson_inline size_t remaining_input_length(const uint8_t *json) const noexcept;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
+  /**
+   * Whether the document buffer lacks SIMDJSON_PADDING trailing bytes, i.e. it was
+   * started with parser::iterate_unpadded. When true, the value parsers must not
+   * read past the end of the document. False for the standard padded iterate().
+   */
+  simdjson_inline bool unpadded() const noexcept;
+  /**
+   * In unpadded mode, return a pointer safe for the padding-relying scalar parsers:
+   * the in-place pointer when the scalar's end is far enough from the end of the
+   * input, otherwise a space-padded copy of the scalar (`length` bytes) in the
+   * parser's scratch buffer. `length` is the scalar's span up to the next structural.
+   * Must only be called when unpadded() is true.
+   */
+  simdjson_never_inline const uint8_t *ensure_padded_scalar(const uint8_t *json, uint32_t length) noexcept;
   /**
    * Get the root value iterator
    */

@@ -138,6 +138,30 @@ public:
   simdjson_warn_unused simdjson_result<document> iterate(padded_string &&json) & noexcept = delete;
 
   /**
+   * (experimental) Start iterating an On-Demand JSON document held in a buffer that is *not*
+   * padded with SIMDJSON_PADDING trailing bytes.
+   *
+   * Unlike iterate(), this never requires (and never adds) trailing padding: it
+   * parses directly from your buffer of exactly `len` bytes and is guaranteed not
+   * to read past `buf + len`. It is the On-Demand analogue of
+   * `dom::parser::parse_unpadded`. Use it only when you genuinely cannot provide a
+   * padded buffer; padded iterate() is faster (value parsing near the end of an
+   * unpadded buffer is handled with extra, slower care). The standard padded
+   * iterate() path is unaffected.
+   *
+   * As with iterate(), parsing is done lazily as you traverse the document, so the
+   * buffer (and the parser) must remain valid and unmodified for as long as you use
+   * the returned document.
+   *
+   * @param json The JSON to parse. Only `len` bytes are read; no padding required.
+   */
+  simdjson_warn_unused simdjson_result<document> iterate_unpadded(const char *json, size_t len) & noexcept;
+  /** @overload iterate_unpadded(const char *json, size_t len) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate_unpadded(const uint8_t *json, size_t len) & noexcept;
+  /** @overload iterate_unpadded(const char *json, size_t len) & noexcept */
+  simdjson_warn_unused simdjson_result<document> iterate_unpadded(std::string_view json) & noexcept;
+
+  /**
    * @private
    *
    * Start iterating an on-demand JSON document.
@@ -369,6 +393,16 @@ public:
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement = false) const noexcept;
 
   /**
+   * Bounds-safe variant of unescape for unpadded input: `buf_end` is one past the last
+   * readable input byte. Used by On Demand's iterate_unpadded so the string parser
+   * never reads past the end of the buffer. Internal use.
+   */
+  simdjson_inline simdjson_result<std::string_view> unescape_safe(raw_json_string in, uint8_t *&dst, bool allow_replacement, const uint8_t *buf_end) const noexcept;
+
+  /** Bounds-safe variant of unescape_wobbly for unpadded input. Internal use. */
+  simdjson_inline simdjson_result<std::string_view> unescape_wobbly_safe(raw_json_string in, uint8_t *&dst, const uint8_t *buf_end) const noexcept;
+
+  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
    * The result may not be valid UTF-8. See https://simonsapin.github.io/wtf-8/
    * The provided pointer is advanced to the end of the string by reference, and a string_view instance
@@ -432,7 +466,25 @@ private:
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
+  /**
+   * Whether the document currently being iterated lives in a buffer without
+   * SIMDJSON_PADDING trailing bytes (set only by iterate_unpadded). When true,
+   * the value parsers (numbers, strings, keys, atoms) avoid reading past the end
+   * of the document. The default padded iterate() path leaves this false and is
+   * unaffected. Read by json_iterator (a friend).
+   */
+  bool _unpadded{false};
   std::unique_ptr<uint8_t[]> string_buf{};
+  /**
+   * Scratch buffer used only in unpadded mode: a scalar (number or atom) whose end
+   * lies within SIMDJSON_PADDING of the end of the input is copied here, padded with
+   * spaces, so the padding-relying value parsers stay in bounds. Allocated by
+   * iterate_unpadded (sized to the document length + SIMDJSON_PADDING); never touched
+   * by the padded iterate() path. Distinct from string_buf, whose contents persist as
+   * returned string_views. Read/written by json_iterator (a friend).
+   */
+  std::unique_ptr<uint8_t[]> _unpadded_scratch{};
+  size_t _unpadded_scratch_capacity{0};
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};

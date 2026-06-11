@@ -23,6 +23,24 @@ struct simdjson_ondemand {
 };
 
 BENCHMARK_TEMPLATE(large_random, simdjson_ondemand)->UseManualTime();
+
+// Same workload, but parsed with iterate_unpadded (the bounds-safe value parsers
+// used for input buffers without SIMDJSON_PADDING). Run on the same buffer so the
+// measured difference is purely the cost of the unpadded code paths.
+struct simdjson_ondemand_unpadded {
+  static constexpr diff_flags DiffFlags = diff_flags::NONE;
+
+  ondemand::parser parser{};
+
+  bool run(simdjson::padded_string &json, std::vector<point> &result) {
+    auto doc = parser.iterate_unpadded(json.data(), json.size());
+    for (ondemand::object coord : doc) {
+      result.emplace_back(json_benchmark::point{coord.find_field("x"), coord.find_field("y"), coord.find_field("z")});
+    }
+    return true;
+  }
+};
+BENCHMARK_TEMPLATE(large_random, simdjson_ondemand_unpadded)->UseManualTime();
 #if SIMDJSON_STATIC_REFLECTION
 
 struct simdjson_ondemand_static_reflect {

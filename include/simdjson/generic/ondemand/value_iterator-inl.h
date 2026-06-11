@@ -89,7 +89,8 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_objec
     // Checking that the document is balanced requires a full scan which is potentially
     // expensive, but it only happens in edge cases where the first padding character is
     // a closing bracket.
-    if ((*_json_iter->peek(_json_iter->end_position()) == '}') && (!_json_iter->balanced())) {
+    // See check_root_array: skip the gibberish-byte peek in unpadded mode.
+    if (!_json_iter->unpadded() && (*_json_iter->peek(_json_iter->end_position()) == '}') && (!_json_iter->balanced())) {
       _json_iter->abandon();
       // The exact error would require more work. It will typically be an unclosed object.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
@@ -187,23 +188,21 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
+    // In unpadded mode, capture the key token's content length (peek_length() includes
+    // the two quotes, so subtract 2; it is >= 2 for a valid key) before field_key()
+    // advances, so the comparison below cannot read past the end of the input.
+    const bool unpadded = _json_iter->unpadded();
+    const size_t max_key_length = unpadded ? size_t(_json_iter->peek_length()) - 2 : 0;
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
     // field_value() will advance and check that we find a ':' separating the
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
-    // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    // If it matches, stop and return. The padded path uses the fast unbounded compare
+    // (which may over-read on adversarial keys in unpadded input); the unpadded path
+    // uses the length-bounded compare.
+    if (unpadded ? actual_key.unsafe_is_equal(max_key_length, key) : actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -320,8 +319,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
+    // In unpadded mode, capture the key token's content length (see find_field_raw)
+    // before field_key() advances, to bound the comparison below.
+    const bool unpadded = _json_iter->unpadded();
+    const size_t max_key_length = unpadded ? size_t(_json_iter->peek_length()) - 2 : 0;
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -329,15 +330,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
 
-    // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    // If it matches, stop and return (bounded compare in unpadded mode; see find_field_raw).
+    if (unpadded ? actual_key.unsafe_is_equal(max_key_length, key) : actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -370,8 +364,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
+    // In unpadded mode, capture the key token's content length (see find_field_raw)
+    // before field_key() advances, to bound the comparison below.
+    const bool unpadded = _json_iter->unpadded();
+    const size_t max_key_length = unpadded ? size_t(_json_iter->peek_length()) - 2 : 0;
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
@@ -379,15 +375,8 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     // key and the value.  It will also increment the depth by one.
     error = field_value(); SIMDJSON_ASSUME(!error);
 
-    // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    // If it matches, stop and return (bounded compare in unpadded mode; see find_field_raw).
+    if (unpadded ? actual_key.unsafe_is_equal(max_key_length, key) : actual_key.unsafe_is_equal(key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -484,7 +473,10 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_array
     // Checking that the document is balanced requires a full scan which is potentially
     // expensive, but it only happens in edge cases where the first padding character is
     // a closing bracket.
-    if ((*_json_iter->peek(_json_iter->end_position()) == ']') && (!_json_iter->balanced())) {
+    // In unpadded mode there is no byte after the document to read (and no padding
+    // that could masquerade as a closing bracket), so we skip the gibberish-byte peek;
+    // this matches the padded behavior when the trailing padding is not a bracket.
+    if (!_json_iter->unpadded() && (*_json_iter->peek(_json_iter->end_position()) == ']') && (!_json_iter->balanced())) {
       _json_iter->abandon();
       // The exact error would require more work. It will typically be an unclosed array.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
@@ -977,10 +969,17 @@ simdjson_inline const uint8_t *value_iterator::peek_root_scalar(const char *type
 }
 simdjson_inline const uint8_t *value_iterator::peek_non_root_scalar(const char *type) noexcept {
   logger::log_value(*_json_iter, start_position(), depth(), type);
-  if (!is_at_start()) { return peek_start(); }
-
-  assert_at_non_root_start();
-  return _json_iter->peek();
+  const uint8_t *json;
+  if (!is_at_start()) {
+    json = peek_start();
+  } else {
+    assert_at_non_root_start();
+    json = _json_iter->peek();
+  }
+  // In unpadded mode, keep the padding-relying number/atom parsers in bounds. A single
+  // predicted branch on the padded (default) path; the copy itself is out-of-line.
+  if (simdjson_unlikely(_json_iter->unpadded())) { return _json_iter->ensure_padded_scalar(json, peek_start_length()); }
+  return json;
 }
 
 simdjson_inline void value_iterator::advance_root_scalar(const char *type) noexcept {

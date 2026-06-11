@@ -56,6 +56,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 
   json.remove_utf8_bom();
   _document_len = json.length();
+  _unpadded = false; // padded input: value parsers use the fast (padding-relying) path
 
   // Allocate if needed
   if (capacity() < json.length() || !string_buf) {
@@ -65,6 +66,40 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+}
+
+// (experimental) Iterate a buffer with no trailing SIMDJSON_PADDING. Mirrors
+// iterate(padded_string_view) but skips the padding requirement and sets the
+// _unpadded flag so the lazy value parsers stay within [json, json+len).
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_unpadded(const uint8_t *json, size_t len) & noexcept {
+  // Strip a leading UTF-8 BOM, as padded_string_view::remove_utf8_bom() does.
+  if (len >= 3 && json[0] == 0xEF && json[1] == 0xBB && json[2] == 0xBF) { json += 3; len -= 3; }
+  _document_len = len;
+  _unpadded = true;
+
+  // Allocate if needed
+  if (capacity() < len || !string_buf) {
+    SIMDJSON_TRY( allocate(len, max_depth()) );
+  }
+
+  // Scratch buffer for bounds-safe scalar (number/atom) parsing near the end of the
+  // input. Sized to hold any single scalar (<= len bytes) plus SIMDJSON_PADDING.
+  if (_unpadded_scratch_capacity < len + SIMDJSON_PADDING) {
+    _unpadded_scratch.reset(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
+    if (!_unpadded_scratch) { return MEMALLOC; }
+    _unpadded_scratch_capacity = len + SIMDJSON_PADDING;
+  }
+
+  // Stage 1 is padding-safe (it copies the final partial block into a local
+  // padded buffer); only the lazy value parsers need the _unpadded guard.
+  SIMDJSON_TRY( implementation->stage1(json, len, stage1_mode::regular) );
+  return document::start({ json, this });
+}
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_unpadded(const char *json, size_t len) & noexcept {
+  return iterate_unpadded(reinterpret_cast<const uint8_t *>(json), len);
+}
+simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_unpadded(std::string_view json) & noexcept {
+  return iterate_unpadded(reinterpret_cast<const uint8_t *>(json.data()), json.size());
 }
 
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
@@ -265,8 +300,24 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::u
   return result;
 }
 
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_safe(raw_json_string in, uint8_t *&dst, bool allow_replacement, const uint8_t *buf_end) const noexcept {
+  uint8_t *end = implementation->parse_string_safe(in.buf, dst, allow_replacement, buf_end);
+  if (!end) { return STRING_ERROR; }
+  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
+  dst = end;
+  return result;
+}
+
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept {
   uint8_t *end = implementation->parse_wobbly_string(in.buf, dst);
+  if (!end) { return STRING_ERROR; }
+  std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
+  dst = end;
+  return result;
+}
+
+simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_wobbly_safe(raw_json_string in, uint8_t *&dst, const uint8_t *buf_end) const noexcept {
+  uint8_t *end = implementation->parse_wobbly_string_safe(in.buf, dst, buf_end);
   if (!end) { return STRING_ERROR; }
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
   dst = end;

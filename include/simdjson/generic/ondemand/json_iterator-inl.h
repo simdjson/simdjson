@@ -204,15 +204,31 @@ simdjson_inline bool json_iterator::streaming() const noexcept {
 simdjson_inline bool json_iterator::allow_incomplete_json() const noexcept {
   return _allow_incomplete_json;
 }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 simdjson_inline size_t json_iterator::remaining_input_length(const uint8_t *json) const noexcept {
   const uint8_t *end = token.buf + parser->_document_len;
   return json < end ? size_t(end - json) : 0;
 }
-#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 simdjson_inline token_position json_iterator::root_position() const noexcept {
   return _root;
+}
+
+simdjson_inline bool json_iterator::unpadded() const noexcept {
+  return parser->_unpadded;
+}
+
+simdjson_never_inline const uint8_t *json_iterator::ensure_padded_scalar(const uint8_t *json, uint32_t length) noexcept {
+  // The scalar occupies [json, json+length). The padding-relying parsers may read up
+  // to SIMDJSON_PADDING bytes past json+length; if that stays within the buffer, parse
+  // in place. Otherwise copy the scalar into the scratch and pad it with spaces (which
+  // terminate number/atom parsing just like trailing whitespace would).
+  if (remaining_input_length(json) >= size_t(length) + SIMDJSON_PADDING) { return json; }
+  uint8_t *scratch = parser->_unpadded_scratch.get();
+  std::memcpy(scratch, json, length);
+  std::memset(scratch + length, ' ', SIMDJSON_PADDING);
+  return scratch;
 }
 
 simdjson_inline void json_iterator::assert_at_document_depth() const noexcept {
@@ -373,6 +389,11 @@ simdjson_inline token_position json_iterator::position() const noexcept {
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
+  // In unpadded mode, use the bounds-safe string parser so we never read past the
+  // end of the input buffer.
+  if (simdjson_unlikely(unpadded())) {
+    return parser->unescape_safe(in, _string_buf_loc, allow_replacement, token.buf + parser->_document_len);
+  }
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape(in, _string_buf_loc, allow_replacement);
 #if !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)

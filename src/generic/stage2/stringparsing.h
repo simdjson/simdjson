@@ -302,6 +302,47 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
   }
 }
 
+/**
+ * Bounds-safe variant of parse_wobbly_string; see parse_string_safe. `buf_end` is one
+ * past the last readable input byte.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string_safe(const uint8_t *src, uint8_t *dst, const uint8_t *buf_end) {
+  while (src + SIMDJSON_PADDING <= buf_end) {
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    if (bs_quote.has_quote_first()) {
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      if (escape_char == 'u') {
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint_wobbly(&src, &dst)) {
+          return nullptr;
+        }
+      } else {
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr;
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+  uint8_t scratch[SIMDJSON_PADDING * 3];
+  const size_t remaining = size_t(buf_end - src); // < SIMDJSON_PADDING
+  std::memset(scratch, ' ', sizeof(scratch));
+  std::memcpy(scratch, src, remaining);
+  return parse_wobbly_string(scratch, dst);
+}
+
 } // namespace stringparsing
 
 } // unnamed namespace

@@ -143,8 +143,16 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string(const uint
   return arm64::stringparsing::parse_string(src, dst, allow_replacement);
 }
 
+simdjson_warn_unused uint8_t *dom_parser_implementation::parse_string_safe(const uint8_t *src, uint8_t *dst, bool allow_replacement, const uint8_t *buf_end) const noexcept {
+  return arm64::stringparsing::parse_string_safe(src, dst, allow_replacement, buf_end);
+}
+
 simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(const uint8_t *src, uint8_t *dst) const noexcept {
   return arm64::stringparsing::parse_wobbly_string(src, dst);
+}
+
+simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string_safe(const uint8_t *src, uint8_t *dst, const uint8_t *buf_end) const noexcept {
+  return arm64::stringparsing::parse_wobbly_string_safe(src, dst, buf_end);
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
