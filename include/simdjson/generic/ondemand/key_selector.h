@@ -730,7 +730,8 @@ simdjson_really_inline std::size_t scan_key_length(const char* p) noexcept {
     // cap (63) keeps every covered offset within the 64-byte padding guarantee, so
     // the SIMD and scalar builds agree.
     static_assert(MaxKeyLen <= 63, "MaxKeyLen must be <= 63 for current SIMD implementations");
-    constexpr std::size_t num_blocks = MaxKeyLen / 16 + 1;
+    // [[maybe_unused]]: the scalar fallback (no NEON/SSE2/LSX) does not use it.
+    [[maybe_unused]] constexpr std::size_t num_blocks = MaxKeyLen / 16 + 1;
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
     for (std::size_t b = 0; b < num_blocks; ++b) {
         uint8x16_t v = vld1q_u8(reinterpret_cast<const uint8_t*>(p) + b * 16);
@@ -850,7 +851,8 @@ simdjson_really_inline bool compare_key_bytes(
     } else if constexpr (MaxKeyLen <= 64) {
         // 3 or 4 16-byte blocks (33..48 -> 3, 49..64 -> 4). stored is zero-padded
         // to exactly num_blocks*16 bytes (KEY_STRIDE), so neither load overruns it.
-        constexpr std::size_t num_blocks = (MaxKeyLen + 15) / 16;
+        // [[maybe_unused]]: the scalar fallback (no NEON/SSE2/LSX) does not use it.
+        [[maybe_unused]] constexpr std::size_t num_blocks = (MaxKeyLen + 15) / 16;
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
         uint8x16_t base = vld1q_u8(idx16);
         uint8x16_t lenv = vdupq_n_u8(static_cast<uint8_t>(len));
