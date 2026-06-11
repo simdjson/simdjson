@@ -244,9 +244,12 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string_safe(const uint8_t *s
   // Within the final SIMDJSON_PADDING bytes: copy what remains into a
   // space-padded scratch (spaces are neither quote nor backslash, so they do not
   // disturb matching) and let the regular parser finish from there. The closing
-  // quote is within `remaining`, so all of parse_string's speculative reads land
-  // inside the scratch.
-  uint8_t scratch[SIMDJSON_PADDING * 4];
+  // quote is within `remaining` (< SIMDJSON_PADDING), so parse_string finds it in
+  // the chunk starting at some offset <= remaining and reads at most
+  // BYTES_PROCESSED (<= SIMDJSON_PADDING) further -- i.e. under 2*SIMDJSON_PADDING.
+  // We size at 3x for a comfortable margin (the unicode look-ahead reads a few
+  // extra bytes past an escape).
+  uint8_t scratch[SIMDJSON_PADDING * 3];
   const size_t remaining = size_t(buf_end - src); // < SIMDJSON_PADDING
   std::memset(scratch, ' ', sizeof(scratch));
   std::memcpy(scratch, src, remaining);

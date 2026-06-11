@@ -144,8 +144,9 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
 inline simdjson_result<element> parser::parse_into_document_unpadded(document& provided_doc, const uint8_t *buf, size_t len) & noexcept {
   // Like parse_into_document with realloc_if_needed=false (no copy, parse in
   // place), but we tell the implementation the buffer is not padded so stage 2
-  // string parsing avoids reading past buf+len. Stage 1, number and atom parsing
-  // are already safe for unpadded input.
+  // avoids reading past buf+len: string unescaping is bounded, near-the-end
+  // numbers are parsed from a padded copy, and atoms use length-aware
+  // validators (see tape_builder). Stage 1 is already safe for unpadded input.
   error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
 
