@@ -9,6 +9,7 @@ add_cpp_test(basictests                 LABELS dom acceptance per_implementation
 add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_fuzz_tests LABELS dom acceptance per_implementation)
 add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
+add_cpp_test(unpadded_tests             LABELS dom acceptance per_implementation)
 add_cpp_test(errortests                 LABELS dom acceptance per_implementation)
 add_cpp_test(extracting_values_example  LABELS dom acceptance per_implementation)
 add_cpp_test(integer_tests              LABELS dom acceptance per_implementation)

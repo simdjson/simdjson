@@ -64,6 +64,7 @@ void print_usage(ostream& out) {
   out << "-s all       - Run all stages." << endl;
   out << "-C           - Leave the buffers cold (includes page allocation and related OS tasks during parsing, speed tied to OS performance)" << endl;
   out << "-H           - Make the buffers hot (reduce page allocation and related OS tasks during parsing) [default]" << endl;
+  out << "-u           - Parse without padding, using dom::parser::parse_unpadded (no padded copy, bounds-safe stage 2)." << endl;
   out << "-a IMPL      - Use the given parser implementation. By default, detects the most advanced" << endl;
   out << "               implementation supported on the host machine." << endl;
   for (auto impl : simdjson::get_available_implementations()) {
@@ -89,6 +90,8 @@ struct option_struct {
 
   bool verbose = false;
   bool tabbed_output = false;
+  // When true, parse with parse_unpadded (no padded copy; bounds-safe stage 2).
+  bool unpadded = false;
   /**
    * Benchmarking on a cold parser instance means that the parsing may include
    * memory allocation at the OS level. This may lead to apparently odd results
@@ -101,8 +104,11 @@ struct option_struct {
   option_struct(int argc, char **argv) {
     int c;
 
-    while ((c = getopt(argc, argv, "vtn:i:a:s:HC")) != -1) {
+    while ((c = getopt(argc, argv, "vtn:i:a:s:HCu")) != -1) {
       switch (c) {
+      case 'u':
+        unpadded = true;
+        break;
       case 'n':
         iterations = atoi(optarg);
         break;
@@ -190,7 +196,7 @@ int main(int argc, char *argv[]) {
   // Set up benchmarkers by reading all files
   vector<benchmarker*> benchmarkers;
   for (size_t i=0; i<options.files.size(); i++) {
-    benchmarkers.push_back(new benchmarker(options.files[i], collector));
+    benchmarkers.push_back(new benchmarker(options.files[i], collector, options.unpadded));
   }
 
   // Run the benchmarks
