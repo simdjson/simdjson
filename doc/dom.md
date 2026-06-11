@@ -924,6 +924,8 @@ If you have a buffer with no trailing padding at all and you want neither to add
 Parsing Without Padding
 ---------------------
 
+(*This feature is currently experimental.*)
+
 If you have a buffer with **no** trailing padding and you do not want the library to copy it into a padded buffer, the DOM API offers `dom::parser::parse_unpadded`:
 
 ```cpp

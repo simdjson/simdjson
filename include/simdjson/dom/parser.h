@@ -253,6 +253,8 @@ public:
    * Parse a JSON document whose buffer is **not** padded, in place and without
    * copying it.
    *
+   * *This feature is currently experimental.*
+   *
    * The standard parse() methods require the input buffer to have at least
    * SIMDJSON_PADDING extra readable bytes after the document (or they copy it
    * into a padded buffer when realloc_if_needed is true). parse_unpadded() lifts
@@ -295,6 +297,8 @@ public:
    * place and without copying. This is to parse_unpadded() what
    * parse_into_document() is to parse(). See parse_unpadded() for the padding and
    * lifetime semantics.
+   *
+   * *This feature is currently experimental.*
    *
    * @param doc The document instance where the parsed data will be stored (on success).
    * @param buf The JSON to parse. Only `len` bytes are read; no padding required.
