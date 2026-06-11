@@ -259,6 +259,11 @@ struct benchmarker {
   const char *filename;
   // Event collector that can be turned on to measure cycles, missed branches, etc.
   event_collector& collector;
+  // When true, parse the input as if it had no trailing padding: use
+  // dom::parser::parse_unpadded (no padded copy) and the bounds-safe stage-2
+  // string parser. Stage 1 is identical either way. This benchmarks the cost of
+  // the unpadded path relative to the standard padded parse.
+  bool unpadded;
 
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
@@ -274,8 +279,8 @@ struct benchmarker {
   // Speed and event summary for the repeatly-parsing mode
   event_aggregate loop{};
 
-  benchmarker(const char *_filename, event_collector& _collector)
-    : filename(_filename), collector(_collector), stats(NULL) {
+  benchmarker(const char *_filename, event_collector& _collector, bool _unpadded = false)
+    : filename(_filename), collector(_collector), unpadded(_unpadded), stats(NULL) {
     verbose() << "[verbose] loading " << filename << endl;
     auto error = padded_string::load(filename).get(json);
     if (error) {
@@ -320,13 +325,19 @@ struct benchmarker {
     allocate_stage << allocate_count;
     // Run it once to get hot buffers
     if(hotbuffers) {
-      auto result = parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
+      auto result = unpadded
+        ? parser.parse_unpadded(reinterpret_cast<const uint8_t *>(json.data()), json.size())
+        : parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
       if (result.error()) {
         exit_error(string("Failed to parse ") + filename + string(":") + error_message(result.error()));
       }
     }
 
     verbose() << "[verbose] allocated memory for parsed JSON " << endl;
+
+    // Tell the implementation whether the timed stage 2 below should use the
+    // bounds-safe (unpadded) string parser. Stage 1 is unaffected.
+    parser.implementation->_unpadded = unpadded;
 
     // Stage 1 (find structurals)
     collector.start();
@@ -366,7 +377,9 @@ struct benchmarker {
 
   void run_loop(size_t iterations) {
     dom::parser parser;
-    auto firstresult = parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
+    auto firstresult = unpadded
+      ? parser.parse_unpadded(reinterpret_cast<const uint8_t *>(json.data()), json.size())
+      : parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
     if (firstresult.error()) {
       exit_error(string("Failed to parse ") + filename + string(":") + error_message(firstresult.error()));
     }
@@ -374,7 +387,9 @@ struct benchmarker {
     collector.start();
     // some users want something closer to "number of documents per second"
     for(size_t i = 0; i < iterations; i++) {
-      auto result = parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
+      auto result = unpadded
+        ? parser.parse_unpadded(reinterpret_cast<const uint8_t *>(json.data()), json.size())
+        : parser.parse(reinterpret_cast<const uint8_t *>(json.data()), json.size());
       if (result.error()) {
         exit_error(string("Failed to parse ") + filename + string(":") + error_message(result.error()));
       }
