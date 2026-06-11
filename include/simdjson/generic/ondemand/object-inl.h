@@ -428,6 +428,7 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::ob
   return first.for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
 }
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
   requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector>
 simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
@@ -436,6 +437,7 @@ simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Func&& on_m
   if (error()) { return {error(), 0}; }
   return first.template for_each<Selector>(std::forward<Func>(on_match));
 }
+#endif
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {
   if (error()) { return error(); }
