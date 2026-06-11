@@ -250,6 +250,60 @@ public:
   simdjson_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
 
   /**
+   * Parse a JSON document whose buffer is **not** padded, in place and without
+   * copying it.
+   *
+   * The standard parse() methods require the input buffer to have at least
+   * SIMDJSON_PADDING extra readable bytes after the document (or they copy it
+   * into a padded buffer when realloc_if_needed is true). parse_unpadded() lifts
+   * that requirement: it parses directly from your buffer of exactly `len` bytes,
+   * never reading past `buf + len`, and never allocating a full padded copy.
+   *
+   *   dom::parser parser;
+   *   std::string_view json = get_json(); // no trailing padding needed
+   *   dom::element doc = parser.parse_unpadded(json);
+   *
+   * This is the convenient way to use simdjson when you cannot (or do not want
+   * to) pad your input, e.g. a std::string_view into a larger buffer or a memory
+   * mapped file whose tail you do not control. It is generally a little slower
+   * than parsing a padded buffer with parse() (the very end of the document is
+   * handled with extra care), but it avoids the O(n) copy that
+   * parse(buf, len, true) performs when realloc_if_needed is true.
+   *
+   * The input is read but not modified, and it must remain valid (and the parser
+   * alive) for as long as you navigate the returned document, exactly like
+   * parse(buf, len, false).
+   *
+   * @param buf The JSON to parse. Only `len` bytes are read; no padding required.
+   * @param len The length of the JSON.
+   * @return An element pointing at the root of the document, or an error:
+   *         - MEMALLOC if the parser does not have enough capacity and allocation fails.
+   *         - CAPACITY if the parser does not have enough capacity and len > max_capacity.
+   *         - other json errors if parsing fails.
+   */
+  inline simdjson_result<element> parse_unpadded(const uint8_t *buf, size_t len) & noexcept;
+  inline simdjson_result<element> parse_unpadded(const uint8_t *buf, size_t len) && =delete;
+  /** @overload parse_unpadded(const uint8_t *buf, size_t len) */
+  simdjson_inline simdjson_result<element> parse_unpadded(const char *buf, size_t len) & noexcept;
+  simdjson_inline simdjson_result<element> parse_unpadded(const char *buf, size_t len) && =delete;
+  /** @overload parse_unpadded(const uint8_t *buf, size_t len) */
+  simdjson_inline simdjson_result<element> parse_unpadded(std::string_view s) & noexcept;
+  simdjson_inline simdjson_result<element> parse_unpadded(std::string_view s) && =delete;
+
+  /**
+   * Parse a non-padded JSON document into a caller-provided document instance, in
+   * place and without copying. This is to parse_unpadded() what
+   * parse_into_document() is to parse(). See parse_unpadded() for the padding and
+   * lifetime semantics.
+   *
+   * @param doc The document instance where the parsed data will be stored (on success).
+   * @param buf The JSON to parse. Only `len` bytes are read; no padding required.
+   * @param len The length of the JSON.
+   */
+  inline simdjson_result<element> parse_into_document_unpadded(document& doc, const uint8_t *buf, size_t len) & noexcept;
+  inline simdjson_result<element> parse_into_document_unpadded(document& doc, const uint8_t *buf, size_t len) && =delete;
+
+  /**
    * Parse a JSON document into a provide document instance and return a temporary reference to it.
    * It is similar to the function `parse` except that instead of parsing into the internal
    * `document` instance associated with the parser, it allows the user to provide a document

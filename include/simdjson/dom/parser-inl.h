@@ -141,6 +141,28 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
   return provided_doc.root();
 }
 
+inline simdjson_result<element> parser::parse_into_document_unpadded(document& provided_doc, const uint8_t *buf, size_t len) & noexcept {
+  // Like parse_into_document with realloc_if_needed=false (no copy, parse in
+  // place), but we tell the implementation the buffer is not padded so stage 2
+  // string parsing avoids reading past buf+len. Stage 1, number and atom parsing
+  // are already safe for unpadded input.
+  error_code _error = ensure_capacity(provided_doc, len);
+  if (_error) { return _error; }
+
+  if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
+    buf += 3;
+    len -= 3;
+  }
+  implementation->_number_as_string = _number_as_string;
+  implementation->_unpadded = true;
+  _error = implementation->parse(buf, len, provided_doc);
+  implementation->_unpadded = false; // restore so later padded parses use the fast path
+
+  if (_error) { return _error; }
+
+  return provided_doc.root();
+}
+
 simdjson_inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const char *buf, size_t len, bool realloc_if_needed) & noexcept {
   return parse_into_document(provided_doc, reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
 }
@@ -167,6 +189,16 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) &
 }
 simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
   return parse(v.data(), v.length(), false);
+}
+
+inline simdjson_result<element> parser::parse_unpadded(const uint8_t *buf, size_t len) & noexcept {
+  return parse_into_document_unpadded(doc, buf, len);
+}
+simdjson_inline simdjson_result<element> parser::parse_unpadded(const char *buf, size_t len) & noexcept {
+  return parse_unpadded(reinterpret_cast<const uint8_t *>(buf), len);
+}
+simdjson_inline simdjson_result<element> parser::parse_unpadded(std::string_view s) & noexcept {
+  return parse_unpadded(reinterpret_cast<const uint8_t *>(s.data()), s.size());
 }
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
