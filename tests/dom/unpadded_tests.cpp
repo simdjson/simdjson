@@ -58,6 +58,152 @@ bool check_matches(const std::string &json) {
   return true;
 }
 
+// Root and non-root numbers in every shape. Root numbers exercise the
+// space-padded-copy path (visit_root_number); non-root numbers are followed by
+// an in-buffer structural character.
+bool numbers() {
+  TEST_START();
+  const std::vector<std::string> nums = {
+    "0", "-0", "1", "-1", "123", "-123", "3.14", "-3.14", "1e10", "1E10",
+    "1e-10", "1.5e+3", "0.0", "0.1", "3.141592653589793",
+    "123456789012345678", "9223372036854775807", "-9223372036854775808",
+    "18446744073709551615", "1.7976931348623157e308", "100000000000000000000",
+  };
+  for (const auto &n : nums) {
+    if (!check_matches(n)) { return false; }                    // root (copy path)
+    if (!check_matches("[" + n + "]")) { return false; }        // last array element
+    if (!check_matches("{\"k\":" + n + "}")) { return false; }  // last object value
+    if (!check_matches("[" + n + ",1]")) { return false; }      // followed by a comma
+    if (!check_matches("[1," + n + "]")) { return false; }
+  }
+  TEST_SUCCEED();
+}
+
+// Sweep a float so its (8-byte-read) fractional digits land at every offset
+// relative to the end of the buffer, including long fractional parts preceded by
+// filler (which a start-position threshold would miss).
+bool number_at_end_sweep() {
+  TEST_START();
+  for (size_t frac = 1; frac <= 3 * SIMDJSON_PADDING + 5; frac++) {
+    std::string num = "0." + std::string(frac, '9');
+    if (!check_matches(num)) { return false; }                       // root float
+    if (!check_matches("[" + num + "]")) { return false; }           // float ends the array
+    if (!check_matches("{\"k\":" + num + "}")) { return false; }     // float ends the object
+    // Long float preceded by filler so it starts far from the end but its digits
+    // still reach the final bytes (exercises the next-structural-based trigger).
+    if (!check_matches("[123456789," + num + "]")) { return false; }
+    // Long integer at the end too.
+    std::string bignum = std::string(frac, '7');
+    if (!check_matches("[1," + bignum + "]")) { return false; }
+  }
+  TEST_SUCCEED();
+}
+
+// Malformed / truncated atom-like tokens at the buffer end. The 'n'/'t'/'f'
+// dispatch validates a value against the full null/true/false atom, reading a
+// fixed number of bytes; a shorter or wrong token at the end of an unpadded
+// buffer must not read past it (caught here under ASAN). All of these are
+// invalid JSON, so padded and unpadded must agree on the error.
+bool malformed_atoms_at_end() {
+  TEST_START();
+  const std::vector<std::string> toks = {
+    "n", "nu", "nul", "nulx", "nall", "t", "tr", "tru", "trux", "ture",
+    "f", "fa", "fal", "fals", "falx", "fale", "true", "false", "null",
+  };
+  for (const auto &t : toks) {
+    if (!check_matches(t)) { return false; }                        // root
+    if (!check_matches("[" + t + "]")) { return false; }            // ends the array
+    if (!check_matches("{\"k\":" + t + "}")) { return false; }      // ends the object
+    if (!check_matches("[" + t + ",1]")) { return false; }
+    if (!check_matches("[" + std::string(SIMDJSON_PADDING, ' ') + t + "]")) { return false; }
+  }
+  TEST_SUCCEED();
+}
+
+// --- Deterministic random JSON generator (for fuzz-style comparison) ----------
+// xorshift64 so any failure is reproducible from its seed.
+struct rng {
+  uint64_t s;
+  explicit rng(uint64_t seed) : s(seed ? seed : 0x9e3779b97f4a7c15ull) {}
+  uint64_t next() { s ^= s << 13; s ^= s >> 7; s ^= s << 17; return s; }
+  uint32_t below(uint32_t n) { return static_cast<uint32_t>(next() % n); }
+};
+
+void gen_string(rng &r, std::string &out) {
+  out += '"';
+  uint32_t n = r.below(24);
+  for (uint32_t i = 0; i < n; i++) {
+    switch (r.below(9)) {
+      case 0: out += "\\n"; break;
+      case 1: out += "\\t"; break;
+      case 2: out += "\\\""; break;
+      case 3: out += "\\\\"; break;
+      case 4: out += "\\/"; break;
+      case 5: out += "\\u00e9"; break;        // 'é' via escape
+      case 6: out += "\xC3\xA9"; break;        // 'é' as raw UTF-8
+      case 7: out += "\xF0\x9F\x98\x80"; break; // emoji (4-byte UTF-8)
+      default: out += static_cast<char>('a' + r.below(26)); break;
+    }
+  }
+  out += '"';
+}
+
+void gen_number(rng &r, std::string &out) {
+  switch (r.below(6)) {
+    case 0: out += std::to_string(r.below(1000000)); break;
+    case 1: out += "-" + std::to_string(r.below(1000000)); break;
+    case 2: out += std::to_string(r.below(1000)) + "." + std::to_string(r.below(1000)); break;
+    case 3: out += std::to_string(r.below(100)) + "e" + std::to_string(int(r.below(20)) - 10); break;
+    case 4: out += "0"; break;
+    default: out += std::to_string(r.next()); break; // big uint64
+  }
+}
+
+void gen_value(rng &r, std::string &out, int depth) {
+  // At depth 0 only emit scalars so generation terminates (and produces many
+  // short documents near the padding boundary).
+  uint32_t choice = (depth <= 0) ? (3 + r.below(4)) : r.below(7);
+  switch (choice) {
+    case 0: { // object
+      out += '{';
+      uint32_t n = r.below(5);
+      for (uint32_t i = 0; i < n; i++) { if (i) { out += ','; } gen_string(r, out); out += ':'; gen_value(r, out, depth - 1); }
+      out += '}';
+      break;
+    }
+    case 1: { // array
+      out += '[';
+      uint32_t n = r.below(6);
+      for (uint32_t i = 0; i < n; i++) { if (i) { out += ','; } gen_value(r, out, depth - 1); }
+      out += ']';
+      break;
+    }
+    case 2: gen_string(r, out); break;
+    case 3: gen_number(r, out); break;
+    case 4: out += "true"; break;
+    case 5: out += "false"; break;
+    default: out += "null"; break;
+  }
+}
+
+// Generate thousands of diverse valid documents and require parse_unpadded to
+// agree with the padded parser on every one. Under ASAN this is the broadest
+// over-read check: many documents end in strings/numbers/escapes at every
+// possible offset relative to the buffer end.
+bool random_documents() {
+  TEST_START();
+  for (uint64_t seed = 1; seed <= 5000; seed++) {
+    rng r(seed * 0x100000001b3ull);
+    std::string json;
+    gen_value(r, json, 4);
+    if (!check_matches(json)) {
+      std::cerr << "random_documents failed at seed " << seed << " json=<" << json << ">" << std::endl;
+      return false;
+    }
+  }
+  TEST_SUCCEED();
+}
+
 // Sweep a string value of every length so its closing quote lands at every
 // offset relative to the SIMDJSON_PADDING boundary and the scratch-copy path.
 bool string_at_end_sweep() {
@@ -114,18 +260,27 @@ bool assorted_documents() {
   TEST_SUCCEED();
 }
 
-// Larger, real-world files parsed unpadded from an exact-size buffer.
+// Larger, real-world files parsed unpadded from an exact-size buffer. Files that
+// are not present in this build are skipped (some are fetched at build time).
 bool real_files() {
   TEST_START();
-  for (const char *path : {TWITTER_JSON, CANADA_JSON, DEMO_JSON, REPEAT_JSON}) {
+  const char *paths[] = {
+    TWITTER_JSON, TWITTER_TIMELINE_JSON, CANADA_JSON, MESH_JSON, APACHE_JSON,
+    GSOC_JSON, REPEAT_JSON, DEMO_JSON, SMALLDEMO_JSON, ADVERSARIAL_JSON,
+    FLATADVERSARIAL_JSON, TRUENULL_JSON,
+  };
+  size_t tested = 0;
+  for (const char *path : paths) {
     simdjson::padded_string contents;
-    ASSERT_SUCCESS( simdjson::padded_string::load(path).get(contents) );
+    if (simdjson::padded_string::load(path).get(contents)) { continue; } // skip missing
     std::string json(contents.data(), contents.size());
     if (!check_matches(json)) {
       std::cerr << "mismatch on file " << path << std::endl;
       return false;
     }
+    tested++;
   }
+  std::cout << "  (compared " << tested << " real files)" << std::endl;
   TEST_SUCCEED();
 }
 
@@ -177,11 +332,40 @@ bool degenerate_inputs() {
   TEST_SUCCEED();
 }
 
+#if SIMDJSON_ENABLE_NAN_INF
+// Only built with -DSIMDJSON_ENABLE_NAN_INF=ON. The non-root inf validator does
+// an 8-byte 'infinity' compare; a malformed inf-spelling at the very end of an
+// unpadded buffer would over-read it without the length-aware guard. Includes
+// valid and malformed tokens, at the document end and behind padding-sized filler.
+bool nan_inf_at_end() {
+  TEST_START();
+  const std::vector<std::string> toks = {
+    "inf", "Inf", "INF", "infinity", "Infinity", "nan", "NaN", "NAN",
+    "in", "inf2", "infi", "infin", "infinit", "na", "nat", "nana",
+  };
+  for (const auto &t : toks) {
+    if (!check_matches(t)) { return false; }                         // root
+    if (!check_matches("[" + t + "]")) { return false; }             // ends the array
+    if (!check_matches("{\"k\":" + t + "}")) { return false; }       // ends the object
+    if (!check_matches("[" + std::string(SIMDJSON_PADDING, ' ') + t + "]")) { return false; }
+  }
+  TEST_SUCCEED();
+}
+#endif
+
 bool run() {
-  return string_at_end_sweep() &&
+  return
+#if SIMDJSON_ENABLE_NAN_INF
+         nan_inf_at_end() &&
+#endif
+         numbers() &&
+         number_at_end_sweep() &&
+         malformed_atoms_at_end() &&
+         string_at_end_sweep() &&
          escapes_at_end() &&
          assorted_documents() &&
          degenerate_inputs() &&
+         random_documents() &&
          real_files() &&
          api_overloads();
 }

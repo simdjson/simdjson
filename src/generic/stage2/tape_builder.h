@@ -212,18 +212,37 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_number(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("number");
-  error_code err = numberparsing::parse_number(value, tape);
+  const uint8_t *num = value;
+  std::unique_ptr<uint8_t[]> copy{}; // keeps a padded copy of the tail alive when used
+  if constexpr (UNPADDED) {
+    // numberparsing reads ahead in 8-byte blocks for floats
+    // (is_made_of_eight_digits_fast reads up to 7 bytes past the digits), so a
+    // number whose digits reach the final bytes of an unpadded buffer would read
+    // past it. *(next_structural) is the offset of the token following this
+    // number, hence an upper bound on where the digits end; when that is within
+    // SIMDJSON_PADDING of the end we parse from a space-padded copy of the tail
+    // (mirroring visit_root_number). This fires only for numbers near the end.
+    if (simdjson_unlikely(*(iter.next_structural) + SIMDJSON_PADDING > iter.dom_parser.len)) {
+      const size_t rl = iter.remaining_len(); // bytes from `value` to the end of the document
+      copy.reset(new (std::nothrow) uint8_t[rl + SIMDJSON_PADDING]);
+      if (copy.get() == nullptr) { return MEMALLOC; }
+      std::memcpy(copy.get(), value, rl);
+      std::memset(copy.get() + rl, ' ', SIMDJSON_PADDING);
+      num = copy.get();
+    }
+  }
+  error_code err = numberparsing::parse_number(num, tape);
   if (simdjson_unlikely(err == BIGINT_ERROR &&
       iter.dom_parser._number_as_string)) {
     // Write big integer to string buffer using the same format as strings.
     // Scan digits the same way parse_number does (skip optional '-', then digits).
-    const uint8_t *p = value;
+    const uint8_t *p = num;
     if (*p == '-') p++;
     while (numberparsing::is_digit(*p)) p++;
-    size_t len = size_t(p - value);
+    size_t len = size_t(p - num);
     tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::BIGINT);
     uint8_t *dst = current_string_buf_loc + sizeof(uint32_t);
-    memcpy(dst, value, len);
+    memcpy(dst, num, len);
     dst += len;
     on_end_string(dst);
     return SUCCESS;
@@ -257,7 +276,12 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_true_atom(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("true");
-  if (!atomparsing::is_valid_true_atom(value)) { return T_ATOM_ERROR; }
+  // The non-length-aware validator reads a fixed 5 bytes; a malformed/truncated
+  // token at the very end of an unpadded buffer would over-read. Use the
+  // length-aware form there (the root variant already does this).
+  const bool ok = UNPADDED ? atomparsing::is_valid_true_atom(value, iter.remaining_len())
+                           : atomparsing::is_valid_true_atom(value);
+  if (!ok) { return T_ATOM_ERROR; }
   tape.append(0, internal::tape_type::TRUE_VALUE);
   return SUCCESS;
 }
@@ -273,7 +297,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_false_atom(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("false");
-  if (!atomparsing::is_valid_false_atom(value)) { return F_ATOM_ERROR; }
+  const bool ok = UNPADDED ? atomparsing::is_valid_false_atom(value, iter.remaining_len())
+                           : atomparsing::is_valid_false_atom(value);
+  if (!ok) { return F_ATOM_ERROR; }
   tape.append(0, internal::tape_type::FALSE_VALUE);
   return SUCCESS;
 }
@@ -289,7 +315,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_null_atom(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("null");
-  if (!atomparsing::is_valid_null_atom(value)) { return N_ATOM_ERROR; }
+  const bool ok = UNPADDED ? atomparsing::is_valid_null_atom(value, iter.remaining_len())
+                           : atomparsing::is_valid_null_atom(value);
+  if (!ok) { return N_ATOM_ERROR; }
   tape.append(0, internal::tape_type::NULL_VALUE);
   return SUCCESS;
 }
@@ -306,7 +334,11 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_nan_atom(json_iterator &iter, const uint8_t *value, error_code errc) noexcept {
   iter.log_value("nan");
-  if (!atomparsing::is_valid_nan_atom(value)) { return errc; }
+  // For unpadded input use the length-aware validator so the 'infinity'-style
+  // 8-byte compare cannot read past the buffer on a malformed token at the end.
+  const bool ok = UNPADDED ? atomparsing::is_valid_nan_atom(value, iter.remaining_len())
+                           : atomparsing::is_valid_nan_atom(value);
+  if (!ok) { return errc; }
   tape.append_double(std::numeric_limits<double>::quiet_NaN());
   return SUCCESS;
 }
@@ -322,8 +354,12 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
 template <bool UNPADDED>
 simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::visit_inf_atom(json_iterator &iter, const uint8_t *value) noexcept {
   iter.log_value("inf");
-  // Because 'inf' is an extension, non a canonical atom, a tape error should be returned on failure
-  if (!atomparsing::is_valid_inf_atom(value)) { return TAPE_ERROR; }
+  // Because 'inf' is an extension, non a canonical atom, a tape error should be returned on failure.
+  // For unpadded input use the length-aware validator so the 'infinity' 8-byte
+  // compare cannot read past the buffer on a malformed token at the end.
+  const bool ok = UNPADDED ? atomparsing::is_valid_inf_atom(value, iter.remaining_len())
+                           : atomparsing::is_valid_inf_atom(value);
+  if (!ok) { return TAPE_ERROR; }
   tape.append_double(std::numeric_limits<double>::infinity());
   return SUCCESS;
 }
