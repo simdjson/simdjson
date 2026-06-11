@@ -139,9 +139,9 @@ void gen_string(rng &r, std::string &out) {
       case 2: out += "\\\""; break;
       case 3: out += "\\\\"; break;
       case 4: out += "\\/"; break;
-      case 5: out += "\\u00e9"; break;        // 'é' via escape
-      case 6: out += "\xC3\xA9"; break;        // 'é' as raw UTF-8
-      case 7: out += "\xF0\x9F\x98\x80"; break; // emoji (4-byte UTF-8)
+      case 5: out += "\\u00e9"; break;          // U+00E9 via JSON \u escape
+      case 6: out += "\xC3\xA9"; break;         // U+00E9 as raw UTF-8
+      case 7: out += "\xF0\x9F\x98\x80"; break; // U+1F600 emoji (4-byte UTF-8)
       default: out += static_cast<char>('a' + r.below(26)); break;
     }
   }
@@ -223,7 +223,7 @@ bool escapes_at_end() {
   TEST_START();
   const std::vector<std::string> tails = {
     R"(\n)", R"(\t)", R"(\")", R"(\\)", R"(\/)", R"(\b)", R"(\f)", R"(\r)",
-    R"(é)", R"(😀)" /* emoji surrogate pair */,
+    "\xC3\xA9" /* U+00E9 'e-acute', raw UTF-8 */, "\xF0\x9F\x98\x80" /* U+1F600 emoji */,
     R"(\uD800)" /* lone high surrogate (valid JSON string) */,
   };
   // Vary a leading filler so the escape sits at many offsets near the end.
@@ -247,7 +247,8 @@ bool assorted_documents() {
     "\"\"", "\"a\"", "\"hello world\"", "1", "[1]", "[1,2,3]",
     R"({"a":1,"b":2,"c":[true,false,null],"d":{"x":"y"}})",
     R"([{"k":"v"},{"k2":"v2"},123,4.5,"end"])",
-    R"({"unicode":"éèê","emoji":"😀"})",
+    // {"unicode":"<U+00E9 U+00E8 U+00EA>","emoji":"<U+1F600>"} as raw UTF-8
+    "{\"unicode\":\"\xC3\xA9\xC3\xA8\xC3\xAA\",\"emoji\":\"\xF0\x9F\x98\x80\"}",
     R"(  {  "spaced" :  "value"  }  )",
     R"({"nested":{"deep":{"deeper":{"value":42}}}})",
     "\"\xEF\xBB\xBF\"", // a string whose content is a BOM (not a leading BOM)
