@@ -944,6 +944,75 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  // Exercises the window fast path end-to-end (via object::for_each on real
+  // documents) with deliberate prefix/quote-boundary key sets. "jo"/"joe" tests
+  // that the closing-quote check inside the window candidate confirmation
+  // correctly distinguishes a short key from a longer one that shares its prefix
+  // (the window byte may point at the quote for the short key). "id"/"screen_name"
+  // exercises a simple offset-0 single-byte discriminator window. Verifies
+  // dispatch to the right index, matched_count, absent/short-circuit behavior,
+  // and that prefix misses do not spuriously match.
+  bool key_selector_window_prefix_quote_for_each() {
+    TEST_START();
+    // "jo" vs "joe": window + p[len] == '"' check is critical.
+    using jo_sel = ondemand::key_selector<"jo", "joe">;
+    static_assert(jo_sel::window.ok, "expected window fast path for jo/joe");
+
+    auto json_both = R"({ "jo": 10, "extra": 99, "joe": 20 })"_padded;
+    SUBTEST("for_each jo/joe both present (prefix+quote boundary)", test_ondemand_doc(json_both, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      int jo_v = 0, joe_v = 0;
+      std::size_t matched = 0;
+      ASSERT_SUCCESS( obj.for_each<jo_sel>([&](std::size_t i, ondemand::value v) -> simdjson::error_code {
+        ++matched;
+        if (i == 0) return v.get(jo_v);
+        if (i == 1) return v.get(joe_v);
+        return SUCCESS;
+      }) );
+      ASSERT_EQUAL(matched, 2u);
+      ASSERT_EQUAL(jo_v, 10);
+      ASSERT_EQUAL(joe_v, 20);
+      return true;
+    }));
+
+    auto json_joe_only = R"({ "joe": 42, "joker": 7 })"_padded;
+    SUBTEST("for_each jo/joe (only longer; short prefix must not match via window)", test_ondemand_doc(json_joe_only, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      int jo_v = -1, joe_v = 0;
+      auto res = obj.for_each<jo_sel>([&](std::size_t i, ondemand::value v) -> simdjson::error_code {
+        if (i == 0) return v.get(jo_v);
+        if (i == 1) return v.get(joe_v);
+        return SUCCESS;
+      });
+      ASSERT_SUCCESS(res);
+      ASSERT_EQUAL(res.matched_count, 1u);
+      ASSERT_EQUAL(joe_v, 42);
+      ASSERT_EQUAL(jo_v, -1); // short handler must not have run
+      return true;
+    }));
+
+    // Single-byte window at offset 0.
+    using id_sel = ondemand::key_selector<"id", "screen_name">;
+    static_assert(id_sel::window.ok, "expected window for id/screen_name");
+    auto json_id = R"({ "id": 123, "screen_name": "lemire", "followers": 5 })"_padded;
+    SUBTEST("for_each id/screen_name (window, early stop, extra keys ignored)", test_ondemand_doc(json_id, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      uint64_t idv = 0;
+      std::string_view sn{};
+      auto res = obj.for_each<id_sel>(idv, sn);
+      ASSERT_SUCCESS(res);
+      ASSERT_EQUAL(res.matched_count, 2u);
+      ASSERT_EQUAL(idv, 123u);
+      ASSERT_EQUAL(sn, "lemire");
+      return true;
+    }));
+
+    TEST_SUCCEED();
+  }
+
   // key_selector::describe() returns a complete, compile-time-derived description
   // of the matching algorithm. This checks the window-mode example used verbatim
   // in doc/basics.md, that describe() is a constant expression, and the stable
@@ -1043,6 +1112,7 @@ namespace object_tests {
            key_selector_matchers_agree() &&
            key_selector_long_keys() &&
            key_selector_long_keys_for_each() &&
+           key_selector_window_prefix_quote_for_each() &&
            key_selector_describe() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS

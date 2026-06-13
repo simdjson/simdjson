@@ -2111,7 +2111,10 @@ You walk an object with `object::for_each`, naming the keys you want either
 type** (`obj.for_each<sel>(...)`). The two are interchangeable: every form below
 works with either spelling. For each *matched* key, in the order it appears in the
 JSON document, `for_each` hands you the value; unselected keys are skipped, and
-iteration stops as soon as all `Selector::size()` keys have matched.
+iteration stops as soon as all `Selector::size()` keys have matched. Like other
+object iteration in simdjson, for_each consumes the object (advancing the
+underlying iterator); after the call the same object instance should not be
+used for further field access or iteration.
 
 What you pass *after* the keys decides what happens with each matched value. The
 forms below all share the same single-pass hot path (the compile-time perfect hash

@@ -25,6 +25,11 @@ namespace ondemand {
  * care about the error (including SIMDJSON_TRY and the test ASSERT_* macros) keep
  * working unchanged.
  *
+ * On error paths (a handler returns a non-SUCCESS error_code, or a direct-target
+ * deserialization via value::get fails), matched_count reflects only the number
+ * of distinct selected keys that were successfully handled *before* the failure;
+ * the failing key is not counted. This is the current behavior.
+ *
  * Marked [[nodiscard]]: for_each surfaces parse/type errors (from a matched
  * value, a returning handler, or the structural walk itself) only through this
  * result, so it must not be silently dropped. This matters most in builds
@@ -196,6 +201,10 @@ public:
    * Selector::size() keys have matched or the object ends. The value is consumed
    * in place, so this is a low-overhead way to extract a known set of fields
    * regardless of their order in the JSON.
+   *
+   * Like other object iteration in simdjson, for_each consumes the object by
+   * advancing the underlying iterator state; after the call the same object
+   * instance should not be used for further field access or iteration.
    *
    * Usage:
    *   using sel_t = ondemand::key_selector<"id", "text", "user">;
