@@ -85,16 +85,19 @@ bool numbers() {
 bool number_at_end_sweep() {
   TEST_START();
   for (size_t frac = 1; frac <= 3 * SIMDJSON_PADDING + 5; frac++) {
-    std::string num = "0." + std::string(frac, '9');
+    std::string num = "0.";
+    num.append(frac, '9');
     if (!check_matches(num)) { return false; }                       // root float
-    if (!check_matches("[" + num + "]")) { return false; }           // float ends the array
-    if (!check_matches("{\"k\":" + num + "}")) { return false; }     // float ends the object
+    { std::string s = "["; s += num; s += "]"; if (!check_matches(s)) { return false; } }           // float ends the array
+    { std::string s = "{\"k\":"; s += num; s += "}"; if (!check_matches(s)) { return false; } }     // float ends the object
     // Long float preceded by filler so it starts far from the end but its digits
     // still reach the final bytes (exercises the next-structural-based trigger).
-    if (!check_matches("[123456789," + num + "]")) { return false; }
+    std::string longfloat = "[123456789,"; longfloat += num; longfloat += "]";
+    if (!check_matches(longfloat)) { return false; }
     // Long integer at the end too.
     std::string bignum = std::string(frac, '7');
-    if (!check_matches("[1," + bignum + "]")) { return false; }
+    std::string longint = "[1,"; longint += bignum; longint += "]";
+    if (!check_matches(longint)) { return false; }
   }
   TEST_SUCCEED();
 }
@@ -115,7 +118,7 @@ bool malformed_atoms_at_end() {
     if (!check_matches("[" + t + "]")) { return false; }            // ends the array
     if (!check_matches("{\"k\":" + t + "}")) { return false; }      // ends the object
     if (!check_matches("[" + t + ",1]")) { return false; }
-    if (!check_matches("[" + std::string(SIMDJSON_PADDING, ' ') + t + "]")) { return false; }
+    { std::string s = "["; s.append(SIMDJSON_PADDING, ' '); s += t; s += "]"; if (!check_matches(s)) { return false; } }
   }
   TEST_SUCCEED();
 }
@@ -151,9 +154,9 @@ void gen_string(rng &r, std::string &out) {
 void gen_number(rng &r, std::string &out) {
   switch (r.below(6)) {
     case 0: out += std::to_string(r.below(1000000)); break;
-    case 1: out += "-" + std::to_string(r.below(1000000)); break;
-    case 2: out += std::to_string(r.below(1000)) + "." + std::to_string(r.below(1000)); break;
-    case 3: out += std::to_string(r.below(100)) + "e" + std::to_string(int(r.below(20)) - 10); break;
+    case 1: out += "-"; out += std::to_string(r.below(1000000)); break;
+    case 2: out += std::to_string(r.below(1000)); out += '.'; out += std::to_string(r.below(1000)); break;
+    case 3: out += std::to_string(r.below(100)); out += 'e'; out += std::to_string(int(r.below(20)) - 10); break;
     case 4: out += "0"; break;
     default: out += std::to_string(r.next()); break; // big uint64
   }
@@ -209,10 +212,14 @@ bool random_documents() {
 bool string_at_end_sweep() {
   TEST_START();
   for (size_t n = 0; n <= 3 * SIMDJSON_PADDING + 5; n++) {
-    std::string json = "{\"k\":\"" + std::string(n, 'a') + "\"}";
+    std::string json = "{\"k\":\"";
+    json.append(n, 'a');
+    json += "\"}";
     if (!check_matches(json)) { return false; }
     // Also a bare root string of length n.
-    std::string root = "\"" + std::string(n, 'b') + "\"";
+    std::string root = "\"";
+    root.append(n, 'b');
+    root += "\"";
     if (!check_matches(root)) { return false; }
   }
   TEST_SUCCEED();
@@ -229,12 +236,43 @@ bool escapes_at_end() {
   // Vary a leading filler so the escape sits at many offsets near the end.
   for (const auto &tail : tails) {
     for (size_t pad = 0; pad <= 2 * SIMDJSON_PADDING; pad++) {
-      std::string json = "{\"k\":\"" + std::string(pad, 'x') + tail + "\"}";
+      std::string json = "{\"k\":\"";
+      json.append(pad, 'x');
+      json += tail;
+      json += "\"}";
       if (!check_matches(json)) { return false; }
-      std::string root = "\"" + std::string(pad, 'y') + tail + "\"";
+      std::string root = "\"";
+      root.append(pad, 'y');
+      root += tail;
+      root += "\"";
       if (!check_matches(root)) { return false; }
     }
   }
+  TEST_SUCCEED();
+}
+
+// Targeted regression test for a surrogate-pair lookahead read that reaches
+// +11 bytes past a backslash in the fast (BYTES_PROCESSED-sized) loop of
+// parse_string_safe. On kernels where BYTES_PROCESSED == SIMDJSON_PADDING
+// (e.g. icelake) this requires a guard margin of at least +12. Stage 1 accepts
+// the document (the final " closes the string) but the escape is a high
+// surrogate followed by a truncated \u; the second hex_to_u32_nocheck reads
+// 4 bytes at the critical offset. We place the backslash at content offset 63
+// so it is bs_dist=63 of the first chunk on 64-byte kernels.
+bool surrogate_pair_deep_lookahead_at_chunk_boundary() {
+  TEST_START();
+  // Root string case.
+  std::string json = "\"";
+  json.append(63, 'a');
+  json += "\\uD800\\u\"";   // high surrogate + \u (truncated) + string closer
+  if (!check_matches(json)) { return false; }
+
+  // Non-root (object value) case.
+  std::string obj = "{\"k\":\"";
+  obj.append(63, 'b');
+  obj += "\\uD800\\u\"}";  // final " closes the string value
+  if (!check_matches(obj)) { return false; }
+
   TEST_SUCCEED();
 }
 
@@ -356,7 +394,7 @@ bool nan_inf_at_end() {
     if (!check_matches(t)) { return false; }                         // root
     if (!check_matches("[" + t + "]")) { return false; }             // ends the array
     if (!check_matches("{\"k\":" + t + "}")) { return false; }       // ends the object
-    if (!check_matches("[" + std::string(SIMDJSON_PADDING, ' ') + t + "]")) { return false; }
+    { std::string s = "["; s.append(SIMDJSON_PADDING, ' '); s += t; s += "]"; if (!check_matches(s)) { return false; } }
   }
   TEST_SUCCEED();
 }
@@ -372,6 +410,7 @@ bool run() {
          malformed_atoms_at_end() &&
          string_at_end_sweep() &&
          escapes_at_end() &&
+         surrogate_pair_deep_lookahead_at_chunk_boundary() &&
          assorted_documents() &&
          degenerate_inputs() &&
          random_documents() &&

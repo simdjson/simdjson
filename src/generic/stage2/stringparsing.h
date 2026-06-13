@@ -212,7 +212,15 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string_safe(const uint8_t *s
   // SIMDJSON_PADDING (>= BYTES_PROCESSED) so copy_and_find never reads past
   // buf_end; escape/Unicode look-aheads read within the string (before the
   // closing quote, which is < buf_end), so they are in bounds here too.
-  while (src + SIMDJSON_PADDING <= buf_end) {
+  // We add margin (+12) for handle_unicode_codepoint's worst-case lookahead:
+  // after seeing a high surrogate, it does hex_to_u32_nocheck on the immediate
+  // following bytes (+6 from the '\'), then (if it sees \u) another
+  // hex_to_u32_nocheck at +8..+11 relative to the backslash that started the
+  // escape. With bs_dist up to BYTES_PROCESSED-1 this reaches +11 from the
+  // chunk start. The +12 margin ensures that even on kernels where
+  // BYTES_PROCESSED == SIMDJSON_PADDING (e.g. icelake) the 4-byte read stays
+  // in-bounds. The scratch fallback (3*PAD) is already safe.
+  while (src + SIMDJSON_PADDING + 12 <= buf_end) {
     auto b = backslash_and_quote{};
     auto bs_quote = b.copy_and_find(src, dst);
     if (bs_quote.has_quote_first()) {
