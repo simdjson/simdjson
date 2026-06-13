@@ -188,7 +188,7 @@ template <typename Selector, typename... Handlers>
            (sizeof...(Handlers) == Selector::size()) &&
            (key_selector_for_each_detail::field_handler<Handlers> && ...)
 simdjson_flatten simdjson_inline for_each_result object::for_each(Handlers&&... on_match)
-    noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+    noexcept(key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>) {
   auto handlers = std::forward_as_tuple(std::forward<Handlers>(on_match)...);
   // Reuse the single (index, value) implementation via a tiny adapter.
   // The adapter is called once per *matched* key (very few); the hot path
@@ -205,7 +205,7 @@ template <constevalutil::fixed_string... Keys, typename... Handlers>
            (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
            (key_selector_for_each_detail::field_handler<Handlers> && ...)
 simdjson_inline for_each_result object::for_each(Handlers&&... on_match)
-    noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+    noexcept(key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>) {
   using Selector = key_selector<Keys...>;
   return this->template for_each<Selector>(std::forward<Handlers>(on_match)...);
 }
@@ -515,7 +515,7 @@ template <typename Selector, typename... Handlers>
            (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
 simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
 simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Handlers&&... on_match)
-    noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+    noexcept(SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>) {
   if (error()) { return {error(), 0}; }
   return first.template for_each<Selector>(std::forward<Handlers>(on_match)...);
 }
@@ -526,7 +526,7 @@ template <constevalutil::fixed_string... Keys, typename... Handlers>
            (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
 simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
 simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Handlers&&... on_match)
-    noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+    noexcept(SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>) {
   if (error()) { return {error(), 0}; }
   return first.template for_each<Keys...>(std::forward<Handlers>(on_match)...);
 }

@@ -64,6 +64,20 @@ inline constexpr bool nothrow_field_handler_v =
     std::is_invocable_v<std::remove_reference_t<H>&, value>
         ? std::is_nothrow_invocable_v<std::remove_reference_t<H>&, value>
         : ::simdjson::nothrow_deserializable<std::remove_cvref_t<H>, value>;
+
+/**
+ * nothrow_field_handler_v folded over a whole handler pack. The variadic
+ * for_each overloads spell their conditional-noexcept specifier with this
+ * single id-expression rather than an inline fold expression. MSVC (VS18)
+ * mishandles a fold-expression that appears directly in the noexcept-specifier
+ * of an out-of-line template definition: it fails to recognize the definition's
+ * specifier as matching the in-class declaration's and reports a spurious
+ * C2382 ("redefinition; different exception specifications"). Naming the fold
+ * here keeps the specifier a plain identifier, which matches reliably.
+ */
+template <typename... Handlers>
+inline constexpr bool nothrow_field_handlers_v =
+    (nothrow_field_handler_v<Handlers> && ...);
 } // namespace key_selector_for_each_detail
 #endif
 
@@ -247,7 +261,7 @@ public:
              (sizeof...(Handlers) == Selector::size()) &&
              (key_selector_for_each_detail::field_handler<Handlers> && ...)
   simdjson_inline for_each_result for_each(Handlers&&... on_match)
-      noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+      noexcept(key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>);
 
   /**
    * Direct-key shorthand. Equivalent to for_each<key_selector<Keys...>>(...).
@@ -261,7 +275,7 @@ public:
              (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
              (key_selector_for_each_detail::field_handler<Handlers> && ...)
   simdjson_inline for_each_result for_each(Handlers&&... on_match)
-      noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+      noexcept(key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>);
 #endif
 
   /**
@@ -532,7 +546,7 @@ public:
              (sizeof...(Handlers) == Selector::size()) &&
              (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
   simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Handlers&&... on_match)
-      noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+      noexcept(SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>);
 
   /**
    * Forwarding overload for the direct-key variadic form.
@@ -542,7 +556,7 @@ public:
              (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
              (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
   simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Handlers&&... on_match)
-      noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+      noexcept(SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handlers_v<Handlers...>);
 
 #if SIMDJSON_STATIC_REFLECTION
   // TODO: move this code into object-inl.h

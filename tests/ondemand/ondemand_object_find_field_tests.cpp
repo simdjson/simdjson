@@ -390,6 +390,64 @@ namespace object_tests {
 
     TEST_SUCCEED();
   }
+
+  // The following key_selector_doc_* functions are exercised, verbatim, as the
+  // examples in doc/basics.md "Key selectors". They use the error-code style (no
+  // throwing conversions) so they compile and run with SIMDJSON_EXCEPTIONS=OFF.
+
+  // Mirrors doc/basics.md "Key selectors": binding fields straight to variables,
+  // calling for_each on the simdjson_result<object> directly (error forwarding),
+  // and reading matched_count.
+  bool key_selector_doc_bind_variables() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    std::string_view name, city;
+    uint64_t age = 0;
+    // for_each is called on the simdjson_result<object> returned by get_object():
+    // had get_object() failed, that error would surface through result.error
+    // without ever touching the object.
+    auto result = doc.get_object().for_each<"name", "city", "age">(name, city, age);
+    ASSERT_SUCCESS(result.error);
+    ASSERT_EQUAL(result.matched_count, 3u);
+    ASSERT_EQUAL(name, "Daniel");
+    ASSERT_EQUAL(city, "Montreal");
+    ASSERT_EQUAL(age, 42u);
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors": matched_count when only some selected
+  // keys are present in the document.
+  bool key_selector_doc_matched_count() {
+    TEST_START();
+    // Of the three selected keys, only "name" appears in the document.
+    auto json = R"({ "name": "Daniel", "age": 42 })"_padded;
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    std::string_view name, city, country;
+    auto result = doc.get_object().for_each<"name", "city", "country">(name, city, country);
+    ASSERT_SUCCESS(result.error);
+    ASSERT_EQUAL(result.matched_count, 1u); // only "name" matched
+    ASSERT_EQUAL(name, "Daniel");
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors": a value-parsing error (type mismatch)
+  // surfaces through the for_each result and stops the walk.
+  bool key_selector_doc_error_propagation() {
+    TEST_START();
+    // "age" is a number; binding it to a std::string_view fails with
+    // INCORRECT_TYPE, and that error is reported through result.error.
+    auto json = R"({ "name": "Daniel", "age": 42 })"_padded;
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    std::string_view name;
+    std::string_view age_as_string; // wrong target type for the number "age"
+    auto result = doc.get_object().for_each<"name", "age">(name, age_as_string);
+    ASSERT_ERROR(result.error, INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
@@ -460,6 +518,53 @@ namespace object_tests {
     ASSERT_EQUAL(title, "On Demand");
     ASSERT_EQUAL(author_name, "Daniel");
     ASSERT_EQUAL(author_handle, "lemire");
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors": mixing a direct variable target and a
+  // lambda in the same call (one handler per key).
+  bool key_selector_doc_mixed() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object obj = doc.get_object();
+
+    std::string_view name;
+    uint64_t age_doubled = 0;
+    // "name" binds straight to a variable; "age" runs a lambda for custom logic.
+    ASSERT_SUCCESS( obj.for_each<"name", "age">(
+      name,
+      [&](ondemand::value v){ age_doubled = 2 * uint64_t(v); }
+    ) );
+    ASSERT_EQUAL(name, "Daniel");
+    ASSERT_EQUAL(age_doubled, 84u);
+    TEST_SUCCEED();
+  }
+
+  // Mirrors doc/basics.md "Key selectors": the index-based single-callback form.
+  bool key_selector_doc_index_callback() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+    ondemand::parser parser;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object obj = doc.get_object();
+
+    using sel = ondemand::key_selector<"name", "city", "age">;
+    std::string_view name, city;
+    uint64_t age = 0;
+    // One callback receives (index, value); the index is the key's position in
+    // the selector ("name"=0, "city"=1, "age"=2).
+    ASSERT_SUCCESS( obj.for_each<sel>([&](std::size_t i, ondemand::value v) {
+      switch (i) {
+        case 0: name = std::string_view(v); break;
+        case 1: city = std::string_view(v); break;
+        case 2: age  = uint64_t(v); break;
+      }
+    }) );
+    ASSERT_EQUAL(name, "Daniel");
+    ASSERT_EQUAL(city, "Montreal");
+    ASSERT_EQUAL(age, 42u);
     TEST_SUCCEED();
   }
 
@@ -932,6 +1037,9 @@ namespace object_tests {
            object_find_field_key_selector() &&
            object_for_each_callback_error() &&
            object_for_each_variadic_no_exceptions() &&
+           key_selector_doc_bind_variables() &&
+           key_selector_doc_matched_count() &&
+           key_selector_doc_error_propagation() &&
            key_selector_matchers_agree() &&
            key_selector_long_keys() &&
            key_selector_long_keys_for_each() &&
@@ -942,6 +1050,8 @@ namespace object_tests {
            key_selector_example_toplevel() &&
            key_selector_example_nested() &&
            key_selector_example_inner_object() &&
+           key_selector_doc_mixed() &&
+           key_selector_doc_index_callback() &&
            for_each_throwing_callback_propagates() &&
 #endif
            true;

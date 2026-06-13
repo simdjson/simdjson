@@ -34,6 +34,14 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
     + [Example Usage](#example-usage)
 - [C++20 Ranges Support](#c20-ranges-support)
 - [Key selectors](#key-selectors)
+  * [Binding fields straight to variables](#binding-fields-straight-to-variables)
+  * [Per-key callbacks](#per-key-callbacks)
+  * [Mixing variables and callbacks](#mixing-variables-and-callbacks)
+  * [A single index-based callback](#a-single-index-based-callback)
+  * [Nested objects](#nested-objects)
+  * [Error handling for key selectors](#error-handling-for-key-selectors)
+  * [Compile-time restrictions](#compile-time-restrictions)
+  * [Inspecting the matching algorithm with `describe()`](#inspecting-the-matching-algorithm-with-describe)
 - [Compile-Time JSONPath and JSON Pointer (C++26 Reflection)](#compile-time-jsonpath-and-json-pointer-c26-reflection)
 - [Error handling](#error-handling)
   * [Error handling examples without exceptions](#error-handling-examples-without-exceptions)
@@ -2098,63 +2106,57 @@ compile-time helpers:
 - `sel::size()` — the number of keys in the selector (here, 3);
 - `sel::key_at(i)` — the key text at index `i`.
 
-You then walk an object with `object::for_each`. There are two supported callback
-styles (both are single-pass and use the same compile-time PHF + `match_raw` hot path):
+You walk an object with `object::for_each`, naming the keys you want either
+**inline** (`obj.for_each<"name", "city">(...)`) or through a **named selector
+type** (`obj.for_each<sel>(...)`). The two are interchangeable: every form below
+works with either spelling. For each *matched* key, in the order it appears in the
+JSON document, `for_each` hands you the value; unselected keys are skipped, and
+iteration stops as soon as all `Selector::size()` keys have matched.
 
-- **Convenient per-key callbacks (recommended for manual/partial extraction)**: pass one
-  callback *per key* (the compiler enforces the count matches). Each callback receives
-  only the `ondemand::value`; no index or `switch` is needed. Position in the pack
-  corresponds to key order in the selector.
+What you pass *after* the keys decides what happens with each matched value. The
+forms below all share the same single-pass hot path (the compile-time perfect hash
+plus a SIMD `match_raw`); choose whichever reads best for the task:
 
-  ```cpp
-  std::string_view name, city;
-  uint64_t age{};
-  obj.for_each<"name", "city", "age">(
-    [&](ondemand::value v){ name = std::string_view(v); },
-    [&](ondemand::value v){ city = std::string_view(v); },
-    [&](ondemand::value v){ age  = uint64_t(v); }
-  );
-  ```
-  Or with a named selector type:
-  ```cpp
-  using fields = ondemand::key_selector<"name", "city", "age">;
-  obj.for_each<fields>( /* same three callbacks */ );
-  ```
+| Form | What you pass | Best for |
+|------|---------------|----------|
+| [Bind to variables](#binding-fields-straight-to-variables) | one variable per key | pulling fields into locals |
+| [Per-key callbacks](#per-key-callbacks) | one callback per key | custom logic per field |
+| [Mixed](#mixing-variables-and-callbacks) | a mix of the two | mostly-plain extraction with one or two special fields |
+| [Single index callback](#a-single-index-based-callback) | one `(index, value)` callback | shared state across keys |
 
-- **Index-based single callback (still available)**: the original form receives
-  `(index, value)` and you dispatch yourself (useful when you want a single lambda
-  with complex shared state or non-trivial logic).
+The number of handlers must equal the number of keys (the compiler enforces this),
+except for the single index-based callback, which takes exactly one callback for
+the whole selector.
 
-  ```cpp
-  obj.for_each<sel>([&](std::size_t i, ondemand::value v) {
-    switch (i) { case 0: ...; case 1: ...; }
-  });
-  ```
+### Binding fields straight to variables
 
-The `for_each` call returns a `for_each_result` (implicitly convertible to
-`error_code`) holding the first error (or `SUCCESS`) and a `matched_count`. A
-`matched_count` equal to `Selector::size()` means every selected key was seen.
-Your per-key (or index) callback may return `void` or `error_code`; a returned
-`error_code` stops the walk and is propagated. This is the way to surface
-value-parsing errors (e.g. type mismatches) from inside extraction.
+The most concise form: pass one *variable* per key, in selector order. The matched
+value is assigned to it via `value::get`, so no lambda is needed. This works with
+or without exceptions; errors are reported through the returned result (see
+[Error handling](#error-handling-for-key-selectors)).
 
+```cpp
+using namespace simdjson;
+auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+ondemand::parser parser;
+auto doc = parser.iterate(json);
 
-Key selectors are subject to a few compile-time restrictions:
+std::string_view name, city;
+uint64_t age = 0;
+// for_each is called on the simdjson_result<object> returned by get_object():
+// had get_object() failed, that error would surface through result.error
+// without ever touching the object.
+auto result = doc.get_object().for_each<"name", "city", "age">(name, city, age);
+// result.error == SUCCESS, result.matched_count == 3
+// name == "Daniel", city == "Montreal", age == 42
+```
 
-- Key length. We currently limit keys to at most 63 characters long.
-  A longer key produces a compile-time error. This limitation could be
-  eased in the future but we expect longer keys to be unusual.
-- Number of keys. The hard limit is 255 keys, but the compile-time perfect-hash
-  construction may fail (again, a compile-time error) for large or awkward key sets,
-  and compilation time grows with the number of keys. For compilation speed,
-  you may use precompiled headers if you have dozens of keys.
-- Key contents. Keys must be distinct, non-empty, and must not contain a
-  backslash, a double quote, or a null byte. Matching is performed against the
-  raw, unescaped JSON key bytes, so a selector key has to equal the key exactly
-  as it appears in the document (no JSON escape processing is applied).
+### Per-key callbacks
 
-This example uses exceptions (see [Disabling exceptions](#disabling-exceptions)
-for the error-code style). The `"age"` field is not selected, so it is skipped.
+Pass one *callback* per key, in selector order. Each callback receives only the
+`ondemand::value` — no index, no `switch`. This example uses exceptions (see
+[Disabling exceptions](#disabling-exceptions) for the error-code style); the
+`"age"` field is not selected, so it is skipped.
 
 ```cpp
 using namespace simdjson;
@@ -2171,15 +2173,22 @@ obj.for_each<"name", "city">(
 // name == "Daniel", city == "Montreal"
 ```
 
-Key selectors work on any object and we do not have
-to include all keys. Here the `"verified"` field is skipped.
+The same call written with a named selector type is equivalent:
+
+```cpp
+using fields = ondemand::key_selector<"name", "city">;
+obj.for_each<fields>( /* the same two callbacks */ );
+```
+
+Key selectors work on any object, and you need not select every key. Here the
+`"verified"` field is simply skipped:
 
 ```cpp
 using namespace simdjson;
 auto json = R"({ "user": { "id": 1186275104, "screen_name": "ayuu0123", "verified": false } })"_padded;
 ondemand::parser parser;
 ondemand::document doc = parser.iterate(json);
-ondemand::object user = doc["user"].get_object();
+ondemand::object user = doc.find_field("user").get_object();
 
 uint64_t id = 0;
 std::string_view handle;
@@ -2190,12 +2199,63 @@ user.for_each<"id", "screen_name">(
 // id == 1186275104, handle == "ayuu0123"
 ```
 
+### Mixing variables and callbacks
+
+The two styles combine freely, one handler per key: bind the plain fields straight
+to variables and use a lambda only where you need custom logic.
+
+```cpp
+using namespace simdjson;
+auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object obj = doc.get_object();
+
+std::string_view name;
+uint64_t age_doubled = 0;
+// "name" binds straight to a variable; "age" runs a lambda for custom logic.
+obj.for_each<"name", "age">(
+  name,
+  [&](ondemand::value v){ age_doubled = 2 * uint64_t(v); }
+);
+// name == "Daniel", age_doubled == 84
+```
+
+### A single index-based callback
+
+If you would rather dispatch yourself — for example to share state across keys, or
+for non-trivial per-key logic — pass a *single* callback that takes
+`(std::size_t index, ondemand::value)`. The index is the key's position in the
+selector.
+
+```cpp
+using namespace simdjson;
+auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal" })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object obj = doc.get_object();
+
+using sel = ondemand::key_selector<"name", "city", "age">;
+std::string_view name, city;
+uint64_t age = 0;
+obj.for_each<sel>([&](std::size_t i, ondemand::value v) {
+  switch (i) {
+    case 0: name = std::string_view(v); break; // "name"
+    case 1: city = std::string_view(v); break; // "city"
+    case 2: age  = uint64_t(v);         break; // "age"
+  }
+});
+// name == "Daniel", city == "Montreal", age == 42
+```
+
+### Nested objects
 
 A selected value can be any JSON value, including a nested object. Because the
-value is consumed inside the callback, you can simply turn it into an
-`ondemand::object` and call `for_each` again with another selector. As always
-with On Demand, the inner object must be fully consumed before the outer
-iteration continues, which the nested `for_each` does for you.
+value is consumed inside its handler, you can turn it into an `ondemand::object`
+and call `for_each` again with another selector. As always with On Demand, the
+inner object must be fully consumed before the outer iteration continues, which the
+nested `for_each` does for you. Returning the nested `for_each` result (it converts
+to `error_code`) lets any inner error propagate out through the outer walk.
 
 ```cpp
 using namespace simdjson;
@@ -2212,17 +2272,116 @@ uint64_t id = 0;
 std::string_view title, author_name, author_handle;
 obj.for_each<"id", "author", "title">(
   [&](ondemand::value v){ id = uint64_t(v); },
-  [&](ondemand::value v) {  // "author" is itself an object
-    ondemand::object author = v.get_object();
-    author.for_each<"name", "handle">(
-      [&](ondemand::value av){ author_name   = std::string_view(av); },
-      [&](ondemand::value av){ author_handle = std::string_view(av); }
-    );
+  [&](ondemand::value v) -> simdjson::error_code {  // "author" is itself an object
+    ondemand::object author;
+    SIMDJSON_TRY( v.get_object().get(author) );
+    // Bind the inner fields directly; return the nested for_each result so any
+    // inner error propagates out through the outer for_each.
+    return author.for_each<"name", "handle">(author_name, author_handle);
   },
   [&](ondemand::value v){ title = std::string_view(v); }
 );
 // id == 42, title == "On Demand", author_name == "Daniel", author_handle == "lemire"
 ```
+
+### Error handling for key selectors
+
+`for_each` returns a `for_each_result` with two members:
+
+- `error` — an `error_code`: the first error encountered (or `SUCCESS`);
+- `matched_count` — how many distinct selector keys were found in the document.
+
+`for_each_result` converts implicitly to `error_code`, so callers that only care
+about the error can write `if (auto e = obj.for_each<...>(...)) { ... }` or use
+`ASSERT_SUCCESS`/`SIMDJSON_TRY` on it directly.
+
+**How many keys matched.** A `matched_count` equal to `Selector::size()` means
+every selected key was present. A smaller count means some keys were absent — not
+an error. Handlers for absent keys are never invoked (so the corresponding
+variables keep their prior value).
+
+```cpp
+using namespace simdjson;
+// Of the three selected keys, only "name" appears in the document.
+auto json = R"({ "name": "Daniel", "age": 42 })"_padded;
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+
+std::string_view name, city, country;
+auto result = doc.get_object().for_each<"name", "city", "country">(name, city, country);
+// result.error == SUCCESS, result.matched_count == 1  (only "name" matched)
+// name == "Daniel"
+```
+
+**Surfacing value-parsing errors.** When you bind a value to a variable, a failing
+conversion (for example a type mismatch) stops the walk and is reported through
+`result.error`. The same happens when a callback returns an `error_code`: returning
+a non-`SUCCESS` code stops the walk at that field and propagates the error. A
+callback may return either `void` or `error_code`.
+
+```cpp
+using namespace simdjson;
+// "age" is a number; binding it to a std::string_view fails with INCORRECT_TYPE.
+auto json = R"({ "name": "Daniel", "age": 42 })"_padded;
+ondemand::parser parser;
+auto doc = parser.iterate(json);
+
+std::string_view name;
+std::string_view age_as_string; // wrong target type for the number "age"
+auto result = doc.get_object().for_each<"name", "age">(name, age_as_string);
+// result.error == INCORRECT_TYPE
+```
+
+**Without exceptions.** The variable-binding and `error_code`-returning callback
+styles never throw, so they are the way to use key selectors when
+`SIMDJSON_EXCEPTIONS` is off: every error reaches you through `result.error`. The
+two examples just above already use this style (note `auto doc = parser.iterate(...)`
+rather than a throwing assignment to `ondemand::document`).
+
+**Calling `for_each` on a `simdjson_result`.** You can call `for_each` directly on
+the `simdjson_result<object>` returned by `get_object()` (as the examples above do)
+without first checking it. If the `get_object()` step failed, that error is returned
+through `result.error` and the object is never touched — one error check covers
+both the lookup and the walk.
+
+**With exceptions.** The throwing conversions (`std::string_view(v)`,
+`uint64_t(v)`) used in the callback examples may throw `simdjson_error` on a type
+mismatch. Because the callback runs inside `for_each`'s own stack frame, `for_each`
+is *conditionally* `noexcept`: it is `noexcept` only when every handler is, so a
+throwing handler's exception propagates out to your `try`/`catch` instead of
+crossing a `noexcept` boundary and calling `std::terminate`.
+
+```cpp
+using namespace simdjson;
+auto json = R"({ "name": 123, "city": "Montreal" })"_padded; // "name" is a number
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+ondemand::object obj = doc.get_object();
+using fields = ondemand::key_selector<"name", "city">;
+try {
+  (void) obj.for_each<fields>([&](std::size_t, ondemand::value v) {
+    (void) std::string_view(v); // throws INCORRECT_TYPE on the numeric "name"
+  });
+} catch (simdjson_error &e) {
+  // e.error() == INCORRECT_TYPE
+}
+```
+
+### Compile-time restrictions
+
+Key selectors are subject to a few compile-time restrictions:
+
+- Key length. We currently limit keys to at most 63 characters long.
+  A longer key produces a compile-time error. This limitation could be
+  eased in the future but we expect longer keys to be unusual.
+- Number of keys. The hard limit is 255 keys, but the compile-time perfect-hash
+  construction may fail (again, a compile-time error) for large or awkward key sets,
+  and compilation time grows with the number of keys. For compilation speed,
+  you may use precompiled headers if you have dozens of keys.
+- Key contents. Keys must be distinct, non-empty, and must not contain a
+  backslash, a double quote, or a null byte. Matching is performed against the
+  raw, unescaped JSON key bytes, so a selector key has to equal the key exactly
+  as it appears in the document (no JSON escape processing is applied).
 
 ### Inspecting the matching algorithm with `describe()`
 
