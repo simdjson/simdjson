@@ -27,12 +27,9 @@ struct simdjson_ondemand_key_selector {
 
   simdjson_inline twitter_user<std::string_view> read_user(ondemand::object user) {
     twitter_user<std::string_view> out{};
-    user.for_each<user_sel_t>([&](std::size_t i, ondemand::value v) {
-      switch (i) {
-        case 0: out.id          = uint64_t(v);         break; // "id"
-        case 1: out.screen_name = std::string_view(v); break; // "screen_name"
-      }
-    });
+    // Bind the two scalar fields straight to the struct members. Input is known
+    // valid here, so we discard the result; a real caller would check it.
+    (void) user.for_each<user_sel_t>(out.id, out.screen_name);
     return out;
   }
 
@@ -40,17 +37,18 @@ struct simdjson_ondemand_key_selector {
     auto doc = parser.iterate(json);
     for (ondemand::object tw : doc.find_field("statuses")) {
       tweet<std::string_view> t{};
-      tw.for_each<tweet_sel_t>([&](std::size_t i, ondemand::value v) {
-        switch (i) {
-          case 0: t.created_at             = std::string_view(v);    break; // "created_at"
-          case 1: t.id                     = uint64_t(v);            break; // "id"
-          case 2: t.result                 = std::string_view(v);    break; // "text"
-          case 3: t.in_reply_to_status_id  = nullable_int(v);        break; // "in_reply_to_status_id"
-          case 4: t.user                   = read_user(v);           break; // "user"
-          case 5: t.retweet_count          = uint64_t(v);            break; // "retweet_count"
-          case 6: t.favorite_count         = uint64_t(v);            break; // "favorite_count"
-        }
-      });
+      // Scalar/string fields bind directly to members; the two fields that need
+      // custom logic (a nullable int and a nested object) use a lambda. Input is
+      // known valid here, so we discard the result; a real caller would check it.
+      (void) tw.for_each<tweet_sel_t>(
+        t.created_at,
+        t.id,
+        t.result,
+        [&](ondemand::value v){ t.in_reply_to_status_id  = nullable_int(v); },
+        [&](ondemand::value v){ t.user                   = read_user(v); },
+        t.retweet_count,
+        t.favorite_count
+      );
       result.emplace_back(std::move(t));
     }
     return true;

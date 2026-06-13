@@ -10,6 +10,10 @@
 #include "simdjson/generic/ondemand/json_iterator.h"
 #include "simdjson/generic/ondemand/value-inl.h"
 #include "simdjson/jsonpathutil.h"
+#include <utility>
+#if SIMDJSON_SUPPORTS_CONCEPTS
+#include <tuple> // std::forward_as_tuple/get for the variadic for_each adapter
+#endif
 #if SIMDJSON_STATIC_REFLECTION
 #include "simdjson/generic/ondemand/json_string_builder.h"  // for constevalutil::fixed_string
 #include <meta>
@@ -65,7 +69,8 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
-  requires key_selector_type<Selector>
+  requires key_selector_type<Selector> &&
+           std::is_invocable_v<Func&, std::size_t, value>
 simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_match)
     noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, value>) {
   // Single pass driven directly by the value_iterator, mirroring
@@ -111,12 +116,13 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
       if (!(seen_word & seen_bit)) {
         seen_word |= seen_bit;
         value matched_value(it.child());
-        // The callback may return either void or an error_code. When it returns an
-        // error_code, we stop at the first non-SUCCESS result and propagate it so
-        // the caller can surface value-parse errors (for example, a type mismatch
-        // on a matched field). A void-returning callback is responsible for
-        // handling its own errors.
-        if constexpr (std::is_same_v<decltype(on_match(idx, matched_value)), error_code>) {
+        // The callback may return void or anything convertible to error_code
+        // (error_code itself, or a for_each_result from a nested for_each). When
+        // it yields an error_code, we stop at the first non-SUCCESS result and
+        // propagate it so the caller can surface value-parse errors (for example,
+        // a type mismatch on a matched field). A void-returning callback is
+        // responsible for handling its own errors.
+        if constexpr (std::is_convertible_v<decltype(on_match(idx, matched_value)), error_code>) {
           // Unlike the internal-error paths above, a callback error does not
           // abandon the iterator: we leave it recoverable so the caller can keep
           // using the object (or its parent) after handling the error.
@@ -138,6 +144,70 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
     if ((error = it.has_next_field().error())) { return {error, matched}; }
   }
   return {SUCCESS, matched};
+}
+
+namespace key_selector_for_each_detail {
+
+// Dispatch a matched value to the I-th handler in the tuple (0-based). A handler
+// is either an invocable taking the value (void- or error_code-returning) or a
+// deserialization target, in which case we assign via value::get. We always
+// return error_code so the core (index, value) for_each can treat the adapter
+// uniformly.
+template <typename Tuple, std::size_t... Is>
+simdjson_really_inline error_code dispatch_value(
+    std::size_t idx, Tuple& handlers, value v, std::index_sequence<Is...>) {
+  error_code err = SUCCESS;
+  auto try_one = [&](auto Ic) {
+    constexpr std::size_t I = decltype(Ic)::value;
+    if (idx == I) {
+      auto&& h = std::get<I>(handlers);
+      using H = std::remove_reference_t<decltype(h)>;
+      if constexpr (std::is_invocable_v<H&, value>) {
+        // A handler returning void runs for its side effects; one returning
+        // anything convertible to error_code (error_code, or a for_each_result
+        // from a nested for_each) has its error captured and propagated.
+        if constexpr (std::is_convertible_v<decltype(h(v)), error_code>) {
+          err = h(v);
+        } else {
+          h(v);
+        }
+      } else {
+        // Direct deserialization target: assign the matched value into it.
+        err = v.get(h);
+      }
+    }
+  };
+  (try_one(std::integral_constant<std::size_t, Is>{}), ...);
+  return err;
+}
+
+} // namespace key_selector_for_each_detail
+
+template <typename Selector, typename... Handlers>
+  requires key_selector_type<Selector> &&
+           (sizeof...(Handlers) == Selector::size()) &&
+           (key_selector_for_each_detail::field_handler<Handlers> && ...)
+simdjson_flatten simdjson_inline for_each_result object::for_each(Handlers&&... on_match)
+    noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+  auto handlers = std::forward_as_tuple(std::forward<Handlers>(on_match)...);
+  // Reuse the single (index, value) implementation via a tiny adapter.
+  // The adapter is called once per *matched* key (very few); the hot path
+  // (iteration + match_raw + seen bitset) stays exactly the same.
+  return this->template for_each<Selector>(
+      [&](std::size_t i, value v) -> error_code {
+        return key_selector_for_each_detail::dispatch_value(
+            i, handlers, v, std::make_index_sequence<Selector::size()>{});
+      });
+}
+
+template <constevalutil::fixed_string... Keys, typename... Handlers>
+  requires (sizeof...(Handlers) == sizeof...(Keys)) &&
+           (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
+           (key_selector_for_each_detail::field_handler<Handlers> && ...)
+simdjson_inline for_each_result object::for_each(Handlers&&... on_match)
+    noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+  using Selector = key_selector<Keys...>;
+  return this->template for_each<Selector>(std::forward<Handlers>(on_match)...);
 }
 #endif
 
@@ -430,12 +500,35 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::ob
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <typename Selector, typename Func>
-  requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector>
+  requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector> &&
+           std::is_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>
 simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
 simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Func&& on_match)
     noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>) {
   if (error()) { return {error(), 0}; }
   return first.template for_each<Selector>(std::forward<Func>(on_match));
+}
+
+template <typename Selector, typename... Handlers>
+  requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector> &&
+           (sizeof...(Handlers) == Selector::size()) &&
+           (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
+simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Handlers&&... on_match)
+    noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+  if (error()) { return {error(), 0}; }
+  return first.template for_each<Selector>(std::forward<Handlers>(on_match)...);
+}
+
+template <constevalutil::fixed_string... Keys, typename... Handlers>
+  requires (sizeof...(Handlers) == sizeof...(Keys)) &&
+           (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
+           (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
+simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result
+simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Handlers&&... on_match)
+    noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...)) {
+  if (error()) { return {error(), 0}; }
+  return first.template for_each<Keys...>(std::forward<Handlers>(on_match)...);
 }
 #endif
 

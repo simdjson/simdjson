@@ -2061,9 +2061,10 @@ On-Demand iterators with no value buffering or extra per-element overhead.
 
 When you need to extract a known, fixed set of fields from a JSON object and you
 do not care about the order in which they appear in the document, *key selectors*
-let you do it in a single pass: each selected key is mapped to a small integer
-index, and you dispatch on that index (typically with a `switch`) instead of
-repeatedly looking up keys by string.
+let you do it in a single pass. You declare the keys at compile time; simdjson
+builds a perfect hash so that each JSON object can be walked once, matching
+field names with a fast (SIMD-accelerated) `match_raw` and invoking your
+callbacks for the selected keys regardless of their order in the document.
 
 **Requirements.** Key selectors rely on C++20 features (concepts and class-type
 non-type template parameters), so they are only available when simdjson is
@@ -2097,21 +2098,45 @@ compile-time helpers:
 - `sel::size()` — the number of keys in the selector (here, 3);
 - `sel::key_at(i)` — the key text at index `i`.
 
-You then walk an object with `object::for_each<sel>(callback)`. The callback is
-invoked once for each field whose key belongs to the selector, **in JSON order**,
-with two arguments: the selector index of the matched key, and the field's value
-(an `ondemand::value` that you must consume inside the callback, before the next
-field is visited, as usual with On Demand). Fields whose keys are not in the
-selector are skipped without being parsed; duplicate keys are ignored after the
-first match; and iteration stops as soon as every selector key has matched or the
-object ends. The `for_each` call returns a `simdjson::error_code` (`SUCCESS`, or the first
-error encountered while walking the object). Your callback may itself return a
-`simdjson::error_code`: when it does, the walk stops at the first non-`SUCCESS`
-result and `for_each` returns it. That is the recommended way to report a
-value-parsing error (e.g. a type mismatch) from inside the callback.
+You then walk an object with `object::for_each`. There are two supported callback
+styles (both are single-pass and use the same compile-time PHF + `match_raw` hot path):
 
-Because the selector index is a small integer, a `switch` is the natural way to
-dispatch on the matched field.
+- **Convenient per-key callbacks (recommended for manual/partial extraction)**: pass one
+  callback *per key* (the compiler enforces the count matches). Each callback receives
+  only the `ondemand::value`; no index or `switch` is needed. Position in the pack
+  corresponds to key order in the selector.
+
+  ```cpp
+  std::string_view name, city;
+  uint64_t age{};
+  obj.for_each<"name", "city", "age">(
+    [&](ondemand::value v){ name = std::string_view(v); },
+    [&](ondemand::value v){ city = std::string_view(v); },
+    [&](ondemand::value v){ age  = uint64_t(v); }
+  );
+  ```
+  Or with a named selector type:
+  ```cpp
+  using fields = ondemand::key_selector<"name", "city", "age">;
+  obj.for_each<fields>( /* same three callbacks */ );
+  ```
+
+- **Index-based single callback (still available)**: the original form receives
+  `(index, value)` and you dispatch yourself (useful when you want a single lambda
+  with complex shared state or non-trivial logic).
+
+  ```cpp
+  obj.for_each<sel>([&](std::size_t i, ondemand::value v) {
+    switch (i) { case 0: ...; case 1: ...; }
+  });
+  ```
+
+The `for_each` call returns a `for_each_result` (implicitly convertible to
+`error_code`) holding the first error (or `SUCCESS`) and a `matched_count`. A
+`matched_count` equal to `Selector::size()` means every selected key was seen.
+Your per-key (or index) callback may return `void` or `error_code`; a returned
+`error_code` stops the walk and is propagated. This is the way to surface
+value-parsing errors (e.g. type mismatches) from inside extraction.
 
 
 Key selectors are subject to a few compile-time restrictions:
@@ -2138,15 +2163,11 @@ ondemand::parser parser;
 ondemand::document doc = parser.iterate(json);
 ondemand::object obj = doc.get_object();
 
-using fields = ondemand::key_selector<"name", "city">;
-
 std::string_view name, city;
-obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
-  switch (i) {
-    case 0: name = std::string_view(v); break; // "name"
-    case 1: city = std::string_view(v); break; // "city"
-  }
-});
+obj.for_each<"name", "city">(
+  [&](ondemand::value v){ name = std::string_view(v); },
+  [&](ondemand::value v){ city = std::string_view(v); }
+);
 // name == "Daniel", city == "Montreal"
 ```
 
@@ -2160,16 +2181,12 @@ ondemand::parser parser;
 ondemand::document doc = parser.iterate(json);
 ondemand::object user = doc["user"].get_object();
 
-using user_fields = ondemand::key_selector<"id", "screen_name">;
-
 uint64_t id = 0;
 std::string_view handle;
-user.for_each<user_fields>([&](std::size_t i, ondemand::value v) {
-  switch (i) {
-    case 0: id     = uint64_t(v);         break; // "id"
-    case 1: handle = std::string_view(v); break; // "screen_name"
-  }
-});
+user.for_each<"id", "screen_name">(
+  [&](ondemand::value v){ id     = uint64_t(v); },
+  [&](ondemand::value v){ handle = std::string_view(v); }
+);
 // id == 1186275104, handle == "ayuu0123"
 ```
 
@@ -2191,27 +2208,19 @@ ondemand::parser parser;
 ondemand::document doc = parser.iterate(json);
 ondemand::object obj = doc.get_object();
 
-using post_fields   = ondemand::key_selector<"id", "author", "title">;
-using author_fields = ondemand::key_selector<"name", "handle">;
-
 uint64_t id = 0;
 std::string_view title, author_name, author_handle;
-obj.for_each<post_fields>([&](std::size_t i, ondemand::value v) {
-  switch (i) {
-    case 0: id = uint64_t(v); break;                       // "id"
-    case 1: {                                              // "author" is itself an object
-      ondemand::object author = v.get_object();
-      author.for_each<author_fields>([&](std::size_t j, ondemand::value av) {
-        switch (j) {
-          case 0: author_name   = std::string_view(av); break; // "name"
-          case 1: author_handle = std::string_view(av); break; // "handle"
-        }
-      });
-      break;
-    }
-    case 2: title = std::string_view(v); break;            // "title"
-  }
-});
+obj.for_each<"id", "author", "title">(
+  [&](ondemand::value v){ id = uint64_t(v); },
+  [&](ondemand::value v) {  // "author" is itself an object
+    ondemand::object author = v.get_object();
+    author.for_each<"name", "handle">(
+      [&](ondemand::value av){ author_name   = std::string_view(av); },
+      [&](ondemand::value av){ author_handle = std::string_view(av); }
+    );
+  },
+  [&](ondemand::value v){ title = std::string_view(v); }
+);
 // id == 42, title == "On Demand", author_name == "Daniel", author_handle == "lemire"
 ```
 

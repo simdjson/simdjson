@@ -24,12 +24,47 @@ namespace ondemand {
  * in the object. Implicitly converts to error_code so existing callers that only
  * care about the error (including SIMDJSON_TRY and the test ASSERT_* macros) keep
  * working unchanged.
+ *
+ * Marked [[nodiscard]]: for_each surfaces parse/type errors (from a matched
+ * value, a returning handler, or the structural walk itself) only through this
+ * result, so it must not be silently dropped. This matters most in builds
+ * without exceptions, where it is the only channel for those errors. To
+ * deliberately ignore it, assign to a variable or cast to void.
  */
-struct for_each_result {
+struct [[nodiscard]] for_each_result {
   error_code error{SUCCESS};
   std::size_t matched_count{0};
   constexpr operator error_code() const noexcept { return error; }
 };
+
+namespace key_selector_for_each_detail {
+/**
+ * A per-key handler for the variadic object::for_each is either:
+ *   - an invocable taking a value (run custom logic for that field), or
+ *   - a deserialization target T, in which case the matched value is assigned
+ *     directly via value::get(T&).
+ * The target form lets callers bind fields straight to variables without a
+ * lambda per key -- e.g. obj.for_each<"name","city","age">(name, city, age) --
+ * while still allowing a lambda in any position when custom logic is needed
+ * (for example to descend into a nested object).
+ */
+template <typename H>
+concept field_handler =
+    std::is_invocable_v<std::remove_reference_t<H>&, value> ||
+    ::simdjson::deserializable<std::remove_cvref_t<H>, value>;
+
+/**
+ * noexcept-ness of handling a single handler: nothrow-invocability for the
+ * callback form, or nothrow-deserializability for the direct-target form
+ * (builtin scalar/string targets are noexcept; custom targets follow their
+ * own tag_invoke noexcept specification).
+ */
+template <typename H>
+inline constexpr bool nothrow_field_handler_v =
+    std::is_invocable_v<std::remove_reference_t<H>&, value>
+        ? std::is_nothrow_invocable_v<std::remove_reference_t<H>&, value>
+        : ::simdjson::nothrow_deserializable<std::remove_cvref_t<H>, value>;
+} // namespace key_selector_for_each_detail
 #endif
 
 /**
@@ -178,9 +213,55 @@ public:
    *          the error can ignore the count.
    */
   template <typename Selector, typename Func>
-    requires key_selector_type<Selector>
+    requires key_selector_type<Selector> &&
+             std::is_invocable_v<Func&, std::size_t, value>
   simdjson_inline for_each_result for_each(Func&& on_match)
       noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, value>);
+
+  /**
+   * Variadic per-key form. Provide exactly one handler per key in the Selector
+   * (compiler-enforced). Handlers are processed in JSON document order for the
+   * matching keys. Each handler is either:
+   *   - a deserialization target (a variable), in which case the matched value
+   *     is assigned to it via value::get -- no lambda required; or
+   *   - an invocable taking the ondemand::value (for custom logic such as
+   *     descending into a nested object). It may return void or error_code;
+   *     returning error_code lets you surface parse/type errors.
+   * The two styles may be mixed freely, one handler per key.
+   *
+   * Example (bind fields straight to variables):
+   *   using fields = ondemand::key_selector<"name", "city", "age">;
+   *   obj.for_each<fields>(name, city, age);
+   *
+   * Example (mixing a target and a lambda):
+   *   obj.for_each<ondemand::key_selector<"id", "user">>(
+   *     id,                                          // assigned via value::get
+   *     [&](ondemand::value v){ u = read_user(v); }  // custom logic
+   *   );
+   *
+   * The index-based single-callback form (taking (size_t, value)) remains
+   * available for shared-state or more complex per-key logic.
+   */
+  template <typename Selector, typename... Handlers>
+    requires key_selector_type<Selector> &&
+             (sizeof...(Handlers) == Selector::size()) &&
+             (key_selector_for_each_detail::field_handler<Handlers> && ...)
+  simdjson_inline for_each_result for_each(Handlers&&... on_match)
+      noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+
+  /**
+   * Direct-key shorthand. Equivalent to for_each<key_selector<Keys...>>(...).
+   * Lets you write the keys inline without a separate using/alias, binding each
+   * field straight to a variable (or a lambda, see the Selector form above):
+   *
+   *   obj.for_each<"name", "city", "age">(name, city, age);
+   */
+  template <constevalutil::fixed_string... Keys, typename... Handlers>
+    requires (sizeof...(Handlers) == sizeof...(Keys)) &&
+             (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
+             (key_selector_for_each_detail::field_handler<Handlers> && ...)
+  simdjson_inline for_each_result for_each(Handlers&&... on_match)
+      noexcept((key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
 #endif
 
   /**
@@ -438,9 +519,30 @@ public:
    * object::for_each for the semantics.
    */
   template <typename Selector, typename Func>
-    requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector>
+    requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector> &&
+             std::is_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>
   simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Func&& on_match)
       noexcept(std::is_nothrow_invocable_v<Func&, std::size_t, SIMDJSON_IMPLEMENTATION::ondemand::value>);
+
+  /**
+   * Forwarding overload for the variadic per-key form (targets and/or lambdas).
+   */
+  template <typename Selector, typename... Handlers>
+    requires SIMDJSON_IMPLEMENTATION::ondemand::key_selector_type<Selector> &&
+             (sizeof...(Handlers) == Selector::size()) &&
+             (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
+  simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Handlers&&... on_match)
+      noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
+
+  /**
+   * Forwarding overload for the direct-key variadic form.
+   */
+  template <constevalutil::fixed_string... Keys, typename... Handlers>
+    requires (sizeof...(Handlers) == sizeof...(Keys)) &&
+             (sizeof...(Keys) >= 1) && (sizeof...(Keys) <= 255) &&
+             (SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::field_handler<Handlers> && ...)
+  simdjson_inline SIMDJSON_IMPLEMENTATION::ondemand::for_each_result for_each(Handlers&&... on_match)
+      noexcept((SIMDJSON_IMPLEMENTATION::ondemand::key_selector_for_each_detail::nothrow_field_handler_v<Handlers> && ...));
 
 #if SIMDJSON_STATIC_REFLECTION
   // TODO: move this code into object-inl.h

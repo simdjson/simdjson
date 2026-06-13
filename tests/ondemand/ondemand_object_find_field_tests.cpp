@@ -275,6 +275,121 @@ namespace object_tests {
     }));
     TEST_SUCCEED();
   }
+
+  // Exercises the variadic for_each forms using ONLY non-throwing operations
+  // (direct variable binding via value::get, and error_code-returning lambdas),
+  // so this test compiles and runs in builds with SIMDJSON_EXCEPTIONS=OFF. It
+  // confirms the API is fully usable without exceptions: errors surface through
+  // the returned for_each_result, and the walk stops at the first failing field.
+  bool object_for_each_variadic_no_exceptions() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal", "extra": 1 })"_padded;
+    using sel3 = ondemand::key_selector<"name", "city", "age">;
+
+    SUBTEST("direct variable binding via named selector", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      std::string_view name, city;
+      uint64_t age = 0;
+      auto error = obj.for_each<sel3>(name, city, age);
+      ASSERT_SUCCESS( error );
+      ASSERT_EQUAL( error.matched_count, 3u );
+      ASSERT_EQUAL( name, "Daniel" );
+      ASSERT_EQUAL( city, "Montreal" );
+      ASSERT_EQUAL( age, 42u );
+      return true;
+    }));
+
+    SUBTEST("direct variable binding via direct keys", test_ondemand_doc(json, [&](auto doc_result) {
+      std::string_view name, city;
+      uint64_t age = 0;
+      ASSERT_SUCCESS( doc_result.get_object().template for_each<"name", "city", "age">(name, city, age) );
+      ASSERT_EQUAL( name, "Daniel" );
+      ASSERT_EQUAL( city, "Montreal" );
+      ASSERT_EQUAL( age, 42u );
+      return true;
+    }));
+
+    SUBTEST("error_code per-value lambdas", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      std::string_view name, city; uint64_t age = 0;
+      ASSERT_SUCCESS( obj.for_each<sel3>(
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(name); },
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(city); },
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(age); }
+      ) );
+      ASSERT_EQUAL( name, "Daniel" );
+      ASSERT_EQUAL( city, "Montreal" );
+      ASSERT_EQUAL( age, 42u );
+      return true;
+    }));
+
+    SUBTEST("mixed direct target and error_code lambda", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      std::string_view name; uint64_t age = 0;
+      ASSERT_SUCCESS( obj.for_each<ondemand::key_selector<"name", "age">>(
+        name, // direct target
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(age); }
+      ) );
+      ASSERT_EQUAL( name, "Daniel" );
+      ASSERT_EQUAL( age, 42u );
+      return true;
+    }));
+
+    SUBTEST("direct binding stops on type mismatch", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      // "age" is a number; binding it to a string_view fails with INCORRECT_TYPE.
+      std::string_view name, city, age_as_string;
+      auto error = obj.for_each<sel3>(name, city, age_as_string);
+      ASSERT_ERROR( error, INCORRECT_TYPE );
+      return true;
+    }));
+
+    SUBTEST("error_code lambda stops the walk", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      // sel3 keys are name(0), city(1), age(2); JSON order is name, age, city.
+      // So the walk fires cb0 (name), then cb2 (age), then cb1 (city). Make the
+      // age callback (fired 2nd) stop the walk, and assert the city callback
+      // (which would fire 3rd) never runs.
+      bool ran_name = false, ran_age = false, ran_city = false;
+      auto error = obj.for_each<sel3>(
+        [&](ondemand::value) -> simdjson::error_code { ran_name = true; return SUCCESS; },
+        [&](ondemand::value) -> simdjson::error_code { ran_city = true; return SUCCESS; },
+        [&](ondemand::value) -> simdjson::error_code { ran_age = true; return INCORRECT_TYPE; }
+      );
+      ASSERT_ERROR( error, INCORRECT_TYPE );
+      ASSERT_TRUE( ran_name );
+      ASSERT_TRUE( ran_age );
+      ASSERT_FALSE( ran_city );
+      return true;
+    }));
+
+    auto nested_json = R"({ "id": 7, "author": { "name": "Lemire", "handle": "x" } })"_padded;
+    SUBTEST("nested for_each result propagates", test_ondemand_doc(nested_json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc_result.get(obj) );
+      uint64_t id = 0; std::string_view author_name, author_handle;
+      ASSERT_SUCCESS( obj.for_each<ondemand::key_selector<"id", "author">>(
+        id,
+        [&](ondemand::value v) -> simdjson::error_code {
+          ondemand::object author;
+          SIMDJSON_TRY( v.get_object().get(author) );
+          // Return the nested for_each_result; it converts to error_code.
+          return author.for_each<"name", "handle">(author_name, author_handle);
+        }
+      ) );
+      ASSERT_EQUAL( id, 7u );
+      ASSERT_EQUAL( author_name, "Lemire" );
+      ASSERT_EQUAL( author_handle, "x" );
+      return true;
+    }));
+
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
@@ -286,15 +401,11 @@ namespace object_tests {
     ondemand::document doc = parser.iterate(json);
     ondemand::object obj = doc.get_object();
 
-    using fields = ondemand::key_selector<"name", "city">;
-
     std::string_view name, city;
-    obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
-      switch (i) {
-        case 0: name = std::string_view(v); break; // "name"
-        case 1: city = std::string_view(v); break; // "city"
-      }
-    });
+    ASSERT_SUCCESS( obj.for_each<"name", "city">(
+      [&](ondemand::value v){ name = std::string_view(v); },
+      [&](ondemand::value v){ city = std::string_view(v); }
+    ) );
     ASSERT_EQUAL(name, "Daniel");
     ASSERT_EQUAL(city, "Montreal");
     TEST_SUCCEED();
@@ -308,16 +419,12 @@ namespace object_tests {
     ondemand::document doc = parser.iterate(json);
     ondemand::object user = doc.find_field("user").get_object();
 
-    using user_fields = ondemand::key_selector<"id", "screen_name">;
-
     uint64_t id = 0;
     std::string_view handle;
-    user.for_each<user_fields>([&](std::size_t i, ondemand::value v) {
-      switch (i) {
-        case 0: id     = uint64_t(v);         break; // "id"
-        case 1: handle = std::string_view(v); break; // "screen_name"
-      }
-    });
+    ASSERT_SUCCESS( user.for_each<"id", "screen_name">(
+      [&](ondemand::value v){ id     = uint64_t(v); },
+      [&](ondemand::value v){ handle = std::string_view(v); }
+    ) );
     ASSERT_EQUAL(id, 1186275104);
     ASSERT_EQUAL(handle, "ayuu0123");
     TEST_SUCCEED();
@@ -336,27 +443,19 @@ namespace object_tests {
     ondemand::document doc = parser.iterate(json);
     ondemand::object obj = doc.get_object();
 
-    using post_fields   = ondemand::key_selector<"id", "author", "title">;
-    using author_fields = ondemand::key_selector<"name", "handle">;
-
     uint64_t id = 0;
     std::string_view title, author_name, author_handle;
-    obj.for_each<post_fields>([&](std::size_t i, ondemand::value v) {
-      switch (i) {
-        case 0: id = uint64_t(v); break;                       // "id"
-        case 1: {                                              // "author" is itself an object
-          ondemand::object author = v.get_object();
-          author.for_each<author_fields>([&](std::size_t j, ondemand::value av) {
-            switch (j) {
-              case 0: author_name   = std::string_view(av); break; // "name"
-              case 1: author_handle = std::string_view(av); break; // "handle"
-            }
-          });
-          break;
-        }
-        case 2: title = std::string_view(v); break;            // "title"
-      }
-    });
+    ASSERT_SUCCESS( obj.for_each<"id", "author", "title">(
+      [&](ondemand::value v){ id = uint64_t(v); },
+      [&](ondemand::value v) -> simdjson::error_code {  // "author" is itself an object
+        ondemand::object author;
+        SIMDJSON_TRY( v.get_object().get(author) );
+        // Bind the inner fields directly; return the nested for_each result so
+        // any inner error propagates out through the outer for_each.
+        return author.for_each<"name", "handle">(author_name, author_handle);
+      },
+      [&](ondemand::value v){ title = std::string_view(v); }
+    ) );
     ASSERT_EQUAL(id, 42);
     ASSERT_EQUAL(title, "On Demand");
     ASSERT_EQUAL(author_name, "Daniel");
@@ -385,7 +484,8 @@ namespace object_tests {
     std::string_view name, city;
     bool threw = false;
     try {
-      obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
+      // The callback throws before for_each can return, so discard the result.
+      (void) obj.for_each<fields>([&](std::size_t i, ondemand::value v) {
         switch (i) {
           case 0: name = std::string_view(v); break; // throws INCORRECT_TYPE
           case 1: city = std::string_view(v); break;
@@ -395,6 +495,162 @@ namespace object_tests {
       threw = true;
     }
     ASSERT_TRUE(threw);
+    TEST_SUCCEED();
+  }
+
+  // Tests for the new variadic per-key callback forms (both <Selector>(cb0,cb1,...)
+  // and the direct-key <"k0","k1",...>(cb0,cb1,...) shorthand). Exercises
+  // success, error_code return, void callbacks, simdjson_result forwarding,
+  // N=1 edge, error propagation, and mixed void/error-cb.
+  bool object_for_each_variadic_callbacks() {
+    TEST_START();
+    auto json = R"({ "name": "Daniel", "age": 42, "city": "Montreal", "extra": 1 })"_padded;
+    using sel3 = ondemand::key_selector<"name", "city", "age">; // 3 keys, order in JSON different
+
+    SUBTEST("variadic via named selector (3 cbs, void)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      std::string_view name, city;
+      uint64_t age = 0;
+      auto res = obj.for_each<sel3>(
+        [&](ondemand::value v){ name = std::string_view(v); },
+        [&](ondemand::value v){ city = std::string_view(v); },
+        [&](ondemand::value v){ age  = uint64_t(v); }
+      );
+      ASSERT_SUCCESS(res.error);
+      ASSERT_EQUAL(res.matched_count, 3u);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(city, "Montreal");
+      ASSERT_EQUAL(age, 42u);
+      return true;
+    }));
+
+    SUBTEST("variadic via named selector (error_code cbs)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      std::string_view name; uint64_t age = 0;
+      ASSERT_SUCCESS( obj.for_each<sel3>(
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(name); },
+        [&](ondemand::value v) -> simdjson::error_code { std::string_view ignore; return v.get(ignore); }, // city ignored
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(age); }
+      ) );
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(age, 42u);
+      return true;
+    }));
+
+    SUBTEST("variadic error propagation (type mismatch in 2nd cb)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      ASSERT_ERROR( obj.for_each<sel3>(
+        [&](ondemand::value v){ (void)std::string_view(v); },
+        [&](ondemand::value v){ (void)std::string_view(v); },
+        [&](ondemand::value v) -> simdjson::error_code { std::string_view s; return v.get(s); } // age (number) as string -> error
+      ), INCORRECT_TYPE );
+      return true;
+    }));
+
+    SUBTEST("direct keys shorthand", test_ondemand_doc(json, [&](auto doc_result) {
+      std::string_view name, city; uint64_t age = 0;
+      auto res = doc_result.get_object().template for_each<"name", "city", "age">(
+        [&](ondemand::value v){ name = std::string_view(v); },
+        [&](ondemand::value v){ city = std::string_view(v); },
+        [&](ondemand::value v){ age  = uint64_t(v); }
+      );
+      ASSERT_SUCCESS(res);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(city, "Montreal");
+      ASSERT_EQUAL(age, 42u);
+      return true;
+    }));
+
+    SUBTEST("N=1 direct key (absent key -> matched_count 0)", test_ondemand_doc(json, [&](auto doc_result) {
+      auto r1 = doc_result.get_object().template for_each<"only">(
+        [&](ondemand::value /*v*/){ /* not present, cb not called */ }
+      );
+      ASSERT_SUCCESS(r1.error);
+      ASSERT_EQUAL(r1.matched_count, 0u);
+      return true;
+    }));
+
+    SUBTEST("N=1 via named selector (present)", test_ondemand_doc(json, [&](auto doc_result) {
+      using only_sel = ondemand::key_selector<"name">;
+      std::string_view nm;
+      auto r2 = doc_result.get_object().template for_each<only_sel>(
+        [&](ondemand::value v) -> simdjson::error_code { return v.get(nm); }
+      );
+      ASSERT_SUCCESS(r2);
+      ASSERT_EQUAL(nm, "Daniel");
+      return true;
+    }));
+
+    SUBTEST("simdjson_result<object> forwarding for variadic", test_ondemand_doc(json, [&](auto doc_result) {
+      std::string_view name; uint64_t a = 0;
+      auto walk = doc_result.get_object().template for_each<"name", "age">(
+        [&](ondemand::value v){ name = std::string_view(v); },
+        [&](ondemand::value v){ a = uint64_t(v); }
+      );
+      ASSERT_SUCCESS(walk.error);
+      ASSERT_EQUAL(walk.matched_count, 2u);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(a, 42u);
+      return true;
+    }));
+
+    SUBTEST("direct variable binding (no lambdas)", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      std::string_view name, city;
+      uint64_t age = 0;
+      // Each key binds straight to a variable; the matched value is assigned via
+      // value::get -- no per-field lambda needed.
+      auto res = obj.for_each<sel3>(name, city, age);
+      ASSERT_SUCCESS(res.error);
+      ASSERT_EQUAL(res.matched_count, 3u);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(city, "Montreal");
+      ASSERT_EQUAL(age, 42u);
+      return true;
+    }));
+
+    SUBTEST("direct variable binding via direct keys", test_ondemand_doc(json, [&](auto doc_result) {
+      std::string_view name, city;
+      uint64_t age = 0;
+      auto res = doc_result.get_object().template for_each<"name", "city", "age">(name, city, age);
+      ASSERT_SUCCESS(res.error);
+      ASSERT_EQUAL(res.matched_count, 3u);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(city, "Montreal");
+      ASSERT_EQUAL(age, 42u);
+      return true;
+    }));
+
+    SUBTEST("mixed targets and lambda", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      std::string_view name;
+      uint64_t age_times_two = 0;
+      // name binds directly; age uses a lambda for custom logic.
+      auto res = obj.for_each<ondemand::key_selector<"name", "age">>(
+        name,
+        [&](ondemand::value v){ age_times_two = 2 * uint64_t(v); }
+      );
+      ASSERT_SUCCESS(res.error);
+      ASSERT_EQUAL(res.matched_count, 2u);
+      ASSERT_EQUAL(name, "Daniel");
+      ASSERT_EQUAL(age_times_two, 84u);
+      return true;
+    }));
+
+    SUBTEST("direct binding type-mismatch propagates error", test_ondemand_doc(json, [&](auto doc_result) {
+      ondemand::object obj;
+      ASSERT_SUCCESS(doc_result.get(obj));
+      std::string_view name;
+      std::string_view age_as_string; // "age" is a number -> INCORRECT_TYPE on get
+      ASSERT_ERROR( obj.for_each<sel3>(name, name, age_as_string), INCORRECT_TYPE );
+      return true;
+    }));
+
     TEST_SUCCEED();
   }
 #endif
@@ -675,12 +931,14 @@ namespace object_tests {
 #if SIMDJSON_SUPPORTS_CONCEPTS
            object_find_field_key_selector() &&
            object_for_each_callback_error() &&
+           object_for_each_variadic_no_exceptions() &&
            key_selector_matchers_agree() &&
            key_selector_long_keys() &&
            key_selector_long_keys_for_each() &&
            key_selector_describe() &&
 #endif
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
+           object_for_each_variadic_callbacks() &&
            key_selector_example_toplevel() &&
            key_selector_example_nested() &&
            key_selector_example_inner_object() &&
