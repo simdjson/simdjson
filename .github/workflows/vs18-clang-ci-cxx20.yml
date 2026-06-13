@@ -1,4 +1,4 @@
-name: VS17-CLANG-CI
+name: VS18-CLANG-CI
 
 on: [push, pull_request]
 
@@ -7,15 +7,15 @@ jobs:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    name: windows-vs17
-    runs-on: windows-latest
+    name: windows-vs18
+    runs-on: windows-2025-vs2026
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {gen: Visual Studio 17 2022, arch: x64, build_type: Debug}
-          - {gen: Visual Studio 17 2022, arch: x64, build_type: Release}
-          - {gen: Visual Studio 17 2022, arch: x64, build_type: RelWithDebInfo}
+          - {gen: Visual Studio 18 2026, arch: x64, build_type: Debug}
+          - {gen: Visual Studio 18 2026, arch: x64, build_type: Release}
+          - {gen: Visual Studio 18 2026, arch: x64, build_type: RelWithDebInfo}
     steps:
     - name: checkout
       uses: actions/checkout@v6

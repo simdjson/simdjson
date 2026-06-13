@@ -1,18 +1,18 @@
-name: VS17-NoExcept-CI
+name: VS18-NoExcept-CI
 
 on: [push, pull_request]
 
 jobs:
   ci:
-    name: windows-vs17
-    runs-on: windows-latest
+    name: windows-vs18
+    runs-on: windows-2025-vs2026
     steps:
     - uses: actions/checkout@v6
     - uses: actions/cache@v5
       with:
         path: dependencies/.cache
         key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
-    - name: 'Run CMake with VS17'
+    - name: 'Run CMake with VS18'
       uses: lukka/run-cmake@v3
       with:
         cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
@@ -20,7 +20,7 @@ jobs:
         buildDirectory: "${{ github.workspace }}/../../_temp/windows"
         cmakeBuildType: Release
         buildWithCMake: true
-        cmakeGenerator: VS16Win64
+        cmakeGenerator: VS18Win64
         cmakeAppendedArgs: -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_DEVELOPER_MODE=ON  -DSIMDJSON_EXCEPTIONS=OFF
         buildWithCMakeArgs: --config Release
 
