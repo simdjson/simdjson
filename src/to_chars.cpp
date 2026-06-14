@@ -35,9 +35,7 @@ Dragonbox always yields the (sometimes shorter) shortest representation.
 */
 namespace dtoa_impl {
 
-// -----------------------------------------------------------------------------
 // 128-bit helpers (no compiler intrinsics, so the code stays portable).
-// -----------------------------------------------------------------------------
 struct uint128 {
   std::uint64_t high;
   std::uint64_t low;
