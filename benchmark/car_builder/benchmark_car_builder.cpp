@@ -10,7 +10,9 @@ event_collector collector;
 struct Car {
   std::string make;
   std::string model;
-  int64_t year; // We deliberately do not include the tire pressure.
+  int64_t year;
+  // The tire pressures are doubles; bench to_chars()
+  std::vector<double> tire_pressure;
 };
 
 std::vector<Car> generate_random_cars(size_t count) {
@@ -31,6 +33,8 @@ std::vector<Car> generate_random_cars(size_t count) {
     car.make = makes[make_dist(rng)];
     car.model = models[model_dist(rng)];
     car.year = year_dist(rng);
+    car.tire_pressure = {pressure_dist(rng), pressure_dist(rng),
+                         pressure_dist(rng), pressure_dist(rng)};
     cars.push_back(std::move(car));
   }
   return cars;
@@ -47,6 +51,8 @@ std::string_view serialize(simdjson::builder::string_builder &sb,
     sb.append_key_value("model", car.model);
     sb.append_comma();
     sb.append_key_value("year", car.year);
+    sb.append_comma();
+    sb.append_key_value("tire_pressure", car.tire_pressure);
     sb.end_object();
   }
   sb.end_array();
@@ -126,3 +132,5 @@ int main() {
   }
   return EXIT_SUCCESS;
 }
+
+
