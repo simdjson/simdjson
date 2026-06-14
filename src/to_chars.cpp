@@ -106,19 +106,14 @@ inline uint128 umul192_lower128(std::uint64_t x, uint128 y) noexcept {
   return {high + high_low.high, high_low.low};
 }
 
-// -----------------------------------------------------------------------------
 // Integer log approximations (exact over the range of inputs we feed them).
-// -----------------------------------------------------------------------------
 inline int floor_log10_pow2(int e) noexcept { return (e * 315653) >> 20; }
 inline int floor_log2_pow10(int e) noexcept { return (e * 1741647) >> 19; }
 inline int floor_log10_pow2_minus_log10_4_over_3(int e) noexcept {
   return (e * 631305 - 261663) >> 21;
 }
 
-// -----------------------------------------------------------------------------
-// Format constants for IEEE-754 binary64, plus the precomputed cache of powers
-// of ten. The constants were verified against the reference implementation.
-// -----------------------------------------------------------------------------
+// Format constants for IEEE-754 binary64, plus the precomputed cache of powers of ten.
 static constexpr int kappa = 2;
 static constexpr int significand_bits = 52;
 static constexpr int total_bits = 64;
@@ -756,9 +751,7 @@ static constexpr uint128 cache[619] = {
     {0xf70867153aa2db38, 0xb8cbee4fc66d1ea8}
 };
 
-// -----------------------------------------------------------------------------
 // Per-format helper routines (binary64 specializations of the Dragonbox steps).
-// -----------------------------------------------------------------------------
 struct compute_mul_result {
   std::uint64_t integer_part;
   bool is_integer;
@@ -848,12 +841,10 @@ inline void remove_trailing_zeros(std::uint64_t &significand, int &exponent) noe
   exponent += s;
 }
 
-// -----------------------------------------------------------------------------
 // Dragonbox core: shortest (significand, exponent) such that
 //   value == significand * 10^exponent
 // for a finite, positive, non-zero binary64 value, decomposed into its raw
 // significand bits and biased exponent bits.
-// -----------------------------------------------------------------------------
 struct decimal_fp {
   std::uint64_t significand;
   int exponent;
@@ -1110,7 +1101,7 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
   return append_exponent(buf, n - 1);
 }
 
-} // namespace dtoa_impl
+} // NS dtoa_impl
 
 /*!
 The format of the resulting decimal representation is similar to printf's %g
@@ -1149,8 +1140,8 @@ char *to_chars(char *first, const char *last, double value) {
   return dtoa_impl::format_buffer(first, len, decimal_exponent, kMinExp,
                                   kMaxExp);
 }
-} // namespace internal
-} // namespace simdjson
+} // NS internal
+} // NS simdjson
 
 #endif // SIMDJSON_SRC_TO_CHARS_CPP
 

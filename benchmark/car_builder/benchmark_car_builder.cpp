@@ -11,8 +11,7 @@ struct Car {
   std::string make;
   std::string model;
   int64_t year;
-  // The tire pressures are doubles; bench to_chars()
-  std::vector<double> tire_pressure;
+  std::vector<double> tire_pressure; // used to bench to_chars()
 };
 
 std::vector<Car> generate_random_cars(size_t count) {
@@ -33,8 +32,11 @@ std::vector<Car> generate_random_cars(size_t count) {
     car.make = makes[make_dist(rng)];
     car.model = models[model_dist(rng)];
     car.year = year_dist(rng);
-    car.tire_pressure = {pressure_dist(rng), pressure_dist(rng),
-                         pressure_dist(rng), pressure_dist(rng)};
+    car.tire_pressure = {
+      pressure_dist(rng),
+      pressure_dist(rng),
+      pressure_dist(rng),
+      pressure_dist(rng)};
     cars.push_back(std::move(car));
   }
   return cars;
