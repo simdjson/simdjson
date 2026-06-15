@@ -26,6 +26,7 @@ add_cpp_test(ondemand_nan_inf_tests                  LABELS ondemand acceptance 
 add_cpp_test(ondemand_number_tests                   LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_number_in_string_tests         LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_tests                   LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_object_find_field_tests        LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_object_error_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_ordering_tests                 LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_parse_api_tests                LABELS ondemand acceptance per_implementation)
@@ -37,6 +38,10 @@ add_cpp_test(ondemand_wrong_type_error_tests         LABELS ondemand acceptance 
 add_cpp_test(ondemand_iterate_many_csv               LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_tests             LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_document_tests    LABELS ondemand acceptance per_implementation)
+# Reflective deserialization through the (default) key-selector path. No special
+# macro is needed: the key-selector + object::for_each path is the default, so
+# this is an ordinary test target.
+add_cpp_test(ondemand_key_selector_reflection_tests  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)

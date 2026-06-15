@@ -40,6 +40,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "json2msgpack/boostjson.h"
 
 #include "partial_tweets/simdjson_ondemand.h"
+#include "partial_tweets/simdjson_ondemand_key_selector.h"
 #include "partial_tweets/simdjson_dom.h"
 #include "partial_tweets/yyjson.h"
 #if SIMDJSON_COMPETITION_ONDEMAND_SAJSON

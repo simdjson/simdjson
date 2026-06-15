@@ -159,6 +159,17 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> field_key() noexcept;
 
   /**
+   * Get the current field's key together with its raw byte length.
+   *
+   * Like field_key(), but also returns the number of raw key bytes (the distance
+   * from the first key byte to the closing quote). The length is recovered from
+   * the structural index -- the next structural token is the ':' -- by stepping
+   * back over any whitespace to the closing quote, avoiding a forward SIMD scan
+   * for the closing quote. Leaves the iterator positioned exactly as field_key().
+   */
+  simdjson_warn_unused simdjson_inline error_code field_key_with_length(raw_json_string &key, std::size_t &len) noexcept;
+
+  /**
    * Pass the : in the field and move to its value.
    */
   simdjson_warn_unused simdjson_inline error_code field_value() noexcept;
