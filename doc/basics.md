@@ -338,6 +338,8 @@ Some users may want to browse code along with the compiled assembly:
 | Memory-mapped file (`padded_memory_map`)     | Automatic via mapping / padded read                                                 | Creates view with sufficient padding                                                   | Non-owning (tied to map lifetime)            | Always available on POSIX (zero-copy `mmap`). On Windows, opt-in via `-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON` (requires Windows 10 1803+ and links `onecore.lib`) and `#include <windows.h>` before simdjson; uses `CreateFileMapping2` + `MapViewOfFile3`. |
 
 
+The On-Demand interface always requires padding. However, for users who absolutely cannot work with padded buffers: our separate DOM API has [a `parse_unpadded` function](https://github.com/simdjson/simdjson/blob/master/doc/dom.md#parsing-without-padding) which allows you to parse safely without padding.
+
 Documents are iterators
 -----------------------
 
