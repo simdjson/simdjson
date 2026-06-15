@@ -220,6 +220,16 @@ public:
   /** Whether to store big integers as strings instead of returning BIGINT_ERROR */
   bool _number_as_string{false};
 
+  /**
+   * Whether the input buffer passed to parse() is *not* padded to len +
+   * SIMDJSON_PADDING bytes. When true, stage 2 string parsing avoids reading
+   * past buf+len (it finishes the final, near-the-end bytes from a small padded
+   * scratch buffer). This is set only by the no-padding DOM parse entry points
+   * (dom::parser::parse_unpadded); the default padded fast path leaves it false
+   * and is unaffected.
+   */
+  bool _unpadded{false};
+
 protected:
 
   // Declaring these so that subclasses can use them to implement their constructors.

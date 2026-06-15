@@ -193,6 +193,77 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
   }
 }
 
+/**
+ * Bounds-safe variant of parse_string for input buffers that are NOT padded to
+ * len + SIMDJSON_PADDING bytes. `buf_end` is one past the last readable input
+ * byte (buf + len). It behaves exactly like parse_string while we are at least
+ * SIMDJSON_PADDING bytes away from buf_end (so every speculative SIMD read stays
+ * in bounds); once within the final SIMDJSON_PADDING bytes it copies the few
+ * remaining bytes into a space-padded scratch buffer and finishes with the
+ * regular parse_string. This keeps the delicate escape/Unicode handling in one
+ * place (the proven parse_string) rather than duplicating it.
+ *
+ * Correctness relies on stage 1 having validated the string, i.e. there is an
+ * unescaped closing quote within [src, buf_end); that quote is therefore inside
+ * the copied scratch, so parse_string finds it without running off the scratch.
+ */
+simdjson_warn_unused simdjson_inline uint8_t *parse_string_safe(const uint8_t *src, uint8_t *dst, bool allow_replacement, const uint8_t *buf_end) {
+  // Far from the end: identical to parse_string's loop. The guard uses
+  // SIMDJSON_PADDING (>= BYTES_PROCESSED) so copy_and_find never reads past
+  // buf_end; escape/Unicode look-aheads read within the string (before the
+  // closing quote, which is < buf_end), so they are in bounds here too.
+  // We add margin (+12) for handle_unicode_codepoint's worst-case lookahead:
+  // after seeing a high surrogate, it does hex_to_u32_nocheck on the immediate
+  // following bytes (+6 from the '\'), then (if it sees \u) another
+  // hex_to_u32_nocheck at +8..+11 relative to the backslash that started the
+  // escape. With bs_dist up to BYTES_PROCESSED-1 this reaches +11 from the
+  // chunk start. The +12 margin ensures that even on kernels where
+  // BYTES_PROCESSED == SIMDJSON_PADDING (e.g. icelake) the 4-byte read stays
+  // in-bounds. The scratch fallback (3*PAD) is already safe.
+  while (src + SIMDJSON_PADDING + 12 <= buf_end) {
+    auto b = backslash_and_quote{};
+    auto bs_quote = b.copy_and_find(src, dst);
+    if (bs_quote.has_quote_first()) {
+      return dst + bs_quote.quote_index();
+    }
+    if (bs_quote.has_backslash()) {
+      auto bs_dist = bs_quote.backslash_index();
+      uint8_t escape_char = src[bs_dist + 1];
+      if (escape_char == 'u') {
+        src += bs_dist;
+        dst += bs_dist;
+        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+          return nullptr;
+        }
+      } else {
+        uint8_t escape_result = escape_map[escape_char];
+        if (escape_result == 0u) {
+          return nullptr;
+        }
+        dst[bs_dist] = escape_result;
+        src += bs_dist + 2;
+        dst += bs_dist + 1;
+      }
+    } else {
+      src += backslash_and_quote::BYTES_PROCESSED;
+      dst += backslash_and_quote::BYTES_PROCESSED;
+    }
+  }
+  // Within the final SIMDJSON_PADDING bytes: copy what remains into a
+  // space-padded scratch (spaces are neither quote nor backslash, so they do not
+  // disturb matching) and let the regular parser finish from there. The closing
+  // quote is within `remaining` (< SIMDJSON_PADDING), so parse_string finds it in
+  // the chunk starting at some offset <= remaining and reads at most
+  // BYTES_PROCESSED (<= SIMDJSON_PADDING) further -- i.e. under 2*SIMDJSON_PADDING.
+  // We size at 3x for a comfortable margin (the unicode look-ahead reads a few
+  // extra bytes past an escape).
+  uint8_t scratch[SIMDJSON_PADDING * 3];
+  const size_t remaining = size_t(buf_end - src); // < SIMDJSON_PADDING
+  std::memset(scratch, ' ', sizeof(scratch));
+  std::memcpy(scratch, src, remaining);
+  return parse_string(scratch, dst, allow_replacement);
+}
+
 simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t *src, uint8_t *dst) {
   // It is not ideal that this function is nearly identical to parse_string.
   while (1) {
