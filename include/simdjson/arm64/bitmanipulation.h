@@ -58,7 +58,14 @@ simdjson_inline int leading_zeroes(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 simdjson_inline int count_ones(uint64_t input_num) {
+#if SIMDJSON_REGULAR_VISUAL_STUDIO
    return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
+#else
+   // if the system supports SVE or CSSC, __builtin_popcountll
+   // might be compiled to fewer single instructions. For CSSC,
+   // __builtin_popcountll is compiled to a single instruction.
+   return __builtin_popcountll(input_num);
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 
