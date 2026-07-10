@@ -259,12 +259,6 @@ Head over to [CONTRIBUTING.md](CONTRIBUTING.md) for information on contributing 
 [HACKING.md](HACKING.md) for information on source, building, and architecture/design.
 
 
-Stars
-------
-
-[![Star History Chart](https://api.star-history.com/svg?repos=simdjson/simdjson&type=Date)](https://www.star-history.com/#simdjson/simdjson&Date)
-
-
 License
 -------
 
