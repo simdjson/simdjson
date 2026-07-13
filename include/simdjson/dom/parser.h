@@ -532,7 +532,7 @@ public:
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
-   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   *                   Defaults to 1MB, which has been a reasonable sweet spot in our tests.
    * @return The stream, or an error. An empty input will yield 0 documents rather than an EMPTY error. Errors:
    *         - MEMALLOC if the parser does not have enough capacity and memory allocation fails
    *         - CAPACITY if the parser does not have enough capacity and batch_size > max_capacity.
