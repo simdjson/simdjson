@@ -243,7 +243,7 @@ public:
    * @param batch_size The batch size to use. MUST be larger than the largest document. The sweet
    *                   spot is cache-related: small enough to fit in cache, yet big enough to
    *                   parse as many documents as possible in one tight loop.
-   *                   Defaults to 10MB, which has been a reasonable sweet spot in our tests.
+   *                   Defaults to 1MB, which has been a reasonable sweet spot in our tests.
    * @param allow_comma_separated @deprecated Use stream_format::comma_delimited instead.
    *                   When true, maps internally to stream_format::comma_delimited.
    *                   Defaults to false.
