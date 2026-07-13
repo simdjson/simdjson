@@ -34,6 +34,11 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_LSX 1
 #endif
 #endif
+#if defined(__loongarch_asx)
+#ifndef SIMDJSON_EXPERIMENTAL_HAS_LASX
+#define SIMDJSON_EXPERIMENTAL_HAS_LASX 1
+#endif
+#endif
 #if defined(__riscv_v_intrinsic) && __riscv_v_intrinsic >= 11000 &&            \
     defined(__riscv_vector)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_RVV
@@ -59,6 +64,9 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_LSX
 #include <lsxintrin.h>
+#endif
+#if SIMDJSON_EXPERIMENTAL_HAS_LASX
+#include <lasxintrin.h>
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_RVV
 #include <riscv_vector.h>
@@ -172,6 +180,35 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
                                 _mm_setzero_si128()));
   }
   return _mm_movemask_epi8(running) != 0;
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
+simdjson_inline bool fast_needs_escaping(std::string_view view) {
+  if (view.size() < 32) {
+    return simple_needs_escaping(view);
+  }
+  size_t i = 0;
+  __m256i running = __lasx_xvreplgr2vr_b(0);
+  __m256i v34 = __lasx_xvreplgr2vr_b(34);
+  __m256i v92 = __lasx_xvreplgr2vr_b(92);
+  __m256i v32 = __lasx_xvreplgr2vr_b(32);
+
+  for (; i + 31 < view.size(); i += 32) {
+    __m256i word =
+        __lasx_xvld(reinterpret_cast<const char *>(view.data() + i), 0);
+    __m256i chunk = __lasx_xvseq_b(word, v34);
+    chunk = __lasx_xvor_v(chunk, __lasx_xvseq_b(word, v92));
+    chunk = __lasx_xvor_v(chunk, __lasx_xvslt_bu(word, v32));
+    running = __lasx_xvor_v(running, chunk);
+  }
+  if (i < view.size()) {
+    __m256i word = __lasx_xvld(
+        reinterpret_cast<const char *>(view.data() + view.length() - 32), 0);
+    __m256i chunk = __lasx_xvseq_b(word, v34);
+    chunk = __lasx_xvor_v(chunk, __lasx_xvseq_b(word, v92));
+    chunk = __lasx_xvor_v(chunk, __lasx_xvslt_bu(word, v32));
+    running = __lasx_xvor_v(running, chunk);
+  }
+  return !__lasx_xbz_v(running);
 }
 #elif SIMDJSON_EXPERIMENTAL_HAS_LSX
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
@@ -324,6 +361,51 @@ find_next_json_quotable_character(const std::string_view view,
   }
 
   // Scalar fallback for remaining bytes
+  size_t current = len - remaining;
+  return find_next_json_quotable_character_scalar(view, current);
+}
+#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
+simdjson_inline size_t
+find_next_json_quotable_character(const std::string_view view,
+                                  size_t location) noexcept {
+  const size_t len = view.size();
+  const uint8_t *ptr =
+      reinterpret_cast<const uint8_t *>(view.data()) + location;
+  size_t remaining = len - location;
+
+  // SIMD constants for characters requiring escape
+  __m256i v34 = __lasx_xvreplgr2vr_b(34);  // '"'
+  __m256i v92 = __lasx_xvreplgr2vr_b(92);  // '\\'
+  __m256i v32 = __lasx_xvreplgr2vr_b(32);  // control char threshold
+
+  while (remaining >= 32) {
+    __m256i word = __lasx_xvld(ptr, 0);
+
+    // Check for quotable characters: '"', '\\', or control chars (< 32)
+    __m256i needs_escape = __lasx_xvseq_b(word, v34);
+    needs_escape = __lasx_xvor_v(needs_escape, __lasx_xvseq_b(word, v92));
+    needs_escape = __lasx_xvor_v(needs_escape, __lasx_xvslt_bu(word, v32));
+
+    if (!__lasx_xbz_v(needs_escape)) {
+      // Found a quotable character - locate it via the four 64-bit lanes
+      uint64_t lane0 = __lasx_xvpickve2gr_du(needs_escape, 0);
+      uint64_t lane1 = __lasx_xvpickve2gr_du(needs_escape, 1);
+      uint64_t lane2 = __lasx_xvpickve2gr_du(needs_escape, 2);
+      uint64_t lane3 = __lasx_xvpickve2gr_du(needs_escape, 3);
+      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
+      if (lane0 != 0) {
+        return offset + trailing_zeroes(lane0) / 8;
+      } else if (lane1 != 0) {
+        return offset + 8 + trailing_zeroes(lane1) / 8;
+      } else if (lane2 != 0) {
+        return offset + 16 + trailing_zeroes(lane2) / 8;
+      } else {
+        return offset + 24 + trailing_zeroes(lane3) / 8;
+      }
+    }
+    ptr += 32;
+    remaining -= 32;
+  }
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
 }
