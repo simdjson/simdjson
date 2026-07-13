@@ -52,6 +52,10 @@ inline std::uint64_t umul64(std::uint32_t x, std::uint32_t y) noexcept {
 
 // 64x64 -> 128 bit multiplication.
 inline uint128 umul128(std::uint64_t x, std::uint64_t y) noexcept {
+#if defined(__SIZEOF_INT128__)
+  const __uint128_t p = static_cast<__uint128_t>(x)*y;
+  return {std::uint64_t(p>>64), std::uint64_t(p)};
+#else // using fallback on 32-bit targets and MSVC
   const std::uint32_t a = std::uint32_t(x >> 32);
   const std::uint32_t b = std::uint32_t(x);
   const std::uint32_t c = std::uint32_t(y >> 32);
@@ -67,10 +71,14 @@ inline uint128 umul128(std::uint64_t x, std::uint64_t y) noexcept {
 
   return {ac + (intermediate >> 32) + (ad >> 32) + (bc >> 32),
           (intermediate << 32) + std::uint32_t(bd)};
+#endif
 }
 
 // High 64 bits of a 64x64 -> 128 bit multiplication.
 inline std::uint64_t umul128_upper64(std::uint64_t x, std::uint64_t y) noexcept {
+#if defined(__SIZEOF_INT128__)
+  return std::uint64_t((static_cast<__uint128_t>(x)*y)>>64);
+#else // using fallback on 32-bit targets and MSVC
   const std::uint32_t a = std::uint32_t(x >> 32);
   const std::uint32_t b = std::uint32_t(x);
   const std::uint32_t c = std::uint32_t(y >> 32);
@@ -85,6 +93,7 @@ inline std::uint64_t umul128_upper64(std::uint64_t x, std::uint64_t y) noexcept 
       (bd >> 32) + std::uint32_t(ad) + std::uint32_t(bc);
 
   return ac + (intermediate >> 32) + (ad >> 32) + (bc >> 32);
+#endif
 }
 
 // Upper 128 bits of a 64 x 128 -> 192 bit multiplication.
