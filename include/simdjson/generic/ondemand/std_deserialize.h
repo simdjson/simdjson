@@ -9,7 +9,11 @@
 #include "simdjson/annotations.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <chrono>
 #include <concepts>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <meta>
@@ -54,6 +58,68 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
     return NUMBER_OUT_OF_RANGE;
   }
   out = static_cast<T>(x);
+  return SUCCESS;
+}
+
+//////////////////////////////
+// Chrono deserialization
+//////////////////////////////
+
+/**
+ * Deserializes an ISO 8601 UTC string of the form "YYYY-MM-DDTHH:MM:SS[.fff]Z"
+ * (as produced by the matching serialize tag_invoke in json_string_builder.h)
+ * back into a std::chrono::system_clock::time_point (issue #2447).
+ */
+error_code tag_invoke(deserialize_tag, auto &val, std::chrono::system_clock::time_point &out) noexcept {
+  std::string_view str;
+  SIMDJSON_TRY(val.get_string().get(str));
+
+  // Shortest valid form is "YYYY-MM-DDTHH:MM:SSZ" (20 chars); allow up to
+  // a few extra digits of fractional seconds.
+  if (str.size() < 20 || str.size() > 30 || str.back() != 'Z') {
+    return INCORRECT_TYPE;
+  }
+
+  char buf[32];
+  std::memcpy(buf, str.data(), str.size());
+  buf[str.size()] = '\0';
+
+  int year, month, day, hour, minute, second;
+  int matched = std::sscanf(buf, "%4d-%2d-%2dT%2d:%2d:%2d",
+      &year, &month, &day, &hour, &minute, &second);
+  if (matched != 6) {
+    return INCORRECT_TYPE;
+  }
+
+  int ms = 0;
+  const char *dot = static_cast<const char *>(std::memchr(buf, '.', str.size()));
+  if (dot != nullptr) {
+    char frac[4] = {'0', '0', '0', '\0'};
+    size_t i = 0;
+    for (const char *p = dot + 1; *p >= '0' && *p <= '9' && i < 3; ++p, ++i) {
+      frac[i] = *p;
+    }
+    ms = (frac[0] - '0') * 100 + (frac[1] - '0') * 10 + (frac[2] - '0');
+  }
+
+  std::tm tm_utc{};
+  tm_utc.tm_year = year - 1900;
+  tm_utc.tm_mon = month - 1;
+  tm_utc.tm_mday = day;
+  tm_utc.tm_hour = hour;
+  tm_utc.tm_min = minute;
+  tm_utc.tm_sec = second;
+
+#if defined(_WIN32)
+  std::time_t secs = _mkgmtime(&tm_utc);
+#else
+  std::time_t secs = timegm(&tm_utc);
+#endif
+  if (secs == static_cast<std::time_t>(-1)) {
+    return INCORRECT_TYPE;
+  }
+
+  out = std::chrono::system_clock::from_time_t(secs) + std::chrono::milliseconds(ms);
   return SUCCESS;
 }
 
