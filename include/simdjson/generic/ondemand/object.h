@@ -117,10 +117,11 @@ public:
    *
    * ```cpp
    * simdjson::ondemand::parser parser;
-   * auto obj = parser.parse(R"( { "x": 1, "y": 2, "z": 3 } )"_padded);
-   * double z = obj.find_field("z");
-   * double y = obj.find_field("y");
-   * double x = obj.find_field("x");
+   * auto json = R"( { "x": 1, "y": 2, "z": 3 } )"_padded;
+   * auto doc = parser.iterate(json);
+   * double z = doc.find_field("z");
+   * double y = doc.find_field("y");
+   * double x = doc.find_field("x");
    * ```
    * If you have multiple fields with a matching key ({"x": 1,  "x": 1}) be mindful
    * that only one field is returned.

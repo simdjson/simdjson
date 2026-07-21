@@ -313,7 +313,7 @@ public:
   /**
    * Cast this JSON value to an unsigned integer.
    *
-   * @returns A signed 64-bit integer.
+   * @returns A unsigned 64-bit integer.
    * @exception simdjson_error(INCORRECT_TYPE) If the JSON value is not a 64-bit unsigned integer.
    */
   simdjson_inline operator uint64_t() noexcept(false);
