@@ -92,6 +92,20 @@ public:
    *          Returns INCORRECT_TYPE if the JSON element is not a string.
    */
   inline simdjson_result<std::string_view> get_string() const noexcept;
+
+  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  /**
+   * Cast this element to a C++20 UTF-8 string.
+   *
+   * The string is guaranteed to be valid UTF-8.
+   *
+   * @returns A std::u8string_view. The string is stored in the parser and will be invalidated the next time it
+   *          parses a document or when it is destroyed.
+   *          Returns INCORRECT_TYPE if the JSON element is not a string.
+   */
+  inline simdjson_result<std::u8string_view> get_u8string() const noexcept;
+  #endif
+
   /**
    * Cast this element to a signed integer.
    *
@@ -545,6 +559,9 @@ public:
   simdjson_inline simdjson_result<const char *> get_c_str() const noexcept;
   simdjson_inline simdjson_result<size_t> get_string_length() const noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() const noexcept;
+  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  simdjson_inline simdjson_result<std::u8string_view> get_u8string() const noexcept;
+  #endif
   simdjson_inline simdjson_result<int64_t> get_int64() const noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() const noexcept;
   simdjson_inline simdjson_result<double> get_double() const noexcept;
