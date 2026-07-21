@@ -5,6 +5,10 @@
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <chrono>
+#include <cstdio>
+#include <ctime>
+
 namespace simdjson {
 
 
@@ -33,6 +37,39 @@ struct has_custom_serialization<T, std::void_t<
 
 template <typename T>
 constexpr bool require_custom_serialization = has_custom_serialization<T>::value;
+
+/**
+ * Serializes std::chrono::system_clock::time_point as an ISO 8601 UTC string
+ * with millisecond precision, e.g. "2024-01-15T10:30:00.123Z" (issue #2447).
+ */
+template <typename builder_type>
+void tag_invoke(serialize_tag, builder_type &b, const std::chrono::system_clock::time_point &tp) {
+  using namespace std::chrono;
+
+  auto ms_since_epoch = duration_cast<milliseconds>(tp.time_since_epoch()).count();
+  auto secs = static_cast<std::time_t>(ms_since_epoch / 1000);
+  auto ms = static_cast<int>(ms_since_epoch % 1000);
+  if (ms < 0) {
+    // time points before 1970 can produce a negative remainder; normalize
+    // so that ms is always in [0, 999].
+    ms += 1000;
+    secs -= 1;
+  }
+
+  std::tm tm_utc{};
+#if defined(_WIN32)
+  gmtime_s(&tm_utc, &secs);
+#else
+  gmtime_r(&secs, &tm_utc);
+#endif
+
+  char buf[32];
+  int n = std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
+      tm_utc.tm_year + 1900, tm_utc.tm_mon + 1, tm_utc.tm_mday,
+      tm_utc.tm_hour, tm_utc.tm_min, tm_utc.tm_sec, ms);
+
+  b.escape_and_append_with_quotes(std::string_view(buf, static_cast<size_t>(n)));
+}
 #else
 struct has_custom_serialization : std::false_type {};
 #endif // SIMDJSON_SUPPORTS_CONCEPTS

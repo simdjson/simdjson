@@ -768,6 +768,53 @@ bool car_test_simple_complete_exceptions() {
 #endif // SIMDJSON_EXCEPTIONS
 #endif // SIMDJSONS_SUPPORT_RANGES
 
+#if SIMDJSON_SUPPORTS_CONCEPTS
+bool chrono_time_point_test() {
+  TEST_START();
+  using namespace std::chrono;
+  // 2024-01-15T10:30:00.123Z, chosen to exercise both a non-zero
+  // millisecond component and a UTC calendar date.
+  system_clock::time_point tp =
+      system_clock::from_time_t(1705314600) + milliseconds(123);
+
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(tp).get(s));
+  ASSERT_EQUAL(s, "\"2024-01-15T10:30:00.123Z\"");
+
+  simdjson::padded_string json(s);
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+
+  system_clock::time_point round_tripped;
+  ASSERT_SUCCESS(doc.get(round_tripped));
+  ASSERT_EQUAL(round_tripped.time_since_epoch().count(),
+               tp.time_since_epoch().count());
+  TEST_SUCCEED();
+}
+
+bool chrono_time_point_epoch_test() {
+  TEST_START();
+  using namespace std::chrono;
+  system_clock::time_point tp = system_clock::from_time_t(0);
+
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(tp).get(s));
+  ASSERT_EQUAL(s, "\"1970-01-01T00:00:00.000Z\"");
+
+  simdjson::padded_string json(s);
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+
+  system_clock::time_point round_tripped;
+  ASSERT_SUCCESS(doc.get(round_tripped));
+  ASSERT_EQUAL(round_tripped.time_since_epoch().count(),
+               tp.time_since_epoch().count());
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 #if SIMDJSON_EXCEPTIONS
 bool car_test_exception() {
   TEST_START();
@@ -796,6 +843,7 @@ bool run() {
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
          issue2549() && car_test_template() && serialize_optional() &&
+         chrono_time_point_test() && chrono_time_point_epoch_test() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF
