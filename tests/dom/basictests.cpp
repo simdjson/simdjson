@@ -918,6 +918,22 @@ namespace dom_api_tests {
 #endif // SIMDJSON_ENABLE_DEPRECATED_API
 
   SIMDJSON_POP_DISABLE_WARNINGS
+  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  bool u8string_value() {
+    std::cout << "Running " << __func__ << std::endl;
+    string json(R"({ "str": "hello u8" })");
+    dom::parser parser;
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+
+    std::u8string_view u8_val;
+    ASSERT_SUCCESS( object["str"].get_u8string().get(u8_val) );
+
+    ASSERT_EQUAL( u8_val.size(), 8 );
+    ASSERT_TRUE( u8_val == u8"hello u8" );
+    return true;
+  }
+  #endif
 
   bool object_iterator() {
     std::cout << "Running " << __func__ << std::endl;
@@ -1426,6 +1442,9 @@ namespace dom_api_tests {
 
   bool run() {
     return
+    #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+           u8string_value() &&
+    #endif
     #if SIMDJSON_ENABLE_DEPRECATED_API
         ParsedJson_Iterator_test() &&
     #endif
