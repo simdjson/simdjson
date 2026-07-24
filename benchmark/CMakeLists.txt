@@ -12,6 +12,12 @@ endif(SIMDJSON_STATIC_REFLECTION)
 add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
 
+# Multi-threaded ondemand stream parsing (experimental). Requires exceptions and
+# threads; both are on by default.
+if(SIMDJSON_EXCEPTIONS AND SIMDJSON_ENABLE_THREADS)
+  add_executable(bench_parallel_stream bench_parallel_stream.cpp)
+endif()
+
 if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
   add_executable(bench_parse_call bench_parse_call.cpp)

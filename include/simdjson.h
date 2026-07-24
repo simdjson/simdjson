@@ -54,6 +54,7 @@
 #include "simdjson/dom.h"
 #include "simdjson/builder.h"
 #include "simdjson/ondemand.h"
+#include "simdjson/ondemand_parallel.h"
 #include "simdjson/convert.h"
 #include "simdjson/convert-inl.h"
 
