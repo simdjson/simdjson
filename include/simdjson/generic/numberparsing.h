@@ -682,7 +682,7 @@ simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *cons
     // - Therefore, if the number is positive and lower than that, it's overflow.
     // - The value we are looking at is less than or equal to INT64_MAX.
     //
-    }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INVALID_NUMBER(src); }
+    }  else if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return BIGINT_NUMBER(src); }
   }
 
   // Write unsigned if it does not fit in a signed integer.
