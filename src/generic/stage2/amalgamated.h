@@ -6,5 +6,4 @@
 // All other declarations
 #include <generic/stage2/json_iterator.h>
 #include <generic/stage2/stringparsing.h>
-#include <generic/stage2/structural_iterator.h>
 #include <generic/stage2/tape_builder.h>
