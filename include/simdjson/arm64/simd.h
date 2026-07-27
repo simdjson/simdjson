@@ -104,6 +104,27 @@ namespace {
     }
   };
 
+  // True if at least one byte of `mask` is set. The caller must guarantee that
+  // `mask` is the result of a comparison, i.e. that each byte is either 0x00 or
+  // 0xFF.
+  //
+  // NEON has no movemask. vshrn_n_u16(..., 4) keeps bits [4:11] of each 16-bit
+  // lane, which is the high nibble of the even byte and the low nibble of the odd
+  // byte: four bits per byte, and no set byte can vanish as long as the bytes are
+  // 0x00 or 0xFF. (It would vanish for arbitrary data: 0x0001 narrows to 0x00.)
+  // Comparing the narrowed value as a double then keeps the answer in the FP
+  // register file, so this is shrn+fcmp and the branch reads NZCV directly: no
+  // across-lane reduction and no SIMD-to-general-purpose-register transfer.
+  //
+  // Two floating-point subtleties, both harmless here: fcmp treats -0.0 as zero,
+  // but 0x8000000000000000 needs a 0x80 byte, which a comparison mask cannot
+  // produce; and an all-ones narrowing is a quiet NaN, which compares unordered
+  // (so != 0.0 is true, as wanted) and raises no invalid-operation exception.
+  simdjson_inline bool any_mask_byte_set(const uint8x16_t mask) {
+    const uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(mask), 4);
+    return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
+  }
+
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base_u8<bool> {
@@ -140,7 +161,9 @@ namespace {
       return vget_lane_u64(
           vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(*this), 4)), 0);
     }
-    simdjson_inline bool any() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
+    // A simd8<bool> is only ever produced by a comparison, so its bytes are
+    // always 0x00 or 0xFF and any_mask_byte_set applies.
+    simdjson_inline bool any() const { return any_mask_byte_set(*this); }
   };
 
   // Unsigned bytes
@@ -216,7 +239,11 @@ namespace {
 
     // Bit-specific operations
     simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
-    simdjson_inline bool any_bits_set_anywhere() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
+    // Unlike simd8<bool>, the bytes here are arbitrary, so we cannot narrow them
+    // directly: vtstq_u8 against itself first turns "byte is nonzero" into a
+    // comparison mask, which is one cheap instruction in exchange for dropping
+    // the across-lane reduction and the SIMD-to-GPR transfer.
+    simdjson_inline bool any_bits_set_anywhere() const { return any_mask_byte_set(vtstq_u8(*this, *this)); }
     simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
     template<int N>
     simdjson_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
