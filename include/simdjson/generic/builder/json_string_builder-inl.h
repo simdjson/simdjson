@@ -151,7 +151,11 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
     running = vorrq_u8(running, vceqq_u8(word, v92));
     running = vorrq_u8(running, vcltq_u8(word, vdupq_n_u8(32)));
   }
-  return vmaxvq_u32(vreinterpretq_u32_u8(running)) != 0;
+  // `running` is an OR of comparison results, so every byte is 0x00 or 0xFF and
+  // the narrow-then-fcmp test applies: no across-lane reduction, no
+  // SIMD-to-general-purpose-register transfer. See escape_any below.
+  const uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(running), 4);
+  return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
 }
 #elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
 simdjson_inline bool fast_needs_escaping(std::string_view view) {
@@ -564,6 +568,266 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
   }
 }
 
+// The block-based escaper below needs, from each instruction set, a 16-byte
+// vector type, a handful of loads, a store, and two ways to look at a
+// byte-wise comparison: a cheap "is any byte set?" test for the common case,
+// and a mask with one or more bits per byte for the rare one that needs
+// fixing up.
+//
+// Getting that answer out of the vector register file is the step that
+// decides whether this is worth doing at all, so each instruction set uses
+// its own cheapest form. Instruction sets without one keep the
+// scan-then-copy implementation at the bottom of this section.
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
+#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
+#endif
+
+#if SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2
+
+using escape_vector = __m128i;
+// Mask bits that each input byte contributes to escape_bitmask().
+static constexpr unsigned escape_mask_bits = 1;
+
+simdjson_inline escape_vector escape_load16(const uint8_t *p) noexcept {
+  return _mm_loadu_si128(reinterpret_cast<const __m128i *>(p));
+}
+
+simdjson_inline void escape_store16(char *out, escape_vector v) noexcept {
+  _mm_storeu_si128(reinterpret_cast<__m128i *>(out), v);
+}
+
+// Builds a vector whose bytes 0..7 come from a and bytes 8..15 from b.
+simdjson_inline escape_vector escape_load8x2(const uint8_t *a,
+                                             const uint8_t *b) noexcept {
+  return _mm_unpacklo_epi64(
+      _mm_loadl_epi64(reinterpret_cast<const __m128i *>(a)),
+      _mm_loadl_epi64(reinterpret_cast<const __m128i *>(b)));
+}
+
+// Builds a vector whose bytes 0..3 come from a and bytes 4..7 from b. The
+// upper half is unspecified; callers only look at the low eight bits.
+simdjson_inline escape_vector escape_load4x2(const uint8_t *a,
+                                             const uint8_t *b) noexcept {
+  int32_t a32, b32;
+  memcpy(&a32, a, 4);
+  memcpy(&b32, b, 4);
+  return _mm_unpacklo_epi32(_mm_cvtsi32_si128(a32), _mm_cvtsi32_si128(b32));
+}
+
+// Sets every bit of byte k when byte k of v is a quotable character ('"',
+// '\\' or a control character).
+simdjson_inline escape_vector escape_flags(escape_vector v) noexcept {
+  const __m128i v34 = _mm_set1_epi8(34); // '"'
+  const __m128i v92 = _mm_set1_epi8(92); // '\\'
+  const __m128i v31 = _mm_set1_epi8(31); // for control char detection
+  __m128i needs_escape = _mm_cmpeq_epi8(v, v34);
+  needs_escape = _mm_or_si128(needs_escape, _mm_cmpeq_epi8(v, v92));
+  return _mm_or_si128(
+      needs_escape, _mm_cmpeq_epi8(_mm_subs_epu8(v, v31), _mm_setzero_si128()));
+}
+
+// True when any byte needs escaping. Kept separate from escape_bitmask
+// because some instruction sets can answer it without leaving the vector
+// register file; on SSE2 the compiler folds the two together.
+simdjson_inline bool escape_any(escape_vector flags) noexcept {
+  return _mm_movemask_epi8(flags) != 0;
+}
+
+// A 16-bit mask with bit k set when byte k needed escaping.
+simdjson_inline uint64_t escape_bitmask(escape_vector flags) noexcept {
+  return uint64_t(uint32_t(_mm_movemask_epi8(flags)));
+}
+
+#else // SIMDJSON_EXPERIMENTAL_HAS_NEON
+
+using escape_vector = uint8x16_t;
+static constexpr unsigned escape_mask_bits = 4;
+
+simdjson_inline escape_vector escape_load16(const uint8_t *p) noexcept {
+  return vld1q_u8(p);
+}
+
+simdjson_inline void escape_store16(char *out, escape_vector v) noexcept {
+  vst1q_u8(reinterpret_cast<uint8_t *>(out), v);
+}
+
+simdjson_inline escape_vector escape_load8x2(const uint8_t *a,
+                                             const uint8_t *b) noexcept {
+  uint64_t a64, b64;
+  memcpy(&a64, a, 8);
+  memcpy(&b64, b, 8);
+  return vreinterpretq_u8_u64(vsetq_lane_u64(b64, vdupq_n_u64(a64), 1));
+}
+
+simdjson_inline escape_vector escape_load4x2(const uint8_t *a,
+                                             const uint8_t *b) noexcept {
+  uint32_t a32, b32;
+  memcpy(&a32, a, 4);
+  memcpy(&b32, b, 4);
+  return vreinterpretq_u8_u32(vsetq_lane_u32(b32, vdupq_n_u32(a32), 1));
+}
+
+simdjson_inline escape_vector escape_flags(escape_vector v) noexcept {
+  uint8x16_t needs_escape = vceqq_u8(v, vdupq_n_u8(34));              // '"'
+  needs_escape = vorrq_u8(needs_escape, vceqq_u8(v, vdupq_n_u8(92))); // '\\'
+  return vorrq_u8(needs_escape, vcltq_u8(v, vdupq_n_u8(32)));
+}
+
+// NEON has no movemask. Narrowing to four bits per byte and then moving to a
+// general-purpose register would cost a cross-register-file transfer on every
+// block; comparing the narrowed value as a double instead keeps the answer in
+// the FP register file, so the common "nothing to escape" case is shrn+fcmp.
+simdjson_inline bool escape_any(escape_vector flags) noexcept {
+  uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(flags), 4);
+  return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
+}
+
+// Four bits per byte rather than one: escape_block and the tail paths scale
+// their shifts by escape_mask_bits to match.
+simdjson_inline uint64_t escape_bitmask(escape_vector flags) noexcept {
+  uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(flags), 4);
+  return vget_lane_u64(vreinterpret_u64_u8(narrowed), 0);
+}
+
+#endif // instruction set selection
+
+// The escape bitmask of a 16-byte block.
+simdjson_inline uint64_t escape_mask(escape_vector v) noexcept {
+  return escape_bitmask(escape_flags(v));
+}
+
+// Escapes the bytes of src in the range [i, blockend), given that m is the
+// (non-zero) escape mask for that range: the escape_mask_bits-wide lane of m
+// at byte k is non-zero when src[i + k] requires escaping. Returns the updated
+// output pointer.
+simdjson_inline char *escape_block(const uint8_t *src, char *out, size_t i,
+                                   size_t blockend, uint64_t m) noexcept {
+  constexpr uint64_t lane = (uint64_t(1) << escape_mask_bits) - 1;
+
+  // Copy the run of safe bytes that precedes the first escape.
+  size_t tz = trailing_zeroes(m);
+  size_t first = tz / escape_mask_bits;
+  memcpy(out, src + i, first);
+  out += first;
+
+  size_t pos = i + first;
+  uint64_t mm = m & ~(lane << tz); // remaining escapes
+  while (true) {
+    escape_json_char(char(src[pos]), out);
+    // Copy everything up to the next escape (or to the end of the block).
+    size_t next = blockend;
+    if (mm) {
+      tz = trailing_zeroes(mm);
+      next = i + tz / escape_mask_bits;
+    }
+    size_t seglen = next - pos - 1;
+    memcpy(out, src + pos + 1, seglen);
+    out += seglen;
+    if (!mm) {
+      break;
+    }
+    mm &= ~(lane << tz);
+    pos = next;
+  }
+  return out;
+}
+
+// Copies n bytes with n < 16, using overlapping loads and stores. It never
+// reads more than n bytes from src, nor writes more than n bytes to dst.
+simdjson_inline void copy_lt16(char *dst, const uint8_t *src,
+                               size_t n) noexcept {
+  if (n >= 8) {
+    memcpy(dst, src, 8);
+    memcpy(dst + n - 8, src + n - 8, 8);
+  } else if (n >= 4) {
+    memcpy(dst, src, 4);
+    memcpy(dst + n - 4, src + n - 4, 4);
+  } else if (n > 0) {
+    dst[0] = char(src[0]);
+    dst[n >> 1] = char(src[n >> 1]);
+    dst[n - 1] = char(src[n - 1]);
+  }
+}
+
+// Writes the escaped version of input to out, returning the number of bytes
+// written.
+//
+// The input is consumed in blocks of 16 bytes. The common case is a block that
+// contains no quotable character: it is copied with a single unaligned SIMD
+// store, so we make one pass over the data instead of scanning it and then
+// copying it. A block that does contain quotable characters is fixed up from
+// the escape mask, which lets us memcpy whole runs between escapes rather than
+// rescanning.
+//
+// The tail (fewer than 16 bytes) is covered with overlapping loads that stay
+// entirely within the input: we never read past the end of the string, so this
+// is safe under sanitizers and for inputs that end at a page boundary. Inputs
+// shorter than 4 bytes fall back to scalar code.
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  const size_t len = input.size();
+  const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
+  const char *const initout = out;
+
+  size_t i = 0;
+  while (i + 16 <= len) {
+    escape_vector word = escape_load16(src + i);
+    escape_vector flags = escape_flags(word);
+    if (simdjson_likely(!escape_any(flags))) {
+      escape_store16(out, word);
+      out += 16;
+    } else {
+      out = escape_block(src, out, i, i + 16, escape_bitmask(flags));
+    }
+    i += 16;
+  }
+  if (i < len) {
+    const size_t rem = len - i;
+    uint64_t m;
+    if (len >= 16) {
+      // The last 16 bytes of the input are in bounds. Bit k of that block's
+      // mask belongs to input position len - 16 + k, so shift it down to align
+      // bit 0 with position i.
+      m = escape_mask(escape_load16(src + len - 16)) >>
+          (escape_mask_bits * (16 - rem));
+    } else if (len >= 8) {
+      // Here i == 0 and rem == len. Two overlapping 8-byte loads cover
+      // [0, 8) and [len - 8, len), which is the whole input since len < 16.
+      uint64_t mm = escape_mask(escape_load8x2(src, src + len - 8));
+      constexpr uint64_t low8 = (uint64_t(1) << (escape_mask_bits * 8)) - 1;
+      m = (mm & low8) |
+          ((mm >> (escape_mask_bits * 8)) << (escape_mask_bits * (len - 8)));
+    } else if (len >= 4) {
+      // Same idea with two overlapping 4-byte loads.
+      uint64_t mm = escape_mask(escape_load4x2(src, src + len - 4));
+      constexpr uint64_t low4 = (uint64_t(1) << (escape_mask_bits * 4)) - 1;
+      m = (mm & low4) | (((mm >> (escape_mask_bits * 4)) & low4)
+                         << (escape_mask_bits * (len - 4)));
+    } else {
+      // Fewer than 4 bytes: at most three table lookups, no need for SIMD.
+      for (size_t k = 0; k < len; k++) {
+        uint8_t c = src[k];
+        if (json_quotable_character[c]) {
+          escape_json_char(char(c), out);
+        } else {
+          *out++ = char(c);
+        }
+      }
+      return size_t(out - initout);
+    }
+    if (m == 0) {
+      copy_lt16(out, src + i, rem);
+      out += rem;
+    } else {
+      out = escape_block(src, out, i, len, m);
+    }
+  }
+  return out - initout;
+}
+
+#else // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+
 // Writes the escaped version of input to out, returning the number of bytes
 // written. Uses SIMD position finding to locate quotable characters efficiently.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
@@ -595,6 +859,8 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
   }
   return out - initout;
 }
+
+#endif // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
 simdjson_inline string_builder::string_builder(size_t initial_capacity)
     : buffer(new(std::nothrow) char[initial_capacity]), position(0),
