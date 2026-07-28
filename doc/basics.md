@@ -7,6 +7,7 @@ An overview of what you need to know to use simdjson to parse JSON documents, wi
 separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.md).
 
 - [Requirements](#requirements)
+- [Static reflection (C++26)](#static-reflection-c26)
 - [Including simdjson](#including-simdjson)
 - [Using simdjson with package managers](#using-simdjson-with-package-managers)
 - [Using simdjson as a CMake dependency](#using-simdjson-as-a-cmake-dependency)
@@ -77,6 +78,72 @@ environment.
 Support for AVX-512 require a processor with AVX512-VBMI2 support (Ice Lake or better, AMD Zen 4 or better) under a 64-bit system and a recent compiler (LLVM clang 6 or better, GCC 8 or better, Visual Studio 2019 or better). You need a correspondingly recent assembler such as gas (2.30+) or nasm (2.14+): recent compilers usually come with recent assemblers. If you mix a recent compiler with an incompatible/old assembler (e.g., when using a recent compiler with an old Linux distribution), you may get errors at build time because the compiler produces instructions that the assembler does not recognize: you should update your assembler to match your compiler (e.g., upgrade binutils to version 2.30 or better under Linux) or use an older compiler matching the capabilities of your assembler.
 
 
+
+Static reflection (C++26)
+------------------
+
+Several simdjson features are built on C++26 static reflection: deserializing
+into your own structs without any glue code, serializing them with
+`simdjson::to_json`, the [`rename` and `skip`
+annotations](#renaming-and-skipping-fields-with-annotations),
+[compile-time JSON](compile_time.md) and the
+[compile-time accessors](compile_time_accessors.md).
+
+You do not have to configure anything to get them. simdjson inspects the
+compiler's feature-test macros and enables the reflection-based APIs when the
+compiler provides everything they need:
+
+| Feature | Paper | Feature-test macro |
+|---|---|---|
+| Reflection (`^^`, splicers, `<meta>`) | P2996 | `__cpp_impl_reflection`, `__cpp_lib_reflection` |
+| Expansion statements (`template for`) | P1306 | `__cpp_expansion_statements` |
+| `std::define_static_string` / `std::define_static_array` | P3491 | `__cpp_lib_define_static` |
+
+simdjson also uses annotations (P3394) and consteval blocks (P3289), which
+have no feature-test macro of their own; every implementation that provides
+the macros above also provides those.
+
+Being in C++26 mode is not by itself enough: compilers currently ask you to
+opt into reflection. With GCC 16 that means `-freflection`:
+
+```bash
+g++ -std=c++26 -freflection myproject.cpp simdjson.cpp
+```
+
+The macro `SIMDJSON_STATIC_REFLECTION` reports the result, and you can test
+it in your own code:
+
+```cpp
+#include "simdjson.h"
+
+#if SIMDJSON_STATIC_REFLECTION
+// reflection-based APIs are available
+#endif
+```
+
+You can override the detection by defining `SIMDJSON_STATIC_REFLECTION` to
+`1` or `0` before including `simdjson.h` (or on the command line, e.g.
+`-DSIMDJSON_STATIC_REFLECTION=0`). Forcing it to `1` on a compiler that lacks
+the features will not work; it exists for compilers that support reflection
+without advertising it through the standard macros.
+
+When you build simdjson with CMake, the `SIMDJSON_STATIC_REFLECTION` variable
+takes three values:
+
+| Value | Meaning |
+|---|---|
+| `AUTO` (default) | Let the headers detect it. simdjson does not change your language mode. |
+| `ON` | Compile simdjson and its consumers with `-std=c++26 -freflection` and force the macro on. |
+| `OFF` | Force the macro off, even on a compiler that supports reflection. |
+
+To build simdjson's own tests and benchmarks with reflection, use
+`-DSIMDJSON_STATIC_REFLECTION=ON`; it sets the language mode for every target
+in the project. Putting `-freflection` in `CMAKE_CXX_FLAGS` instead is not
+equivalent, because GCC rejects that flag outside of C++26 mode and simdjson's
+test dependencies build themselves at a lower language level.
+
+Reflection support is experimental, in simdjson as in the compilers: the APIs
+may still change.
 
 Including simdjson
 ------------------
@@ -1465,14 +1532,16 @@ order in which they appear in the document.
 
 ### 3. Using static reflection (C++26)
 
-If you have a C++26 compatible compiler, you can compile
-your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
+If you compile with a C++26 compiler that has static reflection enabled,
+simdjson detects it and the reflection-based APIs become available with no
+configuration on your part. With GCC 16, for example:
 
-```cpp
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "simdjson.h"
+```bash
+g++ -std=c++26 -freflection myprogram.cpp simdjson.cpp
 ```
+
+See [Static reflection (C++26)](#static-reflection-c26) for the detection
+rules and how to override them.
 
 Then you can deserialize a type such as `Car` automatically:
 
@@ -2490,7 +2559,7 @@ static_assert(!ondemand::key_selector<"name", "city">::describe().empty());
 The simdjson library provides **compile-time validated** JSONPath and JSON Pointer accessors when using C++26 Static Reflection. These accessors validate paths against struct definitions at compile time and generate optimized code with zero runtime overhead. In some cases, we find that it is much faster. Furthermore, it is safer in the sense that the expression
 is validated at compile-time.
 
-**Requirements:** C++26 compiler with P2996 reflection support and `-DSIMDJSON_STATIC_REFLECTION=ON` build flag.
+**Requirements:** a C++26 compiler with P2996 reflection enabled (for instance `-std=c++26 -freflection`). simdjson [detects it on its own](#static-reflection-c26).
 
 ```cpp
 ondemand::parser parser;

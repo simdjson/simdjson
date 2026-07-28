@@ -52,18 +52,75 @@ if(SIMDJSON_DISABLE_DEPRECATED_API)
   )
 endif()
 
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.25.0")
-    option(SIMDJSON_STATIC_REFLECTION "Enables static reflection (experimental), requires C++26" OFF)
-else()
-    set(SIMDJSON_STATIC_REFLECTION OFF CACHE BOOL "Enables static reflection (experimental)" FORCE)
-    message(WARNING "SIMDJSON_STATIC_REFLECTION is disabled because your CMake version is below 3.25")
-endif()
+# C++26 static reflection.
+#
+# simdjson detects static reflection from the compiler's feature-test macros
+# (see include/simdjson/compiler_check.h), so anyone compiling with a C++26
+# compiler that has reflection turned on gets the reflection-based APIs with
+# no configuration at all -- including users of the single-header
+# simdjson.h/simdjson.cpp, who never run CMake.
+#
+# This setting only decides whether to override that detection:
+#
+#   AUTO (default)  leave the headers to detect it. simdjson does not touch
+#                   the language mode; you get reflection if you compile with,
+#                   for example, -std=c++26 -freflection.
+#   ON              ask the compiler for reflection (adds -std=c++26 and
+#                   -freflection) and force the macro on.
+#   OFF             force the macro off, even on a compiler that supports it.
+set(SIMDJSON_STATIC_REFLECTION "AUTO" CACHE STRING
+    "C++26 static reflection: AUTO (use it when the compiler supports it), ON (force, adds -std=c++26 -freflection), OFF (never)")
+set_property(CACHE SIMDJSON_STATIC_REFLECTION PROPERTY STRINGS AUTO ON OFF)
 
-if(SIMDJSON_STATIC_REFLECTION)
+string(TOUPPER "${SIMDJSON_STATIC_REFLECTION}" SIMDJSON_STATIC_REFLECTION_REQUEST)
+if(SIMDJSON_STATIC_REFLECTION_REQUEST STREQUAL "AUTO")
+  # Ask the headers, compiled the way this project is being compiled, whether
+  # reflection is available. This keeps compiler_check.h the single source of
+  # truth; CMake only needs the answer to decide which tests and benchmarks
+  # can be built.
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_INCLUDES "${PROJECT_SOURCE_DIR}/include")
+  check_cxx_source_compiles("
+#include \"simdjson/compiler_check.h\"
+#if !SIMDJSON_STATIC_REFLECTION
+#error simdjson: static reflection unavailable
+#endif
+int main() { return 0; }
+" SIMDJSON_STATIC_REFLECTION_DETECTED)
+  unset(CMAKE_REQUIRED_INCLUDES)
+  if(SIMDJSON_STATIC_REFLECTION_DETECTED)
+    set(SIMDJSON_STATIC_REFLECTION_ENABLED ON)
+    message(STATUS "simdjson: C++26 static reflection detected, it will be used.")
+  else()
+    set(SIMDJSON_STATIC_REFLECTION_ENABLED OFF)
+    message(STATUS "simdjson: C++26 static reflection not available with these compiler settings.")
+  endif()
+elseif(SIMDJSON_STATIC_REFLECTION_REQUEST MATCHES "^(ON|TRUE|YES|Y|1)$")
+  if(${CMAKE_VERSION} VERSION_LESS "3.25.0")
+    message(WARNING "SIMDJSON_STATIC_REFLECTION=ON is ignored because your CMake version is below 3.25")
+    set(SIMDJSON_STATIC_REFLECTION_REQUEST "OFF")
+    set(SIMDJSON_STATIC_REFLECTION_ENABLED OFF)
+    simdjson_add_props(
+        target_compile_definitions PUBLIC
+        SIMDJSON_STATIC_REFLECTION=0
+    )
+  else()
+    set(SIMDJSON_STATIC_REFLECTION_ENABLED ON)
+    message(STATUS "simdjson: C++26 static reflection forced on.")
+    simdjson_add_props(
+        target_compile_definitions PUBLIC
+        SIMDJSON_STATIC_REFLECTION=1
+    )
+  endif()
+elseif(SIMDJSON_STATIC_REFLECTION_REQUEST MATCHES "^(OFF|FALSE|NO|N|0|IGNORE|NOTFOUND|)$")
+  set(SIMDJSON_STATIC_REFLECTION_ENABLED OFF)
+  message(STATUS "simdjson: C++26 static reflection forced off.")
   simdjson_add_props(
       target_compile_definitions PUBLIC
-      SIMDJSON_STATIC_REFLECTION=1
+      SIMDJSON_STATIC_REFLECTION=0
   )
+else()
+  message(FATAL_ERROR "SIMDJSON_STATIC_REFLECTION must be AUTO, ON or OFF, got '${SIMDJSON_STATIC_REFLECTION}'.")
 endif()
 
 option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
@@ -204,7 +261,11 @@ endif()
 
 
 
-if(SIMDJSON_STATIC_REFLECTION)
+# Only SIMDJSON_STATIC_REFLECTION=ON puts the compiler into C++26 reflection
+# mode on the user's behalf. In AUTO mode we take the language mode as we find
+# it: cxx_std_11 is a floor, not a ceiling, so a consumer compiling at
+# -std=c++26 -freflection still gets reflection through the header detection.
+if(SIMDJSON_STATIC_REFLECTION_REQUEST MATCHES "^(ON|TRUE|YES|Y|1)$")
 
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION MATCHES "^21")
@@ -220,8 +281,8 @@ if(SIMDJSON_STATIC_REFLECTION)
     endif()
   endif()
 
-  # We would like to require C++26, but no compiler supports that!
-  # This is a hack:
+  # C++26 cannot be requested through target_compile_features yet, so we pass
+  # the flags directly.
   if(IS_BLOOMBERG_P2996_CLANG)
   simdjson_add_props(
       target_compile_options PUBLIC

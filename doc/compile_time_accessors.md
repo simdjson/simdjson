@@ -1,6 +1,6 @@
 # Compile-Time JSONPath and JSON Pointer Accessors
 
-**Note:** This feature requires C++26 Static Reflection support (P2996) and is currently only available with experimental compilers. You must enable it with `-DSIMDJSON_STATIC_REFLECTION=ON` when building.
+**Note:** This feature requires C++26 static reflection (P2996), so far available only in recent or experimental compilers. simdjson detects it and enables the feature by itself; see [static reflection](basics.md#static-reflection-c26).
 
 ## Overview
 
@@ -8,10 +8,13 @@ simdjson provides compile-time JSONPath and JSON Pointer accessors that validate
 
 ## Requirements
 
-- C++26 compiler with Static Reflection support (P2996)
-- Experimental compiler flags:
+- C++26 compiler with static reflection support (P2996)
+- Compiler flags that turn reflection on:
+  - GCC 16: `-std=c++26 -freflection`
   - Clang with P2996 support: `-std=c++26 -freflection -fexpansion-statements`
-- Build configuration: `-DSIMDJSON_STATIC_REFLECTION=ON`
+- No build configuration: simdjson detects reflection from the compiler's
+  feature-test macros. To build simdjson's own tests and benchmarks with it,
+  configure with `-DSIMDJSON_STATIC_REFLECTION=ON`.
 
 ## How It Works
 

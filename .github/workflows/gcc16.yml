@@ -24,3 +24,40 @@ jobs:
           cmake -B build -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -GNinja
           cmake --build build
           ctest --test-dir build --parallel $(nproc)
+
+  # simdjson turns static reflection on by itself when the compiler advertises
+  # it, so that users of the single-header release get it with no build system
+  # and no macro. Check both directions of that detection.
+  autodetection:
+    runs-on: ubuntu-latest
+    container:
+      image: 'gcc:16'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          apt -y update
+          apt -y --no-install-recommends install python3
+      - name: Amalgamate
+        run: AMALGAMATE_OUTPUT_PATH=singleheader_ci python3 singleheader/amalgamate.py --quiet
+      - name: Reflection is used when the compiler offers it
+        run: |
+          g++ -std=c++26 -freflection -O2 -Isingleheader_ci -o autodetect_on \
+              tests/reflection_autodetect_tests.cpp singleheader_ci/simdjson.cpp
+          ./autodetect_on 1
+      - name: Reflection is not used in C++26 mode without -freflection
+        run: |
+          g++ -std=c++26 -O2 -Isingleheader_ci -o autodetect_off \
+              tests/reflection_autodetect_tests.cpp singleheader_ci/simdjson.cpp
+          ./autodetect_off 0
+      - name: Reflection is not used in C++20 mode
+        run: |
+          g++ -std=c++20 -O2 -Isingleheader_ci -o autodetect_cxx20 \
+              tests/reflection_autodetect_tests.cpp singleheader_ci/simdjson.cpp
+          ./autodetect_cxx20 0
+      - name: The override still forces it off
+        run: |
+          g++ -std=c++26 -freflection -DSIMDJSON_STATIC_REFLECTION=0 -O2 \
+              -Isingleheader_ci -o autodetect_forced_off \
+              tests/reflection_autodetect_tests.cpp singleheader_ci/simdjson.cpp
+          ./autodetect_forced_off 0

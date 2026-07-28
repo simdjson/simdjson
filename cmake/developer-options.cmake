@@ -115,13 +115,18 @@ endif()
 
 # We compile tools, tests, etc. with C++ 17. Override yourself if you need on a
 # target.
-if(SIMDJSON_STATIC_REFLECTION)
-  # This is temporary.
+if(SIMDJSON_STATIC_REFLECTION_ENABLED)
+  # Reflection needs C++26. When the user asked for it explicitly the language
+  # mode comes from the -std=c++26 flag added in the top-level CMakeLists; when
+  # it was detected, the user already selected the language mode themselves. In
+  # both cases we must not overwrite CMAKE_CXX_STANDARD here.
   set(SIMDJSON_CXX_STANDARD 26 CACHE STRING "the C++ standard to use for simdjson")
-  #set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
 else()
   set(SIMDJSON_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for simdjson")
-  set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
+  # Respect a standard the user selected explicitly.
+  if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD ${SIMDJSON_CXX_STANDARD})
+  endif()
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
