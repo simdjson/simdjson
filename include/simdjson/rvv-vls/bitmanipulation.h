@@ -35,11 +35,6 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
   return __builtin_popcountll(input_num);
 }
 
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                uint64_t *result) {
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-}
 
 } // unnamed namespace
 } // namespace rvv_vls

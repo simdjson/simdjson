@@ -60,16 +60,6 @@ simdjson_inline int count_ones(uint64_t input_num) {
 }
 #endif
 
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2,
-                                         uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  *result = value1 + value2;
-  return *result < value1;
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
 
 } // unnamed namespace
 } // namespace ppc64

@@ -102,15 +102,6 @@ simdjson_inline uint64_t zero_leading_bit(uint64_t rev_bits, int leading_zeroes)
 
 #endif
 
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#if SIMDJSON_REGULAR_VISUAL_STUDIO
-  *result = value1 + value2;
-  return *result < value1;
-#else
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-#endif
-}
 
 } // unnamed namespace
 } // namespace arm64

@@ -38,10 +38,6 @@ simdjson_inline int count_ones(uint64_t input_num) {
   return __lasx_xvpickve2gr_w(__lasx_xvpcnt_d(__m256i(v4u64{input_num, 0, 0, 0})), 0);
 }
 
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-}
 
 } // unnamed namespace
 } // namespace lasx

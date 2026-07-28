@@ -38,10 +38,6 @@ simdjson_inline int count_ones(uint64_t input_num) {
   return __lsx_vpickve2gr_w(__lsx_vpcnt_d(__m128i(v2u64{input_num, 0})), 0);
 }
 
-simdjson_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-  return __builtin_uaddll_overflow(value1, value2,
-                                   reinterpret_cast<unsigned long long *>(result));
-}
 
 } // unnamed namespace
 } // namespace lsx
