@@ -55,7 +55,12 @@ double from_chars(const char *first, const char* end) noexcept;
   #define simdjson_deprecated __declspec(deprecated)
 
   #define simdjson_really_inline __forceinline
-  #define simdjson_never_inline __declspec(noinline)
+  // The 'inline' matters: __declspec(noinline) says nothing about linkage, so
+  // without it a header function marked simdjson_never_inline is emitted with
+  // external linkage in every translation unit that includes the header, and
+  // linking two such units fails with LNK2005. __forceinline above already
+  // implies inline, which is why only this one needs it spelled out.
+  #define simdjson_never_inline inline __declspec(noinline)
   #define simdjson_really_flatten [[msvc::flatten]]
 
   #define simdjson_unused
