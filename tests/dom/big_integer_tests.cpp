@@ -21,6 +21,14 @@ namespace big_integer_tests {
     TEST_SUCCEED();
   }
 
+  bool default_returns_bigint_error_20_digits() {
+    TEST_START();
+    dom::parser parser;
+    auto result = parser.parse(R"({"val":18446744073709551616})"_padded);
+    ASSERT_EQUAL(result.error(), BIGINT_ERROR);
+    TEST_SUCCEED();
+  }
+
   bool opt_in_parses_big_integer() {
     TEST_START();
     dom::parser parser;
@@ -53,6 +61,25 @@ namespace big_integer_tests {
     std::string_view digits;
     ASSERT_SUCCESS(val.get_bigint().get(digits));
     ASSERT_EQUAL(digits, "-12345678901234567890");
+    TEST_SUCCEED();
+  }
+
+  bool positive_20_digit_overflow() {
+    TEST_START();
+    dom::parser parser;
+    parser.number_as_string(true);
+    // Every 20 digit integer in [2^64, 10^20) is too large for uint64_t.
+    for (auto digits : {"18446744073709551616", "99999999999999999999"}) {
+      dom::element doc;
+      std::string json = std::string(R"({"val":)") + digits + "}";
+      ASSERT_SUCCESS(parser.parse(padded_string(json)).get(doc));
+      dom::element val;
+      ASSERT_SUCCESS(doc["val"].get(val));
+      ASSERT_EQUAL(val.type(), dom::element_type::BIGINT);
+      std::string_view parsed;
+      ASSERT_SUCCESS(val.get_bigint().get(parsed));
+      ASSERT_EQUAL(parsed, digits);
+    }
     TEST_SUCCEED();
   }
 
@@ -135,8 +162,10 @@ namespace big_integer_tests {
   bool run() {
     return option_off_by_default() &&
            default_returns_bigint_error() &&
+           default_returns_bigint_error_20_digits() &&
            opt_in_parses_big_integer() &&
            negative_big_integer() &&
+           positive_20_digit_overflow() &&
            big_integer_in_array() &&
            serialization_preserves_digits() &&
            normal_numbers_unaffected() &&
