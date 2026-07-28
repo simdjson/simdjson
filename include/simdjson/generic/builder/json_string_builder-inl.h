@@ -698,42 +698,6 @@ simdjson_inline uint64_t escape_mask(escape_vector v) noexcept {
   return escape_bitmask(escape_flags(v));
 }
 
-// Escapes the bytes of src in the range [i, blockend), given that m is the
-// (non-zero) escape mask for that range: the escape_mask_bits-wide lane of m
-// at byte k is non-zero when src[i + k] requires escaping. Returns the updated
-// output pointer.
-simdjson_inline char *escape_block(const uint8_t *src, char *out, size_t i,
-                                   size_t blockend, uint64_t m) noexcept {
-  constexpr uint64_t lane = (uint64_t(1) << escape_mask_bits) - 1;
-
-  // Copy the run of safe bytes that precedes the first escape.
-  size_t tz = trailing_zeroes(m);
-  size_t first = tz / escape_mask_bits;
-  memcpy(out, src + i, first);
-  out += first;
-
-  size_t pos = i + first;
-  uint64_t mm = m & ~(lane << tz); // remaining escapes
-  while (true) {
-    escape_json_char(char(src[pos]), out);
-    // Copy everything up to the next escape (or to the end of the block).
-    size_t next = blockend;
-    if (mm) {
-      tz = trailing_zeroes(mm);
-      next = i + tz / escape_mask_bits;
-    }
-    size_t seglen = next - pos - 1;
-    memcpy(out, src + pos + 1, seglen);
-    out += seglen;
-    if (!mm) {
-      break;
-    }
-    mm &= ~(lane << tz);
-    pos = next;
-  }
-  return out;
-}
-
 // Copies n bytes with n < 16, using overlapping loads and stores. It never
 // reads more than n bytes from src, nor writes more than n bytes to dst.
 simdjson_inline void copy_lt16(char *dst, const uint8_t *src,
@@ -749,6 +713,37 @@ simdjson_inline void copy_lt16(char *dst, const uint8_t *src,
     dst[n >> 1] = char(src[n >> 1]);
     dst[n - 1] = char(src[n - 1]);
   }
+}
+
+// Escapes the bytes of src in the range [i, blockend), given that m is the
+// (non-zero) escape mask for that range: the escape_mask_bits-wide lane of m
+// at byte k is non-zero when src[i + k] requires escaping. Returns the updated
+// output pointer.
+//
+// Every segment copied here is shorter than a block, so copy_lt16 handles them
+// without a call into memcpy. The function is deliberately kept out of line:
+// it only runs for blocks that contain a quotable character, and inlining it
+// costs registers in the block loop above, which is where nearly all of the
+// time goes.
+simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
+                                         size_t i, size_t blockend,
+                                         uint64_t m) noexcept {
+  constexpr uint64_t lane = (uint64_t(1) << escape_mask_bits) - 1;
+
+  size_t pos = i; // first byte not yet copied
+  while (m) {
+    const size_t tz = trailing_zeroes(m);
+    const size_t next = i + tz / escape_mask_bits;
+    // Copy the run of safe bytes that precedes this escape.
+    copy_lt16(out, src + pos, next - pos);
+    out += next - pos;
+    escape_json_char(char(src[next]), out);
+    pos = next + 1;
+    m &= ~(lane << tz);
+  }
+  // Copy whatever follows the last escape.
+  copy_lt16(out, src + pos, blockend - pos);
+  return out + (blockend - pos);
 }
 
 // Writes the escaped version of input to out, returning the number of bytes
