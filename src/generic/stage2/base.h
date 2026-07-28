@@ -11,7 +11,6 @@ namespace {
 namespace stage2 {
 
 class json_iterator;
-class structural_iterator;
 struct tape_builder;
 struct tape_writer;
 
