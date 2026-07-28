@@ -720,6 +720,26 @@ build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>&
 static_assert(SIMDJSON_PADDING > 63,
               "key_selector requires SIMDJSON_PADDING > 63 for its SIMD key reads");
 
+#if SIMDJSON_KEY_SELECTOR_HAS_NEON
+// True when every byte of `diff` is zero.
+//
+// `diff` holds arbitrary bytes (it is an XOR of two key windows), so we cannot
+// narrow it directly: vshrn_n_u16(..., 4) keeps only bits [4:11] of each 16-bit
+// lane, and a lone 0x01 in an even byte would be dropped. vtstq_u8 against
+// itself first maps "byte is nonzero" onto a comparison mask (bytes 0x00 or
+// 0xFF), for which the narrowing is lossless. Comparing the narrowed value as a
+// double then keeps the answer in the FP register file: cmtst+shrn+fcmp, with no
+// across-lane reduction and no SIMD-to-general-purpose-register transfer.
+//
+// fcmp treats -0.0 as zero, but 0x8000000000000000 would need a 0x80 byte, which
+// a comparison mask cannot produce, so that hazard is unreachable.
+simdjson_really_inline bool neon_all_bytes_zero(uint8x16_t diff) noexcept {
+    const uint8x8_t narrowed =
+        vshrn_n_u16(vreinterpretq_u16_u8(vtstq_u8(diff, diff)), 4);
+    return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) == 0.0;
+}
+#endif
+
 // Scan for the terminating '"' starting at p. Returns its byte offset (= key
 // length). Caller guarantees SIMDJSON_PADDING (== 64) bytes past the JSON buffer,
 // so reading whole 16-byte blocks up to offset 63 is always safe.
@@ -782,10 +802,7 @@ simdjson_really_inline bool compare_key_bytes(
         uint8x16_t vs = vld1q_u8(reinterpret_cast<const uint8_t*>(stored));
         uint8x16_t mask = vcltq_u8(vld1q_u8(idx16), vdupq_n_u8(static_cast<uint8_t>(len)));
         uint8x16_t diff = veorq_u8(vandq_u8(vp, mask), vs);
-        // A 32-bit-lane horizontal max is enough to decide "all bytes equal"
-        // (diff is zero iff every 32-bit word is zero) and is cheaper than a
-        // byte-wide reduction.
-        return vmaxvq_u32(vreinterpretq_u32_u8(diff)) == 0;
+        return neon_all_bytes_zero(diff);
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
         __m128i vp = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
         __m128i vs = _mm_loadu_si128(reinterpret_cast<const __m128i*>(stored));
@@ -818,7 +835,7 @@ simdjson_really_inline bool compare_key_bytes(
         uint8x16_t m_hi = vcltq_u8(vld1q_u8(idx32_hi), lenv);
         uint8x16_t d_lo = veorq_u8(vandq_u8(vp_lo, m_lo), vs_lo);
         uint8x16_t d_hi = veorq_u8(vandq_u8(vp_hi, m_hi), vs_hi);
-        return vmaxvq_u32(vreinterpretq_u32_u8(vorrq_u8(d_lo, d_hi))) == 0;
+        return neon_all_bytes_zero(vorrq_u8(d_lo, d_hi));
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
         __m128i vp_lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
         __m128i vp_hi = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p + 16));
@@ -864,7 +881,7 @@ simdjson_really_inline bool compare_key_bytes(
             uint8x16_t mask = vcltq_u8(idxv, lenv);
             acc = vorrq_u8(acc, veorq_u8(vandq_u8(vp, mask), vs));
         }
-        return vmaxvq_u32(vreinterpretq_u32_u8(acc)) == 0;
+        return neon_all_bytes_zero(acc);
 #elif SIMDJSON_KEY_SELECTOR_HAS_SSE2
         __m128i base = _mm_load_si128(reinterpret_cast<const __m128i*>(idx16));
         __m128i lenv = _mm_set1_epi8(static_cast<char>(len));

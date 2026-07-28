@@ -81,7 +81,11 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
 
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    return bits.max_val() < 0x80u;
+    // We only care whether some byte has its high bit set, so we turn that into a
+    // comparison mask (one vtstq_u8) and let any() do a shrn+fcmp. That is
+    // cheaper than max_val(), whose byte-wide across-lane reduction has to be
+    // moved to a general-purpose register before the branch can use it.
+    return !bits.any_bits_set(uint8_t(0x80)).any();
 }
 
 simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
