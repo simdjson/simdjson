@@ -9,10 +9,8 @@
 #include <vector>
 
 #ifdef SIMDJSON_THREADS_ENABLED
-#include <condition_variable>
+#include <atomic>
 #include <cstring>
-#include <mutex>
-#include <queue>
 #include <thread>
 #endif
 
@@ -30,11 +28,11 @@ namespace simdjson {
  *
  * ## Design
  *
- * A single dispatcher thread scans the input for document boundaries and carves
- * it into slices (each a whole number of documents), which it feeds to a pool
- * of worker threads through a bounded queue. Each worker owns its own
- * `ondemand::parser` and its own output vector, so no locking happens on the
- * hot path. A user-supplied `extract` function turns each document into a value
+ * Each worker claims a byte range from a shared atomic counter and snaps both
+ * ends forward to the next delimiter, so the slices are contiguous, never split
+ * a document, and are computed without any coordination beyond that counter.
+ * Each worker owns its own `ondemand::parser` and its own output vector, so no
+ * locking happens on the hot path. A user-supplied `extract` function turns each document into a value
  * of type `T`; the values are collected into one vector per worker ("shards").
  *
  * Because documents are distributed across workers, the resulting values are
@@ -55,7 +53,7 @@ namespace simdjson {
  *
  * The comma-delimited formats are intentionally not supported here: a comma can
  * appear nested or inside a string, so top-level commas can only be located by
- * a serial structural scan, which would make the dispatcher the bottleneck.
+ * a serial structural scan, which cannot be done from an arbitrary offset.
  * Whitespace-only-separated input with no newlines still parses correctly; it
  * just is not split (one slice).
  */
@@ -64,9 +62,11 @@ namespace experimental {
 /** Options controlling parse_many_parallel. */
 struct parallel_stream_options {
   /**
-   * Number of worker (parser) threads. When 0, we use
-   * `std::thread::hardware_concurrency() - 1` (reserving one core for the
-   * dispatcher), with a floor of 1.
+   * Number of worker (parser) threads, and the exact number of threads
+   * spawned. When 0, we use `std::thread::hardware_concurrency()`, with a
+   * floor of 1. Note that throughput normally peaks at or below the number of
+   * *physical* cores, so on a machine with simultaneous multithreading the
+   * default overshoots.
    */
   size_t threads = 0;
   /**
@@ -137,65 +137,21 @@ private:
 #ifdef SIMDJSON_THREADS_ENABLED
 namespace internal {
 
-/** A [offset, length) view into the shared input buffer. */
-struct stream_slice {
-  size_t offset;
-  size_t length;
-};
-
-/** A minimal bounded blocking queue used to feed slices to the workers. */
-class slice_queue {
-public:
-  explicit slice_queue(size_t capacity) noexcept : _capacity{capacity} {}
-
-  void push(stream_slice slice) {
-    std::unique_lock<std::mutex> lock(_mutex);
-    _not_full.wait(lock, [this] { return _queue.size() < _capacity; });
-    _queue.push(slice);
-    lock.unlock();
-    _not_empty.notify_one();
-  }
-
-  /** Returns false once the queue is both empty and closed. */
-  bool pop(stream_slice &out) {
-    std::unique_lock<std::mutex> lock(_mutex);
-    _not_empty.wait(lock, [this] { return !_queue.empty() || _closed; });
-    if (_queue.empty()) { return false; }
-    out = _queue.front();
-    _queue.pop();
-    lock.unlock();
-    _not_full.notify_one();
-    return true;
-  }
-
-  void close() {
-    std::unique_lock<std::mutex> lock(_mutex);
-    _closed = true;
-    lock.unlock();
-    _not_empty.notify_all();
-  }
-
-private:
-  std::mutex _mutex{};
-  std::condition_variable _not_full{};
-  std::condition_variable _not_empty{};
-  std::queue<stream_slice> _queue{};
-  size_t _capacity;
-  bool _closed = false;
-};
-
 /**
- * Compute the end (exclusive) of the slice beginning at `pos`, within
- * [pos, hi). The boundary is a delimiter byte that cannot occur inside a JSON
- * value, so a document is never split:
+ * Snap `want` forward to the next slice boundary within [0, hi). The boundary
+ * is a delimiter byte that cannot occur inside a JSON value, so a document is
+ * never split:
  *  - whitespace_delimited: just after a newline ('\n');
  *  - json_sequence: just before a record separator (0x1E).
- * Any other format returns `hi` (no split). The slice is at least `target`
- * bytes unless the input ends first.
+ * Any other format returns `hi` (no split).
+ *
+ * This depends only on `want`, which is what lets every worker compute its own
+ * slice: worker i's end is snap(raw + slice_bytes) and worker i+1's start is
+ * snap(raw + slice_bytes) for the same value, so the slices are contiguous and
+ * never overlap.
  */
-inline size_t next_slice_end(const char *data, size_t hi, size_t pos,
-                             size_t target, stream_format format) {
-  size_t want = pos + target;
+inline size_t snap_to_boundary(const char *data, size_t hi, size_t want,
+                               stream_format format) {
   if (want >= hi) { return hi; }
   switch (format) {
   case stream_format::whitespace_delimited: {
@@ -254,7 +210,7 @@ parse_many_parallel(padded_string_view json, F &&extract,
   size_t worker_count = options.threads;
   if (worker_count == 0) {
     unsigned hardware = std::thread::hardware_concurrency();
-    worker_count = hardware > 2 ? size_t(hardware) - 1 : 1;
+    worker_count = hardware > 1 ? size_t(hardware) : 1;
   }
   const size_t slice_bytes =
       options.slice_bytes ? options.slice_bytes : (1u << 20);
@@ -265,21 +221,11 @@ parse_many_parallel(padded_string_view json, F &&extract,
   std::vector<size_t> local_errors(worker_count, 0);
   std::vector<error_code> local_first(worker_count, SUCCESS);
 
-  // A little slack in the queue keeps every worker fed without letting the
-  // dispatcher run arbitrarily far ahead of the parsers.
-  internal::slice_queue queue(worker_count * 4 + 8);
-
-  std::thread dispatcher([&] {
-    size_t pos = 0;
-    while (pos < length) {
-      size_t end =
-          internal::next_slice_end(data, length, pos, slice_bytes, format);
-      if (end <= pos) { end = length; }
-      queue.push(internal::stream_slice{pos, end - pos});
-      pos = end;
-    }
-    queue.close();
-  });
+  // Each worker claims its own byte range from this counter and snaps both ends
+  // to a delimiter itself. Slicing needs no state from the preceding slice, so
+  // there is nothing for a dedicated dispatcher thread to know that a worker
+  // does not, and the pool spawns exactly `worker_count` threads.
+  std::atomic<size_t> cursor{0};
 
   std::vector<std::thread> workers;
   workers.reserve(worker_count);
@@ -291,13 +237,22 @@ parse_many_parallel(padded_string_view json, F &&extract,
       size_t errors = 0;
       error_code first = SUCCESS;
 
-      internal::stream_slice slice;
-      while (queue.pop(slice)) {
+      for (;;) {
+        const size_t raw =
+            cursor.fetch_add(slice_bytes, std::memory_order_relaxed);
+        if (raw >= length) { break; }
+        const size_t begin =
+            (raw == 0) ? 0
+                       : internal::snap_to_boundary(data, length, raw, format);
+        const size_t end = internal::snap_to_boundary(data, length,
+                                                      raw + slice_bytes, format);
+        // Two claims can land inside one long document; the earlier one covers
+        // it and this slice is empty.
+        if (begin >= end) { continue; }
+        const size_t slice_length = end - begin;
         ondemand::document_stream stream;
         error_code slice_error =
-            parser
-                .iterate_many(data + slice.offset, slice.length, slice.length,
-                              format)
+            parser.iterate_many(data + begin, slice_length, slice_length, format)
                 .get(stream);
         if (slice_error) {
           errors++;
@@ -321,7 +276,6 @@ parse_many_parallel(padded_string_view json, F &&extract,
     });
   }
 
-  dispatcher.join();
   for (std::thread &worker : workers) { worker.join(); }
 
   for (size_t w = 0; w < worker_count; w++) {
