@@ -21,7 +21,7 @@ jobs:
           apt -y --no-install-recommends install cmake ninja-build
       - name: Build and test
         run: |
-          cmake -B build -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON -GNinja
+          cmake -B build -D SIMDJSON_STATIC_REFLECTION_MODE=ON -DSIMDJSON_DEVELOPER_MODE=ON -GNinja
           cmake --build build
           ctest --test-dir build --parallel $(nproc)
 

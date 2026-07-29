@@ -127,8 +127,8 @@ You can override the detection by defining `SIMDJSON_STATIC_REFLECTION` to
 the features will not work; it exists for compilers that support reflection
 without advertising it through the standard macros.
 
-When you build simdjson with CMake, the `SIMDJSON_STATIC_REFLECTION` variable
-takes three values:
+When you build simdjson with CMake, the `SIMDJSON_STATIC_REFLECTION_MODE`
+variable takes three values:
 
 | Value | Meaning |
 |---|---|
@@ -137,10 +137,18 @@ takes three values:
 | `OFF` | Force the macro off, even on a compiler that supports reflection. |
 
 To build simdjson's own tests and benchmarks with reflection, use
-`-DSIMDJSON_STATIC_REFLECTION=ON`; it sets the language mode for every target
-in the project. Putting `-freflection` in `CMAKE_CXX_FLAGS` instead is not
-equivalent, because GCC rejects that flag outside of C++26 mode and simdjson's
-test dependencies build themselves at a lower language level.
+`-DSIMDJSON_STATIC_REFLECTION_MODE=ON`; it sets the language mode for every
+target in the project. Putting `-freflection` in `CMAKE_CXX_FLAGS` instead is
+not equivalent, because GCC rejects that flag outside of C++26 mode and
+simdjson's test dependencies build themselves at a lower language level.
+
+The older boolean CMake variable `SIMDJSON_STATIC_REFLECTION` is still
+accepted, and is read as `ON` or `OFF`, but it is deprecated: it cannot
+express `AUTO`, and CMake's `if()` treats the string `AUTO` as true, so
+reusing that name for a three-valued setting would silently enable reflection
+in any project that still writes `if(SIMDJSON_STATIC_REFLECTION)`. Only the
+CMake variable was renamed; the preprocessor macro of the same name, described
+above, is unchanged.
 
 Reflection support is experimental, in simdjson as in the compilers: the APIs
 may still change.

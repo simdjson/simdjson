@@ -21,11 +21,11 @@ Each benchmark measures parsing + single field access:
 ## Building (Linux/macOS)
 
 ```bash
-cmake -B build -D SIMDJSON_STATIC_REFLECTION=ON -DSIMDJSON_DEVELOPER_MODE=ON
+cmake -B build -D SIMDJSON_STATIC_REFLECTION_MODE=ON -DSIMDJSON_DEVELOPER_MODE=ON
 cmake --build build --target=bench_ondemand
 ```
 
-The `SIMDJSON_STATIC_REFLECTION` will be made unnecessary once mainstream compilers
+The `SIMDJSON_STATIC_REFLECTION_MODE` will be made unnecessary once mainstream compilers
 begin supporting C++26 sufficiently well.
 
 ## Running (Linux/macOS)

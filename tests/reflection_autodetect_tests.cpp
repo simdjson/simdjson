@@ -94,7 +94,10 @@ static bool plain_api_works() {
     printf("could not parse\n");
     return false;
   }
-  int64_t value;
+  // Initialized only to keep GCC quiet: it cannot see that get() leaves value
+  // untouched exactly on the path that returns early, so -Wmaybe-uninitialized
+  // fires, and the CI builds use -Werror.
+  int64_t value{};
   if (doc["a"].at(1).get(value)) {
     printf("could not read a[1]\n");
     return false;

@@ -14,7 +14,7 @@ simdjson provides compile-time JSONPath and JSON Pointer accessors that validate
   - Clang with P2996 support: `-std=c++26 -freflection -fexpansion-statements`
 - No build configuration: simdjson detects reflection from the compiler's
   feature-test macros. To build simdjson's own tests and benchmarks with it,
-  configure with `-DSIMDJSON_STATIC_REFLECTION=ON`.
+  configure with `-DSIMDJSON_STATIC_REFLECTION_MODE=ON`.
 
 ## How It Works
 

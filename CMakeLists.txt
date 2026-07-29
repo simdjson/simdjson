@@ -68,11 +68,31 @@ endif()
 #   ON              ask the compiler for reflection (adds -std=c++26 and
 #                   -freflection) and force the macro on.
 #   OFF             force the macro off, even on a compiler that supports it.
-set(SIMDJSON_STATIC_REFLECTION "AUTO" CACHE STRING
+#
+# Deliberately a new name rather than reusing SIMDJSON_STATIC_REFLECTION: that
+# one used to be a boolean, and CMake's if() treats the string AUTO as true.
+# Storing AUTO under the old name would silently turn reflection *on* in every
+# older or third-party CMake file that still writes
+# `if(SIMDJSON_STATIC_REFLECTION)` -- including the copy of the cache that
+# benchmark/dom/checkperf.cmake hands to the reference build.
+set(SIMDJSON_STATIC_REFLECTION_MODE "AUTO" CACHE STRING
     "C++26 static reflection: AUTO (use it when the compiler supports it), ON (force, adds -std=c++26 -freflection), OFF (never)")
-set_property(CACHE SIMDJSON_STATIC_REFLECTION PROPERTY STRINGS AUTO ON OFF)
+set_property(CACHE SIMDJSON_STATIC_REFLECTION_MODE PROPERTY STRINGS AUTO ON OFF)
 
-string(TOUPPER "${SIMDJSON_STATIC_REFLECTION}" SIMDJSON_STATIC_REFLECTION_REQUEST)
+# Accept the old boolean spelling so existing scripts keep working.
+if(DEFINED SIMDJSON_STATIC_REFLECTION)
+  if(SIMDJSON_STATIC_REFLECTION)
+    set(SIMDJSON_STATIC_REFLECTION_MODE "ON")
+  else()
+    set(SIMDJSON_STATIC_REFLECTION_MODE "OFF")
+  endif()
+  message(DEPRECATION
+      "SIMDJSON_STATIC_REFLECTION is deprecated; use "
+      "SIMDJSON_STATIC_REFLECTION_MODE (AUTO, ON or OFF) instead. "
+      "Reading it as ${SIMDJSON_STATIC_REFLECTION_MODE}.")
+endif()
+
+string(TOUPPER "${SIMDJSON_STATIC_REFLECTION_MODE}" SIMDJSON_STATIC_REFLECTION_REQUEST)
 if(SIMDJSON_STATIC_REFLECTION_REQUEST STREQUAL "AUTO")
   # Ask the headers, compiled the way this project is being compiled, whether
   # reflection is available. This keeps compiler_check.h the single source of
@@ -97,7 +117,7 @@ int main() { return 0; }
   endif()
 elseif(SIMDJSON_STATIC_REFLECTION_REQUEST MATCHES "^(ON|TRUE|YES|Y|1)$")
   if(${CMAKE_VERSION} VERSION_LESS "3.25.0")
-    message(WARNING "SIMDJSON_STATIC_REFLECTION=ON is ignored because your CMake version is below 3.25")
+    message(WARNING "SIMDJSON_STATIC_REFLECTION_MODE=ON is ignored because your CMake version is below 3.25")
     set(SIMDJSON_STATIC_REFLECTION_REQUEST "OFF")
     set(SIMDJSON_STATIC_REFLECTION_ENABLED OFF)
     simdjson_add_props(
@@ -120,7 +140,7 @@ elseif(SIMDJSON_STATIC_REFLECTION_REQUEST MATCHES "^(OFF|FALSE|NO|N|0|IGNORE|NOT
       SIMDJSON_STATIC_REFLECTION=0
   )
 else()
-  message(FATAL_ERROR "SIMDJSON_STATIC_REFLECTION must be AUTO, ON or OFF, got '${SIMDJSON_STATIC_REFLECTION}'.")
+  message(FATAL_ERROR "SIMDJSON_STATIC_REFLECTION_MODE must be AUTO, ON or OFF, got '${SIMDJSON_STATIC_REFLECTION_MODE}'.")
 endif()
 
 option(SIMDJSON_DEVELOPMENT_CHECKS "Enable development-time aids, such as \
@@ -261,7 +281,7 @@ endif()
 
 
 
-# Only SIMDJSON_STATIC_REFLECTION=ON puts the compiler into C++26 reflection
+# Only SIMDJSON_STATIC_REFLECTION_MODE=ON puts the compiler into C++26 reflection
 # mode on the user's behalf. In AUTO mode we take the language mode as we find
 # it: cxx_std_11 is a floor, not a ceiling, so a consumer compiling at
 # -std=c++26 -freflection still gets reflection through the header detection.

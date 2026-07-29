@@ -448,13 +448,13 @@ time_parsing_compilation() {
     if [ "$use_reflection" = "true" ]; then
         cmake -DCMAKE_CXX_COMPILER="$CXX" \
               -DSIMDJSON_DEVELOPER_MODE=ON \
-              -DSIMDJSON_STATIC_REFLECTION=ON \
+              -DSIMDJSON_STATIC_REFLECTION_MODE=ON \
               -DBUILD_SHARED_LIBS=OFF \
               ../.. >/dev/null 2>&1
     else
         cmake -DCMAKE_CXX_COMPILER="$CXX" \
               -DSIMDJSON_DEVELOPER_MODE=ON \
-              -DSIMDJSON_STATIC_REFLECTION=OFF \
+              -DSIMDJSON_STATIC_REFLECTION_MODE=OFF \
               -DBUILD_SHARED_LIBS=OFF \
               ../.. >/dev/null 2>&1
     fi
