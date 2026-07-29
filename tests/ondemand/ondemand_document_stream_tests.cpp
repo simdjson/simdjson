@@ -2351,8 +2351,32 @@ namespace document_stream_tests {
     }
 #endif // SIMDJSON_STATIC_REFLECTION
 
+    // A smaller batch_size must reuse the buffers rather than reallocate.
+    bool shrinking_batch_size_reuses_buffers() {
+        TEST_START();
+        auto json = R"({"a":1}
+{"a":2}
+{"a":3}
+)"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json, 4096).get(stream));
+        for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
+        ASSERT_EQUAL(parser.capacity(), 4096);
+        for (size_t batch : {2048, 1024, 999, 64}) {
+            ASSERT_SUCCESS(parser.iterate_many(json, batch).get(stream));
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
+            ASSERT_EQUAL(parser.capacity(), 4096);
+        }
+        ASSERT_SUCCESS(parser.iterate_many(json, 8192).get(stream));
+        for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
+        ASSERT_EQUAL(parser.capacity(), 8192);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+            shrinking_batch_size_reuses_buffers() &&
 #if SIMDJSON_STATIC_REFLECTION
             reflection_stream_tests() &&
 #endif
