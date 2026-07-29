@@ -1,6 +1,7 @@
 # Compile-Time JSONPath and JSON Pointer Accessors
 
-**Note:** This feature requires C++26 static reflection (P2996), so far available only in recent or experimental compilers. simdjson detects it and enables the feature by itself; see [static reflection](basics.md#static-reflection-c26).
+**Note:** This feature requires C++26 static reflection (P2996) support in the
+compiler system.
 
 ## Overview
 
