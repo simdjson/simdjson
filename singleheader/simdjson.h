@@ -1,4 +1,4 @@
-/* auto-generated on 2026-05-06 17:28:39 -0400. version 4.6.4 Do not edit! */
+/* auto-generated on 2026-07-29 09:06:16 -0400. version 4.6.5 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2538,7 +2538,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "4.6.4"
+#define SIMDJSON_VERSION "4.6.5"
 
 namespace simdjson {
 enum {
@@ -2553,7 +2553,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 4
+  SIMDJSON_VERSION_REVISION = 5
 };
 } // namespace simdjson
 
@@ -72547,7 +72547,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -85917,7 +85917,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -99774,7 +99774,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -113631,7 +113631,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -127603,7 +127603,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -141892,7 +141892,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -155655,7 +155655,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -169441,7 +169441,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
@@ -183231,7 +183231,7 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
   if (new_capacity > max_capacity()) { return CAPACITY; }
-  if (string_buf && new_capacity == capacity() && new_max_depth == max_depth()) { return SUCCESS; }
+  if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
   _capacity = 0;
