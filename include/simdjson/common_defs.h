@@ -55,7 +55,7 @@ double from_chars(const char *first, const char* end) noexcept;
   #define simdjson_deprecated __declspec(deprecated)
 
   #define simdjson_really_inline __forceinline
-  #define simdjson_never_inline __declspec(noinline)
+  #define simdjson_never_inline inline __declspec(noinline)
   #define simdjson_really_flatten [[msvc::flatten]]
 
   #define simdjson_unused
