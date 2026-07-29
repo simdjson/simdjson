@@ -151,9 +151,6 @@ simdjson_inline bool fast_needs_escaping(std::string_view view) {
     running = vorrq_u8(running, vceqq_u8(word, v92));
     running = vorrq_u8(running, vcltq_u8(word, vdupq_n_u8(32)));
   }
-  // `running` is an OR of comparison results, so every byte is 0x00 or 0xFF and
-  // the narrow-then-fcmp test applies: no across-lane reduction, no
-  // SIMD-to-general-purpose-register transfer. See escape_any below.
   const uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(running), 4);
   return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
 }
@@ -568,16 +565,6 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
   }
 }
 
-// The block-based escaper below needs, from each instruction set, a 16-byte
-// vector type, a handful of loads, a store, and two ways to look at a
-// byte-wise comparison: a cheap "is any byte set?" test for the common case,
-// and a mask with one or more bits per byte for the rare one that needs
-// fixing up.
-//
-// Getting that answer out of the vector register file is the step that
-// decides whether this is worth doing at all, so each instruction set uses
-// its own cheapest form. Instruction sets without one keep the
-// scan-then-copy implementation at the bottom of this section.
 #if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
 #define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
 #endif
@@ -675,10 +662,6 @@ simdjson_inline escape_vector escape_flags(escape_vector v) noexcept {
   return vorrq_u8(needs_escape, vcltq_u8(v, vdupq_n_u8(32)));
 }
 
-// NEON has no movemask. Narrowing to four bits per byte and then moving to a
-// general-purpose register would cost a cross-register-file transfer on every
-// block; comparing the narrowed value as a double instead keeps the answer in
-// the FP register file, so the common "nothing to escape" case is shrn+fcmp.
 simdjson_inline bool escape_any(escape_vector flags) noexcept {
   uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(flags), 4);
   return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
@@ -719,12 +702,6 @@ simdjson_inline void copy_lt16(char *dst, const uint8_t *src,
 // (non-zero) escape mask for that range: the escape_mask_bits-wide lane of m
 // at byte k is non-zero when src[i + k] requires escaping. Returns the updated
 // output pointer.
-//
-// Every segment copied here is shorter than a block, so copy_lt16 handles them
-// without a call into memcpy. The function is deliberately kept out of line:
-// it only runs for blocks that contain a quotable character, and inlining it
-// costs registers in the block loop above, which is where nearly all of the
-// time goes.
 simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
                                          size_t i, size_t blockend,
                                          uint64_t m) noexcept {
@@ -748,18 +725,6 @@ simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
 
 // Writes the escaped version of input to out, returning the number of bytes
 // written.
-//
-// The input is consumed in blocks of 16 bytes. The common case is a block that
-// contains no quotable character: it is copied with a single unaligned SIMD
-// store, so we make one pass over the data instead of scanning it and then
-// copying it. A block that does contain quotable characters is fixed up from
-// the escape mask, which lets us memcpy whole runs between escapes rather than
-// rescanning.
-//
-// The tail (fewer than 16 bytes) is covered with overlapping loads that stay
-// entirely within the input: we never read past the end of the string, so this
-// is safe under sanitizers and for inputs that end at a page boundary. Inputs
-// shorter than 4 bytes fall back to scalar code.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
   const size_t len = input.size();
   const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
