@@ -16,7 +16,7 @@
 // C++ 26
 // While C++26 is a working draft, compilers report 202400L in C++26 mode
 // (both GCC 16 and Clang 21 do). Update when the standard is finalized.
-#if !defined(SIMDJSON_CPLUSPLUS26) && (SIMDJSON_CPLUSPLUS > 202400L)
+#if !defined(SIMDJSON_CPLUSPLUS26) && (SIMDJSON_CPLUSPLUS >= 202400L)
 #define SIMDJSON_CPLUSPLUS26 1
 #endif
 
