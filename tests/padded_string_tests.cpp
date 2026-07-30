@@ -129,11 +129,74 @@ static bool testPaddedStringBuilder() {
   TEST_SUCCEED();
 }
 
+
+bool testSliceAt() {
+  TEST_START();
+  simdjson::padded_string json = "{\"a\":1}\n{\"a\":2}\n{\"a\":3}\n"_padded;
+  auto view = simdjson::padded_string_view(json);
+
+  // A block size larger than the input yields the whole input, then nothing.
+  {
+    auto all = simdjson::slice_at(view, '\n', 1 << 20, 0);
+    ASSERT_EQUAL(all.size(), view.size());
+    ASSERT_TRUE(simdjson::slice_at(view, '\n', 1 << 20, 1).empty());
+  }
+
+  // Slices are contiguous, non-overlapping, and reassemble the input. A block
+  // that falls inside one document yields an empty slice, so iteration is
+  // bounded by the input size rather than by the first empty slice.
+  for (size_t block : {size_t(1), size_t(4), size_t(8), size_t(9), size_t(64)}) {
+    std::string rebuilt;
+    size_t previous_end = 0;
+    for (size_t i = 0; i * block < view.size(); i++) {
+      auto piece = simdjson::slice_at(view, '\n', block, i);
+      if (piece.empty()) { continue; }
+      size_t begin = size_t(piece.data() - view.data());
+      ASSERT_EQUAL(begin, previous_end);
+      previous_end = begin + piece.size();
+      ASSERT_TRUE(piece.capacity() >= piece.size() + simdjson::SIMDJSON_PADDING);
+      rebuilt.append(piece.data(), piece.size());
+    }
+    ASSERT_EQUAL(previous_end, view.size());
+    ASSERT_EQUAL(rebuilt, std::string(view.data(), view.size()));
+  }
+
+  // Every slice ends on a document boundary, so each parses on its own.
+  {
+    size_t documents = 0;
+    uint64_t sum = 0;
+    simdjson::ondemand::parser parser;
+    for (size_t i = 0;; i++) {
+      if (i * 8 >= view.size()) { break; }
+      auto piece = simdjson::slice_at(view, '\n', 8, i);
+      if (piece.empty()) { continue; }
+      simdjson::ondemand::document_stream docs;
+      ASSERT_SUCCESS(parser.iterate_many(piece, piece.size()).get(docs));
+      for (auto doc : docs) {
+        uint64_t a;
+        ASSERT_SUCCESS(doc["a"].get_uint64().get(a));
+        sum += a;
+        documents++;
+      }
+    }
+    ASSERT_EQUAL(documents, 3);
+    ASSERT_EQUAL(sum, 6);
+  }
+
+  // Degenerate inputs.
+  ASSERT_TRUE(simdjson::slice_at(view, '\n', 0, 0).empty());
+  ASSERT_TRUE(simdjson::slice_at(view, '\n', 8, 1000).empty());
+  TEST_SUCCEED();
+}
+
 int main() {
   if (!testNullString()) {
     return EXIT_FAILURE;
   }
   if (!testPaddedStringBuilder()) {
+    return EXIT_FAILURE;
+  }
+  if (!testSliceAt()) {
     return EXIT_FAILURE;
   }
   std::cout << "All tests passed!" << std::endl;

@@ -113,6 +113,50 @@ You should be consistent. If you link against the simdjson library built for mul
 system (setting `SIMDJSON_THREADS_ENABLED=1` and linking against a thread library).
 
 A `document_stream` instance uses at most two threads: there is a main thread and a worker thread.
+That caps the gain near a factor of two.
+
+### Parsing on many threads
+
+Documents in a stream are independent, so you can cut the input yourself and parse
+the pieces on as many threads as you like. `simdjson::slice_at` does the cutting:
+it divides the input into blocks and moves each boundary forward to the next
+delimiter, so a document is never split.
+
+```C++
+simdjson::padded_string json = simdjson::padded_string::load("stream.ndjson");
+auto view = simdjson::padded_string_view(json);
+constexpr size_t block_size = 1 << 20;
+
+std::atomic<size_t> next{0};
+std::vector<std::thread> pool;
+for (size_t t = 0; t < std::thread::hardware_concurrency(); t++) {
+  pool.emplace_back([&] {
+    simdjson::ondemand::parser parser;
+    parser.threaded = false;
+    for (;;) {
+      size_t i = next.fetch_add(1);
+      if (i * block_size >= view.size()) { break; }
+      auto piece = simdjson::slice_at(view, '\n', block_size, i);
+      if (piece.empty()) { continue; }
+      simdjson::ondemand::document_stream docs;
+      if (parser.iterate_many(piece, piece.size(),
+                              simdjson::stream_format::newline_delimited).get(docs)) { continue; }
+      for (auto doc : docs) { /* ... */ }
+    }
+  });
+}
+for (auto &th : pool) { th.join(); }
+```
+
+Give each thread its own parser and set `parser.threaded = false`: the parallelism
+is across slices, so a stage-1 thread per parser would only oversubscribe.
+
+A slice is empty when its block falls entirely inside one document, which happens
+only if that document is longer than `block_size`; skip it and continue. Iterate
+while `i * block_size < view.size()` rather than stopping at the first empty slice.
+
+The delimiter must not occur inside a document: a line feed for NDJSON, or a
+record separator (`0x1E`) for RFC 7464.
 
 Support
 -------

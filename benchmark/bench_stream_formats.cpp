@@ -1,5 +1,8 @@
 #include <benchmark/benchmark.h>
+#include <atomic>
 #include <string>
+#include <thread>
+#include <vector>
 #include "simdjson.h"
 
 using namespace simdjson;
@@ -9,6 +12,8 @@ namespace {
 enum class stream_case {
   ndjson_small,
   ndjson_large,
+  newline_small,
+  newline_large,
   rfc7464_small,
   rfc7464_large,
   comma_delimited_small,
@@ -33,6 +38,7 @@ std::string make_document(size_t id, size_t payload_size) {
 
 stream_dataset build_dataset(stream_case which) {
   const bool small = which == stream_case::ndjson_small ||
+                     which == stream_case::newline_small ||
                      which == stream_case::rfc7464_small ||
                      which == stream_case::comma_delimited_small;
   const bool rfc = which == stream_case::rfc7464_small ||
@@ -76,6 +82,10 @@ const stream_dataset &get_dataset(stream_case which) {
       return ndjson_small;
     case stream_case::ndjson_large:
       return ndjson_large;
+    case stream_case::newline_small:
+      return ndjson_small;
+    case stream_case::newline_large:
+      return ndjson_large;
     case stream_case::rfc7464_small:
       return rfc_small;
     case stream_case::rfc7464_large:
@@ -99,8 +109,11 @@ static void bench_ondemand(benchmark::State &state) {
   ondemand::parser parser;
   parser.threaded = threaded;
   stream_format format = stream_format::whitespace_delimited;
-  if constexpr (which == stream_case::rfc7464_small ||
-                which == stream_case::rfc7464_large) {
+  if constexpr (which == stream_case::newline_small ||
+                which == stream_case::newline_large) {
+    format = stream_format::newline_delimited;
+  } else if constexpr (which == stream_case::rfc7464_small ||
+                       which == stream_case::rfc7464_large) {
     format = stream_format::json_sequence;
   } else if constexpr (which == stream_case::comma_delimited_small ||
                        which == stream_case::comma_delimited_large) {
@@ -127,6 +140,52 @@ static void bench_ondemand(benchmark::State &state) {
       }
       sum += id;
     }
+    benchmark::DoNotOptimize(sum);
+  }
+  set_counters(state, dataset);
+}
+
+
+// Documents are independent, so a caller can cut the input with slice_at and
+// parse the pieces on as many threads as it likes.
+template <stream_case which>
+static void bench_sliced(benchmark::State &state) {
+  const auto &dataset = get_dataset(which);
+  const size_t threads = size_t(state.range(0));
+  const stream_format format =
+      (which == stream_case::newline_small || which == stream_case::newline_large)
+          ? stream_format::newline_delimited
+          : stream_format::whitespace_delimited;
+  auto view = padded_string_view(dataset.json);
+
+  for (const auto _ : state) {
+    std::atomic<size_t> next{0};
+    std::vector<uint64_t> sums(threads, 0);
+    std::vector<std::thread> pool;
+    pool.reserve(threads);
+    for (size_t t = 0; t < threads; t++) {
+      pool.emplace_back([&, t] {
+        ondemand::parser parser;
+        parser.threaded = false;
+        uint64_t local = 0;
+        for (;;) {
+          const size_t i = next.fetch_add(1, std::memory_order_relaxed);
+          if (i * BATCH_SIZE >= view.size()) { break; }
+          auto piece = slice_at(view, '\n', BATCH_SIZE, i);
+          if (piece.empty()) { continue; }
+          ondemand::document_stream docs;
+          if (parser.iterate_many(piece, piece.size(), format).get(docs)) { continue; }
+          for (auto doc : docs) {
+            uint64_t id;
+            if (!doc["id"].get_uint64().get(id)) { local += id; }
+          }
+        }
+        sums[t] = local;
+      });
+    }
+    for (auto &th : pool) { th.join(); }
+    uint64_t sum = 0;
+    for (uint64_t v : sums) { sum += v; }
     benchmark::DoNotOptimize(sum);
   }
   set_counters(state, dataset);
@@ -174,6 +233,27 @@ BENCHMARK(bench_ondemand<stream_case::ndjson_small>)
 BENCHMARK(bench_ondemand<stream_case::ndjson_large>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::newline_small>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::newline_large>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+// The stage1/stage2 overlap thread caps out near 2x; slicing does not.
+BENCHMARK(bench_ondemand<stream_case::ndjson_small, false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_ondemand<stream_case::newline_small, false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true);
+BENCHMARK(bench_sliced<stream_case::ndjson_small>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(1)->Arg(2)->Arg(4)->Arg(8);
+BENCHMARK(bench_sliced<stream_case::newline_small>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(1)->Arg(2)->Arg(4)->Arg(8);
 BENCHMARK(bench_ondemand<stream_case::rfc7464_small>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);

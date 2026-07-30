@@ -182,6 +182,25 @@ inline bool padded_input::needs_allocation(const char* buf, size_t len, size_t p
 }
 #endif // SIMDJSON_CPLUSPLUS17
 
+inline padded_string_view slice_at(padded_string_view data, char delimiter,
+                                   size_t block_size, size_t index) noexcept {
+  if (block_size == 0 || index > data.size() / block_size) { return {}; }
+  const size_t raw_begin = index * block_size;
+  if (raw_begin >= data.size()) { return {}; }
+
+  auto snap = [&](size_t want) -> size_t {
+    if (want >= data.size()) { return data.size(); }
+    const void *p = std::memchr(data.data() + want, delimiter, data.size() - want);
+    return p ? size_t(static_cast<const char *>(p) - data.data()) + 1 : data.size();
+  };
+
+  const size_t begin = (raw_begin == 0) ? 0 : snap(raw_begin);
+  const size_t end = snap(raw_begin + block_size);
+  if (begin >= end) { return {}; }
+  return padded_string_view(data.data() + begin, end - begin,
+                            data.capacity() - begin);
+}
+
 } // namespace simdjson
 
 

@@ -6,6 +6,8 @@
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/document-inl.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
+
+#include <cstring>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <algorithm>
@@ -109,11 +111,6 @@ simdjson_inline document_stream::document_stream(
     , use_thread(_parser.threaded) // we need to make a copy because _parser.threaded can change
     #endif
 {
-#ifdef SIMDJSON_THREADS_ENABLED
-  if(worker.get() == nullptr) {
-    error = MEMALLOC;
-  }
-#endif
 }
 
 simdjson_inline document_stream::document_stream() noexcept
@@ -232,6 +229,10 @@ inline void document_stream::start() noexcept {
   #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread on next batch if needed
+    if (worker.get() == nullptr) {
+      worker.reset(new(std::nothrow) stage1_worker());
+      if (worker.get() == nullptr) { error = MEMALLOC; return; }
+    }
     error = stage1_thread_parser.allocate(batch_size);
     if (error) { return; }
     worker->start_thread();
@@ -311,7 +312,57 @@ inline void document_stream::next() noexcept {
   }
 }
 
+simdjson_inline uint8_t document_stream::document_delimiter() const noexcept {
+  switch (format) {
+    case stream_format::newline_delimited: return '\n';
+    case stream_format::json_sequence: return 0x1E;
+    default: return 0;
+  }
+}
+
+simdjson_inline bool document_stream::skip_to_delimiter(uint8_t delimiter) noexcept {
+  const uint8_t *const base = &buf[batch_start];
+  const token_position pos = doc.iter.position();
+  const token_position end = doc.iter.end_position();
+  if (pos >= end) { return false; }
+  const size_t here = size_t(doc.iter.token.peek(pos) - base);
+  const size_t batch_len =
+      (len - batch_start < batch_size) ? len - batch_start : batch_size;
+  if (here >= batch_len) { return false; }
+  const uint8_t *const found = static_cast<const uint8_t *>(
+      memchr(base + here, delimiter, batch_len - here));
+  if (found == nullptr) { return false; }
+
+  const uint32_t boundary = uint32_t(found - base);
+  // The answer is near `pos`: the delimiter ends the current document, while
+  // `end` spans the whole batch. Gallop first so the cost follows the distance
+  // rather than the size of the batch.
+  token_position lo = pos;
+  size_t hop = 1;
+  while (lo + hop < end && lo[hop] < boundary) { lo += hop; hop <<= 1; }
+  token_position hi = (lo + hop < end) ? lo + hop : end;
+  while (lo < hi) {
+    const token_position mid = lo + ((hi - lo) >> 1);
+    if (*mid < boundary) { lo = mid + 1; } else { hi = mid; }
+  }
+  doc.iter.token.set_position(lo);
+  return true;
+}
+
 inline void document_stream::next_document() noexcept {
+  // A delimiter that cannot occur inside a document tells us where the current
+  // one ends, so we can jump there instead of walking every structural. Only
+  // valid while the iterator is still inside the document: a consumed document
+  // already sits on the next one's first token, and skip_child() returns at
+  // once for it.
+  const uint8_t delimiter = document_delimiter();
+  if (delimiter != 0 && !error && doc.iter.depth() > 0 &&
+      skip_to_delimiter(delimiter)) {
+    doc.iter._depth = 1;
+    doc.iter._string_buf_loc = parser->string_buf.get();
+    doc.iter._root = doc.iter.position();
+    return;
+  }
   // Go to next place where depth=0 (document depth)
   error = doc.iter.skip_child(0);
   if (error) { return; }

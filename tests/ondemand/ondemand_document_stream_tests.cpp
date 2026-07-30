@@ -807,6 +807,128 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // newline_delimited and json_sequence let next_document() jump to the
+    // delimiter instead of walking the document. The shortcut is only taken
+    // while the iterator is inside the document, so both a partial read and a
+    // full read must give the same documents.
+    bool delimited_partial_read() {
+        TEST_START();
+        auto nd = R"({"a":1,"b":2}
+{"a":3,"b":4}
+{"a":5,"b":6})"_padded;
+        auto seq = "\x1E{\"a\":1,\"b\":2}\n\x1E{\"a\":3,\"b\":4}\n\x1E{\"a\":5,\"b\":6}\n"_padded;
+        struct { padded_string_view json; stream_format fmt; } cases[] = {
+            { nd, stream_format::newline_delimited },
+            { seq, stream_format::json_sequence },
+        };
+        for (auto &c : cases) {
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(c.json, c.json.size(), c.fmt).get(stream) );
+            size_t count = 0;
+            int64_t total = 0;
+            for (auto doc : stream) {
+                int64_t a;
+                ASSERT_SUCCESS( doc.find_field("a").get_int64().get(a) );
+                total += a; count++;
+            }
+            ASSERT_EQUAL( count, 3 );
+            ASSERT_EQUAL( total, 9 );
+        }
+        TEST_SUCCEED();
+    }
+
+    bool delimited_full_read() {
+        TEST_START();
+        auto json = R"({"a":1,"b":2}
+{"a":3,"b":4}
+{"a":5,"b":6})"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, json.size(),
+                                            stream_format::newline_delimited).get(stream) );
+        size_t count = 0;
+        int64_t total = 0;
+        for (auto doc : stream) {
+            ondemand::object obj;
+            ASSERT_SUCCESS( doc.get_object().get(obj) );
+            for (auto field : obj) {
+                int64_t v;
+                ASSERT_SUCCESS( field.value().get_int64().get(v) );
+                total += v;
+            }
+            count++;
+        }
+        ASSERT_EQUAL( count, 3 );
+        ASSERT_EQUAL( total, 21 );
+        TEST_SUCCEED();
+    }
+
+    bool newline_delimited_edge_cases() {
+        TEST_START();
+        auto json = "{\"a\":1}\r\n{\"a\":2}\n\n{\"a\":3}\n"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, json.size(),
+                                            stream_format::newline_delimited).get(stream) );
+        size_t count = 0;
+        int64_t total = 0;
+        for (auto doc : stream) {
+            int64_t a;
+            ASSERT_SUCCESS( doc.find_field("a").get_int64().get(a) );
+            total += a; count++;
+        }
+        ASSERT_EQUAL( count, 3 );
+        ASSERT_EQUAL( total, 6 );
+        TEST_SUCCEED();
+    }
+
+    bool newline_delimited_scalars() {
+        TEST_START();
+        auto json = "1\n2\n3\n4"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, json.size(),
+                                            stream_format::newline_delimited).get(stream) );
+        size_t count = 0;
+        int64_t total = 0;
+        for (auto doc : stream) {
+            int64_t v;
+            ASSERT_SUCCESS( doc.get_int64().get(v) );
+            total += v; count++;
+        }
+        ASSERT_EQUAL( count, 4 );
+        ASSERT_EQUAL( total, 10 );
+        TEST_SUCCEED();
+    }
+
+    // Same documents as whitespace_delimited, including across batch
+    // boundaries where the fast path runs out of delimiters and falls back.
+    bool newline_delimited_agrees_with_default() {
+        TEST_START();
+        auto json = R"({"x":[1,2,3],"y":{"z":"s"}}
+{"x":[],"y":{"z":"t"}}
+{"x":[4],"y":{"z":"u"}})"_padded;
+        const stream_format formats[2] = {stream_format::whitespace_delimited,
+                                          stream_format::newline_delimited};
+        for (size_t batch : {size_t(64), size_t(128), json.size()}) {
+            std::vector<std::string> got[2];
+            for (int which = 0; which < 2; which++) {
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(json, batch, formats[which]).get(stream) );
+                for (auto doc : stream) {
+                    std::string_view z;
+                    ASSERT_SUCCESS( doc["y"]["z"].get_string().get(z) );
+                    got[which].emplace_back(z);
+                }
+            }
+            ASSERT_EQUAL( got[0].size(), got[1].size() );
+            for (size_t i = 0; i < got[0].size(); i++) { ASSERT_EQUAL( got[0][i], got[1][i] ); }
+        }
+        TEST_SUCCEED();
+    }
+
     bool stress_data_race() {
         TEST_START();
         // Correct JSON.
@@ -2420,6 +2542,11 @@ namespace document_stream_tests {
             adversarial_single_document_array() &&
             document_stream_test() &&
             document_stream_utf8_test() &&
+            delimited_partial_read() &&
+            delimited_full_read() &&
+            newline_delimited_edge_cases() &&
+            newline_delimited_scalars() &&
+            newline_delimited_agrees_with_default() &&
             stress_data_race() &&
             stress_data_race_with_error() &&
             true;

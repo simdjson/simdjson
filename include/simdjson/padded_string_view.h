@@ -171,6 +171,30 @@ inline padded_string_view pad(std::string& s) noexcept;
  */
 inline padded_string_view pad_with_reserve(std::string& s) noexcept;
 
+/**
+ * Return the index-th document-aligned slice of a delimited stream.
+ *
+ * The input is divided into blocks of block_size bytes and each boundary is
+ * moved forward to just past the next delimiter, so a document is never split.
+ * The delimiter must not occur inside a document: a line feed for NDJSON, a
+ * record separator (0x1E) for RFC 7464.
+ *
+ * Slices are contiguous and non-overlapping, and each may be parsed
+ * independently, so callers can process them on as many threads as they like.
+ *
+ * Iterate while index * block_size < data.size(). A slice is empty when its
+ * block falls entirely inside one document, which happens only if that document
+ * is longer than block_size; skip it and continue. With block_size larger than
+ * the longest document, no slice is ever empty.
+ *
+ * @param data       The padded input.
+ * @param delimiter  The byte that separates documents.
+ * @param block_size The nominal slice size, before snapping.
+ * @param index      Which slice to return, counting from zero.
+ */
+inline padded_string_view slice_at(padded_string_view data, char delimiter,
+                                   size_t block_size, size_t index) noexcept;
+
 } // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_VIEW_H
