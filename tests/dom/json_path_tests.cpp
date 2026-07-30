@@ -446,6 +446,129 @@ bool json_path_with_wildcard() {
   TEST_SUCCEED();
 }
 
+// https://github.com/simdjson/simdjson/pull/2800
+// Unterminated bracket-quoted keys used to throw std::out_of_range from
+// get_next_key_and_json_path, aborting noexcept at_path_with_wildcard.
+bool unterminated_bracket_quote_wildcard() {
+  std::cout << "Running unterminated_bracket_quote_wildcard test" << std::endl;
+  auto json = R"({"a": [1, 2, 3], "address": {"city": "Nara"}, "ok": 1})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+
+  // Paths that contain '*' take the wildcard branch and call
+  // get_next_key_and_json_path. Malformed first-segment bracket-quotes must
+  // surface INVALID_JSON_POINTER (and must not abort).
+  const char *first_segment_malformed[] = {
+      R"($["a*)",
+      R"($['a*)",
+      R"($["a"*)",
+      R"($['a'*)",
+      R"($["unterminated*)",
+      R"($['unterminated*)",
+      R"($["*)",
+      R"($['*)",
+      R"($["a"*)", // quote closed but ']' missing before '*'
+  };
+  for (const char *path : first_segment_malformed) {
+    std::cout << "  malformed first segment: " << path << std::endl;
+    ASSERT_EQUAL(doc.at_path_with_wildcard(path).error(), INVALID_JSON_POINTER);
+  }
+
+  // When the first segment is valid but a later bracket-quote is not, child
+  // processing swallows the error and returns an empty result (SUCCESS).
+  // The important property is no throw/abort.
+  const char *later_segment_malformed[] = {
+      R"($["a"]["b*)",
+      R"($["a"]['b*)",
+      R"($["ok"].*)", // ok is a scalar; wildcard suffix yields empty
+  };
+  for (const char *path : later_segment_malformed) {
+    std::cout << "  later-segment / empty result path: " << path << std::endl;
+    std::vector<dom::element> values;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(path).get(values));
+    ASSERT_EQUAL(values.size(), 0);
+  }
+
+  // Well-formed bracket-quoted segments still work with wildcards.
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($["address"].*)").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  std::string_view city;
+  ASSERT_SUCCESS(values[0].get(city));
+  ASSERT_EQUAL(city, "Nara");
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($['address'].*)").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(city));
+  ASSERT_EQUAL(city, "Nara");
+
+  // Non-wildcard at_path uses json_path_to_pointer_conversion (already guarded
+  // for a missing ']'; quotes are not stripped there, so unterminated
+  // forms are still INVALID_JSON_POINTER).
+  ASSERT_EQUAL(doc.at_path(R"($["a")").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path(R"($['a')").error(), INVALID_JSON_POINTER);
+  int64_t ok_val = 0;
+  ASSERT_SUCCESS(doc.at_path("$.ok").get(ok_val));
+  ASSERT_EQUAL(ok_val, 1);
+
+  TEST_SUCCEED();
+}
+
+// Deterministic fuzz-style sweep of truncated / malformed JSONPath strings.
+// Ensures at_path_with_wildcard never aborts on incomplete bracket-quotes.
+bool json_path_malformed_deterministic_fuzz() {
+  std::cout << "Running json_path_malformed_deterministic_fuzz test" << std::endl;
+  auto json = R"({"a":{"b":[1,2,3]},"x":1,"*":true})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+
+  // Seeds that exercise quote / bracket / wildcard combinations.
+  const char *seeds[] = {
+      R"($["a*)",
+      R"($['a*)",
+      R"($["a"][*])",
+      R"($['a'][*])",
+      R"($[*]["b*)",
+      R"($[*]['b*)",
+      R"($["a"]["b*)",
+      R"($["*")",
+      R"($["*"]*)",
+      R"($[*].*)",
+      R"($["a"*].*)",
+      R"($.a["b*)",
+      R"($[")",
+      R"($[')",
+      R"($["])",
+      R"($['])",
+      R"($[""])",
+      R"($[''])",
+      R"($["a])",
+      R"($['a])",
+  };
+
+  for (const char *seed : seeds) {
+    const std::string full(seed);
+    // Try every non-empty prefix so truncation of a once-valid path is covered.
+    for (size_t len = 1; len <= full.size(); len++) {
+      const std::string path = full.substr(0, len);
+      // Must return an error code (or empty success), never throw/abort.
+      auto result = doc.at_path_with_wildcard(path);
+      (void)result.error();
+    }
+  }
+
+  // A few fully valid paths mixed in to keep the happy path warm.
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*").get(values));
+  ASSERT_TRUE(values.size() >= 1);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($["a"].*)").get(values));
+  ASSERT_TRUE(values.size() >= 1);
+
+  TEST_SUCCEED();
+}
+
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
 #if SIMDJSON_EXCEPTIONS
@@ -468,7 +591,8 @@ bool modern_support() {
 }
 
 int main() {
-  if (true && json_path_with_wildcard() && demo() && modern_support() &&
+  if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
+      json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&
