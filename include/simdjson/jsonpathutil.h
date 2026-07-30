@@ -136,6 +136,10 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
       ++i;
     }
 
+    if (i + 1 >= json_path.length() || json_path[i + 1] != ']') {
+      return {key, json_path};
+    }
+
     key = json_path.substr(key_start, i - key_start);
 
     i += 2;
