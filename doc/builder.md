@@ -229,16 +229,6 @@ C++26 static reflection
 
 Static reflection (or compile-time reflection) in C++26 introduces a powerful compile-time mechanism that allows a program to inspect and manipulate its own structure, such as types, variables, functions, and other program elements, during compilation. Unlike runtime reflection in languages like Java or Python, C++26’s static reflection operates entirely at compile time, aligning with C++’s emphasis on zero-overhead abstractions and high performance. It means
 that you can delegate much of the work to the library.
-If you compile with a C++26 compiler that has static reflection enabled,
-simdjson detects it and these features become available on their own. With
-GCC 16, for example:
-
-```bash
-g++ -std=c++26 -freflection myproject.cpp simdjson.cpp
-```
-
-See [static reflection](basics.md#static-reflection-c26) for the detection
-rules and how to override them.
 
 And then you can append your data structures to a `string_builder` instance
 automatically. In most cases, it should work automatically:

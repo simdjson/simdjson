@@ -589,15 +589,7 @@ If you compile with a C++26 compiler that has [P2996](https://wg21.link/P2996)
 static reflection enabled, simdjson detects it and can deserialize a stream of
 JSON documents directly into your own structures **without** writing any
 `tag_invoke` function. The library inspects the non-static public members of
-your type at compile time and produces the parsing code automatically. With
-GCC 16, for example:
-
-```bash
-g++ -std=c++26 -freflection myproject.cpp simdjson.cpp
-```
-
-See [static reflection](basics.md#static-reflection-c26) for the detection
-rules and how to override them.
+your type at compile time and produces the parsing code automatically.
 
 Consider the same `Car` structure used in the C++20 example, but **without**
 any `tag_invoke` glue:
