@@ -86,16 +86,28 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
     }
 
     key = json_path.substr(key_start, i - key_start);
-  } else if ((i+1 < json_path.size()) && json_path[i] == '[' && (json_path[i+1] == '\'' || json_path[i+1] == '"')) {
+  } else if ((i + 1 < json_path.size()) && json_path[i] == '[' &&
+             (json_path[i + 1] == '\'' || json_path[i + 1] == '"')) {
+    // Bracket-quoted key: ['key'] or ["key"].
+    // Require a matching closing quote and a following ']'. If either is
+    // missing, return an empty key and the original path so callers can treat
+    // this as a parse failure (e.g. INVALID_JSON_POINTER) without advancing.
+    // Without this check, i += 2 can make i > size() and substr throws
+    // std::out_of_range, which aborts noexcept callers such as
+    // at_path_with_wildcard / for_each_at_path_with_wildcard.
+    const char quote = json_path[i + 1];
     i += 2;
-    size_t key_start = i;
-    while (i < json_path.length() && json_path[i] != '\'' && json_path[i] != '"') {
+    const size_t key_start = i;
+    while (i < json_path.length() && json_path[i] != quote) {
       ++i;
     }
-
+    if (i >= json_path.length() ||               // missing closing quote
+        i + 1 >= json_path.length() ||           // missing ]
+        json_path[i + 1] != ']') {
+      return {key, json_path};
+    }
     key = json_path.substr(key_start, i - key_start);
-
-    i += 2;
+    i += 2; // past quote and ]
   } else if ((i+2 < json_path.size()) && json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
     key = "*";
     i += 3;

@@ -180,6 +180,12 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;
+  // Empty key means the path segment could not be parsed (including malformed
+  // bracket-quoted keys). Without this check, an empty key is treated as index
+  // 0 and remaining_path may be unchanged, causing infinite recursion.
+  if (key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
   // Wildcard case
   if (key=="*"){
     for(auto element: *this) {

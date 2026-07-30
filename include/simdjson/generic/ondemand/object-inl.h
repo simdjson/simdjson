@@ -187,6 +187,12 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;
+  // Empty key means the path segment could not be parsed (including malformed
+  // bracket-quoted keys). Match DOM at_path_with_wildcard and avoid treating
+  // "no progress" as a recursive lookup of "".
+  if (key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
   // Handle when its the case for wildcard
   if (key == "*") {
     // Loop through each field in the object
