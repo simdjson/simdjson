@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #if SIMDJSON_SUPPORTS_RANGES
 #include <ranges>
@@ -336,6 +337,106 @@ bool escape_and_append_with_quotes() {
   auto result = sb.view().get(p);
   ASSERT_SUCCESS(result);
   ASSERT_EQUAL(p, "\"Hello, \\\"world\\\"!\"");
+  TEST_SUCCEED();
+}
+
+// Scalar reference for JSON string-content escaping (matches escape_json_char).
+static std::string reference_escape(std::string_view in) {
+  static const char *const ctrl[32] = {
+      "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
+      "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
+      "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
+      "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
+      "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
+  std::string out;
+  out.reserve(in.size() * 2);
+  for (unsigned char c : in) {
+    if (c == '"') {
+      out += "\\\"";
+    } else if (c == '\\') {
+      out += "\\\\";
+    } else if (c < 32) {
+      out += ctrl[c];
+    } else {
+      out.push_back(char(c));
+    }
+  }
+  return out;
+}
+
+static bool check_escape_matches_reference(std::string_view in) {
+  simdjson::builder::string_builder sb;
+  sb.escape_and_append(in);
+  std::string_view got;
+  if (sb.view().get(got)) {
+    std::cerr << "FAIL: escape_and_append view() error for len=" << in.size()
+              << std::endl;
+    return false;
+  }
+  const std::string expected = reference_escape(in);
+  if (got != expected) {
+    std::cerr << "FAIL: write_string_escaped mismatch for len=" << in.size()
+              << std::endl;
+    return false;
+  }
+  return true;
+}
+
+// Exercises every length class of the block-escape path (scalar <4, 4x2, 8x2,
+// full 16-byte blocks + last-16 tail), single quotable positions, all control
+// characters, dense escapes, and random mixes against a scalar reference.
+bool escape_write_string_escaped_exhaustive() {
+  TEST_START();
+
+  for (size_t n = 0; n <= 48; n++) {
+    ASSERT_TRUE(check_escape_matches_reference(std::string(n, 'a')));
+  }
+
+  const char specials[] = {'"',  '\\', '\n', '\t', '\r',
+                           '\b', '\f', char(0), char(1), char(31)};
+  for (size_t n = 1; n <= 40; n++) {
+    for (size_t pos = 0; pos < n; pos++) {
+      for (char sp : specials) {
+        std::string s(n, 'x');
+        s[pos] = sp;
+        ASSERT_TRUE(check_escape_matches_reference(s));
+      }
+    }
+  }
+
+  for (int c = 0; c < 32; c++) {
+    ASSERT_TRUE(check_escape_matches_reference(std::string(1, char(c))));
+  }
+
+  ASSERT_TRUE(check_escape_matches_reference(std::string(32, '"')));
+  ASSERT_TRUE(check_escape_matches_reference(std::string(32, '\\')));
+  ASSERT_TRUE(check_escape_matches_reference(std::string(17, '\n')));
+
+  // Deterministic LCG so CI is reproducible without depending on rand().
+  uint32_t state = 1;
+  auto next = [&state]() -> uint32_t {
+    state = state * 1664525u + 1013904223u;
+    return state;
+  };
+  for (int t = 0; t < 2000; t++) {
+    const size_t n = size_t(next() % 64);
+    std::string s(n, '\0');
+    for (size_t i = 0; i < n; i++) {
+      s[i] = char(next() & 0xff);
+    }
+    ASSERT_TRUE(check_escape_matches_reference(s));
+  }
+
+  // High bytes must pass through unescaped; mix with a quotable mid-string.
+  ASSERT_TRUE(check_escape_matches_reference(
+      std::string("\xc3\xa9\xe2\x82\xac\xf0\x9f\x98\x80")));
+  {
+    std::string mixed(20, char(0x80));
+    mixed.push_back('"');
+    mixed.append(5, char(0xff));
+    ASSERT_TRUE(check_escape_matches_reference(mixed));
+  }
+
   TEST_SUCCEED();
 }
 
@@ -804,8 +905,9 @@ bool run() {
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
-         append_raw() && raw_with_length() && string_convertion() &&
-         buffer_growth() && unicode_validation() && true;
+         escape_write_string_escaped_exhaustive() && append_raw() &&
+         raw_with_length() && string_convertion() && buffer_growth() &&
+         unicode_validation() && true;
 }
 
 } // namespace builder_tests
