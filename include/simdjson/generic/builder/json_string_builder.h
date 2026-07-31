@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/implementation_simdjson_result_base.h"
+#include <string>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -51,6 +52,27 @@ namespace builder {
 class string_builder {
 public:
   simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+
+  /**
+   * Build directly into `dest`: the string's storage is used as the output
+   * buffer (growing it as needed), so callers that reuse a string across
+   * calls pay no per-call allocation and no final copy. The builder writes
+   * into dest.data() and the caller is expected to dest.resize(size()) when
+   * done (to_json does this). While the builder is live, dest's size is its
+   * capacity and its contents are the partially-built output; dest must not
+   * be read or written by anyone else (in particular, the value being
+   * serialized must not alias dest).
+   */
+  explicit simdjson_inline string_builder(std::string &dest,
+                                          size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+
+  // The raw buffer pointer below makes the implicit copy operations unsafe;
+  // delete them explicitly (which -Weffc++ requires anyway) and keep the
+  // moves the class always had.
+  string_builder(const string_builder &) = delete;
+  string_builder &operator=(const string_builder &) = delete;
+  simdjson_inline string_builder(string_builder &&) noexcept = default;
+  simdjson_inline string_builder &operator=(string_builder &&) noexcept = default;
 
   static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
 
@@ -253,7 +275,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
   // forces those reloads when accessed via members of *this). User
   // code should NOT call these directly.
   // ============================================================
-  simdjson_inline char *unsafe_data() noexcept { return buffer.get(); }
+  simdjson_inline char *unsafe_data() noexcept { return buf; }
   simdjson_inline size_t unsafe_position() const noexcept { return position; }
   simdjson_inline size_t unsafe_capacity() const noexcept { return capacity; }
   simdjson_inline void unsafe_set_position(size_t p) noexcept { position = p; }
@@ -285,10 +307,18 @@ private:
    */
   simdjson_inline void set_valid(bool valid) noexcept;
 
-  std::unique_ptr<char[]> buffer{};
+  // Hot trio first (touched on every append): the cached raw pointer to the
+  // active storage — buffer.get() in owned mode, external->data() in
+  // string-backed mode, kept in sync by the constructors and grow_buffer —
+  // plus write position and capacity.
+  char *buf{nullptr};
   size_t position{0};
   size_t capacity{0};
+  // Cold state: ownership, validity, and the optional string backing.
+  std::unique_ptr<char[]> buffer{};
   bool is_valid{true};
+  // Non-null when building directly into a caller-provided std::string.
+  std::string *external{nullptr};
 };
 
 

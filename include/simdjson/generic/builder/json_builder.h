@@ -443,23 +443,30 @@ void append(string_builder &b, const Z &z) {
 }
 
 
-template <class Z>
-simdjson_warn_unused simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
-  string_builder b(initial_capacity);
-  append(b, z);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
-}
+// The convenience entry points below (to_json/to_json_string) build directly
+// into the destination std::string: its storage is the builder's buffer, so
+// there is no final copy, and a caller that reuses the same string across
+// calls pays no per-call allocation either (the string keeps its capacity).
+// Callers must not pass a destination that aliases the value being
+// serialized.
 
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
-  string_builder b(initial_capacity);
+  string_builder b(s, initial_capacity);
   append(b, z);
   std::string_view view;
-  if(auto e = b.view().get(view); e) { return e; }
-  s.assign(view);
+  if(auto e = b.view().get(view); e) { s.clear(); return e; }
+  // The output was written in place; drop the unused tail (no copy, the
+  // string keeps its capacity for the next call).
+  s.resize(view.size());
   return SUCCESS;
+}
+
+template <class Z>
+simdjson_warn_unused simdjson_result<std::string> to_json_string(const Z &z, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
+  std::string out;
+  if (auto e = to_json(z, out, initial_capacity); e) { return e; }
+  return out;
 }
 
 template <class Z>
@@ -523,21 +530,21 @@ simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, siz
 } // namespace SIMDJSON_IMPLEMENTATION
 // Alias the function template to 'to' in the global namespace
 template <class Z>
-simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  SIMDJSON_IMPLEMENTATION::builder::append(b, z);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
-}
-template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  // Build directly into `s` (its storage is the builder's buffer); see
+  // builder::to_json above.
+  SIMDJSON_IMPLEMENTATION::builder::string_builder b(s, initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::append(b, z);
   std::string_view view;
-  if(auto e = b.view().get(view); e) { return e; }
-  s.assign(view);
+  if(auto e = b.view().get(view); e) { s.clear(); return e; }
+  s.resize(view.size());
   return SUCCESS;
+}
+template <class Z>
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
+  std::string out;
+  if (auto e = to_json(z, out, initial_capacity); e) { return e; }
+  return out;
 }
 // Global namespace function for extract_from
 template<constevalutil::fixed_string... FieldNames, typename T>
