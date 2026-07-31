@@ -6,11 +6,10 @@
 #include "simdjson/generic/ondemand/document_stream.h"
 #include "simdjson/generic/ondemand/document-inl.h"
 #include "simdjson/generic/implementation_simdjson_result_base-inl.h"
-
-#include <cstring>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <algorithm>
+#include <cstring>
 #include <stdexcept>
 
 namespace simdjson {
@@ -330,7 +329,7 @@ simdjson_inline bool document_stream::skip_to_delimiter(uint8_t delimiter) noexc
       (len - batch_start < batch_size) ? len - batch_start : batch_size;
   if (here >= batch_len) { return false; }
   const uint8_t *const found = static_cast<const uint8_t *>(
-      memchr(base + here, delimiter, batch_len - here));
+      std::memchr(base + here, delimiter, batch_len - here));
   if (found == nullptr) { return false; }
 
   const uint32_t boundary = uint32_t(found - base);
@@ -355,6 +354,13 @@ inline void document_stream::next_document() noexcept {
   // valid while the iterator is still inside the document: a consumed document
   // already sits on the next one's first token, and skip_child() returns at
   // once for it.
+  //
+  // The jump does not structure-validate the unread remainder of the current
+  // document: under newline_delimited / json_sequence the next delimiter is
+  // assumed to be the true document boundary. Callers that leave depth() > 0
+  // while violating that contract (e.g. pretty multi-line JSON under
+  // newline_delimited) can mis-align following documents; use
+  // whitespace_delimited if unsure.
   const uint8_t delimiter = document_delimiter();
   if (delimiter != 0 && !error && doc.iter.depth() > 0 &&
       skip_to_delimiter(delimiter)) {

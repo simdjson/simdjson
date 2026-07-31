@@ -358,6 +358,7 @@ The `stream_format` enum has the following values:
 - `stream_format::json_sequence`: RFC 7464 format with RS delimiters
 - `stream_format::comma_delimited`: Comma-separated JSON documents
 - `stream_format::comma_delimited_array`: A single JSON array whose elements are iterated as comma-delimited documents (see below)
+- `stream_format::newline_delimited`: NDJSON/JSON Lines where each document occupies exactly one line (documents are separated by line feeds and no document contains a raw line feed). Same inputs as `whitespace_delimited`, but with a stronger contract. The delimiter-skip optimization that relies on that contract is implemented for ondemand `iterate_many`; DOM `parse_many` accepts the format and stages documents the same way as whitespace-delimited NDJSON. Use `whitespace_delimited` if unsure.
 
 The trailing LF after each JSON text is optional but recommended by the RFC for robustness.
 

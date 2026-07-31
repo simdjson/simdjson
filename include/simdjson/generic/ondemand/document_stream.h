@@ -272,11 +272,22 @@ private:
    */
   inline void next() noexcept;
 
-  /** Move the json_iterator of the document to the location of the next document in the stream. */
+  /**
+   * Move the json_iterator of the document to the location of the next document
+   * in the stream.
+   *
+   * For formats with a document delimiter (`newline_delimited`, `json_sequence`),
+   * when the iterator is still inside the current document (`depth() > 0`), this
+   * may jump to the next delimiter instead of walking remaining structurals. That
+   * jump does not structure-validate the unread remainder.
+   */
   inline void next_document() noexcept;
   /** Byte that ends a document under `format`, or 0 if there is none. */
   simdjson_inline uint8_t document_delimiter() const noexcept;
-  /** Position the iterator just past the next `delimiter`. */
+  /**
+   * Position the iterator at the first structural at or past the next
+   * `delimiter` in the current batch. Returns false if none is found.
+   */
   simdjson_inline bool skip_to_delimiter(uint8_t delimiter) noexcept;
 
   /** Get the next document index. */
