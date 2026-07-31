@@ -334,6 +334,115 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  // https://github.com/simdjson/simdjson/pull/2800
+  // Unterminated bracket-quoted keys must return INVALID_JSON_POINTER, not abort.
+  bool unterminated_bracket_quote() {
+    TEST_START();
+    auto json = R"({"a": [1, 2, 3], "ok": 1, "address": {"city": "Nara"}})"_padded;
+    ondemand::parser parser;
+
+    const char *malformed[] = {
+        R"($["a*)",
+        R"($['a*)",
+        R"($["a")",
+        R"($['a')",
+        R"($["unterminated")",
+        R"($['unterminated')",
+        R"($["a"]["b")",
+        R"($["a"]['b')",
+        R"($[")",
+        R"($[')",
+        R"($["*)",
+        R"($['*)",
+    };
+    for (const char *path : malformed) {
+      std::cout << "  malformed path: " << path << std::endl;
+      auto doc = parser.iterate(json);
+      auto error = doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {});
+      ASSERT_ERROR(error, INVALID_JSON_POINTER);
+    }
+
+    // Valid bracket-quoted path still works.
+    {
+      auto doc = parser.iterate(json);
+      int64_t got = 0;
+      size_t count = 0;
+      ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard(R"($["ok"])", [&](ondemand::value v) {
+        count++;
+        if (v.get_int64().get(got) != SUCCESS) { got = -1; }
+      }));
+      ASSERT_EQUAL(count, 1);
+      ASSERT_EQUAL(got, 1);
+    }
+    {
+      auto doc = parser.iterate(json);
+      std::string_view city;
+      size_t count = 0;
+      ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard(R"($['address'].city)", [&](ondemand::value v) {
+        count++;
+        if (v.get_string().get(city) != SUCCESS) { city = {}; }
+      }));
+      ASSERT_EQUAL(count, 1);
+      ASSERT_EQUAL(city, "Nara");
+    }
+
+    // Root-array document: empty/malformed key must not infinite-recurse as index 0.
+    {
+      auto arr_json = R"([{"name":"x"}])"_padded;
+      auto doc = parser.iterate(arr_json);
+      auto error = doc.for_each_at_path_with_wildcard(R"($["a*)", [](ondemand::value) {});
+      ASSERT_ERROR(error, INVALID_JSON_POINTER);
+    }
+
+    TEST_SUCCEED();
+  }
+
+  // Deterministic prefix-truncation sweep over bracket/wildcard seeds.
+  bool wildcard_malformed_deterministic_fuzz() {
+    TEST_START();
+    auto json = R"({"a":{"b":[1,2,3]},"x":1})"_padded;
+    ondemand::parser parser;
+
+    const char *seeds[] = {
+        R"($["a*)",
+        R"($['a*)",
+        R"($["a"][*])",
+        R"($['a'][*])",
+        R"($[*]["b*)",
+        R"($["a"]["b*)",
+        R"($[*].*)",
+        R"($.a["b*)",
+        R"($[")",
+        R"($[')",
+        R"($["a])",
+        R"($['a])",
+        R"($[""])",
+        R"($[''])",
+    };
+
+    for (const char *seed : seeds) {
+      const std::string full(seed);
+      for (size_t len = 1; len <= full.size(); len++) {
+        const std::string path = full.substr(0, len);
+        auto doc = parser.iterate(json);
+        // Must not throw/abort; any error code is acceptable for truncated paths.
+        (void)doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {});
+      }
+    }
+
+    // Happy path still works after the sweep.
+    {
+      auto doc = parser.iterate(json);
+      size_t count = 0;
+      ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.a.b[*]", [&](ondemand::value) {
+        count++;
+      }));
+      ASSERT_EQUAL(count, 3);
+    }
+
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
@@ -347,7 +456,9 @@ namespace wildcard_tests {
            mixed_types_in_array() &&
            wildcard_nonexistent_field() &&
            root_array_wildcard() &&
-           wildcard_raw_json_issue_2684();
+           wildcard_raw_json_issue_2684() &&
+           unterminated_bracket_quote() &&
+           wildcard_malformed_deterministic_fuzz();
   }
 }
 
