@@ -198,7 +198,8 @@ simdjson_inline void base_formatter<formatter>::number(double x) {
   }
 #endif
 
-  char number_buffer[24];
+  char number_buffer[40]; // emit at most 24 chars but write past them
+                          // (see src/to_chars::dragonbox())
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
   // argument.
