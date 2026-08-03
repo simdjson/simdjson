@@ -117,164 +117,6 @@ inline bool has_json_escapable_byte(uint64_t x) {
 
 **/
 
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline bool
-simple_needs_escaping(std::string_view v) {
-  for (char c : v) {
-    // a table lookup is faster than a series of comparisons
-    if (json_quotable_character[static_cast<uint8_t>(c)]) {
-      return true;
-    }
-  }
-  return false;
-}
-
-#if SIMDJSON_EXPERIMENTAL_HAS_NEON
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  if (view.size() < 16) {
-    return simple_needs_escaping(view);
-  }
-  size_t i = 0;
-  uint8x16_t running = vdupq_n_u8(0);
-  uint8x16_t v34 = vdupq_n_u8(34);
-  uint8x16_t v92 = vdupq_n_u8(92);
-
-  for (; i + 15 < view.size(); i += 16) {
-    uint8x16_t word = vld1q_u8((const uint8_t *)view.data() + i);
-    running = vorrq_u8(running, vceqq_u8(word, v34));
-    running = vorrq_u8(running, vceqq_u8(word, v92));
-    running = vorrq_u8(running, vcltq_u8(word, vdupq_n_u8(32)));
-  }
-  if (i < view.size()) {
-    uint8x16_t word =
-        vld1q_u8((const uint8_t *)view.data() + view.length() - 16);
-    running = vorrq_u8(running, vceqq_u8(word, v34));
-    running = vorrq_u8(running, vceqq_u8(word, v92));
-    running = vorrq_u8(running, vcltq_u8(word, vdupq_n_u8(32)));
-  }
-  const uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(running), 4);
-  return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  if (view.size() < 16) {
-    return simple_needs_escaping(view);
-  }
-  size_t i = 0;
-  __m128i running = _mm_setzero_si128();
-  for (; i + 15 < view.size(); i += 16) {
-
-    __m128i word =
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(view.data() + i));
-    running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
-    running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
-    running = _mm_or_si128(
-        running, _mm_cmpeq_epi8(_mm_subs_epu8(word, _mm_set1_epi8(31)),
-                                _mm_setzero_si128()));
-  }
-  if (i < view.size()) {
-    __m128i word = _mm_loadu_si128(
-        reinterpret_cast<const __m128i *>(view.data() + view.length() - 16));
-    running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(34)));
-    running = _mm_or_si128(running, _mm_cmpeq_epi8(word, _mm_set1_epi8(92)));
-    running = _mm_or_si128(
-        running, _mm_cmpeq_epi8(_mm_subs_epu8(word, _mm_set1_epi8(31)),
-                                _mm_setzero_si128()));
-  }
-  return _mm_movemask_epi8(running) != 0;
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  if (view.size() < 32) {
-    return simple_needs_escaping(view);
-  }
-  size_t i = 0;
-  __m256i running = __lasx_xvreplgr2vr_b(0);
-  __m256i v34 = __lasx_xvreplgr2vr_b(34);
-  __m256i v92 = __lasx_xvreplgr2vr_b(92);
-  __m256i v32 = __lasx_xvreplgr2vr_b(32);
-
-  for (; i + 31 < view.size(); i += 32) {
-    __m256i word =
-        __lasx_xvld(reinterpret_cast<const char *>(view.data() + i), 0);
-    __m256i chunk = __lasx_xvseq_b(word, v34);
-    chunk = __lasx_xvor_v(chunk, __lasx_xvseq_b(word, v92));
-    chunk = __lasx_xvor_v(chunk, __lasx_xvslt_bu(word, v32));
-    running = __lasx_xvor_v(running, chunk);
-  }
-  if (i < view.size()) {
-    __m256i word = __lasx_xvld(
-        reinterpret_cast<const char *>(view.data() + view.length() - 32), 0);
-    __m256i chunk = __lasx_xvseq_b(word, v34);
-    chunk = __lasx_xvor_v(chunk, __lasx_xvseq_b(word, v92));
-    chunk = __lasx_xvor_v(chunk, __lasx_xvslt_bu(word, v32));
-    running = __lasx_xvor_v(running, chunk);
-  }
-  return !__lasx_xbz_v(running);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_LSX
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  if (view.size() < 16) {
-    return simple_needs_escaping(view);
-  }
-  size_t i = 0;
-  __m128i running = __lsx_vreplgr2vr_b(0);
-  __m128i v34 = __lsx_vreplgr2vr_b(34);
-  __m128i v92 = __lsx_vreplgr2vr_b(92);
-  __m128i v32 = __lsx_vreplgr2vr_b(32);
-
-  for (; i + 15 < view.size(); i += 16) {
-    __m128i word =
-        __lsx_vld(reinterpret_cast<const char *>(view.data() + i), 0);
-    __m128i chunk = __lsx_vseq_b(word, v34);
-    chunk = __lsx_vor_v(chunk, __lsx_vseq_b(word, v92));
-    chunk = __lsx_vor_v(chunk, __lsx_vslt_bu(word, v32));
-    running = __lsx_vor_v(running, chunk);
-  }
-  if (i < view.size()) {
-    __m128i word = __lsx_vld(
-        reinterpret_cast<const char *>(view.data() + view.length() - 16), 0);
-    __m128i chunk = __lsx_vseq_b(word, v34);
-    chunk = __lsx_vor_v(chunk, __lsx_vseq_b(word, v92));
-    chunk = __lsx_vor_v(chunk, __lsx_vslt_bu(word, v32));
-    running = __lsx_vor_v(running, chunk);
-  }
-  return !__lsx_bz_v(running);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  if (view.size() < 16) {
-    return simple_needs_escaping(view);
-  }
-  size_t i = 0;
-  __vector unsigned char running = vec_splats((unsigned char)0);
-  __vector unsigned char v34 = vec_splats((unsigned char)34);
-  __vector unsigned char v92 = vec_splats((unsigned char)92);
-  __vector unsigned char v32 = vec_splats((unsigned char)32);
-
-  for (; i + 15 < view.size(); i += 16) {
-    __vector unsigned char word =
-        vec_vsx_ld(0, reinterpret_cast<const unsigned char *>(view.data() + i));
-    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v34));
-    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v92));
-    running = vec_or(running,
-        (__vector unsigned char)vec_cmplt(word, v32));
-  }
-  if (i < view.size()) {
-    __vector unsigned char word = vec_vsx_ld(
-        0, reinterpret_cast<const unsigned char *>(view.data() + view.length() - 16));
-    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v34));
-    running = vec_or(running, (__vector unsigned char)vec_cmpeq(word, v92));
-    running = vec_or(running,
-        (__vector unsigned char)vec_cmplt(word, v32));
-  }
-  return !vec_all_eq(running, vec_splats((unsigned char)0));
-}
-#else
-simdjson_inline bool fast_needs_escaping(std::string_view view) {
-  return simple_needs_escaping(view);
-}
-#endif
-
 // Scalar fallback for finding next quotable character
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character_scalar(const std::string_view view,
@@ -783,7 +625,7 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
       out = escape_block(src, out, i, len, m);
     }
   }
-  return out - initout;
+  return size_t(out - initout);
 }
 
 #else // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
@@ -817,10 +659,12 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
     escape_json_char(input[location], out);
     location += 1;
   }
-  return out - initout;
+  return size_t(out - initout);
 }
 
 #endif // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+#undef SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+
 
 simdjson_inline string_builder::string_builder(size_t initial_capacity)
     : buffer(new(std::nothrow) char[initial_capacity]), position(0),
