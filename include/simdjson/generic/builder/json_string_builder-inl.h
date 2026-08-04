@@ -890,7 +890,9 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_floating_point<number_type>::value) {
-    constexpr size_t max_number_size = 24;
+    // emit at most 24 chars but write past them
+    // (see src/to_chars::dragonbox())
+    constexpr size_t max_number_size = 40;
     if (capacity_check(max_number_size)) {
 #if SIMDJSON_ENABLE_NAN_INF
       // Check if the input might be NaN or infinity

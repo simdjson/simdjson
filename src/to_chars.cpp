@@ -1010,8 +1010,11 @@ inline void dragonbox(char *buf, int &len, int &decimal_exponent,
       "4041424344454647484950515253545556575859"
       "6061626364656667686970717273747576777879"
       "8081828384858687888990919293949596979899";
-  char tmp[24];
-  char *p = tmp + sizeof(tmp); // write backward
+  constexpr int digit_area = 24;
+  char tmp[digit_area + 16]; // 16: for vmov inlined memcpy below
+                             // 1: for manual copy
+                             // remaining: margin to avoid overflow if n<17
+  char *p = tmp + digit_area; // write backward
   std::uint64_t s = dec.significand;
   while (s >= 100) {
     const std::uint32_t idx = static_cast<std::uint32_t>(s % 100) * 2;
@@ -1028,9 +1031,11 @@ inline void dragonbox(char *buf, int &len, int &decimal_exponent,
   } else {
     *--p = static_cast<char>('0' + s);
   }
-  const int n = static_cast<int>(tmp + sizeof(tmp) - p);
-  std::memcpy(buf, p, static_cast<size_t>(n));
-  len = n;
+  std::memcpy(buf, p, 16); //compile-time size let compiler inline
+                                         //and remove 3 branchs for size check
+                                         //16 to vectorize
+  buf[16] = p[16];                       //copy remaining value here
+  len = static_cast<int>(tmp + digit_area - p);
   decimal_exponent = dec.exponent;
 }
 
@@ -1084,7 +1089,7 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
     // digits[000]
     // len <= max_exp + 2
 
-    std::memset(buf + k, '0', static_cast<size_t>(n) - static_cast<size_t>(k));
+    std::memset(buf + k, '0', 16);
     // Make it look like a floating-point number (#362, #378)
     buf[n + 0] = '.';
     buf[n + 1] = '0';
@@ -1094,8 +1099,9 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
   if (0 < n && n <= max_exp) {
     // dig.its
     // len <= max_digits10 + 1
-    std::memmove(buf + (static_cast<size_t>(n) + 1), buf + n,
-                 static_cast<size_t>(k) - static_cast<size_t>(n));
+    char shifted[16];
+    std::memcpy(shifted, buf+static_cast<size_t>(n), 16);
+    std::memcpy(buf + (static_cast<size_t>(n) + 1), shifted, 16);
     buf[n] = '.';
     return buf + (static_cast<size_t>(k) + 1U);
   }
