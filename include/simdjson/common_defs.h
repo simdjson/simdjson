@@ -4,13 +4,31 @@
 #include <cassert>
 #include "simdjson/compiler_check.h"
 #include "simdjson/portability.h"
+#include <cstddef>
 
 namespace simdjson {
 namespace internal {
 /**
  * @private
+ * Scratch capacity that every caller of to_chars must provide.
+ *
+ * The emitted decimal is at most ~24 characters, but dragonbox() and
+ * format_buffer() intentionally write past the logical end with fixed-size
+ * 16/17-byte memcpy/memset operations so the compiler can inline them (no
+ * libc mem* dispatch with size-class branches). The extra bytes are required
+ * for safety of those over-writes; do not shrink this below 40.
+ * See src/to_chars.cpp and #2805.
+ */
+inline constexpr size_t to_chars_buffer_size = 40;
+/**
+ * @private
  * Our own implementation of the C++17 to_chars function.
  * Defined in src/to_chars
+ *
+ * @note The buffer starting at first must have at least to_chars_buffer_size
+ *       bytes of writable storage (see to_chars_buffer_size).
+ * @note The input number must be finite (NaN/Inf are not supported).
+ * @note The result is NOT null-terminated.
  */
 char *to_chars(char *first, const char *last, double value);
 /**

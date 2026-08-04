@@ -1010,10 +1010,11 @@ inline void dragonbox(char *buf, int &len, int &decimal_exponent,
       "4041424344454647484950515253545556575859"
       "6061626364656667686970717273747576777879"
       "8081828384858687888990919293949596979899";
+  // Digit area is 24; +16 padding lets us always memcpy 16 (+1) bytes with a
+  // compile-time size so the compiler inlines (no libc size-class branches).
+  // Callers must provide to_chars_buffer_size (40) bytes for the same reason.
   constexpr int digit_area = 24;
-  char tmp[digit_area + 16]; // 16: for vmov inlined memcpy below
-                             // 1: for manual copy
-                             // remaining: margin to avoid overflow if n<17
+  char tmp[digit_area + 16];
   char *p = tmp + digit_area; // write backward
   std::uint64_t s = dec.significand;
   while (s >= 100) {
@@ -1031,10 +1032,9 @@ inline void dragonbox(char *buf, int &len, int &decimal_exponent,
   } else {
     *--p = static_cast<char>('0' + s);
   }
-  std::memcpy(buf, p, 16); //compile-time size let compiler inline
-                                         //and remove 3 branchs for size check
-                                         //16 to vectorize
-  buf[16] = p[16];                       //copy remaining value here
+  // Fixed-size copy: double has at most 17 significant digits.
+  std::memcpy(buf, p, 16);
+  buf[16] = p[16];
   len = static_cast<int>(tmp + digit_area - p);
   decimal_exponent = dec.exponent;
 }
@@ -1085,10 +1085,15 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
   // k is the length of the buffer (number of decimal digits)
   // n is the position of the decimal point relative to the start of the buffer.
 
+  // All mem* sizes below are compile-time constants so the compiler inlines
+  // them as plain loads/stores. That requires over-writing past the logical
+  // string length; callers must reserve to_chars_buffer_size (40) bytes.
+  // Logical output is still bounded by ~24 characters; only the returned
+  // pointer reflects the true length.
+
   if (k <= n && n <= max_exp) {
     // digits[000]
     // len <= max_exp + 2
-
     std::memset(buf + k, '0', 16);
     // Make it look like a floating-point number (#362, #378)
     buf[n + 0] = '.';
@@ -1099,8 +1104,9 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
   if (0 < n && n <= max_exp) {
     // dig.its
     // len <= max_digits10 + 1
+    // Shift the fractional digits one place right via a temp (overlap).
     char shifted[16];
-    std::memcpy(shifted, buf+static_cast<size_t>(n), 16);
+    std::memcpy(shifted, buf + static_cast<size_t>(n), 16);
     std::memcpy(buf + (static_cast<size_t>(n) + 1), shifted, 16);
     buf[n] = '.';
     return buf + (static_cast<size_t>(k) + 1U);
@@ -1108,26 +1114,30 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
 
   if (min_exp < n && n <= 0) {
     // 0.[000]digits
+    // With kMinExp = -4, n is in {-3,-2,-1,0}, so pad = -n is 0..3.
     // len <= 2 + (-min_exp - 1) + max_digits10
-
-    std::memmove(buf + (2 + static_cast<size_t>(-n)), buf,
-                 static_cast<size_t>(k));
+    char digits[17];
+    std::memcpy(digits, buf, 17);
+    const size_t pad = static_cast<size_t>(-n); // 0..3
     buf[0] = '0';
     buf[1] = '.';
-    std::memset(buf + 2, '0', static_cast<size_t>(-n));
-    return buf + (2U + static_cast<size_t>(-n) + static_cast<size_t>(k));
+    // Fixed upper bound on leading zeros; only the first `pad` matter.
+    std::memset(buf + 2, '0', 4);
+    std::memcpy(buf + 2 + pad, digits, 17);
+    return buf + (2U + pad + static_cast<size_t>(k));
   }
 
   if (k == 1) {
     // dE+123
     // len <= 1 + 5
-
     buf += 1;
   } else {
     // d.igitsE+123
     // len <= max_digits10 + 1 + 5
-
-    std::memmove(buf + 2, buf + 1, static_cast<size_t>(k) - 1);
+    // k-1 <= 16 for double; fixed-size shift via temp (overlap).
+    char shifted[16];
+    std::memcpy(shifted, buf + 1, 16);
+    std::memcpy(buf + 2, shifted, 16);
     buf[1] = '.';
     buf += 1 + static_cast<size_t>(k);
   }
@@ -1142,7 +1152,9 @@ inline char *format_buffer(char *buf, int len, int decimal_exponent,
 The format of the resulting decimal representation is similar to printf's %g
 format. Returns an iterator pointing past-the-end of the decimal representation.
 @note The input number must be finite, i.e. NaN's and Inf's are not supported.
-@note The buffer must be large enough.
+@note The buffer must have at least to_chars_buffer_size (40) writable bytes.
+  Only ~24 characters are ever part of the logical result, but fixed-size
+  16/17-byte mem* over-writes require the extra scratch for safety.
 @note The result is NOT null-terminated.
 */
 char *to_chars(char *first, const char *last, double value) {

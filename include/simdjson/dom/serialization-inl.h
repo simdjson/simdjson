@@ -198,12 +198,13 @@ simdjson_inline void base_formatter<formatter>::number(double x) {
   }
 #endif
 
-  char number_buffer[40]; // emit at most 24 chars but write past them
-                          // (see src/to_chars::dragonbox())
+  // Must be to_chars_buffer_size (40): only ~24 chars are emitted, but
+  // to_chars over-writes with fixed-size 16/17-byte copies for inlining.
+  char number_buffer[simdjson::internal::to_chars_buffer_size];
   // Currently, passing the nullptr to the second argument is
   // safe because our implementation does not check the second
   // argument.
-  char *newp = internal::to_chars(number_buffer, nullptr, x);
+  char *newp = simdjson::internal::to_chars(number_buffer, nullptr, x);
   chars(number_buffer, newp);
 }
 
