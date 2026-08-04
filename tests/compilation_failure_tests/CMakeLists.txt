@@ -40,7 +40,7 @@ endif()
 # key_selector enforces a 63-character key-length limit at compile time. This
 # needs C++20 concepts, which in this project are enabled together with static
 # reflection, so we only register it there.
-if (SIMDJSON_STATIC_REFLECTION)
+if (SIMDJSON_STATIC_REFLECTION_ENABLED)
   # (1) A 63-character key (exactly at the limit) must compile.
   add_cpp_test(key_selector_too_long_should_compile SOURCES key_selector_too_long.cpp COMPILE_ONLY LABELS acceptance no_mingw)
   # (2) A 64-character key must fail to compile with the documented static_assert

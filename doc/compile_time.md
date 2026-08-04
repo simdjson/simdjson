@@ -19,16 +19,7 @@ your software.
 With C++26, there is another way: parse the JSON file along with your C++ code. In this manner,
 the JSON data becomes native C++ data.
 
-The simdjson library supports parsing JSON documents at compile time if you have C++26 support. To
-activate C++26 reflection support, you can compile
-your code with the `SIMDJSON_STATIC_REFLECTION` macro set:
-
-```cpp
-#define SIMDJSON_STATIC_REFLECTION 1
-//...
-#include "simdjson.h"
-```
-
+The simdjson library supports parsing JSON documents at compile time if you have C++26 support.
 The `simdjson::compile_time::parse_json` function parses a JSON document at **compile time** and returns a `constexpr` structure reflecting its content. We support the full range of JSON values, which are mapped to C++ types as in
 the following table.
 

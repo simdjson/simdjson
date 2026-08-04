@@ -1,6 +1,6 @@
-if(SIMDJSON_STATIC_REFLECTION)
+if(SIMDJSON_STATIC_REFLECTION_ENABLED)
   link_libraries(simdjson)
   include_directories(..)
   add_cpp_test(basic_compile_time_tests SOURCES basic_compile_time_tests.cpp COMPILE_ONLY)
   add_cpp_test(compile_time_json_tests SOURCES compile_time_json_tests.cpp)
-endif(SIMDJSON_STATIC_REFLECTION)
+endif(SIMDJSON_STATIC_REFLECTION_ENABLED)

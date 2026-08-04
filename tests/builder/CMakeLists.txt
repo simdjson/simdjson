@@ -1,7 +1,7 @@
 # All remaining tests link with simdjson proper
 include_directories(..)
 add_cpp_test(builder_string_builder_tests                LABELS ondemand acceptance per_implementation)
-if(SIMDJSON_STATIC_REFLECTION)
+if(SIMDJSON_STATIC_REFLECTION_ENABLED)
   add_cpp_test(static_reflection_custom_tests            LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_builder_tests           LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_comprehensive_tests     LABELS ondemand acceptance per_implementation)
@@ -9,7 +9,7 @@ if(SIMDJSON_STATIC_REFLECTION)
   add_cpp_test(static_reflection_enum_tests              LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_fractured_json_tests    LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_annotations_tests       LABELS ondemand acceptance per_implementation)
-endif(SIMDJSON_STATIC_REFLECTION)
+endif(SIMDJSON_STATIC_REFLECTION_ENABLED)
 # Copy the simdjson dll into the tests directory
 if(MSVC AND BUILD_SHARED_LIBS)
   add_custom_command(TARGET builder_string_builder_tests POST_BUILD        # Adds a post-build event

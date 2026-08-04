@@ -19,6 +19,15 @@ add_cpp_test(memory_map_tests    LABELS other acceptance                   )
 add_cpp_test(prettify_tests      LABELS other acceptance per_implementation)
 add_cpp_test(fractured_json_tests LABELS other acceptance per_implementation)
 
+# Checks that the headers and the build system agree on whether static
+# reflection is available, and that the matching API works.
+add_cpp_test(reflection_autodetect_tests LABELS other acceptance)
+if(SIMDJSON_STATIC_REFLECTION_ENABLED)
+  target_compile_definitions(reflection_autodetect_tests PRIVATE SIMDJSON_EXPECT_STATIC_REFLECTION=1)
+else()
+  target_compile_definitions(reflection_autodetect_tests PRIVATE SIMDJSON_EXPECT_STATIC_REFLECTION=0)
+endif()
+
 if(WIN32 AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
   add_custom_command(TARGET unicode_tests POST_BUILD        # Adds a post-build event

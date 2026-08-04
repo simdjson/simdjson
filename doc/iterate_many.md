@@ -585,18 +585,11 @@ in the order they appear in the JSON document.
 C++26 features (static reflection)
 -----------------------------------
 
-If you have a C++26 compatible compiler with [P2996](https://wg21.link/P2996)
-static reflection support, you can compile the simdjson library with the
-`SIMDJSON_STATIC_REFLECTION` macro set to `1`. When this is the case, simdjson
-can deserialize a stream of JSON documents directly into your own structures
-**without** writing any `tag_invoke` function. The library inspects the
-non-static public members of your type at compile time and produces the
-parsing code automatically.
-
-```cpp
-#define SIMDJSON_STATIC_REFLECTION 1
-#include "simdjson.h"
-```
+If you compile with a C++26 compiler that has [P2996](https://wg21.link/P2996)
+static reflection enabled, simdjson detects it and can deserialize a stream of
+JSON documents directly into your own structures **without** writing any
+`tag_invoke` function. The library inspects the non-static public members of
+your type at compile time and produces the parsing code automatically.
 
 Consider the same `Car` structure used in the C++20 example, but **without**
 any `tag_invoke` glue:

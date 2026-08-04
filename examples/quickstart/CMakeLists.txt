@@ -20,14 +20,14 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   endif()
 
   add_quickstart_test(quickstart_noexceptions   quickstart_noexceptions.cpp NO_EXCEPTIONS LABELS acceptance)
-  if(NOT SIMDJSON_STATIC_REFLECTION)
+  if(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
     add_quickstart_test(quickstart_noexceptions11 quickstart_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11)
-  endif(NOT SIMDJSON_STATIC_REFLECTION)
+  endif(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
 
   add_quickstart_test(quickstart2_noexceptions   quickstart2_noexceptions.cpp NO_EXCEPTIONS LABELS acceptance)
-  if(NOT SIMDJSON_STATIC_REFLECTION)
+  if(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
     add_quickstart_test(quickstart2_noexceptions11 quickstart2_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11)
-  endif(NOT SIMDJSON_STATIC_REFLECTION)
+  endif(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
 
   # On-Demand Quick Start
   if (SIMDJSON_EXCEPTIONS)
@@ -37,8 +37,8 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   endif()
 
   add_quickstart_test(quickstart_ondemand_noexceptions   quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS LABELS quickstart_ondemand acceptance)
-  if(NOT SIMDJSON_STATIC_REFLECTION)
+  if(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
     add_quickstart_test(quickstart_ondemand_noexceptions11 quickstart_ondemand_noexceptions.cpp NO_EXCEPTIONS CXX_STANDARD c++11 LABELS quickstart_ondemand)
-  endif(NOT SIMDJSON_STATIC_REFLECTION)
+  endif(NOT SIMDJSON_STATIC_REFLECTION_ENABLED)
 
 endif()

@@ -14,7 +14,9 @@
 #endif
 
 // C++ 26
-#if !defined(SIMDJSON_CPLUSPLUS26) && (SIMDJSON_CPLUSPLUS >= 202402L) // update when the standard is finalized
+// While C++26 is a working draft, compilers report 202400L in C++26 mode
+// (both GCC 16 and Clang 21 do). Update when the standard is finalized.
+#if !defined(SIMDJSON_CPLUSPLUS26) && (SIMDJSON_CPLUSPLUS >= 202400L)
 #define SIMDJSON_CPLUSPLUS26 1
 #endif
 
@@ -71,14 +73,48 @@
 #endif
 #endif
 
-// The current specification is unclear on how we detect
-// static reflection, both __cpp_lib_reflection and
-// __cpp_impl_reflection are proposed in the draft specification.
-// For now, we disable static reflect by default. It must be
-// specified at compiler time.
+// Static reflection.
+//
+// The reflection-based APIs (simdjson::to, document::get<T>, the builder,
+// compile-time JSON, annotations) need considerably more than the reflection
+// operator. We turn them on only when the compiler advertises all of:
+//
+//   P2996 reflection (^^, splicers, <meta>)  __cpp_impl_reflection,
+//                                            __cpp_lib_reflection
+//   P1306 expansion statements (template for) __cpp_expansion_statements
+//   P3491 std::define_static_string / _array  __cpp_lib_define_static
+//
+// Two further features we rely on have, as of this writing, no feature-test
+// macro of their own, so they cannot be checked directly:
+//
+//   P3394 annotations ([[=x]], std::meta::annotations_of) -- used for
+//         simdjson::rename and simdjson::skip.
+//   P3289 consteval blocks (consteval { ... }) -- used by compile_time_json.
+//
+// Every implementation that defines the four macros above also implements
+// those two, so requiring the four is sufficient in practice. If that ever
+// stops being true, define SIMDJSON_STATIC_REFLECTION=0 to opt out.
+//
+// SIMDJSON_STATIC_REFLECTION may always be defined by the user (or by the
+// build system) to 0 or 1 to override the detection.
+//
+// Note that C++26 mode alone is not enough: GCC 16 requires -freflection,
+// and only then does it define __cpp_impl_reflection.
 #ifndef SIMDJSON_STATIC_REFLECTION
-#define SIMDJSON_STATIC_REFLECTION 0 // disabled by default.
+#if defined(SIMDJSON_CPLUSPLUS26) &&                                           \
+    defined(__cpp_impl_reflection) && __cpp_impl_reflection >= 202506L &&      \
+    defined(__cpp_lib_reflection) && __cpp_lib_reflection >= 202506L &&        \
+    defined(__cpp_expansion_statements) &&                                     \
+        __cpp_expansion_statements >= 202506L &&                               \
+    defined(__cpp_lib_define_static) && __cpp_lib_define_static >= 202506L
+// __cpp_lib_reflection is the feature-test macro for <meta>, so there is no
+// need for a separate __has_include check (which would have to be guarded for
+// compilers that lack __has_include).
+#define SIMDJSON_STATIC_REFLECTION 1
+#else
+#define SIMDJSON_STATIC_REFLECTION 0
 #endif
+#endif // SIMDJSON_STATIC_REFLECTION
 
 #if defined(__apple_build_version__)
 #if __apple_build_version__ < 14000000
