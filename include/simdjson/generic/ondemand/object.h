@@ -473,10 +473,18 @@ protected:
   simdjson_warn_unused simdjson_inline error_code find_field_raw(const std::string_view key) noexcept;
 
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
   friend struct simdjson_result<object>;
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  friend class object_iterator;
+  friend struct simdjson_result<object_iterator>;
+#endif
 };
 
 } // namespace ondemand
