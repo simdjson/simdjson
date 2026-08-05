@@ -427,6 +427,19 @@ simdjson_inline void escape_store16(char *out, escape_vector v) noexcept {
   _mm_storeu_si128(reinterpret_cast<__m128i *>(out), v);
 }
 
+// Stores lanes [consumed, 16) of v at out (as a full 16-byte store whose
+// trailing lanes are junk covered by the caller's slack). SSE2 has no
+// variable byte shuffle, so spill once and reload unaligned; the compiler
+// hoists the spill store when this is called repeatedly on the same v.
+simdjson_inline void escape_store_tail(escape_vector v, size_t consumed,
+                                       char *out) noexcept {
+  alignas(16) uint8_t spill[32];
+  _mm_store_si128(reinterpret_cast<__m128i *>(spill), v);
+  _mm_store_si128(reinterpret_cast<__m128i *>(spill + 16), _mm_setzero_si128());
+  _mm_storeu_si128(reinterpret_cast<__m128i *>(out),
+                   _mm_loadu_si128(reinterpret_cast<const __m128i *>(spill + consumed)));
+}
+
 // Builds a vector whose bytes 0..7 come from a and bytes 8..15 from b.
 simdjson_inline escape_vector escape_load8x2(const uint8_t *a,
                                              const uint8_t *b) noexcept {
@@ -480,6 +493,36 @@ simdjson_inline escape_vector escape_load16(const uint8_t *p) noexcept {
 
 simdjson_inline void escape_store16(char *out, escape_vector v) noexcept {
   vst1q_u8(reinterpret_cast<uint8_t *>(out), v);
+}
+
+// Row r selects lanes [r, r+15]; out-of-range indices yield 0, which only
+// ever lands in slack bytes. Used to reposition a block's not-yet-emitted
+// tail after an escape expansion shifted the output position.
+alignas(16) static const uint8_t escape_shift_table[16][16] = {
+  { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
+  { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16},
+  { 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17},
+  { 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18},
+  { 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19},
+  { 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20},
+  { 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21},
+  { 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22},
+  { 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23},
+  { 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24},
+  {10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25},
+  {11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26},
+  {12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27},
+  {13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28},
+  {14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29},
+  {15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30},
+};
+
+// Stores lanes [consumed, 16) of v at out via a register shuffle (full
+// 16-byte store; trailing lanes are junk covered by the caller's slack).
+simdjson_inline void escape_store_tail(escape_vector v, size_t consumed,
+                                       char *out) noexcept {
+  vst1q_u8(reinterpret_cast<uint8_t *>(out),
+           vqtbl1q_u8(v, vld1q_u8(escape_shift_table[consumed])));
 }
 
 simdjson_inline escape_vector escape_load8x2(const uint8_t *a,
@@ -565,6 +608,32 @@ simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
   return out + (blockend - pos);
 }
 
+// In-register variant of escape_block for full 16-byte blocks. The block's
+// bytes are already in `word`, and the caller blind-stored them at out, so
+// the clean prefix before the first escape is already in place; after each
+// escape expansion the remaining lanes are repositioned with a register
+// shuffle instead of re-copied from memory. One load and one store per 16
+// input bytes at any escape density. Requires one vector of slack past the
+// worst-case expansion (see the capacity checks in escape_and_append*).
+simdjson_never_inline char *escape_block_hot(escape_vector word, const uint8_t *src,
+                                       char *out, size_t i,
+                                       uint64_t m) noexcept {
+  constexpr uint64_t lane = (uint64_t(1) << escape_mask_bits) - 1;
+  size_t consumed = 0;
+  do {
+    const size_t tz = trailing_zeroes(m);
+    const size_t off = tz / escape_mask_bits;
+    out += off - consumed;
+    escape_json_char(char(src[i + off]), out);
+    consumed = off + 1;
+    m &= ~(lane << tz);
+    if (consumed < 16) {
+      escape_store_tail(word, consumed, out);
+    }
+  } while (m);
+  return out + (16 - consumed);
+}
+
 // Writes the escaped version of input to out, returning the number of bytes
 // written.
 inline size_t write_string_escaped(const std::string_view input, char *out) {
@@ -580,7 +649,11 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
       escape_store16(out, word);
       out += 16;
     } else {
-      out = escape_block(src, out, i, i + 16, escape_bitmask(flags));
+      // Blind-store the block so its clean prefix is in place, then let
+      // escape_block_hot reposition the rest in registers. The store may
+      // overshoot into the callers' slack (see escape_and_append*).
+      escape_store16(out, word);
+      out = escape_block_hot(word, src, out, i, escape_bitmask(flags));
     }
     i += 16;
   }
@@ -1018,11 +1091,11 @@ simdjson_inline void
 string_builder::escape_and_append(std::string_view input) noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
   // Guard against size_t overflow in the multiplication below.
-  if (input.size() > (std::numeric_limits<size_t>::max)() / 6) {
+  if (input.size() > ((std::numeric_limits<size_t>::max)() - 16) / 6) {
     set_valid(false);
     return;
   }
-  if (capacity_check(6 * input.size())) {
+  if (capacity_check(6 * input.size() + 16)) {
     position += write_string_escaped(input, buf + position);
   }
 }
@@ -1031,11 +1104,11 @@ simdjson_inline void
 string_builder::escape_and_append_with_quotes(std::string_view input) noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
   // Guard against size_t overflow in the arithmetic below.
-  if (input.size() > ((std::numeric_limits<size_t>::max)() - 2) / 6) {
+  if (input.size() > ((std::numeric_limits<size_t>::max)() - 18) / 6) {
     set_valid(false);
     return;
   }
-  if (capacity_check(2 + 6 * input.size())) {
+  if (capacity_check(6 * input.size() + 18)) {
     buf[position++] = '"';
     position += write_string_escaped(input, buf + position);
     buf[position++] = '"';
@@ -1045,7 +1118,7 @@ string_builder::escape_and_append_with_quotes(std::string_view input) noexcept {
 simdjson_inline void
 string_builder::escape_and_append_with_quotes(char input) noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
-  if (capacity_check(2 + 6 * 1)) {
+  if (capacity_check(24)) {
     buf[position++] = '"';
     std::string_view cinput(&input, 1);
     position += write_string_escaped(cinput, buf + position);

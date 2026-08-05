@@ -151,8 +151,8 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
-  if (simdjson_unlikely(input.size() > ((std::numeric_limits<size_t>::max)() - 2) / 6)) { return; }
-  if (!w.ensure(2 + 6 * input.size())) { return; }
+  if (simdjson_unlikely(input.size() > ((std::numeric_limits<size_t>::max)() - 18) / 6)) { return; }
+  if (!w.ensure(6 * input.size() + 18)) { return; }
   w.ptr[w.pos++] = '"';
   w.pos += write_string_escaped(input, w.ptr + w.pos);
   w.ptr[w.pos++] = '"';
@@ -182,8 +182,8 @@ simdjson_really_inline constexpr void atom(writer &w, const T &m) {
     // wrapped to a small value, ensure() would spuriously succeed and the
     // subsequent escape would overflow the buffer.
     // Note that this is pedantic except maybe on 32-bit targets.
-    if (simdjson_unlikely(key_sv.size() > ((std::numeric_limits<size_t>::max)() - 3) / 6)) { return; }
-    if (!w.ensure(2 + 6 * key_sv.size() + 1)) { return; }
+    if (simdjson_unlikely(key_sv.size() > ((std::numeric_limits<size_t>::max)() - 19) / 6)) { return; }
+    if (!w.ensure(6 * key_sv.size() + 19)) { return; }
     w.ptr[w.pos++] = '"';
     w.pos += write_string_escaped(key_sv, w.ptr + w.pos);
     w.ptr[w.pos++] = '"';
