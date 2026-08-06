@@ -105,7 +105,7 @@ int main(int argc, const char *argv[]) {
       std::cerr << "You probably have a performance degradation." << std::endl;
       return EXIT_FAILURE;
     }
-    if(bestnewcode < worseref) {
+    if(bestnewcode > worseref) {
       std::cout << "You probably have a performance gain." << std::endl;
       return EXIT_SUCCESS;
     }
