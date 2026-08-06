@@ -19,7 +19,8 @@ namespace internal {
  * for safety of those over-writes; do not shrink this below 40.
  * See src/to_chars.cpp and #2805.
  */
-inline constexpr size_t to_chars_buffer_size = 40;
+// Not "inline constexpr": C++11 targets (e.g. readme_examples11) still include this header.
+static constexpr size_t to_chars_buffer_size = 40;
 /**
  * @private
  * Our own implementation of the C++17 to_chars function.
