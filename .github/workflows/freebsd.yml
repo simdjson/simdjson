@@ -1,0 +1,32 @@
+name: FreeBSD
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ['14.3', '15.1']
+    steps:
+      - uses: actions/checkout@v6
+      - uses: vmactions/freebsd-vm@v1
+        name: Test
+        with:
+          release: ${{ matrix.release }}
+          usesh: true
+          copyback: false
+          cache-after-prepare: true
+          prepare: |
+            pkg install -y cmake git bash
+          run: |
+            cmake -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -B build
+            cmake --build build -j=$(sysctl -n hw.ncpu)
+            ctest --output-on-failure --test-dir build
