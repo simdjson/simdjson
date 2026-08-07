@@ -19,8 +19,11 @@ namespace internal {
  * for safety of those over-writes; do not shrink this below 40.
  * See src/to_chars.cpp and #2805.
  */
-// Not "inline constexpr": C++11 targets (e.g. readme_examples11) still include this header.
-static constexpr size_t to_chars_buffer_size = 40;
+// Use an unscoped enum (not static constexpr / inline constexpr):
+// - C++11 targets (readme_examples11, quickstart11, ...) still include this header
+// - a static constexpr in the amalgamated simdjson.cpp TU is unused there
+//   (only callers in headers use it) and trips -Wunused-const-variable -Werror
+enum : size_t { to_chars_buffer_size = 40 };
 /**
  * @private
  * Our own implementation of the C++17 to_chars function.
