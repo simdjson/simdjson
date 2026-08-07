@@ -14652,10 +14652,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -21058,10 +21055,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -27459,10 +27453,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -34131,10 +34122,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -41365,10 +41353,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -47630,10 +47615,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -53799,10 +53781,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -60387,10 +60366,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;
@@ -64452,10 +64428,7 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For parse_unpadded, return a static dummy so
-  // walk_document can report TAPE_ERROR without a 1-byte heap OOB (#2815).
+  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
   const uint32_t idx = *(next_structural);
   if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
     static constexpr uint8_t unpadded_eof_sentinel = 0;

@@ -42,9 +42,6 @@ public:
    *
    * - increment_count(iter) - each time a value is found in an array or object.
    */
-  // UNPADDED is a compile-time constant chosen once per document in
-  // tape_builder::parse_document (from the runtime _unpadded flag). The padded
-  // instantiation of walk_document / peek / advance has no unpadded branches.
   template<bool STREAMING, bool UNPADDED, typename V>
   simdjson_warn_unused simdjson_inline error_code walk_document(V &visitor) noexcept;
 
@@ -61,9 +58,6 @@ public:
    * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
    *
    * They may include invalid JSON as well (such as `1.2.3` or `ture`).
-   *
-   * When UNPADDED is true, a stage-1 sentinel index of value `len` returns a
-   * static dummy byte instead of reading past the buffer (#2815).
    */
   template<bool UNPADDED>
   simdjson_inline const uint8_t *peek() const noexcept;
@@ -73,9 +67,6 @@ public:
    * Tokens can be strings, numbers, booleans, null, or operators (`[{]},:`)).
    *
    * They may include invalid JSON as well (such as `1.2.3` or `ture`).
-   *
-   * When UNPADDED is true, a stage-1 sentinel index of value `len` returns a
-   * static dummy byte instead of reading past the buffer (#2815).
    */
   template<bool UNPADDED>
   simdjson_inline const uint8_t *advance() noexcept;
@@ -258,13 +249,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
     dom_parser{_dom_parser} {
 }
 
+// Stage 1 leaves a sentinel index of value `len`; reading buf[len] requires
+// padding. For UNPADDED, return a dummy so walk_document can fail cleanly (#2815).
 template<bool UNPADDED>
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Stage 1 plants a sentinel structural index of value `len` after the last
-  // real structural (json_structural_indexer::finish). Reading buf[len] is only
-  // valid with SIMDJSON_PADDING. For the UNPADDED=true instantiation, return a
-  // static dummy so walk_document can report TAPE_ERROR without a 1-byte heap
-  // OOB (#2815). The UNPADDED=false (padded) instantiation has no check.
   const uint32_t idx = *(next_structural);
   SIMDJSON_IF_CONSTEXPR (UNPADDED) {
     if (simdjson_unlikely(idx >= dom_parser.len)) {

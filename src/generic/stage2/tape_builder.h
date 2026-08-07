@@ -111,8 +111,6 @@ struct tape_builder {
       dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
     dom_parser.doc = &doc;
     json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
-    // One runtime branch on _unpadded; inside the walk, UNPADDED is a
-    // compile-time constant for both the visitor and peek/advance.
     if (dom_parser._unpadded) {
       tape_builder_impl<true> builder(doc);
       return iter.walk_document<STREAMING, true>(builder);

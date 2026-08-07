@@ -379,19 +379,9 @@ bool degenerate_inputs() {
   TEST_SUCCEED();
 }
 
-// Regression for https://github.com/simdjson/simdjson/issues/2815:
-// when the last real structural is a nested closing bracket/brace and the
-// outer container is still open, stage2's array_continue / object_continue
-// advance() past the final structural index. Stage 1 plants a sentinel index
-// equal to `len` there; reading buf[len] is a 1-byte OOB on an exact-size
-// (unpadded) buffer. Under ASAN this must not crash, and padded/unpadded must
-// agree on TAPE_ERROR (or equivalent).
+// Truncated nested containers (issue #2815): must not over-read unpadded input.
 bool truncated_nested_containers() {
   TEST_START();
-  // The three cases from the issue report:
-  //   "[[]"      -- array path  (json_iterator array_continue)
-  //   "{\"a\":{}" -- object path (json_iterator object_continue)
-  //   "{\"a\":{ }" -- same object path with whitespace before EOF
   const std::vector<std::string> docs = {
     "[[]",
     "{\"a\":{}",
