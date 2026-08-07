@@ -14652,21 +14652,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -21055,21 +21044,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -27453,21 +27431,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -34122,21 +34089,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -41353,21 +41309,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -47615,21 +47560,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -53781,21 +53715,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -60366,21 +60289,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
@@ -64428,21 +64340,10 @@ simdjson_inline json_iterator::json_iterator(dom_parser_implementation &_dom_par
 }
 
 simdjson_inline const uint8_t *json_iterator::peek() const noexcept {
-  // Sentinel index `len` is only readable with padding; dummy for unpadded (#2815).
-  const uint32_t idx = *(next_structural);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural)];
 }
 simdjson_inline const uint8_t *json_iterator::advance() noexcept {
-  const uint32_t idx = *(next_structural++);
-  if (simdjson_unlikely(dom_parser._unpadded && idx >= dom_parser.len)) {
-    static constexpr uint8_t unpadded_eof_sentinel = 0;
-    return &unpadded_eof_sentinel;
-  }
-  return &buf[idx];
+  return &buf[*(next_structural++)];
 }
 simdjson_inline size_t json_iterator::remaining_len() const noexcept {
   return dom_parser.len - *(next_structural-1);
