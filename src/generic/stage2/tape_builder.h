@@ -113,10 +113,10 @@ struct tape_builder {
     json_iterator iter(dom_parser, STREAMING ? dom_parser.next_structural_index : 0);
     if (dom_parser._unpadded) {
       tape_builder_impl<true> builder(doc);
-      return iter.walk_document<STREAMING>(builder);
+      return iter.walk_document<STREAMING, true>(builder);
     } else {
       tape_builder_impl<false> builder(doc);
-      return iter.walk_document<STREAMING>(builder);
+      return iter.walk_document<STREAMING, false>(builder);
     }
   }
 };
