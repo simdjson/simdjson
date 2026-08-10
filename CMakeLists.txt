@@ -277,7 +277,6 @@ if(SIMDJSON_WINDOWS_DLL) # MSVC + Shared; defined in developer-options.cmake
     message(WARNING "simdjson: MSVC does not support a shared library with LTO, \
     turning INTERPROCEDURAL_OPTIMIZATION off.")
   endif()
-  # turn off outside of previous block because BUILD_SHARED_LIBS + SIMDJSON_BUILD_STATIC (see l:36)
   foreach(config IN ITEMS "" _DEBUG _RELEASE _RELWITHDEBINFO _MINSIZEREL)
     set_property(TARGET simdjson PROPERTY INTERPROCEDURAL_OPTIMIZATION${config} OFF)
   endforeach()
