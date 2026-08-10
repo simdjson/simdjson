@@ -265,6 +265,24 @@ if(WIN32 AND BUILD_SHARED_LIBS)
   )
 endif()
 
+
+# MSVC doesn't support shared-lib + LTO.
+# This is a workaround to make sure both are never used together
+if(SIMDJSON_WINDOWS_DLL) # MSVC + Shared; defined in developer-options.cmake
+  if(CMAKE_INTERPROCEDURAL_OPTIMIZATION
+      OR CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG
+      OR CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE
+      OR CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO
+      OR CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL)
+    message(WARNING "simdjson: MSVC does not support a shared library with LTO, \
+    turning INTERPROCEDURAL_OPTIMIZATION off.")
+  endif()
+  # turn off outside of previous block because BUILD_SHARED_LIBS + SIMDJSON_BUILD_STATIC (see l:36)
+  foreach(config IN ITEMS "" _DEBUG _RELEASE _RELWITHDEBINFO _MINSIZEREL)
+    set_property(TARGET simdjson PROPERTY INTERPROCEDURAL_OPTIMIZATION${config} OFF)
+  endforeach()
+endif()
+
 simdjson_add_props(
     target_include_directories
     PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"

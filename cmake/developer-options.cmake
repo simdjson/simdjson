@@ -138,13 +138,6 @@ if(SIMDJSON_STRUCTURAL_INDEXER_STEP)
   message(STATUS "Setting SIMDJSON_STRUCTURAL_INDEXER_STEP to ${SIMDJSON_STRUCTURAL_INDEXER_STEP}.")
   add_compile_definitions(SIMDJSON_STRUCTURAL_INDEXER_STEP=${SIMDJSON_STRUCTURAL_INDEXER_STEP})
 endif()
-# LTO seems to create all sorts of fun problems. Let us
-# disable temporarily.
-#include(CheckIPOSupported)
-#check_ipo_supported(RESULT ltoresult)
-#if(ltoresult)
-#  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-#endif()
 
 option(SIMDJSON_VISUAL_STUDIO_BUILD_WITH_DEBUG_INFO_FOR_PROFILING "\
 Under Visual Studio, add Zi to the compile flag and DEBUG to the link file to \

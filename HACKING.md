@@ -32,6 +32,9 @@ It is similar for Visual Studio users, please see the CMake or Visual Studio doc
 
 By default the library is built in Release mode.
 
+IPO available through `-D CMAKE_INTERPROCEDURAL_OPTIMIZATION=ON`.
+Option is unavailable for a shared library under Visual Studio, where we turn it back off and warn. (MSVC incompatibility)
+
 
 Assertions and development checks
 ------------------------------
