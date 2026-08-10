@@ -379,6 +379,20 @@ bool degenerate_inputs() {
   TEST_SUCCEED();
 }
 
+// Truncated nested containers (issue #2815): must not over-read unpadded input.
+bool truncated_nested_containers() {
+  TEST_START();
+  const std::vector<std::string> docs = {
+    "[[]",
+    "{\"a\":{}",
+    "{\"a\":{ }",
+  };
+  for (const auto &d : docs) {
+    if (!check_matches(d)) { return false; }
+  }
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_ENABLE_NAN_INF
 // Only built with -DSIMDJSON_ENABLE_NAN_INF=ON. The non-root inf validator does
 // an 8-byte 'infinity' compare; a malformed inf-spelling at the very end of an
@@ -413,6 +427,7 @@ bool run() {
          surrogate_pair_deep_lookahead_at_chunk_boundary() &&
          assorted_documents() &&
          degenerate_inputs() &&
+         truncated_nested_containers() &&
          random_documents() &&
          real_files() &&
          api_overloads();
