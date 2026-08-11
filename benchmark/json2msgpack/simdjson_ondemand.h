@@ -13,9 +13,7 @@ using namespace simdjson;
  * How a value is handed to the recursive call below. GCC turns a by-value
  * argument into registers (interprocedural scalar replacement of aggregates),
  * so passing a reference would needlessly pin it to memory; clang and MSVC are
- * the other way around and do better with the reference. Getting this wrong
- * costs roughly 2x on this benchmark, so the choice is made per compiler.
- * See https://godbolt.org/z/TeK4doE51.
+ * the other way around and do better with the reference.
  */
 #if SIMDJSON_GCC_COMPILER
 template <class T> using msgpack_param = T;
