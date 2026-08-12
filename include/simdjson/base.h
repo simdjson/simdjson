@@ -57,12 +57,21 @@ enum class stream_format {
   whitespace_delimited, ///< Whitespace-delimited JSON documents (default, includes NDJSON/JSONL)
   json_sequence,        ///< RFC 7464 JSON text sequences (RS-delimited)
   comma_delimited,      ///< Comma-separated JSON documents (e.g., `{...},{...},{...}`)
-  comma_delimited_array ///< A single JSON array whose elements are iterated as
+  comma_delimited_array,///< A single JSON array whose elements are iterated as
                         ///< comma-separated documents (e.g., `[{...},{...},{...}]`).
                         ///< The parser strips the outer `[` / `]` plus any
                         ///< surrounding JSON whitespace (space, tab, LF, CR)
                         ///< and then behaves like `comma_delimited` over the
                         ///< remaining bytes.
+  newline_delimited     ///< NDJSON/JSON Lines where each document occupies exactly
+                        ///< one line: documents are separated by line feeds and no
+                        ///< document contains a raw line feed. Same inputs as
+                        ///< `whitespace_delimited`, but the stronger guarantee lets
+                        ///< the parser find the end of a document without walking
+                        ///< it. On ondemand `iterate_many`, an unread remainder may
+                        ///< be skipped by jumping to the next line feed without
+                        ///< structure-validating that remainder. Use
+                        ///< `whitespace_delimited` if unsure.
 };
 
 namespace internal {

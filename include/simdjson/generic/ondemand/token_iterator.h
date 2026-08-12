@@ -130,6 +130,7 @@ protected:
   token_position _position{};
 
   friend class json_iterator;
+  friend class document_stream;
   friend class value_iterator;
   friend class object;
   template <typename... Args>
