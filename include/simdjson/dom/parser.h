@@ -555,7 +555,7 @@ public:
    * example, a padded_memory_map), with no extra copy. Without this overload,
    * passing a padded_string_view would silently bind to the padded_string
    * overload via an implicit conversion, allocating and copying the input, and
-   * — because that temporary is destroyed at the end of the full-expression —
+   * -- because that temporary is destroyed at the end of the full-expression --
    * leaving the returned document_stream pointing at freed memory. */
   inline simdjson_result<document_stream> parse_many(const padded_string_view &v, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
 

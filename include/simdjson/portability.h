@@ -318,7 +318,7 @@ using std::size_t;
 // the Windows version macros, and the link library themselves.
 //
 // If the opt-in conditions are not met on Windows, `padded_memory_map`
-// simply does not exist — any attempt to use it fails at compile time
+// simply does not exist -- any attempt to use it fails at compile time
 // with an "unknown identifier" diagnostic rather than silently degrading.
 //
 // The SIMDJSON_HAS_PADDED_MEMORY_MAP macro reflects whether the class is

@@ -765,7 +765,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.

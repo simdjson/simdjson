@@ -16,7 +16,7 @@
 
 namespace simdjson {
 
-// Structural compile-time string — char array avoids the pointer-based
+// Structural compile-time string -- char array avoids the pointer-based
 // 'reflect_constant failed' that occurs with const char* / string_view members.
 template <size_t N>
 struct fixed_string {

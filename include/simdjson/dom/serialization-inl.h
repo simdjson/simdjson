@@ -480,7 +480,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       format.string(iter.get_string_view());
       break;
     case tape_type::BIGINT: {
-      // Big integer stored as string — output raw digits (no quotes)
+      // Big integer stored as string -- output raw digits (no quotes)
       auto sv = iter.get_string_view();
       format.chars(sv.data(), sv.data() + sv.size());
       break;

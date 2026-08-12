@@ -432,7 +432,7 @@ simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
 // Windows zero-copy implementation using placeholder virtual memory.
 //
 // We use the modern Windows memory APIs (VirtualAlloc2, CreateFileMapping2,
-// MapViewOfFile3 — available since Windows 10 1803) to map the file into a
+// MapViewOfFile3 -- available since Windows 10 1803) to map the file into a
 // contiguous virtual address range that includes at least SIMDJSON_PADDING
 // zero bytes after the file content, with no data copies.
 //
