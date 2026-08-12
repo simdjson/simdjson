@@ -526,7 +526,7 @@ using std::size_t;
 // the Windows version macros, and the link library themselves.
 //
 // If the opt-in conditions are not met on Windows, `padded_memory_map`
-// simply does not exist — any attempt to use it fails at compile time
+// simply does not exist -- any attempt to use it fails at compile time
 // with an "unknown identifier" diagnostic rather than silently degrading.
 //
 // The SIMDJSON_HAS_PADDED_MEMORY_MAP macro reflects whether the class is
@@ -5440,7 +5440,7 @@ simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
 // Windows zero-copy implementation using placeholder virtual memory.
 //
 // We use the modern Windows memory APIs (VirtualAlloc2, CreateFileMapping2,
-// MapViewOfFile3 — available since Windows 10 1803) to map the file into a
+// MapViewOfFile3 -- available since Windows 10 1803) to map the file into a
 // contiguous virtual address range that includes at least SIMDJSON_PADDING
 // zero bytes after the file content, with no data copies.
 //
@@ -6588,7 +6588,7 @@ public:
    * example, a padded_memory_map), with no extra copy. Without this overload,
    * passing a padded_string_view would silently bind to the padded_string
    * overload via an implicit conversion, allocating and copying the input, and
-   * — because that temporary is destroyed at the end of the full-expression —
+   * -- because that temporary is destroyed at the end of the full-expression --
    * leaving the returned document_stream pointing at freed memory. */
   inline simdjson_result<document_stream> parse_many(const padded_string_view &v, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
 
@@ -11501,7 +11501,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       format.string(iter.get_string_view());
       break;
     case tape_type::BIGINT: {
-      // Big integer stored as string — output raw digits (no quotes)
+      // Big integer stored as string -- output raw digits (no quotes)
       auto sv = iter.get_string_view();
       format.chars(sv.data(), sv.data() + sv.size());
       break;
@@ -40199,7 +40199,7 @@ simdjson_inline implementation_simdjson_result_base<T>::implementation_simdjson_
 
 namespace simdjson {
 
-// Structural compile-time string — char array avoids the pointer-based
+// Structural compile-time string -- char array avoids the pointer-based
 // 'reflect_constant failed' that occurs with const char* / string_view members.
 template <size_t N>
 struct fixed_string {
@@ -41645,7 +41645,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -41653,7 +41653,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -41859,7 +41859,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -42955,7 +42955,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -44131,7 +44131,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -44139,7 +44139,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -44345,7 +44345,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -45441,7 +45441,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -47094,7 +47094,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -47102,7 +47102,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -47308,7 +47308,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -48404,7 +48404,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -50057,7 +50057,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -50065,7 +50065,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -50271,7 +50271,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -51367,7 +51367,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -53135,7 +53135,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -53143,7 +53143,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -53349,7 +53349,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -54445,7 +54445,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -56520,7 +56520,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -56528,7 +56528,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -56734,7 +56734,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -57830,7 +57830,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -59395,7 +59395,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -59403,7 +59403,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -59609,7 +59609,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -60705,7 +60705,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -62293,7 +62293,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -62301,7 +62301,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -62507,7 +62507,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -63603,7 +63603,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.
@@ -65194,7 +65194,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -65202,7 +65202,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -65408,7 +65408,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>
@@ -66504,7 +66504,7 @@ static const char decimal_table[200] = {
 };
 
 // Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers — gcc and MSVC
+// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
 // refuse to inline recursive `always_inline`/`__forceinline` functions.
 // Caller must guarantee at least 20 bytes available at p. All helpers
 // return pointer past the last digit written.

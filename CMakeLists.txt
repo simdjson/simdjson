@@ -558,8 +558,9 @@ if(FIND_CMD AND FILE_CMD AND GREP_CMD)
       NAME just_ascii
       COMMAND sh -c "\
 non_ascii=$(${FIND_CMD} include src windows tools singleheader tests examples benchmark \
-  -path benchmark/checkperf-reference -prune -name '*.h' -o -name '*.cpp' \
-  -type f -exec ${FILE_CMD} '{}' \; | ${GREP_CMD} -v ASCII); \
+  -path benchmark/checkperf-reference -prune -o \
+  '(' -type f '(' -name '*.h' -o -name '*.cpp' ')' -exec ${FILE_CMD} '{}' \; ')' \
+  | ${GREP_CMD} -v ASCII); \
 if [ -n \"$non_ascii\" ]; then \
   echo 'The following files contain non-ASCII characters:'; \
   echo \"$non_ascii\"; \

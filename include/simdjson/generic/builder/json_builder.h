@@ -139,7 +139,7 @@ template <class T>
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Inline the escape path through the writer so we never round-trip
   // pos through memory for string fields (Twitter is dominated by
-  // these — sync/reload around each string was a real cost).
+  // these -- sync/reload around each string was a real cost).
   std::string_view input;
   if constexpr (std::is_same_v<T, char>) {
     input = std::string_view(&t, 1);
@@ -147,7 +147,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
     input = std::string_view(t);
   }
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
-  // Guard against 2 + 6 * input.size() wrapping for huge inputs — if it
+  // Guard against 2 + 6 * input.size() wrapping for huge inputs -- if it
   // wrapped to a small value, ensure() would spuriously succeed and the
   // subsequent escape would overflow the buffer.
   // Note that this is pedantic except maybe on 32-bit targets.
@@ -353,7 +353,7 @@ simdjson_really_inline constexpr void atom(writer &w, const T &container) {
   w.ptr[w.pos++] = ']';
 }
 
-// append() — top-level entry. Each overload constructs a stack-local
+// append() -- top-level entry. Each overload constructs a stack-local
 // writer, runs atom(w, t) through the inlined call chain, then syncs
 // the local position back into the string_builder.
 template <class T>

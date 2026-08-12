@@ -13,7 +13,7 @@ struct simdjson_ondemand_key_selector {
 
   ondemand::parser parser{};
 
-  // Compile-time selectors — all PHF tables are static constexpr, so every
+  // Compile-time selectors -- all PHF tables are static constexpr, so every
   // call to match_raw fully inlines.
   using tweet_sel_t = ondemand::key_selector<
       "created_at", "id", "text", "in_reply_to_status_id",
