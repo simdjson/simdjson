@@ -239,6 +239,9 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
     const uint8_t *p = num;
     if (*p == '-') p++;
     while (numberparsing::is_digit(*p)) p++;
+    // The digit run must be terminated by a structural or whitespace character; otherwise the
+    // token is malformed (e.g. "123456789123456789123x").
+    if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
     size_t len = size_t(p - num);
     tape.append(current_string_buf_loc - iter.dom_parser.doc->string_buf.get(), internal::tape_type::BIGINT);
     uint8_t *dst = current_string_buf_loc + sizeof(uint32_t);
