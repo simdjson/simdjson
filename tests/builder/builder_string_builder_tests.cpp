@@ -881,6 +881,77 @@ bool car_test_exception() {
   TEST_SUCCEED();
 }
 #endif
+
+// Boundary test for the SIMD escaper's capacity handling: dense escape
+// patterns (up to 6x expansion) at every offset and length that exercises
+// block boundaries, built with initial_capacity 1 so every growth request
+// lands on an exact pos+needed boundary. An under-budgeted capacity check
+// corrupts memory (caught by sanitizers) or output (caught by the
+// byte-for-byte reference comparison below).
+bool escape_tight_capacity_boundary() {
+  TEST_START();
+  auto reference_escape = [](const std::string &in) {
+    static const char *ctrl[32] = {
+        "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005",
+        "\\u0006", "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b",
+        "\\f",     "\\r",     "\\u000e", "\\u000f", "\\u0010", "\\u0011",
+        "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+        "\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d",
+        "\\u001e", "\\u001f"};
+    std::string out = "\"";
+    for (unsigned char c : in) {
+      if (c == '"') {
+        out += "\\\"";
+      } else if (c == '\\') {
+        out += "\\\\";
+      } else if (c < 32) {
+        out += ctrl[c];
+      } else {
+        out += char(c);
+      }
+    }
+    out += '"';
+    return out;
+  };
+  auto check = [&](const std::string &in) -> bool {
+    for (size_t initial_capacity : {size_t(1), size_t(1024)}) {
+      builder::string_builder sb(initial_capacity);
+      sb.escape_and_append_with_quotes(std::string_view(in));
+      std::string_view got;
+      if (sb.view().get(got)) { return false; }
+      if (std::string_view(reference_escape(in)) != got) { return false; }
+    }
+    return true;
+  };
+  const char escapes[] = {'\x01', '"', '\\', '\x1f'};
+  // Maximum-density expansions (6 bytes per input byte) at every length that
+  // exercises the last-chunk repositioning store.
+  for (size_t len = 1; len <= 64; len++) {
+    ASSERT_TRUE(check(std::string(len, '\x01')));
+    ASSERT_TRUE(check(std::string(len, '"')));
+  }
+  // Dense escapes immediately before the chunk boundary, clean tail after.
+  for (size_t lead = 1; lead <= 16; lead++) {
+    for (char e : escapes) {
+      std::string s(lead, e);
+      s += std::string(24, 'a');
+      ASSERT_TRUE(check(s));
+      std::string t(24, 'a');
+      t += std::string(lead, e);
+      ASSERT_TRUE(check(t));
+    }
+  }
+  // A single escape at every offset of a two-chunk string.
+  for (size_t pos = 0; pos < 33; pos++) {
+    for (char e : escapes) {
+      std::string s(33, 'b');
+      s[pos] = e;
+      ASSERT_TRUE(check(s));
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool run() {
   return allchar_test() && bad_utf8_test() && various_integers() &&
          various_unsigned_integers() && car_test_long() && car_test() &&
@@ -905,7 +976,8 @@ bool run() {
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
-         escape_write_string_escaped_exhaustive() && append_raw() &&
+         escape_write_string_escaped_exhaustive() &&
+         escape_tight_capacity_boundary() && append_raw() &&
          raw_with_length() && string_convertion() && buffer_growth() &&
          unicode_validation() && true;
 }
