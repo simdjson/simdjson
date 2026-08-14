@@ -23,7 +23,7 @@ Build Quickstart
 For non-Windows system,
 
 ```bash
-cmake -B -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake -B build -D SIMDJSON_DEVELOPER_MODE=ON .
 cmake --build build
 ctest --test-dir build
 ```
@@ -65,7 +65,7 @@ During development, if you system supports it, we recommend configuring
 the project with `-D SIMDJSON_SANITIZE=ON`.
 
 ```bash
-cmake -B -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON ..
+cmake -B build -D SIMDJSON_SANITIZE=ON -D SIMDJSON_DEVELOPER_MODE=ON .
 cmake --build build
 ctest --test-dir build
 ```
