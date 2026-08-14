@@ -1,0 +1,21 @@
+name: VS18-ARM-CI
+
+on: [push, pull_request]
+
+jobs:
+   ci:
+     name: windows-vs18
+     runs-on: windows-2025-vs2026
+     strategy:
+       fail-fast: false
+       matrix:
+         include:
+           - {arch: ARM64}
+           - {arch: ARM64EC}
+     steps:
+       - name: checkout
+         uses: actions/checkout@v6
+       - name: Use cmake
+         run: |
+           cmake -G "Visual Studio 18 2026" -A ${{ matrix.arch }} -DCMAKE_SYSTEM_VERSION="10.0.22621.0" -DCMAKE_CROSSCOMPILING=1 -DSIMDJSON_DEVELOPER_MODE=ON -D SIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_EXCEPTIONS=OFF -B build  &&
+           cmake --build build --verbose
