@@ -132,6 +132,21 @@ namespace big_integer_tests {
     TEST_SUCCEED();
   }
 
+  bool rejects_trailing_garbage() {
+    TEST_START();
+    dom::parser parser;
+    parser.number_as_string(true);
+    // A big integer whose digit run is followed by a non-structural, non-whitespace character is
+    // a malformed token and must be rejected, just as it is for numbers that fit in 64 bits.
+    ASSERT_ERROR(parser.parse(R"({"val":123456789012345678901x})"_padded), NUMBER_ERROR);
+    ASSERT_ERROR(parser.parse(R"({"val":-123456789012345678901x})"_padded), NUMBER_ERROR);
+    // Same at the top level of a document.
+    ASSERT_ERROR(parser.parse("123456789012345678901x"_padded), NUMBER_ERROR);
+    // A well-formed big integer terminated by a structural character is still accepted.
+    ASSERT_SUCCESS(parser.parse(R"({"val":123456789012345678901})"_padded));
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return option_off_by_default() &&
            default_returns_bigint_error() &&
@@ -141,7 +156,8 @@ namespace big_integer_tests {
            serialization_preserves_digits() &&
            normal_numbers_unaffected() &&
            type_checks() &&
-           element_type_output();
+           element_type_output() &&
+           rejects_trailing_garbage();
   }
 
 } // namespace big_integer_tests
