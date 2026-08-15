@@ -321,6 +321,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<float> get_float() noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_null() noexcept;
   simdjson_warn_unused simdjson_inline bool is_negative() noexcept;
@@ -339,6 +341,8 @@ public:
   simdjson_warn_unused simdjson_inline simdjson_result<int64_t> get_root_int64_in_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<double> get_root_double_in_string(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<float> get_root_float(bool check_trailing) noexcept;
+  simdjson_warn_unused simdjson_inline simdjson_result<float> get_root_float_in_string(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> get_root_bool(bool check_trailing) noexcept;
   simdjson_warn_unused simdjson_inline bool is_root_negative() noexcept;
   simdjson_warn_unused simdjson_inline simdjson_result<bool> is_root_integer(bool check_trailing) noexcept;

@@ -200,6 +200,28 @@ public:
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
 
   /**
+   * Cast this JSON value to a float (binary32).
+   *
+   * The value is rounded directly to binary32: it is the float nearest to the
+   * JSON number. Note that this may differ from get_double() followed by a cast
+   * to float, which rounds twice.
+   *
+   * @returns A float.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
+   */
+  simdjson_inline simdjson_result<float> get_float() noexcept;
+
+  /**
+   * Cast this JSON value (inside string) to a float (binary32).
+   *
+   * @returns A float.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
+   */
+  simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
+
+  /**
    * Cast this JSON value to a string.
    *
    * The string is guaranteed to be valid UTF-8.
@@ -780,6 +802,8 @@ public:
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_inline simdjson_result<float> get_float() noexcept;
+  simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;

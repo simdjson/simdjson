@@ -151,6 +151,12 @@ simdjson_inline simdjson_result<double> document::get_double() noexcept {
 simdjson_inline simdjson_result<double> document::get_double_in_string() noexcept {
   return get_root_value_iterator().get_root_double_in_string(true);
 }
+simdjson_inline simdjson_result<float> document::get_float() noexcept {
+  return get_root_value_iterator().get_root_float(true);
+}
+simdjson_inline simdjson_result<float> document::get_float_in_string() noexcept {
+  return get_root_value_iterator().get_root_float_in_string(true);
+}
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
@@ -176,6 +182,7 @@ template<> simdjson_inline simdjson_result<object> document::get() & noexcept { 
 template<> simdjson_inline simdjson_result<raw_json_string> document::get() & noexcept { return get_raw_json_string(); }
 template<> simdjson_inline simdjson_result<std::string_view> document::get() & noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<double> document::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<float> document::get() & noexcept { return get_float(); }
 template<> simdjson_inline simdjson_result<uint64_t> document::get() & noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document::get() & noexcept { return get_int64(); }
 template<> simdjson_inline simdjson_result<uint32_t> document::get() & noexcept { return get_uint32(); }
@@ -188,6 +195,7 @@ template<> simdjson_warn_unused simdjson_inline error_code document::get(object&
 template<> simdjson_warn_unused simdjson_inline error_code document::get(raw_json_string& out) & noexcept { return get_raw_json_string().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(std::string_view& out) & noexcept { return get_string(false).get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(double& out) & noexcept { return get_double().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code document::get(float& out) & noexcept { return get_float().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(uint64_t& out) & noexcept { return get_uint64().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(int64_t& out) & noexcept { return get_int64().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(uint32_t& out) & noexcept { return get_uint32().get(out); }
@@ -198,6 +206,7 @@ template<> simdjson_warn_unused simdjson_inline error_code document::get(value& 
 template<> simdjson_deprecated simdjson_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(false); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<double> document::get() && noexcept { return std::forward<document>(*this).get_double(); }
+template<> simdjson_deprecated simdjson_inline simdjson_result<float> document::get() && noexcept { return std::forward<document>(*this).get_float(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<uint64_t> document::get() && noexcept { return std::forward<document>(*this).get_uint64(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<int64_t> document::get() && noexcept { return std::forward<document>(*this).get_int64(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<bool> document::get() && noexcept { return std::forward<document>(*this).get_bool(); }
@@ -544,6 +553,14 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION:
   if (error()) { return error(); }
   return first.get_double_in_string();
 }
+simdjson_inline simdjson_result<float> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_float() noexcept {
+  if (error()) { return error(); }
+  return first.get_float();
+}
+simdjson_inline simdjson_result<float> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_float_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_float_in_string();
+}
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
@@ -782,7 +799,9 @@ simdjson_inline simdjson_result<int32_t> document_reference::get_int32() noexcep
   return static_cast<int32_t>(result);
 }
 simdjson_inline simdjson_result<double> document_reference::get_double() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
-simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double(false); }
+simdjson_inline simdjson_result<double> document_reference::get_double_in_string() noexcept { return doc->get_root_value_iterator().get_root_double_in_string(false); }
+simdjson_inline simdjson_result<float> document_reference::get_float() noexcept { return doc->get_root_value_iterator().get_root_float(false); }
+simdjson_inline simdjson_result<float> document_reference::get_float_in_string() noexcept { return doc->get_root_value_iterator().get_root_float_in_string(false); }
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
 template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code document_reference::get_string(string_type& receiver, bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(receiver, false, allow_replacement); }
@@ -796,6 +815,7 @@ template<> simdjson_inline simdjson_result<object> document_reference::get() & n
 template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
 template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
 template<> simdjson_inline simdjson_result<double> document_reference::get() & noexcept { return get_double(); }
+template<> simdjson_inline simdjson_result<float> document_reference::get() & noexcept { return get_float(); }
 template<> simdjson_inline simdjson_result<uint64_t> document_reference::get() & noexcept { return get_uint64(); }
 template<> simdjson_inline simdjson_result<int64_t> document_reference::get() & noexcept { return get_int64(); }
 template<> simdjson_inline simdjson_result<uint32_t> document_reference::get() & noexcept { return get_uint32(); }
@@ -952,6 +972,14 @@ simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION:
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_double_in_string() noexcept {
   if (error()) { return error(); }
   return first.get_double_in_string();
+}
+simdjson_inline simdjson_result<float> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_float() noexcept {
+  if (error()) { return error(); }
+  return first.get_float();
+}
+simdjson_inline simdjson_result<float> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_float_in_string() noexcept {
+  if (error()) { return error(); }
+  return first.get_float_in_string();
 }
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }

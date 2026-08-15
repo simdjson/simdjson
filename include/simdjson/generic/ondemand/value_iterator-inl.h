@@ -609,6 +609,16 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   if(result.error() == SUCCESS) { advance_non_root_scalar("double"); }
   return result;
 }
+simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_float() noexcept {
+  auto result = numberparsing::parse_float(peek_non_root_scalar("float"));
+  if(result.error() == SUCCESS) { advance_non_root_scalar("float"); }
+  return result;
+}
+simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_float_in_string() noexcept {
+  auto result = numberparsing::parse_float_in_string(peek_non_root_scalar("float"));
+  if(result.error() == SUCCESS) { advance_non_root_scalar("float"); }
+  return result;
+}
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_bool() noexcept {
   auto result = parse_bool(peek_non_root_scalar("bool"));
   if(result.error() == SUCCESS) { advance_non_root_scalar("bool"); }
@@ -837,6 +847,43 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   if(result.error() == SUCCESS) {
     if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
     advance_root_scalar("double");
+  }
+  return result;
+}
+
+simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_root_float(bool check_trailing) noexcept {
+  auto max_len = peek_root_length();
+  auto json = peek_root_scalar("float");
+  // We use the same buffer size as get_root_double: the number of significant
+  // digits that matter is smaller for binary32, but the JSON document may still
+  // spell out a long number that we must parse (and round) faithfully.
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    return NUMBER_ERROR;
+  }
+  auto result = numberparsing::parse_float(tmpbuf);
+  if(result.error() == SUCCESS) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("float");
+  }
+  return result;
+}
+
+simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_root_float_in_string(bool check_trailing) noexcept {
+  auto max_len = peek_root_length();
+  auto json = peek_root_scalar("float");
+  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
+  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
+    return NUMBER_ERROR;
+  }
+  auto result = numberparsing::parse_float_in_string(tmpbuf);
+  if(result.error() == SUCCESS) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("float");
   }
   return result;
 }
