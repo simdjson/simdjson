@@ -31,9 +31,10 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    *
-   * You may use get_double(), get_bool(), get_uint64(), get_int64(),
+   * You may use get_double(), get_float(), get_bool(), get_uint64(), get_int64(),
+   * get_uint32(), get_int32(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
    * When SIMDJSON_SUPPORTS_CONCEPTS is set, custom types are also supported.
    *
@@ -58,7 +59,7 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    * If the macro SIMDJSON_SUPPORTS_CONCEPTS is set, then custom types are also supported.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
@@ -96,7 +97,7 @@ public:
       "And you do not seem to have added support for it. Indeed, we have that "
       "simdjson::custom_deserializable<T> is false and the type T is not a default type "
       "such as ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, double, or bool.");
+      "int64_t, uint32_t, int32_t, double, float, or bool.");
     static_cast<void>(out); // to get rid of unused errors
     return UNINITIALIZED;
   }
@@ -105,7 +106,8 @@ public:
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
+      "int64_t, uint32_t, int32_t, double, float, and bool. We recommend you use get_double(), get_float(), "
+      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors

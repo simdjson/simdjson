@@ -53,6 +53,82 @@ bool parse_negative_infinity() {
   TEST_SUCCEED();
 }
 
+// get_float() has its own NaN/Infinity handling (compute_nan_inf overloaded on
+// float), so it needs its own coverage: parse_float() does not go through
+// parse_double().
+bool parse_nan_float() {
+  TEST_START();
+  for (auto json_str : {"NaN", "nan", "-nan", "-NAN"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float().get(value));
+    ASSERT_TRUE(std::isnan(value));
+  }
+  TEST_SUCCEED();
+}
+
+bool parse_infinity_float() {
+  TEST_START();
+  for (auto json_str : {"Infinity", "inf", "INF", "Inf"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float().get(value));
+    ASSERT_TRUE(std::isinf(value));
+    ASSERT_TRUE(value > 0);
+  }
+  TEST_SUCCEED();
+}
+
+bool parse_negative_infinity_float() {
+  TEST_START();
+  for (auto json_str : {"-Infinity", "-inf", "-INF", "-Inf"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float().get(value));
+    ASSERT_TRUE(std::isinf(value));
+    ASSERT_TRUE(value < 0);
+  }
+  TEST_SUCCEED();
+}
+
+// Inside an array, so that the non-root parse_float() path is exercised too
+// (the tests above all go through get_root_float()).
+bool nan_inf_float_in_array() {
+  TEST_START();
+  ondemand::parser parser;
+  auto json = R"([1.25, NaN, Infinity, -Infinity, -nan])"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  ondemand::array arr;
+  ASSERT_SUCCESS(doc.get_array().get(arr));
+
+  size_t index = 0;
+  for (auto val : arr) {
+    float value;
+    ASSERT_SUCCESS(val.get_float().get(value));
+    switch (index) {
+      case 0: ASSERT_EQUAL(value, 1.25f); break;
+      case 1: ASSERT_TRUE(std::isnan(value)); break;
+      case 2: ASSERT_TRUE(std::isinf(value)); ASSERT_TRUE(value > 0); break;
+      case 3: ASSERT_TRUE(std::isinf(value)); ASSERT_TRUE(value < 0); break;
+      case 4: ASSERT_TRUE(std::isnan(value)); break;
+      default: TEST_FAIL("too many values");
+    }
+    index++;
+  }
+  ASSERT_EQUAL(index, 5);
+  TEST_SUCCEED();
+}
+
 bool nan_in_array() {
   TEST_START();
   ondemand::parser parser;
@@ -209,6 +285,79 @@ bool negative_infinity_in_string() {
   TEST_SUCCEED();
 }
 
+bool nan_float_in_string() {
+  TEST_START();
+  for (auto json_str : {R"("NaN")", R"("nan")"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float_in_string().get(value));
+    ASSERT_TRUE(std::isnan(value));
+  }
+  TEST_SUCCEED();
+}
+
+bool infinity_float_in_string() {
+  TEST_START();
+  for (auto json_str : {R"("Infinity")", R"("inf")", R"("INF")", R"("Inf")"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float_in_string().get(value));
+    ASSERT_TRUE(std::isinf(value));
+    ASSERT_TRUE(value > 0);
+  }
+  TEST_SUCCEED();
+}
+
+bool negative_infinity_float_in_string() {
+  TEST_START();
+  for (auto json_str :
+       {R"("-Infinity")", R"("-inf")", R"("-INF")", R"("-Inf")"}) {
+    ondemand::parser parser;
+    padded_string json(json_str, strlen(json_str));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    float value;
+    ASSERT_SUCCESS(doc.get_float_in_string().get(value));
+    ASSERT_TRUE(std::isinf(value));
+    ASSERT_TRUE(value < 0);
+  }
+  TEST_SUCCEED();
+}
+
+// Non-root in-string path (parse_float_in_string rather than
+// get_root_float_in_string).
+bool nan_inf_float_in_string_in_array() {
+  TEST_START();
+  ondemand::parser parser;
+  auto json = R"(["1.25", "NaN", "Infinity", "-Infinity"])"_padded;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  ondemand::array arr;
+  ASSERT_SUCCESS(doc.get_array().get(arr));
+
+  size_t index = 0;
+  for (auto val : arr) {
+    float value;
+    ASSERT_SUCCESS(val.get_float_in_string().get(value));
+    switch (index) {
+      case 0: ASSERT_EQUAL(value, 1.25f); break;
+      case 1: ASSERT_TRUE(std::isnan(value)); break;
+      case 2: ASSERT_TRUE(std::isinf(value)); ASSERT_TRUE(value > 0); break;
+      case 3: ASSERT_TRUE(std::isinf(value)); ASSERT_TRUE(value < 0); break;
+      default: TEST_FAIL("too many values");
+    }
+    index++;
+  }
+  ASSERT_EQUAL(index, 4);
+  TEST_SUCCEED();
+}
+
 bool nan_inf_in_string_in_array() {
   TEST_START();
   ondemand::parser parser;
@@ -332,6 +481,14 @@ bool run() {
          && reject_trailing_junk()        //
          && reject_similar_prefix()       //
          && reject_truncated_atoms()      //
+         && parse_nan_float()             //
+         && parse_infinity_float()        //
+         && parse_negative_infinity_float()      //
+         && nan_inf_float_in_array()             //
+         && nan_float_in_string()                //
+         && infinity_float_in_string()           //
+         && negative_infinity_float_in_string()  //
+         && nan_inf_float_in_string_in_array()   //
       ;
 }
 
