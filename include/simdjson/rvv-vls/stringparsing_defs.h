@@ -18,7 +18,7 @@ public:
   simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
   simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
-  simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
+  simdjson_inline bool has_backslash() { return bs_bits != 0; }
   simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
   simdjson_inline int backslash_index() { return trailing_zeroes(bs_bits); }
 
