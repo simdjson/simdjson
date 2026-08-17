@@ -590,6 +590,28 @@ simdjson_inline bool is_made_of_eight_digits_fast(const uint8_t *chars) {
           0x3333333333333333);
 }
 
+// The same idea for four characters. A block of eight only bites when eight
+// digits are left, so a run of 4 to 7 digits used to fall back to one digit at a
+// time; taking four of them at once is what makes the tail of a long fraction
+// cheap. Adapted from fast_float, credit @aqrit.
+simdjson_inline bool is_made_of_four_digits_fast(const uint8_t *chars) {
+  uint32_t val;
+  // Reads up to 3 bytes beyond the digits, which SIMDJSON_PADDING covers.
+  static_assert(3 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 3");
+  std::memcpy(&val, chars, 4);
+  return !(((val + 0x46464646) | (val - 0x30303030)) & 0x80808080);
+}
+
+// Only call this when is_made_of_four_digits_fast() says the four characters are
+// digits. Little-endian: guarded by SIMDJSON_SWAR_NUMBER_PARSING.
+simdjson_inline uint32_t parse_four_digits_unrolled(const uint8_t *chars) {
+  uint32_t val;
+  std::memcpy(&val, chars, 4);
+  val -= 0x30303030;
+  val = (val * 10) + (val >> 8);
+  return (((val & 0x00FF00FF) * 0x00640001) >> 16) & 0xFFFF;
+}
+
 template<typename I>
 SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_inline bool parse_digit(const uint8_t c, I &i) {
@@ -606,26 +628,41 @@ simdjson_inline bool is_digit(const uint8_t c) {
   return static_cast<uint8_t>(c - '0') <= 9;
 }
 
+// Consumes a run of digits into i, eight at a time while eight are available,
+// then four, then one at a time. Overflow is deliberate: the caller counts the
+// digits and falls back when there are too many for a 64-bit mantissa.
+//
+// Long runs of digits are what a float-heavy document is made of: the fraction
+// of a binary64 printed to full precision is 15 to 17 digits, and reading those
+// one at a time is the single largest cost in parse_double(). Integer parts are
+// left alone: they are usually a handful of digits, and there the check for a
+// block of eight is wasted work.
+SIMDJSON_NO_SANITIZE_UNDEFINED
+simdjson_inline void parse_fraction_digits(const uint8_t *&p, uint64_t &i) {
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_SWAR_NUMBER_PARSING
+  while (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  // A 4 to 7 digit remainder is the common case once the blocks of eight are
+  // gone: 15 fraction digits leave 7, and 17 leave 1 after two blocks.
+  if (is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
+#endif // SIMDJSON_SWAR_NUMBER_PARSING
+#endif // #ifdef SIMDJSON_SWAR_NUMBER_PARSING
+  while (parse_digit(*p, i)) { p++; }
+}
+
 simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
   // z that fits in 53 bits, then we will be able to convert back the
   // the integer into a float in a lossless manner.
   const uint8_t *const first_after_period = p;
-
-#ifdef SIMDJSON_SWAR_NUMBER_PARSING
-#if SIMDJSON_SWAR_NUMBER_PARSING
-  // this helps if we have lots of decimals!
-  // this turns out to be frequent enough.
-  if (is_made_of_eight_digits_fast(p)) {
-    i = i * 100000000 + parse_eight_digits_unrolled(p);
-    p += 8;
-  }
-#endif // SIMDJSON_SWAR_NUMBER_PARSING
-#endif // #ifdef SIMDJSON_SWAR_NUMBER_PARSING
-  // Unrolling the first digit makes a small difference on some implementations (e.g. westmere)
-  if (parse_digit(*p, i)) { ++p; }
-  while (parse_digit(*p, i)) { p++; }
+  parse_fraction_digits(p, i);
   exponent = first_after_period - p;
   // Decimal without digits (123.) is illegal
   if (exponent == 0) {
@@ -1304,9 +1341,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   if (simdjson_likely(*p == '.')) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-    p++;
-    while (parse_digit(*p, i)) { p++; }
+    parse_fraction_digits(p, i);
+    if (p == start_decimal_digits) { return NUMBER_ERROR; } // no decimal digits
     exponent = -(p - start_decimal_digits);
 
     // Overflow check. More than 19 digits (minus the decimal) may be overflow.
@@ -1397,9 +1433,8 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
   if (simdjson_likely(*p == '.')) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-    p++;
-    while (parse_digit(*p, i)) { p++; }
+    parse_fraction_digits(p, i);
+    if (p == start_decimal_digits) { return NUMBER_ERROR; } // no decimal digits
     exponent = -(p - start_decimal_digits);
 
     // Overflow check. More than 19 digits (minus the decimal) may be overflow.
@@ -1630,9 +1665,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   if (simdjson_likely(*p == '.')) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-    p++;
-    while (parse_digit(*p, i)) { p++; }
+    parse_fraction_digits(p, i);
+    if (p == start_decimal_digits) { return NUMBER_ERROR; } // no decimal digits
     exponent = -(p - start_decimal_digits);
 
     // Overflow check. More than 19 digits (minus the decimal) may be overflow.
@@ -1725,9 +1759,8 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
   if (simdjson_likely(*p == '.')) {
     p++;
     const uint8_t *start_decimal_digits = p;
-    if (!parse_digit(*p, i)) { return NUMBER_ERROR; } // no decimal digits
-    p++;
-    while (parse_digit(*p, i)) { p++; }
+    parse_fraction_digits(p, i);
+    if (p == start_decimal_digits) { return NUMBER_ERROR; } // no decimal digits
     exponent = -(p - start_decimal_digits);
 
     // Overflow check. More than 19 digits (minus the decimal) may be overflow.
