@@ -1,0 +1,42 @@
+name: VS18-CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    name: windows-vs18
+    runs-on: windows-2025-vs2026
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {gen: Visual Studio 18 2026, arch: Win32, shared: ON, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: Win32, shared: OFF, build_type: Release, memory_map: OFF, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: ON, build_type: Release, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: OFF, build_type: Debug, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: OFF, build_type: RelWithDebInfo, memory_map: ON, nan_inf: OFF}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: OFF, build_type: Debug, memory_map: ON, nan_inf: ON}
+          - {gen: Visual Studio 18 2026, arch: x64, shared: OFF, build_type: Release, memory_map: ON, nan_inf: ON}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v6
+    - name: Configure
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}} -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_COMPETITION=OFF -DBUILD_SHARED_LIBS=${{matrix.shared}} -DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=${{matrix.memory_map}} -DSIMDJSON_ENABLE_NAN_INF=${{matrix.nan_inf}} -B build
+    - name: Build Debug
+      run: cmake --build build --config ${{matrix.build_type}} --verbose
+    - name: Run tests
+      run: |
+        cd build
+        ctest -C ${{matrix.build_type}}  -LE explicitonly  --output-on-failure
+    - name: Install
+      run: |
+        cmake --install build --config ${{matrix.build_type}}
+    - name: Test Installation
+      run: |
+        cmake -G "${{matrix.gen}}" -A ${{matrix.arch}}  -B build_install_test tests/installation_tests/find
+        cmake --build build_install_test --config ${{matrix.build_type}}

@@ -475,11 +475,11 @@ bool unicode_test() {
   std::cout << "Running " << __func__ << std::endl;
 
   const char* json = R"({
-    "greeting": "Hello, 世界!",
-    "emoji": "🎉🚀✨",
-    "arabic": "مرحبا",
-    "russian": "Привет",
-    "mixed": "café résumé naïve"
+    "greeting": "Hello, \u4e16\u754c!",
+    "emoji": "\ud83c\udf89\ud83d\ude80\u2728",
+    "arabic": "\u0645\u0631\u062d\u0628\u0627",
+    "russian": "\u041f\u0440\u0438\u0432\u0435\u0442",
+    "mixed": "caf\u00e9 r\u00e9sum\u00e9 na\u00efve"
   })";
 
   simdjson::dom::parser parser;
