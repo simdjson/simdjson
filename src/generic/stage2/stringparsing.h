@@ -16,6 +16,55 @@ namespace {
 /// @private
 namespace stringparsing {
 
+/**
+ * Shared accessor logic for `backslash_and_quote`, the per-implementation helper
+ * that locates unescaped quotes and backslashes in a processed chunk.
+ *
+ * Each SIMD kernel keeps only the raw bitmasks (`bs_bits`, `quote_bits`) plus its
+ * architecture-specific `copy_and_find()`. The byte-identical position logic
+ * below lives here, once, instead of being duplicated once per kernel.
+ *
+ * These are free-function templates so they resolve correctly for every kernel
+ * (the mask type is `uint32_t` where 32 bytes are processed per chunk and
+ * `uint64_t` where 64 bytes are processed). The scalar `fallback` implementation
+ * has a structurally different `backslash_and_quote` (a single byte rather than
+ * bitmasks); it provides its own non-template overloads in its kernel namespace,
+ * which overload resolution prefers over these templates.
+ */
+// `has_quote_first()` is true iff the lowest bit set in quote_bits precedes the
+// lowest bit set in bs_bits.
+template <typename T>
+simdjson_inline bool has_quote_first(const T &b) {
+  // This is the number of bits of quotes before the first backslash: if it is
+  // nonzero, the first quote comes before the first backslash.
+  return ((b.bs_bits - 1) & b.quote_bits) != 0;
+}
+
+/**
+ * True iff there is at least one backslash in the chunk.
+ *
+ * `has_quote_first()` and `has_backslash()` are exact complements whenever any
+ * backslash or quote is present. The string parsing loops call
+ * `has_quote_first()` first and return immediately on a leading quote, so
+ * `has_backslash()` is only evaluated when no quote precedes any backslash; in
+ * that state the position-aware mask `((quote_bits - 1) & bs_bits)` reduces to
+ * `bs_bits != 0`.
+ */
+template <typename T>
+simdjson_inline bool has_backslash(const T &b) { return b.bs_bits != 0; }
+
+// Returns the position (in bytes) of the first quote in the chunk.
+template <typename T>
+simdjson_inline int quote_index(const T &b) {
+  return trailing_zeroes(b.quote_bits);
+}
+
+// Returns the position (in bytes) of the first backslash in the chunk.
+template <typename T>
+simdjson_inline int backslash_index(const T &b) {
+  return trailing_zeroes(b.bs_bits);
+}
+
 // begin copypasta
 // These chars yield themselves: " \ /
 // b -> backspace, f -> formfeed, n -> newline, r -> cr, t -> horizontal tab
@@ -154,13 +203,13 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
     auto b = backslash_and_quote{};
     auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
+    if (has_quote_first(bs_quote)) {
       // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
+      return dst + quote_index(bs_quote);
     }
-    if (bs_quote.has_backslash()) {
+    if (has_backslash(bs_quote)) {
       /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
+      auto bs_dist = backslash_index(bs_quote);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
@@ -223,11 +272,11 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string_safe(const uint8_t *s
   while (src + SIMDJSON_PADDING + 12 <= buf_end) {
     auto b = backslash_and_quote{};
     auto bs_quote = b.copy_and_find(src, dst);
-    if (bs_quote.has_quote_first()) {
-      return dst + bs_quote.quote_index();
+    if (has_quote_first(bs_quote)) {
+      return dst + quote_index(bs_quote);
     }
-    if (bs_quote.has_backslash()) {
-      auto bs_dist = bs_quote.backslash_index();
+    if (has_backslash(bs_quote)) {
+      auto bs_dist = backslash_index(bs_quote);
       uint8_t escape_char = src[bs_dist + 1];
       if (escape_char == 'u') {
         src += bs_dist;
@@ -271,13 +320,13 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_wobbly_string(const uint8_t 
     auto b = backslash_and_quote{};
     auto bs_quote = b.copy_and_find(src, dst);
     // If the next thing is the end quote, copy and return
-    if (bs_quote.has_quote_first()) {
+    if (has_quote_first(bs_quote)) {
       // we encountered quotes first. Move dst to point to quotes and exit
-      return dst + bs_quote.quote_index();
+      return dst + quote_index(bs_quote);
     }
-    if (bs_quote.has_backslash()) {
+    if (has_backslash(bs_quote)) {
       /* find out where the backspace is */
-      auto bs_dist = bs_quote.backslash_index();
+      auto bs_dist = backslash_index(bs_quote);
       uint8_t escape_char = src[bs_dist + 1];
       /* we encountered backslash first. Handle backslash */
       if (escape_char == 'u') {
