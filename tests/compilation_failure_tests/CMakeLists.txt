@@ -50,4 +50,8 @@ if (SIMDJSON_STATIC_REFLECTION_ENABLED)
   add_cpp_test(key_selector_too_long_should_not_compile SOURCES key_selector_too_long.cpp COMPILE_ONLY LABELS acceptance no_mingw)
   target_compile_definitions(key_selector_too_long_should_not_compile PRIVATE COMPILATION_TEST_USE_FAILING_CODE=1)
   set_property(TEST key_selector_too_long_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "key_selector keys must be at most 63 characters long")
+
+  # A number that overflows binary64 has no representation to return and no way
+  # to report an error from a constant expression, so it must fail to compile.
+  add_dual_compile_test(compile_time_json_overflow)
 endif()

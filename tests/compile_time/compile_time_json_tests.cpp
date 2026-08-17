@@ -138,6 +138,51 @@ bool test_negative_numbers() {
 }
 
 /**
+ * Test 5b: mantissas that the fast path cannot round on its own
+ *
+ * Eisel-Lemire gives up on a mantissa of more than 19 significant digits, and on
+ * the rare input where the truncated product cannot decide the rounding. The
+ * runtime parser hands those to the slow path in src/from_chars.cpp; a constant
+ * expression cannot call it, so this used to be a hard compile error. Every
+ * value below has more digits than the fast path can take, and each must come
+ * out as the correctly rounded binary64 -- the same value strtod gives.
+ */
+bool test_long_mantissa() {
+    TEST_START();
+
+    constexpr auto data = simdjson::compile_time::parse_json<R"({
+        "pi": 3.14159265358979323846264338327950288419716939937510,
+        "wide": 1.2345678901234567890123456789,
+        "tiny": 0.000000000000000000000000000000000001234567890123456789,
+        "dbl_max": 1.7976931348623157e308,
+        "denormal": 4.9406564584124654417656879286822137236505980261432e-324,
+        "negative": -9.8765432109876543210987654321e-17
+    })">();
+
+    static_assert(data.pi == 3.141592653589793);
+    static_assert(data.wide == 1.2345678901234567);
+    static_assert(data.tiny == 1.2345678901234568e-36);
+    static_assert(data.dbl_max == 1.7976931348623157e308);
+    static_assert(data.denormal == 5e-324); // the smallest subnormal
+    static_assert(data.negative == -9.876543210987654e-17);
+
+    // An exact tie, written out in full: this is precisely halfway between 1.0
+    // and the next binary64, so round-to-nearest-even must pick 1.0, whose
+    // significand is the even one. Deciding that needs the exact value of all
+    // 54 digits, which is the case the fast path cannot settle by itself.
+    constexpr auto tie = simdjson::compile_time::parse_json<R"({
+        "midpoint": 1.00000000000000011102230246251565404236316680908203125
+    })">();
+    static_assert(tie.midpoint == 1.0);
+
+    ASSERT_EQUAL(data.pi, 3.141592653589793);
+    ASSERT_EQUAL(data.wide, 1.2345678901234567);
+    ASSERT_EQUAL(tie.midpoint, 1.0);
+
+    TEST_SUCCEED();
+}
+
+/**
  * Test 6: Whitespace handling
  */
 bool test_whitespace() {
@@ -699,6 +744,7 @@ bool run() {
            test_deeply_nested_objects() &&
            test_empty_object() &&
            test_negative_numbers() &&
+           test_long_mantissa() &&
            test_whitespace() &&
            test_realtime_config() &&
            test_external_json_embed() &&
