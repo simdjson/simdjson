@@ -202,11 +202,65 @@ namespace builder_tests {
   }
 
 
+  // https://github.com/simdjson/simdjson/issues/2827
+  // Since C++26, std::optional is a range, so it used to match both the
+  // container and the optional serialization overloads.
+  bool test_issue2827_optional() {
+    TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+    struct Foo {
+      std::optional<std::string> maybe{};
+    };
+
+    Foo foo{"bar"};
+    std::string json;
+    ASSERT_SUCCESS(simdjson::to_json(foo).get(json));
+    ASSERT_EQUAL(json, "{\"maybe\":\"bar\"}");
+
+    Foo empty;
+    ASSERT_SUCCESS(simdjson::to_json(empty).get(json));
+    ASSERT_EQUAL(json, "{\"maybe\":null}");
+
+    // Optionals used directly, not as a struct member.
+    std::optional<std::string> optional_string = "bar";
+    ASSERT_SUCCESS(simdjson::to_json(optional_string).get(json));
+    ASSERT_EQUAL(json, "\"bar\"");
+
+    std::optional<std::string> empty_string = std::nullopt;
+    ASSERT_SUCCESS(simdjson::to_json(empty_string).get(json));
+    ASSERT_EQUAL(json, "null");
+
+    std::optional<Foo> optional_struct = Foo{"x"};
+    ASSERT_SUCCESS(simdjson::to_json(optional_struct).get(json));
+    ASSERT_EQUAL(json, "{\"maybe\":\"x\"}");
+
+    std::vector<std::optional<int>> vector_of_optionals = {1, std::nullopt, 3};
+    ASSERT_SUCCESS(simdjson::to_json(vector_of_optionals).get(json));
+    ASSERT_EQUAL(json, "[1,null,3]");
+
+    std::optional<std::vector<int>> optional_vector = std::vector<int>{1, 2};
+    ASSERT_SUCCESS(simdjson::to_json(optional_vector).get(json));
+    ASSERT_EQUAL(json, "[1,2]");
+
+    // Round-trip the struct.
+    ondemand::parser parser;
+    std::string document = "{\"maybe\":\"bar\"}";
+    auto doc_result = parser.iterate(pad(document));
+    ASSERT_SUCCESS(doc_result);
+    Foo deserialized;
+    ASSERT_SUCCESS(doc_result.get<Foo>().get(deserialized));
+    ASSERT_TRUE(deserialized.maybe.has_value());
+    ASSERT_EQUAL(*deserialized.maybe, "bar");
+#endif
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return test_empty_values() &&
            test_special_characters() &&
            test_numeric_limits() &&
-           test_nested_structures();
+           test_nested_structures() &&
+           test_issue2827_optional();
   }
 
 } // namespace builder_tests

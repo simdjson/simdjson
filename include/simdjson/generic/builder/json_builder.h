@@ -108,7 +108,7 @@ simdjson_really_inline void call_through_string_builder(writer &w, F &&f) noexce
 }
 
 template <class T>
-  requires(concepts::container_but_not_string<T> && ! concepts::optional_type<T> && !require_custom_serialization<T>)
+  requires(concepts::container_but_not_string<T> && !require_custom_serialization<T>)
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   auto it = t.begin();
   auto end = t.end();
