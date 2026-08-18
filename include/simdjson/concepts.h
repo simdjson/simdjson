@@ -138,9 +138,15 @@ concept string_like =
 // Concept that checks if a type is a container but not a string (because
 // strings handling must be handled differently)
 // Now uses iterator-based approach for broader container support
+//
+// Optional types are excluded on purpose. Since C++26 (P3168), std::optional
+// is itself a range, so without the exclusion an std::optional would match
+// both this concept and optional_type, making the container and the optional
+// overloads of atom()/append() ambiguous. See issue 2827.
 template <typename T>
 concept container_but_not_string =
-  std::ranges::input_range<T> && !string_like<T> && !concepts::string_view_keyed_map<T>;
+  std::ranges::input_range<T> && !string_like<T> && !concepts::string_view_keyed_map<T>
+  && !concepts::optional_type<T>;
 
 
 

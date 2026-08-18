@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -737,6 +738,44 @@ bool serialize_optional() {
   ASSERT_EQUAL(p, "null");
   TEST_SUCCEED();
 }
+
+// https://github.com/simdjson/simdjson/issues/2827
+// Since C++26 (P3168), std::optional is itself a range, so an optional
+// used to match both the container and the optional serialization overloads.
+// These calls must compile and pick the optional overload.
+bool issue2827_optional_serialization() {
+  TEST_START();
+  std::string json;
+
+  std::optional<std::string> optional_string = "bar";
+  ASSERT_SUCCESS(simdjson::to_json(optional_string, json));
+  ASSERT_EQUAL(json, "\"bar\"");
+
+  std::optional<std::string> empty_string = std::nullopt;
+  ASSERT_SUCCESS(simdjson::to_json(empty_string, json));
+  ASSERT_EQUAL(json, "null");
+
+  std::optional<int> optional_int = 3;
+  ASSERT_SUCCESS(simdjson::to_json(optional_int, json));
+  ASSERT_EQUAL(json, "3");
+
+  std::optional<int> empty_int = std::nullopt;
+  ASSERT_SUCCESS(simdjson::to_json(empty_int, json));
+  ASSERT_EQUAL(json, "null");
+
+  std::vector<std::optional<int>> vector_of_optionals = {1, std::nullopt, 3};
+  ASSERT_SUCCESS(simdjson::to_json(vector_of_optionals, json));
+  ASSERT_EQUAL(json, "[1,null,3]");
+
+  std::optional<std::vector<int>> optional_vector = std::vector<int>{1, 2};
+  ASSERT_SUCCESS(simdjson::to_json(optional_vector, json));
+  ASSERT_EQUAL(json, "[1,2]");
+
+  std::optional<std::vector<int>> empty_vector = std::nullopt;
+  ASSERT_SUCCESS(simdjson::to_json(empty_vector, json));
+  ASSERT_EQUAL(json, "null");
+  TEST_SUCCEED();
+}
 #endif
 
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
@@ -897,6 +936,7 @@ bool run() {
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
          issue2549() && car_test_template() && serialize_optional() &&
+         issue2827_optional_serialization() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF
