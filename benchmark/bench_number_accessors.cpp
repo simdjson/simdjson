@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <endian.h>
 #include <string>
 #include <counters/event_counter.h>
 #include "from/benchmark_helpers.h"
@@ -15,8 +14,9 @@ using namespace counters;
 
 namespace {
 
-  // The cost of get_int64(), get_double() and get_number() depends value size,
-  // for this reason we use switchs (Short:5 digits, medium:12 and long:19)
+  // The cost of get_int64(), get_double(), get_float() and get_number()
+  // depends on value size, so we switch over Short:5 digits, medium:12 and
+  // long:19.
   enum class number_length { short_digits, medium_digits, long_digits };
 
   constexpr size_t VALUE_COUNT = 1000000;
@@ -278,7 +278,7 @@ namespace {
     return num_chars / agg.elapsed_ns();
   }
 
-#if !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER)
+#if !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
   void run_ondemand_get_int64(number_length which_len) {
     const auto &dataset =
       get_int_dataset(which_len);
@@ -337,7 +337,7 @@ namespace {
   }
 
 #endif
-#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER)
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
   void run_ondemand_get_double(number_length which_len) {
     const auto &dataset =
       get_double_dataset(which_len);
@@ -395,7 +395,40 @@ namespace {
   }
 
 #endif
-#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE)
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER)
+  void run_ondemand_get_float(number_length which_len) {
+    const auto &dataset =
+      get_double_dataset(which_len);
+    ondemand::parser parser;
+    volatile float sink = 0;
+
+    if(warm_up(parser, dataset.json)) {return;}
+
+    auto result = bench([&]() -> size_t {
+      ondemand::document doc;
+      if(parser.iterate(dataset.json).get(doc)) {return 0;}
+
+      ondemand::array array;
+      if(doc.get_array().get(array)) {return 0;}
+
+      float sum = 0;
+      for(auto element : array) {
+        float value;
+        if(element.get_float().get(value)) {return 0;}
+        sum += value;
+      }
+      sink = sum;
+      return size_t(sum);
+    });
+    pretty_print_array(
+        "ondemand_get_float",
+        dataset.json.size(),
+        dataset.count,
+        result);
+  }
+
+#endif
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_FLOAT)
   void run_ondemand_get_number(number_length which_len) {
     const auto &dataset =
       get_mixed_dataset(which_len);
@@ -430,7 +463,7 @@ namespace {
 
 #endif
 
-  // if no BENCH_ONLY_* flag used: run all (int64, double and number)
+  // if no BENCH_ONLY_* flag used: run all (int64, double, float and number)
   void run_benchmark() {
     for (auto len :{
         number_length::short_digits,
@@ -439,15 +472,18 @@ namespace {
 
     printf("  %s digits:\n", label(len));
 
-#if !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER)
+#if !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
     run_ondemand_get_int64(len);
     run_dom_get_int64(len);
 #endif
-#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER)
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
     run_ondemand_get_double(len);
     run_dom_get_double(len);
 #endif
-#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE)
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER)
+    run_ondemand_get_float(len);
+#endif
+#if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_FLOAT)
     run_ondemand_get_number(len);
 #endif
 
