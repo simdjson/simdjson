@@ -38,10 +38,17 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
 
 template <std::floating_point T>
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
-  double x;
-  SIMDJSON_TRY(val.get_double().get(x));
-  out = static_cast<T>(x);
-  return SUCCESS;
+  if constexpr (std::is_same_v<T, float>) {
+    // Going through binary64 and then rounding to binary32 would round twice
+    // and could produce a value that is not the float nearest to the JSON
+    // number, so we parse to binary32 directly.
+    return val.get_float().get(out);
+  } else {
+    double x;
+    SIMDJSON_TRY(val.get_double().get(x));
+    out = static_cast<T>(x);
+    return SUCCESS;
+  }
 }
 
 template <std::signed_integral T>

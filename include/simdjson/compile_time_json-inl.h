@@ -12,9 +12,11 @@
 #if SIMDJSON_STATIC_REFLECTION
 
 #include "simdjson/compile_time_json.h"
+#include "simdjson/internal/fast_float.h"
 #include <array>
 #include <cstdint>
 #include <meta>
+#include <limits>
 #include <string_view>
 
 #include <algorithm>
@@ -38,232 +40,43 @@ namespace compile_time {
 /**
  * Namespace for number parsing utilities.
  * We seek to provide exact compile-time number parsing functions.
- * That is not trivial, but thankfully we can reuse much of the existing
- * simdjson functionality.
- * Importantly, it is not a trivial matter to provide correct rounding
- * for floating-point numbers at compile-time. The fast_float library
- * does it well.
+ * Correct rounding of floating-point numbers is not a trivial matter, and it is
+ * harder still in a constant expression, where the runtime parser's memcpy and
+ * __uint128_t tricks are unavailable. We hand that part to fast_float, which is
+ * correctly rounded and usable in a constant expression from C++20 onwards.
  */
 namespace number_parsing {
 
-// Counts the number of leading zeros in a 64-bit integer.
-consteval int leading_zeroes(uint64_t input_num, int last_bit = 0) {
-  if (input_num & uint64_t(0xffffffff00000000)) {
-    input_num >>= 32;
-    last_bit |= 32;
-  }
-  if (input_num & uint64_t(0xffff0000)) {
-    input_num >>= 16;
-    last_bit |= 16;
-  }
-  if (input_num & uint64_t(0xff00)) {
-    input_num >>= 8;
-    last_bit |= 8;
-  }
-  if (input_num & uint64_t(0xf0)) {
-    input_num >>= 4;
-    last_bit |= 4;
-  }
-  if (input_num & uint64_t(0xc)) {
-    input_num >>= 2;
-    last_bit |= 2;
-  }
-  if (input_num & uint64_t(0x2)) { /* input_num >>=  1; */
-    last_bit |= 1;
-  }
-  return 63 - last_bit;
-}
-// Multiplies two 32-bit unsigned integers and returns a 64-bit result.
-consteval uint64_t emulu(uint32_t x, uint32_t y) { return x * (uint64_t)y; }
-consteval uint64_t umul128_generic(uint64_t ab, uint64_t cd, uint64_t *hi) {
-  uint64_t ad = emulu((uint32_t)(ab >> 32), (uint32_t)cd);
-  uint64_t bd = emulu((uint32_t)ab, (uint32_t)cd);
-  uint64_t adbc = ad + emulu((uint32_t)ab, (uint32_t)(cd >> 32));
-  uint64_t adbc_carry = (uint64_t)(adbc < ad);
-  uint64_t lo = bd + (adbc << 32);
-  *hi = emulu((uint32_t)(ab >> 32), (uint32_t)(cd >> 32)) + (adbc >> 32) +
-        (adbc_carry << 32) + (uint64_t)(lo < bd);
-  return lo;
-}
-
-// Represents a 128-bit unsigned integer as two 64-bit parts.
-// We have a value128 struct elsewhere in the simdjson, but we
-// use a separate one here for clarity.
-struct value128 {
-  uint64_t low;
-  uint64_t high;
-
-  constexpr value128(uint64_t _low, uint64_t _high) : low(_low), high(_high) {}
-  constexpr value128() : low(0), high(0) {}
-};
-
-// Multiplies two 64-bit integers and returns a 128-bit result as value128.
-consteval value128 full_multiplication(uint64_t a, uint64_t b) {
-  value128 answer;
-  answer.low = umul128_generic(a, b, &answer.high);
-  return answer;
-}
-
-// Converts mantissa and exponent to a double, considering the sign.
-consteval double to_double(uint64_t mantissa, int64_t exponent, bool negative) {
-  uint64_t sign_bit = negative ? (1ULL << 63) : 0;
-  uint64_t exponent_bits = (uint64_t(exponent) & 0x7FF) << 52;
-  uint64_t bits = sign_bit | exponent_bits | (mantissa & ((1ULL << 52) - 1));
-  return std::bit_cast<double>(bits);
-}
-
-// Attempts to compute i * 10^(power) exactly; and if "negative" is
-// true, negate the result.
-// Returns true on success, false on failure.
-// Failure suggests and invalid input or out-of-range result.
-consteval bool compute_float_64(int64_t power, uint64_t i, bool negative,
-                                double &d) {
-  if (i == 0) {
-    d = negative ? -0.0 : 0.0;
-    return true;
-  }
-  int64_t exponent = (((152170 + 65536) * power) >> 16) + 1024 + 63;
-  int lz = leading_zeroes(i);
-  i <<= lz;
-  const uint32_t index =
-      2 * uint32_t(power - simdjson::internal::smallest_power);
-  value128 firstproduct = full_multiplication(
-      i, simdjson::internal::powers_template<>::power_of_five_128[index]);
-  if ((firstproduct.high & 0x1FF) == 0x1FF) {
-    value128 secondproduct = full_multiplication(
-        i, simdjson::internal::powers_template<>::power_of_five_128[index + 1]);
-    firstproduct.low += secondproduct.high;
-    if (secondproduct.high > firstproduct.low) {
-      firstproduct.high++;
-    }
-  }
-  uint64_t lower = firstproduct.low;
-  uint64_t upper = firstproduct.high;
-  uint64_t upperbit = upper >> 63;
-  uint64_t mantissa = upper >> (upperbit + 9);
-  lz += int(1 ^ upperbit);
-  int64_t real_exponent = exponent - lz;
-  if (real_exponent <= 0) {
-    if (-real_exponent + 1 >= 64) {
-      d = negative ? -0.0 : 0.0;
-      return true;
-    }
-    mantissa >>= -real_exponent + 1;
-    mantissa += (mantissa & 1);
-    mantissa >>= 1;
-    real_exponent = (mantissa < (uint64_t(1) << 52)) ? 0 : 1;
-    d = to_double(mantissa, real_exponent, negative);
-    return true;
-  }
-  if ((lower <= 1) && (power >= -4) && (power <= 23) && ((mantissa & 3) == 1)) {
-    if ((mantissa << (upperbit + 64 - 53 - 2)) == upper) {
-      mantissa &= ~1;
-    }
-  }
-  mantissa += mantissa & 1;
-  mantissa >>= 1;
-  if (mantissa >= (1ULL << 53)) {
-    mantissa = (1ULL << 52);
-    real_exponent++;
-  }
-  mantissa &= ~(1ULL << 52);
-  if (real_exponent > 2046) {
-    return false;
-  }
-  d = to_double(mantissa, real_exponent, negative);
-  return true;
-}
-
-// Parses a single digit character and updates the integer value.
-consteval bool parse_digit(const char c, uint64_t &i) {
-  const uint8_t digit = static_cast<uint8_t>(c - '0');
-  if (digit > 9) {
-    return false;
-  }
-  i = 10 * i + digit;
-  return true;
-}
-
-// Parses a JSON float from a string starting at src.
-// Returns the parsed double and the number of characters consumed.
+// Parses a JSON float starting at src. Returns the value and the number of
+// characters consumed.
+//
+// Eisel-Lemire needs somewhere to fall back to: a mantissa of more than 19
+// significant digits, or an input where the truncated product cannot decide the
+// rounding, has to be finished by a slower exact method. A constant expression
+// cannot call the runtime one in src/from_chars.cpp, so we use fast_float, which
+// is correctly rounded in a constant expression and carries its own fallback.
 consteval std::pair<double, size_t> parse_double(const char *src,
                                                  const char *end) {
-  auto get_value = [&](const char *pointer) -> char {
-    if (pointer == end) {
-      return '\0';
-    }
-    return *pointer;
-  };
-  const char *srcinit = src;
-  bool negative = (get_value(src) == '-');
-  src += uint8_t(negative);
-  uint64_t i = 0;
-  const char *p = src;
-  p += parse_digit(get_value(p), i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(get_value(p), i)) {
-    p++;
-  }
-  if (p == src) {
+  double value = 0;
+  auto answer = simdjson_fast_float::from_chars_advanced(
+      src, end, value,
+      simdjson_fast_float::parse_options{
+          simdjson_fast_float::chars_format::json});
+  if (answer.ec == std::errc::invalid_argument) {
     simdjson_consteval_error("Invalid float value");
   }
-  if ((leading_zero && p != src + 1)) {
-    simdjson_consteval_error("Invalid float value");
-  }
-  int64_t exponent = 0;
-  bool overflow;
-  if (get_value(p) == '.') {
-    p++;
-    const char *start_decimal_digits = p;
-    if (!parse_digit(get_value(p), i)) {
-      simdjson_consteval_error("Invalid float value");
-    } // no decimal digits
-    p++;
-    while (parse_digit(get_value(p), i)) {
-      p++;
-    }
-    exponent = -(p - start_decimal_digits);
-    overflow = p - src - 1 > 19;
-    if (overflow && leading_zero) {
-      const char *start_digits = src + 2;
-      while (get_value(start_digits) == '0') {
-        start_digits++;
-      }
-      overflow = p - start_digits > 19;
-    }
-  } else {
-    overflow = p - src > 19;
-  }
-  if (overflow) {
-    simdjson_consteval_error(
-        "Overflow while computing the float value: too many digits");
-  }
-  if (get_value(p) == 'e' || get_value(p) == 'E') {
-    p++;
-    bool exp_neg = get_value(p) == '-';
-    p += exp_neg || get_value(p) == '+';
-    uint64_t exp = 0;
-    const char *start_exp_digits = p;
-    while (parse_digit(get_value(p), exp)) {
-      p++;
-    }
-    if (p - start_exp_digits == 0 || p - start_exp_digits > 19) {
-      simdjson_consteval_error("Invalid float value");
-    }
-    exponent += exp_neg ? 0 - exp : exp;
-  }
-
-  overflow = overflow || exponent < simdjson::internal::smallest_power ||
-             exponent > simdjson::internal::largest_power;
-  if (overflow) {
+  // fast_float reports result_out_of_range at either edge of the format. An
+  // underflow to zero is a value like any other; an overflow to infinity is not
+  // representable in JSON and was an error here before, so it stays one.
+  // (Comparing against max/lowest rather than calling std::isinf, which is not
+  // usable in a constant expression.)
+  if (value > (std::numeric_limits<double>::max)() ||
+      value < std::numeric_limits<double>::lowest()) {
     simdjson_consteval_error("Overflow while computing the float value");
   }
-  double d;
-  if (!compute_float_64(exponent, i, negative, d)) {
-    simdjson_consteval_error("Overflow while computing the float value");
-  }
-  return {d, size_t(p - srcinit)};
+  return {value, size_t(answer.ptr - src)};
 }
+
 } // namespace number_parsing
 
 consteval auto make_data_member_options(auto&& name_str) {
@@ -401,8 +214,6 @@ parse_number(std::string_view json,
   // Note that we consider -0 to be an integer unless it has a decimal point or
   // exponent.
   if (is_float) {
-    // It would be cool to use std::from_chars in a consteval context, but it is
-    // not supported yet for floating point types. :-(
     auto [value, offset] =
         number_parsing::parse_double(json.data(), json.data() + json.size());
     if (offset != scope) {

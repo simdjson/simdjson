@@ -42,6 +42,12 @@ char *to_chars(char *first, const char *last, double value);
  */
 double from_chars(const char *first) noexcept;
 double from_chars(const char *first, const char* end) noexcept;
+/**
+ * @private
+ * Same as from_chars, but produces a correctly rounded binary32 (float) value.
+ * Defined in src/from_chars
+ */
+float from_chars_float(const char *first) noexcept;
 }
 
 #ifndef SIMDJSON_EXCEPTIONS

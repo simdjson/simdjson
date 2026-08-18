@@ -31,9 +31,10 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    *
-   * You may use get_double(), get_bool(), get_uint64(), get_int64(),
+   * You may use get_double(), get_float(), get_bool(), get_uint64(), get_int64(),
+   * get_uint32(), get_int32(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
    * When SIMDJSON_SUPPORTS_CONCEPTS is set, custom types are also supported.
    *
@@ -58,7 +59,7 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, double, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    * If the macro SIMDJSON_SUPPORTS_CONCEPTS is set, then custom types are also supported.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
@@ -96,7 +97,7 @@ public:
       "And you do not seem to have added support for it. Indeed, we have that "
       "simdjson::custom_deserializable<T> is false and the type T is not a default type "
       "such as ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, double, or bool.");
+      "int64_t, uint32_t, int32_t, double, float, or bool.");
     static_cast<void>(out); // to get rid of unused errors
     return UNINITIALIZED;
   }
@@ -105,7 +106,8 @@ public:
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, double, and bool. We recommend you use get_double(), get_bool(), get_uint64(), get_int64(), "
+      "int64_t, uint32_t, int32_t, double, float, and bool. We recommend you use get_double(), get_float(), "
+      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors
@@ -198,6 +200,28 @@ public:
    * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
    */
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+
+  /**
+   * Cast this JSON value to a float (binary32).
+   *
+   * The value is rounded directly to binary32: it is the float nearest to the
+   * JSON number. Note that this may differ from get_double() followed by a cast
+   * to float, which rounds twice.
+   *
+   * @returns A float.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
+   */
+  simdjson_inline simdjson_result<float> get_float() noexcept;
+
+  /**
+   * Cast this JSON value (inside string) to a float (binary32).
+   *
+   * @returns A float.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
+   */
+  simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
 
   /**
    * Cast this JSON value to a string.
@@ -780,6 +804,8 @@ public:
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_inline simdjson_result<float> get_float() noexcept;
+  simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;

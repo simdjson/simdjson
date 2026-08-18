@@ -499,7 +499,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
-  `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
+  `get_float()`, `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
   the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for `ondemand::object` and `ondemand::array`. An exception may be thrown if
   the cast is not possible: the error code is `simdjson::INCORRECT_TYPE` (see [Error handling](#error-handling)). Importantly, when getting an ondemand::object or ondemand::array instance, its content is
   not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
@@ -510,7 +510,13 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   occur. If you somehow need to access non-UTF-8 strings in a lossless manner
   (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
   When calling `get_uint64()`, `get_int64()`, `get_uint32()` or `get_int32()`, if the number does not fit in the
-  corresponding integer type, it is also considered an error (`NUMBER_OUT_OF_RANGE`). When parsing numbers or other scalar values, the library checks
+  corresponding integer type, it is also considered an error (`NUMBER_OUT_OF_RANGE`).
+  The `get_double()` method produces a binary64 (`double`) value and `get_float()` produces a binary32 (`float`) value; both
+  are the value nearest to the JSON number. In particular, `get_float()` rounds to binary32 directly rather than rounding
+  to binary64 first, so it does not suffer from double rounding: `static_cast<float>(value.get_double())` is not always the
+  float nearest to the JSON number, whereas `value.get_float()` always is. As with `get_double()`, a number too large in
+  magnitude to be a finite `float` is an error (`NUMBER_ERROR`) since simdjson does not produce infinite values; a number
+  too small in magnitude simply rounds to zero. When parsing numbers or other scalar values, the library checks
   that the value is followed by an expected character, thus you *may* get a number parsing error when accessing the digits
   as an integer in the following strings: `{"number":12332a`, `{"number":12332\0`, `{"number":12332` (the digits appear at the end). We always abide by the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification so that, for example, numbers prefixed by the `+` sign are in error.
 
@@ -3108,8 +3114,8 @@ Parsing numbers inside strings
 
 Though the JSON specification allows for numbers and string values, many engineers choose to integrate the numbers inside strings, e.g., they prefer `{"a":"1.9"}` to`{"a":1.9}`.
 The simdjson library supports parsing valid numbers inside strings which makes it more convenient for people working with those types of documents. This feature is supported through
-three methods: `get_double_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to note that these methods are not substitute to the regular
-`get_double`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these
+four methods: `get_double_in_string`, `get_float_in_string`, `get_int64_in_string` and  `get_uint64_in_string`. However, it is important to note that these methods are not substitute to the regular
+`get_double`, `get_float`, `get_int64` and `get_uint64`. The usage of the `get_*_in_string` methods is solely to parse valid JSON numbers inside strings, and so we expect users to call these
 methods appropriately. In particular, a valid JSON number has no leading and no trailing whitespaces, and the strings `"nan"`, `"1e"` and `"infinity"` will not be accepted as valid
 numbers (although you have access to the raw string with the `raw_json_token()` method,  see [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
 ). As an example, suppose we have the following JSON text:
