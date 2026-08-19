@@ -42,12 +42,6 @@ The job is available under the actions tab, here is a [direct link](https://gith
 
 The corpus will grow over time and easy to find bugs will be detected already during the pull request stage. Also, it will keep the fuzzer builds from bit rot.
 
-## Fuzzing as a CI job - arm64
-There is also a job running the fuzzers on arm64 (see .drone.yml) to make sure also the arm specific parts are fuzzed. This does not update the corpus, it just reuses what the x64 job finds.
-
-## Fuzzing as a CI job - power
-There is a fuzzing job similar to the arm64 one. It takes the corpus from the x64 fuzzer as a starting point and fuzzes it for a short while. See the "short fuzz on the power arch" github action job.
-
 ## Fuzzing on oss-fuzz
 The simdjson library is continuously fuzzed on [oss-fuzz](https://github.com/google/oss-fuzz). In case a bug is found, the offending input is minimized and tested for reproducibility. A report with the details is automatically filed, and the contact persons at simdjson are notified via email. An issue is opened at the oss-fuzz bugtracker with restricted view access. When the bug is fixed, the issue is automatically closed.
 
