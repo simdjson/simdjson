@@ -1,4 +1,3 @@
-#include "simdjson/common_defs.h"
 #ifndef SIMDJSON_GENERIC_ONDEMAND_OBJECT_ITERATOR_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
