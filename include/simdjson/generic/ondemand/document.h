@@ -112,6 +112,23 @@ public:
    */
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   /**
+   * Cast this JSON value to a 32-bit float.
+   *
+   * Calls get_double() and checks that the result fits in a float.
+   *
+   * @warning This first parses the number as a double and then narrows it to a float. This is
+   *          not always identical to parsing the number as a float directly: the intermediate
+   *          rounding to double can, in rare cases very close to a float rounding boundary,
+   *          produce a different (still correctly-rounded-for-double) result than a direct
+   *          decimal-to-float conversion would. This does not affect whether the value fits;
+   *          only the exact bit pattern in rare edge cases.
+   *
+   * @returns A 32-bit float.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_OUT_OF_RANGE If the value does not fit in a float.
+   */
+  simdjson_inline simdjson_result<float> get_float() noexcept;
+  /**
    * Cast this JSON value to a string.
    *
    * The string is guaranteed to be valid UTF-8.
@@ -856,6 +873,7 @@ public:
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
@@ -1017,6 +1035,7 @@ public:
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
@@ -1112,6 +1131,7 @@ public:
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
+  simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;

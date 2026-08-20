@@ -1061,6 +1061,18 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool float_with_trailing() {
+        TEST_START();
+        auto json = R"( 133 badstuff )"_padded;
+        ondemand::parser parser;
+        ondemand::document_stream doc;
+        ASSERT_SUCCESS(parser.iterate_many(json).get(doc));
+        float x;
+        ASSERT_SUCCESS((*doc.begin()).get_float().get(x));
+        ASSERT_EQUAL(x,133.0f);
+        TEST_SUCCEED();
+    }
+
 
     bool bool_with_trailing() {
         TEST_START();
@@ -2515,6 +2527,7 @@ namespace document_stream_tests {
             int64_with_trailing() &&
             uint32_with_trailing() &&
             int32_with_trailing() &&
+            float_with_trailing() &&
             bool_with_trailing() &&
             null_with_trailing() &&
             truncated_utf8() &&

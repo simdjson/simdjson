@@ -221,6 +221,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -230,6 +231,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -248,6 +250,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -257,6 +260,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -274,6 +278,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -283,6 +288,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -300,6 +306,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -309,6 +316,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -331,6 +339,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -340,6 +349,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -358,6 +368,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -367,6 +378,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -383,6 +395,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -392,6 +405,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
@@ -408,6 +422,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
@@ -417,6 +432,7 @@ namespace error_tests {
       ASSERT_ERROR( val.get_uint32(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_int64(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_uint64(), INCORRECT_TYPE );
+      ASSERT_ERROR( val.get_float(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_double(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_string(), INCORRECT_TYPE );
       ASSERT_ERROR( val.get_array(), INCORRECT_TYPE );

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <limits>
 #include "simdjson.h"
 #include "test_ondemand.h"
 
@@ -659,9 +660,84 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool get_float_values() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    float val;
+    padded_string docdata;
+
+    // Valid float values
+    docdata = "0"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, 0.0f);
+
+    docdata = "42"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, 42.0f);
+
+    docdata = "-1"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, -1.0f);
+
+    docdata = "3.5"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, 3.5f);
+
+    docdata = "3.4028234663852886e38"_padded; // FLT_MAX
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, (std::numeric_limits<float>::max)());
+
+    // Underflow: matches static_cast<float>/strtof semantics, not an error
+    docdata = "1e-300"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, 0.0f);
+
+    // Out of range
+    docdata = "1e300"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_float(), NUMBER_OUT_OF_RANGE);
+
+    docdata = "-1e300"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_ERROR(doc.get_float(), NUMBER_OUT_OF_RANGE);
+
+    // Test via value path
+    auto json = R"({"x": 42})"_padded;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc["x"].get_float().get(val));
+    ASSERT_EQUAL(val, 42.0f);
+
+    TEST_SUCCEED();
+  }
+
+  // Input sits just above the exact double-to-float rounding midpoint: direct
+  // decimal-to-float would round up, but rounding to double first lands exactly
+  // on the midpoint, and round-half-even then rounds down. Documents get_float()'s
+  // known double-rounding tradeoff; update this if it ever parses float directly.
+  bool get_float_double_rounding() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    float val;
+    auto docdata = "1.000000059604644775390625"_padded;
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float().get(val));
+    ASSERT_EQUAL(val, 1.0f);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
+           get_float_values() &&
+           get_float_double_rounding() &&
            minus_zero() &&
            gigantic_big_int() &&
            big_int_not_zero() &&
