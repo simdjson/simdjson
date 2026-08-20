@@ -4,6 +4,7 @@
 # release. The vendored copy is never edited by hand.
 #
 #   tools/vendor_fast_float.sh 8.2.10
+#   tools/vendor_fast_float.sh --from-file path/to/fast_float.h [version]
 #
 # Two transformations are applied. First, everything fast_float declares is
 # renamed so that a program can link simdjson and its own copy of fast_float in
@@ -14,13 +15,25 @@
 
 set -eu
 
-VERSION="${1:-8.2.10}"
+FROM_FILE=""
+VERSION="8.2.10"
+if [ "${1:-}" = "--from-file" ]; then
+  FROM_FILE="${2:?--from-file requires a path to an amalgamated fast_float.h}"
+  VERSION="${3:-8.2.10}"
+elif [ -n "${1:-}" ]; then
+  VERSION="$1"
+fi
+
 URL="https://github.com/fastfloat/fast_float/releases/download/v${VERSION}/fast_float.h"
 OUT="$(dirname "$0")/../include/simdjson/internal/fast_float.h"
 TMP="$(mktemp)"
 trap 'rm -f "$TMP"' EXIT
 
-curl -sSfL -o "$TMP" "$URL"
+if [ -n "$FROM_FILE" ]; then
+  cp "$FROM_FILE" "$TMP"
+else
+  curl -sSfL -o "$TMP" "$URL"
+fi
 
 VERSION="$VERSION" OUT="$OUT" TMP="$TMP" python3 - <<'PYTHON'
 import os, re, unicodedata

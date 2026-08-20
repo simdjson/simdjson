@@ -390,12 +390,16 @@ using parse_options = parse_options_t<char>;
 
 #ifndef SIMDJSON_FASTFLOAT_ASSERT
 #define SIMDJSON_FASTFLOAT_ASSERT(x)                                                    \
-  { ((void)(x)); }
+  {                                                                            \
+    static_cast<void>(x);                                                      \
+  }
 #endif
 
 #ifndef SIMDJSON_FASTFLOAT_DEBUG_ASSERT
 #define SIMDJSON_FASTFLOAT_DEBUG_ASSERT(x)                                              \
-  { ((void)(x)); }
+  {                                                                            \
+    static_cast<void>(x);                                                      \
+  }
 #endif
 
 // rust style `try!()` macro, or `?` operator
@@ -674,7 +678,7 @@ leading_zeroes(uint64_t input_num) {
   // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
   _BitScanReverse64(&leading_zero, input_num);
-  return (int)(63 - leading_zero);
+  return static_cast<int>(63 - leading_zero);
 #else
   return leading_zeroes_generic(input_num);
 #endif
@@ -721,7 +725,7 @@ countr_zero_32(uint32_t input_num) {
 #ifdef SIMDJSON_FASTFLOAT_VISUAL_STUDIO
   unsigned long trailing_zero = 0;
   if (_BitScanForward(&trailing_zero, input_num)) {
-    return (int)trailing_zero;
+    return static_cast<int>(trailing_zero);
   }
   return 32;
 #else
@@ -731,18 +735,21 @@ countr_zero_32(uint32_t input_num) {
 
 // slow emulation routine for 32-bit
 simdjson_fastfloat_really_inline constexpr uint64_t emulu(uint32_t x, uint32_t y) {
-  return x * (uint64_t)y;
+  return x * static_cast<uint64_t>(y);
 }
 
 simdjson_fastfloat_really_inline SIMDJSON_FASTFLOAT_CONSTEXPR14 uint64_t
 umul128_generic(uint64_t ab, uint64_t cd, uint64_t *hi) {
-  uint64_t ad = emulu((uint32_t)(ab >> 32), (uint32_t)cd);
-  uint64_t bd = emulu((uint32_t)ab, (uint32_t)cd);
-  uint64_t adbc = ad + emulu((uint32_t)ab, (uint32_t)(cd >> 32));
-  uint64_t adbc_carry = (uint64_t)(adbc < ad);
+  uint64_t ad =
+      emulu(static_cast<uint32_t>(ab >> 32), static_cast<uint32_t>(cd));
+  uint64_t bd = emulu(static_cast<uint32_t>(ab), static_cast<uint32_t>(cd));
+  uint64_t adbc =
+      ad + emulu(static_cast<uint32_t>(ab), static_cast<uint32_t>(cd >> 32));
+  uint64_t adbc_carry = static_cast<uint64_t>(adbc < ad);
   uint64_t lo = bd + (adbc << 32);
-  *hi = emulu((uint32_t)(ab >> 32), (uint32_t)(cd >> 32)) + (adbc >> 32) +
-        (adbc_carry << 32) + (uint64_t)(lo < bd);
+  *hi =
+      emulu(static_cast<uint32_t>(ab >> 32), static_cast<uint32_t>(cd >> 32)) +
+      (adbc >> 32) + (adbc_carry << 32) + static_cast<uint64_t>(lo < bd);
   return lo;
 }
 
@@ -777,7 +784,7 @@ full_multiplication(uint64_t a, uint64_t b) {
                                    !defined(_M_ARM64) && !defined(__GNUC__))
   answer.low = _umul128(a, b, &answer.high); // _umul128 not available on ARM64
 #elif defined(SIMDJSON_FASTFLOAT_64BIT) && defined(__SIZEOF_INT128__)
-  __uint128_t r = ((__uint128_t)a) * b;
+  __uint128_t r = static_cast<__uint128_t>(a) * b;
   answer.low = uint64_t(r);
   answer.high = uint64_t(r >> 64);
 #else
@@ -1039,7 +1046,7 @@ template <>
 inline constexpr std::float16_t
 binary_format<std::float16_t>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)powers_of_ten[0], powers_of_ten[power];
+  return static_cast<void>(powers_of_ten[0]), powers_of_ten[power];
 }
 
 template <>
@@ -1083,7 +1090,7 @@ binary_format<std::float16_t>::max_mantissa_fast_path(int64_t power) {
   // power >= 0 && power <= 4
   //
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)max_mantissa[0], max_mantissa[power];
+  return static_cast<void>(max_mantissa[0]), max_mantissa[power];
 }
 
 template <>
@@ -1162,7 +1169,7 @@ template <>
 inline constexpr std::bfloat16_t
 binary_format<std::bfloat16_t>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)powers_of_ten[0], powers_of_ten[power];
+  return static_cast<void>(powers_of_ten[0]), powers_of_ten[power];
 }
 
 template <>
@@ -1206,7 +1213,7 @@ binary_format<std::bfloat16_t>::max_mantissa_fast_path(int64_t power) {
   // power >= 0 && power <= 3
   //
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)max_mantissa[0], max_mantissa[power];
+  return static_cast<void>(max_mantissa[0]), max_mantissa[power];
 }
 
 template <>
@@ -1263,7 +1270,7 @@ binary_format<double>::max_mantissa_fast_path(int64_t power) {
   // power >= 0 && power <= 22
   //
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)max_mantissa[0], max_mantissa[power];
+  return static_cast<void>(max_mantissa[0]), max_mantissa[power];
 }
 
 template <>
@@ -1273,20 +1280,20 @@ binary_format<float>::max_mantissa_fast_path(int64_t power) {
   // power >= 0 && power <= 10
   //
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)max_mantissa[0], max_mantissa[power];
+  return static_cast<void>(max_mantissa[0]), max_mantissa[power];
 }
 
 template <>
 inline constexpr double
 binary_format<double>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)powers_of_ten[0], powers_of_ten[power];
+  return static_cast<void>(powers_of_ten[0]), powers_of_ten[power];
 }
 
 template <>
 inline constexpr float binary_format<float>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
-  return (void)powers_of_ten[0], powers_of_ten[power];
+  return static_cast<void>(powers_of_ten[0]), powers_of_ten[power];
 }
 
 template <> inline constexpr int binary_format<double>::largest_power_of_ten() {
@@ -1388,7 +1395,11 @@ template <typename T> constexpr bool space_lut<T>::value[];
 #endif
 
 template <typename UC> constexpr bool is_space(UC c) {
-  return c < 256 && space_lut<>::value[uint8_t(c)];
+  // wchar_t and char can be signed, so a negative code unit slips past a plain
+  // `c < 256` and then indexes the table by its truncated low byte. Compare as
+  // unsigned, matching the care taken in ch_to_digit.
+  using UnsignedUC = typename std::make_unsigned<UC>::type;
+  return static_cast<UnsignedUC>(c) < 256 && space_lut<>::value[uint8_t(c)];
 }
 
 template <typename UC> static constexpr uint64_t int_cmp_zeros() {
@@ -1745,7 +1756,7 @@ template <typename UC> simdjson_fastfloat_really_inline constexpr bool has_simd_
 // able to optimize it well.
 template <typename UC>
 simdjson_fastfloat_really_inline constexpr bool is_integer(UC c) noexcept {
-  return (unsigned)(c - UC('0')) <= 9u;
+  return static_cast<unsigned>(c - UC('0')) <= 9u;
 }
 
 simdjson_fastfloat_really_inline constexpr uint64_t byteswap(uint64_t val) {
@@ -1936,8 +1947,8 @@ simd_parse_if_eight_digits_unrolled(char16_t const *chars,
     return false;
   SIMDJSON_FASTFLOAT_SIMD_RESTORE_WARNINGS
 #else
-  (void)chars;
-  (void)i;
+  static_cast<void>(chars);
+  static_cast<void>(i);
   return false;
 #endif // SIMDJSON_FASTFLOAT_SSE2
 }
@@ -1981,10 +1992,9 @@ loop_parse_if_eight_digits(char const *&p, char const *const pend,
   }
   // Consume a remaining 4-7 digit run in a single SWAR step instead of
   // byte-by-byte (reuses the existing 4-digit helpers). The parsed result is
-  // identical either way. Gated to clang: on gcc the extra 4-digit check
-  // regresses inputs whose remainder is shorter than 4 digits (it becomes pure
-  // overhead there); clang does not show that.
-#if defined(__clang__)
+  // identical either way. Historically gated to clang because gcc regressed on
+  // short remainders, but that verdict predates the span-elision restructure;
+  // with the leaner hot path the 4-digit step now wins on gcc as well.
   if ((pend - p) >= 4) {
     uint32_t const val4 = read4_to_u32(p);
     if (is_made_of_four_digits_fast(val4)) {
@@ -1993,7 +2003,6 @@ loop_parse_if_eight_digits(char const *&p, char const *const pend,
       p += 4;
     }
   }
-#endif
 }
 
 enum class parse_error {
@@ -2316,7 +2325,7 @@ parse_int_string(UC const *p, UC const *pend, T &value,
   SIMDJSON_FASTFLOAT_IF_CONSTEXPR17(
       (std::is_same<T, std::uint8_t>::value && sizeof(UC) == 1)) {
     if (base == 10) {
-      const size_t len = (size_t)(pend - p);
+      const size_t len = static_cast<size_t>(pend - p);
       if (len == 0) {
         if (has_leading_zeros) {
           value = 0;
@@ -2361,9 +2370,10 @@ parse_int_string(UC const *p, UC const *pend, T &value,
 
       uint32_t magic =
           ((digits + 0x46464646u) | (digits - 0x30303030u)) & 0x80808080u;
-      uint32_t tz = (uint32_t)countr_zero_32(magic); // 7, 15, 23, 31, or 32
+      uint32_t tz =
+          static_cast<uint32_t>(countr_zero_32(magic)); // 7, 15, 23, 31, or 32
       uint32_t nd = (tz == 32) ? 4 : (tz >> 3);
-      nd = (uint32_t)(nd < len ? nd : len);
+      nd = static_cast<uint32_t>(nd < len ? nd : len);
       if (nd == 0) {
         if (has_leading_zeros) {
           value = 0;
@@ -2399,7 +2409,7 @@ parse_int_string(UC const *p, UC const *pend, T &value,
         answer.ptr = p + nd;
         return answer;
       }
-      value = (uint8_t)((0x640a01 * digits) >> 24);
+      value = static_cast<uint8_t>((0x640a01 * digits) >> 24);
       answer.ec = std::errc();
       answer.ptr = p + nd;
       return answer;
@@ -2519,7 +2529,7 @@ parse_int_string(UC const *p, UC const *pend, T &value,
 
   // check other types overflow
   if (!std::is_same<T, uint64_t>::value) {
-    if (i > uint64_t(std::numeric_limits<T>::max()) + uint64_t(negative)) {
+    if (i > uint64_t((std::numeric_limits<T>::max)()) + uint64_t(negative)) {
       answer.ec = std::errc::result_out_of_range;
       return answer;
     }
@@ -2536,8 +2546,8 @@ parse_int_string(UC const *p, UC const *pend, T &value,
     // - reinterpret_casting (~i + 1) would work, but it is not constexpr
     // this is always optimized into a neg instruction (note: T is an integer
     // type)
-    value = T(-std::numeric_limits<T>::max() -
-              T(i - uint64_t(std::numeric_limits<T>::max())));
+    value = T(-(std::numeric_limits<T>::max)() -
+              T(i - uint64_t((std::numeric_limits<T>::max)())));
 #ifdef SIMDJSON_FASTFLOAT_VISUAL_STUDIO
 #pragma warning(pop)
 #endif
@@ -4093,8 +4103,8 @@ struct bigint : pow5_tables<> {
       // Work around clang bug https://godbolt.org/z/zedh7rrhc
       // This is similar to https://github.com/llvm/llvm-project/issues/47746,
       // except the workaround described there don't work here
-      SIMDJSON_FASTFLOAT_TRY(small_mul(
-          vec, limb(((void)small_power_of_5[0], small_power_of_5[exp]))));
+      SIMDJSON_FASTFLOAT_TRY(small_mul(vec, limb((static_cast<void>(small_power_of_5[0]),
+                                         small_power_of_5[exp]))));
     }
 
     return true;
@@ -4510,8 +4520,8 @@ inline SIMDJSON_FASTFLOAT_CONSTEXPR20 adjusted_mantissa negative_digit_comp(
   round<T>(answer, [ord](adjusted_mantissa &a, int32_t shift) {
     round_nearest_tie_even(
         a, shift, [ord](bool is_odd, bool _, bool __) -> bool {
-          (void)_;  // not needed, since we've done our comparison
-          (void)__; // not needed, since we've done our comparison
+          static_cast<void>(_);  // not needed, since we've done our comparison
+          static_cast<void>(__); // not needed, since we've done our comparison
           if (ord > 0) {
             return true;
           } else if (ord < 0) {
@@ -4657,7 +4667,7 @@ simdjson_fastfloat_really_inline bool rounds_to_nearest() noexcept {
   // asm). The value does not need to be std::numeric_limits<float>::min(), any
   // small value so that 1 + x should round to 1 would do (after accounting for
   // excess precision, as in 387 instructions).
-  static float volatile fmin = std::numeric_limits<float>::min();
+  static float volatile fmin = (std::numeric_limits<float>::min)();
   float fmini = fmin; // we copy it so that it gets loaded at most once.
 //
 // Explanation:
@@ -4759,7 +4769,14 @@ clinger_fast_path_impl(uint64_t mantissa, int64_t exponent, bool is_negative,
   // We proceed optimistically, assuming that detail::rounds_to_nearest()
   // returns true.
   if (binary_format<T>::min_exponent_fast_path() <= exponent &&
-      exponent <= binary_format<T>::max_exponent_fast_path()) {
+      exponent <= binary_format<T>::max_exponent_fast_path() &&
+      mantissa <= binary_format<T>::max_mantissa_fast_path()) {
+    // The mantissa bound above is a necessary condition for BOTH branches
+    // below: the rounding-mode-dependent branch checks the tighter
+    // max_mantissa_fast_path(exponent) <= max_mantissa_fast_path(). Testing
+    // it before detail::rounds_to_nearest() spares long-mantissa inputs
+    // (which can never take the fast path) the volatile-float probe.
+    //
     // Unfortunately, the conventional Clinger's fast path is only possible
     // when the system rounds to the nearest float.
     //
@@ -4770,18 +4787,16 @@ clinger_fast_path_impl(uint64_t mantissa, int64_t exponent, bool is_negative,
     if (!cpp20_and_in_constexpr() && detail::rounds_to_nearest()) {
       // We have that fegetround() == FE_TONEAREST.
       // Next is Clinger's fast path.
-      if (mantissa <= binary_format<T>::max_mantissa_fast_path()) {
-        value = T(mantissa);
-        if (exponent < 0) {
-          value = value / binary_format<T>::exact_power_of_ten(-exponent);
-        } else {
-          value = value * binary_format<T>::exact_power_of_ten(exponent);
-        }
-        if (is_negative) {
-          value = -value;
-        }
-        return true;
+      value = T(mantissa);
+      if (exponent < 0) {
+        value = value / binary_format<T>::exact_power_of_ten(-exponent);
+      } else {
+        value = value * binary_format<T>::exact_power_of_ten(exponent);
       }
+      if (is_negative) {
+        value = -value;
+      }
+      return true;
     } else {
       // We do not have that fegetround() == FE_TONEAREST.
       // Next is a modified Clinger's fast path, inspired by Jakub Jelinek's
