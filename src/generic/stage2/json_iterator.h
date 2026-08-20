@@ -339,7 +339,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_primitive(V
   // Use the fact that most scalars are going to be either strings or numbers.
   if(*value == '"') {
     return visitor.visit_string(*this, value);
-  } else if (((*value - '0')  < 10) || (*value == '-')) {
+  } else if ((*value - '0') < 10) {
     return visitor.visit_number(*this, value);
   }
   // true, false, null are uncommon.
