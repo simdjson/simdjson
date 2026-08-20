@@ -342,26 +342,82 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
+namespace {
+
+// Key comparisons used by object::iterator::key_equals. They process the key 8 bytes per
+// uint64_t chunk (mirroring the byte-level key comparison in the Java DOM port), so the
+// string-buffer bytes are each loaded once, which helps the compiler keep the work in
+// registers and, for key_equals, vectorize the chunk equality. simdjson buffers are
+// padded, so reading an 8-byte chunk is safe as long as i + 8 <= n.
+
+// Has-zero high-bit mask: each byte lane's high bit is set iff that byte of x is zero.
+simdjson_inline uint64_t swar_has_zero(uint64_t x) {
+  return (x - 0x0101010101010101ULL) & ~x & 0x8080808080808080ULL;
+}
+
+// True if all 8 bytes of the chunk match (vectorized-equality-friendly chunk compare).
+simdjson_inline bool swar_chunk_equal(uint64_t a, uint64_t b) {
+  return swar_has_zero(a ^ b) == 0x8080808080808080ULL;
+}
+
+// ASCII-letter case folding used by key_equals_case_insensitive: two bytes match
+// case-insensitively iff they are equal, or differ only by the ASCII case bit (| 0x20)
+// while both folded values are in 'a'..'z'. Non-ASCII bytes compare exactly.
+simdjson_inline bool swar_byte_equal_nocase(uint8_t a, uint8_t b) {
+  if (a == b) { return true; }
+  uint8_t fa = (uint8_t)(a | 0x20);
+  uint8_t fb = (uint8_t)(b | 0x20);
+  return fa == fb && (fa >= (uint8_t)'a' && fa <= (uint8_t)'z');
+}
+
+simdjson_inline bool swar_bytes_equal_nocase(const uint8_t *a, const uint8_t *b, size_t n) {
+  size_t i = 0;
+  for (; i + 8 <= n; i += 8) {
+    for (size_t k = 0; k < 8; k++) {
+      if (!swar_byte_equal_nocase(a[i + k], b[i + k])) { return false; }
+    }
+  }
+  for (; i < n; i++) {
+    if (!swar_byte_equal_nocase(a[i], b[i])) { return false; }
+  }
+  return true;
+}
+
+} // namespace
+
 inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
+  // without access to the string buffer. 8-byte SWAR equality (the compiler may widen
+  // this to the widest SIMD register): compare uint64_t chunks, then the byte tail.
   const uint32_t len = key_length();
   if(o.size() == len) {
-    // We avoid construction of a temporary string_view instance.
-    return (memcmp(o.data(), key_c_str(), len) == 0);
+    const uint8_t *a = reinterpret_cast<const uint8_t *>(o.data());
+    const uint8_t *b = reinterpret_cast<const uint8_t *>(key_c_str());
+    size_t i = 0;
+    for (; i + 8 <= len; i += 8) {
+      uint64_t x = 0, y = 0;
+      std::memcpy(&x, a + i, 8);
+      std::memcpy(&y, b + i, 8);
+      if (!swar_chunk_equal(x, y)) { return false; }
+    }
+    for (; i < len; i++) {
+      if (a[i] != b[i]) { return false; }
+    }
+    return true;
   }
   return false;
 }
 
 inline bool object::iterator::key_equals_case_insensitive(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
+  // without access to the string buffer. ASCII-letter case fold (| 0x20, guarded to
+  // 'a'..'z'), matching strncasecmp semantics; non-ASCII bytes compare exactly.
   const uint32_t len = key_length();
   if(o.size() == len) {
-      // See For case-insensitive string comparisons, avoid char-by-char functions
-      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+    return swar_bytes_equal_nocase(
+        reinterpret_cast<const uint8_t *>(o.data()),
+        reinterpret_cast<const uint8_t *>(key_c_str()),
+        len);
   }
   return false;
 }

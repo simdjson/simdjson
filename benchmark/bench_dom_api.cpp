@@ -40,6 +40,58 @@ static void recover_one_string(State& state) {
 BENCHMARK(recover_one_string);
 
 
+// Builds an in-memory object with `n` keys ("key0".."keyN-1"), parses it once and
+// benchmarks repeated at_key lookups. This isolates object::iterator::key_equals. A fixed
+// set of keys is looked up so the workload is representative (some hits, some misses) and
+// independent of test data.
+static dom::object make_key_object(dom::parser &parser, padded_string &docdata, size_t n,
+                                   const std::string &suffix) {
+  std::string body = "{";
+  for (size_t i = 0; i < n; i++) {
+    if (i) body += ",";
+    body += "\"key" + std::to_string(i) + suffix + "\":" + std::to_string(i);
+  }
+  body += "}";
+  docdata = padded_string(std::string_view(body));
+  dom::element root;
+  if (parser.parse(docdata).get(root)) { throw std::runtime_error("key-object parse error"); }
+  dom::object obj;
+  if (root.get_object().get(obj)) { throw std::runtime_error("key-object not an object"); }
+  return obj;
+}
+
+static void lookup_flat_array_keys(State &state) {
+  dom::parser parser;
+  padded_string docdata;
+  dom::object obj;
+  try { obj = make_key_object(parser, docdata, 16, ""); }
+  catch (const std::exception &e) { std::cerr << e.what() << std::endl; return; }
+  const char *keys[] = {"key0","key3","key7","key15","missing","key1","key9","key12"};
+  for (simdjson_unused auto _ : state) {
+    uint64_t found = 0;
+    for (const char *k : keys) { dom::element v; if (!obj.at_key(k).get(v)) { found++; } }
+    benchmark::DoNotOptimize(found);
+  }
+}
+BENCHMARK(lookup_flat_array_keys);
+
+static void lookup_case_insensitive_keys(State &state) {
+  dom::parser parser;
+  padded_string docdata;
+  dom::object obj;
+  try { obj = make_key_object(parser, docdata, 16, "Mixed"); } // keys "key0Mixed".., probe with "KEY<n>MIXED"
+  catch (const std::exception &e) { std::cerr << e.what() << std::endl; return; }
+  const char *keys[] = {"KEY0MIXED","KEY3MIXED","KEY7MIXED","KEY15MIXED","MISSINGKEY",
+                         "KEY1MIXED","KEY9MIXED","KEY12MIXED"};
+  for (simdjson_unused auto _ : state) {
+    uint64_t found = 0;
+    for (const char *k : keys) { dom::element v; if (!obj.at_key_case_insensitive(k).get(v)) { found++; } }
+    benchmark::DoNotOptimize(found);
+  }
+}
+BENCHMARK(lookup_case_insensitive_keys);
+
+
 static void serialize_twitter(State& state) {
   dom::parser parser;
   padded_string docdata;
