@@ -20,6 +20,61 @@ simdjson_inline object_iterator::object_iterator(const value_iterator &_iter) no
   : iter{_iter}
 {}
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline object_iterator::object_iterator(const value_iterator &_iter, object* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+#endif
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline object_iterator::~object_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline object_iterator::object_iterator(object_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline object_iterator& object_iterator::operator=(object_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline object_iterator::object_iterator(const object_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline object_iterator& object_iterator::operator=(const object_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
+
 simdjson_inline simdjson_result<field> object_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   // We must call * once per iteration.

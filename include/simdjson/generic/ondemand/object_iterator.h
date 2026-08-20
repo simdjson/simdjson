@@ -20,6 +20,15 @@ public:
    */
   simdjson_inline object_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+   simdjson_inline ~object_iterator() noexcept;
+
+   simdjson_inline object_iterator(object_iterator&&) noexcept;
+   simdjson_inline object_iterator& operator=(object_iterator&&) noexcept;
+   simdjson_inline object_iterator(const object_iterator&) noexcept;
+   simdjson_inline object_iterator& operator=(const object_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -39,6 +48,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   object* parent{nullptr};
+
+   simdjson_inline object_iterator(const value_iterator &_iter, object* _parent) noexcept;
 #endif
   /**
    * The underlying JSON iterator.

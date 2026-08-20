@@ -43,12 +43,21 @@ simdjson_inline simdjson_result<value> object::find_field_unordered(const std::s
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return find_field_unordered(key);
 }
 simdjson_inline simdjson_result<value> object::operator[](const std::string_view key) && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return std::forward<object>(*this).find_field_unordered(key);
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
   if (!has_value) {
@@ -58,6 +67,9 @@ simdjson_inline simdjson_result<value> object::find_field(const std::string_view
   return value(iter.child());
 }
 simdjson_inline simdjson_result<value> object::find_field(const std::string_view key) && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool has_value;
   SIMDJSON_TRY( iter.find_field_raw(key).get(has_value) );
   if (!has_value) {
@@ -246,6 +258,9 @@ simdjson_warn_unused simdjson_inline error_code object::consume() noexcept {
 }
 
 simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
@@ -269,7 +284,8 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 
 simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return object_iterator(iter, this);
 #endif
   return object_iterator(iter);
 }
@@ -380,6 +396,9 @@ simdjson_inline simdjson_result<size_t> object::count_fields() & noexcept {
 }
 
 simdjson_inline simdjson_result<bool> object::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_object().get(is_not_empty);
   if(error) { return error; }
@@ -387,8 +406,17 @@ simdjson_inline simdjson_result<bool> object::is_empty() & noexcept {
 }
 
 simdjson_inline simdjson_result<bool> object::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_object();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void object::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_STATIC_REFLECTION
 

@@ -562,6 +562,42 @@ namespace object_error_tests {
     }));
     TEST_SUCCEED();
   }
+
+  bool reentrant_object_access_during_iteration_error() {
+    TEST_START();
+    auto json = R"({ "x": 1, "y": 2 })"_padded;
+    SUBTEST("operator[] mid-loop", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc.get(obj) );
+      for (auto field : obj) {
+        ASSERT_SUCCESS(field);
+        ASSERT_ERROR( obj["x"], OUT_OF_ORDER_ITERATION );
+        break;
+      }
+      return true;
+    }));
+    SUBTEST("find_field mid-loop", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc.get(obj) );
+      for (auto field : obj) {
+        ASSERT_SUCCESS(field);
+        ASSERT_ERROR( obj.find_field("y"), OUT_OF_ORDER_ITERATION );
+        break;
+      }
+      return true;
+    }));
+    SUBTEST("reset mid-loop", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc.get(obj) );
+      for (auto field : obj) {
+        ASSERT_SUCCESS(field);
+        ASSERT_ERROR( obj.reset(), OUT_OF_ORDER_ITERATION );
+        break;
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 #endif
 
   bool run() {
