@@ -392,8 +392,9 @@ simdjson_inline bool ascii_bytes_equal_nocase(const uint8_t *a, const uint8_t *b
   const size_t nchunks = n / 8;
   uint64_t mismatch = 0;
   for (size_t c = 0; c < nchunks; c++) {
-    uint64_t x = *(const uint64_t *)(a + c * 8);
-    uint64_t y = *(const uint64_t *)(b + c * 8);
+    uint64_t x = 0, y = 0;
+    std::memcpy(&x, a + c * 8, 8);
+    std::memcpy(&y, b + c * 8, 8);
     mismatch |= ascii_fold_lower_chunk(x) ^ ascii_fold_lower_chunk(y);
   }
   if (mismatch != 0) { return false; }
@@ -420,8 +421,9 @@ inline bool object::iterator::key_equals(std::string_view o) const noexcept {
     const size_t nchunks = len / 8;
     uint64_t mismatch = 0;
     for (size_t c = 0; c < nchunks; c++) {
-      uint64_t x = *(const uint64_t *)(a + c * 8);
-      uint64_t y = *(const uint64_t *)(b + c * 8);
+      uint64_t x = 0, y = 0;
+      std::memcpy(&x, a + c * 8, 8);
+      std::memcpy(&y, b + c * 8, 8);
       mismatch |= x ^ y;
     }
     if (mismatch != 0) { return false; }
