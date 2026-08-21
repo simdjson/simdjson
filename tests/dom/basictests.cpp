@@ -1074,9 +1074,12 @@ namespace dom_api_tests {
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 5 );
 
     // Non-ASCII keys are compared exactly (U+00E9 vs U+00E1; both are non-ASCII Unicode).
-    ASSERT_SUCCESS( doc.at_key("caf\u00e9").get(elem) );
+    // The \xC3\xA9 / \xC3\xA1 are explicit UTF-8 bytes (not \u escapes) so the expected
+    // key is byte-identical across MSVC and other compilers regardless of the execution
+    // character set.
+    ASSERT_SUCCESS( doc.at_key("caf\xC3\xA9").get(elem) );
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 6 );
-    ASSERT_SUCCESS( doc.at_key("caf\u00e1").get(elem) );
+    ASSERT_SUCCESS( doc.at_key("caf\xC3\xA1").get(elem) );
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 7 );
 
     // A longer key of the same prefix does not match.
@@ -1109,10 +1112,10 @@ namespace dom_api_tests {
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 10 );
 
     // Case-insensitive fold applies only to ASCII letters: the non-ASCII U+00E9/U+00E1
-    // bytes are preserved exactly, so "CAF\u00e9" still matches key "caf\u00e9".
-    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\u00e9").get(elem) );
+    // bytes are preserved exactly, so "CAF\xC3\xA9" still matches key "caf\xC3\xA9".
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\xC3\xA9").get(elem) );
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 6 );
-    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\u00e1").get(elem) );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\xC3\xA1").get(elem) );
     ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 7 );
 
     // Case-insensitive length and content mismatch still fail.
