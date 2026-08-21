@@ -1026,6 +1026,102 @@ namespace dom_api_tests {
     return true;
   }
 
+  // Regression test for the DOM object key comparisons:
+  //  - exact matching (at_key / object::operator[]) across 8-byte chunk boundaries,
+  //  - case-insensitive matching (at_key_case_insensitive) using the ASCII fold,
+  //  - non-ASCII keys, which must be compared byte-exactly.
+  // The "  abcdef" / " !abcdef" pair differs only in byte 1 (0x20 vs 0x21). A
+  // vectorized "has zero byte" shortcut used to report such a chunk as equal, so
+  // at_key(" !abcdef") could erroneously return the value bound to "  abcdef".
+  bool object_key_matching() {
+    std::cout << "Running " << __func__ << std::endl;
+    // The \uXXXX escapes are decoded by simdjson into UTF-8.
+    // \u00e9 = U+00E9 (e acute), \u00e1 = U+00E1 (a acute); both are non-ASCII.
+    // The last pair uses uppercase ASCII letters that exactly fill an 8-byte chunk, so
+    // the case-insensitive comparison exercises the chunk-wise ASCII fold (not just the
+    // byte-by-byte tail path), and the 17-byte key spans two chunks plus a tail byte.
+    // The "Xy"/"xY" and "EFGH"/"efgh" pairs share no case-insensitive duplicate: each
+    // stored key must be uniquely identifiable by its case-insensitive fold.
+    string json(R"({ "a": 1,
+                      "  abcdef": 2,
+                      " !abcdef": 3,
+                      "1234567890123456": 4,
+                      "12345678901234567": 5,
+                      "caf\u00e9": 6,
+                      "caf\u00e1": 7,
+                      "ABCDEFGH": 8,
+                      "kLMnOpQr": 9,
+                      "123456789012345xY": 10 })");
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(json).get(doc) );
+
+    // Basic exact matches.
+    simdjson::dom::element elem;
+    ASSERT_SUCCESS( doc.at_key("a").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 1 );
+
+    // 8-byte keys: equal length, differ only in byte 1. Must map to their own values.
+    ASSERT_SUCCESS( doc.at_key("  abcdef").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 2 );
+    ASSERT_SUCCESS( doc.at_key(" !abcdef").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 3 );
+
+    // Keys crossing the 8-byte chunk boundary.
+    ASSERT_SUCCESS( doc.at_key("1234567890123456").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 4 );
+    ASSERT_SUCCESS( doc.at_key("12345678901234567").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 5 );
+
+    // Non-ASCII keys are compared exactly (U+00E9 vs U+00E1; both are non-ASCII Unicode).
+    ASSERT_SUCCESS( doc.at_key("caf\u00e9").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 6 );
+    ASSERT_SUCCESS( doc.at_key("caf\u00e1").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 7 );
+
+    // A longer key of the same prefix does not match.
+    ASSERT_ERROR( doc.at_key("  abcdef1").get(elem), NO_SUCH_FIELD );
+    ASSERT_ERROR( doc.at_key("missing").get(elem), NO_SUCH_FIELD );
+
+    // Case-insensitive matches use the ASCII fold.
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("A").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 1 );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("  ABCDEF").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 2 );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive(" !ABCDEF").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 3 );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("12345678901234567").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 5 );
+
+    // An 8-byte key that is exactly an 8-byte chunk: uppercase "ABCDEFGH" folds via the
+    // chunk-wise path (not the byte tail) and matches the stored literal, while a mixed
+    // case ("klmnopqr") folds to the stored "kLMnOpQr". Their case-insensitive folds are
+    // distinct, so each matches only its own value.
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("ABCDEFGH").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 8 );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("klmnopqr").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 9 );
+    ASSERT_ERROR( doc.at_key_case_insensitive("MNOPQRST").get(elem), NO_SUCH_FIELD );
+
+    // Uppercase folding across a chunk boundary and a tail byte: probing with the
+    // opposite case ("...Xy") must fold to the stored "...xY" (17 bytes).
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("123456789012345Xy").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 10 );
+
+    // Case-insensitive fold applies only to ASCII letters: the non-ASCII U+00E9/U+00E1
+    // bytes are preserved exactly, so "CAF\u00e9" still matches key "caf\u00e9".
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\u00e9").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 6 );
+    ASSERT_SUCCESS( doc.at_key_case_insensitive("CAF\u00e1").get(elem) );
+    ASSERT_EQUAL( elem.get_uint64().value_unsafe(), 7 );
+
+    // Case-insensitive length and content mismatch still fail.
+    ASSERT_ERROR( doc.at_key_case_insensitive("  abcdef1").get(elem), NO_SUCH_FIELD );
+    ASSERT_ERROR( doc.at_key_case_insensitive("MISSING").get(elem), NO_SUCH_FIELD );
+
+    return true;
+  }
+
   bool convert_object_to_element() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
@@ -1436,6 +1532,7 @@ namespace dom_api_tests {
            array_iterator_empty() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
+           object_key_matching() &&
            convert_object_to_element() &&
            convert_array_to_element() &&
            string_value() &&
