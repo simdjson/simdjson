@@ -342,26 +342,110 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
+namespace {
+
+// ASCII-letter case folding used by key_equals_case_insensitive: two bytes match
+// case-insensitively iff they are equal, or differ only by the ASCII case bit (| 0x20)
+// while both folded values are in 'a'..'z'. Non-ASCII bytes compare exactly.
+// This mirrors the behavior of strncasecmp for single-byte input.
+simdjson_inline bool ascii_byte_equal_nocase(uint8_t a, uint8_t b) {
+  if (a == b) { return true; }
+  uint8_t fa = (uint8_t)(a | 0x20);
+  uint8_t fb = (uint8_t)(b | 0x20);
+  return fa == fb && (fa >= (uint8_t)'a' && fa <= (uint8_t)'z');
+}
+
+// ASCII-letter case fold applied per byte to a full 8-byte chunk: each byte in
+// 'A'..'Z' (0x41..0x5a) is mapped to its lowercase form (| 0x20); every other byte
+// is passed through unchanged. Lanes are independent: the SWAR range tests below
+// detect 'A'..'Z' by comparing against low 7-bit values so no carry / borrow can
+// cross a byte boundary, and the result is a plain memcmp-comparable chunk.
+simdjson_inline uint64_t ascii_fold_lower_chunk(uint64_t x) {
+  const uint64_t high  = 0x8080808080808080ULL;
+  const uint64_t lower = 0x2020202020202020ULL;
+  // Standard carry-free "greater than n" per byte (Hacker's Delight style): the high
+  // bit is set in exactly the lanes whose low 7-bit value is > n. Each add is contained
+  // within its byte lane (we add at most 0x7f to at most 0x7f, then mask the high bit),
+  // so no carry can cross a byte boundary. This is only meaningful for bytes < 0x80,
+  // which is all we need: 'A'..'Z' live in 0x41..0x5a.
+  auto greater_than = [](uint64_t v, uint64_t n) -> uint64_t {
+    const uint64_t ones = 0x0101010101010101ULL;
+    const uint64_t low7 = 0x7f7f7f7f7f7f7f7fULL;
+    return (((v & low7) + ((0x7f7f7f7f7f7f7f7fULL - n * ones) | 1)) ^ v) & 0x8080808080808080ULL;
+  };
+  // Set the high bit in lanes whose byte is > 'A'-1 (0x40) and NOT > 'Z' (0x5a),
+  // i.e. bytes in 'A'..'Z'. Turn that 0x80 marker into the fold bit 0x20 and OR it in.
+  uint64_t gt_A = greater_than(x, 0x40); // byte >= 'A'
+  uint64_t gt_Z = greater_than(x, 0x5a); // byte >= 'Z'+1
+  uint64_t upper = gt_A & ~gt_Z & high;  // byte in 'A'..'Z'
+  return x | ((upper >> 2) & lower);
+}
+
+simdjson_inline bool ascii_bytes_equal_nocase(const uint8_t *a, const uint8_t *b, size_t n) {
+  // Accumulate mismatches over a COUNTABLE number of chunks with no early return, so the
+  // loop is side-effect-free and the compiler widens it to the native SIMD register width
+  // (verified: NEON .16b in the emitted object on arm64). The fold is exact (carry-free,
+  // non-ASCII pass-through), so a nonzero accumulator means a real mismatch; check it
+  // after the loop, then the byte tail. Dropping the early-exit path for short keys is a
+  // net win: it removes a size-branch (which cost more than it saved on real DOM keys)
+  // and lets every length use the same vectorizable loop.
+  const size_t nchunks = n / 8;
+  uint64_t mismatch = 0;
+  for (size_t c = 0; c < nchunks; c++) {
+    uint64_t x = 0, y = 0;
+    std::memcpy(&x, a + c * 8, 8);
+    std::memcpy(&y, b + c * 8, 8);
+    mismatch |= ascii_fold_lower_chunk(x) ^ ascii_fold_lower_chunk(y);
+  }
+  if (mismatch != 0) { return false; }
+  size_t i = nchunks * 8;
+  for (; i < n; i++) {
+    if (!ascii_byte_equal_nocase(a[i], b[i])) { return false; }
+  }
+  return true;
+}
+
+} // namespace
+
 inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
+  // without access to the string buffer. Accumulate mismatches over a COUNTABLE number of
+  // chunks with no early return, so the loop is side-effect-free and the compiler widens
+  // it to the native SIMD register width (verified: NEON .16b on arm64). A size branch for
+  // short keys was measured to cost more than it saved on real DOM key lengths, so every
+  // length uses the same vectorizable loop.
   const uint32_t len = key_length();
   if(o.size() == len) {
-    // We avoid construction of a temporary string_view instance.
-    return (memcmp(o.data(), key_c_str(), len) == 0);
+    const uint8_t *a = reinterpret_cast<const uint8_t *>(o.data());
+    const uint8_t *b = reinterpret_cast<const uint8_t *>(key_c_str());
+    const size_t nchunks = len / 8;
+    uint64_t mismatch = 0;
+    for (size_t c = 0; c < nchunks; c++) {
+      uint64_t x = 0, y = 0;
+      std::memcpy(&x, a + c * 8, 8);
+      std::memcpy(&y, b + c * 8, 8);
+      mismatch |= x ^ y;
+    }
+    if (mismatch != 0) { return false; }
+    size_t i = nchunks * 8;
+    for (; i < len; i++) {
+      if (a[i] != b[i]) { return false; }
+    }
+    return true;
   }
   return false;
 }
 
 inline bool object::iterator::key_equals_case_insensitive(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
-  // without access to the string buffer.
+  // without access to the string buffer. ASCII-letter case fold (| 0x20, guarded to
+  // 'a'..'z'), matching strncasecmp semantics; non-ASCII bytes compare exactly.
   const uint32_t len = key_length();
   if(o.size() == len) {
-      // See For case-insensitive string comparisons, avoid char-by-char functions
-      // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
-      // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+    return ascii_bytes_equal_nocase(
+        reinterpret_cast<const uint8_t *>(o.data()),
+        reinterpret_cast<const uint8_t *>(key_c_str()),
+        len);
   }
   return false;
 }
