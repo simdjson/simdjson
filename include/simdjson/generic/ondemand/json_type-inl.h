@@ -19,7 +19,7 @@ inline std::ostream& operator<<(std::ostream& out, json_type type) noexcept {
         case json_type::string: out << "string"; break;
         case json_type::boolean: out << "boolean"; break;
         case json_type::null: out << "null"; break;
-        default: SIMDJSON_UNREACHABLE();
+        case json_type::unknown: out << "unknown"; break;
     }
     return out;
 }
