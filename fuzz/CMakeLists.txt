@@ -54,6 +54,7 @@ if(SIMDJSON_ENABLE_FUZZING)
     set(fuzzernames ${fuzzernames} ${name} PARENT_SCOPE)
   endfunction()
 
+  implement_fuzzer(fuzz_atpath)
   implement_fuzzer(fuzz_atpointer)
   implement_fuzzer(fuzz_dump)
   implement_fuzzer(fuzz_dump_raw_tape)
