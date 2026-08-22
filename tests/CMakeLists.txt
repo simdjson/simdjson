@@ -28,6 +28,11 @@ else()
   target_compile_definitions(reflection_autodetect_tests PRIVATE SIMDJSON_EXPECT_STATIC_REFLECTION=0)
 endif()
 
+add_cpp_test(development_checks_tests COMPILE_ONLY LABELS other acceptance)
+target_compile_definitions(development_checks_tests PRIVATE
+  SIMDJSON_EXPECT_DEVELOPMENT_CHECKS=$<OR:$<CONFIG:DEBUG>,$<BOOL:${SIMDJSON_DEVELOPMENT_CHECKS}>>
+)
+
 if(WIN32 AND BUILD_SHARED_LIBS)
   # Copy the simdjson dll into the tests directory
   add_custom_command(TARGET unicode_tests POST_BUILD        # Adds a post-build event

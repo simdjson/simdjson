@@ -1,0 +1,7 @@
+#if defined(SIMDJSON_DEVELOPMENT_CHECKS) && !SIMDJSON_EXPECT_DEVELOPMENT_CHECKS
+#error SIMDJSON_DEVELOPMENT_CHECKS is enabled unexpectedly
+#elif !defined(SIMDJSON_DEVELOPMENT_CHECKS) && SIMDJSON_EXPECT_DEVELOPMENT_CHECKS
+#error SIMDJSON_DEVELOPMENT_CHECKS is disabled unexpectedly
+#endif
+
+int main() { return 0; }

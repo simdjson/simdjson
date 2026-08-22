@@ -374,7 +374,7 @@ if(
   # We still want to enable development checks in Debug mode
   simdjson_add_props(
       target_compile_definitions PUBLIC
-      SIMDJSON_DEVELOPMENT_CHECKS
+      $<$<CONFIG:DEBUG>:SIMDJSON_DEVELOPMENT_CHECKS>
   )
   endif()
 
