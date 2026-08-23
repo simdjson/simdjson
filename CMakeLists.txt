@@ -372,9 +372,7 @@ if(
       $<$<CONFIG:DEBUG>:-Og>
   )
   # -Og defines __OPTIMIZE__, so the header would not auto-enable
-  # SIMDJSON_DEVELOPMENT_CHECKS in Debug. Keep the checks in Debug only;
-  # a bare define here leaked into Release and RelWithDebInfo on
-  # GCC/Clang (since #2590).
+  # SIMDJSON_DEVELOPMENT_CHECKS in Debug. Keep the checks in Debug only.
   simdjson_add_props(
       target_compile_definitions PUBLIC
       $<$<CONFIG:DEBUG>:SIMDJSON_DEVELOPMENT_CHECKS>
