@@ -12,7 +12,7 @@ endif()
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 4.6.7
+    VERSION 4.6.8
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -208,12 +208,15 @@ if(
       target_compile_options PRIVATE
       $<$<CONFIG:DEBUG>:-Og>
   )
-  # We still want to enable development checks in Debug mode
+  # -Og defines __OPTIMIZE__, so the header would not auto-enable
+  # SIMDJSON_DEVELOPMENT_CHECKS in Debug. Keep the checks in Debug only;
+  # a bare define here leaked into Release and RelWithDebInfo on
+  # GCC/Clang (since #2590).
   simdjson_add_props(
       target_compile_definitions PUBLIC
-      SIMDJSON_DEVELOPMENT_CHECKS
+      $<$<CONFIG:DEBUG>:SIMDJSON_DEVELOPMENT_CHECKS>
   )
-  endif()
+endif()
 
 if(SIMDJSON_ENABLE_THREADS)
   find_package(Threads REQUIRED)
