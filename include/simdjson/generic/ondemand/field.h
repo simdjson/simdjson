@@ -37,6 +37,16 @@ public:
    * call it again nor can you call key().
    */
   simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  /**
+   * Get the key as a C++20 u8string_view. This is a zero-copy alias of
+   * unescaped_key(): the very same bytes are returned, viewed as char8_t.
+   *
+   * This consumes the key: once you have called unescaped_u8key(), you cannot
+   * call it again nor can you call key().
+   */
+  simdjson_inline simdjson_warn_unused simdjson_result<std::u8string_view> unescaped_u8key(bool allow_replacement = false) noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
   /**
    * Get the key as a string_view (for higher speed, consider raw_key).
    * We deliberately use a more cumbersome name (unescaped_key) to force users
@@ -69,6 +79,16 @@ public:
    * you can safely call it repeatedly. Use unescaped_key() to get the unescaped key.
    */
   simdjson_inline std::string_view escaped_key() const noexcept;
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  /**
+   * Get the key as a C++20 u8string_view. This is a zero-copy alias of
+   * escaped_key(): the very same bytes are returned, viewed as char8_t.
+   * The string is unprocessed, so it may contain escape characters
+   * (e.g., \uXXXX or \n). It does not count as a consumption of the content:
+   * you can safely call it repeatedly.
+   */
+  simdjson_inline std::u8string_view escaped_u8key() const noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
   /**
    * Get the field value.
    */
@@ -100,11 +120,17 @@ public:
   simdjson_inline simdjson_result() noexcept = default;
 
   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  simdjson_inline simdjson_result<std::u8string_view> unescaped_u8key(bool allow_replacement = false) noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
   template<typename string_type>
   simdjson_inline error_code unescaped_key(string_type &receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> key() noexcept;
   simdjson_inline simdjson_result<std::string_view> key_raw_json_token() noexcept;
   simdjson_inline simdjson_result<std::string_view> escaped_key() noexcept;
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  simdjson_inline simdjson_result<std::u8string_view> escaped_u8key() noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
 };
 

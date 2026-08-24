@@ -88,6 +88,18 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothr
   return SUCCESS;
 }
 
+#if SIMDJSON_SUPPORTS_CHAR8_T
+// any C++20 char8_t string-like type (can be constructed from std::u8string_view),
+// such as std::u8string
+template <concepts::constructible_from_u8string_view T, typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
+  std::u8string_view str;
+  SIMDJSON_TRY(val.get_u8string().get(str));
+  out = T{str};
+  return SUCCESS;
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+
 
 /**
  * STL containers have several constructors including one that takes a single

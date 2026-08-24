@@ -147,6 +147,17 @@
 #define SIMDJSON_SUPPORTS_DESERIALIZATION 0
 #endif
 
+// The C++20 char8_t type (and std::u8string/std::u8string_view) is available.
+// Because all strings that simdjson produces are valid UTF-8, we can offer
+// char8_t variants of our string accessors when this macro is set.
+#if !defined(SIMDJSON_SUPPORTS_CHAR8_T)
+#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+#define SIMDJSON_SUPPORTS_CHAR8_T 1
+#else
+#define SIMDJSON_SUPPORTS_CHAR8_T 0
+#endif
+#endif // !defined(SIMDJSON_SUPPORTS_CHAR8_T)
+
 
 #if !defined(SIMDJSON_CONSTEVAL)
 #if defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
