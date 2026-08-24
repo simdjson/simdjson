@@ -1,4 +1,4 @@
-/* auto-generated on 2026-08-17 13:15:59 -0400. version 4.6.8 Do not edit! */
+/* auto-generated on 2026-08-24 16:23:48 -0400. version 4.6.9 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2538,7 +2538,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "4.6.8"
+#define SIMDJSON_VERSION "4.6.9"
 
 namespace simdjson {
 enum {
@@ -2553,7 +2553,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 8
+  SIMDJSON_VERSION_REVISION = 9
 };
 } // namespace simdjson
 
@@ -72864,13 +72864,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -86246,13 +86242,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -100115,13 +100107,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -113984,13 +113972,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -127968,13 +127952,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -142269,13 +142249,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -156044,13 +156020,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -169842,13 +169814,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
@@ -183644,13 +183612,9 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
   }
-  const char * r{raw()};
-  size_t pos{0};
-  for(;pos < target.size();pos++) {
-    if(r[pos] != target[pos]) { return false; }
-  }
-  if(r[pos] != '"') { return false; }
-  return true;
+  // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
+  // comparison in bounds, so we must stop at the quote terminating the key.
+  return is_equal(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {
