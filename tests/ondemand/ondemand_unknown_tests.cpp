@@ -2,6 +2,7 @@
 #include "test_ondemand.h"
 
 #include <cmath>
+#include <sstream>
 
 using namespace simdjson;
 
@@ -18,6 +19,19 @@ namespace unknown_tests {
         std::string_view str;
         ASSERT_SUCCESS( doc_result.raw_json_token().get(str) );
         ASSERT_EQUAL( str, "NaN");
+        return true;
+    }));
+    TEST_SUCCEED();
+  }
+  bool root_value_type_ostream() {
+    TEST_START();
+    padded_string json = "NaN"_padded;
+    ASSERT_TRUE(test_ondemand_doc(json, [&](auto doc_result) {
+        simdjson::ondemand::json_type type;
+        ASSERT_SUCCESS( doc_result.type().get(type) );
+        std::ostringstream os;
+        os << type;
+        ASSERT_EQUAL( os.str(), "unknown" );
         return true;
     }));
     TEST_SUCCEED();
@@ -76,6 +90,7 @@ namespace unknown_tests {
   bool run() {
     return
            root_value_type() &&
+           root_value_type_ostream() &&
            object_value_type() &&
 #if SIMDJSON_EXCEPTIONS
            object_value_type_exception() &&
