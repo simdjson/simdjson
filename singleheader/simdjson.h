@@ -1,4 +1,4 @@
-/* auto-generated on 2026-08-24 16:23:48 -0400. version 4.6.9 Do not edit! */
+/* auto-generated on 2026-08-24 17:10:01 -0400. version 4.6.9 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -69201,6 +69201,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -82579,6 +82580,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -96444,6 +96446,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -110309,6 +110312,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -124289,6 +124293,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -138586,6 +138591,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -152357,6 +152363,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -166151,6 +166158,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -179949,6 +179957,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
