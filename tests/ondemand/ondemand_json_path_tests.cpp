@@ -129,6 +129,47 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 
+    // A key longer than SIMDJSON_PADDING must not be compared past the quote
+    // that terminates the key in the document.
+    bool long_key() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+
+        // The key "aaa" ends at offset 5, so a target that keeps matching the
+        // bytes that follow it runs into the padding and then out of the buffer.
+        auto small_json = R"({"aaa":1})"_padded;
+        std::string overrun("aaa\":1}");
+        overrun.append(SIMDJSON_PADDING, '\0');
+        ASSERT_SUCCESS(parser.iterate(small_json).get(doc));
+        ASSERT_ERROR(doc.at_path("." + overrun).get(val), NO_SUCH_FIELD);
+
+        // Matching keys longer than SIMDJSON_PADDING still resolve.
+        const std::string long_name(SIMDJSON_PADDING + 16, 'k');
+        auto long_json = padded_string(R"({")" + long_name + R"(":42})");
+        uint64_t number;
+        ASSERT_SUCCESS(parser.iterate(long_json).get(doc));
+        ASSERT_SUCCESS(doc.at_path("." + long_name).get(val));
+        ASSERT_SUCCESS(val.get_uint64().get(number));
+        ASSERT_EQUAL(number, 42);
+
+        // A target that is a prefix of the key, or an extension of it, does not.
+        ASSERT_SUCCESS(parser.iterate(long_json).get(doc));
+        ASSERT_ERROR(doc.at_path("." + long_name.substr(1)).get(val), NO_SUCH_FIELD);
+        ASSERT_SUCCESS(parser.iterate(long_json).get(doc));
+        ASSERT_ERROR(doc.at_path("." + long_name + "k").get(val), NO_SUCH_FIELD);
+
+        // An escaped quote inside a long key is part of the key, not its end.
+        const std::string escaped_name = long_name + R"(\")";
+        auto escaped_json = padded_string(R"({")" + escaped_name + R"(":7})");
+        ASSERT_SUCCESS(parser.iterate(escaped_json).get(doc));
+        ASSERT_SUCCESS(doc.at_path("." + escaped_name).get(val));
+        ASSERT_SUCCESS(val.get_uint64().get(number));
+        ASSERT_EQUAL(number, 7);
+        TEST_SUCCEED();
+    }
+
     bool document_as_scalar() {
         TEST_START();
         auto number_json = R"( 1 )"_padded;
@@ -556,6 +597,7 @@ namespace json_path_tests {
                 run_failure_test(TEST_JSON, "./~01abc.-", INDEX_OUT_OF_BOUNDS) &&
                 many_json_paths() &&
                 document_as_scalar() &&
+                long_key() &&
                 true;
     }
 }   // json_path_tests
