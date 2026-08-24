@@ -65,6 +65,12 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<dom::element>:
   if (error()) { return error(); }
   return first.get_string();
 }
+#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+simdjson_inline simdjson_result<std::u8string_view> simdjson_result<dom::element>::get_u8string() const noexcept {
+  if (error()) { return error(); }
+  return first.get_u8string();
+}
+#endif
 simdjson_inline simdjson_result<int64_t> simdjson_result<dom::element>::get_int64() const noexcept {
   if (error()) { return error(); }
   return first.get_int64();
@@ -263,6 +269,13 @@ inline simdjson_result<std::string_view> element::get_string() const noexcept {
       return INCORRECT_TYPE;
   }
 }
+#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+inline simdjson_result<std::u8string_view> element::get_u8string() const noexcept {
+  std::string_view v;
+  SIMDJSON_TRY(get_string().get(v));
+  return std::u8string_view(reinterpret_cast<const char8_t*>(v.data()), v.size());
+}
+#endif
 inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   if(simdjson_unlikely(!tape.is_uint64())) { // branch rarely taken
