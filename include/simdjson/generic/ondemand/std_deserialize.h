@@ -284,7 +284,15 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 
 template <typename T>
 constexpr bool user_defined_type = (std::is_class_v<T>
-&& !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
+&& !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>
+#if SIMDJSON_SUPPORTS_CHAR8_T
+// The char8_t string types are class types with no reflectable members, so
+// without this they would be taken for user structs and the reflection
+// overload below would compete with the u8 string overload in
+// std_deserialize.h, making every tag_invoke call on them ambiguous.
+&& !std::is_same_v<T, std::u8string> && !std::is_same_v<T, std::u8string_view>
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+&& !concepts::optional_type<T> &&
 !concepts::appendable_containers<T>);
 
 
