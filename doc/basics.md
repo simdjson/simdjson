@@ -462,9 +462,6 @@ Because `std::u8string_view` points inside the parser (just like `std::string_vi
 it is invalidated when you parse another document or destroy the parser. Note also that the
 standard library does not let you print a `std::u8string_view` with `std::cout`.
 
-The DOM API offers `get_u8string()` and `get<std::u8string_view>()` on `dom::element`. It
-does not offer `std::u8string` since it does not offer `std::string` either.
-
 Avoiding pitfalls: enable development checks
 --------------------
 
