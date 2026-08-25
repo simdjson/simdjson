@@ -448,10 +448,10 @@ namespace wildcard_tests {
   // recursing until the stack runs out.
   bool deeply_nested_wildcard() {
     TEST_START();
-    ondemand::parser parser;
 
-    // Well within the default depth limit: still resolves.
+    // Well within the depth limit: still resolves.
     {
+      ondemand::parser parser;
       const size_t n = 100;
       std::string json = std::string(n, '[') + "1" + std::string(n, ']');
       std::string path = "$";
@@ -464,12 +464,22 @@ namespace wildcard_tests {
     }
 
     // Past the depth limit: a clean error, no stack exhaustion.
+    //
+    // We lower max_depth instead of relying on the default (1024): the
+    // recursion is bounded by max_depth, and a full 1024-level recursion costs
+    // about 1 MB of stack in a debug build, which is all the stack Windows
+    // gives an executable by default. The regression being guarded against is
+    // recursion that ignores max_depth entirely, and a small max_depth exposes
+    // that just as well.
+    const size_t depth_limit = 100;
     for (size_t n : {2000, 50000}) {
       std::cout << "  depth " << n << std::endl;
       std::string json = std::string(n, '[') + "1" + std::string(n, ']');
       std::string path = "$";
       for (size_t i = 0; i < n; i++) { path += "[*]"; }
       auto padded = padded_string(json);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
       auto doc = parser.iterate(padded);
       ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), DEPTH_ERROR);
     }
@@ -483,6 +493,8 @@ namespace wildcard_tests {
       std::string path = "$";
       for (size_t i = 0; i < n; i++) { path += ".a"; }
       auto padded = padded_string(json);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
       auto doc = parser.iterate(padded);
       ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), DEPTH_ERROR);
     }
