@@ -621,6 +621,31 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
   > ```
+  >
+  > If you expect a field that may or may not be present, and it is not the next field, the ordered
+  > `find_field()` puts you in the same stuck position as above: you would normally need to call
+  > `reset()` and rescan the object from the very beginning to recover, even for fields you had
+  > already found. `object::get_current_position()` and `object::revert_position()` let you avoid
+  > that rescan: capture the position before the optional lookup, and on `NO_SUCH_FIELD`, revert to
+  > it instead of resetting, so only the fields from that point on are scanned again.
+  >
+  > ```cpp
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2, "z": 3 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > ondemand::object object = doc.get_object();
+  > double x = object.find_field("x");
+  > auto position = object.get_current_position();
+  > double optional; // "optional" is not in this document
+  > if (object.find_field("optional").get(optional)) {
+  >   object.revert_position(position); // back to right after "x", not to the very start
+  > }
+  > double y = object.find_field("y"); // still found, without rescanning "x"
+  > ```
+  >
+  > A captured position is only valid for the object it came from, and only until that object is
+  > `reset()` or the parser `iterate()`s a new document: applying it to a different object, or after
+  > either of those, is undefined behavior that `revert_position()` cannot detect.
 * **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the internal pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```cpp
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON

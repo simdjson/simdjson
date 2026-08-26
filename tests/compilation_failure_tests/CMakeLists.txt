@@ -26,6 +26,7 @@ endif()
 link_libraries(simdjson)
 
 add_dual_compile_test(example_compiletest)
+add_dual_compile_test(object_position_opaque)
 # These don't compile with exceptions off
 if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(bad_array_count)
