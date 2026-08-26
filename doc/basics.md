@@ -59,6 +59,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
 - [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
 - [Thread safety](#thread-safety)
+- [Limiting the maximum depth](#limiting-the-maximum-depth)
 - [Standard compliance](#standard-compliance)
 - [Backwards compatibility](#backwards-compatibility)
 - [Examples](#examples)
@@ -3700,6 +3701,55 @@ issues. If you expect such problems, you may consider using [std::quick_exit](ht
 
 In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
+
+Limiting the maximum depth
+--------------------------
+
+JSON documents can be nested arbitrarily deeply (`[[[[[[ ... ]]]]]]`). The simdjson
+library handles such documents iteratively: however deep the document is, parsing it
+costs the library no stack space.
+
+Code that walks the result is another matter. A recursive function applied to a document
+nested a thousand levels deep needs a thousand stack frames. Running out of stack is not
+a recoverable error: there is no exception and no error code, just a crash. A hostile
+input of a few kilobytes (`[[[[[[...`) is enough to cause one.
+
+So decide how deeply nested a document you are willing to accept, and tell the parser:
+
+```cpp
+ondemand::parser parser;
+// We will not go more than 30 levels deep.
+auto error = parser.allocate(0, 30);
+if (error) { /* allocation failure */ }
+```
+
+The first argument to `allocate` is a capacity to reserve up front, not a limit: passing
+zero is fine, and the parser still grows its buffers by itself as documents are passed
+to it. If you know how large your documents are, you can skip the initial reallocations
+by reserving the capacity, e.g., `parser.allocate(1024 * 1024, 30)`. To put a hard limit
+on the document size, use `parser.set_max_capacity(1024 * 1024)`.
+
+The depth limit bounds the recursion the library does on your behalf:
+`for_each_at_path_with_wildcard()` descends one level per path segment, and returns
+`DEPTH_ERROR` rather than going past `max_depth`. It is also verified at every step when
+you enable [development checks](#avoiding-pitfalls-enable-development-checks).
+
+Even if you do not limit the depth at the simdjson parser level, you can avoid deep
+recursion in your own code by calling `current_depth()`. It is available on the document
+and on its values, it is inexpensive, and it reports how deep the iterator currently
+sits:
+
+```cpp
+void recursive_print_json(ondemand::value element) {
+  if (element.current_depth() > 30) { throw std::runtime_error("too deep"); }
+  // ...
+}
+```
+
+Real-world JSON is rarely nested more than a handful of levels, so a limit like 30 is
+generous, and it keeps a recursive traversal to a few tens of kilobytes of stack. The
+default is 1024 (`simdjson::DEFAULT_MAX_DEPTH`). You can query the current setting with
+`parser.max_depth()`.
 
 Standard compliance
 --------------------
