@@ -632,6 +632,7 @@ namespace object_error_tests {
            out_of_order_object_find_field_sibling_error() &&
            out_of_order_object_find_field_unordered_child_error() &&
            out_of_order_object_find_field_unordered_sibling_error() &&
+           reentrant_object_access_during_iteration_error() &&
 #endif
            true;
   }
