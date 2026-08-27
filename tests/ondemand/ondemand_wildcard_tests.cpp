@@ -443,6 +443,70 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  // A wildcard path recurses one level per segment, so a long path applied to a
+  // deeply nested document must stop at the parser's depth limit rather than
+  // recursing until the stack runs out.
+  //
+  // The recursion is bounded by max_depth, and every level costs a few
+  // kilobytes of stack in an unoptimized build. The default limit (1024) is
+  // therefore more than a Windows executable's 1 MB default stack can hold, so
+  // we run the whole test with a small max_depth. The regression being guarded
+  // against is recursion that ignores max_depth entirely: a 2000- or
+  // 50000-deep document with a max_depth of 16 exposes that just as well, and
+  // it keeps the test's stack usage to a few tens of kilobytes.
+  bool deeply_nested_wildcard() {
+    TEST_START();
+
+    const size_t depth_limit = 16;
+
+    // Well within the depth limit: still resolves.
+    {
+      const size_t n = depth_limit - 2;
+      std::cout << "  within limit, depth " << n << std::endl;
+      std::string json = std::string(n, '[') + "1" + std::string(n, ']');
+      std::string path = "$";
+      for (size_t i = 0; i < n; i++) { path += "[*]"; }
+      auto padded = padded_string(json);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
+      auto doc = parser.iterate(padded);
+      size_t count = 0;
+      ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard(path, [&](ondemand::value) { count++; }));
+      ASSERT_EQUAL(count, 1);
+    }
+
+    // Past the depth limit: a clean error, no stack exhaustion.
+    for (size_t n : {2000, 50000}) {
+      std::cout << "  arrays, depth " << n << std::endl;
+      std::string json = std::string(n, '[') + "1" + std::string(n, ']');
+      std::string path = "$";
+      for (size_t i = 0; i < n; i++) { path += "[*]"; }
+      auto padded = padded_string(json);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
+      auto doc = parser.iterate(padded);
+      ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), DEPTH_ERROR);
+    }
+
+    // Same for objects.
+    {
+      const size_t n = 50000;
+      std::cout << "  objects, depth " << n << std::endl;
+      std::string json, tail;
+      for (size_t i = 0; i < n; i++) { json += R"({"a":)"; tail += "}"; }
+      json += "1" + tail;
+      std::string path = "$";
+      for (size_t i = 0; i < n; i++) { path += ".a"; }
+      auto padded = padded_string(json);
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
+      auto doc = parser.iterate(padded);
+      ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), DEPTH_ERROR);
+    }
+
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
@@ -458,7 +522,8 @@ namespace wildcard_tests {
            root_array_wildcard() &&
            wildcard_raw_json_issue_2684() &&
            unterminated_bracket_quote() &&
-           wildcard_malformed_deterministic_fuzz();
+           wildcard_malformed_deterministic_fuzz() &&
+           deeply_nested_wildcard();
   }
 }
 
