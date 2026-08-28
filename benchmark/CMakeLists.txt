@@ -11,6 +11,9 @@ endif(SIMDJSON_STATIC_REFLECTION_ENABLED)
 
 add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
+# Uses counters + from/benchmark_helpers.h, not Google Benchmark, so it
+# does not belong behind the benchmark::benchmark guard below.
+add_executable(bench_object_revert_position bench_object_revert_position.cpp)
 
 if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
@@ -26,7 +29,6 @@ if (TARGET benchmark::benchmark)
   target_compile_definitions(bench_number_accessors_float PRIVATE BENCH_ONLY_FLOAT)
   add_executable(bench_number_accessors_number bench_number_accessors.cpp)
   target_compile_definitions(bench_number_accessors_number PRIVATE BENCH_ONLY_NUMBER)
-  add_executable(bench_object_revert_position bench_object_revert_position.cpp)
   if(SIMDJSON_EXCEPTIONS)
     add_executable(bench_ondemand bench_ondemand.cpp)
     if(TARGET yyjson)
