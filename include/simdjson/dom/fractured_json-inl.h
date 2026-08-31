@@ -14,6 +14,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
+#include <iterator>
 
 namespace simdjson {
 namespace internal {
