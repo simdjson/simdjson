@@ -412,6 +412,29 @@ simdjson_inline simdjson_result<bool> object::reset() & noexcept {
   return iter.reset_object();
 }
 
+simdjson_inline object_position object::get_current_position() const noexcept {
+  return object_position{iter.position(), iter.json_iter().depth()};
+}
+
+simdjson_inline error_code object::revert_position(object_position position) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
+  // json_iterator::reenter_child() requires the live depth to be exactly
+  // one level shallower than the target (matching how every other depth
+  // transition in this iterator works), and under SIMDJSON_DEVELOPMENT_CHECKS
+  // additionally validates against the parser's per-depth container-start
+  // bookkeeping. Neither applies here: depending on what was captured and
+  // what has happened since (a scalar field fully consumed, a compound
+  // value left open, a find_field() miss that scanned past everything),
+  // the live depth when reverting can be any number of levels away from
+  // the captured one, and the captured depth is not necessarily a
+  // container's own start. reenter_at() moves directly, matching how
+  // reset_object() itself repositions without going through reenter_child().
+  iter.reenter_at(position.position, position.depth);
+  return SUCCESS;
+}
+
 #if SIMDJSON_DEVELOPMENT_CHECKS
 simdjson_inline void object::set_locked(bool _locked) noexcept {
   locked = _locked;
@@ -569,6 +592,16 @@ simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::for_each(Handlers&&.
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::reset() noexcept {
   if (error()) { return error(); }
   return first.reset();
+}
+
+inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_position> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::get_current_position() noexcept {
+  if (error()) { return error(); }
+  return first.get_current_position();
+}
+
+inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::revert_position(SIMDJSON_IMPLEMENTATION::ondemand::object_position position) noexcept {
+  if (error()) { return error(); }
+  return first.revert_position(position);
 }
 
 inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::is_empty() noexcept {

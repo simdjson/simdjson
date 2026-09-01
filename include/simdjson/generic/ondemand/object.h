@@ -87,6 +87,44 @@ inline constexpr bool nothrow_field_handlers_v =
 #endif
 
 /**
+ * An opaque snapshot of an object's scanning position, obtained from
+ * object::get_current_position() and consumed by object::revert_position().
+ *
+ * This bundles the raw token position with the iteration depth that was
+ * live at the moment of capture: a scalar field value (e.g. a number)
+ * unwinds back to the object's own depth once fully consumed, while a
+ * compound value (array/object) not yet fully consumed stays one level
+ * deeper. The correct depth to restore to therefore depends on what was
+ * live when the snapshot was taken, not on the object itself, which is
+ * why both pieces travel together here rather than being recomputed later.
+ *
+ * The members are private and only constructible by object itself: a
+ * hand-built value here would let revert_position() jump to an arbitrary,
+ * unvalidated position and depth, and this type carries no way to check
+ * that a given snapshot still refers to a live object. Only ever pass
+ * along a value you got from get_current_position(), and only back to the
+ * same object, before that object has been reset() or the parser has
+ * iterate()d a new document: neither invalidates a snapshot in a way this
+ * type can detect.
+ */
+struct object_position {
+  /**
+   * Default-constructed so a variable can be declared and assigned later,
+   * matching e.g. document()/object(). Not a valid position to revert to.
+   */
+  simdjson_inline object_position() noexcept = default;
+
+private:
+  token_position position{};
+  depth_t depth{};
+
+  simdjson_inline object_position(token_position position_, depth_t depth_) noexcept
+    : position(position_), depth(depth_) {}
+
+  friend class object;
+};
+
+/**
  * A forward-only JSON object field iterator.
  */
 class object {
@@ -365,6 +403,34 @@ public:
    */
   inline simdjson_result<bool> reset() & noexcept;
   /**
+   * Get an opaque token representing the object's current scanning position.
+   * Pass it to revert_position() to return to this exact point later, without
+   * paying the cost of a full reset() and re-scan from the beginning.
+   *
+   * A typical use is an optional field that may or may not be next: capture
+   * the position, attempt find_field(), and on NO_SUCH_FIELD, revert_position()
+   * instead of reset() so that fields already consumed are not rescanned.
+   *
+   * The returned token is only valid for this object, and only until it is
+   * reset() or the parser iterate()s a new document; using it after either
+   * is undefined behavior (see object_position).
+   *
+   * @returns An opaque position token.
+   */
+  simdjson_inline object_position get_current_position() const noexcept;
+  /**
+   * Return the object's scanning position to a snapshot previously obtained
+   * from get_current_position(). Unlike reset(), this does not rescan the
+   * object from the beginning: fields before the captured position remain
+   * consumed, and scanning resumes exactly where the snapshot was captured.
+   *
+   * @param position A snapshot previously returned by get_current_position(),
+   *        for this same object.
+   * @returns SUCCESS, or OUT_OF_ORDER_ITERATION if called during active
+   *          iteration (SIMDJSON_DEVELOPMENT_CHECKS builds only).
+   */
+  simdjson_inline error_code revert_position(object_position position) noexcept;
+  /**
    * This method scans the beginning of the object and checks whether the
    * object is empty.
    * The runtime complexity is constant time. After
@@ -518,6 +584,8 @@ public:
 #endif
   simdjson_inline error_code for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept;
   inline simdjson_result<bool> reset() noexcept;
+  inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_position> get_current_position() noexcept;
+  inline error_code revert_position(SIMDJSON_IMPLEMENTATION::ondemand::object_position position) noexcept;
   inline simdjson_result<bool> is_empty() noexcept;
   inline simdjson_result<size_t> count_fields() & noexcept;
   inline simdjson_result<std::string_view> raw_json() noexcept;
