@@ -9,6 +9,7 @@
 #include "simdjson/annotations.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <chrono>
 #include <concepts>
 #include <limits>
 #if SIMDJSON_STATIC_REFLECTION
@@ -19,9 +20,102 @@
 
 namespace simdjson {
 
+namespace chrono_deserialize_detail {
+
+// Parse a 2-digit decimal field. Returns false if either character is not a digit.
+simdjson_inline bool parse_2(const char *p, int &out) noexcept {
+  if (p[0] < '0' || p[0] > '9' || p[1] < '0' || p[1] > '9') {
+    return false;
+  }
+  out = (p[0] - '0') * 10 + (p[1] - '0');
+  return true;
+}
+
+simdjson_inline bool parse_4(const char *p, int &out) noexcept {
+  int hi = 0;
+  int lo = 0;
+  if (!parse_2(p, hi) || !parse_2(p + 2, lo)) {
+    return false;
+  }
+  out = hi * 100 + lo;
+  return true;
+}
+
+// Parse ISO 8601 UTC timestamps such as "2024-01-15T10:30:00Z".
+// Optional fractional seconds (e.g. ".123") are accepted and truncated to whole seconds.
+template <typename Duration>
+simdjson_inline bool parse_iso8601_utc(
+    std::string_view s,
+    std::chrono::time_point<std::chrono::system_clock, Duration> &out) noexcept {
+  if (s.size() < 20) {
+    return false;
+  }
+  const char *p = s.data();
+  if (p[4] != '-' || p[7] != '-' || p[10] != 'T' || p[13] != ':' || p[16] != ':') {
+    return false;
+  }
+  int year = 0;
+  int month = 0;
+  int day = 0;
+  int hour = 0;
+  int minute = 0;
+  int second = 0;
+  if (!parse_4(p, year) || !parse_2(p + 5, month) || !parse_2(p + 8, day) ||
+      !parse_2(p + 11, hour) || !parse_2(p + 14, minute) || !parse_2(p + 17, second)) {
+    return false;
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 ||
+      second > 60) {
+    return false;
+  }
+  size_t pos = 19;
+  if (pos < s.size() && s[pos] == '.') {
+    ++pos;
+    if (pos >= s.size() || s[pos] < '0' || s[pos] > '9') {
+      return false;
+    }
+    while (pos < s.size() && s[pos] >= '0' && s[pos] <= '9') {
+      ++pos;
+    }
+  }
+  if (pos >= s.size() || (s[pos] != 'Z' && s[pos] != 'z')) {
+    return false;
+  }
+  if (pos + 1 != s.size()) {
+    return false;
+  }
+  const std::chrono::year_month_day ymd{std::chrono::year{year},
+                                        std::chrono::month{static_cast<unsigned>(month)},
+                                        std::chrono::day{static_cast<unsigned>(day)}};
+  if (!ymd.ok()) {
+    return false;
+  }
+  const std::chrono::sys_days days{ymd};
+  const auto tp = days + std::chrono::hours{hour} + std::chrono::minutes{minute} +
+                  std::chrono::seconds{second};
+  out = std::chrono::time_point_cast<Duration>(tp);
+  return true;
+}
+
+} // namespace chrono_deserialize_detail
+
 //////////////////////////////
 // Number deserialization
 //////////////////////////////
+
+// Deserialize std::chrono::system_clock::time_point from an ISO 8601 UTC string
+// (second precision), e.g. "2024-01-15T10:30:00Z" (see #2447).
+template <typename Duration, typename ValT>
+error_code tag_invoke(
+    deserialize_tag, ValT &val,
+    std::chrono::time_point<std::chrono::system_clock, Duration> &out) noexcept {
+  std::string_view s;
+  SIMDJSON_TRY(val.get_string().get(s));
+  if (!chrono_deserialize_detail::parse_iso8601_utc(s, out)) {
+    return INCORRECT_TYPE;
+  }
+  return SUCCESS;
+}
 
 template <std::unsigned_integral T>
 error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
@@ -271,9 +365,15 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 
 
 template <typename T>
+constexpr bool is_system_clock_time_point_v = false;
+template <typename Duration>
+constexpr bool is_system_clock_time_point_v<
+    std::chrono::time_point<std::chrono::system_clock, Duration>> = true;
+
+template <typename T>
 constexpr bool user_defined_type = (std::is_class_v<T>
 && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
-!concepts::appendable_containers<T>);
+!concepts::appendable_containers<T> && !is_system_clock_time_point_v<T>);
 
 
 // key_selector_reflection_detail is defined unconditionally (it only requires
