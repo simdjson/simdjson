@@ -45,7 +45,7 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
