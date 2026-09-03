@@ -835,7 +835,9 @@ simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *cons
 }
 
 simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_swar(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uint8_t * const) noexcept { return 0; }
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_swar(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const) noexcept { return 0; }
@@ -1076,6 +1078,45 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   return i;
 }
 
+// SWAR-accelerated variant of parse_unsigned. Gates on the first eight bytes
+// all being digits: a single 8-byte load plus a few ALU ops (safe thanks to
+// SIMDJSON_PADDING), cheap enough to run unconditionally: short numbers pay
+// only the predicted-not-taken branch and fall through to parse_unsigned
+// unchanged. Numbers with 8+ leading digits parse 8 (or 16) digits per step
+// instead of one.
+simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_swar(const uint8_t * const src) noexcept {
+#if !defined(SIMDJSON_SWAR_NUMBER_PARSING) || !SIMDJSON_SWAR_NUMBER_PARSING
+  // The eight-digit SWAR helpers are not endian-safe on targets that disable
+  // SIMDJSON_SWAR_NUMBER_PARSING (e.g. big-endian); use the byte loop there.
+  return parse_unsigned(src);
+#else
+  if (simdjson_likely(!is_made_of_eight_digits_fast(src))) {
+    return parse_unsigned(src);
+  }
+  const uint8_t *const start_digits = src;
+  uint64_t i = parse_eight_digits_unrolled(src);
+  const uint8_t *p = src + 8;
+  // Second batch must itself verify all eight bytes are digits: the window
+  // can straddle the number's terminator into adjacent JSON.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  while (parse_digit(*p, i)) { p++; }
+  size_t digit_count = size_t(p - start_digits);
+  if (digit_count > 20) { return INCORRECT_TYPE; }
+  // At least 8 digits here, so a leading zero is always an error.
+  if ('0' == *start_digits) { return NUMBER_ERROR; }
+  if (integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  if (digit_count == 20) {
+    // Same overflow logic as parse_unsigned.
+    if (src[0] != uint8_t('1') || i <= uint64_t(INT64_MAX)) { return INCORRECT_TYPE; }
+  }
+  return i;
+#endif // SIMDJSON_SWAR_NUMBER_PARSING
+}
+
+
 
 // Parse any number from 0 to 18,446,744,073,709,551,615
 // Never read at src_end or beyond
@@ -1216,6 +1257,37 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   // so cheap that we might as well always make it.
   if(i > uint64_t(INT64_MAX) + uint64_t(negative)) { return INCORRECT_TYPE; }
   return negative ? (~i+1) : i;
+}
+
+// SWAR-accelerated variant of parse_integer, same gating strategy as
+// parse_unsigned_swar.
+simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_swar(const uint8_t *src) noexcept {
+#if !defined(SIMDJSON_SWAR_NUMBER_PARSING) || !SIMDJSON_SWAR_NUMBER_PARSING
+  return parse_integer(src);
+#else
+  bool negative = (*src == '-');
+  const uint8_t *p = src + uint8_t(negative);
+  if (simdjson_likely(!is_made_of_eight_digits_fast(p))) {
+    return parse_integer(src);
+  }
+  const uint8_t *const start_digits = p;
+  uint64_t i = parse_eight_digits_unrolled(p);
+  p += 8;
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  while (parse_digit(*p, i)) { p++; }
+  size_t digit_count = size_t(p - start_digits);
+  // int64_t values never have more than 19 digits.
+  if (digit_count > 19) { return INCORRECT_TYPE; }
+  // At least 8 digits here, so a leading zero is always an error.
+  if ('0' == *start_digits) { return NUMBER_ERROR; }
+  if (integer_string_finisher[*p] != SUCCESS) { return error_code(integer_string_finisher[*p]); }
+  // Negative numbers can go down to -INT64_MAX-1, positives up to INT64_MAX.
+  if (i > uint64_t(INT64_MAX) + uint64_t(negative)) { return INCORRECT_TYPE; }
+  return negative ? (~i+1) : i;
+#endif // SIMDJSON_SWAR_NUMBER_PARSING
 }
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
