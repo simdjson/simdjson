@@ -1,4 +1,4 @@
-/* auto-generated on 2026-08-24 17:10:01 -0400. version 4.6.9 Do not edit! */
+/* auto-generated on 2026-09-03 12:17:15 -0400. version 4.6.10 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -260,7 +260,7 @@ using std::size_t;
 #endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #define SIMDJSON_IS_PPC64 1
-#if defined(__ALTIVEC__)
+#if defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #define SIMDJSON_IS_PPC64_VMX 1
 #endif // defined(__ALTIVEC__)
 #else
@@ -2538,7 +2538,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "4.6.9"
+#define SIMDJSON_VERSION "4.6.10"
 
 namespace simdjson {
 enum {
@@ -2553,7 +2553,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 9
+  SIMDJSON_VERSION_REVISION = 10
 };
 } // namespace simdjson
 
@@ -39845,7 +39845,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -41940,7 +41940,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -44522,7 +44522,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -47104,7 +47104,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -49801,7 +49801,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -52815,7 +52815,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -55303,7 +55303,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -57814,7 +57814,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -60329,7 +60329,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_fractured_json(
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif

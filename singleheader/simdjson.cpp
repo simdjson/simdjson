@@ -1,4 +1,4 @@
-/* auto-generated on 2026-08-24 17:10:01 -0400. version 4.6.9 Do not edit! */
+/* auto-generated on 2026-09-03 12:17:15 -0400. version 4.6.10 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -240,7 +240,7 @@ using std::size_t;
 #endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
 #define SIMDJSON_IS_PPC64 1
-#if defined(__ALTIVEC__)
+#if defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #define SIMDJSON_IS_PPC64_VMX 1
 #endif // defined(__ALTIVEC__)
 #else
