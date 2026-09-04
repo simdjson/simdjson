@@ -107,6 +107,23 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping that the other stream formats do not
+   * maintain, and outside these conditions it is not merely imprecise, it is
+   * arbitrary -- it can exceed size_in_bytes() or wrap around to a huge value.
+   * Check it only when all of the following hold:
+   *
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence and comma_delimited mode the stage-1 filter rewrites the
+   *     structural index in place and the bookkeeping is lost, so the value is
+   *     meaningless even for a stream that parsed completely;
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
   /**
