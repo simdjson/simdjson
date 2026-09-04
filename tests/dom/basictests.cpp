@@ -918,7 +918,7 @@ namespace dom_api_tests {
 #endif // SIMDJSON_ENABLE_DEPRECATED_API
 
   SIMDJSON_POP_DISABLE_WARNINGS
-  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  #if SIMDJSON_SUPPORTS_CHAR8_T
   bool u8string_value() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "str": "hello u8" })");
@@ -931,6 +931,29 @@ namespace dom_api_tests {
 
     ASSERT_EQUAL( u8_val.size(), 8 );
     ASSERT_TRUE( u8_val == u8"hello u8" );
+    return true;
+  }
+
+  bool u8string_value_get_template() {
+    std::cout << "Running " << __func__ << std::endl;
+    // The key holds an escaped U+00E9, so the unescaped value is five bytes long.
+    string json(R"({ "str": "caf\u00e9", "n": 1 })");
+    dom::parser parser;
+    dom::object object;
+    ASSERT_SUCCESS( parser.parse(json).get(object) );
+
+    std::u8string_view u8_val;
+    ASSERT_SUCCESS( object["str"].get<std::u8string_view>().get(u8_val) );
+    ASSERT_EQUAL( u8_val.size(), 5 );
+    ASSERT_TRUE( u8_val == u8"caf\u00e9" );
+
+    // get(T&), is<T>() and the error path come along with the specialization.
+    std::u8string_view other;
+    ASSERT_SUCCESS( object["str"].get(other) );
+    ASSERT_TRUE( other == u8_val );
+    ASSERT_TRUE( object["str"].is<std::u8string_view>() );
+    ASSERT_FALSE( object["n"].is<std::u8string_view>() );
+    ASSERT_ERROR( object["n"].get<std::u8string_view>(), INCORRECT_TYPE );
     return true;
   }
   #endif
@@ -1442,8 +1465,9 @@ namespace dom_api_tests {
 
   bool run() {
     return
-    #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+    #if SIMDJSON_SUPPORTS_CHAR8_T
            u8string_value() &&
+           u8string_value_get_template() &&
     #endif
     #if SIMDJSON_ENABLE_DEPRECATED_API
         ParsedJson_Iterator_test() &&

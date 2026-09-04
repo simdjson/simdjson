@@ -65,7 +65,7 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<dom::element>:
   if (error()) { return error(); }
   return first.get_string();
 }
-#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+#if SIMDJSON_SUPPORTS_CHAR8_T
 simdjson_inline simdjson_result<std::u8string_view> simdjson_result<dom::element>::get_u8string() const noexcept {
   if (error()) { return error(); }
   return first.get_u8string();
@@ -269,11 +269,11 @@ inline simdjson_result<std::string_view> element::get_string() const noexcept {
       return INCORRECT_TYPE;
   }
 }
-#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+#if SIMDJSON_SUPPORTS_CHAR8_T
 inline simdjson_result<std::u8string_view> element::get_u8string() const noexcept {
   std::string_view v;
   SIMDJSON_TRY(get_string().get(v));
-  return std::u8string_view(reinterpret_cast<const char8_t*>(v.data()), v.size());
+  return internal::as_u8string_view(v);
 }
 #endif
 inline simdjson_result<uint64_t> element::get_uint64() const noexcept {
@@ -371,6 +371,9 @@ template<> inline simdjson_result<array> element::get<array>() const noexcept { 
 template<> inline simdjson_result<object> element::get<object>() const noexcept { return get_object(); }
 template<> inline simdjson_result<const char *> element::get<const char *>() const noexcept { return get_c_str(); }
 template<> inline simdjson_result<std::string_view> element::get<std::string_view>() const noexcept { return get_string(); }
+#if SIMDJSON_SUPPORTS_CHAR8_T
+template<> inline simdjson_result<std::u8string_view> element::get<std::u8string_view>() const noexcept { return get_u8string(); }
+#endif
 template<> inline simdjson_result<int64_t> element::get<int64_t>() const noexcept { return get_int64(); }
 template<> inline simdjson_result<uint64_t> element::get<uint64_t>() const noexcept { return get_uint64(); }
 template<> inline simdjson_result<double> element::get<double>() const noexcept { return get_double(); }

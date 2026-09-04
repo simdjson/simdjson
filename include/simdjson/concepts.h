@@ -3,6 +3,7 @@
 #if SIMDJSON_SUPPORTS_CONCEPTS
 
 #include <concepts>
+#include <string_view>
 #include <type_traits>
 
 namespace simdjson {
@@ -43,6 +44,19 @@ template<typename T>
 concept constructible_from_string_view = std::is_constructible_v<T, std::string_view>
                                         && !std::is_same_v<T, std::string_view>
                                         && std::is_default_constructible_v<T>;
+
+#if SIMDJSON_SUPPORTS_CHAR8_T
+/**
+ * A C++20 char8_t string type such as std::u8string. Such types cannot be built
+ * from a std::string_view (the character types differ), so they need their own
+ * deserialization path, going through the u8 string accessors.
+ */
+template<typename T>
+concept constructible_from_u8string_view = std::is_constructible_v<T, std::u8string_view>
+                                        && !std::is_same_v<T, std::u8string_view>
+                                        && !std::is_constructible_v<T, std::string_view>
+                                        && std::is_default_constructible_v<T>;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 
 template<typename M>
 concept string_view_keyed_map = string_view_like<typename M::key_type>

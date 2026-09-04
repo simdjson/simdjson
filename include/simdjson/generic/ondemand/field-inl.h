@@ -38,11 +38,19 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> field::un
   return answer;
 }
 
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline simdjson_warn_unused simdjson_result<std::u8string_view> field::unescaped_u8key(bool allow_replacement) noexcept {
+  std::string_view key;
+  SIMDJSON_TRY( unescaped_key(allow_replacement).get(key) );
+  return internal::as_u8string_view(key);
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+
 template <typename string_type>
 simdjson_inline simdjson_warn_unused error_code field::unescaped_key(string_type& receiver, bool allow_replacement) noexcept {
   std::string_view key;
   SIMDJSON_TRY( unescaped_key(allow_replacement).get(key) );
-  receiver = key;
+  internal::assign_utf8(receiver, key);
   return SUCCESS;
 }
 
@@ -63,6 +71,12 @@ simdjson_inline std::string_view field::escaped_key() const noexcept {
   while(*end_quote != '"') end_quote--;
   return std::string_view(reinterpret_cast<const char*>(first.buf), end_quote - first.buf);
 }
+
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline std::u8string_view field::escaped_u8key() const noexcept {
+  return internal::as_u8string_view(escaped_key());
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 
 simdjson_inline value &field::value() & noexcept {
   return second;
@@ -108,10 +122,24 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
   return first.escaped_key();
 }
 
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline simdjson_result<std::u8string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::escaped_u8key() noexcept {
+  if (error()) { return error(); }
+  return first.escaped_u8key();
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.unescaped_key(allow_replacement);
 }
+
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline simdjson_result<std::u8string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_u8key(bool allow_replacement) noexcept {
+  if (error()) { return error(); }
+  return first.unescaped_u8key(allow_replacement);
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 
 template<typename string_type>
 simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::unescaped_key(string_type &receiver, bool allow_replacement) noexcept {

@@ -22,6 +22,9 @@ template <> struct is_builtin_deserializable<SIMDJSON_IMPLEMENTATION::ondemand::
 template <> struct is_builtin_deserializable<SIMDJSON_IMPLEMENTATION::ondemand::value> : std::true_type {};
 template <> struct is_builtin_deserializable<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> : std::true_type {};
 template <> struct is_builtin_deserializable<std::string_view> : std::true_type {};
+#if SIMDJSON_SUPPORTS_CHAR8_T
+template <> struct is_builtin_deserializable<std::u8string_view> : std::true_type {};
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 
 template <typename T>
 concept is_builtin_deserializable_v = is_builtin_deserializable<T>::value;
