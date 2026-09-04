@@ -945,12 +945,37 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // structural_indexes[] is relative to batch_start while current_index() is
+    // absolute, so source() used to underflow on every batch after the first.
+    bool source_across_batches() {
+        TEST_START();
+        std::string raw;
+        for (int k = 0; k < 200; k++) { raw += std::to_string(100000 + k); raw += "\n"; }
+        auto input = simdjson::padded_string(raw);
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 64).get(stream));
+        size_t count = 0;
+        for (auto it = stream.begin(); it != stream.end(); ++it) {
+            auto doc = *it;
+            ASSERT_SUCCESS(doc.error());
+            std::string_view src = it.source();
+            ASSERT_TRUE(it.current_index() <= input.size());
+            ASSERT_TRUE(src.size() <= input.size() - it.current_index());
+            ASSERT_EQUAL(src, std::to_string(100000 + count));
+            count++;
+        }
+        ASSERT_EQUAL(count, size_t(200));
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
             issue2181() &&
             issue2170() &&
             issue2137() &&
             skipbom() &&
+            source_across_batches() &&
             issue1977() &&
             string_with_trailing() &&
             uint64_with_trailing() &&

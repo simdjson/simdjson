@@ -56,6 +56,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 inline padded_string::padded_string() noexcept = default;
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
+  if (data_ptr == nullptr) { viable_size = 0; }
 }
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {

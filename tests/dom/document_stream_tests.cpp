@@ -1,3 +1,4 @@
+#include <sstream>
 #include <cctype>
 #include <cstring>
 #include <random>
@@ -984,6 +985,33 @@ namespace document_stream_tests {
     return true;
   }
 
+
+  // A root scalar whose token reaches the end of a partial window used to be
+  // emitted as a complete document, so 100005 came back as 1.
+  bool scalar_at_window_boundary() {
+    TEST_START();
+    const char *tokens[] = {"100000", "true", "false", "null"};
+    for (const char *token : tokens) {
+      std::string raw;
+      for (int k = 0; k < 12; k++) { raw += token; raw += "\n"; }
+      auto input = simdjson::padded_string(raw);
+      std::string expected;
+      for (int k = 0; k < 12; k++) { expected += token; expected += "|"; }
+      for (size_t window = 32; window <= 96; window++) {
+        simdjson::dom::parser parser;
+        simdjson::dom::document_stream stream;
+        ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+        std::string got;
+        for (auto doc : stream) {
+          ASSERT_SUCCESS(doc.error());
+          std::stringstream ss; ss << doc; got += ss.str(); got += "|";
+        }
+        ASSERT_EQUAL(got, expected);
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   // Pins the contract documented on truncated_bytes(): reliable for a stream
   // iterated all the way to the end with no document error.
   bool truncated_bytes_documented_cases() {
@@ -1048,7 +1076,8 @@ namespace document_stream_tests {
   }
 
   bool run() {
-    return truncated_bytes_documented_cases() &&
+    return scalar_at_window_boundary() &&
+           truncated_bytes_documented_cases() &&
            source_on_failed_document() &&
            issue2181() &&
            issue2170() &&

@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-03 12:17:46 -0400. version 4.6.11 Do not edit! */
+/* auto-generated on 2026-09-04 16:04:31 -0400. version 4.6.11 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -4734,6 +4734,7 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 inline padded_string::padded_string() noexcept = default;
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
+  if (data_ptr == nullptr) { viable_size = 0; }
 }
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
@@ -15008,9 +15009,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -15021,6 +15027,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -17221,9 +17228,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -17234,6 +17246,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -19921,9 +19934,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -19934,6 +19952,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -22621,9 +22640,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -22634,6 +22658,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -25436,9 +25461,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -25449,6 +25479,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -28568,9 +28599,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -28581,6 +28617,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -31200,9 +31237,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -31213,6 +31255,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -33810,9 +33853,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -33823,6 +33871,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -36437,9 +36486,14 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
-  size_t max_structures = SIMDJSON_ROUNDUP_N(capacity, 64) + 2 + 7;
+  size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if(rounded_capacity + 9 < rounded_capacity) {
+    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
+  }
+  size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -36450,6 +36504,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
+  if(max_depth == 0 || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);
@@ -71014,7 +71069,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -84405,7 +84460,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -98283,7 +98338,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -112161,7 +112216,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -126154,7 +126209,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -140464,7 +140519,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -154248,7 +154303,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -168055,7 +168110,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
@@ -181866,7 +181921,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
         // TODO: We could remove trailing whitespaces
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
