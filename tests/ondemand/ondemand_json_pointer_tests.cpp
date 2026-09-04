@@ -6,6 +6,101 @@ using namespace std::string_literals;
 using namespace simdjson;
 
 namespace json_pointer_tests {
+
+    // Empty pointers must not index a null-data std::string_view. RFC 6901
+    // defines an empty pointer as selecting the current value.
+    bool value_at_pointer_empty() {
+        TEST_START();
+        auto json = R"({"a":[1,2,3],"b":{"x":1}})"_padded;
+        ondemand::parser parser;
+        std::string_view null_empty{};
+
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::value v;
+            ASSERT_SUCCESS(doc["a"].get(v));
+            ondemand::value out;
+            ASSERT_SUCCESS(v.at_pointer(null_empty).get(out));
+        }
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::array array;
+            ASSERT_SUCCESS(doc["a"].get_array().get(array));
+            ondemand::value out;
+            ASSERT_ERROR(array.at_pointer(null_empty).get(out), INVALID_JSON_POINTER);
+        }
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::object object;
+            ASSERT_SUCCESS(doc["b"].get_object().get(object));
+            ondemand::value out;
+            ASSERT_ERROR(object.at_pointer(null_empty).get(out), INVALID_JSON_POINTER);
+        }
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::value v;
+            ASSERT_SUCCESS(doc["a"].get(v));
+            int64_t n;
+            ASSERT_SUCCESS(v.at_pointer("/1").get_int64().get(n));
+            ASSERT_EQUAL(n, 2);
+        }
+        TEST_SUCCEED();
+    }
+
+    bool deeply_nested_pointer_is_bounded() {
+        TEST_START();
+        for (size_t depth : {internal::MAX_RECURSIVE_PATH_DEPTH,
+                             internal::MAX_RECURSIVE_PATH_DEPTH + 1}) {
+            std::string json(depth, '[');
+            json += '0';
+            json.append(depth, ']');
+            padded_string padded(json);
+            ondemand::parser parser;
+            ASSERT_SUCCESS(parser.allocate(padded.size(), depth + 2));
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+            std::string pointer;
+            for (size_t i = 0; i < depth; i++) { pointer += "/0"; }
+            if (depth == internal::MAX_RECURSIVE_PATH_DEPTH) {
+                int64_t value;
+                ASSERT_SUCCESS(doc.at_pointer(pointer).get_int64().get(value));
+                ASSERT_EQUAL(value, 0);
+            } else {
+                ASSERT_ERROR(doc.at_pointer(pointer), DEPTH_ERROR);
+            }
+        }
+        TEST_SUCCEED();
+    }
+
+    bool malformed_suffix_is_validated_before_lookup() {
+        TEST_START();
+        auto json = R"({"a":[0],"o":{"x":1}})"_padded;
+        ondemand::parser parser;
+        for (std::string_view pointer : {"/a/~2", "/missing/~2", "/o/missing/~"}) {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ASSERT_ERROR(doc.at_pointer(pointer), INVALID_JSON_POINTER);
+        }
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::array array;
+            ASSERT_SUCCESS(doc["a"].get_array().get(array));
+            ASSERT_ERROR(array.at_pointer("/~2"), INVALID_JSON_POINTER);
+        }
+        {
+            ondemand::document doc;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ondemand::object object;
+            ASSERT_SUCCESS(doc["o"].get_object().get(object));
+            ASSERT_ERROR(object.at_pointer("/missing/~2"), INVALID_JSON_POINTER);
+        }
+        TEST_SUCCEED();
+    }
     const padded_string TEST_JSON = R"(
     {
         "/~01abc": [
@@ -511,7 +606,12 @@ namespace json_pointer_tests {
                 run_failure_test(TEST_JSON, "/~1~001abc/", INVALID_JSON_POINTER) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/18446744073709551616", INDEX_OUT_OF_BOUNDS) &&
                 run_failure_test(TEST_JSON, "/~1~001abc/-", INDEX_OUT_OF_BOUNDS) &&
+                run_failure_test(TEST_JSON, "/bad~", INVALID_JSON_POINTER) &&
+                run_failure_test(TEST_JSON, "/bad~2", INVALID_JSON_POINTER) &&
                 many_json_pointers() &&
+                value_at_pointer_empty() &&
+                deeply_nested_pointer_is_bounded() &&
+                malformed_suffix_is_validated_before_lookup() &&
                 document_as_scalar() &&
                 true;
     }

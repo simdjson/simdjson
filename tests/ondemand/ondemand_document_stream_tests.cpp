@@ -1,4 +1,9 @@
+#include <chrono>
+#include <memory>
 #include <string>
+#include <thread>
+#include <utility>
+#include <vector>
 using namespace std::string_literals;
 
 #include "simdjson.h"
@@ -511,6 +516,124 @@ namespace document_stream_tests {
         ASSERT_EQUAL(counter,4);
         TEST_SUCCEED();
     }
+
+    // source() must keep scalar views within the input when a small stream
+    // window forces documents into batches after the first one.
+    bool source_test_scalars_multiple_batches() {
+        TEST_START();
+        std::string json_str;
+        for (int i = 0; i < 200; i++) {
+            json_str += std::to_string(100000 + i);
+            json_str += "   ";
+        }
+        simdjson::padded_string json(json_str);
+        const char *buf_begin = json.data();
+        const char *buf_end = json.data() + json.size();
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json, 64).get(stream));
+        size_t counter{0};
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
+            ASSERT_TRUE(counter < 200);
+            std::string_view src = i.source();
+            ASSERT_TRUE(src.data() >= buf_begin);
+            ASSERT_TRUE(src.data() <= buf_end);
+            ASSERT_TRUE(src.size() <= static_cast<size_t>(buf_end - src.data()));
+            ASSERT_EQUAL(src, std::to_string(100000 + counter));
+            counter++;
+        }
+        ASSERT_EQUAL(counter, 200);
+        TEST_SUCCEED();
+    }
+
+    bool partial_window_ending_inside_scalar_container() {
+        TEST_START();
+        const std::vector<std::pair<std::string, std::vector<std::string_view>>> cases = {
+            {std::string(25, ' ') + "[1234567890] [1]", {"[1234567890]", "[1]"}},
+            {std::string("0") + std::string(24, ' ') + "[1234567890] [1]",
+             {"0", "[1234567890]", "[1]"}},
+            {std::string("1") + std::string(24, ' ') + "\"abcdefghij\" [1]",
+             {"1", "\"abcdefghij\"", "[1]"}},
+        };
+        for (const auto &test_case : cases) {
+            padded_string json(test_case.first);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(json, 32).get(stream));
+            size_t index = 0;
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS(i.error());
+                ASSERT_TRUE(index < test_case.second.size());
+                ASSERT_EQUAL(i.source(), test_case.second[index++]);
+            }
+            ASSERT_EQUAL(index, test_case.second.size());
+        }
+        TEST_SUCCEED();
+    }
+
+#ifdef SIMDJSON_THREADS_ENABLED
+    std::string make_threaded_move_input(size_t batch_size) {
+        std::string input;
+        input.reserve(batch_size * 3);
+        while (input.size() < batch_size * 3) { input += "[0]\n"; }
+        return input;
+    }
+
+    // Keep the moved-to stream alive long enough for an unfixed background
+    // worker to dereference its stale pointers into the moved-from stream.
+    // Without this wait, destruction can cancel the worker before it runs and
+    // the regression can spuriously pass.
+    void let_moved_worker_run() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    bool active_threaded_move_constructor() {
+        TEST_START();
+        const size_t batch_size = 1 << 20;
+        padded_string json(make_threaded_move_input(batch_size));
+        for (size_t attempt = 0; attempt < 32; attempt++) {
+            ondemand::parser parser;
+            parser.threaded = true;
+            std::unique_ptr<ondemand::document_stream> destination;
+            {
+                ondemand::document_stream source;
+                ASSERT_SUCCESS(parser.iterate_many(json, batch_size).get(source));
+                simdjson_unused auto iterator = source.begin();
+                destination.reset(new (std::nothrow) ondemand::document_stream(std::move(source)));
+                ASSERT_TRUE(destination != nullptr);
+            }
+            let_moved_worker_run();
+            ASSERT_EQUAL(destination->size_in_bytes(), json.size());
+            destination.reset();
+        }
+        TEST_SUCCEED();
+    }
+
+    bool active_threaded_move_assignment() {
+        TEST_START();
+        const size_t batch_size = 1 << 20;
+        padded_string json(make_threaded_move_input(batch_size));
+        for (size_t attempt = 0; attempt < 32; attempt++) {
+            ondemand::parser destination_parser;
+            ondemand::parser source_parser;
+            destination_parser.threaded = true;
+            source_parser.threaded = true;
+            ondemand::document_stream destination;
+            ASSERT_SUCCESS(destination_parser.iterate_many(json, batch_size).get(destination));
+            simdjson_unused auto destination_iterator = destination.begin();
+            {
+                ondemand::document_stream source;
+                ASSERT_SUCCESS(source_parser.iterate_many(json, batch_size).get(source));
+                simdjson_unused auto iterator = source.begin();
+                destination = std::move(source);
+            }
+            let_moved_worker_run();
+            ASSERT_EQUAL(destination.size_in_bytes(), json.size());
+        }
+        TEST_SUCCEED();
+    }
+#endif
 
     bool truncated() {
         TEST_START();
@@ -2531,6 +2654,12 @@ namespace document_stream_tests {
             doc_index() &&
             doc_index_multiple_batches() &&
             source_test() &&
+            source_test_scalars_multiple_batches() &&
+            partial_window_ending_inside_scalar_container() &&
+#ifdef SIMDJSON_THREADS_ENABLED
+            active_threaded_move_constructor() &&
+            active_threaded_move_assignment() &&
+#endif
             truncated() &&
             truncated_complete_docs() &&
             truncated_unclosed_string() &&

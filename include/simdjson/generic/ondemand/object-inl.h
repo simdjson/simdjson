@@ -294,10 +294,15 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  if (json_pointer.empty()) { return INVALID_JSON_POINTER; }
+  if (internal::json_pointer_depth_exceeded(json_pointer)) { return DEPTH_ERROR; }
+  if (!internal::json_pointer_is_well_formed(json_pointer)) { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
+  if (!internal::json_pointer_token_is_well_formed(key)) {
+    return INVALID_JSON_POINTER;
+  }
   // Grab the child with the given key
   simdjson_result<value> child;
 
@@ -348,6 +353,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code object::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (internal::json_path_depth_exceeded(json_path)) { return DEPTH_ERROR; }
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;

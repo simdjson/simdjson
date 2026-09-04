@@ -344,6 +344,8 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
   if (json_pointer.empty()) {
     return this->get_value();
   }
+  if (internal::json_pointer_depth_exceeded(json_pointer)) { return DEPTH_ERROR; }
+  if (!internal::json_pointer_is_well_formed(json_pointer)) { return INVALID_JSON_POINTER; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)

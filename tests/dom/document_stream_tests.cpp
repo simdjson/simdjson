@@ -1,6 +1,9 @@
 #include <cctype>
+#include <chrono>
+#include <memory>
 #include <random>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 using namespace std::string_literals;
@@ -83,6 +86,67 @@ namespace document_stream_tests {
       simdjson::padded_string str("{}",2);
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
+
+#ifdef SIMDJSON_THREADS_ENABLED
+  std::string make_threaded_move_input(size_t batch_size) {
+    std::string input;
+    input.reserve(batch_size * 3);
+    while (input.size() < batch_size * 3) { input += "[0]\n"; }
+    return input;
+  }
+
+  // Keep the moved-to stream alive long enough for an unfixed background
+  // worker to dereference its stale pointers into the moved-from stream.
+  void let_moved_worker_run() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  bool active_threaded_move_constructor() {
+    std::cout << "Running " << __func__ << std::endl;
+    const size_t batch_size = 1 << 20;
+    simdjson::padded_string input(make_threaded_move_input(batch_size));
+    for (size_t attempt = 0; attempt < 32; attempt++) {
+      simdjson::dom::parser parser;
+      parser.threaded = true;
+      std::unique_ptr<simdjson::dom::document_stream> destination;
+      {
+        simdjson::dom::document_stream source;
+        ASSERT_SUCCESS(parser.parse_many(input, batch_size).get(source));
+        simdjson_unused auto iterator = source.begin();
+        destination.reset(new (std::nothrow) simdjson::dom::document_stream(std::move(source)));
+        ASSERT_TRUE(destination != nullptr);
+      }
+      let_moved_worker_run();
+      ASSERT_EQUAL(destination->size_in_bytes(), input.size());
+      destination.reset();
+    }
+    return true;
+  }
+
+  bool active_threaded_move_assignment() {
+    std::cout << "Running " << __func__ << std::endl;
+    const size_t batch_size = 1 << 20;
+    simdjson::padded_string input(make_threaded_move_input(batch_size));
+    for (size_t attempt = 0; attempt < 32; attempt++) {
+      simdjson::dom::parser destination_parser;
+      simdjson::dom::parser source_parser;
+      destination_parser.threaded = true;
+      source_parser.threaded = true;
+      simdjson::dom::document_stream destination;
+      ASSERT_SUCCESS(destination_parser.parse_many(input, batch_size).get(destination));
+      simdjson_unused auto destination_iterator = destination.begin();
+      {
+        simdjson::dom::document_stream source;
+        ASSERT_SUCCESS(source_parser.parse_many(input, batch_size).get(source));
+        simdjson_unused auto iterator = source.begin();
+        destination = std::move(source);
+      }
+      let_moved_worker_run();
+      ASSERT_EQUAL(destination.size_in_bytes(), input.size());
+    }
+    return true;
+  }
+#endif
 
   bool stress_data_race() {
     std::cout << "Running " << __func__ << std::endl;
@@ -2109,6 +2173,10 @@ namespace document_stream_tests {
   bool run() {
     return json_sequence_tests() &&
            comma_delimited_tests() &&
+#ifdef SIMDJSON_THREADS_ENABLED
+           active_threaded_move_constructor() &&
+           active_threaded_move_assignment() &&
+#endif
            issue2181() &&
            issue2170() &&
           issue_non_ascii_separator_source() &&

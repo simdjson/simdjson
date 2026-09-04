@@ -36,11 +36,37 @@ namespace stage1 {
   * complete document, therefore the last json buffer location is the end of the
   * batch.
   */
-simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
+simdjson_inline uint32_t find_next_document_index(
+    dom_parser_implementation &parser,
+    bool defer_window_ending_scalar = false) {
   // Variant: do not count separately, just figure out depth
   if(parser.n_structural_indexes == 0) { return 0; }
-  auto arr_cnt = 0;
-  auto obj_cnt = 0;
+
+  // An unquoted scalar whose token reaches the end of a partial window is
+  // ambiguous: bytes in the next window may continue the number or atom. Keep
+  // it for the next batch rather than exposing a truncated document. A quoted
+  // string is unambiguous here because stage 1 has already rejected/removed an
+  // unclosed quote.
+  bool defer_last_scalar = false;
+  if (defer_window_ending_scalar) {
+    const uint32_t last_index = parser.structural_indexes[parser.n_structural_indexes - 1];
+    const uint8_t first = parser.buf[last_index];
+    const uint8_t last = parser.buf[parser.len - 1];
+    const bool last_is_json_whitespace =
+      last == ' ' || last == '\t' || last == '\n' || last == '\r';
+    switch (first) {
+      case '{': case '[': case '}': case ']': case ':': case ',': case '"':
+        break;
+      default:
+        if (!last_is_json_whitespace) {
+          defer_last_scalar = true;
+        }
+        break;
+    }
+  }
+
+  int64_t arr_cnt = 0;
+  int64_t obj_cnt = 0;
   for (auto i = parser.n_structural_indexes - 1; i > 0; i--) {
     auto idxb = parser.structural_indexes[i];
     switch (parser.buf[idxb]) {
@@ -70,7 +96,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
     }
     // Last document is complete, so the next document will appear after!
     if (!arr_cnt && !obj_cnt) {
-      return parser.n_structural_indexes;
+      return defer_last_scalar ? i : parser.n_structural_indexes;
     }
     // Last document is incomplete; mark the document at i + 1 as the next one
     return i;
@@ -92,7 +118,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
   }
   if (!arr_cnt && !obj_cnt) {
     // We have a complete document.
-    return parser.n_structural_indexes;
+    return defer_last_scalar ? 0 : parser.n_structural_indexes;
   }
   return 0;
 }
@@ -296,7 +322,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   if (parser.n_structural_indexes == 0) { return 0; }
 
   // Track depth to identify root-level commas (depth 0)
-  int depth = 0;
+  int64_t depth = 0;
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;

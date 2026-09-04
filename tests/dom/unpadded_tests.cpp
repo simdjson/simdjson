@@ -17,6 +17,11 @@
 #include "simdjson.h"
 #include "test_macros.h"
 
+#if SIMDJSON_HAS_UNISTD_H
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 namespace unpadded_tests {
 using namespace simdjson;
 
@@ -393,6 +398,52 @@ bool truncated_nested_containers() {
   TEST_SUCCEED();
 }
 
+// The scalar fallback scanner must honor parse_unpadded's exact-read contract
+// when a UTF-8 lead byte is the final readable byte(s). A protected page makes
+// any one-byte over-read fail deterministically, even without ASan.
+bool fallback_truncated_utf8_at_guard_page() {
+  TEST_START();
+#if SIMDJSON_HAS_UNISTD_H
+  const implementation *fallback = get_available_implementations()["fallback"];
+  // A build configured with one architecture-specific implementation may not
+  // contain fallback at all.
+  if (fallback == nullptr) { TEST_SUCCEED(); }
+  const implementation *saved = get_active_implementation();
+  struct implementation_restorer {
+    const implementation *saved;
+    ~implementation_restorer() { get_active_implementation() = saved; }
+  } restore{saved};
+  get_active_implementation() = fallback;
+
+  const long page_size_result = sysconf(_SC_PAGESIZE);
+  ASSERT_TRUE(page_size_result > 0);
+  const size_t page_size = static_cast<size_t>(page_size_result);
+  void *mapping = mmap(nullptr, page_size * 2, PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  ASSERT_TRUE(mapping != MAP_FAILED);
+  struct mapping_releaser {
+    void *mapping;
+    size_t length;
+    ~mapping_releaser() { munmap(mapping, length); }
+  } release{mapping, page_size * 2};
+  uint8_t *page = static_cast<uint8_t *>(mapping);
+  ASSERT_EQUAL(mprotect(page + page_size, page_size, PROT_NONE), 0);
+
+  const std::vector<std::vector<uint8_t>> cases = {
+    {'"', 0xC2},
+    {'"', 0xE1, 0x80},
+    {'"', 0xF1, 0x80, 0x80},
+  };
+  for (const auto &input : cases) {
+    uint8_t *at_boundary = page + page_size - input.size();
+    std::memcpy(at_boundary, input.data(), input.size());
+    dom::parser parser;
+    ASSERT_TRUE(parser.parse_unpadded(at_boundary, input.size()).error() != SUCCESS);
+  }
+#endif
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_ENABLE_NAN_INF
 // Only built with -DSIMDJSON_ENABLE_NAN_INF=ON. The non-root inf validator does
 // an 8-byte 'infinity' compare; a malformed inf-spelling at the very end of an
@@ -428,6 +479,7 @@ bool run() {
          assorted_documents() &&
          degenerate_inputs() &&
          truncated_nested_containers() &&
+         fallback_truncated_utf8_at_guard_page() &&
          random_documents() &&
          real_files() &&
          api_overloads();

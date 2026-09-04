@@ -100,6 +100,7 @@ public:
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
+   *         - DEPTH_ERROR if the pointer exceeds the recursive safety limit (currently 64 segments)
    */
   inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
@@ -115,6 +116,7 @@ public:
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array
+   *         - DEPTH_ERROR if the path exceeds the recursive safety limit (currently 64 segments)
   */
   inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
 
@@ -125,7 +127,8 @@ public:
    *
    * @param json_path JSONPath expression with wildcards
    * @param callback Function called for each matching value
-   * @return error_code indicating success or failure
+   * @return DEPTH_ERROR if the path exceeds the recursive safety limit
+   *         (currently 64 segments), or another error_code indicating failure
   */
 #if SIMDJSON_SUPPORTS_CONCEPTS
   template <typename Func>

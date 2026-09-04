@@ -12,6 +12,11 @@ int main() {
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#if SIMDJSON_CPLUSPLUS17 && defined(__has_include)
+#if __has_include(<memory_resource>)
+#include <memory_resource>
+#endif
+#endif
 #include <string>
 #include <string_view>
 
@@ -178,11 +183,105 @@ bool test_padded_input_from_std_string() {
   return true;
 }
 
+bool test_padded_input_from_temporary_std_string() {
+  simdjson::padded_input input(std::string(R"({"temporary":42})"));
+  if (input.is_view()) {
+    printf("FAILED: temporary std::string produced a non-owning view\n");
+    return false;
+  }
+
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  auto error = parser.iterate(input).get(doc);
+  if (error) {
+    printf("FAILED: temporary std::string iterate error: %s\n",
+           simdjson::error_message(error));
+    return false;
+  }
+  int64_t value;
+  error = doc["temporary"].get_int64().get(value);
+  if (error || value != 42) {
+    printf("FAILED: temporary std::string value mismatch\n");
+    return false;
+  }
+  printf("OK: test_padded_input_from_temporary_std_string\n");
+  return true;
+}
+
+const std::string make_const_temporary_std_string() {
+  std::string json = R"({"const_temporary":84})";
+  json.reserve(json.size() + simdjson::SIMDJSON_PADDING + 32);
+  return json;
+}
+
+bool test_padded_input_from_const_temporary_std_string() {
+  simdjson::padded_input input(make_const_temporary_std_string());
+  if (input.is_view()) {
+    printf("FAILED: const temporary std::string produced a non-owning view\n");
+    return false;
+  }
+
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  auto error = parser.iterate(input).get(doc);
+  if (error) {
+    printf("FAILED: const temporary std::string iterate error: %s\n",
+           simdjson::error_message(error));
+    return false;
+  }
+  int64_t value;
+  error = doc["const_temporary"].get_int64().get(value);
+  if (error || value != 84) {
+    printf("FAILED: const temporary std::string value mismatch\n");
+    return false;
+  }
+  printf("OK: test_padded_input_from_const_temporary_std_string\n");
+  return true;
+}
+
+#if defined(__cpp_lib_memory_resource)
+std::pmr::string make_temporary_pmr_string() {
+  std::pmr::string json = R"({"pmr_temporary":126})";
+  json.reserve(json.size() + simdjson::SIMDJSON_PADDING + 32);
+  return json;
+}
+
+bool test_padded_input_from_temporary_pmr_string() {
+  simdjson::padded_input input(make_temporary_pmr_string());
+  if (input.is_view()) {
+    printf("FAILED: temporary std::pmr::string produced a non-owning view\n");
+    return false;
+  }
+
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  auto error = parser.iterate(input).get(doc);
+  if (error) {
+    printf("FAILED: temporary std::pmr::string iterate error: %s\n",
+           simdjson::error_message(error));
+    return false;
+  }
+  int64_t value;
+  error = doc["pmr_temporary"].get_int64().get(value);
+  if (error || value != 126) {
+    printf("FAILED: temporary std::pmr::string value mismatch\n");
+    return false;
+  }
+  printf("OK: test_padded_input_from_temporary_pmr_string\n");
+  return true;
+}
+#endif
+
 int main() {
   bool ok = true;
   ok = test_padded_input_from_string_view() && ok;
   ok = test_padded_input_from_cstring() && ok;
   ok = test_padded_input_from_std_string() && ok;
+  ok = test_padded_input_from_temporary_std_string() && ok;
+  ok = test_padded_input_from_const_temporary_std_string() && ok;
+#if defined(__cpp_lib_memory_resource)
+  ok = test_padded_input_from_temporary_pmr_string() && ok;
+#endif
   ok = test_padded_input_is_view() && ok;
   ok = test_padded_input_nested_json() && ok;
   ok = test_padded_input_dom() && ok;

@@ -29,33 +29,44 @@ inline stage1_worker::~stage1_worker() {
   stop_thread();
 }
 
-inline void stage1_worker::start_thread() {
+inline bool stage1_worker::start_thread() noexcept {
   std::unique_lock<std::mutex> lock(locking_mutex);
   if(thread.joinable()) {
-    return; // This should never happen but we never want to create more than one thread.
+    return true; // Never create more than one thread.
   }
-  thread = std::thread([this]{
-      while(true) {
-        std::unique_lock<std::mutex> thread_lock(locking_mutex);
-        // We wait for either "run" or "stop_thread" to be called.
-        cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
-        // If, for some reason, the stop_thread() method was called (i.e., the
-        // destructor of stage1_worker is called, then we want to immediately destroy
-        // the thread (and not do any more processing).
-        if(!can_work) {
-          break;
-        }
-        this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
-              this->_next_batch_start);
-        this->has_work = false;
-        // The condition variable call should be moved after thread_lock.unlock() for performance
-        // reasons but thread sanitizers may report it as a data race if we do.
-        // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
-        cond_var.notify_one(); // will notify "finish"
-        thread_lock.unlock();
+  auto work_loop = [this]{
+    while(true) {
+      std::unique_lock<std::mutex> thread_lock(locking_mutex);
+      // We wait for either "run" or "stop_thread" to be called.
+      cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
+      // If, for some reason, the stop_thread() method was called (i.e., the
+      // destructor of stage1_worker is called, then we want to immediately destroy
+      // the thread (and not do any more processing).
+      if(!can_work) {
+        break;
       }
+      this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
+            this->_next_batch_start);
+      this->has_work = false;
+      // The condition variable call should be moved after thread_lock.unlock() for performance
+      // reasons but thread sanitizers may report it as a data race if we do.
+      // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
+      cond_var.notify_one(); // will notify "finish"
+      thread_lock.unlock();
     }
-  );
+  };
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    thread = std::thread(work_loop);
+  } catch (...) {
+    return false;
+  }
+#else
+  // Without language-level exceptions std::thread cannot report a recoverable
+  // resource error, so preserve the historical threaded behavior.
+  thread = std::thread(work_loop);
+#endif
+  return true;
 }
 
 
@@ -122,6 +133,54 @@ simdjson_inline document_stream::document_stream() noexcept
 {
 }
 
+simdjson_inline document_stream::document_stream(document_stream &&other) noexcept
+  : parser{nullptr},
+    buf{nullptr},
+    len{0},
+    batch_size{0},
+    format{stream_format::whitespace_delimited},
+    error{UNINITIALIZED}
+#ifdef SIMDJSON_THREADS_ENABLED
+    , use_thread{false},
+    worker{}
+#endif
+{
+  *this = std::move(other);
+}
+
+simdjson_inline document_stream &document_stream::operator=(document_stream &&other) noexcept {
+  if (this == &other) { return *this; }
+#ifdef SIMDJSON_THREADS_ENABLED
+  worker.reset();
+  if (other.worker) { other.worker->finish(); }
+#endif
+  parser = other.parser;
+  buf = other.buf;
+  len = other.len;
+  batch_size = other.batch_size;
+  format = other.format;
+  error = other.error;
+  batch_start = other.batch_start;
+  doc_index = other.doc_index;
+#ifdef SIMDJSON_THREADS_ENABLED
+  use_thread = other.use_thread;
+  stage1_thread_error = other.stage1_thread_error;
+  worker = std::move(other.worker);
+  stage1_thread_parser = std::move(other.stage1_thread_parser);
+  other.use_thread = false;
+  other.stage1_thread_error = UNINITIALIZED;
+#endif
+  other.parser = nullptr;
+  other.buf = nullptr;
+  other.len = 0;
+  other.batch_size = 0;
+  other.format = stream_format::whitespace_delimited;
+  other.error = UNINITIALIZED;
+  other.batch_start = 0;
+  other.doc_index = 0;
+  return *this;
+}
+
 simdjson_inline document_stream::~document_stream() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   worker.reset();
@@ -132,13 +191,13 @@ simdjson_inline document_stream::iterator::iterator() noexcept
   : stream{nullptr}, finished{true} {
 }
 
-simdjson_inline document_stream::iterator document_stream::begin() noexcept {
+simdjson_inline document_stream::iterator document_stream::begin() & noexcept {
   start();
   // If there are no documents, we're finished.
   return iterator(this, error == EMPTY);
 }
 
-simdjson_inline document_stream::iterator document_stream::end() noexcept {
+simdjson_inline document_stream::iterator document_stream::end() & noexcept {
   return iterator(this, true);
 }
 
@@ -206,7 +265,11 @@ inline void document_stream::start() noexcept {
     // Kick off the first thread if needed
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
-    worker->start_thread();
+    if (!worker->start_thread()) {
+      use_thread = false;
+      next();
+      return;
+    }
     start_stage1_thread();
     if (error) { return; }
   }
@@ -275,7 +338,8 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 
 inline size_t document_stream::truncated_bytes() const noexcept {
   if(error == CAPACITY) { return len - batch_start; }
-  return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
+  const size_t structural_count = parser->implementation->n_structural_indexes;
+  return parser->implementation->structural_indexes[structural_count] - parser->implementation->structural_indexes[structural_count + 1];
 }
 
 inline size_t document_stream::next_batch_start() const noexcept {
@@ -358,21 +422,21 @@ simdjson_inline simdjson_result<dom::document_stream>::simdjson_result(dom::docu
 }
 
 #if SIMDJSON_EXCEPTIONS
-simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept(false) {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.begin();
 }
-simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept(false) {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
 #else // SIMDJSON_EXCEPTIONS
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
-simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() noexcept {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::begin() & noexcept {
   first.error = error();
   return first.begin();
 }
-simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() noexcept {
+simdjson_inline dom::document_stream::iterator simdjson_result<dom::document_stream>::end() & noexcept {
   first.error = error();
   return first.end();
 }

@@ -281,9 +281,10 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
    * This is illustrated with the test array_iterate_unclosed_error() on the following input:
    * R"({ "a": [,,)"
    **/
-  parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len); // used later in partial == stage1_mode::streaming_final
-  parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
-  parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
+  const size_t initial_structural_count = parser.n_structural_indexes;
+  parser.structural_indexes[initial_structural_count] = uint32_t(len); // used later in partial == stage1_mode::streaming_final
+  parser.structural_indexes[initial_structural_count + 1] = uint32_t(len);
+  parser.structural_indexes[initial_structural_count + 2] = 0;
   parser.next_structural_index = 0;
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
@@ -301,7 +302,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !have_unclosed_string);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
@@ -331,7 +332,8 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // whether we used truncation. If initial_n_structural_indexes == parser.n_structural_indexes,
     // then this will query parser.structural_indexes[parser.n_structural_indexes] which is len,
     // otherwise, it will copy some prior index.
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     // This next line is critical, do not change it unless you understand what you are
     // doing.
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
@@ -363,7 +365,8 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start);
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
   } else if (partial == stage1_mode::comma_delimited_partial) {
@@ -388,7 +391,8 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
   }

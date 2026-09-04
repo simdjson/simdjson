@@ -164,11 +164,29 @@ inline padded_input::padded_input(const std::string &s)
   }
 }
 
+inline padded_input::padded_input(std::string &&s)
+    : storage(simdjson::padded_string(s)) {
+}
+
+inline padded_input::padded_input(const std::string &&s)
+    : storage(simdjson::padded_string(s)) {
+}
+
+template<typename Traits, typename Allocator>
+inline padded_input::padded_input(std::basic_string<char, Traits, Allocator> &&s)
+    : storage(simdjson::padded_string(s.data(), s.size())) {
+}
+
+template<typename Traits, typename Allocator>
+inline padded_input::padded_input(const std::basic_string<char, Traits, Allocator> &&s)
+    : storage(simdjson::padded_string(s.data(), s.size())) {
+}
+
 inline bool padded_input::is_view() const noexcept {
   return std::holds_alternative<simdjson::padded_string_view>(storage);
 }
 
-inline padded_input::operator simdjson::padded_string_view() const noexcept {
+inline padded_input::operator simdjson::padded_string_view() const & noexcept {
   return std::visit([](const auto& p) -> simdjson::padded_string_view {
       return p;
   }, storage);

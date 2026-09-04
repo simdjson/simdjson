@@ -129,7 +129,9 @@ inline simdjson_result<bool> array::reset() & noexcept {
 }
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  if (json_pointer.empty()) { return INVALID_JSON_POINTER; }
+  if (internal::json_pointer_depth_exceeded(json_pointer)) { return DEPTH_ERROR; }
+  if (!internal::json_pointer_is_well_formed(json_pointer)) { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -165,6 +167,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code array::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (internal::json_path_depth_exceeded(json_path)) { return DEPTH_ERROR; }
   auto result_pair = get_next_key_and_json_path(json_path);
   std::string_view key = result_pair.first;
   std::string_view remaining_path = result_pair.second;
@@ -195,7 +198,11 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
       if(c < '0' || c > '9'){
         return INVALID_JSON_POINTER;
       }
-      idx = idx*10 + (c - '0');
+      const size_t digit = size_t(c - '0');
+      if (idx > ((std::numeric_limits<size_t>::max)() - digit) / 10) {
+        return INDEX_OUT_OF_BOUNDS;
+      }
+      idx = idx * 10 + digit;
     }
 
     auto element = at(idx);

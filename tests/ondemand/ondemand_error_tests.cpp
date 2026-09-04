@@ -171,6 +171,32 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  bool parser_rejects_zero_max_depth() {
+    TEST_START();
+    ondemand::parser parser;
+    ASSERT_ERROR(parser.allocate(32, 0), CAPACITY);
+    auto json = "0"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    uint64_t value;
+    ASSERT_SUCCESS(doc.get_uint64().get(value));
+    ASSERT_EQUAL(value, 0);
+    TEST_SUCCEED();
+  }
+
+  bool parser_rejects_wrapping_capacity() {
+    TEST_START();
+#if SIMDJSON_IS_32BITS
+    ondemand::parser parser;
+    ASSERT_ERROR(parser.allocate(SIZE_MAX - 15, 16), CAPACITY);
+    ASSERT_ERROR(parser.allocate(SIZE_MAX / sizeof(uint32_t), 16), CAPACITY);
+    auto json = "0"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+#endif
+    TEST_SUCCEED();
+  }
+
   bool parser_set_max_capacity() {
     TEST_START();
     ondemand::parser parser;
@@ -475,6 +501,8 @@ namespace error_tests {
            raw_json_string_error() &&
            empty_document_error() &&
            parser_max_capacity() &&
+           parser_rejects_zero_max_depth() &&
+           parser_rejects_wrapping_capacity() &&
            parser_set_max_capacity() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&

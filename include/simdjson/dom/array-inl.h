@@ -93,31 +93,7 @@ inline size_t array::number_of_slots() const noexcept {
 }
 inline simdjson_result<element> array::at_pointer(std::string_view json_pointer) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  if(json_pointer.empty()) { // an empty string means that we return the current node
-      return element(this->tape); // copy the current node
-  } else if(json_pointer[0] != '/') { // otherwise there is an error
-      return INVALID_JSON_POINTER;
-  }
-  json_pointer = json_pointer.substr(1);
-  // - means "the append position" or "the element after the end of the array"
-  // We don't support this, because we're returning a real element, not a position.
-  if (json_pointer == "-") { return INDEX_OUT_OF_BOUNDS; }
-
-  size_t array_index = 0;
-  size_t i;
-  SIMDJSON_TRY(internal::parse_json_pointer_array_index(json_pointer, array_index, i));
-
-  // Get the child
-  auto child = array(tape).at(array_index);
-  // If there is an error, it ends here
-  if(child.error()) {
-    return child;
-  }
-  // If there is a /, we're not done yet, call recursively.
-  if (i < json_pointer.length()) {
-    child = child.at_pointer(json_pointer.substr(i));
-  }
-  return child;
+  return element(tape).at_pointer(json_pointer);
 }
 
 inline simdjson_result<element> array::at_path(std::string_view json_path) const noexcept {
@@ -149,68 +125,7 @@ inline void array::process_json_path_of_child_elements(std::vector<element>::ite
 
 inline simdjson_result<std::vector<element>> array::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-
-  size_t i = 0;
-   // json_path.starts_with('$') requires C++20.
-  if (!json_path.empty() && json_path.front() == '$') {
-    i = 1;
-  }
-
-  if (i >= json_path.size() || (json_path[i] != '.' && json_path[i] != '[')) {
-    return INVALID_JSON_POINTER;
-  }
-
-  if (json_path.find("*") != std::string::npos) {
-    std::vector<element> child_values;
-
-    if (
-      (json_path.compare(i, 3, "[*]") == 0 && json_path.size() == i + 3) ||
-      (json_path.compare(i, 2,".*") == 0 && json_path.size() == i + 2)
-    ) {
-      get_values(child_values);
-      return child_values;
-    }
-
-    std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(json_path);
-
-    std::string_view key = key_and_json_path.first;
-    json_path = key_and_json_path.second;
-
-    if (key.size() > 0) {
-      if (key == "*") {
-        get_values(child_values);
-      } else {
-        element pointer_result;
-        std::string json_pointer = std::string("/") + std::string(key);
-        auto error = at_pointer(json_pointer).get(pointer_result);
-
-        if (!error) {
-          child_values.emplace_back(pointer_result);
-        }
-      }
-
-      std::vector<element> result = {};
-
-      if (child_values.size() > 0) {
-        std::vector<element>::iterator child_values_begin = child_values.begin();
-        std::vector<element>::iterator child_values_end = child_values.end();
-
-        process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
-      }
-
-      return result;
-    } else {
-      return INVALID_JSON_POINTER;
-    }
-  } else {
-    element result;
-    auto error = at_path(json_path).get(result);
-    if (error) {
-      return error;
-    }
-
-    return std::vector<element>{std::move(result)};
-  }
+  return element(tape).at_path_with_wildcard(json_path);
 }
 
 inline simdjson_result<element> array::at(size_t index) const noexcept {

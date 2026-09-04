@@ -3,6 +3,7 @@
 #include "test_macros.h"
 
 #include <cstdlib>
+#include <limits>
 
 // this test is needed, because memcpy may be invoked on a null pointer
 // otherwise
@@ -10,6 +11,16 @@ static bool testNullString() {
   TEST_START();
   std::string_view empty;
   simdjson::padded_string blah(empty);
+  TEST_SUCCEED();
+}
+
+static bool testFailedAllocationHasEmptyState() {
+  TEST_START();
+  // This always fails the length + SIMDJSON_PADDING overflow check without
+  // relying on the machine actually being out of memory.
+  simdjson::padded_string oversized(std::numeric_limits<size_t>::max());
+  ASSERT_EQUAL(oversized.size(), 0);
+  ASSERT_TRUE(oversized.data() == nullptr);
   TEST_SUCCEED();
 }
 
@@ -191,6 +202,9 @@ bool testSliceAt() {
 
 int main() {
   if (!testNullString()) {
+    return EXIT_FAILURE;
+  }
+  if (!testFailedAllocationHasEmptyState()) {
     return EXIT_FAILURE;
   }
   if (!testPaddedStringBuilder()) {

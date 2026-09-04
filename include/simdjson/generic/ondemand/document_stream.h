@@ -27,10 +27,11 @@ struct stage1_worker {
   stage1_worker operator=(const stage1_worker&) = delete;
   ~stage1_worker();
   /**
-   * We only start the thread when it is needed, not at object construction, this may throw.
+   * We only start the thread when it is needed, not at object construction.
+   * Returns false if the thread cannot be created.
    * You should only call this once.
    **/
-  void start_thread();
+  bool start_thread() noexcept;
   /**
    * Start a stage 1 job. You should first call 'run', then 'finish'.
    * You must call start_thread once before.
@@ -87,10 +88,10 @@ public:
    *  ```
    */
   simdjson_inline document_stream() noexcept;
-  /** Move one document_stream to another. */
-  simdjson_inline document_stream(document_stream &&other) noexcept = default;
-  /** Move one document_stream to another. */
-  simdjson_inline document_stream &operator=(document_stream &&other) noexcept = default;
+  /** Move one document_stream to another. Existing iterators are invalidated. */
+  simdjson_inline document_stream(document_stream &&other) noexcept;
+  /** Move one document_stream to another. Existing iterators are invalidated. */
+  simdjson_inline document_stream &operator=(document_stream &&other) noexcept;
 
   simdjson_inline ~document_stream() noexcept;
 
@@ -210,11 +211,13 @@ public:
   /**
    * Start iterating the documents in the stream.
    */
-  simdjson_inline iterator begin() noexcept;
+  simdjson_inline iterator begin() & noexcept;
+  simdjson_inline iterator begin() && noexcept = delete;
   /**
    * The end of the stream, for iterator comparison purposes.
    */
-  simdjson_inline iterator end() noexcept;
+  simdjson_inline iterator end() & noexcept;
+  simdjson_inline iterator end() && noexcept = delete;
 
 private:
 

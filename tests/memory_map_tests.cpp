@@ -15,6 +15,12 @@
 
 #include "simdjson.h"
 #include "test_macros.h"
+#include <cstdlib>
+
+#if SIMDJSON_HAS_UNISTD_H
+#include <limits>
+#include <unistd.h>
+#endif
 
 // When SIMDJSON_HAS_PADDED_MEMORY_MAP is 0 (e.g. Windows builds without
 // SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS, or MinGW configurations that lack
@@ -119,6 +125,35 @@ bool test_memory_map_missing_file() {
     TEST_SUCCEED();
 }
 
+#if SIMDJSON_HAS_UNISTD_H && SIMDJSON_IS_32BITS
+bool test_memory_map_rejects_wrapping_file_size() {
+    TEST_START();
+    if (sizeof(off_t) <= sizeof(size_t)) { TEST_SUCCEED(); }
+    // The vulnerable implementation truncated this size to one byte before
+    // mapping it, so this distinguishes the fixed rejection from an mmap
+    // failure caused merely by overflowing size + SIMDJSON_PADDING.
+    const std::uintmax_t oversized = static_cast<std::uintmax_t>(SIZE_MAX) + 2;
+    if (oversized > static_cast<std::uintmax_t>((std::numeric_limits<off_t>::max)())) {
+      TEST_SUCCEED();
+    }
+
+    char path[] = "/tmp/simdjson-map-overflow-XXXXXX";
+    int fd = mkstemp(path);
+    ASSERT_TRUE(fd >= 0);
+    if (ftruncate(fd, static_cast<off_t>(oversized)) != 0) {
+      close(fd);
+      unlink(path);
+      TEST_SUCCEED(); // filesystem cannot represent the sparse test file
+    }
+    close(fd);
+    simdjson::padded_memory_map map(path);
+    const bool invalid = !map.is_valid() && map.view().empty();
+    unlink(path);
+    ASSERT_TRUE(invalid);
+    TEST_SUCCEED();
+}
+#endif
+
 #endif // SIMDJSON_HAS_PADDED_MEMORY_MAP
 
 int main() {
@@ -131,6 +166,9 @@ int main() {
     ok = ok && test_memory_map_iterate_many();
     ok = ok && test_memory_map_parse_many();
     ok = ok && test_memory_map_missing_file();
+#if SIMDJSON_HAS_UNISTD_H && SIMDJSON_IS_32BITS
+    ok = ok && test_memory_map_rejects_wrapping_file_size();
+#endif
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
     std::cout << "padded_memory_map is disabled in this configuration; "

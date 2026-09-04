@@ -103,7 +103,7 @@ inline simdjson_result<element> parser::load_into_document(document& provided_do
   return parse_into_document(provided_doc, loaded_bytes.get(), len, false);
 }
 
-inline simdjson_result<document_stream> parser::load_many(std::string_view path, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::load_many(std::string_view path, size_t batch_size) & noexcept {
   size_t len;
   auto _error = read_file(path).get(len);
   if (_error) { return _error; }
@@ -202,23 +202,23 @@ simdjson_inline simdjson_result<element> parser::parse_unpadded(std::string_view
   return parse_unpadded(reinterpret_cast<const uint8_t *>(s.data()), s.size());
 }
 
-inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size) & noexcept {
   return parse_many(buf, len, batch_size, stream_format::whitespace_delimited);
 }
-inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size) & noexcept {
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
 }
-inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) & noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
-inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) & noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
-inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size) & noexcept {
   return parse_many(v.data(), v.length(), batch_size);
 }
 
-inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) & noexcept {
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
   if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {
     buf += 3;
@@ -244,16 +244,16 @@ inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, s
   }
   return document_stream(*this, buf, len, batch_size, format);
 }
-inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size, stream_format format) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const char *buf, size_t len, size_t batch_size, stream_format format) & noexcept {
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, format);
 }
-inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size, stream_format format) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size, stream_format format) & noexcept {
   return parse_many(s.data(), s.length(), batch_size, format);
 }
-inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size, stream_format format) & noexcept {
   return parse_many(s.data(), s.length(), batch_size, format);
 }
-inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size, stream_format format) noexcept {
+inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size, stream_format format) & noexcept {
   return parse_many(v.data(), v.length(), batch_size, format);
 }
 
@@ -269,6 +269,17 @@ simdjson_pure simdjson_inline size_t parser::max_depth() const noexcept {
 
 simdjson_warn_unused
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
+  // Reject configurations that cannot produce valid backing arrays before
+  // creating or mutating an implementation.
+  if (capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63 ||
+      max_depth == 0 || max_depth > SIMDJSON_MAX_DEPTH) {
+    return CAPACITY;
+  }
+  const size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
+  if (rounded_capacity > SIZE_MAX - 9 ||
+      rounded_capacity + 9 > SIZE_MAX / sizeof(uint32_t)) {
+    return CAPACITY;
+  }
   //
   // Reallocate implementation if needed
   //

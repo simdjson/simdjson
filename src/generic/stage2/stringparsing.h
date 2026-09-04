@@ -220,7 +220,9 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string_safe(const uint8_t *s
   // chunk start. The +12 margin ensures that even on kernels where
   // BYTES_PROCESSED == SIMDJSON_PADDING (e.g. icelake) the 4-byte read stays
   // in-bounds. The scratch fallback (3*PAD) is already safe.
-  while (src + SIMDJSON_PADDING + 12 <= buf_end) {
+  // Use a distance check: forming a pointer past one-past-the-end is undefined
+  // even when the pointer is only used in a comparison.
+  while (size_t(buf_end - src) >= SIMDJSON_PADDING + 12) {
     auto b = backslash_and_quote{};
     auto bs_quote = b.copy_and_find(src, dst);
     if (bs_quote.has_quote_first()) {

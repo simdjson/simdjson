@@ -143,6 +143,27 @@ namespace parser_load {
     TEST_SUCCEED();
   }
 
+  bool parser_rejects_zero_max_depth() {
+    TEST_START();
+    dom::parser parser;
+    ASSERT_ERROR(parser.allocate(32, 0), CAPACITY);
+    dom::element value;
+    ASSERT_SUCCESS(parser.parse("0"_padded).get(value));
+    TEST_SUCCEED();
+  }
+
+  bool parser_rejects_wrapping_capacity() {
+    TEST_START();
+#if SIMDJSON_IS_32BITS
+    dom::parser parser;
+    ASSERT_ERROR(parser.allocate(SIZE_MAX - 15, 16), CAPACITY);
+    ASSERT_ERROR(parser.allocate(SIZE_MAX / sizeof(uint32_t), 16), CAPACITY);
+    dom::element value;
+    ASSERT_SUCCESS(parser.parse("[0,0,0,0,0,0]"_padded).get(value));
+#endif
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return true
         && parser_load_capacity()
@@ -153,6 +174,8 @@ namespace parser_load {
         && parser_load_string_view_subpath()
         && parser_load_chain()
         && parser_load_many_chain()
+        && parser_rejects_zero_max_depth()
+        && parser_rejects_wrapping_capacity()
         && parser_parse_many_documents_error_in_the_middle()
         && parser_parse_many_documents_partial()
         && parser_parse_many_documents_partial_at_the_end()

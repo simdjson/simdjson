@@ -61,13 +61,15 @@ inline dom_parser_implementation &dom_parser_implementation::operator=(dom_parse
 
 // Leaving these here so they can be inlined if so desired
 inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(size_t capacity) noexcept {
-  if(capacity > SIMDJSON_MAXSIZE_BYTES) { return CAPACITY; }
+  // ROUNDUP_N adds 63 before masking. Check that addition before performing it;
+  // otherwise a near-SIZE_MAX request can wrap to a tiny allocation while the
+  // original capacity is recorded as available.
+  if(capacity > SIMDJSON_MAXSIZE_BYTES || capacity > SIZE_MAX - 63) { return CAPACITY; }
   // Stage 1 index output
   size_t rounded_capacity = SIMDJSON_ROUNDUP_N(capacity, 64);
-  if(rounded_capacity + 9 < rounded_capacity) {
-    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
-  }
+  if(rounded_capacity > SIZE_MAX - 9) { return CAPACITY; }
   size_t max_structures = rounded_capacity + 9;
+  if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
   structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
   if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
   structural_indexes[0] = 0;
@@ -78,7 +80,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 }
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
-  if(max_depth > SIMDJSON_MAX_DEPTH) { return CAPACITY; }
+  if(max_depth == 0 || max_depth > SIMDJSON_MAX_DEPTH ||
+     max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
   // Stage 2 stacks
   open_containers.reset(new (std::nothrow) open_container[max_depth]);
   is_array.reset(new (std::nothrow) bool[max_depth]);

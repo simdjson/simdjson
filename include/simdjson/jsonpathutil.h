@@ -1,6 +1,7 @@
 #ifndef SIMDJSON_JSONPATHUTIL_H
 #define SIMDJSON_JSONPATHUTIL_H
 
+#include "simdjson/base.h"
 #include "simdjson/error.h"
 #include <string>
 #include "simdjson/common_defs.h"
@@ -10,6 +11,54 @@
 
 namespace simdjson {
 namespace internal {
+
+/** Maximum number of recursive path segments in the single-pass On-Demand API. */
+constexpr size_t MAX_RECURSIVE_PATH_DEPTH = 64;
+
+/** Validate one RFC 6901 reference token (without its leading slash). */
+simdjson_inline bool json_pointer_token_is_well_formed(std::string_view token) noexcept {
+  for (size_t i = 0; i < token.size(); i++) {
+    if (token[i] == '~') {
+      if (++i >= token.size() || (token[i] != '0' && token[i] != '1')) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/** Validate a non-empty RFC 6901 JSON Pointer. */
+simdjson_inline bool json_pointer_is_well_formed(std::string_view pointer) noexcept {
+  if (pointer.empty() || pointer.front() != '/') { return false; }
+  size_t token_start = 1;
+  while (token_start <= pointer.size()) {
+    const size_t slash = pointer.find('/', token_start);
+    const std::string_view token = pointer.substr(
+      token_start, slash == std::string_view::npos ? slash : slash - token_start);
+    if (!json_pointer_token_is_well_formed(token)) { return false; }
+    if (slash == std::string_view::npos) { break; }
+    token_start = slash + 1;
+  }
+  return true;
+}
+
+/** Compare an encoded RFC 6901 reference token with an unescaped object key. */
+simdjson_inline bool json_pointer_token_equals(std::string_view token,
+                                               std::string_view key) noexcept {
+  size_t key_index = 0;
+  for (size_t i = 0; i < token.size(); i++) {
+    char c = token[i];
+    if (c == '~') {
+      // Callers validate the token before comparing it.
+      c = token[++i] == '0' ? '~' : '/';
+    }
+    if (key_index >= key.size() || key[key_index++] != c) {
+      return false;
+    }
+  }
+  return key_index == key.size();
+}
+
 /**
  * Parses the next JSON Pointer array index token.
  *
@@ -159,6 +208,35 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
 
   return std::make_pair(key, json_path.substr(i));
 }
+
+namespace internal {
+
+// On-Demand JSON Pointer/Path lookup is recursive because it must preserve its
+// single-pass traversal semantics. Parsing may deliberately be configured much
+// deeper, but a query must not turn that into unbounded call-stack consumption.
+simdjson_inline bool json_pointer_depth_exceeded(std::string_view pointer) noexcept {
+  size_t depth = 0;
+  for (char c : pointer) {
+    if (c == '/' && ++depth > MAX_RECURSIVE_PATH_DEPTH) { return true; }
+  }
+  return false;
+}
+
+simdjson_inline bool json_path_depth_exceeded(std::string_view path) noexcept {
+  size_t depth = 0;
+  while (!path.empty()) {
+    const size_t previous_size = path.size();
+    auto segment = get_next_key_and_json_path(path);
+    if (segment.first.empty() || segment.second.size() >= previous_size) {
+      return false; // malformed paths are rejected by the caller
+    }
+    if (++depth > MAX_RECURSIVE_PATH_DEPTH) { return true; }
+    path = segment.second;
+  }
+  return false;
+}
+
+} // namespace internal
 
 } // namespace simdjson
 #endif // SIMDJSON_JSONPATHUTIL_H
