@@ -110,13 +110,21 @@ struct padded_string final {
 
   /**
    * Create a std::string_view with the same content.
+   *
+   * The view is tied to this padded_string, so conversion is only available
+   * on lvalues.
    */
-  operator std::string_view() const;
+  operator std::string_view() const &;
+  operator std::string_view() const && = delete;
 
   /**
    * Create a padded_string_view with the same content.
+   *
+   * The view is tied to this padded_string, so conversion is only available
+   * on lvalues.
    */
-  operator padded_string_view() const noexcept;
+  operator padded_string_view() const & noexcept;
+  operator padded_string_view() const && noexcept = delete;
 
   /**
    * Load this padded string from a file.
@@ -331,7 +339,8 @@ public:
    *
    * @return a padded_string_view representing the memory-mapped file, or an empty view if the memory map is invalid.
    */
-  simdjson_inline simdjson::padded_string_view view() const noexcept simdjson_lifetime_bound;
+  simdjson_inline simdjson::padded_string_view view() const & noexcept simdjson_lifetime_bound;
+  simdjson_inline simdjson::padded_string_view view() const && noexcept = delete;
   /**
    * Check if the memory map is valid.
    *

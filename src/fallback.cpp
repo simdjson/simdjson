@@ -47,12 +47,15 @@ simdjson_inline structural_scanner(dom_parser_implementation &_parser, stage1_mo
   : buf{_parser.buf},
     next_structural_index{_parser.structural_indexes.get()},
     parser{_parser},
-    len{static_cast<uint32_t>(_parser.len)},
+    len{_parser.len},
     partial{_partial} {
 }
 
 simdjson_inline void add_structural() {
-  *next_structural_index = idx;
+  // Parser capacity is capped at UINT32_MAX, so every real input offset fits
+  // the structural-index representation even though scanner arithmetic uses
+  // size_t to keep idx + N from wrapping at that boundary.
+  *next_structural_index = static_cast<uint32_t>(idx);
   next_structural_index++;
 }
 
@@ -61,6 +64,9 @@ simdjson_inline bool is_continuation(uint8_t c) {
 }
 
 simdjson_inline void validate_utf8_character() {
+  // scan() and validate_string() only call us while idx < len.
+  const size_t remaining = len - idx;
+
   // Continuation
   if (simdjson_unlikely((buf[idx] & 0x40) == 0)) {
     // extra continuation
@@ -72,8 +78,9 @@ simdjson_inline void validate_utf8_character() {
   // 2-byte
   if ((buf[idx] & 0x20) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+1 > len || !is_continuation(buf[idx+1]))) {
-      if (idx+1 > len && is_streaming(partial)) { idx = len; return; }
+    const bool truncated = remaining < 2;
+    if (simdjson_unlikely(truncated || !is_continuation(buf[idx+1]))) {
+      if (truncated && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -87,8 +94,9 @@ simdjson_inline void validate_utf8_character() {
   // 3-byte
   if ((buf[idx] & 0x10) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+2 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
-      if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+    const bool truncated = remaining < 3;
+    if (simdjson_unlikely(truncated || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
+      if (truncated && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -103,8 +111,9 @@ simdjson_inline void validate_utf8_character() {
 
   // 4-byte
   // missing continuation
-  if (simdjson_unlikely(idx+3 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
-    if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+  const bool truncated = remaining < 4;
+  if (simdjson_unlikely(truncated || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
+    if (truncated && is_streaming(partial)) { idx = len; return; }
     error = UTF8_ERROR;
     idx++;
     return;
@@ -194,6 +203,10 @@ simdjson_inline bool validate_string() {
       return false;
     }
     if (buf[idx] == '\\') {
+      if (len - idx < 2) {
+        idx = len;
+        return true;
+      }
       idx += 2;
     } else if (simdjson_unlikely(buf[idx] & 0x80)) {
       validate_utf8_character();
@@ -254,7 +267,7 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !unclosed_string);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
@@ -284,7 +297,8 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     // whether we used truncation. If initial_n_structural_indexes == parser.n_structural_indexes,
     // then this will query parser.structural_indexes[parser.n_structural_indexes] which is len,
     // otherwise, it will copy some prior index.
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     // This next line is critical, do not change it unless you understand what you are
     // doing.
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
@@ -311,7 +325,8 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     if(unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start);
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   } else if (partial == stage1_mode::comma_delimited_partial) {
@@ -336,7 +351,8 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     if(unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
-    parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
+    const size_t structural_count = parser.n_structural_indexes;
+    parser.structural_indexes[structural_count + 1] = parser.structural_indexes[structural_count];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
   } else if(unclosed_string) { error = UNCLOSED_STRING; }
@@ -347,8 +363,8 @@ private:
   const uint8_t *buf;
   uint32_t *next_structural_index;
   dom_parser_implementation &parser;
-  uint32_t len;
-  uint32_t idx{0};
+  size_t len;
+  size_t idx{0};
   error_code error{SUCCESS};
   stage1_mode partial;
 }; // structural_scanner
@@ -357,6 +373,7 @@ private:
 } // unnamed namespace
 
 simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode partial) noexcept {
+  if (simdjson_unlikely(_len > capacity())) { return CAPACITY; }
   this->buf = _buf;
   this->len = _len;
   stage1::structural_scanner scanner(*this, partial);

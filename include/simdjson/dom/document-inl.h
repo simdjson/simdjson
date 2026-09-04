@@ -42,16 +42,17 @@ inline error_code document::allocate(size_t capacity) noexcept {
   // worse with "[7,7,7,7,6,7,7,7,6,7,7,6,[7,7,7,7,6,7,7,7,6,7,7,6,7,7,7,7,7,7,6"
   //where capacity + 1 tape elements are
   // generated, see issue https://github.com/simdjson/simdjson/issues/345
-  if(capacity + 3 < capacity) {
-    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
-  }
-  size_t tape_capacity = SIMDJSON_ROUNDUP_N(capacity + 3, 64);
+  if(capacity > SIZE_MAX - 3) { return CAPACITY; }
+  const size_t tape_size = capacity + 3;
+  if(tape_size > SIZE_MAX - 63) { return CAPACITY; }
+  size_t tape_capacity = SIMDJSON_ROUNDUP_N(tape_size, 64);
+  if(tape_capacity > SIZE_MAX / sizeof(uint64_t)) { return CAPACITY; }
   // a document with only zero-length strings... could have capacity/3 string
   // and we would need capacity/3 * 5 bytes on the string buffer
-  if(5 * (capacity / 3) + SIMDJSON_PADDING < SIMDJSON_PADDING) {
-    return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
-  }
-  size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (capacity / 3) + SIMDJSON_PADDING, 64);
+  const size_t string_count = capacity / 3;
+  if(string_count > (SIZE_MAX - SIMDJSON_PADDING - 63) / 5) { return CAPACITY; }
+  const size_t string_size = 5 * string_count + SIMDJSON_PADDING;
+  size_t string_capacity = SIMDJSON_ROUNDUP_N(string_size, 64);
   string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
   tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
   if(!(string_buf && tape)) {

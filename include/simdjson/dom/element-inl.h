@@ -421,54 +421,141 @@ inline simdjson_result<element> element::operator[](const char *key) const noexc
 }
 
 inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
-  if (simdjson_unlikely(json_pointer[0] != '/')) {
-    return false;
-  }
-  size_t escape = json_pointer.find('~');
-  if (escape == std::string_view::npos) {
-    return true;
-  }
-  if (escape == json_pointer.size() - 1) {
-    return false;
-  }
-  if (json_pointer[escape + 1] != '0' && json_pointer[escape + 1] != '1') {
-    return false;
-  }
-  return true;
+  return internal::json_pointer_is_well_formed(json_pointer);
 }
 
 inline simdjson_result<element> element::at_pointer(std::string_view json_pointer) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  switch (tape.tape_ref_type()) {
-    case internal::tape_type::START_OBJECT:
-      return object(tape).at_pointer(json_pointer);
-    case internal::tape_type::START_ARRAY:
-      return array(tape).at_pointer(json_pointer);
-    default: {
-      if (!json_pointer.empty()) { // a non-empty string can be invalid, or accessing a primitive (issue 2154)
-        if (is_pointer_well_formed(json_pointer)) {
-          return NO_SUCH_FIELD;
-        }
-        return INVALID_JSON_POINTER;
-      }
-      // an empty string means that we return the current node
-      dom::element copy(*this);
-      return simdjson_result<element>(std::move(copy));
-    }
+  if (json_pointer.empty()) {
+    return element(*this);
   }
+  if (!is_pointer_well_formed(json_pointer)) {
+    return INVALID_JSON_POINTER;
+  }
+
+  element current(*this);
+  while (!json_pointer.empty()) {
+    json_pointer.remove_prefix(1); // validated leading '/'
+    const size_t slash = json_pointer.find('/');
+    const std::string_view token = json_pointer.substr(0, slash);
+
+    switch (current.tape.tape_ref_type()) {
+      case internal::tape_type::START_OBJECT: {
+        object obj(current.tape);
+        bool found = false;
+        for (auto field = obj.begin(); field != obj.end(); ++field) {
+          if (internal::json_pointer_token_equals(token, field.key())) {
+            current = field.value();
+            found = true;
+            break;
+          }
+        }
+        if (!found) { return NO_SUCH_FIELD; }
+        break;
+      }
+      case internal::tape_type::START_ARRAY: {
+        if (token == "-") {
+          return slash == std::string_view::npos ? INDEX_OUT_OF_BOUNDS : INCORRECT_TYPE;
+        }
+        size_t array_index = 0;
+        size_t token_length = 0;
+        SIMDJSON_TRY(internal::parse_json_pointer_array_index(token, array_index, token_length));
+        element child;
+        SIMDJSON_TRY(array(current.tape).at(array_index).get(child));
+        current = child;
+        break;
+      }
+      default:
+        return NO_SUCH_FIELD;
+    }
+
+    if (slash == std::string_view::npos) { break; }
+    json_pointer.remove_prefix(slash);
+  }
+  return current;
 }
 
 inline simdjson_result<std::vector<element>> element::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
 
-  switch (tape.tape_ref_type()) {
-    case internal::tape_type::START_OBJECT:
-      return object(tape).at_path_with_wildcard(json_path);
-    case internal::tape_type::START_ARRAY:
-      return array(tape).at_path_with_wildcard(json_path);
-    default:
-      return std::vector<element>{};
+  if (tape.tape_ref_type() != internal::tape_type::START_OBJECT &&
+      tape.tape_ref_type() != internal::tape_type::START_ARRAY) {
+    return std::vector<element>{};
   }
+
+  // The non-wildcard path has its normal error semantics.
+  if (json_path.find('*') == std::string_view::npos) {
+    element result;
+    SIMDJSON_TRY(at_path(json_path).get(result));
+    return std::vector<element>{result};
+  }
+
+  std::vector<element> current{*this};
+  bool first_segment = true;
+  while (json_path.find('*') != std::string_view::npos) {
+    const size_t previous_size = json_path.size();
+    const auto segment = get_next_key_and_json_path(json_path);
+    if (segment.first.empty() || segment.second.size() >= previous_size) {
+      // Historically, errors below a wildcard branch are ignored along with
+      // that branch, while a malformed first segment is returned to the caller.
+      return first_segment ? simdjson_result<std::vector<element>>(INVALID_JSON_POINTER)
+                           : simdjson_result<std::vector<element>>(std::vector<element>{});
+    }
+
+    std::string pointer;
+    if (segment.first != "*") {
+      pointer.reserve(segment.first.size() + 1);
+      pointer.push_back('/');
+      pointer.append(segment.first.data(), segment.first.size());
+    }
+
+    std::vector<element> next;
+    for (const element &candidate : current) {
+      if (segment.first == "*") {
+        switch (candidate.tape.tape_ref_type()) {
+          case internal::tape_type::START_OBJECT: {
+            object obj(candidate.tape);
+            for (auto field = obj.begin(); field != obj.end(); ++field) {
+              next.emplace_back(field.value());
+            }
+            break;
+          }
+          case internal::tape_type::START_ARRAY: {
+            array arr(candidate.tape);
+            for (element child : arr) { next.emplace_back(child); }
+            break;
+          }
+          default:
+            break;
+        }
+      } else {
+        // Preserve the historical pointer-style interpretation of each
+        // non-wildcard segment (including '/' and '~' behavior).
+        element child;
+        if (!candidate.at_pointer(pointer).get(child)) { next.emplace_back(child); }
+      }
+    }
+
+    current = std::move(next);
+    json_path = segment.second;
+    first_segment = false;
+    if (current.empty()) { return current; }
+    // Preserve the historical treatment of '*' embedded in a literal final
+    // key: entering wildcard mode and then recursing on an empty suffix
+    // produced an empty successful result.
+    if (json_path.empty() && segment.first != "*") {
+      return std::vector<element>{};
+    }
+  }
+
+  if (json_path.empty()) { return current; }
+
+  std::vector<element> result;
+  for (const element &candidate : current) {
+    element child;
+    if (!candidate.at_path(json_path).get(child)) { result.emplace_back(child); }
+  }
+  return result;
 }
 
 inline simdjson_result<element> element::at_path(std::string_view json_path) const noexcept {

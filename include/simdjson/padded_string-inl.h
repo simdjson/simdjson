@@ -61,6 +61,9 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
 inline padded_string::padded_string() noexcept = default;
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
+  if (data_ptr == nullptr) {
+    viable_size = 0;
+  }
 }
 inline padded_string::padded_string(const char *data, size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
@@ -166,9 +169,9 @@ inline bool padded_string::append(const char *data, size_t length) noexcept {
   return true;
 }
 
-inline padded_string::operator std::string_view() const simdjson_lifetime_bound { return std::string_view(data(), length()); }
+inline padded_string::operator std::string_view() const & simdjson_lifetime_bound { return std::string_view(data(), length()); }
 
-inline padded_string::operator padded_string_view() const noexcept simdjson_lifetime_bound {
+inline padded_string::operator padded_string_view() const & noexcept simdjson_lifetime_bound {
   return padded_string_view(data(), length(), length() + SIMDJSON_PADDING);
 }
 
@@ -404,6 +407,12 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
       close(fd);
       return; // failed to get file size, data will be nullptr
     }
+    if (st.st_size <= 0 ||
+        static_cast<std::uintmax_t>(st.st_size) >
+          static_cast<std::uintmax_t>(SIZE_MAX - simdjson::SIMDJSON_PADDING)) {
+      close(fd);
+      return; // invalid size or size + padding would overflow
+    }
     size = static_cast<size_t>(st.st_size);
     size_t total_size = size + simdjson::SIMDJSON_PADDING;
     void *anon_map =
@@ -555,7 +564,7 @@ simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
 }
 #endif // POSIX or _WIN32
 
-simdjson_inline simdjson::padded_string_view padded_memory_map::view() const noexcept simdjson_lifetime_bound {
+simdjson_inline simdjson::padded_string_view padded_memory_map::view() const & noexcept simdjson_lifetime_bound {
   if(!is_valid()) {
     return simdjson::padded_string_view(); // return an empty view if mapping failed
   }

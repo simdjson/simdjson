@@ -58,6 +58,24 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  bool array_index_overflow_is_rejected() {
+    TEST_START();
+    auto json = R"([[42],[99]])"_padded;
+    const std::string overflow_index = sizeof(size_t) == 8
+      ? "18446744073709551616"
+      : "4294967296";
+    const std::string path = "$." + overflow_index + "[*]";
+
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    size_t callback_count = 0;
+    ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [&](ondemand::value) {
+      callback_count++;
+    }), INDEX_OUT_OF_BOUNDS);
+    ASSERT_EQUAL(callback_count, 0);
+    TEST_SUCCEED();
+  }
+
   bool object_wildcard_basic() {
     TEST_START();
     auto json = R"({
@@ -444,16 +462,12 @@ namespace wildcard_tests {
   }
 
   // A wildcard path recurses one level per segment, so a long path applied to a
-  // deeply nested document must stop at the parser's depth limit rather than
-  // recursing until the stack runs out.
+  // deeply nested document must stop at the lower of the parser depth and the
+  // fixed recursive-query safety limit rather than exhausting the stack.
   //
-  // The recursion is bounded by max_depth, and every level costs a few
-  // kilobytes of stack in an unoptimized build. The default limit (1024) is
-  // therefore more than a Windows executable's 1 MB default stack can hold, so
-  // we run the whole test with a small max_depth. The regression being guarded
-  // against is recursion that ignores max_depth entirely: a 2000- or
-  // 50000-deep document with a max_depth of 16 exposes that just as well, and
-  // it keeps the test's stack usage to a few tens of kilobytes.
+  // Every level costs substantial stack in an unoptimized build. The first
+  // subtests use a small parser max_depth to verify that limit is respected;
+  // the final subtest raises max_depth and checks the independent fixed limit.
   bool deeply_nested_wildcard() {
     TEST_START();
 
@@ -504,12 +518,38 @@ namespace wildcard_tests {
       ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), DEPTH_ERROR);
     }
 
+    // Raising the parser depth must not also raise the recursive query stack
+    // limit: path traversal has its own fixed safety bound.
+    {
+      for (size_t n : {internal::MAX_RECURSIVE_PATH_DEPTH,
+                       internal::MAX_RECURSIVE_PATH_DEPTH + 1}) {
+        std::string json = std::string(n, '[') + "1" + std::string(n, ']');
+        std::string path = "$";
+        for (size_t i = 0; i < n; i++) { path += "[*]"; }
+        auto padded = padded_string(json);
+        ondemand::parser parser;
+        ASSERT_SUCCESS(parser.allocate(padded.size(), n + 2));
+        auto doc = parser.iterate(padded);
+        size_t count = 0;
+        const simdjson::error_code error = doc.for_each_at_path_with_wildcard(
+          path, [&](ondemand::value) { count++; });
+        if (n == internal::MAX_RECURSIVE_PATH_DEPTH) {
+          ASSERT_SUCCESS(error);
+          ASSERT_EQUAL(count, 1);
+        } else {
+          ASSERT_ERROR(error, DEPTH_ERROR);
+          ASSERT_EQUAL(count, 0);
+        }
+      }
+    }
+
     TEST_SUCCEED();
   }
 
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
+           array_index_overflow_is_rejected() &&
            object_wildcard_basic() &&
            combined_wildcards() &&
            empty_array_wildcard() &&

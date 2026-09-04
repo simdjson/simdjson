@@ -569,6 +569,87 @@ bool json_path_malformed_deterministic_fuzz() {
   TEST_SUCCEED();
 }
 
+bool deeply_nested_paths_are_iterative() {
+  TEST_START();
+  const size_t depth = 50000;
+  std::string json(depth, '[');
+  json += '0';
+  json.append(depth, ']');
+  padded_string padded(json);
+
+  dom::parser parser;
+  ASSERT_SUCCESS(parser.allocate(padded.size(), depth + 2));
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(padded).get(doc));
+
+  std::string pointer;
+  std::string wildcard_path = "$";
+  for (size_t i = 0; i < depth; i++) {
+    pointer += "/0";
+    wildcard_path += "[*]";
+  }
+  dom::element pointed;
+  ASSERT_SUCCESS(doc.at_pointer(pointer).get(pointed));
+  int64_t pointed_value;
+  ASSERT_SUCCESS(pointed.get_int64().get(pointed_value));
+  ASSERT_EQUAL(pointed_value, 0);
+  std::vector<dom::element> wildcard_values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard(wildcard_path).get(wildcard_values));
+  ASSERT_EQUAL(wildcard_values.size(), 1);
+  int64_t wildcard_value;
+  ASSERT_SUCCESS(wildcard_values[0].get_int64().get(wildcard_value));
+  ASSERT_EQUAL(wildcard_value, 0);
+  TEST_SUCCEED();
+}
+
+bool malformed_pointer_escapes_are_rejected() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(R"({"a~b/c":1,"nested":{"x":2}})"_padded).get(doc));
+  int64_t value;
+  ASSERT_SUCCESS(doc.at_pointer("/a~0b~1c").get_int64().get(value));
+  ASSERT_EQUAL(value, 1);
+  ASSERT_ERROR(doc.at_pointer("/bad~"), INVALID_JSON_POINTER);
+  ASSERT_ERROR(doc.at_pointer("/nested/x/~2"), INVALID_JSON_POINTER);
+  TEST_SUCCEED();
+}
+
+bool wildcard_preserves_pointer_style_segments() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(
+    R"({"arr":[{"x":[3]}],"a/b":{"x":[1]},"a":{"b":{"x":[2]}}})"_padded
+  ).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.arr.0/x[*]").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  int64_t value;
+  ASSERT_SUCCESS(values[0].get_int64().get(value));
+  ASSERT_EQUAL(value, 3);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a/b.x[*]").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get_int64().get(value));
+  ASSERT_EQUAL(value, 2);
+  TEST_SUCCEED();
+}
+
+bool wildcard_preserves_literal_terminal_star_behavior() {
+  TEST_START();
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(
+    R"({"a*b":1,"items":[{"a*b":2}]})"_padded
+  ).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a*b").get(values));
+  ASSERT_TRUE(values.empty());
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.items[*].a*b").get(values));
+  ASSERT_TRUE(values.empty());
+  TEST_SUCCEED();
+}
+
 // for 0.5 version and following (standard compliant)
 bool modern_support() {
 #if SIMDJSON_EXCEPTIONS
@@ -592,7 +673,11 @@ bool modern_support() {
 
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
-      json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
+      json_path_malformed_deterministic_fuzz() && deeply_nested_paths_are_iterative() &&
+      malformed_pointer_escapes_are_rejected() &&
+      wildcard_preserves_pointer_style_segments() &&
+      wildcard_preserves_literal_terminal_star_behavior() &&
+      demo() && modern_support() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&

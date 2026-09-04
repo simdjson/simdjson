@@ -272,26 +272,14 @@ simdjson_inline int32_t value::current_depth() const noexcept{
 }
 
 inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
-  if (simdjson_unlikely(json_pointer.empty())) { // can't be
-    return false;
-  }
-  if (simdjson_unlikely(json_pointer[0] != '/')) {
-    return false;
-  }
-  size_t escape = json_pointer.find('~');
-  if (escape == std::string_view::npos) {
-    return true;
-  }
-  if (escape == json_pointer.size() - 1) {
-    return false;
-  }
-  if (json_pointer[escape + 1] != '0' && json_pointer[escape + 1] != '1') {
-    return false;
-  }
-  return true;
+  return internal::json_pointer_is_well_formed(json_pointer);
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // RFC 6901: an empty JSON Pointer selects the current value.
+  if (json_pointer.empty()) { return std::move(*this); }
+  if (internal::json_pointer_depth_exceeded(json_pointer)) { return DEPTH_ERROR; }
+  if (!internal::json_pointer_is_well_formed(json_pointer)) { return INVALID_JSON_POINTER; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -329,6 +317,7 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (internal::json_path_depth_exceeded(json_path)) { return DEPTH_ERROR; }
   if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));

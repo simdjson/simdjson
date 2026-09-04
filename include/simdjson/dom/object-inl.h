@@ -103,47 +103,7 @@ inline simdjson_result<element> object::operator[](const char *key) const noexce
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  if(json_pointer.empty()) { // an empty string means that we return the current node
-      return element(this->tape); // copy the current node
-  } else if(json_pointer[0] != '/') { // otherwise there is an error
-      return INVALID_JSON_POINTER;
-  }
-  json_pointer = json_pointer.substr(1);
-  size_t slash = json_pointer.find('/');
-  std::string_view key = json_pointer.substr(0, slash);
-  // Grab the child with the given key
-  simdjson_result<element> child;
-
-  // If there is an escape character in the key, unescape it and then get the child.
-  size_t escape = key.find('~');
-  if (escape != std::string_view::npos) {
-    // Unescape the key
-    std::string unescaped(key);
-    do {
-      switch (unescaped[escape+1]) {
-        case '0':
-          unescaped.replace(escape, 2, "~");
-          break;
-        case '1':
-          unescaped.replace(escape, 2, "/");
-          break;
-        default:
-          return INVALID_JSON_POINTER; // "Unexpected ~ escape character in JSON pointer");
-      }
-      escape = unescaped.find('~', escape+1);
-    } while (escape != std::string::npos);
-    child = at_key(unescaped);
-  } else {
-    child = at_key(key);
-  }
-  if(child.error()) {
-    return child; // we do not continue if there was an error
-  }
-  // If there is a /, we have to recurse and look up more of the path
-  if (slash != std::string_view::npos) {
-    child = child.at_pointer(json_pointer.substr(slash));
-  }
-  return child;
+  return element(tape).at_pointer(json_pointer);
 }
 
 inline simdjson_result<element> object::at_path(std::string_view json_path) const noexcept {
@@ -174,73 +134,7 @@ inline void object::process_json_path_of_child_elements(std::vector<element>::it
 
 inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-
-  size_t i = 0;
-  if (json_path.empty()) {
-    return INVALID_JSON_POINTER;
-  }
-  // if JSONPath starts with $, skip it
-  // json_path.starts_with('$') requires C++20.
-  if (json_path.front() == '$') {
-    i = 1;
-  }
-
-  if (i >= json_path.size() || (json_path[i] != '.' && json_path[i] != '[')) {
-    // expect JSONPath expressions to always start with $ but this isn't currently
-    // expected in jsonpathutil.h.
-    return INVALID_JSON_POINTER;
-  }
-
-  if (json_path.find("*") != std::string::npos) {
-
-    std::vector<element> child_values;
-
-    if (
-      (json_path.compare(i, 3, "[*]") == 0 && json_path.size() == i + 3) ||
-      (json_path.compare(i, 2,".*") == 0 && json_path.size() == i + 2)
-    ) {
-      get_values(child_values);
-      return child_values;
-    }
-
-    std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(json_path);
-
-    std::string_view key = key_and_json_path.first;
-    json_path = key_and_json_path.second;
-
-    if (key.size() > 0) {
-      if (key == "*") {
-        get_values(child_values);
-      } else {
-        element pointer_result;
-        auto error = at_pointer(std::string("/") + std::string(key)).get(pointer_result);
-
-        if (!error) {
-          child_values.emplace_back(pointer_result);
-        }
-      }
-
-      std::vector<element> result = {};
-      if (child_values.size() > 0) {
-
-        std::vector<element>::iterator child_values_begin = child_values.begin();
-        std::vector<element>::iterator child_values_end = child_values.end();
-
-        process_json_path_of_child_elements(child_values_begin, child_values_end, json_path, result);
-      }
-
-      return result;
-    } else {
-      return INVALID_JSON_POINTER;
-    }
-  } else {
-    element result;
-    auto error = this->at_path(json_path).get(result);
-    if (error) {
-      return error;
-    }
-    return std::vector<element>{std::move(result)};
-  }
+  return element(tape).at_path_with_wildcard(json_path);
 }
 
 inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {

@@ -48,6 +48,7 @@ public:
    * @param s The string.
    */
   explicit inline padded_string_view(const std::string &s) noexcept;
+  explicit padded_string_view(const std::string &&s) noexcept = delete;
 
   /**
    * Promise the given string_view has at least SIMDJSON_PADDING extra bytes allocated to it.
@@ -57,6 +58,14 @@ public:
    *      than the length, the capacity will be set to the length.
    */
   explicit inline padded_string_view(std::string_view s, size_t capacity) noexcept;
+  template<typename Traits, typename Allocator>
+  explicit padded_string_view(
+    std::basic_string<char, Traits, Allocator> &&s,
+    size_t capacity) noexcept = delete;
+  template<typename Traits, typename Allocator>
+  explicit padded_string_view(
+    const std::basic_string<char, Traits, Allocator> &&s,
+    size_t capacity) noexcept = delete;
 
   /** The number of allocated bytes. */
   inline size_t capacity() const noexcept;
@@ -115,6 +124,28 @@ struct padded_input {
      * original string's data.
      */
      inline explicit padded_input(const std::string &s);
+    /**
+     * Construct an owning padded_input from a temporary std::string.
+     *
+     * A temporary cannot safely back the non-owning view used by the const
+     * reference overload, so rvalues are always copied into padded storage.
+     */
+     inline explicit padded_input(std::string &&s);
+    /**
+     * Construct an owning padded_input from a const temporary std::string.
+     *
+     * Const rvalues cannot bind to the non-const rvalue overload and are also
+     * unsafe as non-owning views, so they are copied into padded storage.
+     */
+     inline explicit padded_input(const std::string &&s);
+    /** Construct an owning padded_input from any allocator-specialized
+     * temporary basic_string, such as std::pmr::string. */
+     template<typename Traits, typename Allocator>
+     inline explicit padded_input(std::basic_string<char, Traits, Allocator> &&s);
+    /** Construct an owning padded_input from a const allocator-specialized
+     * temporary basic_string. */
+     template<typename Traits, typename Allocator>
+     inline explicit padded_input(const std::basic_string<char, Traits, Allocator> &&s);
 
     /**
      * Check if the padded_input is a view.
@@ -128,7 +159,8 @@ struct padded_input {
      *
      * @return The padded_string_view.
      */
-     inline operator simdjson::padded_string_view() const noexcept;
+     inline operator simdjson::padded_string_view() const & noexcept;
+     inline operator simdjson::padded_string_view() const && noexcept = delete;
 
 private:
     std::variant<simdjson::padded_string_view, simdjson::padded_string> storage;

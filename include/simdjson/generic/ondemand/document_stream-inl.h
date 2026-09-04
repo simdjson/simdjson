@@ -34,33 +34,44 @@ inline stage1_worker::~stage1_worker() {
   stop_thread();
 }
 
-inline void stage1_worker::start_thread() {
+inline bool stage1_worker::start_thread() noexcept {
   std::unique_lock<std::mutex> lock(locking_mutex);
   if(thread.joinable()) {
-    return; // This should never happen but we never want to create more than one thread.
+    return true; // Never create more than one thread.
   }
-  thread = std::thread([this]{
-      while(true) {
-        std::unique_lock<std::mutex> thread_lock(locking_mutex);
-        // We wait for either "run" or "stop_thread" to be called.
-        cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
-        // If, for some reason, the stop_thread() method was called (i.e., the
-        // destructor of stage1_worker is called, then we want to immediately destroy
-        // the thread (and not do any more processing).
-        if(!can_work) {
-          break;
-        }
-        this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
-              this->_next_batch_start);
-        this->has_work = false;
-        // The condition variable call should be moved after thread_lock.unlock() for performance
-        // reasons but thread sanitizers may report it as a data race if we do.
-        // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
-        cond_var.notify_one(); // will notify "finish"
-        thread_lock.unlock();
+  auto work_loop = [this]{
+    while(true) {
+      std::unique_lock<std::mutex> thread_lock(locking_mutex);
+      // We wait for either "run" or "stop_thread" to be called.
+      cond_var.wait(thread_lock, [this]{return has_work || !can_work;});
+      // If, for some reason, the stop_thread() method was called (i.e., the
+      // destructor of stage1_worker is called, then we want to immediately destroy
+      // the thread (and not do any more processing).
+      if(!can_work) {
+        break;
       }
+      this->owner->stage1_thread_error = this->owner->run_stage1(*this->stage1_thread_parser,
+            this->_next_batch_start);
+      this->has_work = false;
+      // The condition variable call should be moved after thread_lock.unlock() for performance
+      // reasons but thread sanitizers may report it as a data race if we do.
+      // See https://stackoverflow.com/questions/35775501/c-should-condition-variable-be-notified-under-lock
+      cond_var.notify_one(); // will notify "finish"
+      thread_lock.unlock();
     }
-  );
+  };
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    thread = std::thread(work_loop);
+  } catch (...) {
+    return false;
+  }
+#else
+  // Without language-level exceptions std::thread cannot report a recoverable
+  // resource error, so preserve the historical threaded behavior.
+  thread = std::thread(work_loop);
+#endif
+  return true;
 }
 
 
@@ -126,6 +137,50 @@ simdjson_inline document_stream::document_stream() noexcept
 {
 }
 
+simdjson_inline document_stream::document_stream(document_stream &&other) noexcept
+  : document_stream() {
+  *this = std::move(other);
+}
+
+simdjson_inline document_stream &document_stream::operator=(document_stream &&other) noexcept {
+  if (this == &other) { return *this; }
+#ifdef SIMDJSON_THREADS_ENABLED
+  // A worker stores pointers to its owning stream and background parser. Join
+  // both sides before moving either object so those pointers cannot race with
+  // memberwise moves or outlive the moved-from stream.
+  worker.reset();
+  if (other.worker) { other.worker->finish(); }
+#endif
+  parser = other.parser;
+  buf = other.buf;
+  len = other.len;
+  batch_size = other.batch_size;
+  allow_comma_separated = other.allow_comma_separated;
+  format = other.format;
+  doc = std::move(other.doc);
+  error = other.error;
+  batch_start = other.batch_start;
+  doc_index = other.doc_index;
+#ifdef SIMDJSON_THREADS_ENABLED
+  use_thread = other.use_thread;
+  stage1_thread_error = other.stage1_thread_error;
+  worker = std::move(other.worker);
+  stage1_thread_parser = std::move(other.stage1_thread_parser);
+  other.use_thread = false;
+  other.stage1_thread_error = UNINITIALIZED;
+#endif
+  other.parser = nullptr;
+  other.buf = nullptr;
+  other.len = 0;
+  other.batch_size = 0;
+  other.allow_comma_separated = false;
+  other.format = stream_format::whitespace_delimited;
+  other.error = UNINITIALIZED;
+  other.batch_start = 0;
+  other.doc_index = 0;
+  return *this;
+}
+
 simdjson_inline document_stream::~document_stream() noexcept
 {
   #ifdef SIMDJSON_THREADS_ENABLED
@@ -139,7 +194,8 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 
 inline size_t document_stream::truncated_bytes() const noexcept {
   if(error == CAPACITY) { return len - batch_start; }
-  return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
+  const size_t structural_count = parser->implementation->n_structural_indexes;
+  return parser->implementation->structural_indexes[structural_count] - parser->implementation->structural_indexes[structural_count + 1];
 }
 
 simdjson_inline document_stream::iterator::iterator() noexcept
@@ -194,13 +250,13 @@ simdjson_inline bool document_stream::iterator::operator==(const document_stream
   return finished == other.finished;
 }
 
-simdjson_inline document_stream::iterator document_stream::begin() noexcept {
+simdjson_inline document_stream::iterator document_stream::begin() & noexcept {
   start();
   // If there are no documents, we're finished.
   return iterator(this, error == EMPTY);
 }
 
-simdjson_inline document_stream::iterator document_stream::end() noexcept {
+simdjson_inline document_stream::iterator document_stream::end() & noexcept {
   return iterator(this, true);
 }
 
@@ -234,7 +290,12 @@ inline void document_stream::start() noexcept {
     }
     error = stage1_thread_parser.allocate(batch_size);
     if (error) { return; }
-    worker->start_thread();
+    if (!worker->start_thread()) {
+      // Thread resources are optional; retain correctness by parsing later
+      // batches synchronously.
+      use_thread = false;
+      return;
+    }
     start_stage1_thread();
     if (error) { return; }
   }
@@ -443,7 +504,9 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
       default:    // Scalar value document
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          // structural_indexes[] is relative to batch_start, while
+          // current_index() is absolute within stream->buf.
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
