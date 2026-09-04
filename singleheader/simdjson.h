@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-03 12:17:15 -0400. version 4.6.10 Do not edit! */
+/* auto-generated on 2026-09-03 12:17:46 -0400. version 4.6.11 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2538,7 +2538,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "4.6.10"
+#define SIMDJSON_VERSION "4.6.11"
 
 namespace simdjson {
 enum {
@@ -2553,7 +2553,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 10
+  SIMDJSON_VERSION_REVISION = 11
 };
 } // namespace simdjson
 
@@ -6351,6 +6351,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
   /**
@@ -9945,6 +9957,9 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
   const char* start = reinterpret_cast<const char*>(stream->buf) + current_index();
+  if (stream->error) {
+    return std::string_view(start, stream->len - current_index());
+  }
   bool object_or_array = ((*start == '[') || (*start == '{'));
   if(object_or_array) {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index - 1];
@@ -66951,6 +66966,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -80330,6 +80357,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -94196,6 +94235,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -108062,6 +108113,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -122043,6 +122106,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -136341,6 +136416,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -150113,6 +150200,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -163908,6 +164007,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -177707,6 +177818,18 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below. It is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is arbitrary -- it can exceed size_in_bytes() or wrap
+   * around to a huge value. Check it only when both of the following hold:
+   *
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 

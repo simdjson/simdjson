@@ -181,6 +181,11 @@ simdjson_inline bool char_is_ascii_stop(uint8_t c) {
   return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
 }
 
+// Ends a run of primitive (number / true / false / null) characters.
+simdjson_inline bool char_is_primitive_stop(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_SPACE | CHAR_TYPE_OPERATOR | CHAR_TYPE_ESC_ASCII);
+}
+
 // Returns true if the string is unclosed.
 simdjson_inline bool validate_string() {
   idx++; // skip first quote
@@ -226,9 +231,13 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       add_structural();
     // Primitive or invalid character (invalid characters will be checked in stage 2)
     } else {
-      // Anything else, add the structural and go until we find the next one
+      // Anything else, add the structural and go until we find the next one.
+      // ESC_ASCII covers the control characters, '"' and '\\', none of which
+      // can occur inside a valid primitive. Stopping there keeps a quote
+      // reaching validate_string(): a quote swallowed by the run would hide
+      // an unclosed string.
       add_structural();
-      while (idx+1<len && !char_is_space_or_operator(buf[idx+1])) {
+      while (idx+1<len && !char_is_primitive_stop(buf[idx+1])) {
         idx++;
       };
     }

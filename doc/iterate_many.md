@@ -273,7 +273,9 @@ This will print:
 39 bytes
 ```
 
-Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.
+Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Importantly, it also assumes that no document reported an error: iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.
+
+If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using `current_index()` and `source()` on the iterator.
 
 Comma-separated documents
 -----------

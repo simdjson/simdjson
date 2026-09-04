@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-03 12:17:15 -0400. version 4.6.10 Do not edit! */
+/* auto-generated on 2026-09-03 12:17:46 -0400. version 4.6.11 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -13976,11 +13976,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -14005,6 +14000,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -20371,11 +20372,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -20400,6 +20396,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -26761,11 +26763,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -26790,6 +26787,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -33422,11 +33425,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -33451,6 +33449,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -40645,11 +40649,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -40674,6 +40673,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -46899,11 +46904,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -46928,6 +46928,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -53057,11 +53063,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -53086,6 +53087,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -59634,11 +59641,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -59663,6 +59665,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -65058,6 +65066,11 @@ simdjson_inline bool char_is_ascii_stop(uint8_t c) {
   return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
 }
 
+// Ends a run of primitive (number / true / false / null) characters.
+simdjson_inline bool char_is_primitive_stop(uint8_t c) {
+  return char_is_type(c, CHAR_TYPE_SPACE | CHAR_TYPE_OPERATOR | CHAR_TYPE_ESC_ASCII);
+}
+
 // Returns true if the string is unclosed.
 simdjson_inline bool validate_string() {
   idx++; // skip first quote
@@ -65103,9 +65116,13 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       add_structural();
     // Primitive or invalid character (invalid characters will be checked in stage 2)
     } else {
-      // Anything else, add the structural and go until we find the next one
+      // Anything else, add the structural and go until we find the next one.
+      // ESC_ASCII covers the control characters, '"' and '\\', none of which
+      // can occur inside a valid primitive. Stopping there keeps a quote
+      // reaching validate_string(): a quote swallowed by the run would hide
+      // an unclosed string.
       add_structural();
-      while (idx+1<len && !char_is_space_or_operator(buf[idx+1])) {
+      while (idx+1<len && !char_is_primitive_stop(buf[idx+1])) {
         idx++;
       };
     }
