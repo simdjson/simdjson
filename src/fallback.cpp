@@ -72,8 +72,8 @@ simdjson_inline void validate_utf8_character() {
   // 2-byte
   if ((buf[idx] & 0x20) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+1 > len || !is_continuation(buf[idx+1]))) {
-      if (idx+1 > len && is_streaming(partial)) { idx = len; return; }
+    if (simdjson_unlikely(idx+1 >= len || !is_continuation(buf[idx+1]))) {
+      if (idx+1 >= len && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -87,8 +87,8 @@ simdjson_inline void validate_utf8_character() {
   // 3-byte
   if ((buf[idx] & 0x10) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+2 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
-      if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+    if (simdjson_unlikely(idx+2 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
+      if (idx+2 >= len && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -103,8 +103,8 @@ simdjson_inline void validate_utf8_character() {
 
   // 4-byte
   // missing continuation
-  if (simdjson_unlikely(idx+3 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
-    if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+  if (simdjson_unlikely(idx+3 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
+    if (idx+3 >= len && is_streaming(partial)) { idx = len; return; }
     error = UTF8_ERROR;
     idx++;
     return;
@@ -181,11 +181,6 @@ simdjson_inline bool char_is_ascii_stop(uint8_t c) {
   return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
 }
 
-// Ends a run of primitive (number / true / false / null) characters.
-simdjson_inline bool char_is_primitive_stop(uint8_t c) {
-  return char_is_type(c, CHAR_TYPE_SPACE | CHAR_TYPE_OPERATOR | CHAR_TYPE_ESC_ASCII);
-}
-
 // Returns true if the string is unclosed.
 simdjson_inline bool validate_string() {
   idx++; // skip first quote
@@ -232,13 +227,14 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     // Primitive or invalid character (invalid characters will be checked in stage 2)
     } else {
       // Anything else, add the structural and go until we find the next one.
-      // ESC_ASCII covers the control characters, '"' and '\\', none of which
-      // can occur inside a valid primitive. Stopping there keeps RFC 7464
-      // json_sequence inputs like `\x1e"a"\x1e"b"` from collapsing into a
-      // single primitive run, and keeps a quote reaching validate_string()
-      // (a quote swallowed by the run would hide an unclosed string).
+      // We also stop on RS (0x1E) so that RFC 7464 json_sequence inputs
+      // like `\x1e"a"\x1e"b"` produce a separate structural for each RS
+      // rather than being absorbed into a single primitive run, and on '"'
+      // so that an unclosed string still reaches validate_string(). Neither
+      // can occur inside a valid primitive.
       add_structural();
-      while (idx+1<len && !char_is_primitive_stop(buf[idx+1])) {
+      while (idx+1<len && !char_is_space_or_operator(buf[idx+1]) &&
+             buf[idx+1] != 0x1e && buf[idx+1] != '"') {
         idx++;
       };
     }
@@ -258,7 +254,7 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !unclosed_string && ends_with_partial_scalar(parser, len));
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is

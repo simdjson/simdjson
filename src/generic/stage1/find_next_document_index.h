@@ -36,7 +36,14 @@ namespace stage1 {
   * complete document, therefore the last json buffer location is the end of the
   * batch.
   */
-simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
+simdjson_inline bool ends_with_partial_scalar(dom_parser_implementation &parser, size_t len) {
+  const uint8_t f = parser.buf[parser.structural_indexes[parser.n_structural_indexes - 1]];
+  const uint8_t e = parser.buf[len - 1];
+  return f != '{' && f != '[' && f != '}' && f != ']' && f != ':' && f != ',' && f != '"' &&
+         e != ' ' && e != '\t' && e != '\n' && e != '\r';
+}
+
+simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser, bool defer_last = false) {
   // Variant: do not count separately, just figure out depth
   if(parser.n_structural_indexes == 0) { return 0; }
   auto arr_cnt = 0;
@@ -70,7 +77,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
     }
     // Last document is complete, so the next document will appear after!
     if (!arr_cnt && !obj_cnt) {
-      return parser.n_structural_indexes;
+      return defer_last ? i : parser.n_structural_indexes;
     }
     // Last document is incomplete; mark the document at i + 1 as the next one
     return i;
@@ -92,7 +99,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
   }
   if (!arr_cnt && !obj_cnt) {
     // We have a complete document.
-    return parser.n_structural_indexes;
+    return defer_last ? 0 : parser.n_structural_indexes;
   }
   return 0;
 }

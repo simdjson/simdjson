@@ -414,8 +414,24 @@ bool nan_inf_at_end() {
 }
 #endif
 
+// A multi-byte UTF-8 sequence cut off by the end of the buffer: the fallback
+// scanner must not read the continuation byte that would sit at buf[len].
+bool truncated_utf8_at_end() {
+  TEST_START();
+  const std::vector<std::string> tails = {
+    "\xc3", "\xe0", "\xe0\xa0", "\xf0", "\xf0\x90", "\xf0\x90\x80",
+  };
+  for (const auto &t : tails) {
+    if (!check_matches("[\"a" + t)) { return false; }
+    if (!check_matches("\"a" + t)) { return false; }
+    if (!check_matches("{\"a\":\"b" + t)) { return false; }
+  }
+  TEST_SUCCEED();
+}
+
 bool run() {
   return
+         truncated_utf8_at_end() &&
 #if SIMDJSON_ENABLE_NAN_INF
          nan_inf_at_end() &&
 #endif

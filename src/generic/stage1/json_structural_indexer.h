@@ -302,7 +302,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !have_unclosed_string && ends_with_partial_scalar(parser, len));
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
