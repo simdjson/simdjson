@@ -217,6 +217,9 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
   const char* start = reinterpret_cast<const char*>(stream->buf) + current_index();
+  if (stream->error) {
+    return std::string_view(start, stream->len - current_index());
+  }
   bool object_or_array = ((*start == '[') || (*start == '{'));
   if(object_or_array) {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index - 1];

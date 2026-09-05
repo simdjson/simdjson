@@ -1,4 +1,6 @@
+#include <sstream>
 #include <cctype>
+#include <cstring>
 #include <random>
 #include <string>
 #include <unistd.h>
@@ -983,8 +985,102 @@ namespace document_stream_tests {
     return true;
   }
 
+
+  // A root scalar whose token reaches the end of a partial window used to be
+  // emitted as a complete document, so 100005 came back as 1.
+  bool scalar_at_window_boundary() {
+    TEST_START();
+    const char *tokens[] = {"100000", "true", "false", "null"};
+    for (const char *token : tokens) {
+      std::string raw;
+      for (int k = 0; k < 12; k++) { raw += token; raw += "\n"; }
+      auto input = simdjson::padded_string(raw);
+      std::string expected;
+      for (int k = 0; k < 12; k++) { expected += token; expected += "|"; }
+      for (size_t window = 32; window <= 96; window++) {
+        simdjson::dom::parser parser;
+        simdjson::dom::document_stream stream;
+        ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+        std::string got;
+        for (auto doc : stream) {
+          simdjson::dom::element element;
+          ASSERT_SUCCESS(doc.get(element));
+          std::stringstream ss; ss << element; got += ss.str(); got += "|";
+        }
+        ASSERT_EQUAL(got, expected);
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+  // Pins the contract documented on truncated_bytes(): reliable for a stream
+  // iterated all the way to the end with no document error.
+  bool truncated_bytes_documented_cases() {
+    TEST_START();
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+
+    SUBTEST("complete stream reports zero", ([&]() {
+      std::string raw;
+      for (int k = 0; k < 40; k++) { raw += "{\"a\":" + std::to_string(k) + "}\n"; }
+      auto input = simdjson::padded_string(raw);
+      for (size_t window : {size_t(64), simdjson::dom::DEFAULT_BATCH_SIZE}) {
+        ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+        size_t i = 0;
+        for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); i++; }
+        ASSERT_EQUAL(i, size_t(40));
+        ASSERT_EQUAL(stream.truncated_bytes(), size_t(0));
+      }
+      return true;
+    }()));
+
+    SUBTEST("truncated tail is reported exactly", ([&]() {
+      auto input = R"({"a":1}
+{"b":2}
+{"c":)"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); i++; }
+      ASSERT_EQUAL(i, size_t(2));
+      ASSERT_EQUAL(stream.truncated_bytes(), size_t(5)); // {"c":
+      return true;
+    }()));
+
+    TEST_SUCCEED();
+  }
+
+  // For a document starting with '{' or '[', source() read
+  // structural_indexes[next_structural_index - 1]; stage 2 leaves that index
+  // at 0 for the first document of a failed batch.
+  bool source_on_failed_document() {
+    TEST_START();
+    const char *inputs[] = {
+      "{\"a\":}",
+      "{\"a\" 1}",
+      "[1,2,]]",
+      "{\"a\":1} {\"b\":}",
+    };
+    for (const char *raw : inputs) {
+      auto input = simdjson::padded_string(raw, std::strlen(raw));
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE).get(stream));
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        (void)doc.error();
+        auto view = it.source(); // must stay inside the input
+        ASSERT_TRUE(it.current_index() <= input.size());
+        ASSERT_TRUE(view.size() <= input.size() - it.current_index());
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return issue2181() &&
+    return scalar_at_window_boundary() &&
+           truncated_bytes_documented_cases() &&
+           source_on_failed_document() &&
+           issue2181() &&
            issue2170() &&
            skipbom() &&
            fuzzaccess() &&

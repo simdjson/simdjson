@@ -256,11 +256,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     ((error != SUCCESS) && (error != UNCLOSED_STRING)) // when partial we tolerate UNCLOSED_STRING
     : (error != SUCCESS); // if partial is false, we must have SUCCESS
   const bool have_unclosed_string = (error == UNCLOSED_STRING);
-  if (simdjson_unlikely(should_we_exit)) { return error; }
-
-  if (unescaped_chars_error) {
-    return UNESCAPED_CHARS;
-  }
   parser.n_structural_indexes = uint32_t(indexer.tail - parser.structural_indexes.get());
   /***
    * The On-Demand API requires special padding.
@@ -285,6 +280,12 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
   parser.structural_indexes[parser.n_structural_indexes + 1] = uint32_t(len);
   parser.structural_indexes[parser.n_structural_indexes + 2] = 0;
   parser.next_structural_index = 0;
+
+  // Bail out only once the count and sentinels above are set:
+  // document_stream::truncated_bytes() reads them even on error.
+  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+
   // a valid JSON file cannot have zero structural indexes - we should have found something
   if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
     return EMPTY;
@@ -301,7 +302,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !have_unclosed_string && ends_with_partial_scalar(parser, len));
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
