@@ -1003,8 +1003,9 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
         std::string got;
         for (auto doc : stream) {
-          ASSERT_SUCCESS(doc.error());
-          std::stringstream ss; ss << doc; got += ss.str(); got += "|";
+          simdjson::dom::element element;
+          ASSERT_SUCCESS(doc.get(element));
+          std::stringstream ss; ss << element; got += ss.str(); got += "|";
         }
         ASSERT_EQUAL(got, expected);
       }
