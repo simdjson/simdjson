@@ -597,7 +597,7 @@ bool at_path_error_propagation() {
   auto doc = parser.parse(json);
   ASSERT_SUCCESS(doc.error());
 
-  // A failed lookup must retain its error even when the next path is invalid.
+  // Preserve the original error regardless of whether the next path is valid.
   for (std::string_view path : {"$.key", "$[0]", "invalid", "$["}) {
     ASSERT_ERROR(doc["missing"].at_path(path), NO_SUCH_FIELD);
     ASSERT_ERROR(doc["missing"].get_array().at_path(path), NO_SUCH_FIELD);
