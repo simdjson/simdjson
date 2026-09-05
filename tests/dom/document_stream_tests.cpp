@@ -1,3 +1,5 @@
+#include <sstream>
+#include <cstring>
 #include <cctype>
 #include <random>
 #include <string>
@@ -1636,6 +1638,186 @@ namespace document_stream_tests {
       return true;
     }()));
 
+    // Stage 1 drops the unclosed string's opening quote, but the RS filter
+    // used to re-derive it as the record's value start, sending stage 2 past
+    // the end of the padded buffer.
+    SUBTEST("unclosed string after RS is not resurrected", ([&]() {
+      // bytes: CR(0) RS(1) LF(2) "(3)
+      auto input = "\r\x1e\n\""_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, 417, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) { (void)doc.error(); i++; }
+      ASSERT_EQUAL(i, size_t(0));
+      return true;
+    }()));
+
+    SUBTEST("unclosed string immediately after RS", ([&]() {
+      // With no whitespace between them, the fallback scanner swallowed the
+      // quote into the RS run, so validate_string() never ran.
+      auto input = "\x1e\""_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) { (void)doc.error(); i++; }
+      ASSERT_EQUAL(i, size_t(0));
+      return true;
+    }()));
+
+    SUBTEST("complete record before an unclosed string still parses", ([&]() {
+      // bytes: RS(0) 1(1) LF(2) RS(3) "(4) a(5) b(6) c(7)
+      auto input = "\x1e" "1\n" "\x1e" "\"abc"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) {
+        ASSERT_SUCCESS(doc.error());
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, int64_t(1));
+        i++;
+      }
+      ASSERT_EQUAL(i, size_t(1));
+      return true;
+    }()));
+
+    // A batch yielding no document must still move the window forward, or
+    // parse_many() spins forever. NOTE: a regression here hangs rather than
+    // fails, so these rely on the ctest timeout.
+    SUBTEST("no RS in the first window terminates", ([&]() {
+      // No RS anywhere, first structural at offset 0: the partial window
+      // found no record and asked to restart where it began.
+      auto input = simdjson::padded_string(std::string(33, '1'));
+      ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) { (void)doc.error(); i++; ASSERT_TRUE(i < 100); }
+      ASSERT_EQUAL(i, size_t(1));
+      return true;
+    }()));
+
+    SUBTEST("record larger than the window reports CAPACITY", ([&]() {
+      // The RS is at offset 0 and its value lies beyond the window, so no
+      // progress is possible and we must say so rather than loop.
+      auto input = simdjson::padded_string("\x1e" + std::string(40, ' ') + "\x1e" "1\n");
+      ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::json_sequence).get(stream));
+      size_t i = 0;
+      simdjson::error_code last = simdjson::SUCCESS;
+      for (auto doc : stream) { last = doc.error(); i++; ASSERT_TRUE(i < 100); }
+      ASSERT_EQUAL(i, size_t(1));
+      ASSERT_EQUAL(last, simdjson::CAPACITY);
+      return true;
+    }()));
+
+    SUBTEST("multibatch sequences still parse", ([&]() {
+      std::string raw;
+      for (int k = 0; k < 20; k++) { raw += "\x1e"; raw += std::to_string(k); raw += "\n"; }
+      auto input = simdjson::padded_string(raw);
+      ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::json_sequence).get(stream));
+      int64_t expected = 0;
+      for (auto doc : stream) {
+        ASSERT_SUCCESS(doc.error());
+        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        ASSERT_EQUAL(v, expected);
+        expected++;
+      }
+      ASSERT_EQUAL(expected, int64_t(20));
+      return true;
+    }()));
+
+    TEST_SUCCEED();
+  }
+
+  // A root scalar whose token reaches the end of a partial window used to be
+  // emitted as a complete document, so 100005 came back as 1.
+  bool scalar_at_window_boundary() {
+    TEST_START();
+    const char *tokens[] = {"100000", "true", "false", "null"};
+    for (const char *token : tokens) {
+      std::string raw;
+      for (int k = 0; k < 12; k++) { raw += token; raw += "\n"; }
+      auto input = simdjson::padded_string(raw);
+      std::string expected;
+      for (int k = 0; k < 12; k++) { expected += token; expected += "|"; }
+      for (size_t window = 32; window <= 96; window++) {
+        simdjson::dom::parser parser;
+        simdjson::dom::document_stream stream;
+        ASSERT_SUCCESS(parser.parse_many(input, window).get(stream));
+        std::string got;
+        for (auto doc : stream) {
+          simdjson::dom::element element;
+          ASSERT_SUCCESS(doc.get(element));
+          std::stringstream ss; ss << element; got += ss.str(); got += "|";
+        }
+        ASSERT_EQUAL(got, expected);
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+  // Pins the contract documented on truncated_bytes(): reliable for
+  // whitespace/newline-delimited streams iterated to the end with no document
+  // error. It is deliberately NOT checked for json_sequence/comma_delimited,
+  // where the stage-1 filter compacts the structural index in place.
+  bool truncated_bytes_documented_cases() {
+    TEST_START();
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+
+    SUBTEST("complete stream reports zero", ([&]() {
+      std::string raw;
+      for (int k = 0; k < 40; k++) { raw += "{\"a\":" + std::to_string(k) + "}\n"; }
+      auto input = simdjson::padded_string(raw);
+      const simdjson::stream_format formats[] = {
+        simdjson::stream_format::newline_delimited,
+        simdjson::stream_format::whitespace_delimited,
+      };
+      for (auto format : formats) {
+        for (size_t window : {size_t(64), simdjson::dom::DEFAULT_BATCH_SIZE}) {
+          ASSERT_SUCCESS(parser.parse_many(input, window, format).get(stream));
+          size_t i = 0;
+          for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); i++; }
+          ASSERT_EQUAL(i, size_t(40));
+          ASSERT_EQUAL(stream.truncated_bytes(), size_t(0));
+        }
+      }
+      return true;
+    }()));
+
+    SUBTEST("truncated tail is reported exactly", ([&]() {
+      auto input = R"({"a":1}
+{"b":2}
+{"c":)"_padded;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE).get(stream));
+      size_t i = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); i++; }
+      ASSERT_EQUAL(i, size_t(2));
+      ASSERT_EQUAL(stream.truncated_bytes(), size_t(5)); // {"c":
+      return true;
+    }()));
+
+    TEST_SUCCEED();
+  }
+
+  // For a document starting with '{' or '[', source() read
+  // structural_indexes[next_structural_index - 1]; stage 2 leaves that index
+  // at 0 for the first document of a failed batch. All stream formats.
+  bool source_on_failed_document() {
+    TEST_START();
+    const char *inputs[] = {
+      "{\"a\":}",
+      "{\"a\" 1}",
+      "[1,2,]]",
+      "{\"a\":1} {\"b\":}",
+    };
+    for (const char *raw : inputs) {
+      auto input = simdjson::padded_string(raw, std::strlen(raw));
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, simdjson::dom::DEFAULT_BATCH_SIZE).get(stream));
+      for (auto it = stream.begin(); it != stream.end(); ++it) {
+        auto doc = *it;
+        (void)doc.error();
+        auto view = it.source(); // must stay inside the input
+        ASSERT_TRUE(it.current_index() <= input.size());
+        ASSERT_TRUE(view.size() <= input.size() - it.current_index());
+      }
+    }
     TEST_SUCCEED();
   }
 
@@ -2108,6 +2290,9 @@ namespace document_stream_tests {
 
   bool run() {
     return json_sequence_tests() &&
+           scalar_at_window_boundary() &&
+           truncated_bytes_documented_cases() &&
+           source_on_failed_document() &&
            comma_delimited_tests() &&
            issue2181() &&
            issue2170() &&

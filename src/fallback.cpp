@@ -72,8 +72,8 @@ simdjson_inline void validate_utf8_character() {
   // 2-byte
   if ((buf[idx] & 0x20) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+1 > len || !is_continuation(buf[idx+1]))) {
-      if (idx+1 > len && is_streaming(partial)) { idx = len; return; }
+    if (simdjson_unlikely(idx+1 >= len || !is_continuation(buf[idx+1]))) {
+      if (idx+1 >= len && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -87,8 +87,8 @@ simdjson_inline void validate_utf8_character() {
   // 3-byte
   if ((buf[idx] & 0x10) == 0) {
     // missing continuation
-    if (simdjson_unlikely(idx+2 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
-      if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+    if (simdjson_unlikely(idx+2 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
+      if (idx+2 >= len && is_streaming(partial)) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -103,8 +103,8 @@ simdjson_inline void validate_utf8_character() {
 
   // 4-byte
   // missing continuation
-  if (simdjson_unlikely(idx+3 > len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
-    if (idx+2 > len && is_streaming(partial)) { idx = len; return; }
+  if (simdjson_unlikely(idx+3 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
+    if (idx+3 >= len && is_streaming(partial)) { idx = len; return; }
     error = UTF8_ERROR;
     idx++;
     return;
@@ -229,12 +229,12 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       // Anything else, add the structural and go until we find the next one.
       // We also stop on RS (0x1E) so that RFC 7464 json_sequence inputs
       // like `\x1e"a"\x1e"b"` produce a separate structural for each RS
-      // rather than being absorbed into a single primitive run. RS is a
-      // control character that is invalid in normal JSON, so breaking
-      // the run here has no effect on well-formed non-json_sequence
-      // inputs.
+      // rather than being absorbed into a single primitive run, and on '"'
+      // so that an unclosed string still reaches validate_string(). Neither
+      // can occur inside a valid primitive.
       add_structural();
-      while (idx+1<len && !char_is_space_or_operator(buf[idx+1]) && buf[idx+1] != 0x1e) {
+      while (idx+1<len && !char_is_space_or_operator(buf[idx+1]) &&
+             buf[idx+1] != 0x1e && buf[idx+1] != '"') {
         idx++;
       };
     }
@@ -254,7 +254,7 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser);
+    auto new_structural_indexes = find_next_document_index(parser, !unclosed_string && ends_with_partial_scalar(parser, len));
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
@@ -291,26 +291,41 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     if (parser.n_structural_indexes == 0) { return EMPTY; }
   } else if (partial == stage1_mode::json_sequence_partial) {
     // RFC 7464: use RS positions for batch boundaries
+    // A discarded unclosed string also caps how far the filter may scan.
+    size_t scan_len = len;
     if(unclosed_string) {
       parser.n_structural_indexes--;
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+      scan_len = parser.structural_indexes[parser.n_structural_indexes];
     }
     uint32_t next_batch_start = uint32_t(len);
-    auto new_structural_indexes = find_next_document_index_json_sequence(parser, len, false, next_batch_start);
+    auto new_structural_indexes = find_next_document_index_json_sequence(parser, len, false, next_batch_start, scan_len);
     if (new_structural_indexes == DOCUMENT_TOO_LARGE) {
       return CAPACITY;
     }
     if (new_structural_indexes == 0) {
+      // An EMPTY batch must still advance next_batch_start, or document_stream
+      // re-parses the same bytes forever. CAPACITY when it cannot.
+      if (next_batch_start == 0) { return CAPACITY; }
       parser.n_structural_indexes = 0;
+      parser.structural_indexes[0] = next_batch_start;
       return EMPTY;
     }
     parser.n_structural_indexes = new_structural_indexes;
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::json_sequence_final) {
     // RFC 7464: final batch, last document extends to EOF
-    if(unclosed_string) { parser.n_structural_indexes--; }
+    // As above: a discarded unclosed string caps how far the filter may scan.
+    size_t scan_len = len;
+    if(unclosed_string) {
+      parser.n_structural_indexes--;
+      scan_len = parser.structural_indexes[parser.n_structural_indexes];
+    }
     uint32_t next_batch_start = uint32_t(len);
-    parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start);
+    parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
+    // NOTE: the filter above compacted structural_indexes in place, so the
+    // value copied here is a stale pre-compaction index; this is why
+    // truncated_bytes() is documented as meaningless in json_sequence mode.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
@@ -326,13 +341,19 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       return CAPACITY;
     }
     if (new_structural_indexes == 0) {
+      // An EMPTY batch must still advance next_batch_start, or document_stream
+      // re-parses the same bytes forever. CAPACITY when it cannot.
+      if (next_batch_start == 0) { return CAPACITY; }
       parser.n_structural_indexes = 0;
+      parser.structural_indexes[0] = next_batch_start;
       return EMPTY;
     }
     parser.n_structural_indexes = new_structural_indexes;
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
+    // (like json_sequence, the filter compacts in place, so truncated_bytes()
+    // is documented as meaningless for this format)
     if(unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);

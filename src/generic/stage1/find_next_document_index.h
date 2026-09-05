@@ -36,7 +36,14 @@ namespace stage1 {
   * complete document, therefore the last json buffer location is the end of the
   * batch.
   */
-simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser) {
+simdjson_inline bool ends_with_partial_scalar(dom_parser_implementation &parser, size_t len) {
+  const uint8_t f = parser.buf[parser.structural_indexes[parser.n_structural_indexes - 1]];
+  const uint8_t e = parser.buf[len - 1];
+  return f != '{' && f != '[' && f != '}' && f != ']' && f != ':' && f != ',' && f != '"' &&
+         e != ' ' && e != '\t' && e != '\n' && e != '\r';
+}
+
+simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser, bool defer_last = false) {
   // Variant: do not count separately, just figure out depth
   if(parser.n_structural_indexes == 0) { return 0; }
   auto arr_cnt = 0;
@@ -70,7 +77,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
     }
     // Last document is complete, so the next document will appear after!
     if (!arr_cnt && !obj_cnt) {
-      return parser.n_structural_indexes;
+      return defer_last ? i : parser.n_structural_indexes;
     }
     // Last document is incomplete; mark the document at i + 1 as the next one
     return i;
@@ -92,7 +99,7 @@ simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &par
   }
   if (!arr_cnt && !obj_cnt) {
     // We have a complete document.
-    return parser.n_structural_indexes;
+    return defer_last ? 0 : parser.n_structural_indexes;
   }
   return 0;
 }
@@ -119,6 +126,9 @@ constexpr uint32_t DOCUMENT_TOO_LARGE = UINT32_MAX;
  * @param len The length of the current batch buffer.
  * @param is_final True if this is the final batch (no more data coming).
  * @param next_batch_start Output: offset where the next batch should start.
+ * @param scan_len Offset past which no value start may be derived. Equals len
+ *        unless stage 1 dropped a trailing unclosed string, whose bytes it
+ *        never validated.
  * @return The number of structural indexes to keep (after RS filtering),
  *         0 if no document content found (EMPTY),
  *         or DOCUMENT_TOO_LARGE if a document started but didn't fit (CAPACITY).
@@ -127,7 +137,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     dom_parser_implementation &parser,
     size_t len,
     bool is_final,
-    uint32_t &next_batch_start) {
+    uint32_t &next_batch_start,
+    size_t scan_len) {
   // Default: next batch starts at end of buffer
   next_batch_start = uint32_t(len);
 
@@ -157,7 +168,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
       // because the scanner groups runs of adjacent non-whitespace
       // scalar bytes (including RS) into a single scalar start.
       uint32_t value_start = pos + 1;
-      while (value_start < len) {
+      while (value_start < scan_len) {
         const uint8_t c = parser.buf[value_start];
         if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
           value_start++;
@@ -190,7 +201,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
       // RS (which the scanner also classifies as scalar), it is
       // treated as a scalar continuation and not emitted - so we
       // must add it here just like any other scalar value.
-      if (value_start < len) {
+      if (value_start < scan_len) {
         const uint8_t c = parser.buf[value_start];
         const bool is_operator =
             (c == '{' || c == '}' || c == '[' || c == ']' ||
@@ -217,7 +228,12 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Update structural index count
   parser.n_structural_indexes = write_idx;
 
-  if (parser.n_structural_indexes == 0) { return 0; }
+  if (parser.n_structural_indexes == 0) {
+    // Only RS markers here: the last one opens a record continuing past the
+    // window, so that is where the next batch resumes.
+    if (!is_final && rs_count > 0) { next_batch_start = last_rs_pos; }
+    return 0;
+  }
   if (rs_count == 0) {
     // No RS found; for final batch, try generic boundary detection
     return is_final ? find_next_document_index(parser) : 0;
