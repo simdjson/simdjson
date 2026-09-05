@@ -590,9 +590,49 @@ bool modern_support() {
   return true;
 }
 
+bool at_path_error_propagation() {
+  TEST_START();
+  const auto json = R"({"array": [1], "object": {"key": 2}})"_padded;
+  dom::parser parser;
+  auto doc = parser.parse(json);
+  ASSERT_SUCCESS(doc.error());
+
+  // A failed lookup must retain its error even when the next path is invalid.
+  for (std::string_view path : {"$.key", "$[0]", "invalid", "$["}) {
+    ASSERT_ERROR(doc["missing"].at_path(path), NO_SUCH_FIELD);
+    ASSERT_ERROR(doc["missing"].get_array().at_path(path), NO_SUCH_FIELD);
+    ASSERT_ERROR(doc["missing"].get_object().at_path(path), NO_SUCH_FIELD);
+    ASSERT_ERROR(doc.get_array().at_path(path), INCORRECT_TYPE);
+    ASSERT_ERROR(doc["array"].get_object().at_path(path), INCORRECT_TYPE);
+    ASSERT_ERROR(doc["array"].at(1).at_path(path), INDEX_OUT_OF_BOUNDS);
+  }
+
+  // Successful results must still validate paths and return selected values.
+  ASSERT_ERROR(doc.at_path("invalid"), INVALID_JSON_POINTER);
+  ASSERT_ERROR(doc["array"].get_array().at_path("invalid"), INVALID_JSON_POINTER);
+  ASSERT_ERROR(doc["object"].get_object().at_path("invalid"), INVALID_JSON_POINTER);
+  int64_t value;
+  ASSERT_SUCCESS(doc.at_path("$.object.key").get_int64().get(value));
+  ASSERT_EQUAL(value, 2);
+  ASSERT_SUCCESS(doc["array"].get_array().at_path("$[0]").get_int64().get(value));
+  ASSERT_EQUAL(value, 1);
+  ASSERT_SUCCESS(doc["object"].get_object().at_path("$.key").get_int64().get(value));
+  ASSERT_EQUAL(value, 2);
+
+  const auto invalid_json = "["_padded;
+  auto invalid_doc = parser.parse(invalid_json);
+  const auto parse_error = invalid_doc.error();
+  ASSERT_TRUE(parse_error != SUCCESS);
+  ASSERT_ERROR(invalid_doc.at_path("invalid"), parse_error);
+  ASSERT_ERROR(invalid_doc.get_array().at_path("invalid"), parse_error);
+  ASSERT_ERROR(invalid_doc.get_object().at_path("invalid"), parse_error);
+  TEST_SUCCEED();
+}
+
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
+      at_path_error_propagation() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&
