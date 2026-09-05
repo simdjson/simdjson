@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.10</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -290,7 +290,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 
 <p>Returns the input size in bytes. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00262">262</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00265">265</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -320,9 +320,15 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 <p>After iterating through the stream, this method returns the number of bytes that were not parsed at the end of the stream. </p>
 <p>If <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> differs from zero, then the input was truncated maybe because incomplete JSON documents were found at the end of the stream. You may need to process the bytes in the interval [<a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a>-<a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a>, <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a>).</p>
 <p>You should only call <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> after streaming through all documents, like so:</p>
-<p><a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.parse_many(json,window); for(auto doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes(); </p>
+<p><a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.parse_many(json,window); for(auto doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes();</p>
+<p>IMPORTANT: this value is only meaningful under the conditions below. It is computed from stage-1 bookkeeping, and outside these conditions it is not merely imprecise, it is arbitrary &ndash; it can exceed <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a> or wrap around to a huge value. Check it only when both of the following hold:</p>
+<ul>
+<li>you iterated all the way to the end of the stream;</li>
+<li>no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</li>
+</ul>
+<p>If you need to know about a truncated tail outside those conditions, track it yourself from the last successful document (see iterator::current_index() and iterator::source()). </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00266">266</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00269">269</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>

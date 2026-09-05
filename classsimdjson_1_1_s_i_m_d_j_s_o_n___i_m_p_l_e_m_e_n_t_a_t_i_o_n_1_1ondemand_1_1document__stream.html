@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.10</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -162,7 +162,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream_8h_source.html#l00208">208</a> of file <a class="el" href="generic_2ondemand_2document__stream_8h_source.html">document_stream.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream_8h_source.html#l00220">220</a> of file <a class="el" href="generic_2ondemand_2document__stream_8h_source.html">document_stream.h</a>.</p>
 
 </div>
 </div>
@@ -342,7 +342,13 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
 <p>After iterating through the stream, this method returns the number of bytes that were not parsed at the end of the stream. </p>
 <p>If <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> differs from zero, then the input was truncated maybe because incomplete JSON documents were found at the end of the stream. You may need to process the bytes in the interval [<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0" title="Returns the input size in bytes.">size_in_bytes()</a>-<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a>, <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0" title="Returns the input size in bytes.">size_in_bytes()</a>).</p>
 <p>You should only call <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> after streaming through all documents, like so:</p>
-<p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.iterate_many(json,window); for(auto &amp; doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes(); </p>
+<p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.iterate_many(json,window); for(auto &amp; doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes();</p>
+<p>IMPORTANT: this value is only meaningful under the conditions below. It is computed from stage-1 bookkeeping, and outside these conditions it is not merely imprecise, it is arbitrary &ndash; it can exceed <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#a43723c86c43ee3533a3278b5cd2fe2d0" title="Returns the input size in bytes.">size_in_bytes()</a> or wrap around to a huge value. Check it only when both of the following hold:</p>
+<ul>
+<li>you iterated all the way to the end of the stream;</li>
+<li>no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</li>
+</ul>
+<p>If you need to know about a truncated tail outside those conditions, track it yourself from the last successful document (see iterator::current_index() and iterator::source()). </p>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00141">141</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 

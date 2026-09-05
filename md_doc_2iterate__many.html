@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.10</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -243,7 +243,8 @@ Incomplete streams</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">39 bytes</div>
 </div><!-- fragment --><p></code></p>
-<p><code>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.</code></p>
+<p><code>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Importantly, it also assumes that no document reported an error: iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</code></p>
+<p><code>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using <code>current_index()</code> and <code>source()</code> on the iterator.</code></p>
 <p><code></code></p>
 <h1><a class="anchor" id="autotoc_md122"></a>
 Comma-separated documents</h1>
