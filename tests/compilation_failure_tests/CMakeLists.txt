@@ -36,6 +36,12 @@ if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(dangling_parser_parse_stdstring)
   add_dual_compile_test(dangling_parser_parse_padstring)
   add_dual_compile_test(unsafe_parse_many)
+  # A std::string_view argument converts implicitly to a padded_string temporary,
+  # which dies while the returned document_stream still points at it.
+  add_dual_compile_test(dangling_parse_many_string_view)
+  add_dual_compile_test(dangling_parse_many_format)
+  add_dual_compile_test(dangling_iterate_many_string_view)
+  add_dual_compile_test(dangling_iterate_many_format)
 endif()
 
 # key_selector enforces a 63-character key-length limit at compile time. This
