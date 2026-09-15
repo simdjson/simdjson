@@ -721,22 +721,12 @@ static_assert(SIMDJSON_PADDING > 63,
               "key_selector requires SIMDJSON_PADDING > 63 for its SIMD key reads");
 
 #if SIMDJSON_KEY_SELECTOR_HAS_NEON
-// True when every byte of `diff` is zero.
-//
-// `diff` holds arbitrary bytes (it is an XOR of two key windows), so we cannot
-// narrow it directly: vshrn_n_u16(..., 4) keeps only bits [4:11] of each 16-bit
-// lane, and a lone 0x01 in an even byte would be dropped. vtstq_u8 against
-// itself first maps "byte is nonzero" onto a comparison mask (bytes 0x00 or
-// 0xFF), for which the narrowing is lossless. Comparing the narrowed value as a
-// double then keeps the answer in the FP register file: cmtst+shrn+fcmp, with no
-// across-lane reduction and no SIMD-to-general-purpose-register transfer.
-//
-// fcmp treats -0.0 as zero, but 0x8000000000000000 would need a 0x80 byte, which
-// a comparison mask cannot produce, so that hazard is unreachable.
+// True when every byte of `diff` is zero. A 32-bit-lane horizontal max is
+// enough (zero iff every 32-bit word is zero) and is cheaper than a byte-wide
+// reduction. Do not replace this with a floating-point compare against 0.0:
+// flush-to-zero would treat a denormal as zero.
 simdjson_really_inline bool neon_all_bytes_zero(uint8x16_t diff) noexcept {
-    const uint8x8_t narrowed =
-        vshrn_n_u16(vreinterpretq_u16_u8(vtstq_u8(diff, diff)), 4);
-    return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) == 0.0;
+    return vmaxvq_u32(vreinterpretq_u32_u8(diff)) == 0;
 }
 #endif
 
