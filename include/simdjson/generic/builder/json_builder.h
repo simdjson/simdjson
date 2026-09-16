@@ -9,7 +9,10 @@
 #if SIMDJSON_STATIC_REFLECTION
 
 #include <charconv>
+#include <chrono>
+#include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <meta>
 #include <memory>
 #include <optional>
@@ -195,6 +198,43 @@ simdjson_really_inline constexpr void atom(writer &w, const T &m) {
 }
 
 
+template <typename T>
+inline constexpr bool is_system_clock_time_point_v = false;
+template <typename Duration>
+inline constexpr bool is_system_clock_time_point_v<
+    std::chrono::time_point<std::chrono::system_clock, Duration>> = true;
+
+// Serialize std::chrono::system_clock::time_point as an ISO 8601 UTC string
+// with second precision, e.g. "2024-01-15T10:30:00Z" (see #2447).
+template <typename Duration>
+simdjson_really_inline void atom(
+    writer &w,
+    const std::chrono::time_point<std::chrono::system_clock, Duration> &tp) {
+  using clock = std::chrono::system_clock;
+  const auto secs = std::chrono::time_point_cast<std::chrono::seconds>(tp);
+  const std::time_t tt = clock::to_time_t(secs);
+  std::tm tm_buf{};
+#if defined(_WIN32)
+  if (gmtime_s(&tm_buf, &tt) != 0) {
+    return;
+  }
+#else
+  if (gmtime_r(&tt, &tm_buf) == nullptr) {
+    return;
+  }
+#endif
+  // "YYYY-MM-DDTHH:MM:SSZ" is 20 characters.
+  char buf[32];
+  const int n = std::snprintf(
+      buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", tm_buf.tm_year + 1900,
+      tm_buf.tm_mon + 1, tm_buf.tm_mday, tm_buf.tm_hour, tm_buf.tm_min,
+      tm_buf.tm_sec);
+  if (n != 20) {
+    return;
+  }
+  atom(w, std::string_view(buf, static_cast<size_t>(n)));
+}
+
 template<typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(writer &w, const number_type t) {
@@ -241,7 +281,8 @@ template <class T>
            !std::is_same_v<T, std::string> &&
            !std::is_same_v<T, std::string_view> &&
            !std::is_same_v<T, const char*> &&
-           !std::is_same_v<T, char> && !require_custom_serialization<T>)
+           !std::is_same_v<T, char> && !require_custom_serialization<T> &&
+           !is_system_clock_time_point_v<T>)
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Per-field block: ensure key+value worst case, then write key + value
   // through the writer's local pos. For arithmetic fields, the integer
@@ -411,6 +452,15 @@ simdjson_inline void append(string_builder &b, const T &t) {
 }
 
 // works for struct
+template <typename Duration>
+simdjson_inline void append(
+    string_builder &b,
+    const std::chrono::time_point<std::chrono::system_clock, Duration> &tp) {
+  writer w(b);
+  atom(w, tp);
+  w.sync();
+}
+
 template <class Z>
   requires(std::is_class_v<Z> && !concepts::container_but_not_string<Z> &&
            !concepts::string_view_keyed_map<Z> &&
@@ -420,7 +470,8 @@ template <class Z>
            !std::is_same_v<Z, std::string> &&
            !std::is_same_v<Z, std::string_view> &&
            !std::is_same_v<Z, const char*> &&
-           !std::is_same_v<Z, char> && !require_custom_serialization<Z>)
+           !std::is_same_v<Z, char> && !require_custom_serialization<Z> &&
+           !is_system_clock_time_point_v<Z>)
 simdjson_inline void append(string_builder &b, const Z &z) {
   writer w(b);
   atom(w, z);
