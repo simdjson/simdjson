@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+#include <cstring>
 #include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
@@ -96,6 +97,107 @@ static void unicode_validate_twitter(State& state) {
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
 BENCHMARK(unicode_validate_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void add_utf8_rate_counter(State& state, size_t bytes) {
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+      double(bytes), benchmark::Counter::kIsRate,
+      benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+}
+
+static void benchmark_validate_utf8(State& state, const padded_string& docdata, bool expected) {
+  const bool initial_result = simdjson::validate_utf8(docdata.data(), docdata.size());
+  if (initial_result != expected) {
+    state.SkipWithError("unexpected UTF-8 validation result");
+    return;
+  }
+
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    const bool is_ok = simdjson::validate_utf8(docdata.data(), docdata.size());
+    bytes += docdata.size();
+    benchmark::DoNotOptimize(is_ok);
+  }
+  add_utf8_rate_counter(state, bytes);
+}
+
+static padded_string make_ascii_utf8_input(size_t size) {
+  padded_string input(size);
+  std::memset(input.data(), 'a', size);
+  return input;
+}
+
+static padded_string make_multilingual_utf8_input(size_t size) {
+  padded_string input(size);
+  for (size_t i = 0; i < size; i += 3) {
+    input.data()[i] = char(0xe2);
+    input.data()[i + 1] = char(0x82);
+    input.data()[i + 2] = char(0xac);
+  }
+  return input;
+}
+
+static void unicode_validate_ascii_4kb(State& state) {
+  const padded_string docdata = make_ascii_utf8_input(4 * 1024);
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_ascii_4kb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_ascii_64kb(State& state) {
+  const padded_string docdata = make_ascii_utf8_input(64 * 1024);
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_ascii_64kb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_ascii_1mb(State& state) {
+  const padded_string docdata = make_ascii_utf8_input(1024 * 1024);
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_ascii_1mb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_multilingual_1mb(State& state) {
+  const padded_string docdata = make_multilingual_utf8_input((1024 * 1024 / 3) * 3);
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_multilingual_1mb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_boundary_error_4kb(State& state) {
+  padded_string docdata = make_ascii_utf8_input(4 * 1024);
+  docdata.data()[63] = char(0xe2);
+  docdata.data()[64] = 'a';
+  benchmark_validate_utf8(state, docdata, false);
+}
+BENCHMARK(unicode_validate_boundary_error_4kb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_boundary_error_64kb(State& state) {
+  padded_string docdata = make_ascii_utf8_input(64 * 1024);
+  docdata.data()[63] = char(0xe2);
+  docdata.data()[64] = 'a';
+  benchmark_validate_utf8(state, docdata, false);
+}
+BENCHMARK(unicode_validate_boundary_error_64kb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void unicode_validate_boundary_error_1mb(State& state) {
+  padded_string docdata = make_ascii_utf8_input(1024 * 1024);
+  docdata.data()[63] = char(0xe2);
+  docdata.data()[64] = 'a';
+  benchmark_validate_utf8(state, docdata, false);
+}
+BENCHMARK(unicode_validate_boundary_error_1mb)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
