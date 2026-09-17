@@ -867,9 +867,15 @@ simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *cons
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  // PERF NOTE: a block of eight rarely bites here, but a block of four pays off from four digits on
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
+  // The root accessors parse from a 22-byte stack buffer, without padding
+  const uint8_t *const swar_end = p + 16;
+  while (p < swar_end && is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
@@ -1034,9 +1040,15 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  // PERF NOTE: a block of eight rarely bites here, but a block of four pays off from four digits on
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
+  // The root accessors parse from a 22-byte stack buffer, without padding
+  const uint8_t *const swar_end = p + 16;
+  while (p < swar_end && is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
@@ -1132,9 +1144,15 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_stri
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  // PERF NOTE: a block of eight rarely bites here, but a block of four pays off from four digits on
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
+  // The root accessors parse from a 22-byte stack buffer, without padding
+  const uint8_t *const swar_end = p + 16;
+  while (p < swar_end && is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
@@ -1187,9 +1205,15 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  // PERF NOTE: a block of eight rarely bites here, but a block of four pays off from four digits on
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
+  // The root accessors parse from a 22-byte stack buffer, without padding
+  const uint8_t *const swar_end = p + 16;
+  while (p < swar_end && is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
   while (parse_digit(*p, i)) { p++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
@@ -1273,9 +1297,15 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
+  // PERF NOTE: a block of eight rarely bites here, but a block of four pays off from four digits on
   const uint8_t *const start_digits = src;
   uint64_t i = 0;
+  // The root accessors parse from a 22-byte stack buffer, without padding
+  const uint8_t *const swar_end = src + 16;
+  while (src < swar_end && is_made_of_four_digits_fast(src)) {
+    i = i * 10000 + parse_four_digits_unrolled(src);
+    src += 4;
+  }
   while (parse_digit(*src, i)) { src++; }
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
