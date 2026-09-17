@@ -69,6 +69,67 @@ namespace {
     return {padded_string(out), VALUE_COUNT};
   }
 
+  number_dataset build_uint_dataset(number_length which) {
+    xorshift64 rng{0x2545f4914f6cdd1dULL};
+    std::string out;
+
+    out.reserve(VALUE_COUNT * 24);
+    out += '[';
+
+    for (size_t i = 0; i < VALUE_COUNT; i++) {
+      if (i > 0) { out += ','; }
+      uint64_t magnitude = 0;
+
+      switch (which) {
+        case number_length::short_digits:
+          magnitude = 10000ULL + rng() % 90000ULL; // 5 digits
+          break;
+        case number_length::medium_digits:
+          magnitude = 100000000000ULL + rng() % 900000000000ULL; // 12 digits
+          break;
+        case number_length::long_digits:
+          magnitude = 1000000000000000000ULL + rng() % 8000000000000000000ULL; //19
+          break;
+      }
+      out += std::to_string(magnitude);
+    }
+
+    out += ']';
+    return {padded_string(out), VALUE_COUNT};
+  }
+
+  number_dataset build_int_in_string_dataset(number_length which) {
+    xorshift64 rng{0x2545f4914f6cdd1dULL};
+    std::string out;
+
+    out.reserve(VALUE_COUNT * 26);
+    out += '[';
+
+    for (size_t i = 0; i < VALUE_COUNT; i++) {
+      if (i > 0) { out += ','; }
+      uint64_t magnitude = 0;
+
+      switch (which) {
+        case number_length::short_digits:
+          magnitude = 10000ULL + rng() % 90000ULL; // 5 digits
+          break;
+        case number_length::medium_digits:
+          magnitude = 100000000000ULL + rng() % 900000000000ULL; // 12 digits
+          break;
+        case number_length::long_digits:
+          magnitude = 1000000000000000000ULL + rng() % 8000000000000000000ULL; //19
+          break;
+      }
+      out += '"';
+      if ((rng() & 1) != 0) { out += '-'; }
+      out += std::to_string(magnitude);
+      out += '"';
+    }
+
+    out += ']';
+    return {padded_string(out), VALUE_COUNT};
+  }
+
   number_dataset build_double_dataset(number_length which) {
     xorshift64 rng{0x9e3779b97f4a7c15ULL};
     std::string out;
@@ -174,6 +235,44 @@ namespace {
         return long_ints;
     }
     return short_ints;
+  }
+
+  const number_dataset &get_uint_dataset(number_length which) {
+    static const number_dataset short_uints =
+      build_uint_dataset(number_length::short_digits);
+    static const number_dataset medium_uints =
+      build_uint_dataset(number_length::medium_digits);
+    static const number_dataset long_uints =
+      build_uint_dataset(number_length::long_digits);
+
+    switch (which) {
+      case number_length::short_digits:
+        return short_uints;
+      case number_length::medium_digits:
+        return medium_uints;
+      case number_length::long_digits:
+        return long_uints;
+    }
+    return short_uints;
+  }
+
+  const number_dataset &get_int_in_string_dataset(number_length which) {
+    static const number_dataset short_strs =
+      build_int_in_string_dataset(number_length::short_digits);
+    static const number_dataset medium_strs =
+      build_int_in_string_dataset(number_length::medium_digits);
+    static const number_dataset long_strs =
+      build_int_in_string_dataset(number_length::long_digits);
+
+    switch (which) {
+      case number_length::short_digits:
+        return short_strs;
+      case number_length::medium_digits:
+        return medium_strs;
+      case number_length::long_digits:
+        return long_strs;
+    }
+    return short_strs;
   }
 
   const number_dataset &get_double_dataset(number_length which) {
@@ -336,6 +435,96 @@ namespace {
         result);
   }
 
+  void run_ondemand_get_uint64(number_length which_len) {
+    const auto &dataset = get_uint_dataset(which_len);
+    ondemand::parser parser;
+    volatile uint64_t sink = 0;
+
+    if(warm_up(parser, dataset.json)) {return;}
+
+    auto result = bench([&]() -> size_t {
+      ondemand::document doc;
+      if(parser.iterate(dataset.json).get(doc)) {return 0;}
+
+      ondemand::array array;
+      if(doc.get_array().get(array)) {return 0;}
+
+      uint64_t sum = 0;
+      for(auto element : array) {
+        uint64_t value;
+        if(element.get_uint64().get(value)) {return 0;}
+        sum += value;
+      }
+      sink = sum;
+      return size_t(sum);
+    });
+    pretty_print_array(
+        "ondemand_get_uint64",
+        dataset.json.size(),
+        dataset.count,
+        result);
+  }
+
+  void run_ondemand_get_int64_in_string(number_length which_len) {
+    const auto &dataset = get_int_in_string_dataset(which_len);
+    ondemand::parser parser;
+    volatile uint64_t sink = 0;
+
+    if(warm_up(parser, dataset.json)) {return;}
+
+    auto result = bench([&]() -> size_t {
+      ondemand::document doc;
+      if(parser.iterate(dataset.json).get(doc)) {return 0;}
+
+      ondemand::array array;
+      if(doc.get_array().get(array)) {return 0;}
+
+      uint64_t sum = 0;
+      for(auto element : array) {
+        int64_t value;
+        if(element.get_int64_in_string().get(value)) {return 0;}
+        sum += uint64_t(value);
+      }
+      sink = sum;
+      return size_t(sum);
+    });
+    pretty_print_array(
+        "ondemand_get_int64_in_string",
+        dataset.json.size(),
+        dataset.count,
+        result);
+  }
+
+  void run_dom_parse_int64(number_length which_len) {
+    const auto &dataset = get_int_dataset(which_len);
+    dom::parser parser;
+    volatile uint64_t sink = 0;
+
+    {
+      dom::array warm;
+      if (parser.parse(dataset.json).get(warm)) { return; }
+    }
+
+    auto result = bench([&]() -> size_t {
+      dom::array array;
+      if (parser.parse(dataset.json).get(array)) { return 0; }
+      uint64_t sum = 0;
+      for (auto element : array) {
+        int64_t value;
+        if (element.get_int64().get(value)) { return 0; }
+        sum += uint64_t(value);
+      }
+      sink = sum;
+      return size_t(sum);
+    });
+
+    pretty_print_array(
+        "dom_parse_int64",
+        dataset.json.size(),
+        dataset.count,
+        result);
+  }
+
 #endif
 #if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
   void run_ondemand_get_double(number_length which_len) {
@@ -475,6 +664,9 @@ namespace {
 #if !defined(BENCH_ONLY_DOUBLE) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
     run_ondemand_get_int64(len);
     run_dom_get_int64(len);
+    run_ondemand_get_uint64(len);
+    run_ondemand_get_int64_in_string(len);
+    run_dom_parse_int64(len);
 #endif
 #if !defined(BENCH_ONLY_INT) && !defined(BENCH_ONLY_NUMBER) && !defined(BENCH_ONLY_FLOAT)
     run_ondemand_get_double(len);
