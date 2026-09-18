@@ -60,7 +60,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 #if defined(__aarch64__) && defined(__linux__)
   #include <sys/auxv.h>
-  #include <asm/hwcap.h>
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)) && defined(_WIN32) && !defined(_WINDOWS_)
 // We avoid including <windows.h> (macro pollution); this matches the
@@ -85,7 +84,12 @@ static inline uint32_t detect_supported_architectures() {
 
 #if defined(__linux__)
 // The kernel advertises SVE in AT_HWCAP and SVE2 in AT_HWCAP2. Older
-// headers may not define these bits, so we provide the kernel's values.
+// headers may not define these constants, so we provide the kernel's values
+// (we deliberately do not include <asm/hwcap.h>, which is not available on
+// all toolchains, e.g., musl without linux-headers).
+#ifndef AT_HWCAP2
+#define AT_HWCAP2 26
+#endif
 #ifndef HWCAP_SVE
 #define HWCAP_SVE (1 << 22)
 #endif
