@@ -64,6 +64,48 @@ public:
   };
 
   /**
+   * A forward iterator that visits the array's elements in reverse order.
+   * Like iterator, it returns element handles by value and does not own the
+   * document. No allocation or modification of the document is performed.
+   */
+  class reverse_iterator {
+  public:
+    using value_type = element;
+    using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = value_type;
+    using iterator_category = std::forward_iterator_tag;
+
+    inline reference operator*() const noexcept;
+    inline reverse_iterator& operator++() noexcept;
+    inline reverse_iterator operator++(int) noexcept;
+    inline bool operator==(const reverse_iterator& other) const noexcept;
+    inline bool operator!=(const reverse_iterator& other) const noexcept;
+
+    reverse_iterator() noexcept = default;
+    reverse_iterator(const reverse_iterator&) noexcept = default;
+    reverse_iterator& operator=(const reverse_iterator&) noexcept = default;
+  private:
+    simdjson_inline reverse_iterator(const internal::tape_ref &tape, size_t array_start) noexcept;
+    internal::tape_ref tape{};
+    size_t array_start{};
+    friend class array;
+  };
+
+  /**
+   * Return the last array element, or rend() for an empty array.
+   * Incrementing the returned iterator moves toward the first element.
+   * A complete traversal takes O(n) time and O(1) additional space, where n
+   * is the number of immediate elements in the array.
+   * Finding the last or previous element can take O(n) time in the worst case when
+   * numeric payloads equal numeric type markers. Increments are amortized O(1)
+   * over a complete traversal; nested values do not increase this bound.
+   */
+  inline reverse_iterator rbegin() const noexcept;
+  /** Return the reverse traversal sentinel, before the first element. */
+  inline reverse_iterator rend() const noexcept;
+
+  /**
    * Return the first array element.
    *
    * Part of the std::iterable interface.
@@ -198,6 +240,8 @@ public:
 #if SIMDJSON_EXCEPTIONS
   inline dom::array::iterator begin() const noexcept(false);
   inline dom::array::iterator end() const noexcept(false);
+  inline dom::array::reverse_iterator rbegin() const noexcept(false);
+  inline dom::array::reverse_iterator rend() const noexcept(false);
   inline size_t size() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };

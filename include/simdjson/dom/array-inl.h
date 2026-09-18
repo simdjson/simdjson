@@ -38,6 +38,14 @@ inline size_t simdjson_result<dom::array>::size() const noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first.size();
 }
+inline dom::array::reverse_iterator simdjson_result<dom::array>::rbegin() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.rbegin();
+}
+inline dom::array::reverse_iterator simdjson_result<dom::array>::rend() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.rend();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -87,6 +95,15 @@ inline array::iterator array::end() const noexcept {
 inline size_t array::size() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return tape.scope_count();
+}
+inline array::reverse_iterator array::rbegin() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable());
+  const internal::tape_ref end_tape(tape.doc, tape.matching_brace_index() - 1);
+  return reverse_iterator(internal::tape_ref(tape.doc, end_tape.before_element(tape.json_index)), tape.json_index);
+}
+inline array::reverse_iterator array::rend() const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.usable());
+  return reverse_iterator(tape, tape.json_index);
 }
 inline size_t array::number_of_slots() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
@@ -235,6 +252,30 @@ inline std::vector<element>& array::get_values(std::vector<element>& out) const 
 
 inline array::operator element() const noexcept {
 	return element(tape);
+}
+
+//
+// array::reverse_iterator inline implementation
+//
+simdjson_inline array::reverse_iterator::reverse_iterator(const internal::tape_ref &_tape, size_t _array_start) noexcept
+    : tape{_tape}, array_start{_array_start} { }
+inline element array::reverse_iterator::operator*() const noexcept {
+  return element(tape);
+}
+inline array::reverse_iterator& array::reverse_iterator::operator++() noexcept {
+  tape.json_index = tape.before_element(array_start);
+  return *this;
+}
+inline array::reverse_iterator array::reverse_iterator::operator++(int) noexcept {
+  reverse_iterator out = *this;
+  ++*this;
+  return out;
+}
+inline bool array::reverse_iterator::operator==(const reverse_iterator& other) const noexcept {
+  return tape.doc == other.tape.doc && tape.json_index == other.tape.json_index;
+}
+inline bool array::reverse_iterator::operator!=(const reverse_iterator& other) const noexcept {
+  return !(*this == other);
 }
 
 //
