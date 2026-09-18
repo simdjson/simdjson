@@ -140,6 +140,8 @@ public:
 
 class pretty_formatter : public base_formatter<pretty_formatter> {
 public:
+  explicit pretty_formatter(int step = 4) : indent_step(step) {}
+
   simdjson_inline void print_newline();
 
   simdjson_inline void print_indents(size_t depth);
@@ -164,6 +166,10 @@ template <class formatter = mini_formatter> class string_builder {
 public:
   /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
+  /** Construct a builder passing arguments to the formatter **/
+  template <typename... Args>
+  explicit string_builder(Args&&... args) : format(std::forward<Args>(args)...) {}
+
   /** Append an element to the builder (to be printed) **/
   inline void append(simdjson::dom::element value);
   /** Append an array to the builder (to be printed) **/
@@ -300,19 +306,19 @@ template <class T> std::string minify(simdjson_result<T> x) {
  *   cout << prettify(doc) << endl;
  *
  */
-template <class T> std::string prettify(T x) {
-  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
+template <class T> std::string prettify(T x, int indent_step = 4) {
+  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb(indent_step);
   sb.append(x);
   std::string_view answer = sb.str();
   return std::string(answer.data(), answer.size());
 }
 
 #if SIMDJSON_EXCEPTIONS
-template <class T> std::string prettify(simdjson_result<T> x) {
+template <class T> std::string prettify(simdjson_result<T> x, int indent_step = 4) {
   if (x.error()) {
     throw simdjson_error(x.error());
   }
-  return to_string(x.value());
+  return prettify(x.value(), indent_step);
 }
 #endif
 
