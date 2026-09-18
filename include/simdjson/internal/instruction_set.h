@@ -71,6 +71,8 @@ enum instruction_set {
   LASX = 0x40000,
   //RVV = 0x80000,
   RVV_VLS = 0x100000,
+  SVE = 0x200000,
+  SVE2 = 0x400000,
 };
 
 } // namespace internal
