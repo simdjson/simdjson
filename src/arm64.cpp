@@ -37,10 +37,48 @@ namespace {
 
 using namespace simd;
 
+#ifdef SIMDJSON_ARM64_SVE2_MATCH
+simdjson_inline svbool_t match_operators_sve2(uint8x16_t input) {
+  const uint8x16_t operators = {
+    0xff, ',', ':', '[', ']', '{', '}', 0xff,
+    ',', ':', '[', ']', '{', '}', ',', ':'
+  };
+  const svbool_t pg = svptrue_pat_b8(SV_VL16);
+  const svuint8_t data = svset_neonq_u8(svundef_u8(), input);
+  const svuint8_t table = svset_neonq_u8(svundef_u8(), operators);
+  return svmatch_u8(pg, data, table);
+}
+
+#define SIMDJSON_ARM64_STORE_PREDICATE(PREDICATE, DESTINATION) \
+  __asm__ volatile("str %0, [%1]" : : "Upl"(PREDICATE), "r"(DESTINATION) : "memory")
+
+// STR P stores VL/64 bytes, up to the architectural maximum of 32 bytes.
+// This conversion consumes only the first 16 bits of each predicate.
+simdjson_inline uint64_t operator_predicates_to_bitmask(
+    svbool_t p0, svbool_t p1, svbool_t p2, svbool_t p3) {
+  alignas(16) uint8_t stored[4][32];
+  SIMDJSON_ARM64_STORE_PREDICATE(p0, stored[0]);
+  SIMDJSON_ARM64_STORE_PREDICATE(p1, stored[1]);
+  SIMDJSON_ARM64_STORE_PREDICATE(p2, stored[2]);
+  SIMDJSON_ARM64_STORE_PREDICATE(p3, stored[3]);
+  uint16_t m0, m1, m2, m3;
+  __builtin_memcpy(&m0, stored[0], sizeof(m0));
+  __builtin_memcpy(&m1, stored[1], sizeof(m1));
+  __builtin_memcpy(&m2, stored[2], sizeof(m2));
+  __builtin_memcpy(&m3, stored[3], sizeof(m3));
+  return uint64_t(m0) | (uint64_t(m1) << 16) |
+         (uint64_t(m2) << 32) | (uint64_t(m3) << 48);
+}
+
+#undef SIMDJSON_ARM64_STORE_PREDICATE
+#endif
+
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+#ifndef SIMDJSON_ARM64_SVE2_MATCH
   const uint8x16_t op_table = simd8<uint8_t>(
     0xff, 0, ',', ':', 0, '[', ']', '{', '}', 0, 0, 0, 0, 0, 0, 0
   );
+#endif
   const uint8x16_t ws_table = simd8<uint8_t>(
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0, 0
   );
@@ -50,10 +88,19 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
   const uint8x16_t d0_2 = in.chunks[2];
   const uint8x16_t d0_3 = in.chunks[3];
 
+#ifdef SIMDJSON_ARM64_SVE2_MATCH
+  const svbool_t match_op_0 = match_operators_sve2(d0_0);
+  const svbool_t match_op_1 = match_operators_sve2(d0_1);
+  const svbool_t match_op_2 = match_operators_sve2(d0_2);
+  const svbool_t match_op_3 = match_operators_sve2(d0_3);
+  const uint64_t op = operator_predicates_to_bitmask(
+      match_op_0, match_op_1, match_op_2, match_op_3);
+#else
   const uint8x16_t match_op_0 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_0, vdupq_n_u8(3)), 4)), d0_0);
   const uint8x16_t match_op_1 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_1, vdupq_n_u8(3)), 4)), d0_1);
   const uint8x16_t match_op_2 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_2, vdupq_n_u8(3)), 4)), d0_2);
   const uint8x16_t match_op_3 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_3, vdupq_n_u8(3)), 4)), d0_3);
+#endif
 
   const uint8x16_t match_ws_0 = vqtbx1q_u8(vceqq_u8(d0_0, vdupq_n_u8(' ')), ws_table, d0_0);
   const uint8x16_t match_ws_1 = vqtbx1q_u8(vceqq_u8(d0_1, vdupq_n_u8(' ')), ws_table, d0_1);
@@ -65,6 +112,7 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
   );
 
+#ifndef SIMDJSON_ARM64_SVE2_MATCH
   uint8x16_t op_sum0 = vpaddq_u8(vandq_u8(match_op_0, bit_mask), vandq_u8(match_op_1, bit_mask));
   uint8x16_t ws_sum0 = vpaddq_u8(vandq_u8(match_ws_0, bit_mask), vandq_u8(match_ws_1, bit_mask));
   uint8x16_t op_sum1 = vpaddq_u8(vandq_u8(match_op_2, bit_mask), vandq_u8(match_op_3, bit_mask));
@@ -75,6 +123,13 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
   ws_sum0 = vpaddq_u8(ws_sum0, ws_sum0);
   const uint64_t op = vgetq_lane_u64(vreinterpretq_u64_u8(op_sum0), 0);
   const uint64_t whitespace = vgetq_lane_u64(vreinterpretq_u64_u8(ws_sum0), 0);
+#else
+  uint8x16_t ws_sum0 = vpaddq_u8(vandq_u8(match_ws_0, bit_mask), vandq_u8(match_ws_1, bit_mask));
+  uint8x16_t ws_sum1 = vpaddq_u8(vandq_u8(match_ws_2, bit_mask), vandq_u8(match_ws_3, bit_mask));
+  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum1);
+  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum0);
+  const uint64_t whitespace = vgetq_lane_u64(vreinterpretq_u64_u8(ws_sum0), 0);
+#endif
 
   return { whitespace, op };
 }
