@@ -37,7 +37,22 @@ bool load_prettify(const char *filename) {
   error = parser.parse(serial1).get(doc);
   if (error) { std::cerr << error << std::endl; return false; }
   auto serial2 = simdjson::prettify(doc);
-  bool match = (serial1 == serial2);
+
+  // test 2-space indentation
+  auto serial3 = simdjson::prettify(doc, 2);
+  error = parser.parse(serial3).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial4 = simdjson::prettify(doc, 2);
+
+  // test -1-space indentiation i.e., preserve original indentation
+  auto serial5 = simdjson::prettify(doc, -1);
+  error = parser.parse(serial5).get(doc);
+  if (error) { std::cerr << error << std::endl; return false; }
+  auto serial6 = simdjson::prettify(doc, -1);
+
+  bool match = (serial1 == serial2) && 
+      (serial3 == serial4) &&
+      (serial5 == serial6);
   if (match) {
     std::cout << "Parsing prettify and calling prettify again results in the same "
                  "content."
