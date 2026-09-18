@@ -58,6 +58,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #if defined(__loongarch__) && defined(__linux__)
   #include <sys/auxv.h>
 #endif
+#if defined(__aarch64__) && defined(__linux__)
+  #include <sys/auxv.h>
+  #include <asm/hwcap.h>
+#endif
+#if (defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)) && defined(_WIN32) && !defined(_WINDOWS_)
+// We avoid including <windows.h> (macro pollution); this matches the
+// declaration in the Windows SDK (BOOL WINAPI IsProcessorFeaturePresent(DWORD)).
+extern "C" __declspec(dllimport) int __stdcall IsProcessorFeaturePresent(unsigned long ProcessorFeature);
+#endif
 
 #ifdef __FILC__
 #include <stdfil.h>
@@ -74,8 +83,52 @@ static inline uint32_t detect_supported_architectures() {
 
 #elif defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
 
+#if defined(__linux__)
+// The kernel advertises SVE in AT_HWCAP and SVE2 in AT_HWCAP2. Older
+// headers may not define these bits, so we provide the kernel's values.
+#ifndef HWCAP_SVE
+#define HWCAP_SVE (1 << 22)
+#endif
+#ifndef HWCAP2_SVE2
+#define HWCAP2_SVE2 (1 << 1)
+#endif
+#endif // __linux__
+
+#if defined(_WIN32)
+// Only recent Windows SDKs define these processor features.
+#ifndef PF_ARM_SVE_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE_INSTRUCTIONS_AVAILABLE 46
+#endif
+#ifndef PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE
+#define PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE 47
+#endif
+#endif // _WIN32
+
 static inline uint32_t detect_supported_architectures() {
-  return instruction_set::NEON;
+  // NEON is mandatory on AArch64.
+  uint32_t host_isa = instruction_set::NEON;
+#if defined(__linux__)
+  unsigned long hwcap = getauxval(AT_HWCAP);
+  unsigned long hwcap2 = getauxval(AT_HWCAP2);
+  if (hwcap & HWCAP_SVE) {
+    host_isa |= instruction_set::SVE;
+  }
+  if (hwcap2 & HWCAP2_SVE2) {
+    // SVE2 implies SVE.
+    host_isa |= instruction_set::SVE | instruction_set::SVE2;
+  }
+#elif defined(_WIN32)
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
+    host_isa |= instruction_set::SVE;
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+    // SVE2 implies SVE.
+    host_isa |= instruction_set::SVE | instruction_set::SVE2;
+  }
+#endif
+  // On other systems (e.g., macOS, where Apple Silicon has no SVE), we only
+  // report NEON.
+  return host_isa;
 }
 
 #elif defined(__x86_64__) || defined(_M_AMD64) // x64
