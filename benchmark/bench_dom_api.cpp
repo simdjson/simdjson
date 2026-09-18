@@ -10,6 +10,7 @@ using namespace std;
 const padded_string EMPTY_ARRAY("[]", 2);
 
 static const char *TWITTER_JSON = SIMDJSON_BENCHMARK_DATA_DIR "twitter.json";
+static const char *CITM_JSON = SIMDJSON_BENCHMARK_DATA_DIR "citm_catalog.json";
 static const char *NUMBERS_JSON = SIMDJSON_BENCHMARK_DATA_DIR "numbers.json";
 
 static void recover_one_string(State& state) {
@@ -82,12 +83,12 @@ BENCHMARK(serialize_twitter)->ComputeStatistics("max", [](const std::vector<doub
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
-static void prettify_twitter(State& state) {
+static void prettify_file(State& state, const char *filename) {
   dom::parser parser;
   padded_string docdata;
-  auto error = padded_string::load(TWITTER_JSON).get(docdata);
+  auto error = padded_string::load(filename).get(docdata);
   if(error) {
-      cerr << "could not parse twitter.json" << error << endl;
+      cerr << "could not load " << filename << ": " << error << endl;
       return;
   }
   // we do not want mem. alloc. in the loop.
@@ -97,7 +98,7 @@ static void prettify_twitter(State& state) {
   }
   dom::element doc;
   if ((error = parser.parse(docdata).get(doc))) {
-    cerr << "could not parse twitter.json" << error << endl;
+    cerr << "could not parse " << filename << ": " << error << endl;
     return;
   }
   size_t bytes = 0;
@@ -116,11 +117,47 @@ static void prettify_twitter(State& state) {
   }
   // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
   state.counters["Gigabytes"] = benchmark::Counter(
-	        double(bytes), benchmark::Counter::kIsRate,
-	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+            double(bytes), benchmark::Counter::kIsRate,
+            benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
   state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
 }
+
+static void prettify_twitter(State& state) {
+  prettify_file(state, TWITTER_JSON);
+}
 BENCHMARK(prettify_twitter)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void prettify_citm(State& state) {
+  prettify_file(state, CITM_JSON);
+}
+BENCHMARK(prettify_citm)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
+static void prettify_deep_nesting(State& state) {
+  dom::parser parser;
+  std::string content = std::string(40, '[') + "1" + std::string(40, ']');
+  dom::element doc;
+  simdjson::error_code error;
+  if ((error = parser.parse(content.data(), content.size()).get(doc))) {
+    cerr << "could not parse deep nesting" << error << endl;
+    return;
+  }
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    std::string serial = simdjson::prettify(doc);
+    bytes += serial.size();
+    benchmark::DoNotOptimize(serial);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+            double(bytes), benchmark::Counter::kIsRate,
+            benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(prettify_deep_nesting)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 

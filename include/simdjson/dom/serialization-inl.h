@@ -311,12 +311,10 @@ simdjson_inline void mini_formatter::print_space() { return; }
 simdjson_inline void pretty_formatter::print_newline() { one_char('\n'); }
 
 simdjson_inline void pretty_formatter::print_indents(size_t depth) {
-  if (this->indent_step <= 0) {
+  if (indent_step <= 0) {
     return;
   }
-  for (size_t i = 0; i < this->indent_step * depth; i++) {
-    one_char(' ');
-  }
+  buffer.append_n(' ', depth * static_cast<size_t>(indent_step));
 }
 
 simdjson_inline void pretty_formatter::print_space() { one_char(' '); }
