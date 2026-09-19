@@ -1142,6 +1142,40 @@ bool bracket_padding_counted_in_object_length_test() {
   return true;
 }
 
+bool compact_multiline_breaks_after_expanded_item_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string big_string(40, '0');
+  std::string json = R"([{"a":true,"b":")" + big_string + R"("},{"a":true,"b":"x"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 40;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  std::string expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": \"" + big_string + "\"\n"
+      "    },\n"
+      "    { \"a\": true, \"b\": \"x\" }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Compact multiline breaks after expanded item test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1183,9 +1217,10 @@ int main() {
   success = compact_multiline_respects_max_total_line_length_test() && success;
   success = bracket_padding_counted_in_object_length_test() && success;
   success = bracket_padding_counted_in_array_length_test() && success;
+  success = compact_multiline_breaks_after_expanded_item_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 31 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 32 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

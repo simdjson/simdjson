@@ -614,6 +614,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
   size_t items_on_line = 0;
   bool first = true;
+  bool prev_item_was_expanded = false;
   size_t child_idx = 0;
 
   for (dom::element elem : arr) {
@@ -626,6 +627,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
       // Check if we should break to new line
       if (items_on_line >= options_.max_items_per_line ||
+          prev_item_was_expanded ||
           format_.should_break_line(child_metrics.estimated_inline_len)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
@@ -645,6 +647,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     } else {
       format_element(elem, child_metrics, depth + 1);
     }
+    prev_item_was_expanded = !child_metrics.can_inline;
 
     items_on_line++;
     child_idx++;
