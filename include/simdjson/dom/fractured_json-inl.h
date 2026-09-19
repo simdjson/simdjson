@@ -73,7 +73,6 @@ inline element_metrics structure_analyzer::analyze_scalar(const dom::element& el
   metrics.complexity = 0;
   metrics.child_count = 0;
   metrics.can_inline = true;
-  metrics.recommended_layout = layout_mode::single_line;
 
   switch (elem.type()) {
     case dom::element_type::STRING: {
@@ -162,20 +161,6 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
     metrics.is_uniform_array = check_array_uniformity(arr, metrics.common_keys);
   }
 
-  // Decide layout
-  if (metrics.child_count == 0) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else if (metrics.can_inline) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else if (metrics.is_uniform_array && !metrics.common_keys.empty()) {
-    metrics.recommended_layout = layout_mode::table;
-  } else if (current_opts_->enable_compact_multiline &&
-             max_child_complexity <= current_opts_->max_compact_array_complexity) {
-    metrics.recommended_layout = layout_mode::compact_multiline;
-  } else {
-    metrics.recommended_layout = layout_mode::expanded;
-  }
-
   return metrics;
 }
 
@@ -214,13 +199,6 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 
   metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
                        (metrics.estimated_inline_len <= current_opts_->max_inline_length);
-
-  // Objects use inline or expanded (no table/compact for objects)
-  if (metrics.child_count == 0 || metrics.can_inline) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else {
-    metrics.recommended_layout = layout_mode::expanded;
-  }
 
   return metrics;
 }
@@ -365,15 +343,15 @@ inline double structure_analyzer::compute_object_similarity(const dom::object& a
 
 inline layout_mode structure_analyzer::decide_layout(const element_metrics& metrics,
                                                       size_t depth,
-                                                      size_t available_width) const {
+                                                      const fractured_json_options& opts) {
   if (metrics.child_count == 0) {
     return layout_mode::single_line;
   }
 
   // Check inline feasibility
-  size_t indent_width = depth * current_opts_->indent_spaces;
+  size_t indent_width = depth * opts.indent_spaces;
   if (metrics.can_inline &&
-      metrics.estimated_inline_len + indent_width <= available_width) {
+      metrics.estimated_inline_len + indent_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
   }
 
@@ -383,8 +361,8 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
   }
 
   // Check compact multiline
-  if (current_opts_->enable_compact_multiline &&
-      metrics.complexity <= current_opts_->max_compact_array_complexity + 1) {
+  if (opts.enable_compact_multiline &&
+      metrics.complexity <= opts.max_compact_array_complexity + 1) {
     return layout_mode::compact_multiline;
   }
 
@@ -553,7 +531,8 @@ inline void fractured_string_builder::format_element(const dom::element& elem,
 inline void fractured_string_builder::format_array(const dom::array& arr,
                                                     const element_metrics& metrics,
                                                     size_t depth) {
-  switch (metrics.recommended_layout) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_);
+  switch (layout) {
     case layout_mode::single_line:
       format_array_inline(arr, metrics);
       break;
@@ -638,7 +617,9 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    if (child_metrics.can_inline) {
+    layout_mode item_layout = structure_analyzer::decide_layout(child_metrics, depth + 1, options_);
+    bool item_fits = item_layout == layout_mode::single_line;
+    if (item_fits) {
       layout_mode prev_layout = format_.get_layout_mode();
       format_.set_layout_mode(layout_mode::single_line);
       format_element(elem, child_metrics, depth + 1);
@@ -647,7 +628,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     } else {
       format_element(elem, child_metrics, depth + 1);
     }
-    prev_item_was_expanded = !child_metrics.can_inline;
+    prev_item_was_expanded = !item_fits;
 
     items_on_line++;
     child_idx++;
@@ -808,7 +789,8 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 inline void fractured_string_builder::format_object(const dom::object& obj,
                                                      const element_metrics& metrics,
                                                      size_t depth) {
-  if (metrics.recommended_layout == layout_mode::single_line || metrics.can_inline) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_);
+  if (layout == layout_mode::single_line) {
     format_object_inline(obj, metrics);
   } else {
     format_object_expanded(obj, metrics, depth);

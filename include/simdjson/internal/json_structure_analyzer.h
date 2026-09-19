@@ -49,9 +49,6 @@ struct element_metrics {
   /** For uniform arrays of objects: the common keys */
   std::vector<std::string> common_keys{};
 
-  /** Recommended layout mode based on analysis */
-  layout_mode recommended_layout = layout_mode::expanded;
-
   /** Child metrics for arrays and objects (in order of iteration) */
   std::vector<element_metrics> children{};
 };
@@ -116,6 +113,12 @@ public:
   element_metrics analyze_object(const dom::object& obj,
                                  const fractured_json_options& opts);
 
+  /** Decide layout at the given render depth. Kept out of analysis since
+   * the same metrics can render inline or expanded at different depths. */
+  static layout_mode decide_layout(const element_metrics& metrics,
+                                    size_t depth,
+                                    const fractured_json_options& opts);
+
 private:
   const fractured_json_options* current_opts_ = nullptr;
 
@@ -154,13 +157,6 @@ private:
    */
   double compute_object_similarity(const dom::object& a,
                                    const dom::object& b) const;
-
-  /**
-   * Decide the recommended layout mode based on metrics and options.
-   */
-  layout_mode decide_layout(const element_metrics& metrics,
-                            size_t depth,
-                            size_t available_width) const;
 };
 
 } // namespace internal
