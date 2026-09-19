@@ -1283,6 +1283,39 @@ bool compact_multiline_item_respects_max_total_line_length_test() {
   return true;
 }
 
+bool trailing_comma_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"x":"0123456789"},{"y":"0123456789"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 25;
+  opts.enable_compact_multiline = false;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"x\": \"0123456789\"\n"
+      "    },\n"
+      "    { \"y\": \"0123456789\" }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Trailing comma counted in length test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1328,9 +1361,10 @@ int main() {
   success = nested_object_respects_max_total_line_length_test() && success;
   success = nested_array_respects_max_total_line_length_test() && success;
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
+  success = trailing_comma_counted_in_length_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 35 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 36 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

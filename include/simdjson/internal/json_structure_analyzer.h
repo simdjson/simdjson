@@ -117,7 +117,8 @@ public:
    * the same metrics can render inline or expanded at different depths. */
   static layout_mode decide_layout(const element_metrics& metrics,
                                     size_t depth,
-                                    const fractured_json_options& opts);
+                                    const fractured_json_options& opts,
+                                    bool has_trailing_comma = false);
 
 private:
   const fractured_json_options* current_opts_ = nullptr;
