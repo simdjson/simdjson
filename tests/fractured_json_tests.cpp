@@ -979,6 +979,40 @@ bool no_padding_test() {
   return true;
 }
 
+bool compact_multiline_oversized_item_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":true,"b":true,"c":true,"d":true}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 10;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": true,\n"
+      "        \"c\": true,\n"
+      "        \"d\": true\n"
+      "    }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Compact multiline oversized item test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1015,8 +1049,11 @@ int main() {
   success = disable_table_test() && success;
   success = no_padding_test() && success;
 
+  // Layout tests
+  success = compact_multiline_oversized_item_test() && success;
+
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 27 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 28 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

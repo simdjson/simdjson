@@ -622,13 +622,17 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    // Format element inline
-    layout_mode prev_layout = format_.get_layout_mode();
-    format_.set_layout_mode(layout_mode::single_line);
     const element_metrics& child_metrics = (child_idx < metrics.children.size())
         ? metrics.children[child_idx] : element_metrics{};
-    format_element(elem, child_metrics, depth + 1);
-    format_.set_layout_mode(prev_layout);
+
+    if (child_metrics.can_inline) {
+      layout_mode prev_layout = format_.get_layout_mode();
+      format_.set_layout_mode(layout_mode::single_line);
+      format_element(elem, child_metrics, depth + 1);
+      format_.set_layout_mode(prev_layout);
+    } else {
+      format_element(elem, child_metrics, depth + 1);
+    }
 
     items_on_line++;
     child_idx++;
