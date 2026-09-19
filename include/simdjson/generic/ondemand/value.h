@@ -31,7 +31,7 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
+   * Supported types: object, array, raw_json_string, string_view, u8string_view (C++20), uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    *
    * You may use get_double(), get_float(), get_bool(), get_uint64(), get_int64(),
    * get_uint32(), get_int32(),
@@ -59,7 +59,7 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
+   * Supported types: object, array, raw_json_string, string_view, u8string_view (C++20), uint64_t, int64_t, uint32_t, int32_t, double, float, bool
    * If the macro SIMDJSON_SUPPORTS_CONCEPTS is set, then custom types are also supported.
    *
    * @param out This is set to a value of the given type, parsed from the JSON. If there is an error, this may not be initialized.
@@ -249,6 +249,26 @@ public:
    * @returns INCORRECT_TYPE if the JSON value is not a string.
    */
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  /**
+   * Cast this JSON value to a C++20 UTF-8 string.
+   *
+   * The string is guaranteed to be valid UTF-8.
+   *
+   * Equivalent to get<std::u8string_view>(). This is a zero-copy alias of
+   * get_string(): the very same bytes are returned, viewed as char8_t.
+   *
+   * Important: a value should be consumed once. Calling get_u8string() twice on the same
+   * value is an error.
+   *
+   * @param allow_replacement Whether to allow a replacement character for unmatched surrogate pairs.
+   * @returns An UTF-8 string. The string is stored in the parser and will be invalidated the next
+   *          time it parses a document or when it is destroyed.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 
   /**
    * Attempts to fill the provided std::string reference with the parsed value of the current string.
@@ -807,6 +827,9 @@ public:
   simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+#if SIMDJSON_SUPPORTS_CHAR8_T
+  simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
   template <typename string_type>
   simdjson_warn_unused simdjson_inline error_code get_string(string_type& receiver, bool allow_replacement = false) noexcept;
   simdjson_inline simdjson_result<std::string_view> get_wobbly_string() noexcept;

@@ -88,6 +88,18 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothr
   return SUCCESS;
 }
 
+#if SIMDJSON_SUPPORTS_CHAR8_T
+// any C++20 char8_t string-like type (can be constructed from std::u8string_view),
+// such as std::u8string
+template <concepts::constructible_from_u8string_view T, typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
+  std::u8string_view str;
+  SIMDJSON_TRY(val.get_u8string().get(str));
+  out = T{str};
+  return SUCCESS;
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -272,7 +284,15 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 
 template <typename T>
 constexpr bool user_defined_type = (std::is_class_v<T>
-&& !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
+&& !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view>
+#if SIMDJSON_SUPPORTS_CHAR8_T
+// The char8_t string types are class types with no reflectable members, so
+// without this they would be taken for user structs and the reflection
+// overload below would compete with the u8 string overload in
+// std_deserialize.h, making every tag_invoke call on them ambiguous.
+&& !std::is_same_v<T, std::u8string> && !std::is_same_v<T, std::u8string_view>
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
+&& !concepts::optional_type<T> &&
 !concepts::appendable_containers<T>);
 
 

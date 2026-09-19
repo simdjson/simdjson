@@ -556,7 +556,7 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(strin
   auto saved_string_buf_loc = _json_iter->string_buf_loc();
   auto err = get_string(allow_replacement).get(content);
   if (err) { return err; }
-  receiver = content;
+  internal::assign_utf8(receiver, content);
   // Restore the string buffer location, effectively discarding any temporary string storage
   _json_iter->string_buf_loc() = saved_string_buf_loc;
   return SUCCESS;
@@ -721,7 +721,7 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(
   auto saved_string_buf_loc = _json_iter->string_buf_loc();
   auto err = get_root_string(check_trailing, allow_replacement).get(content);
   if (err) { return err; }
-  receiver = content;
+  internal::assign_utf8(receiver, content);
   // Restore the string buffer location, effectively discarding any temporary string storage
   _json_iter->string_buf_loc() = saved_string_buf_loc;
   return SUCCESS;
