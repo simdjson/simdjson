@@ -147,6 +147,11 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   // Complexity is 1 + max child complexity
   metrics.complexity = 1 + max_child_complexity;
 
+  // Bracket padding "[ 1, 2 ]" vs "[1, 2]"
+  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+    metrics.estimated_inline_len += 2;
+  }
+
   // Check if can inline
   metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
                        (metrics.estimated_inline_len <= current_opts_->max_inline_length);
@@ -201,6 +206,11 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
   }
 
   metrics.complexity = 1 + max_child_complexity;
+
+  // Bracket padding '{ "a": 1 }' vs '{"a": 1}'
+  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+    metrics.estimated_inline_len += 2;
+  }
 
   metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
                        (metrics.estimated_inline_len <= current_opts_->max_inline_length);
@@ -607,12 +617,16 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
   size_t child_idx = 0;
 
   for (dom::element elem : arr) {
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+
     if (!first) {
       format_.comma();
+      format_.track_line_length(1);
 
       // Check if we should break to new line
       if (items_on_line >= options_.max_items_per_line ||
-          format_.should_break_line(20)) { // 20 is rough estimate for next item
+          format_.should_break_line(child_metrics.estimated_inline_len)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
         items_on_line = 0;
@@ -622,14 +636,12 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
-
     if (child_metrics.can_inline) {
       layout_mode prev_layout = format_.get_layout_mode();
       format_.set_layout_mode(layout_mode::single_line);
       format_element(elem, child_metrics, depth + 1);
       format_.set_layout_mode(prev_layout);
+      format_.track_line_length(child_metrics.estimated_inline_len);
     } else {
       format_element(elem, child_metrics, depth + 1);
     }
