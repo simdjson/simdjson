@@ -124,16 +124,16 @@ private:
   const fractured_json_options* current_opts_ = nullptr;
 
   /** Recursive analysis implementation */
-  element_metrics analyze_element(const dom::element& elem, size_t depth);
+  element_metrics analyze_element(const dom::element& elem, size_t depth) const;
 
   /** Analyze scalar values (strings, numbers, booleans, null) */
-  element_metrics analyze_scalar(const dom::element& elem);
+  element_metrics analyze_scalar(const dom::element& elem) const;
 
   /** Analyze an array element */
-  element_metrics analyze_array(const dom::array& arr, size_t depth);
+  element_metrics analyze_array(const dom::array& arr, size_t depth) const;
 
   /** Analyze an object element */
-  element_metrics analyze_object(const dom::object& obj, size_t depth);
+  element_metrics analyze_object(const dom::object& obj, size_t depth) const;
 
   /** Estimate inline length for a string (including quotes and escaping) */
   size_t estimate_string_length(std::string_view s) const;

@@ -45,7 +45,7 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
   return analyze_object(obj, 0);
 }
 
-inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) {
+inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) const {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
@@ -68,7 +68,7 @@ inline element_metrics structure_analyzer::analyze_element(const dom::element& e
   return element_metrics{};
 }
 
-inline element_metrics structure_analyzer::analyze_scalar(const dom::element& elem) {
+inline element_metrics structure_analyzer::analyze_scalar(const dom::element& elem) const {
   element_metrics metrics;
   metrics.complexity = 0;
   metrics.child_count = 0;
@@ -121,7 +121,7 @@ inline element_metrics structure_analyzer::analyze_scalar(const dom::element& el
 }
 
 inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
-                                                          size_t depth) {
+                                                          size_t depth) const {
   element_metrics metrics;
   metrics.complexity = 1; // At least 1 for being an array
   metrics.estimated_inline_len = 2; // "[]"
@@ -165,7 +165,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
 }
 
 inline element_metrics structure_analyzer::analyze_object(const dom::object& obj,
-                                                           size_t depth) {
+                                                           size_t depth) const {
   element_metrics metrics;
   metrics.complexity = 1;
   metrics.estimated_inline_len = 2; // "{}"
