@@ -114,17 +114,28 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
 
   for (auto v : arr) {
     if constexpr (concepts::returns_reference<T>) {
-      if (auto const err = v.get<value_type>().get(concepts::emplace_one(out));
-          err) {
-        // If an error occurs, the empty element that we just inserted gets
-        // removed. We're not using a temp variable because if T is a heavy
-        // type, we want the valid path to be the fast path and the slow path be
-        // the path that has errors in it.
+#if SIMDJSON_EXCEPTIONS
+      try {
+#endif
+        if (auto const err = v.get<value_type>().get(concepts::emplace_one(out));
+            err) {
+          // If an error occurs, the empty element that we just inserted gets
+          // removed. We're not using a temp variable because if T is a heavy
+          // type, we want the valid path to be the fast path and the slow path be
+          // the path that has errors in it.
+          if constexpr (requires { out.pop_back(); }) {
+            static_cast<void>(out.pop_back());
+          }
+          return err;
+        }
+#if SIMDJSON_EXCEPTIONS
+      } catch (...) {
         if constexpr (requires { out.pop_back(); }) {
           static_cast<void>(out.pop_back());
         }
-        return err;
+        throw;
       }
+#endif // SIMDJSON_EXCEPTIONS
     } else {
       value_type temp;
       if (auto const err = v.get<value_type>().get(temp); err) {
