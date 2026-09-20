@@ -160,7 +160,7 @@ public:
    */
   template <typename T>
   simdjson_warn_unused simdjson_inline error_code get(T &out)
-     noexcept(custom_deserializable<T, array> ? nothrow_custom_deserializable<T, array> : true) {
+     noexcept(nothrow_gettable<T, array>) {
     static_assert(custom_deserializable<T, array>);
     return deserialize(*this, out);
   }
@@ -172,7 +172,7 @@ public:
    */
   template <typename T>
   simdjson_inline simdjson_result<T> get()
-    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+    noexcept(nothrow_gettable<T, array>)
   {
     static_assert(std::is_default_constructible<T>::value, "The specified type is not default constructible.");
     T out{};
@@ -269,7 +269,7 @@ public:
   // TODO: move this code into object-inl.h
 
   template<typename T>
-  simdjson_inline simdjson_result<T> get() noexcept {
+  simdjson_inline simdjson_result<T> get() noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
     if (error()) { return error(); }
     if constexpr (std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
       return first;
@@ -277,7 +277,7 @@ public:
     return first.get<T>();
   }
   template<typename T>
-  simdjson_warn_unused simdjson_inline error_code get(T& out) noexcept {
+  simdjson_warn_unused simdjson_inline error_code get(T& out) noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
     if (error()) { return error(); }
     if constexpr (std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
       out = first;

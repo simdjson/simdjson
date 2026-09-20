@@ -113,25 +113,13 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   }
 
   for (auto v : arr) {
-    if constexpr (concepts::returns_reference<T>) {
-      if (auto const err = v.get<value_type>().get(concepts::emplace_one(out));
-          err) {
-        // If an error occurs, the empty element that we just inserted gets
-        // removed. We're not using a temp variable because if T is a heavy
-        // type, we want the valid path to be the fast path and the slow path be
-        // the path that has errors in it.
-        if constexpr (requires { out.pop_back(); }) {
-          static_cast<void>(out.pop_back());
-        }
-        return err;
-      }
-    } else {
-      value_type temp;
-      if (auto const err = v.get<value_type>().get(temp); err) {
-        return err;
-      }
-      concepts::emplace_one(out, std::move(temp));
+    // Deserialize into a temporary first: an error or an exception (a user
+    // tag_invoke may throw) must not leave a default-constructed element behind.
+    value_type temp;
+    if (auto const err = v.get<value_type>(temp); err) {
+      return err;
     }
+    concepts::emplace_one(out, std::move(temp));
   }
   return SUCCESS;
 }
@@ -168,7 +156,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
 }
 
 template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::mapped_type;
 
   out.clear();
@@ -187,21 +175,21 @@ error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object
 }
 
 template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::value &val, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::value &val, T &out) noexcept(false) {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   SIMDJSON_TRY(val.get_object().get(obj));
   return simdjson::deserialize(obj, out);
 }
 
 template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document &doc, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document &doc, T &out) noexcept(false) {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   SIMDJSON_TRY(doc.get_object().get(obj));
   return simdjson::deserialize(obj, out);
 }
 
 template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &doc, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &doc, T &out) noexcept(false) {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   SIMDJSON_TRY(doc.get_object().get(obj));
   return simdjson::deserialize(obj, out);
@@ -212,10 +200,6 @@ error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::docume
  * This CPO (Customization Point Object) will help deserialize into
  * smart pointers.
  *
- * If constructing T is nothrow, this conversion should be nothrow as well since
- * we return MEMALLOC if we're not able to allocate memory instead of throwing
- * the error message.
- *
  * @tparam T The type inside the smart pointer
  * @tparam ValT document/value type
  * @param val document/value
@@ -223,7 +207,7 @@ error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::docume
  * @return status of the conversion
  */
 template <concepts::smart_pointer T, typename ValT>
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::element_type, ValT>) {
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using element_type = typename std::remove_cvref_t<T>::element_type;
 
   // For better error messages, don't use these as constraints on
@@ -235,12 +219,13 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(nothrow_deser
       std::is_default_constructible_v<element_type>,
       "The specified type inside the unique_ptr must default constructible.");
 
-  auto ptr = new (std::nothrow) element_type();
-  if (ptr == nullptr) {
+  // Own the allocation before get(): a user tag_invoke may throw.
+  std::unique_ptr<element_type> ptr(new (std::nothrow) element_type());
+  if (!ptr) {
     return MEMALLOC;
   }
   SIMDJSON_TRY(val.template get<element_type>(*ptr));
-  out.reset(ptr);
+  out = std::move(ptr);
   return SUCCESS;
 }
 
@@ -273,7 +258,14 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
 template <typename T>
 constexpr bool user_defined_type = (std::is_class_v<T>
 && !std::is_same_v<T, std::string> && !std::is_same_v<T, std::string_view> && !concepts::optional_type<T> &&
-!concepts::appendable_containers<T>);
+!concepts::appendable_containers<T>
+// simdjson's own types (array, object, value, raw_json_string, number,
+// document, document_reference) have dedicated get<T>() specializations and
+// must never go through reflection.
+&& !is_builtin_deserializable_v<T>
+&& !std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::number>
+&& !std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::document>
+&& !std::is_same_v<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>);
 
 
 // key_selector_reflection_detail is defined unconditionally (it only requires
@@ -380,7 +372,7 @@ consteval bool keys_fit_selector() {
 // (see keys_fit_selector).
 template <typename T>
 simdjson_warn_unused error_code deserialize_struct_ordered(
-    SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept {
+    SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept(false) {
   template for (constexpr auto mem : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
     if constexpr (is_eligible_member(mem)) {
       constexpr std::string_view key = simdjson::get_json_key_name<mem>();
@@ -408,9 +400,12 @@ simdjson_warn_unused error_code deserialize_struct_ordered(
 //   - automatically and per-type, when the struct's member keys do not fit the
 //     key_selector limits (see keys_fit_selector), so that long member names and
 //     the like keep compiling rather than tripping a static_assert.
+//
+// noexcept(false): a member's tag_invoke may throw and the exception must reach
+// the caller of get<T>().
 template <typename T, typename ValT>
   requires(user_defined_type<T> && std::is_class_v<T>)
-error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
     obj = val;
@@ -524,33 +519,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
-error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept {
-  if (!out) {
-    out = std::make_unique<T>();
-    if (!out) {
-      return MEMALLOC;
-    }
+error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept(false) {
+  std::unique_ptr<T> ptr(new (std::nothrow) T());
+  if (!ptr) {
+    return MEMALLOC;
   }
-  if (auto err = val.get(*out)) {
-    out.reset();
-    return err;
-  }
+  SIMDJSON_TRY(val.get(*ptr));
+  out = std::move(ptr);
   return SUCCESS;
 }
 
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
-error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &out) noexcept {
-  if (!out) {
-    out = std::make_shared<T>();
-    if (!out) {
-      return MEMALLOC;
-    }
+error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &out) noexcept(false) {
+  std::shared_ptr<T> ptr(new (std::nothrow) T());
+  if (!ptr) {
+    return MEMALLOC;
   }
-  if (auto err = val.get(*out)) {
-    out.reset();
-    return err;
-  }
+  SIMDJSON_TRY(val.get(*ptr));
+  out = std::move(ptr);
   return SUCCESS;
 }
 

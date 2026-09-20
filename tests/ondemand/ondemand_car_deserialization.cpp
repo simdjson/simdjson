@@ -50,6 +50,10 @@ simdjson::ondemand::value::get() noexcept {
 }
 #endif
 
+#if !SIMDJSON_STATIC_REFLECTION
+// With static reflection, Car is deserialized automatically and get<Car>() is
+// noexcept(false) (a member customization may throw), so these explicit
+// noexcept specializations would no longer match the primary template.
 template <>
 simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
   ondemand::object obj;
@@ -124,6 +128,7 @@ simdjson::ondemand::document_reference::get() &noexcept {
   }
   return car;
 }
+#endif // !SIMDJSON_STATIC_REFLECTION
 
 int main_should_compile(void) {
   padded_string json =

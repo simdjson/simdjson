@@ -137,6 +137,9 @@ simdjson::ondemand::value::get() noexcept {
 #endif
 
 
+#if !SIMDJSON_STATIC_REFLECTION
+// With static reflection, Car is deserialized automatically and get<Car>() is
+// noexcept(false), so this explicit noexcept specialization would not match.
 template <>
 simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
   ondemand::object obj;
@@ -149,6 +152,7 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::value::get() noexcept {
   if((error = obj["tire_pressure"].get<std::vector<double>>().get(car.tire_pressure))) { return error; }
   return car;
 }
+#endif // !SIMDJSON_STATIC_REFLECTION
 
 int custom_type_without_exceptions() {
   padded_string json = R"( [ { "make": "Toyota", "model": "Camry",  "year": 2018,
@@ -172,6 +176,7 @@ int custom_type_without_exceptions() {
 }
 
 
+#if !SIMDJSON_STATIC_REFLECTION
 template <>
 simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexcept {
   ondemand::object obj;
@@ -202,6 +207,7 @@ simdjson_inline simdjson_result<Car> simdjson::ondemand::document::get() & noexc
   }
   return car;
 }
+#endif // !SIMDJSON_STATIC_REFLECTION
 
 #if SIMDJSON_EXCEPTIONS
 

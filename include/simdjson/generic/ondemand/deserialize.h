@@ -39,6 +39,10 @@ concept nothrow_custom_deserializable = nothrow_tag_invocable<deserialize_tag, V
 template <typename T, typename ValT = SIMDJSON_IMPLEMENTATION::ondemand::value>
 concept nothrow_deserializable = nothrow_custom_deserializable<T, ValT> || is_builtin_deserializable_v<T>;
 
+// True iff get<T>() on ValT cannot throw: no custom tag_invoke, or that tag_invoke is noexcept.
+template <typename T, typename ValT = SIMDJSON_IMPLEMENTATION::ondemand::value>
+concept nothrow_gettable = !custom_deserializable<T, ValT> || nothrow_custom_deserializable<T, ValT>;
+
 /// Deserialize Tag
 inline constexpr struct deserialize_tag {
   using array_type = SIMDJSON_IMPLEMENTATION::ondemand::array;
