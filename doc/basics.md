@@ -982,6 +982,12 @@ The C++26 approach is even simpler.
 
 ### 1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)
 
+This approach is meant for compilers without C++20 support. It is not compatible with
+static reflection (C++26): when reflection is enabled, your structs are deserialized
+automatically and `get<T>()` is `noexcept(false)` for them, so an explicit `noexcept`
+specialization no longer compiles. Prefer [`tag_invoke`](#2-use-tag_invoke-for-custom-types-c20)
+whenever you can.
+
 Suppose you have your own types, such as a `Car` struct:
 
 ```cpp
@@ -1333,6 +1339,25 @@ Let us explain each argument of `tag_invoke` function.
 - `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.
 - `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
 - The third parameter is an instance of the type that you want to support.
+
+Your `tag_invoke` function reports errors by returning an `error_code`, but it is also allowed
+to throw an exception. The `get<T>()` methods (including those of `simdjson_result<T>`)
+are `noexcept` only when the `tag_invoke` function for `T` is itself `noexcept`, so an
+exception thrown from your `tag_invoke` propagates to your `try`/`catch` block. Whether you
+return an error code or throw, the object being deserialized may be left partially
+populated: when deserializing a `std::vector<T>`, for example, the elements that were parsed
+before the failure are kept and no extra element is added. A `std::unique_ptr<T>` or
+`std::shared_ptr<T>` is left unchanged (so it stays null if it was null).
+If you never throw, mark your `tag_invoke` function `noexcept`: the `get<T>()` methods then
+remain `noexcept` for your type.
+
+Exceptions also propagate out of structs deserialized through static reflection (C++26):
+if a member's type has a throwing `tag_invoke`, `get<T>()` for the enclosing struct is
+`noexcept(false)` and the exception reaches your `try`/`catch` block. Note that this makes
+`get<T>()` `noexcept(false)` for every reflected struct `T`, so a legacy explicit
+specialization such as `template<> simdjson_result<Car> simdjson::ondemand::value::get() noexcept`
+no longer matches the primary template when static reflection is enabled: remove it (the
+struct is deserialized automatically) or replace it with a `tag_invoke` customization.
 
 You can use it like so:
 
