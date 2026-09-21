@@ -580,7 +580,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   return raw_json_string(json+1);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_uint64() noexcept {
-  auto result = numberparsing::parse_unsigned(peek_non_root_scalar("uint64"));
+  auto result = numberparsing::parse_unsigned_swar(peek_non_root_scalar("uint64"));
   if(result.error() == SUCCESS) { advance_non_root_scalar("uint64"); }
   return result;
 }
@@ -590,7 +590,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_int64() noexcept {
-  auto result = numberparsing::parse_integer(peek_non_root_scalar("int64"));
+  auto result = numberparsing::parse_integer_swar(peek_non_root_scalar("int64"));
   if(result.error() == SUCCESS) { advance_non_root_scalar("int64"); }
   return result;
 }
