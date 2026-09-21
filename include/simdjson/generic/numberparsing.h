@@ -656,6 +656,20 @@ simdjson_inline void parse_fraction_digits(const uint8_t *&p, uint64_t &i) {
   while (parse_digit(*p, i)) { p++; }
 }
 
+SIMDJSON_NO_SANITIZE_UNDEFINED
+simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
+#ifdef SIMDJSON_SWAR_NUMBER_PARSING
+#if SIMDJSON_SWAR_NUMBER_PARSING
+  const uint8_t *const swar_end = p + 16;
+  while (p < swar_end && is_made_of_four_digits_fast(p)) {
+    i = i * 10000 + parse_four_digits_unrolled(p);
+    p += 4;
+  }
+#endif // SIMDJSON_SWAR_NUMBER_PARSING
+#endif // #ifdef SIMDJSON_SWAR_NUMBER_PARSING
+  while (parse_digit(*p, i)) { p++; }
+}
+
 simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
   // we continue with the fiction that we have an integer. If the
   // floating point number is representable as x * 10^z for some integer
@@ -1037,7 +1051,7 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  parse_integer_digits(p, i);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1135,7 +1149,7 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_stri
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  parse_integer_digits(p, i);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1190,7 +1204,7 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
   uint64_t i = 0;
-  while (parse_digit(*p, i)) { p++; }
+  parse_integer_digits(p, i);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1276,7 +1290,7 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = src;
   uint64_t i = 0;
-  while (parse_digit(*src, i)) { src++; }
+  parse_integer_digits(src, i);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
