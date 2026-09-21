@@ -116,18 +116,21 @@ static inline uint32_t detect_supported_architectures() {
   unsigned long hwcap2 = getauxval(AT_HWCAP2);
   if (hwcap & HWCAP_SVE) {
     host_isa |= instruction_set::SVE;
-  }
-  if (hwcap2 & HWCAP2_SVE2) {
-    // SVE2 implies SVE.
-    host_isa |= instruction_set::SVE | instruction_set::SVE2;
+    // We only claim SVE2 when SVE is also present. Before Linux 6.14, the
+    // kernel set HWCAP2_SVE2 on processors implementing SME(2) but not SVE,
+    // because SVE2 instructions are available in streaming mode. Our SVE2
+    // code runs in non-streaming mode and needs actual SVE.
+    if (hwcap2 & HWCAP2_SVE2) {
+      host_isa |= instruction_set::SVE2;
+    }
   }
 #elif defined(_WIN32)
   if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE)) {
     host_isa |= instruction_set::SVE;
-  }
-  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
-    // SVE2 implies SVE.
-    host_isa |= instruction_set::SVE | instruction_set::SVE2;
+    // As on Linux, require SVE before claiming SVE2.
+    if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE)) {
+      host_isa |= instruction_set::SVE2;
+    }
   }
 #endif
   // On other systems (e.g., macOS, where Apple Silicon has no SVE), we only
