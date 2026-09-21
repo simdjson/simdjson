@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "simdjson.h"
@@ -979,6 +980,342 @@ bool no_padding_test() {
   return true;
 }
 
+bool compact_multiline_oversized_item_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":true,"b":true,"c":true,"d":true}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 10;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": true,\n"
+      "        \"c\": true,\n"
+      "        \"d\": true\n"
+      "    }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Compact multiline oversized item test passed." << std::endl;
+  return true;
+}
+
+bool compact_multiline_respects_max_total_line_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json =
+      R"(["aaaaaaaaaaaaaaaaaaaaaaaaa","bbbbbbbbbbbbbbbbbbbbbbbbb","ccccccccccccccccccccccccc",)"
+      R"("ddddddddddddddddddddddddd","eeeeeeeeeeeeeeeeeeeeeeeee","fffffffffffffffffffffffff"])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 50;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  std::string line;
+  std::istringstream stream(formatted);
+  while (std::getline(stream, line)) {
+    if (line.size() > opts.max_total_line_length) {
+      std::cerr << "Line exceeds max_total_line_length (" << opts.max_total_line_length
+                << "): \"" << line << "\" (" << line.size() << " chars)" << std::endl;
+      return false;
+    }
+  }
+
+  // Re-parse to verify validity
+  error = parser.parse(formatted).get(doc);
+  if (error) {
+    std::cerr << "Re-parse error: " << error << std::endl;
+    return false;
+  }
+
+  std::cout << "Compact multiline max total line length test passed." << std::endl;
+  return true;
+}
+
+bool bracket_padding_counted_in_array_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  // unpadded content is 14 chars
+  const char* json = R"(["0123456789"])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 15;
+  opts.simple_bracket_padding = true;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=20):\n" << formatted << std::endl;
+
+  const char* expected_expanded =
+      "[\n"
+      "    \"0123456789\"\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected_expanded);
+
+  opts.max_inline_length = 15;
+  opts.simple_bracket_padding = false;
+  formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted, "[\"0123456789\"]");
+
+  opts.max_inline_length = 16;
+  opts.simple_bracket_padding = true;
+  formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted, "[ \"0123456789\" ]");
+
+  std::cout << "Bracket padding counted in length test passed." << std::endl;
+  return true;
+}
+
+bool bracket_padding_counted_in_object_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  // unpadded content is 19 chars
+  const char* json = R"({"x":"0123456789"})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 20;
+  opts.simple_bracket_padding = true;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=20):\n" << formatted << std::endl;
+
+  const char* expected_expanded =
+      "{\n"
+      "    \"x\": \"0123456789\"\n"
+      "}";
+  ASSERT_EQUAL(formatted, expected_expanded);
+
+  opts.max_inline_length = 20;
+  opts.simple_bracket_padding = false;
+  formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted, "{\"x\": \"0123456789\"}");
+
+  opts.max_inline_length = 21;
+  opts.simple_bracket_padding = true;
+  formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted, "{ \"x\": \"0123456789\" }");
+
+  std::cout << "Bracket padding counted in length test passed." << std::endl;
+  return true;
+}
+
+bool compact_multiline_breaks_after_expanded_item_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string big_string(40, '0');
+  std::string json = R"([{"a":true,"b":")" + big_string + R"("},{"a":true,"b":"x"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_inline_length = 40;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  std::string expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": \"" + big_string + "\"\n"
+      "    },\n"
+      "    { \"a\": true, \"b\": \"x\" }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Compact multiline breaks after expanded item test passed." << std::endl;
+  return true;
+}
+
+bool nested_object_respects_max_total_line_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"({"a":{"b":{"c":{"d":"hello world"}}}})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 30;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "{\n"
+      "    \"a\": {\n"
+      "        \"b\": {\n"
+      "            \"c\": {\n"
+      "                \"d\": \"hello world\"\n"
+      "            }\n"
+      "        }\n"
+      "    }\n"
+      "}";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Nested object max total line length test passed." << std::endl;
+  return true;
+}
+
+bool nested_array_respects_max_total_line_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"({"a":{"b":{"c":["hello world"]}}})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 25;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "{\n"
+      "    \"a\": {\n"
+      "        \"b\": {\n"
+      "            \"c\": [\n"
+      "                \"hello world\"\n"
+      "            ]\n"
+      "        }\n"
+      "    }\n"
+      "}";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Nested array max total line length test passed." << std::endl;
+  return true;
+}
+
+bool compact_multiline_item_respects_max_total_line_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json =
+      R"([{"a":true,"b":"ABCDEFGHIJKLMNOPQRST"},{"a":true,"b":"ABCDEFGHIJKLMNOPQRST"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 44;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": \"ABCDEFGHIJKLMNOPQRST\"\n"
+      "    },\n"
+      "    {\n"
+      "        \"a\": true,\n"
+      "        \"b\": \"ABCDEFGHIJKLMNOPQRST\"\n"
+      "    }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Compact multiline item max total line length test passed." << std::endl;
+  return true;
+}
+
+bool trailing_comma_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"x":"0123456789"},{"y":"0123456789"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 25;
+  opts.enable_compact_multiline = false;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"x\": \"0123456789\"\n"
+      "    },\n"
+      "    { \"y\": \"0123456789\" }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Trailing comma counted in length test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1015,8 +1352,19 @@ int main() {
   success = disable_table_test() && success;
   success = no_padding_test() && success;
 
+  // Layout tests
+  success = compact_multiline_oversized_item_test() && success;
+  success = compact_multiline_respects_max_total_line_length_test() && success;
+  success = bracket_padding_counted_in_object_length_test() && success;
+  success = bracket_padding_counted_in_array_length_test() && success;
+  success = compact_multiline_breaks_after_expanded_item_test() && success;
+  success = nested_object_respects_max_total_line_length_test() && success;
+  success = nested_array_respects_max_total_line_length_test() && success;
+  success = compact_multiline_item_respects_max_total_line_length_test() && success;
+  success = trailing_comma_counted_in_length_test() && success;
+
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 27 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 36 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

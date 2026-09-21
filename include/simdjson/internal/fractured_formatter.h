@@ -118,10 +118,12 @@ private:
   fractured_json_options options_;
 
   /** Format an element using pre-computed metrics */
-  void format_element(const dom::element& elem, const element_metrics& metrics, size_t depth);
+  void format_element(const dom::element& elem, const element_metrics& metrics, size_t depth,
+                       bool has_trailing_comma = false);
 
   /** Format an array with the appropriate layout */
-  void format_array(const dom::array& arr, const element_metrics& metrics, size_t depth);
+  void format_array(const dom::array& arr, const element_metrics& metrics, size_t depth,
+                     bool has_trailing_comma = false);
 
   /** Format an array inline: [1, 2, 3] */
   void format_array_inline(const dom::array& arr, const element_metrics& metrics);
@@ -136,7 +138,8 @@ private:
   void format_array_expanded(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
   /** Format an object with the appropriate layout */
-  void format_object(const dom::object& obj, const element_metrics& metrics, size_t depth);
+  void format_object(const dom::object& obj, const element_metrics& metrics, size_t depth,
+                      bool has_trailing_comma = false);
 
   /** Format an object inline: {"a": 1, "b": 2} */
   void format_object_inline(const dom::object& obj, const element_metrics& metrics);

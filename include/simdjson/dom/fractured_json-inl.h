@@ -45,7 +45,7 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
   return analyze_object(obj, 0);
 }
 
-inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) {
+inline element_metrics structure_analyzer::analyze_element(const dom::element& elem, size_t depth) const {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
@@ -68,12 +68,11 @@ inline element_metrics structure_analyzer::analyze_element(const dom::element& e
   return element_metrics{};
 }
 
-inline element_metrics structure_analyzer::analyze_scalar(const dom::element& elem) {
+inline element_metrics structure_analyzer::analyze_scalar(const dom::element& elem) const {
   element_metrics metrics;
   metrics.complexity = 0;
   metrics.child_count = 0;
   metrics.can_inline = true;
-  metrics.recommended_layout = layout_mode::single_line;
 
   switch (elem.type()) {
     case dom::element_type::STRING: {
@@ -122,7 +121,7 @@ inline element_metrics structure_analyzer::analyze_scalar(const dom::element& el
 }
 
 inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
-                                                          size_t depth) {
+                                                          size_t depth) const {
   element_metrics metrics;
   metrics.complexity = 1; // At least 1 for being an array
   metrics.estimated_inline_len = 2; // "[]"
@@ -147,6 +146,11 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   // Complexity is 1 + max child complexity
   metrics.complexity = 1 + max_child_complexity;
 
+  // Bracket padding "[ 1, 2 ]" vs "[1, 2]"
+  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+    metrics.estimated_inline_len += 2;
+  }
+
   // Check if can inline
   metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
                        (metrics.estimated_inline_len <= current_opts_->max_inline_length);
@@ -157,25 +161,11 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
     metrics.is_uniform_array = check_array_uniformity(arr, metrics.common_keys);
   }
 
-  // Decide layout
-  if (metrics.child_count == 0) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else if (metrics.can_inline) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else if (metrics.is_uniform_array && !metrics.common_keys.empty()) {
-    metrics.recommended_layout = layout_mode::table;
-  } else if (current_opts_->enable_compact_multiline &&
-             max_child_complexity <= current_opts_->max_compact_array_complexity) {
-    metrics.recommended_layout = layout_mode::compact_multiline;
-  } else {
-    metrics.recommended_layout = layout_mode::expanded;
-  }
-
   return metrics;
 }
 
 inline element_metrics structure_analyzer::analyze_object(const dom::object& obj,
-                                                           size_t depth) {
+                                                           size_t depth) const {
   element_metrics metrics;
   metrics.complexity = 1;
   metrics.estimated_inline_len = 2; // "{}"
@@ -202,15 +192,13 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 
   metrics.complexity = 1 + max_child_complexity;
 
+  // Bracket padding '{ "a": 1 }' vs '{"a": 1}'
+  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+    metrics.estimated_inline_len += 2;
+  }
+
   metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
                        (metrics.estimated_inline_len <= current_opts_->max_inline_length);
-
-  // Objects use inline or expanded (no table/compact for objects)
-  if (metrics.child_count == 0 || metrics.can_inline) {
-    metrics.recommended_layout = layout_mode::single_line;
-  } else {
-    metrics.recommended_layout = layout_mode::expanded;
-  }
 
   return metrics;
 }
@@ -355,15 +343,16 @@ inline double structure_analyzer::compute_object_similarity(const dom::object& a
 
 inline layout_mode structure_analyzer::decide_layout(const element_metrics& metrics,
                                                       size_t depth,
-                                                      size_t available_width) const {
+                                                      const fractured_json_options& opts,
+                                                      bool has_trailing_comma) {
   if (metrics.child_count == 0) {
     return layout_mode::single_line;
   }
 
   // Check inline feasibility
-  size_t indent_width = depth * current_opts_->indent_spaces;
+  size_t reserved_width = depth * opts.indent_spaces + (has_trailing_comma ? 1 : 0);
   if (metrics.can_inline &&
-      metrics.estimated_inline_len + indent_width <= available_width) {
+      metrics.estimated_inline_len + reserved_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
   }
 
@@ -373,8 +362,8 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
   }
 
   // Check compact multiline
-  if (current_opts_->enable_compact_multiline &&
-      metrics.complexity <= current_opts_->max_compact_array_complexity + 1) {
+  if (opts.enable_compact_multiline &&
+      metrics.complexity <= opts.max_compact_array_complexity + 1) {
     return layout_mode::compact_multiline;
   }
 
@@ -518,19 +507,20 @@ simdjson_inline std::string_view fractured_string_builder::str() const {
 
 inline void fractured_string_builder::format_element(const dom::element& elem,
                                                        const element_metrics& metrics,
-                                                       size_t depth) {
+                                                       size_t depth,
+                                                       bool has_trailing_comma) {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        format_array(arr, metrics, depth);
+        format_array(arr, metrics, depth, has_trailing_comma);
       }
       break;
     }
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        format_object(obj, metrics, depth);
+        format_object(obj, metrics, depth, has_trailing_comma);
       }
       break;
     }
@@ -542,8 +532,10 @@ inline void fractured_string_builder::format_element(const dom::element& elem,
 
 inline void fractured_string_builder::format_array(const dom::array& arr,
                                                     const element_metrics& metrics,
-                                                    size_t depth) {
-  switch (metrics.recommended_layout) {
+                                                    size_t depth,
+                                                    bool has_trailing_comma) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+  switch (layout) {
     case layout_mode::single_line:
       format_array_inline(arr, metrics);
       break;
@@ -604,15 +596,21 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
   size_t items_on_line = 0;
   bool first = true;
+  bool prev_item_was_expanded = false;
   size_t child_idx = 0;
 
   for (dom::element elem : arr) {
+    const element_metrics& child_metrics = (child_idx < metrics.children.size())
+        ? metrics.children[child_idx] : element_metrics{};
+
     if (!first) {
       format_.comma();
+      format_.track_line_length(1);
 
       // Check if we should break to new line
       if (items_on_line >= options_.max_items_per_line ||
-          format_.should_break_line(20)) { // 20 is rough estimate for next item
+          prev_item_was_expanded ||
+          format_.should_break_line(child_metrics.estimated_inline_len)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
         items_on_line = 0;
@@ -622,13 +620,19 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    // Format element inline
-    layout_mode prev_layout = format_.get_layout_mode();
-    format_.set_layout_mode(layout_mode::single_line);
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
-    format_element(elem, child_metrics, depth + 1);
-    format_.set_layout_mode(prev_layout);
+    bool is_last = (child_idx + 1 == metrics.child_count);
+    layout_mode item_layout = structure_analyzer::decide_layout(child_metrics, depth + 1, options_, !is_last);
+    bool item_fits = item_layout == layout_mode::single_line;
+    if (item_fits) {
+      layout_mode prev_layout = format_.get_layout_mode();
+      format_.set_layout_mode(layout_mode::single_line);
+      format_element(elem, child_metrics, depth + 1, !is_last);
+      format_.set_layout_mode(prev_layout);
+      format_.track_line_length(child_metrics.estimated_inline_len);
+    } else {
+      format_element(elem, child_metrics, depth + 1, !is_last);
+    }
+    prev_item_was_expanded = !item_fits;
 
     items_on_line++;
     child_idx++;
@@ -775,7 +779,8 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
     format_.print_indents(depth + 1);
     const element_metrics& child_metrics = (child_idx < metrics.children.size())
         ? metrics.children[child_idx] : element_metrics{};
-    format_element(elem, child_metrics, depth + 1);
+    bool is_last = (child_idx + 1 == metrics.child_count);
+    format_element(elem, child_metrics, depth + 1, !is_last);
     child_idx++;
   }
 
@@ -788,8 +793,10 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 
 inline void fractured_string_builder::format_object(const dom::object& obj,
                                                      const element_metrics& metrics,
-                                                     size_t depth) {
-  if (metrics.recommended_layout == layout_mode::single_line || metrics.can_inline) {
+                                                     size_t depth,
+                                                     bool has_trailing_comma) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+  if (layout == layout_mode::single_line) {
     format_object_inline(obj, metrics);
   } else {
     format_object_expanded(obj, metrics, depth);
@@ -861,7 +868,8 @@ inline void fractured_string_builder::format_object_expanded(const dom::object& 
     }
     const element_metrics& child_metrics = (child_idx < metrics.children.size())
         ? metrics.children[child_idx] : element_metrics{};
-    format_element(field.value, child_metrics, depth + 1);
+    bool is_last = (child_idx + 1 == metrics.child_count);
+    format_element(field.value, child_metrics, depth + 1, !is_last);
     child_idx++;
   }
 
