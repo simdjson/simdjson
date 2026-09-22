@@ -23,7 +23,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [2. Use `tag_invoke` for custom types (C++20)](#2-use-tag_invoke-for-custom-types-c20)
   * [3. Using static reflection (C++26)](#3-using-static-reflection-c26)
     + [Special cases](#special-cases)
-    + [Renaming and skipping fields with annotations](#renaming-and-skipping-fields-with-annotations)
+    + [Customizing (de)serialization with annotations](#customizing-deserialization-with-annotations)
   * [The simdjson::from shortcut (experimental, C++20)](#the-simdjsonfrom-shortcut-experimental-c20)
   * [Order-independent reflective deserialization (experimental)](#order-independent-reflective-deserialization-experimental)
 - [Minifying JSON strings without parsing](#minifying-json-strings-without-parsing)
@@ -1670,24 +1670,43 @@ You can also automatically serialize the `Car` instance to a JSON string, see
 our [Builder documentation](builder.md).
 
 
-#### Renaming and skipping fields with annotations
+#### Customizing (de)serialization with annotations
 
 **This is experimental: the syntax may change slightly in the future.**
 
 C++26 annotations provide a convenient way to customize (de)serialization
-without writing `tag_invoke` functions. You can rename the JSON key that
-corresponds to a C++ data member, or skip a member entirely.
+without writing `tag_invoke` functions. The available annotations are modelled
+after the attributes of the Rust [serde](https://serde.rs/attributes.html) library.
+They affect both deserialization (`doc.get<T>()`, `simdjson::from`, ...) and
+serialization (`simdjson::to_json`, `builder << value`, ...).
 
-The syntax is:
+Annotations on data members:
 
-```cpp
-// rename cppFieldName (in C++) to json_key_name (in JSON)
-[[= simdjson::rename<"json_key_name">]] std::string cppFieldName;
-// do not serialize or deserialize this field
-[[= simdjson::skip]] int internalState;
-```
+| Annotation | serde equivalent | Effect |
+|---|---|---|
+| `[[= simdjson::rename<"key">]]` | `rename` | use `"key"` as the JSON key |
+| `[[= simdjson::alias<"a", "b">]]` | `alias` | also accept `"a"` and `"b"` when deserializing |
+| `[[= simdjson::skip]]` | `skip` | neither serialized nor deserialized |
+| `[[= simdjson::skip_serializing]]` | `skip_serializing` | never serialized |
+| `[[= simdjson::skip_deserializing]]` | `skip_deserializing` | never deserialized (keeps its value) |
+| `[[= simdjson::skip_serializing_if<pred>]]` | `skip_serializing_if` | not serialized when `pred(value)` is true |
+| `[[= simdjson::default_value]]` | `default` | a missing key is not an error |
+| `[[= simdjson::default_from<factory>]]` | `default = "path"` | a missing key sets the member to `factory()` |
+| `[[= simdjson::with<Adapter>]]` | `with` | custom (de)serialization of the member |
+| `[[= simdjson::flatten]]` | `flatten` | inline the members of a nested structure |
 
-Full examples:
+Annotations on structures:
+
+| Annotation | serde equivalent | Effect |
+|---|---|---|
+| `[[= simdjson::rename_all<simdjson::case_style::camel_case>]]` | `rename_all` | rename every member |
+| `[[= simdjson::default_value]]` | `default` | no missing key is an error |
+| `[[= simdjson::deny_unknown_fields]]` | `deny_unknown_fields` | an unknown key is an error (`UNKNOWN_FIELD`) |
+| `[[= simdjson::transparent]]` | `transparent` | (de)serialize as the single member |
+
+Enumerations accept `rename_all`, and their enumerators accept `rename` and `alias`.
+
+##### Renaming
 
 ```cpp
 struct RenamedFields {
@@ -1695,25 +1714,175 @@ struct RenamedFields {
   [[= simdjson::rename<"last_name">]]  std::string lastName = "";
   int age = 0;
 };
+// {"first_name":"Alice","last_name":"Smith","age":30}
+```
 
-struct SkippedField {
-  std::string name = "";
-  [[= simdjson::skip]] int internalCache = 0;
+The `rename_all` annotation applies a naming convention to all members of a structure
+(or all enumerators of an enumeration). The C++ identifier is split into words at
+underscores and at case changes (`user_id`, `userId` and `UserId` all have the words
+`user` and `id`), and the words are joined according to the convention:
+`lowercase` (`userid`), `uppercase` (`USERID`), `pascal_case` (`UserId`),
+`camel_case` (`userId`), `snake_case` (`user_id`), `screaming_snake_case` (`USER_ID`),
+`kebab_case` (`user-id`) and `screaming_kebab_case` (`USER-ID`).
+The `lowercase` and `uppercase` conventions only change the case of the letters
+(`user_id` becomes `USER_ID` with `uppercase`). An explicit `rename` takes precedence.
+
+```cpp
+struct [[= simdjson::rename_all<simdjson::case_style::camel_case>]] User {
+  std::string first_name;
+  int64_t user_id;
+  [[= simdjson::rename<"KEY">]] int api_key;
 };
+// {"firstName":"Ann","userId":7,"KEY":8}
 
-struct MixedAnnotations {
-  [[= simdjson::rename<"user_name">]] std::string userName = "";
-  [[= simdjson::skip]] int sessionToken = 0;
-  int age = 0;
+enum class [[= simdjson::rename_all<simdjson::case_style::screaming_snake_case>]] Status {
+  not_started,                                  // "NOT_STARTED"
+  inProgress,                                   // "IN_PROGRESS"
+  done [[= simdjson::rename<"finished">,
+          = simdjson::alias<"complete">]]       // "finished" (also accepts "complete")
 };
 ```
 
-- Serialization via `simdjson::to_json(r)` or `builder << r` will use the renamed
-  keys and omit skipped fields.
-- Deserialization via `doc.get<RenamedFields>()` will map the JSON keys back
-  to the C++ fields. Skipped fields are never written during deserialization
-  (they keep their default-initialized value), and keys matching skipped fields
-  in the JSON input are ignored.
+With `alias`, deserialization accepts other keys in addition to the regular
+key (serialization always uses the regular key). When the JSON object contains
+more than one of the names of a member, which one is used is unspecified.
+
+```cpp
+struct Profile {
+  [[= simdjson::alias<"userName", "login">]] std::string user_name;
+};
+// accepts {"user_name":"x"}, {"userName":"x"} and {"login":"x"}
+```
+
+##### Skipping
+
+```cpp
+struct Credentials {
+  std::string name;
+  [[= simdjson::skip]] int internal_cache = 0;         // never in JSON
+  [[= simdjson::skip_serializing]] std::string password; // read, never written
+  [[= simdjson::skip_deserializing]] int version = 3;   // written, never read
+  [[= simdjson::skip_serializing_if<simdjson::is_none>]] std::optional<std::string> email;
+  [[= simdjson::skip_serializing_if<simdjson::is_empty>]] std::vector<std::string> roles;
+};
+```
+
+A member that is not deserialized (`skip`, `skip_deserializing`) keeps its value,
+and a matching key in the JSON input is ignored (or rejected, with `deny_unknown_fields`).
+The predicate of `skip_serializing_if` can be `simdjson::is_none` (an empty `std::optional`
+or a null smart pointer), `simdjson::is_empty` (an empty string or container), or any
+constexpr callable taking the member value, such as a captureless lambda:
+
+```cpp
+inline constexpr auto is_zero = [](int v) { return v == 0; };
+struct Counter {
+  [[= simdjson::skip_serializing_if<is_zero>]] int count = 0;
+};
+```
+
+##### Default values
+
+By default, every member (except `std::optional` members) must be present in the JSON
+object, or deserialization fails with `NO_SUCH_FIELD`. With `default_value`, a missing
+key is not an error and the member keeps its value (with `doc.get<T>()`, the value from
+its default member initializer). With `default_from<factory>`, a missing key assigns
+`factory()` to the member. When the key is present, its value replaces the default
+(a container does not append to its default content).
+
+```cpp
+int default_timeout() { return 30; }
+
+struct Settings {
+  std::string host;                                        // required
+  [[= simdjson::default_value]] int port = 8080;           // optional, 8080 if missing
+  [[= simdjson::default_from<default_timeout>]] int timeout; // optional, 30 if missing
+  [[= simdjson::default_from<[] { return std::string("guest"); }>]] std::string user;
+};
+
+struct [[= simdjson::default_value]] Options { // every member is optional
+  bool verbose = false;
+  int level = 1;
+};
+```
+
+##### Rejecting unknown fields
+
+Keys that do not match any member are normally ignored. With `deny_unknown_fields`,
+they make deserialization fail with the `UNKNOWN_FIELD` error. The keys of members that
+are not deserialized (`skip`, `skip_deserializing`) are unknown. Deserialization of
+such structures walks every field of the object and is somewhat slower.
+
+```cpp
+struct [[= simdjson::deny_unknown_fields]] Point {
+  double x;
+  double y;
+};
+// {"x":1,"y":2,"z":3} -> UNKNOWN_FIELD
+```
+
+##### Transparent structures
+
+A structure annotated with `transparent` has exactly one data member (not counting
+`skip` members) and is (de)serialized as that member. It is useful for strong types.
+
+```cpp
+struct [[= simdjson::transparent]] UserId { int64_t value; };
+struct Account {
+  UserId id;
+  std::vector<UserId> friends;
+};
+// {"id":42,"friends":[1,2]} rather than {"id":{"value":42},"friends":[{"value":1},{"value":2}]}
+```
+
+##### Flattening
+
+The members of a data member annotated with `flatten` (which must be a structure) are
+(de)serialized as if they were members of the enclosing structure. The annotations of
+the nested structure (`rename_all`, `default_value`, ...) apply to its members.
+
+```cpp
+struct Pagination {
+  int limit;
+  int offset;
+};
+
+struct Users {
+  std::vector<std::string> names;
+  [[= simdjson::flatten]] Pagination pagination;
+};
+// {"names":["a","b"],"limit":10,"offset":20}
+// rather than {"names":["a","b"],"pagination":{"limit":10,"offset":20}}
+```
+
+Flattening a map (to collect the remaining keys, as serde allows) is not supported.
+
+##### Custom (de)serialization of a member
+
+With `with<Adapter>`, a member is (de)serialized by the static functions of `Adapter`:
+
+```cpp
+// A bool written as "yes" or "no".
+struct yes_no {
+  static void serialize(simdjson::builder::string_builder &b, const bool &v) {
+    b.append_raw(v ? "\"yes\"" : "\"no\"");
+  }
+  static simdjson::error_code deserialize(simdjson::ondemand::value &v, bool &out) {
+    std::string_view s;
+    SIMDJSON_TRY(v.get_string().get(s));
+    if (s == "yes") { out = true; return simdjson::SUCCESS; }
+    if (s == "no") { out = false; return simdjson::SUCCESS; }
+    return simdjson::INCORRECT_TYPE;
+  }
+};
+
+struct Feature {
+  [[= simdjson::with<yes_no>]] bool enabled;
+};
+// {"enabled":"yes"}
+```
+
+The adapter may provide only one of the two functions: the default behaviour is used
+in the other direction. The `serialize` function must write exactly one JSON value.
 
 ### The simdjson::from shortcut (experimental, C++20)
 

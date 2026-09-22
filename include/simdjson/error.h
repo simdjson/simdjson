@@ -50,6 +50,7 @@ enum error_code {
   OUT_OF_BOUNDS,              ///< Attempted to access location outside of document.
   TRAILING_CONTENT,           ///< Unexpected trailing content in the JSON input
   OUT_OF_CAPACITY,            ///< The capacity was exceeded, we cannot allocate enough memory.
+  UNKNOWN_FIELD,              ///< JSON field does not map to any member of the target (see simdjson::deny_unknown_fields)
   NUM_ERROR_CODES             ///< Placeholder for end of error code list.
 };
 
