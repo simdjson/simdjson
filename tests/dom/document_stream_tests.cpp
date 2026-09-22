@@ -1276,7 +1276,7 @@ namespace document_stream_tests {
         ASSERT_TRUE(i < N);
         switch (i % 4) {
           case 0: {
-            int64_t v; ASSERT_SUCCESS(doc.get(v));
+            int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
             ASSERT_EQUAL(v, int64_t(i));
             break;
           }
@@ -1331,7 +1331,7 @@ namespace document_stream_tests {
         ASSERT_TRUE(i < N);
         switch (i % 4) {
           case 0: {
-            int64_t v; ASSERT_SUCCESS(doc.get(v));
+            int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
             ASSERT_EQUAL(v, int64_t(i));
             break;
           }
@@ -1379,7 +1379,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 3);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1399,7 +1399,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 3);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1419,7 +1419,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 3);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1439,7 +1439,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 3);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1460,7 +1460,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 2);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1481,7 +1481,7 @@ namespace document_stream_tests {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 3);
         ASSERT_EQUAL(it.current_index(), expected_idx[i]);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1580,7 +1580,7 @@ namespace document_stream_tests {
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < N);
-        int64_t v;
+        int64_t v = 0;
         ASSERT_SUCCESS(doc["i"].get(v));
         ASSERT_EQUAL(v, int64_t(i));
         i++;
@@ -1606,7 +1606,7 @@ namespace document_stream_tests {
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < N);
-        int64_t v;
+        int64_t v = 0;
         ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, int64_t(i));
         i++;
@@ -1630,7 +1630,7 @@ namespace document_stream_tests {
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(i < 2);
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected[i]);
         i++;
       }
@@ -1669,7 +1669,7 @@ namespace document_stream_tests {
       size_t i = 0;
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, int64_t(1));
         i++;
       }
@@ -1712,7 +1712,7 @@ namespace document_stream_tests {
       int64_t expected = 0;
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
-        int64_t v; ASSERT_SUCCESS(doc.get(v));
+        int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, expected);
         expected++;
       }
@@ -2036,7 +2036,7 @@ namespace document_stream_tests {
         ASSERT_TRUE(i < N);
         switch (i % 4) {
           case 0: {
-            int64_t v; ASSERT_SUCCESS(doc.get(v));
+            int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
             ASSERT_EQUAL(v, int64_t(i));
             break;
           }
@@ -2091,7 +2091,7 @@ namespace document_stream_tests {
         ASSERT_TRUE(i < N);
         switch (i % 4) {
           case 0: {
-            int64_t v; ASSERT_SUCCESS(doc.get(v));
+            int64_t v = 0; ASSERT_SUCCESS(doc.get(v));
             ASSERT_EQUAL(v, int64_t(i));
             break;
           }
@@ -2201,7 +2201,7 @@ namespace document_stream_tests {
       int64_t sum = 0;
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
-        int64_t v;
+        int64_t v = 0;
         ASSERT_SUCCESS(doc.get(v));
         sum += v;
         count++;
@@ -2276,7 +2276,7 @@ namespace document_stream_tests {
       for (auto doc : stream) {
         ASSERT_SUCCESS(doc.error());
         ASSERT_TRUE(count < N);
-        int64_t v;
+        int64_t v = 0;
         ASSERT_SUCCESS(doc.get(v));
         ASSERT_EQUAL(v, int64_t(count));
         count++;
