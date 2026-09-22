@@ -596,6 +596,17 @@ namespace object_error_tests {
       }
       return true;
     }));
+    SUBTEST("revert_position mid-loop", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc.get(obj) );
+      auto position = obj.get_current_position();
+      for (auto field : obj) {
+        ASSERT_SUCCESS(field);
+        ASSERT_ERROR( obj.revert_position(position), OUT_OF_ORDER_ITERATION );
+        break;
+      }
+      return true;
+    }));
     TEST_SUCCEED();
   }
 #endif
@@ -621,6 +632,7 @@ namespace object_error_tests {
            out_of_order_object_find_field_sibling_error() &&
            out_of_order_object_find_field_unordered_child_error() &&
            out_of_order_object_find_field_unordered_sibling_error() &&
+           reentrant_object_access_during_iteration_error() &&
 #endif
            true;
   }

@@ -116,6 +116,16 @@ public:
    *   }
    *   size_t truncated = stream.truncated_bytes();
    *
+   * IMPORTANT: this value is only meaningful under the conditions below.
+   *
+   *   - the format is whitespace_delimited or newline_delimited;
+   *   - you iterated all the way to the end of the stream;
+   *   - no document reported an error. Iteration stops at the first failed
+   *     document, which can leave the bookkeeping from a mid-stream batch.
+   *
+   * If you need to know about a truncated tail outside those conditions, track
+   * it yourself from the last successful document (see iterator::current_index()
+   * and iterator::source()).
    */
   inline size_t truncated_bytes() const noexcept;
 

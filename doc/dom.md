@@ -17,6 +17,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Error Handling Example](#error-handling-example)
   * [Exceptions](#exceptions)
 * [Tree Walking and JSON Element Types](#tree-walking-and-json-element-types)
+* [Limiting the maximum depth](#limiting-the-maximum-depth)
 * [Reusing the parser for maximum efficiency](#reusing-the-parser-for-maximum-efficiency)
 * [Server Loops: Long-Running Processes and Memory Capacity](#server-loops-long-running-processes-and-memory-capacity)
 * [Best Use of the DOM API](#best-use-of-the-dom-api)
@@ -794,6 +795,42 @@ void basics_treewalk_1() {
 Notice that we do not include `dom::element_type::BIGINT` in this example
 as `dom::element_type::BIGINT` type is only generated if the parser was
 set to support big integers (`parser.number_as_string(true)`).
+
+
+Limiting the maximum depth
+--------------------------
+
+JSON documents can be nested arbitrarily deeply (`[[[[[[ ... ]]]]]]`). The simdjson
+library parses such documents iteratively: however deep the document is, parsing it
+costs the library no stack space.
+
+Code that walks the result is another matter. A recursive function applied to a document
+nested a thousand levels deep needs a thousand stack frames. Running out of stack is not
+a recoverable error: there is no exception and no error code, just a crash. A hostile
+input of a few kilobytes (`[[[[[[...`) is enough to cause one.
+
+So decide how deeply nested a document you are willing to accept, and tell the parser.
+The DOM parser refuses to parse a document nested more deeply than its `max_depth`, and
+reports `DEPTH_ERROR`:
+
+```cpp
+dom::parser parser;
+// We refuse documents nested more than 30 levels deep.
+auto error = parser.allocate(0, 30);
+if (error) { /* allocation failure */ }
+auto result = parser.parse(json); // DEPTH_ERROR if json is nested too deeply
+```
+
+The first argument to `allocate` is a capacity to reserve up front, not a limit: passing
+zero is fine, and the parser still grows its buffers by itself as documents are passed
+to it. If you know how large your documents are, you can skip the initial reallocations
+by reserving the capacity, e.g., `parser.allocate(1024 * 1024, 30)`. To put a hard limit
+on the document size, use `parser.set_max_capacity(1024 * 1024)`.
+
+The default depth limit is 1024 (`simdjson::DEFAULT_MAX_DEPTH`). Real-world JSON is
+rarely nested more than a handful of levels, so a limit like 30 is generous, and it
+keeps a recursive traversal to a few tens of kilobytes of stack. You can query the
+current setting with `parser.max_depth()`.
 
 
 Reusing the parser for maximum efficiency

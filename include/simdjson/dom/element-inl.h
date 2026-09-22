@@ -137,6 +137,7 @@ simdjson_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_
   return first.at_pointer(json_pointer);
 }
 simdjson_inline simdjson_result<dom::element> simdjson_result<dom::element>::at_path(const std::string_view json_path) const noexcept {
+  if (error()) { return error(); }
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
   return at_pointer(json_pointer);

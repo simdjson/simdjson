@@ -478,6 +478,15 @@ protected:
 
   /** @copydoc error_code json_iterator::position() const noexcept; */
   simdjson_inline token_position position() const noexcept;
+  /**
+   * Move the live iterator directly to the given position and depth, without
+   * validating against the parser's per-depth container-start bookkeeping
+   * (unlike json_iterator::reenter_child()). Used to restore a previously
+   * captured mid-container position (see object::revert_position()): that
+   * bookkeeping only tracks each container's own start, not every position
+   * a caller might later capture and revert to, so it does not apply here.
+   */
+  simdjson_inline void reenter_at(token_position position, depth_t depth) noexcept;
   /** @copydoc error_code json_iterator::end_position() const noexcept; */
   simdjson_inline token_position last_position() const noexcept;
   /** @copydoc error_code json_iterator::end_position() const noexcept; */

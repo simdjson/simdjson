@@ -1116,6 +1116,21 @@ simdjson_inline void value_iterator::move_at_container_start() noexcept {
   _json_iter->token.set_position(_start_position + 1);
 }
 
+simdjson_inline void value_iterator::reenter_at(token_position position, depth_t depth) noexcept {
+  // Unlike reenter_child(), this does not require the live depth to be
+  // exactly one level shallower than depth, nor does it validate against
+  // the parser's per-depth container-start bookkeeping: neither holds in
+  // general for a caller-supplied snapshot (see object_position). What
+  // must still always hold, regardless of what was captured or how far
+  // the live iterator has since moved, is that position and depth are
+  // themselves sane values -- this is the same bound reenter_child()
+  // itself applies unconditionally.
+  SIMDJSON_ASSUME(position != nullptr);
+  SIMDJSON_ASSUME(depth >= 1 && depth < INT32_MAX);
+  _json_iter->_depth = depth;
+  _json_iter->token.set_position(position);
+}
+
 simdjson_inline simdjson_result<bool> value_iterator::reset_array() noexcept {
   if(error()) { return error(); }
   move_at_container_start();

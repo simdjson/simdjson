@@ -193,6 +193,19 @@ namespace adversarial {
     ASSERT_ERROR( parser.parse(json, len).get(foo), TAPE_ERROR ); // Parse just the first digit
     TEST_SUCCEED();
   }
+  bool allocation_limits() {
+    TEST_START();
+    dom::parser parser;
+    ASSERT_ERROR( parser.allocate(64, 0), CAPACITY );
+    ASSERT_ERROR( parser.allocate(SIZE_MAX, DEFAULT_MAX_DEPTH), CAPACITY );
+    ASSERT_ERROR( parser.allocate(SIZE_MAX - 63, DEFAULT_MAX_DEPTH), CAPACITY );
+    ASSERT_ERROR( parser.allocate(64, SIZE_MAX), CAPACITY );
+    ASSERT_SUCCESS( parser.allocate(1024, DEFAULT_MAX_DEPTH) );
+    auto json = "[1,2,3]"_padded;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(json).get(doc) );
+    TEST_SUCCEED();
+  }
   bool run() {
     constexpr size_t filler_size = 65;
     static_assert(filler_size > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = std::strlen(PADDING_FILLED_WITH_NUMBERS)
@@ -200,6 +213,7 @@ namespace adversarial {
       && number_overrun_at_root()
       && number_overrun_in_array()
       && number_overrun_in_object()
+      && allocation_limits()
     ;
   }
 }

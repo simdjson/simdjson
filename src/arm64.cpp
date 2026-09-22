@@ -8,10 +8,45 @@
 #include <simdjson/arm64.h>
 #include <simdjson/arm64/implementation.h>
 
+// defining SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
+#define SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+
 #include <simdjson/arm64/begin.h>
 #include <generic/amalgamated.h>
 #include <generic/stage1/amalgamated.h>
 #include <generic/stage2/amalgamated.h>
+
+#undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+
+namespace simdjson { namespace arm64 { namespace { namespace stage1 {
+
+// The generic bit_indexer::write emits the structural indexes in groups of
+// four (up to 24), so a block with five set bits computes and stores eight
+// indexes, three of them wasted. Typical JSON has four to eight structural
+// characters per 64-byte block. This version writes the first four indexes
+// unconditionally and then continues by groups of two, which cuts the wasted
+// work on such blocks at the cost of one more branch for dense blocks. Both
+// versions fall back to the same scalar loop past 24 indexes.
+simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
+  if (bits == 0) { return; }
+
+  const int cnt = static_cast<int>(count_ones(bits));
+#if SIMDJSON_PREFER_REVERSE_BITS
+  bits = reverse_bits(bits);
+#endif
+  write_indexes<0, 4>(idx, bits);
+  if (simdjson_unlikely(4 < cnt)) {
+    write_indexes_stepped<4, 24, 2>(idx, bits, cnt);
+  }
+  if (simdjson_unlikely(24 < cnt)) {
+    for (int i = 24; i < cnt; ++i) {
+      write_index(idx, bits, i);
+    }
+  }
+  this->tail += cnt;
+}
+
+}}}} // namespace simdjson::arm64::(anonymous)::stage1
 
 //
 // Stage 1
@@ -81,11 +116,7 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
 
 simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
     simd8<uint8_t> bits = input.reduce_or();
-    // We only care whether some byte has its high bit set, so we turn that into a
-    // comparison mask (one vtstq_u8) and let any() do a shrn+fcmp. That is
-    // cheaper than max_val(), whose byte-wide across-lane reduction has to be
-    // moved to a general-purpose register before the branch can use it.
-    return !bits.any_bits_set(uint8_t(0x80)).any();
+    return bits.max_val() < 0x80u;
 }
 
 simdjson_unused simdjson_inline simd8<bool> must_be_continuation(const simd8<uint8_t> prev1, const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {

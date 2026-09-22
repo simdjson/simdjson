@@ -36,6 +36,7 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(st
   return first.at_pointer(json_pointer);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(std::string_view json_path) const noexcept {
+  if (error()) { return error(); }
   auto json_pointer = json_path_to_pointer_conversion(json_path);
   if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
   return at_pointer(json_pointer);

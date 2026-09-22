@@ -49,9 +49,6 @@ struct element_metrics {
   /** For uniform arrays of objects: the common keys */
   std::vector<std::string> common_keys{};
 
-  /** Recommended layout mode based on analysis */
-  layout_mode recommended_layout = layout_mode::expanded;
-
   /** Child metrics for arrays and objects (in order of iteration) */
   std::vector<element_metrics> children{};
 };
@@ -116,20 +113,27 @@ public:
   element_metrics analyze_object(const dom::object& obj,
                                  const fractured_json_options& opts);
 
+  /** Decide layout at the given render depth. Kept out of analysis since
+   * the same metrics can render inline or expanded at different depths. */
+  static layout_mode decide_layout(const element_metrics& metrics,
+                                    size_t depth,
+                                    const fractured_json_options& opts,
+                                    bool has_trailing_comma = false);
+
 private:
   const fractured_json_options* current_opts_ = nullptr;
 
   /** Recursive analysis implementation */
-  element_metrics analyze_element(const dom::element& elem, size_t depth);
+  element_metrics analyze_element(const dom::element& elem, size_t depth) const;
 
   /** Analyze scalar values (strings, numbers, booleans, null) */
-  element_metrics analyze_scalar(const dom::element& elem);
+  element_metrics analyze_scalar(const dom::element& elem) const;
 
   /** Analyze an array element */
-  element_metrics analyze_array(const dom::array& arr, size_t depth);
+  element_metrics analyze_array(const dom::array& arr, size_t depth) const;
 
   /** Analyze an object element */
-  element_metrics analyze_object(const dom::object& obj, size_t depth);
+  element_metrics analyze_object(const dom::object& obj, size_t depth) const;
 
   /** Estimate inline length for a string (including quotes and escaping) */
   size_t estimate_string_length(std::string_view s) const;
@@ -154,13 +158,6 @@ private:
    */
   double compute_object_similarity(const dom::object& a,
                                    const dom::object& b) const;
-
-  /**
-   * Decide the recommended layout mode based on metrics and options.
-   */
-  layout_mode decide_layout(const element_metrics& metrics,
-                            size_t depth,
-                            size_t available_width) const;
 };
 
 } // namespace internal

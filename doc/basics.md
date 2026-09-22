@@ -60,6 +60,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
 - [Storing directly into an existing string instance](#storing-directly-into-an-existing-string-instance)
 - [Thread safety](#thread-safety)
+- [Limiting the maximum depth](#limiting-the-maximum-depth)
 - [Standard compliance](#standard-compliance)
 - [Backwards compatibility](#backwards-compatibility)
 - [Examples](#examples)
@@ -664,6 +665,31 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > double y = doc["y"]; // The cursor is now after the 2 (at })
   > double x = doc["x"]; // Success: [] loops back around to find "x"
   > ```
+  >
+  > If you expect a field that may or may not be present, and it is not the next field, the ordered
+  > `find_field()` puts you in the same stuck position as above: you would normally need to call
+  > `reset()` and rescan the object from the very beginning to recover, even for fields you had
+  > already found. `object::get_current_position()` and `object::revert_position()` let you avoid
+  > that rescan: capture the position before the optional lookup, and on `NO_SUCH_FIELD`, revert to
+  > it instead of resetting, so only the fields from that point on are scanned again.
+  >
+  > ```cpp
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2, "z": 3 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > ondemand::object object = doc.get_object();
+  > double x = object.find_field("x");
+  > auto position = object.get_current_position();
+  > double optional; // "optional" is not in this document
+  > if (object.find_field("optional").get(optional)) {
+  >   object.revert_position(position); // back to right after "x", not to the very start
+  > }
+  > double y = object.find_field("y"); // still found, without rescanning "x"
+  > ```
+  >
+  > A captured position is only valid for the object it came from, and only until that object is
+  > `reset()` or the parser `iterate()`s a new document: applying it to a different object, or after
+  > either of those, is undefined behavior that `revert_position()` cannot detect.
 * **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the internal pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```cpp
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
@@ -998,6 +1024,12 @@ C++20 or better should skip ahead to [using `tag_invoke` for custom types (C++20
 The C++26 approach is even simpler.
 
 ### 1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)
+
+This approach is meant for compilers without C++20 support. It is not compatible with
+static reflection (C++26): when reflection is enabled, your structs are deserialized
+automatically and `get<T>()` is `noexcept(false)` for them, so an explicit `noexcept`
+specialization no longer compiles. Prefer [`tag_invoke`](#2-use-tag_invoke-for-custom-types-c20)
+whenever you can.
 
 Suppose you have your own types, such as a `Car` struct:
 
@@ -1350,6 +1382,25 @@ Let us explain each argument of `tag_invoke` function.
 - `simdjson::deserialize_tag`: it is the tag for Customization Point Object (CPO). You may often ignore this parameter. It is used to indicate that you mean to provide a deserialization function for simdjson.
 - `var`: It receives automatically a `simdjson` value type (document, value, document_reference).
 - The third parameter is an instance of the type that you want to support.
+
+Your `tag_invoke` function reports errors by returning an `error_code`, but it is also allowed
+to throw an exception. The `get<T>()` methods (including those of `simdjson_result<T>`)
+are `noexcept` only when the `tag_invoke` function for `T` is itself `noexcept`, so an
+exception thrown from your `tag_invoke` propagates to your `try`/`catch` block. Whether you
+return an error code or throw, the object being deserialized may be left partially
+populated: when deserializing a `std::vector<T>`, for example, the elements that were parsed
+before the failure are kept and no extra element is added. A `std::unique_ptr<T>` or
+`std::shared_ptr<T>` is left unchanged (so it stays null if it was null).
+If you never throw, mark your `tag_invoke` function `noexcept`: the `get<T>()` methods then
+remain `noexcept` for your type.
+
+Exceptions also propagate out of structs deserialized through static reflection (C++26):
+if a member's type has a throwing `tag_invoke`, `get<T>()` for the enclosing struct is
+`noexcept(false)` and the exception reaches your `try`/`catch` block. Note that this makes
+`get<T>()` `noexcept(false)` for every reflected struct `T`, so a legacy explicit
+specialization such as `template<> simdjson_result<Car> simdjson::ondemand::value::get() noexcept`
+no longer matches the primary template when static reflection is enabled: remove it (the
+struct is deserialized automatically) or replace it with a `tag_invoke` customization.
 
 You can use it like so:
 
@@ -3743,6 +3794,55 @@ issues. If you expect such problems, you may consider using [std::quick_exit](ht
 
 In a threaded environment, stack space is often limited. Running code like simdjson in debug mode may require hundreds of kilobytes of stack memory. Thus stack overflows are a possibility. We recommend you turn on optimization when working in an environment where stack space is limited. If you must run your code in debug mode, we recommend you configure your system to have more stack space. We discourage you from running production code based on a debug build.
 
+
+Limiting the maximum depth
+--------------------------
+
+JSON documents can be nested arbitrarily deeply (`[[[[[[ ... ]]]]]]`). The simdjson
+library handles such documents iteratively: however deep the document is, parsing it
+costs the library no stack space.
+
+Code that walks the result is another matter. A recursive function applied to a document
+nested a thousand levels deep needs a thousand stack frames. Running out of stack is not
+a recoverable error: there is no exception and no error code, just a crash. A hostile
+input of a few kilobytes (`[[[[[[...`) is enough to cause one.
+
+So decide how deeply nested a document you are willing to accept, and tell the parser:
+
+```cpp
+ondemand::parser parser;
+// We will not go more than 30 levels deep.
+auto error = parser.allocate(0, 30);
+if (error) { /* allocation failure */ }
+```
+
+The first argument to `allocate` is a capacity to reserve up front, not a limit: passing
+zero is fine, and the parser still grows its buffers by itself as documents are passed
+to it. If you know how large your documents are, you can skip the initial reallocations
+by reserving the capacity, e.g., `parser.allocate(1024 * 1024, 30)`. To put a hard limit
+on the document size, use `parser.set_max_capacity(1024 * 1024)`.
+
+The depth limit bounds the recursion the library does on your behalf:
+`for_each_at_path_with_wildcard()` descends one level per path segment, and returns
+`DEPTH_ERROR` rather than going past `max_depth`. It is also verified at every step when
+you enable [development checks](#avoiding-pitfalls-enable-development-checks).
+
+Even if you do not limit the depth at the simdjson parser level, you can avoid deep
+recursion in your own code by calling `current_depth()`. It is available on the document
+and on its values, it is inexpensive, and it reports how deep the iterator currently
+sits:
+
+```cpp
+void recursive_print_json(ondemand::value element) {
+  if (element.current_depth() > 30) { throw std::runtime_error("too deep"); }
+  // ...
+}
+```
+
+Real-world JSON is rarely nested more than a handful of levels, so a limit like 30 is
+generous, and it keeps a recursive traversal to a few tens of kilobytes of stack. The
+default is 1024 (`simdjson::DEFAULT_MAX_DEPTH`). You can query the current setting with
+`parser.max_depth()`.
 
 Standard compliance
 --------------------

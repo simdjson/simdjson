@@ -45,7 +45,7 @@
 #define SIMDJSON_EXPERIMENTAL_HAS_RVV 1
 #endif
 #endif
-#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__)
+#if (defined(__PPC64__) || defined(_M_PPC64)) && defined(__ALTIVEC__) && defined(__POWER8_VECTOR__)
 #ifndef SIMDJSON_EXPERIMENTAL_HAS_PPC64
 #define SIMDJSON_EXPERIMENTAL_HAS_PPC64 1
 #endif
@@ -505,8 +505,7 @@ simdjson_inline escape_vector escape_flags(escape_vector v) noexcept {
 }
 
 simdjson_inline bool escape_any(escape_vector flags) noexcept {
-  uint8x8_t narrowed = vshrn_n_u16(vreinterpretq_u16_u8(flags), 4);
-  return vdupd_lane_f64(vreinterpret_f64_u8(narrowed), 0) != 0.0;
+  return vmaxvq_u32(vreinterpretq_u32_u8(flags)) != 0;
 }
 
 // Four bits per byte rather than one: escape_block and the tail paths scale

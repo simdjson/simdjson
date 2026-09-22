@@ -239,6 +239,128 @@ namespace object_tests {
     TEST_SUCCEED();
   }
 
+  bool revert_position_after_missing_ordered_field() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = R"({"a":0, "b":1, "c":2, "d":3})"_padded;
+    simdjson::ondemand::document doc;
+    simdjson::ondemand::object obj;
+    int64_t num;
+
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+    ASSERT_SUCCESS(obj.find_field("a").get(num));
+    ASSERT_EQUAL(num, 0);
+
+    // Ordered find_field only scans forward. Capture where we are right
+    // after "a", before probing an optional field that is not next.
+    auto position = obj.get_current_position();
+    assert_error(obj.find_field("x").get(num), NO_SUCH_FIELD);
+
+    // revert_position() returns to right after "a", without rescanning
+    // from the beginning: "b", "c" and "d" are all still reachable.
+    ASSERT_SUCCESS(obj.revert_position(position));
+    ASSERT_SUCCESS(obj.find_field("b").get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(obj.find_field("c").get(num));
+    ASSERT_EQUAL(num, 2);
+    ASSERT_SUCCESS(obj.find_field("d").get(num));
+    ASSERT_EQUAL(num, 3);
+    TEST_SUCCEED();
+  }
+
+  bool revert_position_nested_object() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = R"({"arr":[{"a":0, "b":1, "c":2}]})"_padded;
+    simdjson::ondemand::document doc;
+    simdjson::ondemand::array arr;
+    simdjson::ondemand::object obj;
+    int64_t num;
+
+    // Exercise revert_position() on an object nested inside an array, so
+    // the object's own depth is not the trivial root case.
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc["arr"].get_array().get(arr));
+    auto it = arr.begin();
+    simdjson::ondemand::value v;
+    ASSERT_SUCCESS((*it).get(v));
+    ASSERT_SUCCESS(v.get_object().get(obj));
+
+    ASSERT_SUCCESS(obj.find_field("a").get(num));
+    ASSERT_EQUAL(num, 0);
+    auto position = obj.get_current_position();
+    assert_error(obj.find_field("nope").get(num), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(obj.revert_position(position));
+    ASSERT_SUCCESS(obj.find_field("b").get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(obj.find_field("c").get(num));
+    ASSERT_EQUAL(num, 2);
+    TEST_SUCCEED();
+  }
+
+  bool revert_position_with_unconsumed_compound_value() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = R"({"a":[1,2,3], "c":4, "d":5})"_padded;
+    simdjson::ondemand::document doc;
+    simdjson::ondemand::object obj;
+    simdjson::ondemand::array arr;
+    int64_t num;
+
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_object().get(obj));
+
+    // Obtain "a" as an array but do not iterate or otherwise drain it.
+    // This leaves the live iterator mid-value on a compound value that is
+    // not fully consumed, which sits at a different depth than a scalar
+    // field like the one in revert_position_after_missing_ordered_field();
+    // get_current_position() must capture whichever depth is actually live.
+    ASSERT_SUCCESS(obj.find_field("a").get(arr));
+    auto position = obj.get_current_position();
+
+    // The miss scans past the still-open array (via skip_child()) before
+    // exhausting the remaining fields.
+    assert_error(obj.find_field("x").get(num), NO_SUCH_FIELD);
+
+    ASSERT_SUCCESS(obj.revert_position(position));
+    ASSERT_SUCCESS(obj.find_field("c").get(num));
+    ASSERT_EQUAL(num, 4);
+    ASSERT_SUCCESS(obj.find_field("d").get(num));
+    ASSERT_EQUAL(num, 5);
+    TEST_SUCCEED();
+  }
+
+  bool revert_position_simdjson_result_wrapper() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string docdata = R"({"a":0, "b":1, "c":2, "d":3})"_padded;
+    simdjson::ondemand::document doc;
+    int64_t num;
+
+    // Unlike revert_position_after_missing_ordered_field(), obj here stays a
+    // simdjson_result<object> throughout: get_current_position() and
+    // revert_position() are exercised through their simdjson_result<object>
+    // forwarders (object-inl.h), not by unwrapping to a plain object first.
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    simdjson::simdjson_result<simdjson::ondemand::object> obj = doc.get_object();
+    ASSERT_SUCCESS(obj.find_field("a").get(num));
+    ASSERT_EQUAL(num, 0);
+
+    simdjson::simdjson_result<simdjson::ondemand::object_position> position = obj.get_current_position();
+    ASSERT_SUCCESS(position);
+    assert_error(obj.find_field("x").get(num), NO_SUCH_FIELD);
+
+    ASSERT_SUCCESS(obj.revert_position(position.value_unsafe()));
+    ASSERT_SUCCESS(obj.find_field("b").get(num));
+    ASSERT_EQUAL(num, 1);
+    ASSERT_SUCCESS(obj.find_field("c").get(num));
+    ASSERT_EQUAL(num, 2);
+    ASSERT_SUCCESS(obj.find_field("d").get(num));
+    ASSERT_EQUAL(num, 3);
+    TEST_SUCCEED();
+  }
+
   bool missing_keys() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -1380,6 +1502,10 @@ namespace object_tests {
            issue1723() &&
            value_search_unescaped_key() &&
            missing_key_continue() &&
+           revert_position_after_missing_ordered_field() &&
+           revert_position_nested_object() &&
+           revert_position_with_unconsumed_compound_value() &&
+           revert_position_simdjson_result_wrapper() &&
            no_missing_keys() &&
            missing_keys() &&
            missing_keys_for_empty_top_level_object() &&

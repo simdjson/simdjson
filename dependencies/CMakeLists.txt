@@ -60,57 +60,12 @@ int main() {}
     target_compile_definitions(boostjson INTERFACE SIMDJSON_COMPETITION_BOOSTJSON)
   endif()
   CPMAddPackage(
-      NAME cjson
-      URL https://github.com/DaveGamble/cJSON/archive/c69134d01746dcf551dd7724b4edb12f922eb0d1.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(cjson STATIC "${cjson_SOURCE_DIR}/cJSON.c")
-  target_include_directories(cjson SYSTEM PUBLIC "${cjson_SOURCE_DIR}")
-  target_compile_definitions(cjson INTERFACE SIMDJSON_COMPETITION_CJSON)
-
-  CPMAddPackage(
-      NAME fastjson
-      URL https://github.com/mikeando/fastjson/archive/485f994a61a64ac73fa6a40d4d639b99b463563b.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(fastjson STATIC
-          "${fastjson_SOURCE_DIR}/src/fastjson.cpp"
-          "${fastjson_SOURCE_DIR}/src/fastjson2.cpp"
-          "${fastjson_SOURCE_DIR}/src/fastjson_dom.cpp")
-  target_include_directories(fastjson SYSTEM PUBLIC
-          "${fastjson_SOURCE_DIR}/include")
-  target_compile_definitions(fastjson INTERFACE SIMDJSON_COMPETITION_FASTJSON)
-
-  CPMAddPackage(
-      NAME gason
-      URL https://github.com/vivkin/gason/archive/7aee524189da1c1ecd19f67981e3d903dae25470.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(gason STATIC "${gason_SOURCE_DIR}/src/gason.cpp")
-  target_include_directories(gason SYSTEM PUBLIC "${gason_SOURCE_DIR}/src")
-  target_compile_definitions(gason INTERFACE SIMDJSON_COMPETITION_GASON)
-
-  CPMAddPackage(
-      NAME jsmn
-      URL https://github.com/zserge/jsmn/archive/18e9fe42cbfe21d65076f5c77ae2be379ad1270f.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(jsmn STATIC "${jsmn_SOURCE_DIR}/jsmn.c")
-  target_include_directories(jsmn SYSTEM PUBLIC "${jsmn_SOURCE_DIR}")
-  target_compile_definitions(jsmn INTERFACE SIMDJSON_COMPETITION_JSMN)
-
-  CPMAddPackage(
       NAME nlohmann_json
       URL https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.zip
   )
 
   set_property(TARGET nlohmann_json APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS SIMDJSON_COMPETITION_NLOHMANN_JSON)
 
-
-  set(jsoncpp_SOURCE_DIR "${simdjson_SOURCE_DIR}/dependencies/jsoncppdist")
-  add_library(jsoncpp STATIC "${jsoncpp_SOURCE_DIR}/jsoncpp.cpp")
-  target_include_directories(jsoncpp SYSTEM PUBLIC "${jsoncpp_SOURCE_DIR}")
-  target_compile_definitions(jsoncpp INTERFACE SIMDJSON_COMPETITION_JSONCPP)
 
   CPMAddPackage(
       NAME rapidjson
@@ -147,19 +102,6 @@ int main() {}
   target_compile_definitions(sajson INTERFACE SIMDJSON_COMPETITION_SAJSON)
 
   CPMAddPackage(
-      NAME ujson4c
-      URL https://github.com/esnme/ujson4c/archive/e14f3fd5207fe30d1bdea723f260609e69d1abfa.zip
-      DOWNLOAD_ONLY YES
-  )
-  add_library(ujson4c STATIC
-          "${ujson4c_SOURCE_DIR}/src/ujdecode.c"
-          "${ujson4c_SOURCE_DIR}/3rdparty/ultrajsondec.c")
-  target_include_directories(ujson4c SYSTEM PUBLIC
-          "${ujson4c_SOURCE_DIR}/src"
-          "${ujson4c_SOURCE_DIR}/3rdparty")
-  target_compile_definitions(ujson4c INTERFACE SIMDJSON_COMPETITION_UJSON4C)
-
-  CPMAddPackage(
       NAME yyjson
       URL https://github.com/ibireme/yyjson/archive/c3856514de0a67d7b66939bf3ed491a2d6e61277.zip
       DOWNLOAD_ONLY YES
@@ -169,7 +111,7 @@ int main() {}
   target_compile_definitions(yyjson INTERFACE SIMDJSON_COMPETITION_YYJSON)
 
   add_library(competition-core INTERFACE)
-  target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson cjson jsmn yyjson)
+  target_link_libraries(competition-core INTERFACE nlohmann_json rapidjson sajson yyjson)
 
   if(TARGET boostjson)
      target_compile_definitions(boostjson INTERFACE HAS_BOOST_JSON)
@@ -177,7 +119,7 @@ int main() {}
   endif()
 
   add_library(competition-all INTERFACE)
-  target_link_libraries(competition-all INTERFACE competition-core jsoncpp fastjson gason ujson4c)
+  target_link_libraries(competition-all INTERFACE competition-core)
 endfunction()
 
 if(SIMDJSON_COMPETITION)

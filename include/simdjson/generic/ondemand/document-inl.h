@@ -614,22 +614,46 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
 }
 
 template<typename T>
-simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() & noexcept {
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() &
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>();
 }
 template<typename T>
-simdjson_deprecated simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() && noexcept {
+simdjson_deprecated simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get() &&
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>();
 }
 template<typename T>
-simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) & noexcept {
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) &
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>(out);
 }
 template<typename T>
-simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) && noexcept {
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get(T &out) &&
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document>(first).get<T>(out);
 }
@@ -1049,22 +1073,46 @@ simdjson_inline simdjson_result<bool> simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return first.is_null();
 }
 template<typename T>
-simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() & noexcept {
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() &
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>();
 }
 template<typename T>
-simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() && noexcept {
+simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get() &&
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>(first).get<T>();
 }
 template <class T>
-simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) & noexcept {
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) &
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>(out);
 }
 template <class T>
-simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) && noexcept {
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get(T &out) &&
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::document_reference>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return std::forward<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>(first).get<T>(out);
 }

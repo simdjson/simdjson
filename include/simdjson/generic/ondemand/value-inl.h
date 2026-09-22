@@ -513,11 +513,23 @@ template<> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::o
   return SUCCESS;
 }
 
-template<typename T> simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get() noexcept {
+template<typename T> simdjson_inline simdjson_result<T> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get()
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::value>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>();
 }
-template<typename T> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get(T &out) noexcept {
+template<typename T> simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get(T &out)
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::value>)
+#else
+    noexcept
+#endif
+{
   if (error()) { return error(); }
   return first.get<T>(out);
 }

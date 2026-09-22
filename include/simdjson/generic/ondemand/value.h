@@ -44,7 +44,7 @@ public:
   template <typename T>
   simdjson_inline simdjson_result<T> get()
 #if SIMDJSON_SUPPORTS_CONCEPTS
-    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+    noexcept(nothrow_gettable<T, value>)
 #else
     noexcept
 #endif
@@ -69,7 +69,7 @@ public:
   template <typename T>
   simdjson_warn_unused simdjson_inline error_code get(T &out)
 #if SIMDJSON_SUPPORTS_CONCEPTS
-    noexcept(custom_deserializable<T, value> ? nothrow_custom_deserializable<T, value> : true)
+    noexcept(nothrow_gettable<T, value>)
 #else
     noexcept
 #endif
@@ -837,9 +837,19 @@ public:
   simdjson_inline simdjson_result<bool> get_bool() noexcept;
   simdjson_inline simdjson_result<bool> is_null() noexcept;
 
-  template<typename T> simdjson_inline simdjson_result<T> get() noexcept;
+  template<typename T> simdjson_inline simdjson_result<T> get()
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::value>);
+#else
+    noexcept;
+#endif
 
-  template<typename T> simdjson_inline error_code get(T &out) noexcept;
+  template<typename T> simdjson_inline error_code get(T &out)
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    noexcept(nothrow_gettable<T, SIMDJSON_IMPLEMENTATION::ondemand::value>);
+#else
+    noexcept;
+#endif
 
 #if SIMDJSON_EXCEPTIONS
   template <class T>

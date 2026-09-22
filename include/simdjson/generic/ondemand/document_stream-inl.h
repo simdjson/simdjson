@@ -443,7 +443,7 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
       default:    // Scalar value document
         // This returns a string spanning from start of value to the beginning of the next document (excluded)
         {
-          auto next_index = stream->parser->implementation->structural_indexes[++cur_struct_index];
+          auto next_index = stream->batch_start + stream->parser->implementation->structural_indexes[++cur_struct_index];
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
