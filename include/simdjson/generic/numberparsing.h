@@ -657,6 +657,15 @@ simdjson_inline void parse_fraction_digits(const uint8_t *&p, uint64_t &i) {
 }
 
 SIMDJSON_NO_SANITIZE_UNDEFINED
+simdjson_inline void parse_float_integer_digits(const uint8_t *&p, uint64_t &i,
+                                                bool &leading_zero) {
+  if (!parse_digit(*p, i)) { leading_zero = true; return; }
+  p++;
+  leading_zero = (i == 0);
+  while (parse_digit(*p, i)) { p++; }
+}
+
+SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
@@ -1330,9 +1339,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
   //
   uint64_t i = 0;
   const uint8_t *p = src;
-  p += parse_digit(*p, i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(*p, i)) { p++; }
+  bool leading_zero;
+  parse_float_integer_digits(p, i, leading_zero);
   // no integer digits, or 0123 (zero must be solo)
   if ( p == src ) {
 
@@ -1422,9 +1430,8 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
   //
   uint64_t i = 0;
   const uint8_t *p = src;
-  p += parse_digit(*p, i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(*p, i)) { p++; }
+  bool leading_zero;
+  parse_float_integer_digits(p, i, leading_zero);
   // no integer digits, or 0123 (zero must be solo)
   if ( p == src ) {
 
@@ -1649,9 +1656,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
   //
   uint64_t i = 0;
   const uint8_t *p = src;
-  p += parse_digit(*p, i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(*p, i)) { p++; }
+  bool leading_zero;
+  parse_float_integer_digits(p, i, leading_zero);
   // no integer digits, or 0123 (zero must be solo)
   if ( p == src ) {
 #if SIMDJSON_ENABLE_NAN_INF
@@ -1743,9 +1749,8 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
   //
   uint64_t i = 0;
   const uint8_t *p = src;
-  p += parse_digit(*p, i);
-  bool leading_zero = (i == 0);
-  while (parse_digit(*p, i)) { p++; }
+  bool leading_zero;
+  parse_float_integer_digits(p, i, leading_zero);
   // no integer digits, or 0123 (zero must be solo)
   if ( p == src ) {
 #if SIMDJSON_ENABLE_NAN_INF
