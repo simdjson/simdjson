@@ -68,7 +68,6 @@ bool inline_array_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 100;
   opts.max_inline_complexity = 2;
 
   auto formatted = simdjson::fractured_json(doc, opts);
@@ -100,7 +99,6 @@ bool inline_object_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 100;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted: " << formatted << std::endl;
@@ -163,10 +161,8 @@ bool compact_multiline_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 30; // Force compact multiline
-  opts.max_total_line_length = 60;
+  opts.max_total_line_length = 40; // Force compact multiline
   opts.enable_compact_multiline = true;
-  opts.max_items_per_line = 5;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted:\n" << formatted << std::endl;
@@ -204,7 +200,6 @@ bool table_format_test() {
   simdjson::fractured_json_options opts;
   opts.enable_table_format = true;
   opts.min_table_rows = 3;
-  opts.max_inline_length = 80;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted (table):\n" << formatted << std::endl;
@@ -743,10 +738,8 @@ bool large_array_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 50;
   opts.max_total_line_length = 80;
   opts.enable_compact_multiline = true;
-  opts.max_items_per_line = 10;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Large array formatted (first 300 chars):\n" << formatted.substr(0, 300) << "..." << std::endl;
@@ -895,7 +888,7 @@ bool disable_compact_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 20;
+  opts.max_total_line_length = 20;
   opts.enable_compact_multiline = false;  // Force expanded mode
 
   auto formatted = simdjson::fractured_json(doc, opts);
@@ -994,7 +987,7 @@ bool compact_multiline_oversized_item_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 10;
+  opts.max_total_line_length = 10;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted:\n" << formatted << std::endl;
@@ -1071,11 +1064,11 @@ bool bracket_padding_counted_in_array_length_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 15;
+  opts.max_total_line_length = 15;
   opts.simple_bracket_padding = true;
 
   auto formatted = simdjson::fractured_json(doc, opts);
-  std::cout << "Formatted (limit=20):\n" << formatted << std::endl;
+  std::cout << "Formatted (limit=15):\n" << formatted << std::endl;
 
   const char* expected_expanded =
       "[\n"
@@ -1083,16 +1076,16 @@ bool bracket_padding_counted_in_array_length_test() {
       "]";
   ASSERT_EQUAL(formatted, expected_expanded);
 
-  opts.max_inline_length = 15;
+  opts.max_total_line_length = 14;
   opts.simple_bracket_padding = false;
   formatted = simdjson::fractured_json(doc, opts);
-  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  std::cout << "Formatted (limit=14):\n" << formatted << std::endl;
   ASSERT_EQUAL(formatted, "[\"0123456789\"]");
 
-  opts.max_inline_length = 16;
+  opts.max_total_line_length = 16;
   opts.simple_bracket_padding = true;
   formatted = simdjson::fractured_json(doc, opts);
-  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  std::cout << "Formatted (limit=16):\n" << formatted << std::endl;
   ASSERT_EQUAL(formatted, "[ \"0123456789\" ]");
 
   std::cout << "Bracket padding counted in length test passed." << std::endl;
@@ -1114,7 +1107,7 @@ bool bracket_padding_counted_in_object_length_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 20;
+  opts.max_total_line_length = 20;
   opts.simple_bracket_padding = true;
 
   auto formatted = simdjson::fractured_json(doc, opts);
@@ -1126,13 +1119,13 @@ bool bracket_padding_counted_in_object_length_test() {
       "}";
   ASSERT_EQUAL(formatted, expected_expanded);
 
-  opts.max_inline_length = 20;
+  opts.max_total_line_length = 19;
   opts.simple_bracket_padding = false;
   formatted = simdjson::fractured_json(doc, opts);
-  std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
+  std::cout << "Formatted (limit=19):\n" << formatted << std::endl;
   ASSERT_EQUAL(formatted, "{\"x\": \"0123456789\"}");
 
-  opts.max_inline_length = 21;
+  opts.max_total_line_length = 21;
   opts.simple_bracket_padding = true;
   formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted (limit=21):\n" << formatted << std::endl;
@@ -1157,7 +1150,7 @@ bool compact_multiline_breaks_after_expanded_item_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_inline_length = 40;
+  opts.max_total_line_length = 44;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted:\n" << formatted << std::endl;

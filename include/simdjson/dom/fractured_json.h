@@ -21,12 +21,6 @@ struct fractured_json_options {
   size_t max_total_line_length = 120;
 
   /**
-   * Maximum length for inlined elements (default: 80).
-   * Simple arrays/objects shorter than this may be rendered inline.
-   */
-  size_t max_inline_length = 80;
-
-  /**
    * Maximum nesting depth for inline rendering (default: 2).
    * Elements with complexity exceeding this will be expanded.
    * Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.
@@ -70,11 +64,6 @@ struct fractured_json_options {
    * per line.
    */
   bool enable_compact_multiline = true;
-
-  /**
-   * Maximum array items per line in compact mode (default: 10).
-   */
-  size_t max_items_per_line = 10;
 
   /**
    * Add space inside brackets for simple containers (default: true).

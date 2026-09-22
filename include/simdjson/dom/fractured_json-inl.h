@@ -152,8 +152,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   }
 
   // Check if can inline
-  metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
-                       (metrics.estimated_inline_len <= current_opts_->max_inline_length);
+  metrics.can_inline = metrics.complexity <= current_opts_->max_inline_complexity;
 
   // Check for uniform array (table formatting)
   if (current_opts_->enable_table_format &&
@@ -197,8 +196,7 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
     metrics.estimated_inline_len += 2;
   }
 
-  metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
-                       (metrics.estimated_inline_len <= current_opts_->max_inline_length);
+  metrics.can_inline = metrics.complexity <= current_opts_->max_inline_complexity;
 
   return metrics;
 }
@@ -594,7 +592,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
   format_.print_newline();
   format_.print_indents(depth + 1);
 
-  size_t items_on_line = 0;
   bool first = true;
   bool prev_item_was_expanded = false;
   size_t child_idx = 0;
@@ -608,12 +605,10 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
       format_.track_line_length(1);
 
       // Check if we should break to new line
-      if (items_on_line >= options_.max_items_per_line ||
-          prev_item_was_expanded ||
+      if (prev_item_was_expanded ||
           format_.should_break_line(child_metrics.estimated_inline_len)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
-        items_on_line = 0;
       } else if (options_.comma_padding) {
         format_.print_space();
       }
@@ -634,7 +629,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     prev_item_was_expanded = !item_fits;
 
-    items_on_line++;
     child_idx++;
   }
 
