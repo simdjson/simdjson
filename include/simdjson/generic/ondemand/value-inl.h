@@ -49,6 +49,13 @@ simdjson_inline simdjson_result<raw_json_string> value::get_raw_json_string() no
 simdjson_inline simdjson_result<std::string_view> value::get_string(bool allow_replacement) noexcept {
   return iter.get_string(allow_replacement);
 }
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline simdjson_result<std::u8string_view> value::get_u8string(bool allow_replacement) noexcept {
+  std::string_view content;
+  SIMDJSON_TRY( get_string(allow_replacement).get(content) );
+  return internal::as_u8string_view(content);
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value::get_string(string_type& receiver, bool allow_replacement) noexcept {
   return iter.get_string(receiver, allow_replacement);
@@ -103,6 +110,9 @@ template<> simdjson_inline simdjson_result<array> value::get() noexcept { return
 template<> simdjson_inline simdjson_result<object> value::get() noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> value::get() noexcept { return get_raw_json_string(); }
 template<> simdjson_inline simdjson_result<std::string_view> value::get() noexcept { return get_string(false); }
+#if SIMDJSON_SUPPORTS_CHAR8_T
+template<> simdjson_inline simdjson_result<std::u8string_view> value::get() noexcept { return get_u8string(false); }
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_inline simdjson_result<number> value::get() noexcept { return get_number(); }
 template<> simdjson_inline simdjson_result<double> value::get() noexcept { return get_double(); }
 template<> simdjson_inline simdjson_result<float> value::get() noexcept { return get_float(); }
@@ -117,6 +127,9 @@ template<> simdjson_warn_unused simdjson_inline error_code value::get(array& out
 template<> simdjson_warn_unused simdjson_inline error_code value::get(object& out) noexcept { return get_object().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(raw_json_string& out) noexcept { return get_raw_json_string().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(std::string_view& out) noexcept { return get_string(false).get(out); }
+#if SIMDJSON_SUPPORTS_CHAR8_T
+template<> simdjson_warn_unused simdjson_inline error_code value::get(std::u8string_view& out) noexcept { return get_u8string(false).get(out); }
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_warn_unused simdjson_inline error_code value::get(number& out) noexcept { return get_number().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(double& out) noexcept { return get_double().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(float& out) noexcept { return get_float().get(out); }
@@ -329,6 +342,10 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  // Every recursive step of for_each_at_path_with_wildcard goes through this
+  // function, and each one descends one level into the document. A path with
+  // many segments applied to a deeply nested document would otherwise recurse
+  // without bound and overflow the stack.
   if (size_t(iter.depth()) >= iter.json_iter().parser->max_depth()) { return DEPTH_ERROR; }
   json_type t;
   SIMDJSON_TRY(type().get(t));
@@ -462,6 +479,12 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
+#if SIMDJSON_SUPPORTS_CHAR8_T
+simdjson_inline simdjson_result<std::u8string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_u8string(bool allow_replacement) noexcept {
+  if (error()) { return error(); }
+  return first.get_u8string(allow_replacement);
+}
+#endif // SIMDJSON_SUPPORTS_CHAR8_T
 template <typename string_type>
 simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_string(string_type& receiver, bool allow_replacement) noexcept {
   if (error()) { return error(); }

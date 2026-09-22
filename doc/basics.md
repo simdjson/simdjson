@@ -15,6 +15,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [Documents are iterators](#documents-are-iterators)
   * [Parser, document and JSON scope](#parser-document-and-json-scope)
 - [string_view](#string_view)
+- [u8string_view and u8string (C++20)](#u8string_view-and-u8string-c20)
 - [Avoiding pitfalls: enable development checks](#avoiding-pitfalls-enable-development-checks)
 - [Using the parsed JSON](#using-the-parsed-json)
   * [Using the parsed JSON: additional examples](#using-the-parsed-json-additional-examples)
@@ -419,6 +420,48 @@ offer the same API, irrespective of the compiler and standard library. The macro
 Some users prefer to use non-JSON native encoding formats such as UTF-16 or UTF-32. Users may
 transcode the UTF-8 strings produced by the simdjson library to other formats. See the
 [simdutf library](https://github.com/simdutf/simdutf), for example.
+
+u8string_view and u8string (C++20)
+-------------
+
+C++20 introduced the `char8_t` type, along with `std::u8string_view` and `std::u8string`,
+to represent UTF-8 data in the type system. Because every string that simdjson produces is
+valid UTF-8, we offer `char8_t` variants of our string accessors. They are available when
+the macro `SIMDJSON_SUPPORTS_CHAR8_T` is set (it is set automatically when the compiler
+defines `__cpp_char8_t`). They are exact aliases of the `char`-based accessors: the same
+bytes, at the same address, with no copy and no conversion.
+
+| `char` accessor           | `char8_t` accessor          | Available on                                        |
+|:--------------------------|:----------------------------|:----------------------------------------------------|
+| `get_string()`            | `get_u8string()`            | `ondemand::value`, `ondemand::document`, `dom::element` |
+| `field.unescaped_key()`   | `field.unescaped_u8key()`   | `ondemand::field`                                   |
+| `field.escaped_key()`     | `field.escaped_u8key()`     | `ondemand::field`                                   |
+| `get<std::string_view>()` | `get<std::u8string_view>()` | `ondemand::value`, `ondemand::document`, `dom::element` |
+
+```C++
+auto json = R"({ "make": "Toyota", "model": "Camry" })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+std::u8string_view make = doc["make"].get_u8string();
+```
+
+On-demand also accepts `std::u8string_view` and `std::u8string` wherever it accepts
+`std::string_view` and `std::string`: as a template parameter to `get<T>()`, as the
+receiver of `get_string()` and `unescaped_key()`, and as the element type of a
+container (C++20 deserialization).
+
+```C++
+std::u8string owned;
+auto error = doc["make"].get_string(owned);            // stores a copy
+auto tags = doc["tags"].get<std::vector<std::u8string>>();
+```
+
+The receiver overloads (`get_string(receiver)` and `unescaped_key(receiver)`) accept both
+`std::u8string` (which stores a copy) and `std::u8string_view` (which does not).
+
+Because `std::u8string_view` points inside the parser (just like `std::string_view` does),
+it is invalidated when you parse another document or destroy the parser. Note also that the
+standard library does not let you print a `std::u8string_view` with `std::cout`.
 
 Avoiding pitfalls: enable development checks
 --------------------

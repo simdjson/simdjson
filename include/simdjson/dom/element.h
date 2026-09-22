@@ -93,7 +93,7 @@ public:
    */
   inline simdjson_result<std::string_view> get_string() const noexcept;
 
-  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  #if SIMDJSON_SUPPORTS_CHAR8_T
   /**
    * Cast this element to a C++20 UTF-8 string.
    *
@@ -211,7 +211,7 @@ public:
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
+   * - String: std::string_view, const char *, std::u8string_view (C++20)
    * - Array: dom::array
    * - Object: dom::object
    *
@@ -226,7 +226,7 @@ public:
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
+   * - String: std::string_view, const char *, std::u8string_view (C++20)
    * - Array: dom::array
    * - Object: dom::object
    *
@@ -256,7 +256,7 @@ public:
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
+   * - String: std::string_view, const char *, std::u8string_view (C++20)
    * - Array: dom::array
    * - Object: dom::object
    *
@@ -275,7 +275,7 @@ public:
    * Supported types:
    * - Boolean: bool
    * - Number: double, uint64_t, int64_t
-   * - String: std::string_view, const char *
+   * - String: std::string_view, const char *, std::u8string_view (C++20)
    * - Array: dom::array
    * - Object: dom::object
    *
@@ -559,7 +559,7 @@ public:
   simdjson_inline simdjson_result<const char *> get_c_str() const noexcept;
   simdjson_inline simdjson_result<size_t> get_string_length() const noexcept;
   simdjson_inline simdjson_result<std::string_view> get_string() const noexcept;
-  #if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L
+  #if SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<std::u8string_view> get_u8string() const noexcept;
   #endif
   simdjson_inline simdjson_result<int64_t> get_int64() const noexcept;
