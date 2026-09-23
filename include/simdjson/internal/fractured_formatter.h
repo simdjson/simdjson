@@ -34,20 +34,8 @@ public:
   /** Get the current layout mode */
   layout_mode get_layout_mode() const;
 
-  /** Set current depth for formatting decisions */
-  void set_depth(size_t depth);
-
-  /** Get current depth */
-  size_t get_depth() const;
-
   /** Track current line length for compact multiline decisions */
   void track_line_length(size_t chars);
-
-  /** Reset line length (after newline) */
-  void reset_line_length();
-
-  /** Get current line length */
-  size_t get_line_length() const;
 
   /** Check if we should break to a new line in compact mode */
   bool should_break_line(size_t upcoming_length) const;
@@ -55,35 +43,26 @@ public:
   /** Get the options */
   const fractured_json_options& options() const;
 
-  // Table formatting support
-  /** Begin a table row */
-  void begin_table_row();
-
-  /** End a table row */
-  void end_table_row();
-
-  /** Set column widths for table alignment */
-  void set_column_widths(const std::vector<size_t>& widths);
-
-  /** Get current column index in table mode */
-  size_t get_column_index() const;
-
-  /** Advance to next column */
-  void next_column();
-
-  /** Add padding to align with column width */
-  void align_to_column_width(size_t actual_width);
-
 private:
   fractured_json_options options_;
   layout_mode current_layout_ = layout_mode::expanded;
-  size_t current_depth_ = 0;
   size_t current_line_length_ = 0;
+};
 
-  // Table state
-  bool in_table_mode_ = false;
-  std::vector<size_t> column_widths_;
-  size_t current_column_ = 0;
+/** RAII helper forcing single line layout and restoring previous mode on exit */
+class scoped_single_line_mode {
+public:
+  explicit scoped_single_line_mode(fractured_formatter& format)
+      : format_(format), prev_(format.get_layout_mode()) {
+    format_.set_layout_mode(layout_mode::single_line);
+  }
+  ~scoped_single_line_mode() { format_.set_layout_mode(prev_); }
+  scoped_single_line_mode(const scoped_single_line_mode&) = delete;
+  scoped_single_line_mode& operator=(const scoped_single_line_mode&) = delete;
+
+private:
+  fractured_formatter& format_;
+  layout_mode prev_;
 };
 
 /**
@@ -131,8 +110,36 @@ private:
   /** Format an array with compact multiline: multiple items per line */
   void format_array_compact_multiline(const dom::array& arr, const element_metrics& metrics, size_t depth);
 
+  /** Like format_array_compact_multiline, but rows are cross-row aligned
+   * and packed using a fixed per-row slot width. */
+  void format_array_compact_multiline_aligned(const dom::array& arr, const element_metrics& metrics, size_t depth);
+
   /** Format an array as a table */
   void format_array_as_table(const dom::array& arr, const element_metrics& metrics, size_t depth);
+
+  /** Write one object row's columns */
+  void format_table_object_row(const dom::object& obj, const element_metrics& row_metrics,
+                                const std::vector<table_column>& columns, size_t depth);
+
+  /** Write one array row's columns */
+  void format_table_array_row(const dom::array& arr, const element_metrics& row_metrics,
+                               const std::vector<table_column>& columns, size_t depth);
+
+  /** Dispatches to format_table_object_row/format_table_array_row based on elem's type. */
+  void format_table_row(const dom::element& elem, const element_metrics& row_metrics,
+                        const std::vector<table_column>& columns, size_t depth);
+
+  /** Row for a uniform scalar array: writes elem inline, then pads to width so every row lines up. */
+  void format_table_scalar_row(const dom::element& elem, const element_metrics& row_metrics,
+                                size_t width, size_t depth);
+
+  /** Shared per-column writer: recurses if the column has children,
+   * otherwise writes a plain padded value or blank. */
+  void format_table_row_columns(const std::vector<table_column>& columns,
+                                 const std::vector<bool>& found,
+                                 const std::vector<dom::element>& values,
+                                 const std::vector<const element_metrics*>& value_metrics,
+                                 size_t depth);
 
   /** Format an array expanded: one item per line */
   void format_array_expanded(const dom::array& arr, const element_metrics& metrics, size_t depth);
@@ -149,13 +156,6 @@ private:
 
   /** Format a scalar value */
   void format_scalar(const dom::element& elem);
-
-  /** Calculate column widths for table formatting */
-  std::vector<size_t> calculate_column_widths(const dom::array& arr,
-                                               const std::vector<std::string>& columns) const;
-
-  /** Measure the actual formatted length of a value (for alignment) */
-  size_t measure_value_length(const dom::element& elem) const;
 
   /** Whether to pad this container's own brackets. */
   bool bracket_padding_for(const element_metrics& metrics) const;

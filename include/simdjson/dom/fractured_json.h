@@ -53,16 +53,9 @@ struct fractured_json_options {
   bool enable_table_format = true;
 
   /**
-   * Minimum number of rows to trigger table mode (default: 3).
+   * Maximum complexity for table formatting. (default: 2).
    */
-  size_t min_table_rows = 3;
-
-  /**
-   * Similarity threshold for table detection (default: 0.8).
-   * Objects must share at least this fraction of keys to be formatted
-   * as a table.
-   */
-  double table_similarity_threshold = 0.8;
+  size_t max_table_row_complexity = 2;
 
   /**
    * Enable compact multiline arrays (default: true).
@@ -70,6 +63,12 @@ struct fractured_json_options {
    * per line.
    */
   bool enable_compact_multiline = true;
+
+  /**
+   * Minimum number of rows a compact multiline array must be able to pack
+   * per line to be used. (default: 3)
+   */
+  size_t min_compact_array_row_items = 3;
 
   /**
    * Add space inside brackets for containers that hold only scalar values

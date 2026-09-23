@@ -413,7 +413,6 @@ support the Fractured JSON standard.
 
   fractured_json_options opts;
   opts.enable_table_format = true;
-  opts.min_table_rows = 3;
 
   std::string formatted = simdjson::to_fractured_json_string(data, opts);
 ```
@@ -439,9 +438,9 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 - `indent_spaces` (default: 4): Number of spaces per indentation level.
 - `always_expand_depth` (default: -1): Forces elements close to the root to always fully expand, regardless of other settings. -1 = none; 0 = root node only; 1 = root node and its children; etc.
 - `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.
-- `min_table_rows` (default: 3): Minimum number of rows to trigger table mode.
-- `table_similarity_threshold` (default: 0.8): Similarity threshold for table detection. Objects must share at least this fraction of keys to be formatted as a table.
+- `max_table_row_complexity` (default: 2): Maximum complexity for table formatting.
 - `enable_compact_multiline` (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.
+- `min_compact_array_row_items` (default: 3): Minimum number of rows a compact multiline array must be able to pack per line to be used.
 - `simple_bracket_padding` (default: true): Add space inside brackets for containers that hold only scalar values. When true: `{ "key": "value" }`, when false: `{"key": "value"}`.
 - `nested_bracket_padding` (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: `{ "a": [ 1, 2 ] }`, when false: `{ "a": [1, 2]}`.
 - `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.

@@ -199,7 +199,6 @@ bool table_format_test() {
 
   simdjson::fractured_json_options opts;
   opts.enable_table_format = true;
-  opts.min_table_rows = 3;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted (table):\n" << formatted << std::endl;
@@ -642,7 +641,7 @@ bool special_key_test() {
   return true;
 }
 
-// Test non-uniform array (shouldn't trigger table mode)
+// Test non-uniform array (shouldn't trigger table mode since it would be too wide)
 bool non_uniform_array_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -663,7 +662,7 @@ bool non_uniform_array_test() {
 
   simdjson::fractured_json_options opts;
   opts.enable_table_format = true;
-  opts.min_table_rows = 3;
+  opts.max_total_line_length = 80;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Non-uniform array formatted:\n" << formatted << std::endl;
@@ -1384,7 +1383,7 @@ bool always_expand_depth_test() {
     ASSERT_EQUAL(formatted,
         "[\n"
         "    { \"id\": 1, \"name\": \"Alice\" },\n"
-        "    { \"id\": 2, \"name\": \"Bob\" },\n"
+        "    { \"id\": 2, \"name\": \"Bob\"   },\n"
         "    { \"id\": 3, \"name\": \"Carol\" }\n"
         "]");
   }
@@ -1413,6 +1412,554 @@ bool always_expand_depth_test() {
   }
 
   std::cout << "Always expand depth test passed." << std::endl;
+  return true;
+}
+
+
+bool table_format_union_columns_with_blank_padding_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"({"test":[{"test":1,"test3":2,"test2":2},{"test":1,"test2":3,"test4":5}]})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 70; // no single row but fit table
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "{\n"
+      "    \"test\": [\n"
+      "        { \"test\": 1, \"test3\": 2, \"test2\": 2             },\n"
+      "        { \"test\": 1,             \"test2\": 3, \"test4\": 5 }\n"
+      "    ]\n"
+      "}";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Table format union columns with blank padding test passed." << std::endl;
+  return true;
+}
+
+bool table_format_respects_max_total_line_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":1,"b":2,"c":3},{"a":4,"b":5,"c":6},{"a":7,"b":8,"c":9}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.max_total_line_length = 15; // too small for a 3-column table row
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  const char* expected =
+      "[\n"
+      "    {\n"
+      "        \"a\": 1,\n"
+      "        \"b\": 2,\n"
+      "        \"c\": 3\n"
+      "    },\n"
+      "    {\n"
+      "        \"a\": 4,\n"
+      "        \"b\": 5,\n"
+      "        \"c\": 6\n"
+      "    },\n"
+      "    {\n"
+      "        \"a\": 7,\n"
+      "        \"b\": 8,\n"
+      "        \"c\": 9\n"
+      "    }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Table format max total line length test passed." << std::endl;
+  return true;
+}
+
+bool table_nested_cell_padding_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":{"x":1}},{"a":{"x":22}}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  // "a" is a uniform object column, so its "x" sub-column is aligned recursively
+  const char* expected =
+      "[\n"
+      "    { \"a\": { \"x\": 1  } },\n"
+      "    { \"a\": { \"x\": 22 } }\n"
+      "]";
+  ASSERT_EQUAL(formatted, expected);
+
+  std::cout << "Table nested cell padding test passed." << std::endl;
+  return true;
+}
+
+bool table_row_bracket_padding_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":{"x":1}},{"a":{"x":22}}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.simple_bracket_padding = true;
+    opts.nested_bracket_padding = false;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": { \"x\": 1  }},\n"
+        "    {\"a\": { \"x\": 22 }}\n"
+        "]");
+  }
+  {
+    simdjson::fractured_json_options opts;
+    opts.simple_bracket_padding = false;
+    opts.nested_bracket_padding = true;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"a\": {\"x\": 1 } },\n"
+        "    { \"a\": {\"x\": 22} }\n"
+        "]");
+  }
+
+  std::cout << "Table row bracket padding test passed." << std::endl;
+  return true;
+}
+
+bool table_row_bracket_padding_consistent_across_ragged_rows_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":{"x":1},"b":1},{"b":2}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  simdjson::fractured_json_options opts;
+  opts.simple_bracket_padding = false;
+  opts.nested_bracket_padding = true;
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  // Row 2 lacks "a" entirely  but it still must use nested_bracket_padding
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    { \"a\": {\"x\": 1}, \"b\": 1 },\n"
+      "    {                \"b\": 2 }\n"
+      "]");
+
+  std::cout << "Table row bracket padding consistent across ragged rows test passed." << std::endl;
+  return true;
+}
+
+bool table_format_prunes_recursive_columns_to_fit_width_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json =
+      R"({"test":[{"test1":{"test1":1},"test2":{"test1":1}},)"
+      R"({"test1":{"test2":1},"test2":{"test2":1}}]})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    // Not enough room for recursive alignment so keep inner parts compact
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 70;
+    opts.max_table_row_complexity = 10;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"test\": [\n"
+        "        { \"test1\": { \"test1\": 1 }, \"test2\": { \"test1\": 1 } },\n"
+        "        { \"test1\": { \"test2\": 1 }, \"test2\": { \"test2\": 1 } }\n"
+        "    ]\n"
+        "}");
+  }
+  {
+    // Enough room for full recursive alignment
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 90;
+    opts.max_table_row_complexity = 10;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"test\": [\n"
+        "        { \"test1\": { \"test1\": 1             }, \"test2\": { \"test1\": 1             } },\n"
+        "        { \"test1\": {             \"test2\": 1 }, \"test2\": {             \"test2\": 1 } }\n"
+        "    ]\n"
+        "}");
+  }
+
+  std::cout << "Table format prunes recursive columns to fit width test passed." << std::endl;
+  return true;
+}
+
+bool table_format_prunes_deepest_column_only_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json =
+      R"([{"a":{"b":{"c":1}},"b":{"c":1}},{"a":{"b":{"d":1}},"b":{"d":1}}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    // Room for full recursive alignment of both "a.b" and "b".
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 70;
+    opts.max_table_row_complexity = 10;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"a\": { \"b\": { \"c\": 1         } }, \"b\": { \"c\": 1         } },\n"
+        "    { \"a\": { \"b\": {         \"d\": 1 } }, \"b\": {         \"d\": 1 } }\n"
+        "]");
+  }
+  {
+    // Not enough room for both, but enough for one: only "a.b" gets pruned to plain;
+    // "b" stays recursively aligned.
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 63;
+    opts.max_table_row_complexity = 10;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"a\": { \"b\": { \"c\": 1 } }, \"b\": { \"c\": 1         } },\n"
+        "    { \"a\": { \"b\": { \"d\": 1 } }, \"b\": {         \"d\": 1 } }\n"
+        "]");
+  }
+  {
+    // Not enough room for either: both columns end up pruned to plain.
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 50;
+    opts.max_table_row_complexity = 10;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"a\": { \"b\": { \"c\": 1 } }, \"b\": { \"c\": 1 } },\n"
+        "    { \"a\": { \"b\": { \"d\": 1 } }, \"b\": { \"d\": 1 } }\n"
+        "]");
+  }
+
+  std::cout << "Table format prunes deepest column only test passed." << std::endl;
+  return true;
+}
+
+bool compact_multiline_aligned_packing_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json =
+      R"([{"id":1,"name":"Alice"},{"id":2,"name":"Bob"},{"id":3,"name":"Carol"},)"
+      R"({"id":4,"name":"Dave"},{"id":5,"name":"Eve"}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    // Not enough room for 3 aligned rows on one line so falls back to table
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 40;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"id\": 1, \"name\": \"Alice\" },\n"
+        "    { \"id\": 2, \"name\": \"Bob\"   },\n"
+        "    { \"id\": 3, \"name\": \"Carol\" },\n"
+        "    { \"id\": 4, \"name\": \"Dave\"  },\n"
+        "    { \"id\": 5, \"name\": \"Eve\"   }\n"
+        "]");
+  }
+  {
+    // Enough room for 3+ aligned rows per line. Packs them, wrapping to a
+    // new line only when the next row wouldn't fit
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 120;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"id\": 1, \"name\": \"Alice\" }, { \"id\": 2, \"name\": \"Bob\"   }, { \"id\": 3, \"name\": \"Carol\" },\n"
+        "    { \"id\": 4, \"name\": \"Dave\"  }, { \"id\": 5, \"name\": \"Eve\"   }\n"
+        "]");
+  }
+
+  std::cout << "Compact multiline aligned packing test passed." << std::endl;
+  return true;
+}
+
+bool compact_multiline_scalar_list_alignment_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  {
+    // Numbers (with null tolerated)
+    const char* json = R"([1, 10, 4, 10, 10, 10, 10, 10, 10, 1.111, null])";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 40;
+    opts.simple_bracket_padding = false;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    1    , 10   , 4    , 10   , 10   ,\n"
+        "    10   , 10   , 10   , 10   , 1.111,\n"
+        "    null \n"
+        "]");
+  }
+  {
+    // Strings (with null tolerated)
+    const char* json = R"(["a", "bb", null])";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 15;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    \"a\" ,\n"
+        "    \"bb\",\n"
+        "    null\n"
+        "]");
+  }
+  {
+    // mixed not aligned
+    const char* json = R"(["a", 1, "bb", 22])";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 15;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    \"a\",\n"
+        "    1,\n"
+        "    \"bb\",\n"
+        "    22\n"
+        "]");
+  }
+
+  std::cout << "Compact multiline scalar list alignment test passed." << std::endl;
+  return true;
+}
+
+bool table_format_array_rows_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"({"test":[[1,10],[1,10],[1,10],[10,1],["test",1]]})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    // Table format: one row per line, columns aligned by position.
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 50;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"test\": [\n"
+        "        [ 1     , 10 ],\n"
+        "        [ 1     , 10 ],\n"
+        "        [ 1     , 10 ],\n"
+        "        [ 10    , 1  ],\n"
+        "        [ \"test\", 1  ]\n"
+        "    ]\n"
+        "}");
+  }
+  {
+    // Enough room to pack several aligned rows per line.
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 64;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"test\": [\n"
+        "        [ 1     , 10 ], [ 1     , 10 ], [ 1     , 10 ],\n"
+        "        [ 10    , 1  ], [ \"test\", 1  ]\n"
+        "    ]\n"
+        "}");
+  }
+
+  {
+    // Enough room to pack all rows in one line
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 73;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"test\": [ [ 1, 10 ], [ 1, 10 ], [ 1, 10 ], [ 10, 1 ], [ \"test\", 1 ] ]\n"
+        "}");
+  }
+
+  std::cout << "Table format array rows test passed." << std::endl;
+  return true;
+}
+
+bool table_format_array_rows_ragged_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([[1,2,33],[1,2]])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 17;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    [ 1, 2, 33 ],\n"
+        "    [ 1, 2     ]\n"
+        "]");
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 26;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[ [ 1, 2, 33 ], [ 1, 2 ] ]");
+  }
+
+  std::cout << "Table format array rows ragged test passed." << std::endl;
+  return true;
+}
+
+bool table_format_respects_max_table_row_complexity_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":{"b":{"x":1}}},{"a":{"b":{"x":2}}},{"a":{"b":{"x":3}}}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_table_row_complexity = 2;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted:\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "    {\n"
+        "        \"a\": { \"b\": { \"x\": 1 } }\n"
+        "    },\n"
+        "    {\n"
+        "        \"a\": { \"b\": { \"x\": 2 } }\n"
+        "    },\n"
+        "    {\n"
+        "        \"a\": { \"b\": { \"x\": 3 } }\n"
+        "    }\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_table_row_complexity = 3;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted:\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "    { \"a\": { \"b\": { \"x\": 1 } } },\n"
+        "    { \"a\": { \"b\": { \"x\": 2 } } },\n"
+        "    { \"a\": { \"b\": { \"x\": 3 } } }\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  std::cout << "Table format max table row complexity test passed." << std::endl;
   return true;
 }
 
@@ -1464,9 +2011,21 @@ int main() {
   success = trailing_comma_counted_in_length_test() && success;
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
+  success = table_format_union_columns_with_blank_padding_test() && success;
+  success = table_format_respects_max_total_line_length_test() && success;
+  success = table_nested_cell_padding_test() && success;
+  success = table_row_bracket_padding_test() && success;
+  success = table_row_bracket_padding_consistent_across_ragged_rows_test() && success;
+  success = table_format_prunes_recursive_columns_to_fit_width_test() && success;
+  success = table_format_prunes_deepest_column_only_test() && success;
+  success = table_format_array_rows_test() && success;
+  success = table_format_array_rows_ragged_test() && success;
+  success = compact_multiline_aligned_packing_test() && success;
+  success = compact_multiline_scalar_list_alignment_test() && success;
+  success = table_format_respects_max_table_row_complexity_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 38 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 50 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

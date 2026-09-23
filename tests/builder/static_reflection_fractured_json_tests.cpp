@@ -151,7 +151,6 @@ bool table_format_test() {
 
   fractured_json_options opts;
   opts.enable_table_format = true;
-  opts.min_table_rows = 3;
 
   std::string formatted;
   ASSERT_SUCCESS(simdjson::to_fractured_json_string(data, opts).get(formatted));
