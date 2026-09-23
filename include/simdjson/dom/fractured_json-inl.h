@@ -147,7 +147,9 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   metrics.complexity = 1 + max_child_complexity;
 
   // Bracket padding "[ 1, 2 ]" vs "[1, 2]"
-  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+  bool use_bracket_padding = (max_child_complexity >= 1)
+      ? current_opts_->nested_bracket_padding : current_opts_->simple_bracket_padding;
+  if (use_bracket_padding && metrics.child_count > 0) {
     metrics.estimated_inline_len += 2;
   }
 
@@ -192,7 +194,9 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
   metrics.complexity = 1 + max_child_complexity;
 
   // Bracket padding '{ "a": 1 }' vs '{"a": 1}'
-  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+  bool use_bracket_padding = (max_child_complexity >= 1)
+      ? current_opts_->nested_bracket_padding : current_opts_->simple_bracket_padding;
+  if (use_bracket_padding && metrics.child_count > 0) {
     metrics.estimated_inline_len += 2;
   }
 
@@ -567,7 +571,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
       if (options_.comma_padding) {
         format_.print_space();
       }
-    } else if (options_.simple_bracket_padding) {
+    } else if (bracket_padding_for(metrics)) {
       format_.print_space();
     }
     first = false;
@@ -577,7 +581,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
     child_idx++;
   }
 
-  if (options_.simple_bracket_padding && !empty) {
+  if (bracket_padding_for(metrics) && !empty) {
     format_.print_space();
   }
   format_.end_array();
@@ -677,7 +681,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
         ? metrics.children[child_idx] : element_metrics{};
 
     format_.start_object();
-    if (options_.simple_bracket_padding) {
+    if (bracket_padding_for(row_metrics)) {
       format_.print_space();
     }
 
@@ -740,7 +744,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
       format_.next_column();
     }
 
-    if (options_.simple_bracket_padding) {
+    if (bracket_padding_for(row_metrics)) {
       format_.print_space();
     }
     format_.end_object();
@@ -815,7 +819,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
       if (options_.comma_padding) {
         format_.print_space();
       }
-    } else if (options_.simple_bracket_padding) {
+    } else if (bracket_padding_for(metrics)) {
       format_.print_space();
     }
     first = false;
@@ -830,7 +834,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
     child_idx++;
   }
 
-  if (options_.simple_bracket_padding && !empty) {
+  if (bracket_padding_for(metrics) && !empty) {
     format_.print_space();
   }
   format_.end_object();
@@ -917,6 +921,10 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
     default:
       break;
   }
+}
+
+inline bool fractured_string_builder::bracket_padding_for(const element_metrics& metrics) const {
+  return metrics.complexity >= 2 ? options_.nested_bracket_padding : options_.simple_bracket_padding;
 }
 
 inline size_t fractured_string_builder::measure_value_length(const dom::element& elem) const {

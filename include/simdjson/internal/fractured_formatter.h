@@ -156,6 +156,9 @@ private:
 
   /** Measure the actual formatted length of a value (for alignment) */
   size_t measure_value_length(const dom::element& elem) const;
+
+  /** Whether to pad this container's own brackets. */
+  bool bracket_padding_for(const element_metrics& metrics) const;
 };
 
 } // namespace internal

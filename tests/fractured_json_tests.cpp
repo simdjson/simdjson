@@ -956,6 +956,7 @@ bool no_padding_test() {
 
   simdjson::fractured_json_options opts;
   opts.simple_bracket_padding = false;
+  opts.nested_bracket_padding = false;
   opts.colon_padding = false;
   opts.comma_padding = false;
 
@@ -1309,6 +1310,44 @@ bool trailing_comma_counted_in_length_test() {
   return true;
 }
 
+bool nested_bracket_padding_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"({"a":[1,2]})";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_inline_complexity = 3;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted, "{ \"a\": [ 1, 2 ] }");
+  }
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_inline_complexity = 3;
+    opts.nested_bracket_padding = false;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted, "{\"a\": [ 1, 2 ]}");
+  }
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_inline_complexity = 3;
+    opts.simple_bracket_padding = false;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted, "{ \"a\": [1, 2] }");
+  }
+
+  std::cout << "Nested bracket padding test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1355,9 +1394,10 @@ int main() {
   success = nested_array_respects_max_total_line_length_test() && success;
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
   success = trailing_comma_counted_in_length_test() && success;
+  success = nested_bracket_padding_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 36 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 37 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

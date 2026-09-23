@@ -66,11 +66,20 @@ struct fractured_json_options {
   bool enable_compact_multiline = true;
 
   /**
-   * Add space inside brackets for simple containers (default: true).
-   * When true: { "key": "value" }
-   * When false: {"key": "value"}
+   * Add space inside brackets for containers that hold only scalar values
+   * (default: true). When true: { "key": "value" }. When false:
+   * {"key": "value"}.
+   * @see nested_bracket_padding
    */
   bool simple_bracket_padding = true;
+
+  /**
+   * Add space inside brackets for containers that hold at least one
+   * nested array/object (default: true). When true: { "a": [ 1, 2 ] }.
+   * When false: { "a": [1, 2]}.
+   * @see simple_bracket_padding
+   */
+  bool nested_bracket_padding = true;
 
   /**
    * Add space after colons (default: true).
