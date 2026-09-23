@@ -2,6 +2,7 @@
 #include "test_builder.h"
 #include <string>
 #include <optional>
+#include <vector>
 
 using namespace simdjson;
 
@@ -24,6 +25,219 @@ struct MixedAnnotations {
   int age = 0;
 };
 
+struct AliasedFields {
+  [[= simdjson::alias<"userName", "login">]] std::string user_name = "";
+  int age = 0;
+};
+
+struct OneWaySkips {
+  std::string name = "";
+  [[= simdjson::skip_serializing]] std::string password = "";
+  [[= simdjson::skip_deserializing]] int computed = 7;
+};
+
+inline constexpr auto is_zero = [](int v) { return v == 0; };
+
+struct ConditionalSkips {
+  [[= simdjson::skip_serializing_if<simdjson::is_none>]] std::optional<int> maybe{};
+  [[= simdjson::skip_serializing_if<simdjson::is_empty>]] std::vector<int> values{};
+  [[= simdjson::skip_serializing_if<simdjson::is_empty>]] std::string note = "";
+  [[= simdjson::skip_serializing_if<is_zero>]] int count = 0;
+  int always = 0;
+};
+
+struct Settings {
+  std::string host = "";
+  [[= simdjson::default_value]] int port = 8080;
+  [[= simdjson::default_value]] std::vector<std::string> tags{"default"};
+};
+
+struct [[= simdjson::default_value]] AllDefaults {
+  std::string host = "localhost";
+  int port = 80;
+  bool secure = false;
+};
+
+int make_timeout() { return 30; }
+
+struct DefaultFrom {
+  std::string name = "";
+  [[= simdjson::default_from<make_timeout>]] int timeout = 0;
+  [[= simdjson::default_from<[] { return std::string("guest"); }>]] std::string role{};
+};
+
+// Serializes a bool as "yes"/"no".
+struct yes_no {
+  static void serialize(simdjson::builder::string_builder &b, const bool &v) {
+    b.append_raw(v ? "\"yes\"" : "\"no\"");
+  }
+  static simdjson::error_code deserialize(simdjson::ondemand::value &v, bool &out) {
+    std::string_view s;
+    SIMDJSON_TRY(v.get_string().get(s));
+    if (s == "yes") { out = true; return simdjson::SUCCESS; }
+    if (s == "no") { out = false; return simdjson::SUCCESS; }
+    return simdjson::INCORRECT_TYPE;
+  }
+};
+
+// Only customizes serialization: an int written as a string.
+struct int_as_string {
+  static void serialize(auto &b, const int &v) {
+    std::string s = std::to_string(v);
+    b.escape_and_append_with_quotes(s);
+  }
+};
+
+struct WithAdapters {
+  [[= simdjson::with<yes_no>]] bool enabled = false;
+  [[= simdjson::with<int_as_string>]] int id = 0;
+};
+
+struct [[= simdjson::rename_all<simdjson::case_style::camel_case>]] CamelCase {
+  std::string first_name = "";
+  int user_id = 0;
+  [[= simdjson::rename<"KEEP">]] int explicit_name = 0;
+};
+
+struct [[= simdjson::rename_all<simdjson::case_style::snake_case>]] SnakeCase {
+  std::string firstName = "";
+  int HTTPStatus = 0;
+};
+
+struct [[= simdjson::rename_all<simdjson::case_style::screaming_kebab_case>]] ScreamingKebab {
+  int max_retry_count = 0;
+};
+
+struct [[= simdjson::rename_all<simdjson::case_style::pascal_case>]] PascalCase {
+  int user_id = 0;
+};
+
+struct [[= simdjson::deny_unknown_fields]] Strict {
+  std::string name = "";
+  [[= simdjson::alias<"years">]] int age = 0;
+  [[= simdjson::default_value]] int level = 1;
+  [[= simdjson::skip]] int secret = 0;
+};
+
+struct [[= simdjson::transparent]] UserId {
+  int64_t value = 0;
+};
+
+struct [[= simdjson::transparent]] Tags {
+  std::vector<std::string> items{};
+};
+
+struct Account {
+  UserId id{};
+  Tags tags{};
+  std::vector<UserId> friends{};
+};
+
+enum class [[= simdjson::rename_all<simdjson::case_style::screaming_snake_case>]] Status {
+  not_started,
+  inProgress,
+  done [[= simdjson::rename<"finished">, = simdjson::alias<"complete", "DONE">]]
+};
+
+struct Task {
+  Status status = Status::not_started;
+};
+
+struct Pagination {
+  int limit = 0;
+  int offset = 0;
+};
+
+struct [[= simdjson::rename_all<simdjson::case_style::camel_case>]] RequestMeta {
+  std::string request_id = "";
+  [[= simdjson::default_value]] int retry_count = 0;
+};
+
+struct Trace {
+  [[= simdjson::flatten]] RequestMeta meta{};
+  [[= simdjson::alias<"span">]] std::string span_id = "";
+};
+
+struct UserPage {
+  int64_t id = 0;
+  [[= simdjson::flatten]] Pagination page{};
+  [[= simdjson::flatten]] Trace trace{};
+};
+
+struct [[= simdjson::deny_unknown_fields]] StrictPage {
+  int id = 0;
+  [[= simdjson::flatten]] Pagination page{};
+};
+
+// A key longer than 63 characters does not fit a key_selector, which forces the
+// scan fallback in the default build.
+struct LongKeys {
+  [[= simdjson::rename<"a_very_long_key_name_that_exceeds_the_key_selector_limit_of_63_chars">]] int value = 0;
+  [[= simdjson::alias<"alt">]] int other = 0;
+  [[= simdjson::default_from<make_timeout>]] int timeout = 0;
+};
+
+// Keys written with escape sequences in JSON: they cannot be compared raw, so
+// deserialization scans the object comparing unescaped keys, in both builds.
+struct EscapedKeys {
+  [[= simdjson::rename<"say \"hi\"">]] int quoted = 0;
+  [[= simdjson::rename<"back\\slash">]] int backslash = 0;
+  [[= simdjson::rename<"tab\there">]] int tab = 0;
+};
+
+// Serialized, but not deserialized: const and private members. With
+// deny_unknown_fields, their keys must not be unknown.
+struct [[= simdjson::deny_unknown_fields]] StrictVersioned {
+  const int version = 2;
+  std::string name = "";
+  int hidden_value() const { return hidden; }
+private:
+  int hidden = 7;
+};
+
+// An adapter taking an ondemand::value, on a transparent structure.
+struct count_elements {
+  static simdjson::error_code deserialize(simdjson::ondemand::value &v, uint64_t &out) {
+    simdjson::ondemand::array a;
+    SIMDJSON_TRY(v.get_array().get(a));
+    size_t count;
+    SIMDJSON_TRY(a.count_elements().get(count));
+    out = count;
+    return simdjson::SUCCESS;
+  }
+};
+
+struct [[= simdjson::transparent]] ElementCount {
+  [[= simdjson::with<count_elements>]] uint64_t count = 0;
+};
+
+struct [[= simdjson::transparent]] YesNo {
+  [[= simdjson::with<yes_no>]] bool value = false;
+};
+
+#if SIMDJSON_EXCEPTIONS
+struct throwing_adapter {
+  static void serialize(simdjson::builder::string_builder &, const int &) {
+    throw std::runtime_error("adapter failure");
+  }
+};
+
+struct WithThrowingAdapter {
+  [[= simdjson::with<throwing_adapter>]] int value = 0;
+};
+#endif // SIMDJSON_EXCEPTIONS
+
+#endif // SIMDJSON_STATIC_REFLECTION
+
+#if SIMDJSON_STATIC_REFLECTION
+template <typename T>
+simdjson::error_code parse_as(const std::string &json, T &out) {
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  simdjson::padded_string padded(json);
+  SIMDJSON_TRY(parser.iterate(padded).get(doc));
+  return doc.get<T>().get(out);
+}
 #endif // SIMDJSON_STATIC_REFLECTION
 
 namespace annotation_tests {
@@ -129,6 +343,420 @@ bool mixed_annotations_deserialize_test() {
   TEST_SUCCEED();
 }
 
+bool alias_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  AliasedFields a;
+  ASSERT_SUCCESS(parse_as(R"({"user_name":"ann","age":1})", a));
+  ASSERT_EQUAL(a.user_name, "ann");
+  ASSERT_SUCCESS(parse_as(R"({"userName":"bob","age":2})", a));
+  ASSERT_EQUAL(a.user_name, "bob");
+  ASSERT_SUCCESS(parse_as(R"({"age":3,"login":"cat"})", a));
+  ASSERT_EQUAL(a.user_name, "cat");
+  ASSERT_EQUAL(a.age, 3);
+  // When several names of a member are present, one of them is used.
+  ASSERT_SUCCESS(parse_as(R"({"login":"first","user_name":"second","age":4})", a));
+  ASSERT_TRUE(a.user_name == "first" || a.user_name == "second");
+  // Missing (under every name) is still an error.
+  ASSERT_ERROR(parse_as(R"({"age":5})", a), simdjson::NO_SUCH_FIELD);
+  // Serialization uses the regular key.
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(AliasedFields{"dan", 6}).get(out));
+  ASSERT_EQUAL(out, R"({"user_name":"dan","age":6})");
+#endif
+  TEST_SUCCEED();
+}
+
+bool one_way_skip_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  OneWaySkips s{"eve", "hunter2", 42};
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(s).get(out));
+  ASSERT_EQUAL(out, R"({"name":"eve","computed":42})");
+  OneWaySkips r;
+  ASSERT_SUCCESS(parse_as(R"({"name":"fay","password":"pw","computed":99})", r));
+  ASSERT_EQUAL(r.name, "fay");
+  ASSERT_EQUAL(r.password, "pw");
+  ASSERT_EQUAL(r.computed, 7); // not deserialized
+  // A skip_deserializing member is not required.
+  ASSERT_SUCCESS(parse_as(R"({"name":"gus","password":"pw"})", r));
+#endif
+  TEST_SUCCEED();
+}
+
+bool skip_serializing_if_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ConditionalSkips empty;
+  ASSERT_SUCCESS(simdjson::to_json(empty).get(out));
+  ASSERT_EQUAL(out, R"({"always":0})");
+  ConditionalSkips full;
+  full.maybe = 1;
+  full.values = {2, 3};
+  full.note = "hi";
+  full.count = 4;
+  full.always = 5;
+  ASSERT_SUCCESS(simdjson::to_json(full).get(out));
+  ASSERT_EQUAL(out, R"({"maybe":1,"values":[2,3],"note":"hi","count":4,"always":5})");
+  // The first serialized key may come after a skipped one: no stray comma.
+  ConditionalSkips partial;
+  partial.count = 9;
+  ASSERT_SUCCESS(simdjson::to_json(partial).get(out));
+  ASSERT_EQUAL(out, R"({"count":9,"always":0})");
+#endif
+  TEST_SUCCEED();
+}
+
+bool default_value_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  Settings s;
+  ASSERT_SUCCESS(parse_as(R"({"host":"example.com"})", s));
+  ASSERT_EQUAL(s.host, "example.com");
+  ASSERT_EQUAL(s.port, 8080);
+  ASSERT_EQUAL(s.tags.size(), 1);
+  ASSERT_EQUAL(s.tags[0], "default");
+  ASSERT_SUCCESS(parse_as(R"({"port":1,"host":"h","tags":[]})", s));
+  ASSERT_EQUAL(s.port, 1);
+  ASSERT_EQUAL(s.tags.size(), 0);
+  // Members without default_value remain required.
+  ASSERT_ERROR(parse_as(R"({"port":1})", s), simdjson::NO_SUCH_FIELD);
+  // A present but invalid value is still an error.
+  ASSERT_ERROR(parse_as(R"({"host":"h","port":"x"})", s), simdjson::INCORRECT_TYPE);
+#endif
+  TEST_SUCCEED();
+}
+
+bool struct_default_value_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  AllDefaults d;
+  ASSERT_SUCCESS(parse_as(R"({})", d));
+  ASSERT_EQUAL(d.host, "localhost");
+  ASSERT_EQUAL(d.port, 80);
+  ASSERT_EQUAL(d.secure, false);
+  ASSERT_SUCCESS(parse_as(R"({"secure":true})", d));
+  ASSERT_EQUAL(d.host, "localhost");
+  ASSERT_EQUAL(d.secure, true);
+#endif
+  TEST_SUCCEED();
+}
+
+bool default_from_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  DefaultFrom d;
+  ASSERT_SUCCESS(parse_as(R"({"name":"x"})", d));
+  ASSERT_EQUAL(d.timeout, 30);
+  ASSERT_EQUAL(d.role, "guest");
+  ASSERT_SUCCESS(parse_as(R"({"name":"x","timeout":5,"role":"admin"})", d));
+  ASSERT_EQUAL(d.timeout, 5);
+  ASSERT_EQUAL(d.role, "admin");
+#endif
+  TEST_SUCCEED();
+}
+
+bool with_adapter_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(WithAdapters{true, 12}).get(out));
+  ASSERT_EQUAL(out, R"({"enabled":"yes","id":"12"})");
+  WithAdapters w;
+  // int_as_string has no deserialize: the default (a JSON number) applies.
+  ASSERT_SUCCESS(parse_as(R"({"enabled":"no","id":3})", w));
+  ASSERT_EQUAL(w.enabled, false);
+  ASSERT_EQUAL(w.id, 3);
+  ASSERT_SUCCESS(parse_as(R"({"enabled":"yes","id":4})", w));
+  ASSERT_EQUAL(w.enabled, true);
+  ASSERT_ERROR(parse_as(R"({"enabled":true,"id":4})", w), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"enabled":"maybe","id":4})", w), simdjson::INCORRECT_TYPE);
+#endif
+  TEST_SUCCEED();
+}
+
+bool rename_all_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(CamelCase{"Ann", 7, 8}).get(out));
+  ASSERT_EQUAL(out, R"({"firstName":"Ann","userId":7,"KEEP":8})");
+  CamelCase c;
+  ASSERT_SUCCESS(parse_as(out, c));
+  ASSERT_EQUAL(c.first_name, "Ann");
+  ASSERT_EQUAL(c.user_id, 7);
+  ASSERT_EQUAL(c.explicit_name, 8);
+  ASSERT_ERROR(parse_as(R"({"first_name":"Ann","userId":7,"KEEP":8})", c), simdjson::NO_SUCH_FIELD);
+
+  ASSERT_SUCCESS(simdjson::to_json(SnakeCase{"Bo", 404}).get(out));
+  ASSERT_EQUAL(out, R"({"first_name":"Bo","http_status":404})");
+  SnakeCase sc;
+  ASSERT_SUCCESS(parse_as(out, sc));
+  ASSERT_EQUAL(sc.HTTPStatus, 404);
+
+  ASSERT_SUCCESS(simdjson::to_json(ScreamingKebab{3}).get(out));
+  ASSERT_EQUAL(out, R"({"MAX-RETRY-COUNT":3})");
+  ASSERT_SUCCESS(simdjson::to_json(PascalCase{4}).get(out));
+  ASSERT_EQUAL(out, R"({"UserId":4})");
+#endif
+  TEST_SUCCEED();
+}
+
+bool deny_unknown_fields_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  Strict s;
+  ASSERT_SUCCESS(parse_as(R"({"name":"a","age":1})", s));
+  ASSERT_EQUAL(s.name, "a");
+  ASSERT_EQUAL(s.age, 1);
+  ASSERT_EQUAL(s.level, 1);
+  ASSERT_SUCCESS(parse_as(R"({"years":2,"level":3,"name":"b"})", s));
+  ASSERT_EQUAL(s.age, 2);
+  ASSERT_EQUAL(s.level, 3);
+  ASSERT_ERROR(parse_as(R"({"name":"a","age":1,"extra":true})", s), simdjson::UNKNOWN_FIELD);
+  // The key of a skipped member is unknown.
+  ASSERT_ERROR(parse_as(R"({"name":"a","age":1,"secret":1})", s), simdjson::UNKNOWN_FIELD);
+  ASSERT_ERROR(parse_as(R"({"name":"a"})", s), simdjson::NO_SUCH_FIELD);
+  ASSERT_ERROR(parse_as(R"({"name":"a","age":"x"})", s), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"([1])", s), simdjson::INCORRECT_TYPE);
+  // Escaped keys are compared after unescaping.
+  ASSERT_SUCCESS(parse_as(R"({"n\u0061me":"c","age":4})", s));
+  ASSERT_EQUAL(s.name, "c");
+  std::string message = simdjson::error_message(simdjson::UNKNOWN_FIELD);
+  ASSERT_TRUE(message.find("UNKNOWN_FIELD") != std::string::npos);
+#endif
+  TEST_SUCCEED();
+}
+
+bool transparent_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  Account a;
+  a.id.value = 42;
+  a.tags.items = {"x", "y"};
+  a.friends = {UserId{1}, UserId{2}};
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(a).get(out));
+  ASSERT_EQUAL(out, R"({"id":42,"tags":["x","y"],"friends":[1,2]})");
+  Account b;
+  ASSERT_SUCCESS(parse_as(out, b));
+  ASSERT_EQUAL(b.id.value, 42);
+  ASSERT_EQUAL(b.tags.items.size(), 2);
+  ASSERT_EQUAL(b.friends.size(), 2);
+  ASSERT_EQUAL(b.friends[1].value, 2);
+  UserId top;
+  ASSERT_SUCCESS(parse_as("17", top));
+  ASSERT_EQUAL(top.value, 17);
+  ASSERT_SUCCESS(simdjson::to_json(top).get(out));
+  ASSERT_EQUAL(out, "17");
+#endif
+  TEST_SUCCEED();
+}
+
+bool enum_annotations_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(Task{Status::not_started}).get(out));
+  ASSERT_EQUAL(out, R"({"status":"NOT_STARTED"})");
+  ASSERT_SUCCESS(simdjson::to_json(Task{Status::inProgress}).get(out));
+  ASSERT_EQUAL(out, R"({"status":"IN_PROGRESS"})");
+  ASSERT_SUCCESS(simdjson::to_json(Task{Status::done}).get(out));
+  ASSERT_EQUAL(out, R"({"status":"finished"})");
+  Task t;
+  ASSERT_SUCCESS(parse_as(R"({"status":"IN_PROGRESS"})", t));
+  ASSERT_TRUE(t.status == Status::inProgress);
+  ASSERT_SUCCESS(parse_as(R"({"status":"finished"})", t));
+  ASSERT_TRUE(t.status == Status::done);
+  ASSERT_SUCCESS(parse_as(R"({"status":"complete"})", t));
+  ASSERT_TRUE(t.status == Status::done);
+  ASSERT_SUCCESS(parse_as(R"({"status":"DONE"})", t));
+  ASSERT_TRUE(t.status == Status::done);
+  ASSERT_ERROR(parse_as(R"({"status":"inProgress"})", t), simdjson::INCORRECT_TYPE);
+#endif
+  TEST_SUCCEED();
+}
+
+bool long_keys_fallback_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  LongKeys k;
+  ASSERT_SUCCESS(parse_as(R"({"alt":2,"a_very_long_key_name_that_exceeds_the_key_selector_limit_of_63_chars":1})", k));
+  ASSERT_EQUAL(k.value, 1);
+  ASSERT_EQUAL(k.other, 2);
+  ASSERT_EQUAL(k.timeout, 30);
+  ASSERT_SUCCESS(parse_as(R"({"other":3,"a_very_long_key_name_that_exceeds_the_key_selector_limit_of_63_chars":1,"timeout":4})", k));
+  ASSERT_EQUAL(k.other, 3);
+  ASSERT_EQUAL(k.timeout, 4);
+  ASSERT_ERROR(parse_as(R"({"other":3})", k), simdjson::NO_SUCH_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+#if SIMDJSON_STATIC_REFLECTION
+UserPage make_user_page() {
+  UserPage p{};
+  p.id = 1;
+  p.page = {10, 20};
+  p.trace.meta.request_id = "r1";
+  p.trace.meta.retry_count = 2;
+  p.trace.span_id = "s1";
+  return p;
+}
+#endif
+
+bool flatten_serialize_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(make_user_page()).get(out));
+  ASSERT_EQUAL(out, R"({"id":1,"limit":10,"offset":20,"requestId":"r1","retryCount":2,"span_id":"s1"})");
+#endif
+  TEST_SUCCEED();
+}
+
+bool flatten_roundtrip_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  // The output of flatten_serialize_test.
+  UserPage q{};
+  ASSERT_SUCCESS(parse_as(R"({"id":1,"limit":10,"offset":20,"requestId":"r1","retryCount":2,"span_id":"s1"})", q));
+  ASSERT_EQUAL(q.id, 1);
+  ASSERT_EQUAL(q.page.limit, 10);
+  ASSERT_EQUAL(q.page.offset, 20);
+  ASSERT_EQUAL(q.trace.meta.request_id, "r1");
+  ASSERT_EQUAL(q.trace.meta.retry_count, 2);
+  ASSERT_EQUAL(q.trace.span_id, "s1");
+#endif
+  TEST_SUCCEED();
+}
+
+bool flatten_deserialize_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  UserPage q{};
+  // Any order; the default_value of a flattened member applies; aliases apply.
+  ASSERT_SUCCESS(parse_as(R"({"span":"s2","offset":5,"requestId":"r2","id":3,"limit":4})", q));
+  ASSERT_EQUAL(q.id, 3);
+  ASSERT_EQUAL(q.page.limit, 4);
+  ASSERT_EQUAL(q.page.offset, 5);
+  ASSERT_EQUAL(q.trace.meta.retry_count, 0);
+  ASSERT_EQUAL(q.trace.span_id, "s2");
+  // A missing required member of a flattened structure is an error.
+  ASSERT_ERROR(parse_as(R"({"id":3,"offset":5,"requestId":"r","span_id":"s"})", q), simdjson::NO_SUCH_FIELD);
+  // The flattened structure is not expected as a nested object.
+  ASSERT_ERROR(parse_as(R"({"id":3,"page":{"limit":1,"offset":2},"requestId":"r","span_id":"s"})", q), simdjson::NO_SUCH_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool flatten_deny_unknown_fields_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  StrictPage sp;
+  ASSERT_SUCCESS(parse_as(R"({"offset":2,"id":1,"limit":3})", sp));
+  ASSERT_EQUAL(sp.page.limit, 3);
+  ASSERT_ERROR(parse_as(R"({"offset":2,"id":1,"limit":3,"page":{}})", sp), simdjson::UNKNOWN_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool default_replaces_container_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  Settings s;
+  ASSERT_SUCCESS(parse_as(R"({"host":"h","tags":["a","b"]})", s));
+  ASSERT_EQUAL(s.tags.size(), 2);
+  ASSERT_EQUAL(s.tags[0], "a");
+#endif
+  TEST_SUCCEED();
+}
+
+bool escaped_keys_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  EscapedKeys e;
+  e.quoted = 1;
+  e.backslash = 2;
+  e.tab = 3;
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(e).get(out));
+  ASSERT_EQUAL(out, R"({"say \"hi\"":1,"back\\slash":2,"tab\there":3})");
+  EscapedKeys f;
+  ASSERT_SUCCESS(parse_as(out, f));
+  ASSERT_EQUAL(f.quoted, 1);
+  ASSERT_EQUAL(f.backslash, 2);
+  ASSERT_EQUAL(f.tab, 3);
+  // The first occurrence of a key wins.
+  ASSERT_SUCCESS(parse_as(R"({"say \"hi\"":4,"back\\slash":5,"tab\u0009here":6,"say \"hi\"":7})", f));
+  ASSERT_EQUAL(f.quoted, 4);
+  ASSERT_EQUAL(f.tab, 6);
+  ASSERT_ERROR(parse_as(R"({"say \"hi\"":4,"back\\slash":5})", f), simdjson::NO_SUCH_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool deny_unknown_fields_roundtrip_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  StrictVersioned v;
+  v.name = "n";
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(v).get(out));
+  ASSERT_EQUAL(out, R"({"version":2,"name":"n","hidden":7})");
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string padded(out);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+  StrictVersioned w;
+  ASSERT_SUCCESS(doc.get(w));
+  ASSERT_EQUAL(w.name, "n");
+  simdjson::padded_string unknown(std::string(R"({"version":2,"name":"n","extra":1})"));
+  ASSERT_SUCCESS(parser.iterate(unknown).get(doc));
+  ASSERT_ERROR(doc.get(w), simdjson::UNKNOWN_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool transparent_adapter_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  // Read directly from a document: the adapter must still be called.
+  ElementCount c;
+  ASSERT_SUCCESS(parse_as("[1,2,3]", c));
+  ASSERT_EQUAL(c.count, 3);
+  // A scalar document cannot be passed as an ondemand::value.
+  YesNo y;
+  ASSERT_ERROR(parse_as(R"("yes")", y), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+  // As an array element, it is a value.
+  std::vector<YesNo> flags;
+  ASSERT_SUCCESS(parse_as(R"(["yes","no"])", flags));
+  ASSERT_EQUAL(flags.size(), 2);
+  ASSERT_TRUE(flags[0].value);
+  ASSERT_FALSE(flags[1].value);
+#endif
+  TEST_SUCCEED();
+}
+
+bool throwing_adapter_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION && SIMDJSON_EXCEPTIONS
+  WithThrowingAdapter t;
+  bool caught = false;
+  try {
+    std::string out;
+    simdjson::error_code error = simdjson::to_json(t).get(out);
+    (void)error;
+  } catch (const std::runtime_error &) {
+    caught = true;
+  }
+  ASSERT_TRUE(caught);
+#endif
+  TEST_SUCCEED();
+}
+
 bool run_all() {
   return rename_serialize_test()
       && rename_deserialize_test()
@@ -136,7 +764,28 @@ bool run_all() {
       && skip_serialize_test()
       && skip_deserialize_ignores_field_test()
       && mixed_annotations_serialize_test()
-      && mixed_annotations_deserialize_test();
+      && mixed_annotations_deserialize_test()
+      && alias_test()
+      && one_way_skip_test()
+      && skip_serializing_if_test()
+      && default_value_test()
+      && struct_default_value_test()
+      && default_from_test()
+      && with_adapter_test()
+      && rename_all_test()
+      && deny_unknown_fields_test()
+      && transparent_test()
+      && enum_annotations_test()
+      && long_keys_fallback_test()
+      && flatten_serialize_test()
+      && flatten_roundtrip_test()
+      && flatten_deserialize_test()
+      && flatten_deny_unknown_fields_test()
+      && default_replaces_container_test()
+      && escaped_keys_test()
+      && deny_unknown_fields_roundtrip_test()
+      && transparent_adapter_test()
+      && throwing_adapter_test();
 }
 
 } // namespace annotation_tests

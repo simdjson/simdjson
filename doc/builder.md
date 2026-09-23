@@ -295,6 +295,25 @@ std::string json = simdjson::to_json(p);
 The `skip` annotation also affects deserialization: the field keeps its default value
 and any corresponding key in the input JSON is ignored.
 
+Other annotations, modelled after the Rust serde library, affect serialization:
+
+```cpp
+struct [[= simdjson::rename_all<simdjson::case_style::camel_case>]] Account {
+  std::string user_name;                                // "userName"
+  [[= simdjson::skip_serializing]] std::string password; // deserialized, never serialized
+  [[= simdjson::skip_serializing_if<simdjson::is_none>]] std::optional<std::string> email; // omitted when empty
+  [[= simdjson::skip_serializing_if<simdjson::is_empty>]] std::vector<std::string> roles;  // omitted when empty
+  [[= simdjson::with<yes_no>]] bool active;             // custom serialization via yes_no::serialize
+};
+```
+
+Enumerators can be renamed with `rename` (or `rename_all` on the enumeration), a
+structure annotated with `transparent` is serialized as its single data member, and the
+members of a member annotated with `flatten` are written in place of that member.
+See [Customizing (de)serialization with annotations](basics.md#customizing-deserialization-with-annotations)
+for the complete list, including the annotations that only affect deserialization
+(`alias`, `default_value`, `default_from`, `deny_unknown_fields`).
+
 ### Without `string_buffer` instance
 
 In some instances, you might want to create a string directly from your own data type.
