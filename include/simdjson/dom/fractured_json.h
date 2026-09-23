@@ -40,6 +40,12 @@ struct fractured_json_options {
   size_t indent_spaces = 4;
 
   /**
+   * Forces elements close to the root to always fully expand, regardless of other settings.
+   * (default: -1). -1 = none; 0 = root node only; 1 = root node and its children; etc.
+   */
+  int always_expand_depth = -1;
+
+  /**
    * Enable tabular formatting for arrays of similar objects (default: true).
    * When enabled, arrays of objects with identical keys are formatted
    * as aligned tables.

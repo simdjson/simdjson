@@ -351,20 +351,24 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
     return layout_mode::single_line;
   }
 
+  long long signed_depth = static_cast<long long>(depth);
+  bool depth_allows_inline_or_compact = signed_depth > opts.always_expand_depth;
+  bool depth_allows_table = signed_depth >= opts.always_expand_depth;
+
   // Check inline feasibility
   size_t reserved_width = depth * opts.indent_spaces + (has_trailing_comma ? 1 : 0);
-  if (metrics.can_inline &&
+  if (depth_allows_inline_or_compact && metrics.can_inline &&
       metrics.estimated_inline_len + reserved_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
   }
 
   // Check table mode
-  if (metrics.is_uniform_array && !metrics.common_keys.empty()) {
+  if (depth_allows_table && metrics.is_uniform_array && !metrics.common_keys.empty()) {
     return layout_mode::table;
   }
 
   // Check compact multiline
-  if (opts.enable_compact_multiline &&
+  if (depth_allows_inline_or_compact && opts.enable_compact_multiline &&
       metrics.complexity <= opts.max_compact_array_complexity + 1) {
     return layout_mode::compact_multiline;
   }

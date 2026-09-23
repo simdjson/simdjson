@@ -437,6 +437,7 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 - `max_inline_complexity` (default: 2): Maximum nesting depth for inline rendering. Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.
 - `max_compact_array_complexity` (default: 1): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.
 - `indent_spaces` (default: 4): Number of spaces per indentation level.
+- `always_expand_depth` (default: -1): Forces elements close to the root to always fully expand, regardless of other settings. -1 = none; 0 = root node only; 1 = root node and its children; etc.
 - `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.
 - `min_table_rows` (default: 3): Minimum number of rows to trigger table mode.
 - `table_similarity_threshold` (default: 0.8): Similarity threshold for table detection. Objects must share at least this fraction of keys to be formatted as a table.

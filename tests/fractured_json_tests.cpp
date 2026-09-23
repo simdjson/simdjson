@@ -1348,6 +1348,74 @@ bool nested_bracket_padding_test() {
   return true;
 }
 
+bool always_expand_depth_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  {
+    const char* json = R"({"a":1,"b":2})";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.always_expand_depth = 0;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted, "{\n    \"a\": 1,\n    \"b\": 2\n}");
+  }
+  {
+    // A uniform array at the root is still table-formatted, not exploded
+    // into one fully-expanded object per row.
+    const char* json = R"([{"id":1,"name":"Alice"},{"id":2,"name":"Bob"},{"id":3,"name":"Carol"}])";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.always_expand_depth = 0;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    { \"id\": 1, \"name\": \"Alice\" },\n"
+        "    { \"id\": 2, \"name\": \"Bob\" },\n"
+        "    { \"id\": 3, \"name\": \"Carol\" }\n"
+        "]");
+  }
+  {
+    // depth 1 forces the root's direct children to expand too, even
+    // though "a"'s value alone would easily fit inline.
+    const char* json = R"({"a":{"x":1,"y":2}})";
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.always_expand_depth = 1;
+    auto formatted = simdjson::fractured_json(doc, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"a\": {\n"
+        "        \"x\": 1,\n"
+        "        \"y\": 2\n"
+        "    }\n"
+        "}");
+  }
+
+  std::cout << "Always expand depth test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -1395,9 +1463,10 @@ int main() {
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
   success = trailing_comma_counted_in_length_test() && success;
   success = nested_bracket_padding_test() && success;
+  success = always_expand_depth_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 37 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 38 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;
