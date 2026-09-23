@@ -272,9 +272,10 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 // static reflection). It provides the compile-time machinery for building a
 // key_selector from a struct's members, the per-member helpers shared by every
 // deserialization path (they implement the annotations of annotations.h), the
-// ordered per-member fallback used by the opt-out build and as an automatic
-// fallback (see deserialize_struct_ordered and keys_fit_selector below), and the
-// strict path used for structs annotated with deny_unknown_fields.
+// ordered per-member path used by the opt-out build (see
+// deserialize_struct_ordered below), and the scan used for structs annotated
+// with deny_unknown_fields and as an automatic fallback (see
+// deserialize_struct_scan and keys_fit_selector below).
 namespace key_selector_reflection_detail {
 
 // A member participates if it is public, non-const, and not annotated with skip
@@ -306,13 +307,23 @@ struct member_path {
   }
 };
 
+// True when T can be flattened: a structure deserialized member by member (not
+// a string, a container, an optional, a smart pointer, ...).
+template <typename T>
+constexpr bool flattenable_type = user_defined_type<T> && !concepts::string_view_keyed_map<T>
+    && !concepts::container_but_not_string<T> && !concepts::smart_pointer<T>;
+
 consteval void append_eligible_fields(std::meta::info type, std::vector<std::meta::info> &prefix,
                                       std::vector<std::meta::info> &fields) {
   for (std::meta::info mem : std::meta::nonstatic_data_members_of(type, std::meta::access_context::unchecked())) {
     if (!is_eligible_member(mem)) { continue; }
     prefix.push_back(std::meta::reflect_constant(mem));
     if (simdjson::detail::has_annotation(mem, ^^simdjson::detail::flatten_tag)) {
-      append_eligible_fields(simdjson::detail::flattened_type(mem), prefix, fields);
+      std::meta::info flattened = simdjson::detail::flattened_type(mem);
+      if (!std::meta::extract<bool>(std::meta::substitute(^^flattenable_type, {flattened}))) {
+        throw std::meta::exception(u8"simdjson::flatten requires a member whose type is a structure deserialized member by member", mem);
+      }
+      append_eligible_fields(flattened, prefix, fields);
     } else {
       fields.push_back(std::meta::substitute(^^member_path, prefix));
     }
@@ -349,7 +360,9 @@ consteval std::size_t eligible_field_count() {
 consteval std::vector<const char *> accepted_keys_of(std::meta::info entity) {
   std::vector<const char *> keys;
   for (std::string_view key : simdjson::detail::json_key_names(entity)) {
-    keys.push_back(std::define_static_string(key));
+    bool repeated = false;
+    for (const char *previous : keys) { repeated = repeated || std::string_view(previous) == key; }
+    if (!repeated) { keys.push_back(std::define_static_string(key)); }
   }
   return keys;
 }
@@ -372,6 +385,33 @@ consteval std::vector<std::size_t> accepted_key_fields(std::meta::info type) {
     for (std::size_t j = 0; j < accepted_keys_of(field_leaf(fields[i])).size(); ++j) { key_fields.push_back(i); }
   }
   return key_fields;
+}
+
+// True when no two eligible fields of T accept the same key. Otherwise one JSON
+// key would have to fill several members: this is reported at compile time.
+template <typename T>
+consteval bool accepted_keys_are_distinct() {
+  std::vector<const char *> keys = accepted_keys(^^T);
+  for (std::size_t i = 0; i < keys.size(); ++i) {
+    for (std::size_t j = i + 1; j < keys.size(); ++j) {
+      if (std::string_view(keys[i]) == std::string_view(keys[j])) { return false; }
+    }
+  }
+  return true;
+}
+
+// True when some accepted key of T is written with escape sequences in JSON (a
+// double quote, a backslash or a control character). Such a key can only be
+// matched by comparing unescaped keys (deserialize_struct_scan): obj[key] and
+// the key_selector compare the raw bytes.
+template <typename T>
+consteval bool keys_need_unescaping() {
+  for (std::string_view key : accepted_keys(^^T)) {
+    for (char c : key) {
+      if (c == '\\' || c == '"' || static_cast<unsigned char>(c) < 0x20) { return true; }
+    }
+  }
+  return false;
 }
 
 // True when some eligible field of T has aliases: several selector keys may then
@@ -440,8 +480,10 @@ using selector_for = typename [: std::meta::substitute(
 // key_selector can be built for T without a compile-time error. This mirrors the
 // key_selector limits (see key_selector.h): at most 255 keys, each key non-empty
 // and at most 63 characters, no backslash / double-quote / null byte, and all
-// keys distinct. When this returns false the deserializer falls back to the
-// ordered per-field path instead of failing to compile.
+// keys distinct. Keys with any other control character are excluded too: they
+// are escaped in JSON, so their raw bytes never match. When this returns false
+// the deserializer falls back to deserialize_struct_scan instead of failing to
+// compile.
 template <typename T>
 consteval bool keys_fit_selector() {
   std::vector<std::string_view> keys;
@@ -450,13 +492,21 @@ consteval bool keys_fit_selector() {
   for (std::size_t i = 0; i < keys.size(); ++i) {
     if (keys[i].empty() || keys[i].size() > 63) { return false; }
     for (char c : keys[i]) {
-      if (c == '\\' || c == '"' || c == '\0') { return false; }
+      if (c == '\\' || c == '"' || static_cast<unsigned char>(c) < 0x20) { return false; }
     }
     for (std::size_t j = i + 1; j < keys.size(); ++j) {
       if (keys[i] == keys[j]) { return false; }
     }
   }
   return true;
+}
+
+// True when the class `adapter` declares a member named deserialize.
+consteval bool declares_deserialize(std::meta::info adapter) {
+  for (std::meta::info m : std::meta::members_of(adapter, std::meta::access_context::unchecked())) {
+    if (std::meta::has_identifier(m) && std::meta::identifier_of(m) == "deserialize") { return true; }
+  }
+  return false;
 }
 
 // Deserialize a JSON value into `target`, the storage of member `mem`, through
@@ -467,9 +517,22 @@ simdjson_warn_unused simdjson_inline error_code deserialize_member_value(ValueT 
   constexpr std::meta::info with_type = simdjson::detail::annotation_of_template(mem, ^^simdjson::detail::with_t);
   if constexpr (with_type != std::meta::info{}) {
     using adapter = typename [: with_type :]::adapter;
+    using ondemand_value = SIMDJSON_IMPLEMENTATION::ondemand::value;
     if constexpr (requires { { adapter::deserialize(field_value, target) } -> std::convertible_to<error_code>; }) {
       return adapter::deserialize(field_value, target);
+    } else if constexpr (requires(ondemand_value &v) { { adapter::deserialize(v, target) } -> std::convertible_to<error_code>; }
+                         && requires { field_value.get_value(); }) {
+      // A transparent structure read from a document: the adapter takes an
+      // ondemand::value. A scalar document cannot be viewed as a value, so it
+      // reports SCALAR_DOCUMENT_AS_VALUE (an adapter taking auto& receives the
+      // document itself and has no such limitation).
+      ondemand_value v;
+      SIMDJSON_TRY(field_value.get_value().get(v));
+      return adapter::deserialize(v, target);
     } else {
+      static_assert(!declares_deserialize(^^adapter),
+                    "the deserialize function of a simdjson::with adapter must be callable as "
+                    "Adapter::deserialize(simdjson::ondemand::value &, T &) and return an error_code");
       return field_value.get(target);
     }
   } else {
@@ -541,8 +604,8 @@ simdjson_warn_unused simdjson_inline error_code handle_missing_fields(
 
 // Ordered, per-field deserialization: one obj[key] lookup per eligible field
 // (and per alias, until one is found). This is the opt-out path
-// (-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1) and the automatic fallback for
-// structs whose keys do not fit the key_selector limits (see keys_fit_selector).
+// (-DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1), except for structs with keys
+// that need unescaping (see keys_need_unescaping).
 template <typename T>
 simdjson_warn_unused error_code deserialize_struct_ordered(
     SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept(false) {
@@ -564,13 +627,42 @@ simdjson_warn_unused error_code deserialize_struct_ordered(
   return SUCCESS;
 }
 
-// Strict deserialization for structs annotated with deny_unknown_fields: a single
-// pass over every field of the object, where a key that does not map to an
-// eligible field is reported as UNKNOWN_FIELD. As with object::for_each, the
-// first occurrence of a field wins (later duplicates, or aliases of a field
-// already seen, are ignored).
-template <typename T>
-simdjson_warn_unused error_code deserialize_struct_strict(
+// Appends the JSON keys that serialization writes for members of `type` that
+// deserialization cannot assign (const or non-public members, directly or
+// through flatten). `all` is true inside a flattened member that is itself
+// unassignable. Keys of skip_deserializing members are not included: they are
+// unknown keys, as documented.
+consteval void append_unassignable_keys(std::meta::info type, bool all, std::vector<const char *> &keys) {
+  for (std::meta::info mem : std::meta::nonstatic_data_members_of(type, std::meta::access_context::unchecked())) {
+    if (simdjson::detail::has_annotation(mem, ^^simdjson::detail::skip_tag)
+        || simdjson::detail::has_annotation(mem, ^^simdjson::detail::skip_serializing_tag)
+        || simdjson::detail::has_annotation(mem, ^^simdjson::detail::skip_deserializing_tag)) {
+      continue;
+    }
+    bool unassignable = all || !is_eligible_member(mem);
+    if (simdjson::detail::has_annotation(mem, ^^simdjson::detail::flatten_tag)) {
+      append_unassignable_keys(simdjson::detail::flattened_type(mem), unassignable, keys);
+    } else if (unassignable) {
+      keys.push_back(std::define_static_string(simdjson::detail::json_key_name(mem)));
+    }
+  }
+}
+
+consteval std::vector<const char *> unassignable_keys(std::meta::info type) {
+  std::vector<const char *> keys;
+  append_unassignable_keys(type, false, keys);
+  return keys;
+}
+
+// Deserialization by a single pass over every field of the object, comparing
+// unescaped keys. It is used for structs annotated with deny_unknown_fields
+// (DenyUnknown = true), where a key that does not map to an eligible field is
+// reported as UNKNOWN_FIELD, and as the fallback for structs whose keys the
+// key_selector or obj[key] cannot match (see keys_fit_selector and
+// keys_need_unescaping). As with object::for_each, the first occurrence of a
+// field wins (later duplicates, or aliases of a field already seen, are ignored).
+template <bool DenyUnknown, typename T>
+simdjson_warn_unused error_code deserialize_struct_scan(
     SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept(false) {
   static constexpr auto keys = std::define_static_array(accepted_keys(^^T));
   static constexpr auto key_fields = std::define_static_array(accepted_key_fields(^^T));
@@ -584,7 +676,19 @@ simdjson_warn_unused error_code deserialize_struct_strict(
     for (std::size_t i = 0; i < keys.size(); ++i) {
       if (key == std::string_view(keys[i])) { key_index = i; break; }
     }
-    if (key_index == keys.size()) { return UNKNOWN_FIELD; }
+    if (key_index == keys.size()) {
+      if constexpr (DenyUnknown) {
+        // A key that T itself serializes (e.g. of a const member) is not
+        // unknown: a serialized value must parse back.
+        static constexpr auto ignored_keys = std::define_static_array(unassignable_keys(^^T));
+        bool ignored = false;
+        for (const char *ignored_key : ignored_keys) {
+          if (key == std::string_view(ignored_key)) { ignored = true; break; }
+        }
+        if (!ignored) { return UNKNOWN_FIELD; }
+      }
+      continue;
+    }
     const std::size_t field_index = key_fields[key_index];
     if (seen_field[field_index]) { continue; }
     seen_field[field_index] = true;
@@ -603,12 +707,15 @@ consteval bool is_transparent() {
 // Deserialize a reflected struct. By default this builds a compile-time
 // key_selector from the struct's members and walks each object once with
 // object::for_each (perfect-hash key matching), instead of one obj[key] lookup
-// per member. There are two ways the ordered per-member path is used instead:
-//   - globally, by defining -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1;
-//   - automatically and per-type, when the struct's member keys do not fit the
-//     key_selector limits (see keys_fit_selector), so that long member names and
-//     the like keep compiling rather than tripping a static_assert.
-// Structs annotated with deny_unknown_fields always use the strict path, and
+// per member. Other paths are used instead:
+//   - globally, the ordered per-member path when defining
+//     -DSIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION=1;
+//   - automatically and per-type, a scan of the object comparing unescaped keys
+//     when the struct's keys do not fit the key_selector limits (see
+//     keys_fit_selector) or cannot be compared raw (see keys_need_unescaping),
+//     so that long member names and the like keep compiling rather than
+//     tripping a static_assert.
+// Structs annotated with deny_unknown_fields always use the strict scan, and
 // structs annotated with transparent are deserialized as their single member.
 //
 // noexcept(false): a member's tag_invoke may throw and the exception must reach
@@ -629,6 +736,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       return key_selector_reflection_detail::deserialize_member<mem>(val, out.[:mem:]);
     }
   } else {
+  static_assert(key_selector_reflection_detail::accepted_keys_are_distinct<T>(),
+                "two members of this structure accept the same JSON key (check rename, alias, "
+                "rename_all and flatten)");
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
     obj = val;
@@ -636,11 +746,16 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_object().get(obj));
   }
   if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::deny_unknown_fields_tag)) {
-    return key_selector_reflection_detail::deserialize_struct_strict(obj, out);
+    return key_selector_reflection_detail::deserialize_struct_scan<true>(obj, out);
   } else {
 #if defined(SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION) && SIMDJSON_DISABLE_KEY_SELECTOR_REFLECTION
-  // Opt-out build: always use the ordered per-member path.
-  return key_selector_reflection_detail::deserialize_struct_ordered(obj, out);
+  // Opt-out build: use the ordered per-member path, unless obj[key] cannot
+  // match T's keys.
+  if constexpr (key_selector_reflection_detail::keys_need_unescaping<T>()) {
+    return key_selector_reflection_detail::deserialize_struct_scan<false>(obj, out);
+  } else {
+    return key_selector_reflection_detail::deserialize_struct_ordered(obj, out);
+  }
 #else
   if constexpr (key_selector_reflection_detail::eligible_field_count<T>() == 0) {
     // No fields to deserialize: an empty key_selector cannot be built, so just
@@ -651,10 +766,11 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     return SUCCESS;
   } else if constexpr (!key_selector_reflection_detail::keys_fit_selector<T>()) {
     // Automatic fallback: T's accepted keys do not fit the key_selector limits
-    // (e.g. a member name longer than 63 characters), so building a selector
-    // would be a compile error. Use the ordered per-member path instead, so the
-    // default never breaks a struct that the opt-out path would accept.
-    return key_selector_reflection_detail::deserialize_struct_ordered(obj, out);
+    // (e.g. a member name longer than 63 characters, or a key with a double
+    // quote), so building a selector would be a compile error. Scan the object
+    // instead, so the default never breaks a struct that the opt-out path would
+    // accept.
+    return key_selector_reflection_detail::deserialize_struct_scan<false>(obj, out);
   } else {
   using selector = key_selector_reflection_detail::selector_for<T>;
   if constexpr (key_selector_reflection_detail::all_eligible_fields_required<T>()

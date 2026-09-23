@@ -328,6 +328,11 @@ consteval std::vector<std::string_view> json_key_names(std::meta::info entity) {
 
 // The structure type of a member annotated with flatten.
 consteval std::meta::info flattened_type(std::meta::info mem) {
+  if (std::meta::is_reference_type(std::meta::type_of(mem))) {
+    // A reference member could refer back to the enclosing structure: the
+    // flattening would never terminate.
+    throw std::meta::exception(u8"simdjson::flatten requires a member that is not a reference", mem);
+  }
   std::meta::info type = std::meta::remove_cvref(std::meta::type_of(mem));
   if (!std::meta::is_class_type(type)) {
     throw std::meta::exception(u8"simdjson::flatten requires a member of class type", mem);

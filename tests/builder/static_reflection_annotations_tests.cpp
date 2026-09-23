@@ -170,12 +170,62 @@ struct [[= simdjson::deny_unknown_fields]] StrictPage {
 };
 
 // A key longer than 63 characters does not fit a key_selector, which forces the
-// ordered per-member fallback even in the default build.
+// scan fallback in the default build.
 struct LongKeys {
   [[= simdjson::rename<"a_very_long_key_name_that_exceeds_the_key_selector_limit_of_63_chars">]] int value = 0;
   [[= simdjson::alias<"alt">]] int other = 0;
   [[= simdjson::default_from<make_timeout>]] int timeout = 0;
 };
+
+// Keys written with escape sequences in JSON: they cannot be compared raw, so
+// deserialization scans the object comparing unescaped keys, in both builds.
+struct EscapedKeys {
+  [[= simdjson::rename<"say \"hi\"">]] int quoted = 0;
+  [[= simdjson::rename<"back\\slash">]] int backslash = 0;
+  [[= simdjson::rename<"tab\there">]] int tab = 0;
+};
+
+// Serialized, but not deserialized: const and private members. With
+// deny_unknown_fields, their keys must not be unknown.
+struct [[= simdjson::deny_unknown_fields]] StrictVersioned {
+  const int version = 2;
+  std::string name = "";
+  int hidden_value() const { return hidden; }
+private:
+  int hidden = 7;
+};
+
+// An adapter taking an ondemand::value, on a transparent structure.
+struct count_elements {
+  static simdjson::error_code deserialize(simdjson::ondemand::value &v, uint64_t &out) {
+    simdjson::ondemand::array a;
+    SIMDJSON_TRY(v.get_array().get(a));
+    size_t count;
+    SIMDJSON_TRY(a.count_elements().get(count));
+    out = count;
+    return simdjson::SUCCESS;
+  }
+};
+
+struct [[= simdjson::transparent]] ElementCount {
+  [[= simdjson::with<count_elements>]] uint64_t count = 0;
+};
+
+struct [[= simdjson::transparent]] YesNo {
+  [[= simdjson::with<yes_no>]] bool value = false;
+};
+
+#if SIMDJSON_EXCEPTIONS
+struct throwing_adapter {
+  static void serialize(simdjson::builder::string_builder &, const int &) {
+    throw std::runtime_error("adapter failure");
+  }
+};
+
+struct WithThrowingAdapter {
+  [[= simdjson::with<throwing_adapter>]] int value = 0;
+};
+#endif // SIMDJSON_EXCEPTIONS
 
 #endif // SIMDJSON_STATIC_REFLECTION
 
@@ -472,7 +522,7 @@ bool deny_unknown_fields_test() {
   ASSERT_ERROR(parse_as(R"({"name":"a","age":"x"})", s), simdjson::INCORRECT_TYPE);
   ASSERT_ERROR(parse_as(R"([1])", s), simdjson::INCORRECT_TYPE);
   // Escaped keys are compared after unescaping.
-  ASSERT_SUCCESS(parse_as(R"({"name":"c","age":4})", s));
+  ASSERT_SUCCESS(parse_as(R"({"n\u0061me":"c","age":4})", s));
   ASSERT_EQUAL(s.name, "c");
   std::string message = simdjson::error_message(simdjson::UNKNOWN_FIELD);
   ASSERT_TRUE(message.find("UNKNOWN_FIELD") != std::string::npos);
@@ -624,6 +674,89 @@ bool default_replaces_container_test() {
   TEST_SUCCEED();
 }
 
+bool escaped_keys_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  EscapedKeys e;
+  e.quoted = 1;
+  e.backslash = 2;
+  e.tab = 3;
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(e).get(out));
+  ASSERT_EQUAL(out, R"({"say \"hi\"":1,"back\\slash":2,"tab\there":3})");
+  EscapedKeys f;
+  ASSERT_SUCCESS(parse_as(out, f));
+  ASSERT_EQUAL(f.quoted, 1);
+  ASSERT_EQUAL(f.backslash, 2);
+  ASSERT_EQUAL(f.tab, 3);
+  // The first occurrence of a key wins.
+  ASSERT_SUCCESS(parse_as(R"({"say \"hi\"":4,"back\\slash":5,"tab\u0009here":6,"say \"hi\"":7})", f));
+  ASSERT_EQUAL(f.quoted, 4);
+  ASSERT_EQUAL(f.tab, 6);
+  ASSERT_ERROR(parse_as(R"({"say \"hi\"":4,"back\\slash":5})", f), simdjson::NO_SUCH_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool deny_unknown_fields_roundtrip_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  StrictVersioned v;
+  v.name = "n";
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(v).get(out));
+  ASSERT_EQUAL(out, R"({"version":2,"name":"n","hidden":7})");
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string padded(out);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+  StrictVersioned w;
+  ASSERT_SUCCESS(doc.get(w));
+  ASSERT_EQUAL(w.name, "n");
+  simdjson::padded_string unknown(std::string(R"({"version":2,"name":"n","extra":1})"));
+  ASSERT_SUCCESS(parser.iterate(unknown).get(doc));
+  ASSERT_ERROR(doc.get(w), simdjson::UNKNOWN_FIELD);
+#endif
+  TEST_SUCCEED();
+}
+
+bool transparent_adapter_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  // Read directly from a document: the adapter must still be called.
+  ElementCount c;
+  ASSERT_SUCCESS(parse_as("[1,2,3]", c));
+  ASSERT_EQUAL(c.count, 3);
+  // A scalar document cannot be passed as an ondemand::value.
+  YesNo y;
+  ASSERT_ERROR(parse_as(R"("yes")", y), simdjson::SCALAR_DOCUMENT_AS_VALUE);
+  // As an array element, it is a value.
+  std::vector<YesNo> flags;
+  ASSERT_SUCCESS(parse_as(R"(["yes","no"])", flags));
+  ASSERT_EQUAL(flags.size(), 2);
+  ASSERT_TRUE(flags[0].value);
+  ASSERT_FALSE(flags[1].value);
+#endif
+  TEST_SUCCEED();
+}
+
+bool throwing_adapter_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION && SIMDJSON_EXCEPTIONS
+  WithThrowingAdapter t;
+  bool caught = false;
+  try {
+    std::string out;
+    simdjson::error_code error = simdjson::to_json(t).get(out);
+    (void)error;
+  } catch (const std::runtime_error &) {
+    caught = true;
+  }
+  ASSERT_TRUE(caught);
+#endif
+  TEST_SUCCEED();
+}
+
 bool run_all() {
   return rename_serialize_test()
       && rename_deserialize_test()
@@ -648,7 +781,11 @@ bool run_all() {
       && flatten_roundtrip_test()
       && flatten_deserialize_test()
       && flatten_deny_unknown_fields_test()
-      && default_replaces_container_test();
+      && default_replaces_container_test()
+      && escaped_keys_test()
+      && deny_unknown_fields_roundtrip_test()
+      && transparent_adapter_test()
+      && throwing_adapter_test();
 }
 
 } // namespace annotation_tests

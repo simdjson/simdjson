@@ -48,9 +48,8 @@ struct MediumKeyConfig {
 
 // A member name longer than the 63-character key_selector limit (69 characters).
 // On the key-selector path this would be a static_assert; the deserializer must
-// detect that the keys do not fit and silently fall back to the ordered
-// per-member path, so this struct still compiles and deserializes correctly by
-// default. (Regression test for the second review issue on PR #2774.)
+// detect that the keys do not fit and silently fall back to a scan of the
+// object, so this struct still compiles and deserializes correctly by default. (Regression test for the second review issue on PR #2774.)
 struct OverLimitConfig {
   uint64_t a_very_long_member_name_that_exceeds_the_sixty_three_char_limit_padxx = 0; // 69 chars
   uint64_t id = 0;
@@ -59,7 +58,7 @@ struct OverLimitConfig {
 // Field renaming can map a member to a JSON key that key_selector cannot accept:
 // one containing a forbidden character (here a backslash and a double-quote). On
 // the key-selector path these are rejected at compile time, so the deserializer
-// must detect the unfit keys and silently take the ordered per-member fallback.
+// must detect the unfit keys and silently fall back to a scan of the object.
 // The renamed members are optional and absent here, so the fallback leaves them
 // empty; the plain member is present. (A null byte cannot reach this point: the
 // key travels through the pipeline as a C string and is truncated at the null.)
@@ -69,13 +68,8 @@ struct ForbiddenKeyChars {
   uint64_t id = 0;
 };
 
-// Two members renamed to the same JSON key. The key-selector path rejects
-// duplicate keys at compile time, so this struct compiling at all proves the
-// ordered per-member fallback was selected.
-struct DuplicateKeys {
-  [[= simdjson::rename<"shared">]] uint64_t first = 0;
-  [[= simdjson::rename<"shared">]] uint64_t second = 0;
-};
+// Two members accepting the same JSON key (e.g. both renamed to "shared") are
+// rejected at compile time: one JSON key cannot fill several members.
 
 bool flat_out_of_order() {
   TEST_START();
@@ -159,7 +153,7 @@ bool medium_member_name_uses_selector() {
 }
 
 // A member name beyond the 63-character key_selector limit must make the
-// deserializer fall back to the ordered per-member path rather than failing to
+// deserializer fall back to a scan of the object rather than failing to
 // compile.
 bool long_member_name_falls_back() {
   TEST_START();
@@ -177,8 +171,8 @@ bool long_member_name_falls_back() {
 }
 
 // A renamed key with a forbidden character must make the deserializer fall back
-// to the ordered per-member path (compiling at all proves it; the key-selector
-// path would reject the key at compile time).
+// to a scan of the object (compiling at all proves it; the key-selector path
+// would reject the key at compile time).
 bool forbidden_key_chars_fall_back() {
   TEST_START();
   auto json = R"({ "id": 7 })"_padded;
@@ -190,22 +184,14 @@ bool forbidden_key_chars_fall_back() {
   ASSERT_EQUAL(c.id, 7);
   ASSERT_FALSE(c.a.has_value());
   ASSERT_FALSE(c.b.has_value());
-  TEST_SUCCEED();
-}
-
-// Duplicate renamed keys must make the deserializer fall back to the ordered
-// per-member path. The fallback looks up "shared" once per member, so both
-// resolve to the single field.
-bool duplicate_keys_fall_back() {
-  TEST_START();
-  auto json = R"({ "shared": 42 })"_padded;
-  ondemand::parser parser;
-  ondemand::document doc;
-  ASSERT_SUCCESS(parser.iterate(json).get(doc));
-  DuplicateKeys c;
-  ASSERT_SUCCESS(doc.get(c));
-  ASSERT_EQUAL(c.first, 42);
-  ASSERT_EQUAL(c.second, 42);
+  // The scan compares unescaped keys, so the escaped keys are found.
+  auto escaped = R"({ "qu\"ote": 2, "id": 8, "back\\slash": 1 })"_padded;
+  ASSERT_SUCCESS(parser.iterate(escaped).get(doc));
+  ForbiddenKeyChars d;
+  ASSERT_SUCCESS(doc.get(d));
+  ASSERT_EQUAL(d.id, 8);
+  ASSERT_EQUAL(d.a.value(), 1);
+  ASSERT_EQUAL(d.b.value(), 2);
   TEST_SUCCEED();
 }
 
@@ -216,7 +202,6 @@ bool run() {
          medium_member_name_uses_selector() &&
          long_member_name_falls_back() &&
          forbidden_key_chars_fall_back() &&
-         duplicate_keys_fall_back() &&
          true;
 }
 

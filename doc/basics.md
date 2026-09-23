@@ -1746,6 +1746,8 @@ enum class [[= simdjson::rename_all<simdjson::case_style::screaming_snake_case>]
 With `alias`, deserialization accepts other keys in addition to the regular
 key (serialization always uses the regular key). When the JSON object contains
 more than one of the names of a member, which one is used is unspecified.
+Two members of a structure cannot accept the same key (through `rename`, `alias`,
+`rename_all` or `flatten`): this is a compile-time error.
 
 ```cpp
 struct Profile {
@@ -1809,8 +1811,10 @@ struct [[= simdjson::default_value]] Options { // every member is optional
 
 Keys that do not match any member are normally ignored. With `deny_unknown_fields`,
 they make deserialization fail with the `UNKNOWN_FIELD` error. The keys of members that
-are not deserialized (`skip`, `skip_deserializing`) are unknown. Deserialization of
-such structures walks every field of the object and is somewhat slower.
+are not deserialized (`skip`, `skip_deserializing`) are unknown. The keys of `const`
+and non-public members, which are serialized but cannot be deserialized, are ignored,
+so that a serialized structure parses back. Deserialization of such structures walks
+every field of the object and is somewhat slower.
 
 ```cpp
 struct [[= simdjson::deny_unknown_fields]] Point {
@@ -1836,7 +1840,8 @@ struct Account {
 
 ##### Flattening
 
-The members of a data member annotated with `flatten` (which must be a structure) are
+The members of a data member annotated with `flatten` (which must be a structure, not
+a string, a container, an optional or a smart pointer, and not a reference) are
 (de)serialized as if they were members of the enclosing structure. The annotations of
 the nested structure (`rename_all`, `default_value`, ...) apply to its members.
 
@@ -1882,7 +1887,13 @@ struct Feature {
 ```
 
 The adapter may provide only one of the two functions: the default behaviour is used
-in the other direction. The `serialize` function must write exactly one JSON value.
+in the other direction. The `serialize` function must write exactly one JSON value;
+an exception it throws propagates to the caller. A `deserialize` function that cannot
+be called with an `ondemand::value &` is a compile-time error. On a `transparent`
+structure read directly from a document (`doc.get<UserId>()`), a `deserialize`
+function taking an `ondemand::value &` fails with `SCALAR_DOCUMENT_AS_VALUE` when the
+document is a scalar (a lone string, number, Boolean or null); declare its parameter
+as `auto &` to also receive the document itself.
 
 ### The simdjson::from shortcut (experimental, C++20)
 

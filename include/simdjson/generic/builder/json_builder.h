@@ -87,6 +87,13 @@ struct writer {
     // even if 2*capacity overflows, the (std::max) below will pick the needed value,
     // so we do not need a separate overflow check here.
     if (!sb.unsafe_grow((std::max)(cap * 2, pos + n))) {
+      // The string_builder freed its buffer and is now invalid (null buffer,
+      // zero capacity and position). Mirror that state so that every later
+      // ensure() fails too: callers only return from the current atom, and
+      // their callers keep writing.
+      ptr = nullptr;
+      pos = 0;
+      cap = 0;
       return false;
     }
     ptr = sb.unsafe_data();
@@ -99,9 +106,10 @@ struct writer {
 // content (escape_and_append_with_quotes etc), syncing the writer's local
 // state before the call and reloading after. Used for string fields where
 // rewriting the entire SIMD escape path through the writer would be a much
-// bigger refactor.
+// bigger refactor. f may be user code (a with<Adapter> serializer) that
+// throws: the exception then propagates to the caller.
 template <class F>
-simdjson_really_inline void call_through_string_builder(writer &w, F &&f) noexcept {
+simdjson_really_inline void call_through_string_builder(writer &w, F &&f) noexcept(noexcept(f(w.sb))) {
   w.sync();
   f(w.sb);
   w.ptr = w.sb.unsafe_data();
@@ -164,6 +172,12 @@ simdjson_really_inline void atom_fields(writer &w, const T &t, bool &first) {
       if (should_serialize<dm>(t.[:dm:])) {
         if constexpr (simdjson::detail::has_annotation(dm, ^^simdjson::detail::flatten_tag)) {
           static_assert(std::meta::is_class_type(simdjson::detail::flattened_type(dm)));
+          using flattened = std::remove_cvref_t<decltype(t.[:dm:])>;
+          static_assert(!concepts::container_but_not_string<flattened> && !concepts::string_view_keyed_map<flattened> &&
+                        !concepts::appendable_containers<flattened> && !concepts::optional_type<flattened> &&
+                        !concepts::smart_pointer<flattened> && !std::is_same_v<flattened, std::string> &&
+                        !std::is_same_v<flattened, std::string_view> && !require_custom_serialization<flattened>,
+                        "simdjson::flatten requires a member whose type is a structure serialized member by member");
           atom_fields(w, t.[:dm:], first);
         } else {
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
