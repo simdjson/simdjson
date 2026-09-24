@@ -82,6 +82,48 @@ BENCHMARK(serialize_twitter)->ComputeStatistics("max", [](const std::vector<doub
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
+static void prettify_twitter(State& state) {
+  dom::parser parser;
+  padded_string docdata;
+  auto error = padded_string::load(TWITTER_JSON).get(docdata);
+  if(error) {
+      cerr << "could not parse twitter.json" << error << endl;
+      return;
+  }
+  // we do not want mem. alloc. in the loop.
+  if((error = parser.allocate(docdata.size()))) {
+      cout << error << endl;
+      return;
+  }
+  dom::element doc;
+  if ((error = parser.parse(docdata).get(doc))) {
+    cerr << "could not parse twitter.json" << error << endl;
+    return;
+  }
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    std::string serial = simdjson::prettify(doc);
+    bytes += serial.size();
+    benchmark::DoNotOptimize(serial);
+  }
+  // we validate the result
+  {
+    auto serial = simdjson::prettify(doc);
+    dom::element doc2; // we parse the prettified output
+    if ((error = parser.parse(serial).get(doc2))) { throw std::runtime_error("prettification error"); }
+    auto serial2 = simdjson::prettify(doc2); // we prettify a second time
+    if(serial != serial2) { throw std::runtime_error("prettification mismatch"); }
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(prettify_twitter)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
 
 static void serialize_big_string_to_string(State& state) {
   dom::parser parser;
