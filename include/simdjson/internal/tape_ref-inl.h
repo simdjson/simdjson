@@ -71,6 +71,72 @@ inline size_t tape_ref::after_element() const noexcept {
 simdjson_inline tape_type tape_ref::tape_ref_type() const noexcept {
   return static_cast<tape_type>(doc->tape[json_index] >> 56);
 }
+simdjson_inline size_t tape_ref::before_element(size_t array_start) const noexcept {
+  SIMDJSON_DEVELOPMENT_ASSERT(usable());
+  SIMDJSON_DEVELOPMENT_ASSERT(json_index > array_start);
+  tape_ref previous(doc, json_index - 1);
+  if (previous.json_index == array_start) { return array_start; }
+  // An exact numeric marker cannot end an element unless it is itself the
+  // payload of a number. In that case its header is immediately before it.
+  if (previous.is_int64() || previous.is_uint64() || previous.is_double()) {
+    return previous.json_index - 1;
+  }
+  tape_ref probe(doc, previous.json_index - 1);
+
+  // Validate both container links before examining its contents. A candidate
+  // opening tag preceded by an even run of numeric markers is a real tag,
+  // not a numeric payload. Scan both candidate boundaries together so that a
+  // forged opening tag inside a nested value cannot cause an unbounded detour.
+  // For a real container, the opening probe visits preceding siblings. For a
+  // numeric payload, the other probe does. Stopping at the shorter run bounds
+  // the work by the array's immediate elements, rather than nested contents.
+  const auto type = previous.tape_ref_type();
+  if (type == tape_type::END_ARRAY || type == tape_type::END_OBJECT) {
+    const size_t start = previous.matching_brace_index();
+    if (start > array_start && start < previous.json_index) {
+      tape_ref opening(doc, start);
+      const auto expected = type == tape_type::END_ARRAY
+          ? tape_type::START_ARRAY : tape_type::START_OBJECT;
+      if (opening.tape_ref_type() == expected &&
+          opening.matching_brace_index() == previous.json_index + 1) {
+        tape_ref before_opening(doc, start - 1);
+        while ((before_opening.is_int64() || before_opening.is_uint64() ||
+                before_opening.is_double()) &&
+               (probe.is_int64() || probe.is_uint64() || probe.is_double())) {
+          --before_opening.json_index;
+          --probe.json_index;
+        }
+        if (!before_opening.is_int64() && !before_opening.is_uint64() &&
+            !before_opening.is_double() &&
+            (start - before_opening.json_index) % 2 == 1) {
+          return start;
+        }
+      }
+    }
+  }
+
+  // Numeric payloads can have ANY bit pattern, including another type's tag.
+  // A run of exact numeric markers starts with a header, then alternates
+  // between payload and header. An odd run before this word makes it a payload.
+  // Subsequent reverse increments through exact-marker payloads take the
+  // constant-time numeric-payload branch above.
+  while (probe.is_int64() || probe.is_uint64() || probe.is_double()) {
+    --probe.json_index;
+  }
+  if ((previous.json_index - probe.json_index) % 2 == 0) {
+    return previous.json_index - 1;
+  }
+
+  // Once distinguished from numeric payloads, closing container tags link
+  // directly back to their opening tags.
+  switch (previous.tape_ref_type()) {
+    case tape_type::END_ARRAY:
+    case tape_type::END_OBJECT:
+      return previous.matching_brace_index();
+    default:
+      return previous.json_index;
+  }
+}
 simdjson_inline uint64_t internal::tape_ref::tape_value() const noexcept {
   return doc->tape[json_index] & internal::JSON_VALUE_MASK;
 }

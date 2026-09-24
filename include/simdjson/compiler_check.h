@@ -88,7 +88,7 @@
 // macro of their own, so they cannot be checked directly:
 //
 //   P3394 annotations ([[=x]], std::meta::annotations_of) -- used for
-//         simdjson::rename and simdjson::skip.
+//         the annotations of simdjson/annotations.h (rename, skip, ...).
 //   P3289 consteval blocks (consteval { ... }) -- used by compile_time_json.
 //
 // Every implementation that defines the four macros above also implements

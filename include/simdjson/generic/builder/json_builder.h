@@ -68,11 +68,11 @@ struct writer {
   // underlying buffer if needed (rare path). Returns false on
   // allocation failure.
   simdjson_really_inline bool ensure(size_t n) noexcept {
-    // Callers guarantee that pos + n does not wrap: n is either a small
-    // constant or has been checked against pos (see the string atoms).
-    // Do not rewrite this as `n <= cap - pos`: that form keeps an extra
-    // live value across the fully inlined serializer and costs GCC 16
-    // 14-20% of throughput on citm_catalog.json.
+    // pos <= cap, and cap is the size of a live allocation, so pos + n
+    // cannot wrap when n is a small constant or a compile-time length.
+    // Callers passing a size derived from input (the string atoms) must
+    // bound it against pos themselves. Keep the `pos + n <= cap` form:
+    // `n <= cap - pos` is measurably slower once the serializer is inlined.
     if (simdjson_likely(pos + n <= cap)) { return true; }
     return grow_slow(n);
   }
@@ -87,6 +87,13 @@ struct writer {
     // even if 2*capacity overflows, the (std::max) below will pick the needed value,
     // so we do not need a separate overflow check here.
     if (!sb.unsafe_grow((std::max)(cap * 2, pos + n))) {
+      // The string_builder freed its buffer and is now invalid (null buffer,
+      // zero capacity and position). Mirror that state so that every later
+      // ensure() fails too: callers only return from the current atom, and
+      // their callers keep writing.
+      ptr = nullptr;
+      pos = 0;
+      cap = 0;
       return false;
     }
     ptr = sb.unsafe_data();
@@ -99,15 +106,104 @@ struct writer {
 // content (escape_and_append_with_quotes etc), syncing the writer's local
 // state before the call and reloading after. Used for string fields where
 // rewriting the entire SIMD escape path through the writer would be a much
-// bigger refactor.
+// bigger refactor. f may be user code (a with<Adapter> serializer) that
+// throws: the exception then propagates to the caller.
 template <class F>
-simdjson_really_inline void call_through_string_builder(writer &w, F &&f) noexcept {
+simdjson_really_inline void call_through_string_builder(writer &w, F &&f) noexcept(noexcept(f(w.sb))) {
   w.sync();
   f(w.sb);
   w.ptr = w.sb.unsafe_data();
   w.pos = w.sb.unsafe_position();
   w.cap = w.sb.unsafe_capacity();
 }
+
+// Helpers implementing the serialization side of the annotations (see
+// simdjson/annotations.h) for reflected structures.
+namespace annotation_detail {
+
+// A member is serialized unless it is annotated with skip or skip_serializing.
+consteval bool is_serialized_member(std::meta::info dm) {
+  return !simdjson::detail::has_annotation(dm, ^^simdjson::detail::skip_tag)
+      && !simdjson::detail::has_annotation(dm, ^^simdjson::detail::skip_serializing_tag);
+}
+
+// False when the member has a skip_serializing_if<pred> annotation and
+// pred(value) is true.
+template <auto dm, typename V>
+simdjson_really_inline bool should_serialize(const V &value) {
+  constexpr std::meta::info skip_if_type = simdjson::detail::annotation_of_template(dm, ^^simdjson::detail::skip_serializing_if_t);
+  if constexpr (skip_if_type != std::meta::info{}) {
+    using skip_if = typename [: skip_if_type :];
+    return !skip_if::predicate(value);
+  } else {
+    (void)value;
+    return true;
+  }
+}
+
+// Serialize a member value, through its with<Adapter> annotation when the
+// adapter provides a serialize function.
+template <auto dm, typename V>
+simdjson_really_inline void atom_member(writer &w, const V &value) {
+  constexpr std::meta::info with_type = simdjson::detail::annotation_of_template(dm, ^^simdjson::detail::with_t);
+  if constexpr (with_type != std::meta::info{}) {
+    using adapter = typename [: with_type :]::adapter;
+    if constexpr (requires(string_builder &b) { adapter::serialize(b, value); }) {
+      call_through_string_builder(w, [&](string_builder &b) { adapter::serialize(b, value); });
+    } else {
+      atom(w, value);
+    }
+  } else {
+    atom(w, value);
+  }
+}
+
+// Write the "key":value pairs of the members of t (without the braces), each
+// preceded by a comma unless it is the first one. The members of a member
+// annotated with flatten are written in its place.
+template <class T>
+simdjson_really_inline void atom_fields(writer &w, const T &t, bool &first) {
+  // Per-field block: ensure key+value worst case, then write key + value
+  // through the writer's local pos. For arithmetic fields, the integer
+  // write happens directly via write_uint_jeaiii on w.ptr+w.pos, so pos
+  // never round-trips through memory.
+  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_serialized_member(dm)) {
+      if (should_serialize<dm>(t.[:dm:])) {
+        if constexpr (simdjson::detail::has_annotation(dm, ^^simdjson::detail::flatten_tag)) {
+          static_assert(std::meta::is_class_type(simdjson::detail::flattened_type(dm)));
+          using flattened = std::remove_cvref_t<decltype(t.[:dm:])>;
+          static_assert(!concepts::container_but_not_string<flattened> && !concepts::string_view_keyed_map<flattened> &&
+                        !concepts::appendable_containers<flattened> && !concepts::optional_type<flattened> &&
+                        !concepts::smart_pointer<flattened> && !std::is_same_v<flattened, std::string> &&
+                        !std::is_same_v<flattened, std::string_view> && !require_custom_serialization<flattened>,
+                        "simdjson::flatten requires a member whose type is a structure serialized member by member");
+          atom_fields(w, t.[:dm:], first);
+        } else {
+          constexpr const char* key_name = simdjson::get_json_key_name<dm>();
+          constexpr auto first_key = std::define_static_string(
+              constevalutil::consteval_to_quoted_escaped(key_name) + ":");
+          constexpr auto rest_key = std::define_static_string(
+              std::string(",") + constevalutil::consteval_to_quoted_escaped(key_name) + ":");
+          constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
+          constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
+          if (!w.ensure(rest_key_len)) { return; }
+          if (first) {
+            std::memcpy(w.ptr + w.pos, first_key, first_key_len);
+            w.pos += first_key_len;
+          } else {
+            std::memcpy(w.ptr + w.pos, rest_key, rest_key_len);
+            w.pos += rest_key_len;
+          }
+          first = false;
+          atom_member<dm>(w, t.[:dm:]);
+        }
+      }
+    }
+  };
+}
+
+} // namespace annotation_detail
 
 template <class T>
   requires(concepts::container_but_not_string<T> && !require_custom_serialization<T>)
@@ -151,9 +247,10 @@ simdjson_really_inline constexpr void atom(writer &w, const T &t) {
   // Worst-case escape: every byte expands to \uXXXX (6 chars), plus 2 quotes.
   // Guard against w.pos + 2 + 6 * input.size() wrapping for huge inputs -- if
   // it wrapped to a small value, ensure() would spuriously succeed and the
-  // subsequent escape would overflow the buffer.
+  // subsequent escape would overflow the buffer. max - w.pos cannot wrap, and
+  // size < (max - pos) / 6 implies pos + 6 * size + 6 <= max.
   // Note that this is pedantic except maybe on 32-bit targets.
-  if (simdjson_unlikely(input.size() > ((std::numeric_limits<size_t>::max)() - 2 - w.pos) / 6)) { return; }
+  if (simdjson_unlikely(input.size() >= ((std::numeric_limits<size_t>::max)() - w.pos) / 6)) { return; }
   if (!w.ensure(2 + 6 * input.size())) { return; }
   w.ptr[w.pos++] = '"';
   w.pos += write_string_escaped(input, w.ptr + w.pos);
@@ -182,9 +279,10 @@ simdjson_really_inline constexpr void atom(writer &w, const T &m) {
     std::string_view key_sv(key);
     // Guard against w.pos + 3 + 6 * key_sv.size() wrapping for huge keys, if
     // it wrapped to a small value, ensure() would spuriously succeed and the
-    // subsequent escape would overflow the buffer.
+    // subsequent escape would overflow the buffer. max - w.pos cannot wrap, and
+    // size < (max - pos) / 6 implies pos + 6 * size + 6 <= max.
     // Note that this is pedantic except maybe on 32-bit targets.
-    if (simdjson_unlikely(key_sv.size() > ((std::numeric_limits<size_t>::max)() - 3 - w.pos) / 6)) { return; }
+    if (simdjson_unlikely(key_sv.size() >= ((std::numeric_limits<size_t>::max)() - w.pos) / 6)) { return; }
     if (!w.ensure(2 + 6 * key_sv.size() + 1)) { return; }
     w.ptr[w.pos++] = '"';
     w.pos += write_string_escaped(key_sv, w.ptr + w.pos);
@@ -245,36 +343,18 @@ template <class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
 simdjson_really_inline constexpr void atom(writer &w, const T &t) {
-  // Per-field block: ensure key+value worst case, then write key + value
-  // through the writer's local pos. For arithmetic fields, the integer
-  // write happens directly via write_uint_jeaiii on w.ptr+w.pos, so pos
-  // never round-trips through memory.
-  bool first = true;
-  if (!w.ensure(1)) return;
-  w.ptr[w.pos++] = '{';
-  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
-    if constexpr (std::meta::annotations_of_with_type(dm, ^^simdjson::detail::skip_tag).empty()) {
-      constexpr const char* key_name = simdjson::get_json_key_name<dm>();
-      constexpr auto first_key = std::define_static_string(
-          constevalutil::consteval_to_quoted_escaped(key_name) + ":");
-      constexpr auto rest_key = std::define_static_string(
-          std::string(",") + constevalutil::consteval_to_quoted_escaped(key_name) + ":");
-      constexpr size_t first_key_len = std::char_traits<char>::length(first_key);
-      constexpr size_t rest_key_len = std::char_traits<char>::length(rest_key);
-      if (!w.ensure(rest_key_len)) return;
-      if (first) {
-        std::memcpy(w.ptr + w.pos, first_key, first_key_len);
-        w.pos += first_key_len;
-      } else {
-        std::memcpy(w.ptr + w.pos, rest_key, rest_key_len);
-        w.pos += rest_key_len;
-      }
-      first = false;
-      atom(w, t.[:dm:]);
-    }
-  };
-  if (!w.ensure(1)) return;
-  w.ptr[w.pos++] = '}';
+  if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
+    // A transparent structure is serialized as its single member.
+    constexpr auto dm = simdjson::detail::transparent_member(^^T);
+    annotation_detail::atom_member<dm>(w, t.[:dm:]);
+  } else {
+    bool first = true;
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '{';
+    annotation_detail::atom_fields(w, t, first);
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '}';
+  }
 }
 
 // Support for optional types (std::optional, etc.)
@@ -310,7 +390,7 @@ simdjson_really_inline void atom(writer &w, const T &e) {
 #if SIMDJSON_STATIC_REFLECTION
   static constexpr auto enumerators = std::define_static_array(std::meta::enumerators_of(^^T));
   template for (constexpr auto enum_val : enumerators) {
-    constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(std::meta::identifier_of(enum_val)));
+    constexpr auto enum_str = std::define_static_string(constevalutil::consteval_to_quoted_escaped(simdjson::get_json_key_name<enum_val>()));
     constexpr size_t enum_str_len = std::char_traits<char>::length(enum_str);
     if (e == [:enum_val:]) {
       if (!w.ensure(enum_str_len)) return;

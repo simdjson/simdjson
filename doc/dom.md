@@ -9,6 +9,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 * [DOM vs On-Demand](#dom-vs-on-demand)
 * [The Basics: Loading and Parsing JSON Documents](#the-basics-loading-and-parsing-json-documents-using-the-dom-front-end)
 * [Using the Parsed JSON](#using-the-parsed-json)
+* [Reverse Array Iteration](#reverse-array-iteration)
 * [C++17 Support](#c17-support)
 * [C++20 Support](#c20-support)
 * [JSON Pointer](#json-pointer)
@@ -290,6 +291,43 @@ And another one:
   cout << "number: " << v << endl;
 ```
 
+
+Reverse Array Iteration
+----------------------
+
+Use `rbegin()` and `rend()` to visit the immediate elements of a DOM array from
+last to first. Incrementing a reverse iterator moves toward the start of the
+array; nested arrays and objects are returned as individual elements.
+
+```cpp
+simdjson::dom::parser parser;
+simdjson::padded_string json("[1,2,3]", 7);
+simdjson::dom::array values;
+auto error = parser.parse(json).get_array().get(values);
+if (error) { std::cerr << error << std::endl; return; }
+for (auto it = values.rbegin(); it != values.rend(); ++it) {
+  std::cout << *it << std::endl; // 3, then 2, then 1
+}
+```
+
+An empty array has `rbegin() == rend()`. The reverse iterator is a forward
+iterator in reverse document order: it supports copying, dereferencing,
+incrementing, and equality comparisons, but not decrementing. As with forward
+iteration, the document must remain alive and must not be overwritten by another
+parse while its iterators or elements are in use.
+
+A complete reverse traversal takes O(n) time for n immediate array elements,
+uses O(1) additional space, and does not allocate or change the tape. Most steps
+take constant time. When numeric payload bits coincide with numeric type markers,
+locating the previous element can require scanning a run of markers. An
+individual `rbegin()` or increment can therefore take O(n) time in the worst
+case. Increments are amortized O(1) over a complete traversal, including arrays
+with nested values. The existing forward iterator remains unchanged; this API
+does not make the array bidirectional or enable `std::views::reverse(array)`.
+
+With exceptions enabled, `simdjson_result<dom::array>` also exposes `rbegin()`
+and `rend()` and throws its stored error if the result is unsuccessful. With
+exceptions disabled, obtain a `dom::array` with `.get(array)` as above.
 
 C++17 Support
 -------------
