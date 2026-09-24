@@ -1,24 +1,20 @@
-// A std::string_view converts implicitly to a padded_string. Passing one to
-// iterate_many() therefore materializes a temporary that is destroyed at the end of
-// the full-expression, while the returned document_stream keeps a pointer to it:
+// A std::string temporary passed to parse_many() is destroyed at the end of the
+// full-expression, while the returned document_stream keeps a pointer to it:
 // iterating the stream afterwards reads freed memory. It must not compile.
 
 #include <string>
-#include <string_view>
 #include <iostream>
 
 #include "simdjson.h"
 
 int main() {
     std::string input = R"({"hello": "world"} {"hello": "there"})";
-    simdjson::ondemand::parser parser;
-    simdjson::ondemand::document_stream stream;
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
 #if COMPILATION_TEST_USE_FAILING_CODE
-    std::string_view view(input);
-    auto error = parser.iterate_many(view).get(stream);
+    auto error = parser.parse_many(std::string(input)).get(stream);
 #else
-    simdjson::padded_string json(input);
-    auto error = parser.iterate_many(json).get(stream);
+    auto error = parser.parse_many(input).get(stream);
 #endif
     if (error) {
         std::cerr << error << std::endl;

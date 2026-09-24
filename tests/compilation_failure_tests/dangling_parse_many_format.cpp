@@ -1,4 +1,3 @@
-
 // A std::string_view converts implicitly to a padded_string. Passing one to
 // parse_many() therefore materializes a temporary that is destroyed at the end of
 // the full-expression, while the returned document_stream keeps a pointer to it:

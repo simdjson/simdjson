@@ -864,6 +864,28 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool stdstring_with_format() {
+        TEST_START();
+        // A non-const std::string is padded in place, even without spare capacity.
+        std::string json = "{\"a\":1}\n{\"a\":2}\n{\"a\":3}";
+        json.shrink_to_fit();
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,
+                                            stream_format::newline_delimited).get(stream) );
+        size_t count = 0;
+        int64_t total = 0;
+        for (auto doc : stream) {
+            int64_t v;
+            ASSERT_SUCCESS( doc["a"].get_int64().get(v) );
+            total += v;
+            count++;
+        }
+        ASSERT_EQUAL( count, 3 );
+        ASSERT_EQUAL( total, 6 );
+        TEST_SUCCEED();
+    }
+
     bool newline_delimited_edge_cases() {
         TEST_START();
         auto json = "{\"a\":1}\r\n{\"a\":2}\n\n{\"a\":3}\n"_padded;
@@ -2528,6 +2550,7 @@ bool run() {
 #endif
             json_sequence_tests() &&
             comma_delimited_tests() &&
+            stdstring_with_format() &&
             issue2181() &&
             issue2170() &&
             issue_non_ascii_separator_source() &&

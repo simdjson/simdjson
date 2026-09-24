@@ -10,7 +10,7 @@ bool single_document() {
     simdjson::dom::document_stream stream;
 
 #if COMPILATION_TEST_USE_FAILING_CODE
-    auto error = parser.parse_many(json).get(R"({"hello": "world"})"_padded);
+    auto error = parser.parse_many(R"({"hello": "world"})"_padded).get(stream);
 #else
     auto json = R"({"hello": "world"})"_padded;
     auto error = parser.parse_many(json).get(stream);

@@ -290,9 +290,9 @@ public:
   simdjson_deprecated inline simdjson_result<document_stream> iterate_many(std::string &s, size_t batch_size, bool allow_comma_separated) noexcept;
   /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) */
   simdjson_deprecated inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size, bool allow_comma_separated) noexcept;
-  /** @private @overload iterate_many(const std::string &&s, size_t batch_size) */
+  /** @private Deleted for the same reason as iterate_many(const std::string &&s, size_t batch_size). */
   inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size, bool allow_comma_separated) = delete;// unsafe
-  /** @private @overload iterate_many(const std::string &&s, size_t batch_size) */
+  /** @private @overload iterate_many(const std::string &&s, size_t batch_size, bool allow_comma_separated) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size, bool allow_comma_separated) = delete;// unsafe
 #endif // SIMDJSON_DISABLE_DEPRECATED_API
 
@@ -312,11 +312,16 @@ public:
   inline simdjson_result<document_stream> iterate_many(padded_string_view s, size_t batch_size, stream_format format) noexcept;
   /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
   inline simdjson_result<document_stream> iterate_many(const std::string &s, size_t batch_size, stream_format format) noexcept;
+  /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format)
+   *
+   * The string is padded in place if needed (see simdjson::pad), as with iterate_many(std::string &s, size_t batch_size).
+   */
+  inline simdjson_result<document_stream> iterate_many(std::string &s, size_t batch_size, stream_format format) noexcept;
   /** @overload iterate_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &s, size_t batch_size, stream_format format) noexcept;
-  /** @private @overload iterate_many(const std::string &&s, size_t batch_size) */
+  /** @private Deleted for the same reason as iterate_many(const std::string &&s, size_t batch_size). */
   inline simdjson_result<document_stream> iterate_many(const std::string &&s, size_t batch_size, stream_format format) = delete;// unsafe
-  /** @private @overload iterate_many(const std::string &&s, size_t batch_size) */
+  /** @private @overload iterate_many(const std::string &&s, size_t batch_size, stream_format format) */
   inline simdjson_result<document_stream> iterate_many(const padded_string &&s, size_t batch_size, stream_format format) = delete;// unsafe
 
   /** The capacity of this parser (the largest document it can process). */
