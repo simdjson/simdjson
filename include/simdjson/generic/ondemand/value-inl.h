@@ -18,6 +18,41 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
+/**
+ * @private Narrows the result of get_uint64() to a smaller unsigned integer type T.
+ * @returns NUMBER_OUT_OF_RANGE if the value does not fit in a T.
+ */
+template <typename T>
+simdjson_inline simdjson_result<T> narrow_integer(simdjson_result<uint64_t> wide) noexcept {
+  uint64_t result;
+  SIMDJSON_TRY(std::move(wide).get(result));
+  if (result > static_cast<uint64_t>((std::numeric_limits<T>::max)())) { return NUMBER_OUT_OF_RANGE; }
+  return static_cast<T>(result);
+}
+
+/**
+ * @private Narrows the result of get_int64() to a smaller signed integer type T.
+ * @returns NUMBER_OUT_OF_RANGE if the value does not fit in a T.
+ */
+template <typename T>
+simdjson_inline simdjson_result<T> narrow_integer(simdjson_result<int64_t> wide) noexcept {
+  int64_t result;
+  SIMDJSON_TRY(std::move(wide).get(result));
+  if (result > static_cast<int64_t>((std::numeric_limits<T>::max)()) || result < static_cast<int64_t>((std::numeric_limits<T>::min)())) { return NUMBER_OUT_OF_RANGE; }
+  return static_cast<T>(result);
+}
+
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+// get_float32() parses with get_float(), so float must be binary32.
+static_assert(std::numeric_limits<float>::is_iec559 && std::numeric_limits<float>::digits == 24,
+              "get_float32() requires float to be IEEE binary32");
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+// get_float64() parses with get_double(), so double must be binary64.
+static_assert(std::numeric_limits<double>::is_iec559 && std::numeric_limits<double>::digits == 53,
+              "get_float64() requires double to be IEEE binary64");
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
+
 simdjson_inline value::value(const value_iterator &_iter) noexcept
   : iter{_iter}
 {
@@ -88,17 +123,37 @@ simdjson_inline simdjson_result<int64_t> value::get_int64_in_string() noexcept {
   return iter.get_int64_in_string();
 }
 simdjson_inline simdjson_result<uint32_t> value::get_uint32() noexcept {
-  uint64_t result;
-  SIMDJSON_TRY(get_uint64().get(result));
-  if (result > (std::numeric_limits<uint32_t>::max)()) { return NUMBER_OUT_OF_RANGE; }
-  return static_cast<uint32_t>(result);
+  return narrow_integer<uint32_t>(get_uint64());
 }
 simdjson_inline simdjson_result<int32_t> value::get_int32() noexcept {
-  int64_t result;
-  SIMDJSON_TRY(get_int64().get(result));
-  if (result > (std::numeric_limits<int32_t>::max)() || result < (std::numeric_limits<int32_t>::min)()) { return NUMBER_OUT_OF_RANGE; }
-  return static_cast<int32_t>(result);
+  return narrow_integer<int32_t>(get_int64());
 }
+simdjson_inline simdjson_result<uint16_t> value::get_uint16() noexcept {
+  return narrow_integer<uint16_t>(get_uint64());
+}
+simdjson_inline simdjson_result<int16_t> value::get_int16() noexcept {
+  return narrow_integer<int16_t>(get_int64());
+}
+simdjson_inline simdjson_result<uint8_t> value::get_uint8() noexcept {
+  return narrow_integer<uint8_t>(get_uint64());
+}
+simdjson_inline simdjson_result<int8_t> value::get_int8() noexcept {
+  return narrow_integer<int8_t>(get_int64());
+}
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+simdjson_inline simdjson_result<std::float32_t> value::get_float32() noexcept {
+  float result;
+  SIMDJSON_TRY(get_float().get(result));
+  return static_cast<std::float32_t>(result);
+}
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+simdjson_inline simdjson_result<std::float64_t> value::get_float64() noexcept {
+  double result;
+  SIMDJSON_TRY(get_double().get(result));
+  return static_cast<std::float64_t>(result);
+}
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
 simdjson_inline simdjson_result<bool> value::get_bool() noexcept {
   return iter.get_bool();
 }
@@ -120,6 +175,16 @@ template<> simdjson_inline simdjson_result<uint64_t> value::get() noexcept { ret
 template<> simdjson_inline simdjson_result<int64_t> value::get() noexcept { return get_int64(); }
 template<> simdjson_inline simdjson_result<uint32_t> value::get() noexcept { return get_uint32(); }
 template<> simdjson_inline simdjson_result<int32_t> value::get() noexcept { return get_int32(); }
+template<> simdjson_inline simdjson_result<uint16_t> value::get() noexcept { return get_uint16(); }
+template<> simdjson_inline simdjson_result<int16_t> value::get() noexcept { return get_int16(); }
+template<> simdjson_inline simdjson_result<uint8_t> value::get() noexcept { return get_uint8(); }
+template<> simdjson_inline simdjson_result<int8_t> value::get() noexcept { return get_int8(); }
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+template<> simdjson_inline simdjson_result<std::float32_t> value::get() noexcept { return get_float32(); }
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+template<> simdjson_inline simdjson_result<std::float64_t> value::get() noexcept { return get_float64(); }
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
 template<> simdjson_inline simdjson_result<bool> value::get() noexcept { return get_bool(); }
 
 
@@ -137,6 +202,16 @@ template<> simdjson_warn_unused simdjson_inline error_code value::get(uint64_t& 
 template<> simdjson_warn_unused simdjson_inline error_code value::get(int64_t& out) noexcept { return get_int64().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(uint32_t& out) noexcept { return get_uint32().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code value::get(int32_t& out) noexcept { return get_int32().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(uint16_t& out) noexcept { return get_uint16().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(int16_t& out) noexcept { return get_int16().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(uint8_t& out) noexcept { return get_uint8().get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code value::get(int8_t& out) noexcept { return get_int8().get(out); }
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+template<> simdjson_warn_unused simdjson_inline error_code value::get(std::float32_t& out) noexcept { return get_float32().get(out); }
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+template<> simdjson_warn_unused simdjson_inline error_code value::get(std::float64_t& out) noexcept { return get_float64().get(out); }
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
 template<>  simdjson_warn_unused simdjson_inline error_code value::get(bool& out) noexcept { return get_bool().get(out); }
 
 #if SIMDJSON_EXCEPTIONS
@@ -459,6 +534,22 @@ simdjson_inline simdjson_result<int32_t> simdjson_result<SIMDJSON_IMPLEMENTATION
   if (error()) { return error(); }
   return first.get_int32();
 }
+simdjson_inline simdjson_result<uint16_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint16() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint16();
+}
+simdjson_inline simdjson_result<int16_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int16() noexcept {
+  if (error()) { return error(); }
+  return first.get_int16();
+}
+simdjson_inline simdjson_result<uint8_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_uint8() noexcept {
+  if (error()) { return error(); }
+  return first.get_uint8();
+}
+simdjson_inline simdjson_result<int8_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_int8() noexcept {
+  if (error()) { return error(); }
+  return first.get_int8();
+}
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double() noexcept {
   if (error()) { return error(); }
   return first.get_double();
@@ -471,6 +562,18 @@ simdjson_inline simdjson_result<float> simdjson_result<SIMDJSON_IMPLEMENTATION::
   if (error()) { return error(); }
   return first.get_float_in_string();
 }
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+simdjson_inline simdjson_result<std::float32_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_float32() noexcept {
+  if (error()) { return error(); }
+  return first.get_float32();
+}
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+simdjson_inline simdjson_result<std::float64_t> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_float64() noexcept {
+  if (error()) { return error(); }
+  return first.get_float64();
+}
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
 simdjson_inline simdjson_result<double> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::get_double_in_string() noexcept {
   if (error()) { return error(); }
   return first.get_double_in_string();

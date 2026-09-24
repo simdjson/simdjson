@@ -543,7 +543,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
 * **Extracting Values:** You can cast a JSON element to a native type:
   `double(element)`. This works for `std::string_view`, double, uint64_t, int64_t, bool,
   ondemand::object and ondemand::array. We also have explicit methods such as `get_string()`, `get_double()`,
-  `get_float()`, `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
+  `get_float()`, `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_uint16()`, `get_int16()`, `get_uint8()`, `get_int8()`,
+  `get_bool()`, `get_object()` and `get_array()`. After a cast or an explicit method,
   the number, string or boolean will be parsed, or the initial `{` or `[` will be verified for `ondemand::object` and `ondemand::array`. An exception may be thrown if
   the cast is not possible: the error code is `simdjson::INCORRECT_TYPE` (see [Error handling](#error-handling)). Importantly, when getting an ondemand::object or ondemand::array instance, its content is
   not validated: you are only guaranteed that the corresponding initial character (`{` or `[`) is present. Thus,
@@ -553,14 +554,17 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   pass `true` (`get_string(true)`) as a parameter to get replacement characters where errors
   occur. If you somehow need to access non-UTF-8 strings in a lossless manner
   (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
-  When calling `get_uint64()`, `get_int64()`, `get_uint32()` or `get_int32()`, if the number does not fit in the
-  corresponding integer type, it is also considered an error (`NUMBER_OUT_OF_RANGE`).
+  When calling `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_uint16()`, `get_int16()`, `get_uint8()` or
+  `get_int8()`, if the number does not fit in the corresponding integer type, it is also considered an error (`NUMBER_OUT_OF_RANGE`).
   The `get_double()` method produces a binary64 (`double`) value and `get_float()` produces a binary32 (`float`) value; both
   are the value nearest to the JSON number. In particular, `get_float()` rounds to binary32 directly rather than rounding
   to binary64 first, so it does not suffer from double rounding: `static_cast<float>(value.get_double())` is not always the
   float nearest to the JSON number, whereas `value.get_float()` always is. As with `get_double()`, a number too large in
   magnitude to be a finite `float` is an error (`NUMBER_ERROR`) since simdjson does not produce infinite values; a number
-  too small in magnitude simply rounds to zero. When parsing numbers or other scalar values, the library checks
+  too small in magnitude simply rounds to zero. Under C++23, if your compiler provides the fixed-width floating-point
+  types of `<stdfloat>` (GCC 13 and better do), we also offer `get_float32()` and `get_float64()`, returning `std::float32_t`
+  and `std::float64_t`: they are equivalent to `get_float()` and `get_double()`. The macros `SIMDJSON_SUPPORTS_FLOAT32_T` and
+  `SIMDJSON_SUPPORTS_FLOAT64_T` are set to 1 when these methods are available. When parsing numbers or other scalar values, the library checks
   that the value is followed by an expected character, thus you *may* get a number parsing error when accessing the digits
   as an integer in the following strings: `{"number":12332a`, `{"number":12332\0`, `{"number":12332` (the digits appear at the end). We always abide by the [RFC 8259](https://www.tbray.org/ongoing/When/201x/2017/12/14/rfc8259.html) JSON specification so that, for example, numbers prefixed by the `+` sign are in error.
 

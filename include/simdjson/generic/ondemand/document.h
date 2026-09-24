@@ -97,6 +97,46 @@ public:
    */
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
   /**
+   * Cast this JSON value to a 16-bit unsigned integer.
+   *
+   * Calls get_uint64() and checks that the result fits in a uint16_t.
+   *
+   * @returns A 16-bit unsigned integer.
+   * @returns INCORRECT_TYPE If the JSON value is not an unsigned integer.
+   * @returns NUMBER_OUT_OF_RANGE If the value does not fit in a uint16_t.
+   */
+  simdjson_inline simdjson_result<uint16_t> get_uint16() noexcept;
+  /**
+   * Cast this JSON value to a 16-bit signed integer.
+   *
+   * Calls get_int64() and checks that the result fits in an int16_t.
+   *
+   * @returns A 16-bit signed integer.
+   * @returns INCORRECT_TYPE If the JSON value is not an integer.
+   * @returns NUMBER_OUT_OF_RANGE If the value does not fit in an int16_t.
+   */
+  simdjson_inline simdjson_result<int16_t> get_int16() noexcept;
+  /**
+   * Cast this JSON value to an 8-bit unsigned integer.
+   *
+   * Calls get_uint64() and checks that the result fits in a uint8_t.
+   *
+   * @returns An 8-bit unsigned integer.
+   * @returns INCORRECT_TYPE If the JSON value is not an unsigned integer.
+   * @returns NUMBER_OUT_OF_RANGE If the value does not fit in a uint8_t.
+   */
+  simdjson_inline simdjson_result<uint8_t> get_uint8() noexcept;
+  /**
+   * Cast this JSON value to an 8-bit signed integer.
+   *
+   * Calls get_int64() and checks that the result fits in an int8_t.
+   *
+   * @returns An 8-bit signed integer.
+   * @returns INCORRECT_TYPE If the JSON value is not an integer.
+   * @returns NUMBER_OUT_OF_RANGE If the value does not fit in an int8_t.
+   */
+  simdjson_inline simdjson_result<int8_t> get_int8() noexcept;
+  /**
    * Cast this JSON value to a double.
    *
    * @returns A double.
@@ -133,6 +173,31 @@ public:
    * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
    */
   simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
+
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  /**
+   * Cast this JSON value to a std::float32_t (C++23).
+   *
+   * Same as get_float(): the value is rounded directly to binary32.
+   *
+   * @returns A std::float32_t.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   * @returns NUMBER_ERROR If the JSON number is too large in magnitude to be a finite float.
+   */
+  simdjson_inline simdjson_result<std::float32_t> get_float32() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+  /**
+   * Cast this JSON value to a std::float64_t (C++23).
+   *
+   * Same as get_double().
+   *
+   * @returns A std::float64_t.
+   * @returns INCORRECT_TYPE If the JSON value is not a valid floating-point number.
+   */
+  simdjson_inline simdjson_result<std::float64_t> get_float64() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
   /**
    * Cast this JSON value to a string.
    *
@@ -234,10 +299,12 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float,
+   * std::float64_t and std::float32_t (C++23, when available), bool
    *
    * You may use get_double(), get_float(), get_bool(), get_uint64(), get_int64(),
-   * get_uint32(), get_int32(),
+   * get_uint32(), get_int32(), get_uint16(), get_int16(), get_uint8(), get_int8(),
+   * get_float32(), get_float64(),
    * get_object(), get_array(), get_raw_json_string(), or get_string() instead.
    *
    * @returns A value of the given type, parsed from the JSON.
@@ -281,7 +348,8 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool, value
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float,
+   * std::float64_t and std::float32_t (C++23, when available), bool, value
    *
    * Be mindful that the document instance must remain in scope while you are accessing object, array and value instances.
    *
@@ -305,7 +373,7 @@ public:
         "And you do not seem to have added support for it. Indeed, we have that "
         "simdjson::custom_deserializable<T> is false and the type T is not a default type "
         "such as ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-        "int64_t, uint32_t, int32_t, double, float, or bool.");
+        "int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float, or bool.");
       static_cast<void>(out); // to get rid of unused errors
       return UNINITIALIZED;
     }
@@ -314,8 +382,8 @@ public:
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, uint32_t, int32_t, double, float, and bool. We recommend you use get_double(), get_float(), "
-      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), "
+      "int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float, and bool. We recommend you use get_double(), get_float(), "
+      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), get_uint16(), get_int16(), get_uint8(), get_int8(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors
@@ -901,10 +969,20 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<uint32_t> get_uint32() noexcept;
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
+  simdjson_inline simdjson_result<uint16_t> get_uint16() noexcept;
+  simdjson_inline simdjson_result<int16_t> get_int16() noexcept;
+  simdjson_inline simdjson_result<uint8_t> get_uint8() noexcept;
+  simdjson_inline simdjson_result<int8_t> get_int8() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  simdjson_inline simdjson_result<std::float32_t> get_float32() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+  simdjson_inline simdjson_result<std::float64_t> get_float64() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 #if SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;
@@ -946,7 +1024,8 @@ public:
   /**
    * Get this value as the given type.
    *
-   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, double, float, bool, value
+   * Supported types: object, array, raw_json_string, string_view, uint64_t, int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float,
+   * std::float64_t and std::float32_t (C++23, when available), bool, value
    *
    * Be mindful that the document instance must remain in scope while you are accessing object, array and value instances.
    *
@@ -970,7 +1049,7 @@ public:
         "And you do not seem to have added support for it. Indeed, we have that "
         "simdjson::custom_deserializable<T> is false and the type T is not a default type "
         "such as ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-        "int64_t, uint32_t, int32_t, double, float, or bool.");
+        "int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float, or bool.");
       static_cast<void>(out); // to get rid of unused errors
       return UNINITIALIZED;
     }
@@ -979,8 +1058,8 @@ public:
     // immediately fail.
     static_assert(!sizeof(T), "The get method with given type is not implemented by the simdjson library. "
       "The supported types are ondemand::object, ondemand::array, raw_json_string, std::string_view, uint64_t, "
-      "int64_t, uint32_t, int32_t, double, float, and bool. We recommend you use get_double(), get_float(), "
-      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), "
+      "int64_t, uint32_t, int32_t, uint16_t, int16_t, uint8_t, int8_t, double, float, and bool. We recommend you use get_double(), get_float(), "
+      "get_bool(), get_uint64(), get_int64(), get_uint32(), get_int32(), get_uint16(), get_int16(), get_uint8(), get_int8(), "
       " get_object(), get_array(), get_raw_json_string(), or get_string() instead of the get template."
       " You may also add support for custom types, see our documentation.");
     static_cast<void>(out); // to get rid of unused errors
@@ -1074,10 +1153,20 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<uint32_t> get_uint32() noexcept;
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
+  simdjson_inline simdjson_result<uint16_t> get_uint16() noexcept;
+  simdjson_inline simdjson_result<int16_t> get_int16() noexcept;
+  simdjson_inline simdjson_result<uint8_t> get_uint8() noexcept;
+  simdjson_inline simdjson_result<int8_t> get_int8() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  simdjson_inline simdjson_result<std::float32_t> get_float32() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+  simdjson_inline simdjson_result<std::float64_t> get_float64() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 #if SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;
@@ -1194,10 +1283,20 @@ public:
   simdjson_inline simdjson_result<int64_t> get_int64_in_string() noexcept;
   simdjson_inline simdjson_result<uint32_t> get_uint32() noexcept;
   simdjson_inline simdjson_result<int32_t> get_int32() noexcept;
+  simdjson_inline simdjson_result<uint16_t> get_uint16() noexcept;
+  simdjson_inline simdjson_result<int16_t> get_int16() noexcept;
+  simdjson_inline simdjson_result<uint8_t> get_uint8() noexcept;
+  simdjson_inline simdjson_result<int8_t> get_int8() noexcept;
   simdjson_inline simdjson_result<double> get_double() noexcept;
   simdjson_inline simdjson_result<double> get_double_in_string() noexcept;
   simdjson_inline simdjson_result<float> get_float() noexcept;
   simdjson_inline simdjson_result<float> get_float_in_string() noexcept;
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  simdjson_inline simdjson_result<std::float32_t> get_float32() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+  simdjson_inline simdjson_result<std::float64_t> get_float64() noexcept;
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 #if SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;

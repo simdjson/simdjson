@@ -473,6 +473,183 @@ namespace float_tests {
     TEST_SUCCEED();
   }
 
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  simdjson_inline uint32_t float32_bits(std::float32_t f) {
+    static_assert(sizeof(f) == sizeof(uint32_t), "std::float32_t is binary32");
+    uint32_t u;
+    std::memcpy(&u, &f, sizeof(u));
+    return u;
+  }
+
+  // get_float32() is get_float() under another type, so it must also round to
+  // binary32 directly, on every access path.
+  bool float32_getters() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    std::float32_t val;
+    const std::string json = "1.0000000596046447753906250000000000000000000000000000000000001";
+    const uint32_t expected_bits = 0x3f800001; // not what (float)get_double() gives
+
+    padded_string docdata(json);
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get_float32().get(val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get<std::float32_t>().get(val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+    ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+    ASSERT_SUCCESS(doc.get(val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+    ASSERT_SUCCESS(parser.iterate(docdata).get_float32().get(val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+
+    padded_string array_data("[" + json + "," + json + "," + json + "]");
+    ASSERT_SUCCESS(parser.iterate(array_data).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    size_t i = 0;
+    for (auto element : arr) {
+      if (i == 0) {
+        ASSERT_SUCCESS(element.get_float32().get(val)); // simdjson_result<value>
+      } else {
+        ondemand::value v;
+        ASSERT_SUCCESS(element.get(v));
+        if (i == 1) {
+          ASSERT_SUCCESS(v.get<std::float32_t>().get(val));
+        } else {
+          ASSERT_SUCCESS(v.get(val));
+        }
+      }
+      ASSERT_EQUAL(float32_bits(val), expected_bits);
+      i++;
+    }
+    ASSERT_EQUAL(i, 3);
+
+    // document_reference allows trailing content (the next document).
+    padded_string stream_data(json + " 2.5 true");
+    ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(stream_data).get(stream));
+    auto it = stream.begin();
+    ASSERT_SUCCESS((*it).get_float32().get(val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+    ++it;
+    ondemand::document_reference ref;
+    ASSERT_SUCCESS((*it).get(ref));
+    ASSERT_SUCCESS(ref.get_float32().get(val));
+    ASSERT_EQUAL(float32_bits(val), float_bits(2.5f));
+    ++it;
+    ASSERT_ERROR((*it).get_float32(), INCORRECT_TYPE);
+
+    // Errors are those of get_float().
+    {
+      auto input = "1e39"_padded;
+      ASSERT_ERROR(parser.iterate(input).get_float32(), NUMBER_ERROR);
+    }
+    {
+      auto input = R"("1.5")"_padded;
+      ASSERT_ERROR(parser.iterate(input).get_float32(), INCORRECT_TYPE);
+    }
+    {
+      auto input = "1.5 2"_padded;
+      ASSERT_ERROR(parser.iterate(input).get_float32(), TRAILING_CONTENT);
+    }
+    {
+      auto input = "[true]"_padded;
+      ASSERT_SUCCESS(parser.iterate(input).get(doc));
+      ASSERT_ERROR(doc.at(0).get_float32(), INCORRECT_TYPE);
+    }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    // Containers and the generic floating-point deserializer must also avoid
+    // going through binary64.
+    padded_string vec_data("[" + json + "]");
+    ASSERT_SUCCESS(parser.iterate(vec_data).get(doc));
+    std::vector<std::float32_t> vec;
+    ASSERT_SUCCESS(doc.get<std::vector<std::float32_t>>().get(vec));
+    ASSERT_EQUAL(vec.size(), 1);
+    ASSERT_EQUAL(float32_bits(vec[0]), expected_bits);
+    ASSERT_SUCCESS(parser.iterate(vec_data).get(doc));
+    ondemand::value first;
+    ASSERT_SUCCESS(doc.at(0).get(first));
+    ASSERT_SUCCESS(simdjson::deserialize(first, val));
+    ASSERT_EQUAL(float32_bits(val), expected_bits);
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
+
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+  bool float64_getters() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    std::float64_t val;
+    double expected;
+    const char *numbers[] = {"0", "-0.0", "0.1", "3.141592653589793", "1.7976931348623157e308",
+                             "4.9e-324", "-2.2250738585072014e-308", "123456789012345678901234567890"};
+    for (const char *number : numbers) {
+      padded_string docdata{std::string(number)};
+      ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+      ASSERT_SUCCESS(doc.get_double().get(expected));
+      ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+      ASSERT_SUCCESS(doc.get_float64().get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+      ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+      ASSERT_SUCCESS(doc.get<std::float64_t>().get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+      ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
+      ASSERT_SUCCESS(doc.get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+      ASSERT_SUCCESS(parser.iterate(docdata).get_float64().get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+
+      padded_string object_data("{\"x\":" + std::string(number) + "}");
+      ASSERT_SUCCESS(parser.iterate(object_data).get(doc));
+      ASSERT_SUCCESS(doc["x"].get_float64().get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+      ASSERT_SUCCESS(parser.iterate(object_data).get(doc));
+      ondemand::value v;
+      ASSERT_SUCCESS(doc["x"].get(v));
+      ASSERT_SUCCESS(v.get<std::float64_t>().get(val));
+      ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+
+      padded_string stream_data(std::string(number) + " " + std::string(number));
+      ondemand::document_stream stream;
+      ASSERT_SUCCESS(parser.iterate_many(stream_data).get(stream));
+      size_t count = 0;
+      for (auto d : stream) {
+        ASSERT_SUCCESS(d.get_float64().get(val));
+        ASSERT_EQUAL(std::memcmp(&val, &expected, sizeof(val)), 0);
+        count++;
+      }
+      ASSERT_EQUAL(count, 2);
+    }
+    {
+      auto input = "1e309"_padded;
+      ASSERT_ERROR(parser.iterate(input).get_float64(), NUMBER_ERROR);
+    }
+    {
+      auto input = "null"_padded;
+      ASSERT_ERROR(parser.iterate(input).get_float64(), INCORRECT_TYPE);
+    }
+    {
+      auto input = "[\"x\"]"_padded;
+      ASSERT_SUCCESS(parser.iterate(input).get(doc));
+      ASSERT_ERROR(doc.at(0).get_float64(), INCORRECT_TYPE);
+    }
+#if SIMDJSON_SUPPORTS_CONCEPTS
+    auto vec_data = "[0.5, 2]"_padded;
+    ASSERT_SUCCESS(parser.iterate(vec_data).get(doc));
+    std::vector<std::float64_t> vec;
+    ASSERT_SUCCESS(doc.get<std::vector<std::float64_t>>().get(vec));
+    ASSERT_EQUAL(vec.size(), 2);
+    ASSERT_TRUE(vec[0] == 0.5f64 && vec[1] == 2.0f64);
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+    TEST_SUCCEED();
+  }
+#endif // SIMDJSON_SUPPORTS_FLOAT64_T
+
   bool run() {
     return basic_values() &&
            out_of_range() &&
@@ -482,6 +659,12 @@ namespace float_tests {
            many_digits() &&
            round_trip() &&
            wrong_type() &&
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+           float32_getters() &&
+#endif
+#if SIMDJSON_SUPPORTS_FLOAT64_T
+           float64_getters() &&
+#endif
            get_template();
   }
 
