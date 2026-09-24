@@ -18,6 +18,9 @@ public:
   simdjson_inline tape_ref() noexcept;
   simdjson_inline tape_ref(const dom::document *doc, size_t json_index) noexcept;
   inline size_t after_element() const noexcept;
+  // The reference must point to an element boundary inside the array whose
+  // opening tag is at array_start, or to that array's closing tag.
+  inline size_t before_element(size_t array_start) const noexcept;
   simdjson_inline tape_type tape_ref_type() const noexcept;
   simdjson_inline uint64_t tape_value() const noexcept;
   simdjson_inline bool is_double() const noexcept;
