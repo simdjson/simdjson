@@ -147,13 +147,14 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   metrics.complexity = 1 + max_child_complexity;
 
   // Bracket padding "[ 1, 2 ]" vs "[1, 2]"
-  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+  bool use_bracket_padding = (max_child_complexity >= 1)
+      ? current_opts_->nested_bracket_padding : current_opts_->simple_bracket_padding;
+  if (use_bracket_padding && metrics.child_count > 0) {
     metrics.estimated_inline_len += 2;
   }
 
   // Check if can inline
-  metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
-                       (metrics.estimated_inline_len <= current_opts_->max_inline_length);
+  metrics.can_inline = metrics.complexity <= current_opts_->max_inline_complexity;
 
   // Check for uniform array (table formatting)
   if (current_opts_->enable_table_format &&
@@ -193,12 +194,13 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
   metrics.complexity = 1 + max_child_complexity;
 
   // Bracket padding '{ "a": 1 }' vs '{"a": 1}'
-  if (current_opts_->simple_bracket_padding && metrics.child_count > 0) {
+  bool use_bracket_padding = (max_child_complexity >= 1)
+      ? current_opts_->nested_bracket_padding : current_opts_->simple_bracket_padding;
+  if (use_bracket_padding && metrics.child_count > 0) {
     metrics.estimated_inline_len += 2;
   }
 
-  metrics.can_inline = (metrics.complexity <= current_opts_->max_inline_complexity) &&
-                       (metrics.estimated_inline_len <= current_opts_->max_inline_length);
+  metrics.can_inline = metrics.complexity <= current_opts_->max_inline_complexity;
 
   return metrics;
 }
@@ -349,20 +351,24 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
     return layout_mode::single_line;
   }
 
+  long long signed_depth = static_cast<long long>(depth);
+  bool depth_allows_inline_or_compact = signed_depth > opts.always_expand_depth;
+  bool depth_allows_table = signed_depth >= opts.always_expand_depth;
+
   // Check inline feasibility
   size_t reserved_width = depth * opts.indent_spaces + (has_trailing_comma ? 1 : 0);
-  if (metrics.can_inline &&
+  if (depth_allows_inline_or_compact && metrics.can_inline &&
       metrics.estimated_inline_len + reserved_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
   }
 
   // Check table mode
-  if (metrics.is_uniform_array && !metrics.common_keys.empty()) {
+  if (depth_allows_table && metrics.is_uniform_array && !metrics.common_keys.empty()) {
     return layout_mode::table;
   }
 
   // Check compact multiline
-  if (opts.enable_compact_multiline &&
+  if (depth_allows_inline_or_compact && opts.enable_compact_multiline &&
       metrics.complexity <= opts.max_compact_array_complexity + 1) {
     return layout_mode::compact_multiline;
   }
@@ -569,7 +575,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
       if (options_.comma_padding) {
         format_.print_space();
       }
-    } else if (options_.simple_bracket_padding) {
+    } else if (bracket_padding_for(metrics)) {
       format_.print_space();
     }
     first = false;
@@ -579,7 +585,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
     child_idx++;
   }
 
-  if (options_.simple_bracket_padding && !empty) {
+  if (bracket_padding_for(metrics) && !empty) {
     format_.print_space();
   }
   format_.end_array();
@@ -594,7 +600,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
   format_.print_newline();
   format_.print_indents(depth + 1);
 
-  size_t items_on_line = 0;
   bool first = true;
   bool prev_item_was_expanded = false;
   size_t child_idx = 0;
@@ -608,12 +613,10 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
       format_.track_line_length(1);
 
       // Check if we should break to new line
-      if (items_on_line >= options_.max_items_per_line ||
-          prev_item_was_expanded ||
+      if (prev_item_was_expanded ||
           format_.should_break_line(child_metrics.estimated_inline_len)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
-        items_on_line = 0;
       } else if (options_.comma_padding) {
         format_.print_space();
       }
@@ -634,7 +637,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     prev_item_was_expanded = !item_fits;
 
-    items_on_line++;
     child_idx++;
   }
 
@@ -683,7 +685,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
         ? metrics.children[child_idx] : element_metrics{};
 
     format_.start_object();
-    if (options_.simple_bracket_padding) {
+    if (bracket_padding_for(row_metrics)) {
       format_.print_space();
     }
 
@@ -746,7 +748,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
       format_.next_column();
     }
 
-    if (options_.simple_bracket_padding) {
+    if (bracket_padding_for(row_metrics)) {
       format_.print_space();
     }
     format_.end_object();
@@ -821,7 +823,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
       if (options_.comma_padding) {
         format_.print_space();
       }
-    } else if (options_.simple_bracket_padding) {
+    } else if (bracket_padding_for(metrics)) {
       format_.print_space();
     }
     first = false;
@@ -836,7 +838,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
     child_idx++;
   }
 
-  if (options_.simple_bracket_padding && !empty) {
+  if (bracket_padding_for(metrics) && !empty) {
     format_.print_space();
   }
   format_.end_object();
@@ -923,6 +925,10 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
     default:
       break;
   }
+}
+
+inline bool fractured_string_builder::bracket_padding_for(const element_metrics& metrics) const {
+  return metrics.complexity >= 2 ? options_.nested_bracket_padding : options_.simple_bracket_padding;
 }
 
 inline size_t fractured_string_builder::measure_value_length(const dom::element& elem) const {

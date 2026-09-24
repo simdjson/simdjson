@@ -377,7 +377,7 @@ bool print_roundtrip() {
 // is driven by the estimator for unseen elements and by measure_value_length
 // for the chosen cells; if either undercounts NaN/Infinity, column 1's
 // padding won't match column 2's emitted width and rows visibly misalign.
-// Force table mode with min_table_rows = 2 and max_inline_length = 0.
+// Force table mode with min_table_rows = 2.
 
 bool table_aligns_nan() {
   TEST_START();
@@ -387,7 +387,7 @@ bool table_aligns_nan() {
       parser.parse(R"([{"a": 1, "b": 1},{"a": NaN, "b": 1}])"_padded).get(doc));
   fractured_json_options opts;
   opts.min_table_rows = 2;
-  opts.max_inline_length = 0;
+  opts.max_total_line_length = 40;
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
                "    { \"a\": 1  , \"b\": 1 },\n"
@@ -405,7 +405,7 @@ bool table_aligns_inf() {
           .get(doc));
   fractured_json_options opts;
   opts.min_table_rows = 2;
-  opts.max_inline_length = 0;
+  opts.max_total_line_length = 40;
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
                "    { \"a\": 1       , \"b\": 1 },\n"
@@ -423,7 +423,7 @@ bool table_aligns_neg_inf() {
           .get(doc));
   fractured_json_options opts;
   opts.min_table_rows = 2;
-  opts.max_inline_length = 0;
+  opts.max_total_line_length = 40;
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
                "    { \"a\": 1        , \"b\": 1 },\n"

@@ -21,12 +21,6 @@ struct fractured_json_options {
   size_t max_total_line_length = 120;
 
   /**
-   * Maximum length for inlined elements (default: 80).
-   * Simple arrays/objects shorter than this may be rendered inline.
-   */
-  size_t max_inline_length = 80;
-
-  /**
    * Maximum nesting depth for inline rendering (default: 2).
    * Elements with complexity exceeding this will be expanded.
    * Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.
@@ -44,6 +38,12 @@ struct fractured_json_options {
    * Number of spaces per indentation level (default: 4).
    */
   size_t indent_spaces = 4;
+
+  /**
+   * Forces elements close to the root to always fully expand, regardless of other settings.
+   * (default: -1). -1 = none; 0 = root node only; 1 = root node and its children; etc.
+   */
+  int always_expand_depth = -1;
 
   /**
    * Enable tabular formatting for arrays of similar objects (default: true).
@@ -72,16 +72,20 @@ struct fractured_json_options {
   bool enable_compact_multiline = true;
 
   /**
-   * Maximum array items per line in compact mode (default: 10).
-   */
-  size_t max_items_per_line = 10;
-
-  /**
-   * Add space inside brackets for simple containers (default: true).
-   * When true: { "key": "value" }
-   * When false: {"key": "value"}
+   * Add space inside brackets for containers that hold only scalar values
+   * (default: true). When true: { "key": "value" }. When false:
+   * {"key": "value"}.
+   * @see nested_bracket_padding
    */
   bool simple_bracket_padding = true;
+
+  /**
+   * Add space inside brackets for containers that hold at least one
+   * nested array/object (default: true). When true: { "a": [ 1, 2 ] }.
+   * When false: { "a": [1, 2]}.
+   * @see simple_bracket_padding
+   */
+  bool nested_bracket_padding = true;
 
   /**
    * Add space after colons (default: true).
