@@ -465,3 +465,4 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 - `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.
 - `comma_padding` (default: true): Add space after commas in inline content. When true: `[1, 2, 3]`, when false: `[1,2,3]`.
 - `comma_placement` (default: `before_padding_except_numbers`): Placement of commas relative to column padding in table-formatted rows
+- `number_alignment` (default: `left`): Controls alignment of numbers in table columns or compact multiline arrays.

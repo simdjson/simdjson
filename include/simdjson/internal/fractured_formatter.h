@@ -131,7 +131,7 @@ private:
 
   /** Row for a uniform scalar array: writes elem inline, then pads to width so every row lines up. */
   void format_table_scalar_row(const dom::element& elem, const element_metrics& row_metrics,
-                                size_t width, size_t depth);
+                                size_t width, size_t depth, table_column_type column_type);
 
   /** Shared per-column writer: recurses if the column has children,
    * otherwise writes a plain padded value or blank. */
@@ -140,6 +140,11 @@ private:
                                  const std::vector<dom::element>& values,
                                  const std::vector<const element_metrics*>& value_metrics,
                                  size_t depth);
+
+  /** Writes a single aligned leaf value */
+  void format_table_leaf_value(const dom::element& elem, const element_metrics& vm, size_t width,
+                                table_column_type column_type, bool needs_comma,
+                                bool add_comma_space, size_t depth);
 
   /** Whether, for a column of the given type, the comma goes right after the value */
   bool comma_goes_before_padding(table_column_type column_type) const;

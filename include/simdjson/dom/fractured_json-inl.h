@@ -399,6 +399,7 @@ inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
     if (common != table_column_type::number && common != table_column_type::simple) {
       return false;
     }
+    metrics.scalar_column_type = common;
     metrics.table_row_width = max_width;
     metrics.table_row_width_full = max_width;
     return true;
@@ -789,7 +790,8 @@ inline void fractured_string_builder::format_array_compact_multiline_aligned(
 
     const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
     if (columns.empty()) {
-      format_table_scalar_row(elem, row_metrics, metrics.table_row_width_full, depth + 1);
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width_full, depth + 1,
+                              metrics.scalar_column_type);
     } else {
       format_table_row(elem, row_metrics, columns, depth + 1);
     }
@@ -860,31 +862,8 @@ inline void fractured_string_builder::format_table_row_columns(
         }
       } else {
         const element_metrics& vm = child_metrics_at(value_metrics[col_idx]);
-        bool comma_before_pad = needs_comma && comma_goes_before_padding(column.type);
-        {
-          scoped_single_line_mode single_line(format_);
-          format_element(values[col_idx], vm, depth);
-        }
-        if (comma_before_pad) {
-          format_.comma();
-          if (options_.comma_padding) {
-            format_.print_space();
-          }
-        }
-
-        size_t actual_len = vm.estimated_inline_len;
-        size_t target_width = column.width;
-        while (actual_len < target_width) {
-          format_.one_char(' ');
-          actual_len++;
-        }
-
-        if (needs_comma && !comma_before_pad) {
-          format_.comma();
-          if (options_.comma_padding) {
-            format_.print_space();
-          }
-        }
+        format_table_leaf_value(values[col_idx], vm, column.width, column.type, needs_comma,
+                                 /*add_comma_space=*/true, depth);
       }
 
       if (!is_last_col && !needs_comma) {
@@ -1000,17 +979,54 @@ inline bool fractured_string_builder::comma_goes_before_padding(table_column_typ
   }
 }
 
-inline void fractured_string_builder::format_table_scalar_row(
-    const dom::element& elem, const element_metrics& row_metrics, size_t width, size_t depth) {
-  size_t actual_len = row_metrics.estimated_inline_len;
+inline void fractured_string_builder::format_table_leaf_value(
+    const dom::element& elem, const element_metrics& vm, size_t width,
+    table_column_type column_type, bool needs_comma, bool add_comma_space, size_t depth) {
+  bool comma_before_pad = needs_comma && comma_goes_before_padding(column_type);
+  bool comma_after_pad = needs_comma && !comma_before_pad;
+
+  bool right_align = column_type == table_column_type::number &&
+      options_.number_alignment == number_list_alignment::right;
+
+  size_t value_len = vm.estimated_inline_len;
+  size_t left_pad = 0;
+  size_t right_pad = 0;
+  if (right_align) {
+    left_pad = (width > value_len) ? width - value_len : 0;
+    comma_before_pad = needs_comma;
+    comma_after_pad = false;
+  } else {
+    right_pad = (width > value_len) ? width - value_len : 0;
+  }
+
+  for (size_t i = 0; i < left_pad; i++) {
+    format_.one_char(' ');
+  }
+
   {
     scoped_single_line_mode single_line(format_);
-    format_element(elem, row_metrics, depth);
+    format_element(elem, vm, depth);
   }
-  while (actual_len < width) {
+
+  if (comma_before_pad) {
+    format_.comma();
+  }
+  for (size_t i = 0; i < right_pad; i++) {
     format_.one_char(' ');
-    actual_len++;
   }
+  if (comma_after_pad) {
+    format_.comma();
+  }
+  if (needs_comma && add_comma_space && options_.comma_padding) {
+    format_.print_space();
+  }
+}
+
+inline void fractured_string_builder::format_table_scalar_row(
+    const dom::element& elem, const element_metrics& row_metrics, size_t width, size_t depth,
+    table_column_type column_type) {
+  format_table_leaf_value(elem, row_metrics, width, column_type,
+                          /*needs_comma=*/false, /*add_comma_space=*/false, depth);
 }
 
 inline void fractured_string_builder::format_array_as_table(const dom::array& arr,
@@ -1038,7 +1054,8 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
 
     const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
     if (columns.empty()) {
-      format_table_scalar_row(elem, row_metrics, metrics.table_row_width, depth + 1);
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width, depth + 1,
+                              metrics.scalar_column_type);
     } else {
       format_table_row(elem, row_metrics, columns, depth + 1);
     }

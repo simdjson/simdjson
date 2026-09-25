@@ -2028,6 +2028,85 @@ bool table_comma_placement_test() {
   return true;
 }
 
+bool number_alignment_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  {
+    // Object-row table: "a" is a number column, "b" is not.
+    const char* json = R"([{"a":1,"b":"x"},{"a":22,"b":"yy"}])";
+
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    {
+      simdjson::fractured_json_options opts;
+      opts.max_total_line_length = 30;
+      opts.number_alignment = simdjson::number_list_alignment::left;
+
+      auto formatted = simdjson::fractured_json(doc, opts);
+      std::cout << "Formatted (left):\n" << formatted << std::endl;
+
+      const char* expected =
+          "[\n"
+          "    { \"a\": 1 , \"b\": \"x\"  },\n"
+          "    { \"a\": 22, \"b\": \"yy\" }\n"
+          "]";
+      ASSERT_EQUAL(formatted, expected);
+    }
+
+    {
+      simdjson::fractured_json_options opts;
+      opts.max_total_line_length = 30;
+      opts.number_alignment = simdjson::number_list_alignment::right;
+
+      auto formatted = simdjson::fractured_json(doc, opts);
+      std::cout << "Formatted (right):\n" << formatted << std::endl;
+
+      const char* expected =
+          "[\n"
+          "    { \"a\":  1, \"b\": \"x\"  },\n"
+          "    { \"a\": 22, \"b\": \"yy\" }\n"
+          "]";
+      ASSERT_EQUAL(formatted, expected);
+    }
+  }
+
+  {
+    const char* json = R"([1,22,333])";
+
+    simdjson::dom::parser parser;
+    simdjson::dom::element doc;
+    auto error = parser.parse(json, strlen(json)).get(doc);
+    if (error) {
+      std::cerr << "Parse error: " << error << std::endl;
+      return false;
+    }
+
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 10;
+    opts.number_alignment = simdjson::number_list_alignment::right;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted (scalar array, right):\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "      1,\n"
+        "     22,\n"
+        "    333\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  std::cout << "Number alignment test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2089,9 +2168,10 @@ int main() {
   success = compact_multiline_scalar_list_alignment_test() && success;
   success = table_format_respects_max_table_row_complexity_test() && success;
   success = table_comma_placement_test() && success;
+  success = number_alignment_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 51 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 52 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

@@ -91,6 +91,9 @@ struct element_metrics {
 
   /** Child metrics for arrays and objects (in order of iteration) */
   std::vector<element_metrics> children{};
+
+  /** For scalar uniform arrays (table_columns empty): the rows' common type. */
+  table_column_type scalar_column_type = table_column_type::unknown;
 };
 
 /** children[idx], or a default-constructed element_metrics if idx is out of range */

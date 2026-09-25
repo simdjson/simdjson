@@ -16,6 +16,14 @@ enum class table_comma_placement {
   before_padding_except_numbers,
 };
 
+/** Options for how lists or columns of numbers should be aligned */
+enum class number_list_alignment {
+  /** Left-aligns numbers */
+  left,
+  /** Right-aligns numbers */
+  right,
+};
+
 /**
  * Configuration options for FracturedJson formatting.
  *
@@ -115,6 +123,12 @@ struct fractured_json_options {
    * (default: before_padding_except_numbers).
    */
   table_comma_placement comma_placement = table_comma_placement::before_padding_except_numbers;
+
+  /**
+   * Controls alignment of numbers in table columns or compact multiline arrays
+   * (default: left).
+   */
+  number_list_alignment number_alignment = number_list_alignment::left;
 };
 
 /**
