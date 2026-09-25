@@ -70,6 +70,7 @@ Real-world usage
 - [ByConity](https://github.com/ByConity/ByConity)
 - [Timeplus Proton](https://github.com/timeplus-io/proton)
 - [TiFlash](https://github.com/pingcap/tiflash)
+- [ata-validator](https://ata-validator.com)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
