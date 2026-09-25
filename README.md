@@ -66,7 +66,10 @@ Real-world usage
 - [mamba](https://github.com/mamba-org/mamba)
 - [Ladybird Browser](https://ladybird.org)
 - [SereneDB](https://github.com/serenedb/serenedb)
-
+- [YDB](https://github.com/ydb-platform/ydb)
+- [ByConity](https://github.com/ByConity/ByConity)
+- [Timeplus Proton](https://github.com/timeplus-io/proton)
+- [TiFlash](https://github.com/pingcap/tiflash)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
