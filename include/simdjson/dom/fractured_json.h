@@ -64,14 +64,18 @@ struct fractured_json_options {
   int always_expand_depth = -1;
 
   /**
-   * Enable tabular formatting for arrays of similar objects (default: true).
-   * When enabled, arrays of objects with identical keys are formatted
-   * as aligned tables.
+   * Enable tabular formatting for arrays of similar objects or arrays
+   * (default: true). When enabled, the rows of such an array are written one
+   * per line with their columns aligned. Rows need not have identical keys:
+   * columns are ordered by the first occurrence of each key, and a row
+   * missing a key gets blank space in that column.
    */
   bool enable_table_format = true;
 
   /**
-   * Maximum complexity for table formatting. (default: 2).
+   * Maximum complexity of each row of a table (default: 2).
+   * 0 = rows may only be scalars (a single column); 1 = rows may be flat
+   * arrays/objects; higher values allow deeper nesting.
    */
   size_t max_table_row_complexity = 2;
 
@@ -83,8 +87,8 @@ struct fractured_json_options {
   bool enable_compact_multiline = true;
 
   /**
-   * Minimum number of rows a compact multiline array must be able to pack
-   * per line to be used. (default: 3)
+   * Minimum number of items per line for an array to be formatted as a
+   * compact multiline array (default: 3).
    */
   size_t min_compact_array_row_items = 3;
 
@@ -98,8 +102,8 @@ struct fractured_json_options {
 
   /**
    * Add space inside brackets for containers that hold at least one
-   * nested array/object (default: true). When true: { "a": [ 1, 2 ] }.
-   * When false: { "a": [1, 2]}.
+   * nested array/object (default: true). When true: { "a": [1, 2] }.
+   * When false: {"a": [1, 2]}.
    * @see simple_bracket_padding
    */
   bool nested_bracket_padding = true;
@@ -120,13 +124,13 @@ struct fractured_json_options {
 
   /**
    * Placement of commas relative to column padding in table-formatted rows
-   * (default: before_padding_except_numbers).
+   * and compact multiline arrays (default: before_padding_except_numbers).
    */
   table_comma_placement comma_placement = table_comma_placement::before_padding_except_numbers;
 
   /**
    * Controls alignment of numbers in table columns or compact multiline arrays
-   * (default: left).
+   * (default: left). Numbers are always written exactly as in the input.
    */
   number_list_alignment number_alignment = number_list_alignment::left;
 };
