@@ -158,6 +158,36 @@
 #endif
 #endif // !defined(SIMDJSON_SUPPORTS_CHAR8_T)
 
+// The C++23 fixed-width floating-point types std::float32_t and std::float64_t
+// (<stdfloat>) are available. They are optional even in C++23: a compiler that
+// provides them predefines __STDCPP_FLOAT32_T__ and __STDCPP_FLOAT64_T__.
+// When these macros are set, we offer get_float32() and get_float64().
+#if !defined(SIMDJSON_SUPPORTS_FLOAT32_T)
+#if defined(__STDCPP_FLOAT32_T__) && defined(__has_include)
+#if __has_include(<stdfloat>)
+#define SIMDJSON_SUPPORTS_FLOAT32_T 1
+#endif
+#endif
+#ifndef SIMDJSON_SUPPORTS_FLOAT32_T
+#define SIMDJSON_SUPPORTS_FLOAT32_T 0
+#endif
+#endif // !defined(SIMDJSON_SUPPORTS_FLOAT32_T)
+
+#if !defined(SIMDJSON_SUPPORTS_FLOAT64_T)
+#if defined(__STDCPP_FLOAT64_T__) && defined(__has_include)
+#if __has_include(<stdfloat>)
+#define SIMDJSON_SUPPORTS_FLOAT64_T 1
+#endif
+#endif
+#ifndef SIMDJSON_SUPPORTS_FLOAT64_T
+#define SIMDJSON_SUPPORTS_FLOAT64_T 0
+#endif
+#endif // !defined(SIMDJSON_SUPPORTS_FLOAT64_T)
+
+#if SIMDJSON_SUPPORTS_FLOAT32_T || SIMDJSON_SUPPORTS_FLOAT64_T
+#include <stdfloat>
+#endif
+
 
 #if !defined(SIMDJSON_CONSTEVAL)
 #if defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L

@@ -659,9 +659,173 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  // get_uint16(), get_int16(), get_uint8() and get_int8() all range-check the
+  // result of get_uint64() / get_int64(). narrow_getter<T> names the getter for
+  // T so that one checker can walk every access path for every type.
+  template <typename T> struct narrow_getter;
+#define SIMDJSON_NARROW_GETTER(T, NAME) \
+  template <> struct narrow_getter<T> { \
+    template <typename V> static simdjson_result<T> get(V &&v) { return v.NAME(); } \
+  };
+  SIMDJSON_NARROW_GETTER(uint16_t, get_uint16)
+  SIMDJSON_NARROW_GETTER(int16_t, get_int16)
+  SIMDJSON_NARROW_GETTER(uint8_t, get_uint8)
+  SIMDJSON_NARROW_GETTER(int8_t, get_int8)
+#undef SIMDJSON_NARROW_GETTER
+
+  // Checks the outcome of one access: either 'error', or success with 'expected'
+  // (compared as int64_t so that failures print as numbers, not characters).
+  template <typename T>
+  bool check_outcome(error_code e, const T &val, int64_t expected, error_code error) {
+    if (error) {
+      ASSERT_ERROR(e, error);
+    } else {
+      ASSERT_SUCCESS(e);
+      ASSERT_EQUAL(int64_t(val), expected);
+    }
+    return true;
+  }
+
+  // Checks that 'number' parses as T with the given value, or fails with 'error',
+  // through every access path.
+  template <typename T>
+  bool check_narrow_integer(const std::string &number, int64_t expected, error_code error = SUCCESS) {
+    std::cout << "  " << number << " -> " << (error ? error_message(error) : std::to_string(expected)) << std::endl;
+    ondemand::parser parser;
+    ondemand::document doc;
+    T val{};
+    padded_string root(number);
+
+    // document: get_*(), get<T>(), get(T&), then simdjson_result<document>
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_TRUE(check_outcome(narrow_getter<T>::get(doc).get(val), val, expected, error));
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_TRUE(check_outcome(doc.get<T>().get(val), val, expected, error));
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_TRUE(check_outcome(doc.get(val), val, expected, error));
+    ASSERT_TRUE(check_outcome(narrow_getter<T>::get(parser.iterate(root)).get(val), val, expected, error));
+
+    // value: simdjson_result<value>, then value::get_*(), get<T>() and get(T&)
+    padded_string array_data("[" + number + "," + number + "," + number + "," + number + "]");
+    ASSERT_SUCCESS(parser.iterate(array_data).get(doc));
+    ondemand::array arr;
+    ASSERT_SUCCESS(doc.get_array().get(arr));
+    size_t i = 0;
+    for (auto element : arr) {
+      error_code e;
+      if (i == 0) {
+        e = narrow_getter<T>::get(element).get(val);
+      } else {
+        ondemand::value v;
+        ASSERT_SUCCESS(element.get(v));
+        if (i == 1) {
+          e = narrow_getter<T>::get(v).get(val);
+        } else if (i == 2) {
+          e = v.get<T>().get(val);
+        } else {
+          e = v.get(val);
+        }
+      }
+      ASSERT_TRUE(check_outcome(e, val, expected, error));
+      i++;
+    }
+    ASSERT_EQUAL(i, 4);
+
+    // document_reference: the next document is not trailing content.
+    padded_string stream_data(number + " " + number);
+    ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(stream_data).get(stream));
+    i = 0;
+    for (auto d : stream) {
+      error_code e;
+      if (i == 0) {
+        e = narrow_getter<T>::get(d).get(val); // simdjson_result<document_reference>
+      } else {
+        ondemand::document_reference ref;
+        ASSERT_SUCCESS(d.get(ref));
+        e = ref.get<T>().get(val);
+      }
+      ASSERT_TRUE(check_outcome(e, val, expected, error));
+      i++;
+    }
+    ASSERT_EQUAL(i, 2);
+    return true;
+  }
+
+  // Inputs that every narrow getter must reject the same way.
+  template <typename T>
+  bool check_narrow_integer_wrong_type() {
+    return check_narrow_integer<T>("1.0", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("1e2", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("\"12\"", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("true", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("null", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("[1]", 0, INCORRECT_TYPE) &&
+           check_narrow_integer<T>("{}", 0, INCORRECT_TYPE);
+  }
+
+  bool get_uint16_values() {
+    TEST_START();
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("0", 0));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("42", 42));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("65535", 65535));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("65536", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("4294967296", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("18446744073709551615", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint16_t>("-1", 0, INCORRECT_TYPE));
+    ASSERT_TRUE(check_narrow_integer_wrong_type<uint16_t>());
+    TEST_SUCCEED();
+  }
+
+  bool get_int16_values() {
+    TEST_START();
+    ASSERT_TRUE(check_narrow_integer<int16_t>("0", 0));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("-1", -1));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("32767", 32767));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("-32768", -32768));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("32768", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("-32769", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("65535", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("9223372036854775807", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int16_t>("-9223372036854775808", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer_wrong_type<int16_t>());
+    TEST_SUCCEED();
+  }
+
+  bool get_uint8_values() {
+    TEST_START();
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("0", 0));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("42", 42));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("255", 255));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("256", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("65536", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("18446744073709551615", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<uint8_t>("-1", 0, INCORRECT_TYPE));
+    ASSERT_TRUE(check_narrow_integer_wrong_type<uint8_t>());
+    TEST_SUCCEED();
+  }
+
+  bool get_int8_values() {
+    TEST_START();
+    ASSERT_TRUE(check_narrow_integer<int8_t>("0", 0));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("-1", -1));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("127", 127));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("-128", -128));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("128", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("-129", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("255", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer<int8_t>("-9223372036854775808", 0, NUMBER_OUT_OF_RANGE));
+    ASSERT_TRUE(check_narrow_integer_wrong_type<int8_t>());
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
+           get_uint16_values() &&
+           get_int16_values() &&
+           get_uint8_values() &&
+           get_int8_values() &&
            minus_zero() &&
            gigantic_big_int() &&
            big_int_not_zero() &&

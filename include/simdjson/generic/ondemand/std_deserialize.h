@@ -43,6 +43,14 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept {
     // and could produce a value that is not the float nearest to the JSON
     // number, so we parse to binary32 directly.
     return val.get_float().get(out);
+#if SIMDJSON_SUPPORTS_FLOAT32_T
+  } else if constexpr (std::is_same_v<T, std::float32_t>) {
+    // Same reason as float.
+    float x;
+    SIMDJSON_TRY(val.get_float().get(x));
+    out = static_cast<T>(x);
+    return SUCCESS;
+#endif // SIMDJSON_SUPPORTS_FLOAT32_T
   } else {
     double x;
     SIMDJSON_TRY(val.get_double().get(x));
