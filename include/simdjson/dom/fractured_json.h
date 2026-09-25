@@ -46,11 +46,11 @@ struct fractured_json_options {
   size_t max_inline_complexity = 2;
 
   /**
-   * Maximum complexity for compact array formatting (default: 1).
+   * Maximum complexity for compact array formatting (default: 2).
    * Arrays with elements of this complexity or less may have multiple
    * items per line.
    */
-  size_t max_compact_array_complexity = 1;
+  size_t max_compact_array_complexity = 2;
 
   /**
    * Number of spaces per indentation level (default: 4).
@@ -90,11 +90,11 @@ struct fractured_json_options {
 
   /**
    * Add space inside brackets for containers that hold only scalar values
-   * (default: true). When true: { "key": "value" }. When false:
+   * (default: false). When true: { "key": "value" }. When false:
    * {"key": "value"}.
    * @see nested_bracket_padding
    */
-  bool simple_bracket_padding = true;
+  bool simple_bracket_padding = false;
 
   /**
    * Add space inside brackets for containers that hold at least one

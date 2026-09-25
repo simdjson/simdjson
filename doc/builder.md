@@ -453,14 +453,14 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 
 - `max_total_line_length` (default: 120): Maximum total characters per line. Content exceeding this will be expanded to multiple lines.
 - `max_inline_complexity` (default: 2): Maximum nesting depth for inline rendering. Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.
-- `max_compact_array_complexity` (default: 1): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.
+- `max_compact_array_complexity` (default: 2): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.
 - `indent_spaces` (default: 4): Number of spaces per indentation level.
 - `always_expand_depth` (default: -1): Forces elements close to the root to always fully expand, regardless of other settings. -1 = none; 0 = root node only; 1 = root node and its children; etc.
 - `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.
 - `max_table_row_complexity` (default: 2): Maximum complexity for table formatting.
 - `enable_compact_multiline` (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.
 - `min_compact_array_row_items` (default: 3): Minimum number of rows a compact multiline array must be able to pack per line to be used.
-- `simple_bracket_padding` (default: true): Add space inside brackets for containers that hold only scalar values. When true: `{ "key": "value" }`, when false: `{"key": "value"}`.
+- `simple_bracket_padding` (default: false): Add space inside brackets for containers that hold only scalar values. When true: `{ "key": "value" }`, when false: `{"key": "value"}`.
 - `nested_bracket_padding` (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: `{ "a": [ 1, 2 ] }`, when false: `{ "a": [1, 2]}`.
 - `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.
 - `comma_padding` (default: true): Add space after commas in inline content. When true: `[1, 2, 3]`, when false: `[1,2,3]`.

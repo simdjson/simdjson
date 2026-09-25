@@ -1161,7 +1161,7 @@ bool compact_multiline_breaks_after_expanded_item_test() {
       "        \"a\": true,\n"
       "        \"b\": \"" + big_string + "\"\n"
       "    },\n"
-      "    { \"a\": true, \"b\": \"x\" }\n"
+      "    {\"a\": true, \"b\": \"x\"}\n"
       "]";
   ASSERT_EQUAL(formatted, expected);
 
@@ -1254,7 +1254,7 @@ bool compact_multiline_item_respects_max_total_line_length_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_total_line_length = 44;
+  opts.max_total_line_length = 42;
 
   auto formatted = simdjson::fractured_json(doc, opts);
   std::cout << "Formatted:\n" << formatted << std::endl;
@@ -1290,7 +1290,7 @@ bool trailing_comma_counted_in_length_test() {
   }
 
   simdjson::fractured_json_options opts;
-  opts.max_total_line_length = 25;
+  opts.max_total_line_length = 23;
   opts.enable_compact_multiline = false;
 
   auto formatted = simdjson::fractured_json(doc, opts);
@@ -1301,7 +1301,7 @@ bool trailing_comma_counted_in_length_test() {
       "    {\n"
       "        \"x\": \"0123456789\"\n"
       "    },\n"
-      "    { \"y\": \"0123456789\" }\n"
+      "    {\"y\": \"0123456789\"}\n"
       "]";
   ASSERT_EQUAL(formatted, expected);
 
@@ -1326,14 +1326,14 @@ bool nested_bracket_padding_test() {
     simdjson::fractured_json_options opts;
     opts.max_inline_complexity = 3;
     auto formatted = simdjson::fractured_json(doc, opts);
-    ASSERT_EQUAL(formatted, "{ \"a\": [ 1, 2 ] }");
+    ASSERT_EQUAL(formatted, "{ \"a\": [1, 2] }");
   }
   {
     simdjson::fractured_json_options opts;
     opts.max_inline_complexity = 3;
     opts.nested_bracket_padding = false;
     auto formatted = simdjson::fractured_json(doc, opts);
-    ASSERT_EQUAL(formatted, "{\"a\": [ 1, 2 ]}");
+    ASSERT_EQUAL(formatted, "{\"a\": [1, 2]}");
   }
   {
     simdjson::fractured_json_options opts;
@@ -1382,9 +1382,9 @@ bool always_expand_depth_test() {
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"id\": 1, \"name\": \"Alice\" },\n"
-        "    { \"id\": 2, \"name\": \"Bob\"   },\n"
-        "    { \"id\": 3, \"name\": \"Carol\" }\n"
+        "    {\"id\": 1, \"name\": \"Alice\"},\n"
+        "    {\"id\": 2, \"name\": \"Bob\"  },\n"
+        "    {\"id\": 3, \"name\": \"Carol\"}\n"
         "]");
   }
   {
@@ -1438,8 +1438,8 @@ bool table_format_union_columns_with_blank_padding_test() {
   const char* expected =
       "{\n"
       "    \"test\": [\n"
-      "        { \"test\": 1, \"test3\": 2, \"test2\": 2             },\n"
-      "        { \"test\": 1,             \"test2\": 3, \"test4\": 5 }\n"
+      "        {\"test\": 1, \"test3\": 2, \"test2\": 2            },\n"
+      "        {\"test\": 1,             \"test2\": 3, \"test4\": 5}\n"
       "    ]\n"
       "}";
   ASSERT_EQUAL(formatted, expected);
@@ -1512,8 +1512,8 @@ bool table_nested_cell_padding_test() {
   // "a" is a uniform object column, so its "x" sub-column is aligned recursively
   const char* expected =
       "[\n"
-      "    { \"a\": { \"x\": 1  } },\n"
-      "    { \"a\": { \"x\": 22 } }\n"
+      "    { \"a\": {\"x\": 1 } },\n"
+      "    { \"a\": {\"x\": 22} }\n"
       "]";
   ASSERT_EQUAL(formatted, expected);
 
@@ -1615,8 +1615,8 @@ bool table_format_prunes_recursive_columns_to_fit_width_test() {
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        { \"test1\": { \"test1\": 1 }, \"test2\": { \"test1\": 1 } },\n"
-        "        { \"test1\": { \"test2\": 1 }, \"test2\": { \"test2\": 1 } }\n"
+        "        { \"test1\": {\"test1\": 1}, \"test2\": {\"test1\": 1} },\n"
+        "        { \"test1\": {\"test2\": 1}, \"test2\": {\"test2\": 1} }\n"
         "    ]\n"
         "}");
   }
@@ -1629,8 +1629,8 @@ bool table_format_prunes_recursive_columns_to_fit_width_test() {
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        { \"test1\": { \"test1\": 1             }, \"test2\": { \"test1\": 1             } },\n"
-        "        { \"test1\": {             \"test2\": 1 }, \"test2\": {             \"test2\": 1 } }\n"
+        "        { \"test1\": {\"test1\": 1            }, \"test2\": {\"test1\": 1            } },\n"
+        "        { \"test1\": {            \"test2\": 1}, \"test2\": {            \"test2\": 1} }\n"
         "    ]\n"
         "}");
   }
@@ -1656,26 +1656,26 @@ bool table_format_prunes_deepest_column_only_test() {
   {
     // Room for full recursive alignment of both "a.b" and "b".
     simdjson::fractured_json_options opts;
-    opts.max_total_line_length = 70;
+    opts.max_total_line_length = 66;
     opts.max_table_row_complexity = 10;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"a\": { \"b\": { \"c\": 1         } }, \"b\": { \"c\": 1         } },\n"
-        "    { \"a\": { \"b\": {         \"d\": 1 } }, \"b\": {         \"d\": 1 } }\n"
+        "    { \"a\": { \"b\": {\"c\": 1        } }, \"b\": {\"c\": 1        } },\n"
+        "    { \"a\": { \"b\": {        \"d\": 1} }, \"b\": {        \"d\": 1} }\n"
         "]");
   }
   {
     // Not enough room for both, but enough for one: only "a.b" gets pruned to plain;
     // "b" stays recursively aligned.
     simdjson::fractured_json_options opts;
-    opts.max_total_line_length = 63;
+    opts.max_total_line_length = 59;
     opts.max_table_row_complexity = 10;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"a\": { \"b\": { \"c\": 1 } }, \"b\": { \"c\": 1         } },\n"
-        "    { \"a\": { \"b\": { \"d\": 1 } }, \"b\": {         \"d\": 1 } }\n"
+        "    { \"a\": { \"b\": {\"c\": 1} }, \"b\": {\"c\": 1        } },\n"
+        "    { \"a\": { \"b\": {\"d\": 1} }, \"b\": {        \"d\": 1} }\n"
         "]");
   }
   {
@@ -1686,8 +1686,8 @@ bool table_format_prunes_deepest_column_only_test() {
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"a\": { \"b\": { \"c\": 1 } }, \"b\": { \"c\": 1 } },\n"
-        "    { \"a\": { \"b\": { \"d\": 1 } }, \"b\": { \"d\": 1 } }\n"
+        "    { \"a\": { \"b\": {\"c\": 1} }, \"b\": {\"c\": 1} },\n"
+        "    { \"a\": { \"b\": {\"d\": 1} }, \"b\": {\"d\": 1} }\n"
         "]");
   }
 
@@ -1717,23 +1717,23 @@ bool compact_multiline_aligned_packing_test() {
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"id\": 1, \"name\": \"Alice\" },\n"
-        "    { \"id\": 2, \"name\": \"Bob\"   },\n"
-        "    { \"id\": 3, \"name\": \"Carol\" },\n"
-        "    { \"id\": 4, \"name\": \"Dave\"  },\n"
-        "    { \"id\": 5, \"name\": \"Eve\"   }\n"
+        "    {\"id\": 1, \"name\": \"Alice\"},\n"
+        "    {\"id\": 2, \"name\": \"Bob\"  },\n"
+        "    {\"id\": 3, \"name\": \"Carol\"},\n"
+        "    {\"id\": 4, \"name\": \"Dave\" },\n"
+        "    {\"id\": 5, \"name\": \"Eve\"  }\n"
         "]");
   }
   {
     // Enough room for 3+ aligned rows per line. Packs them, wrapping to a
     // new line only when the next row wouldn't fit
     simdjson::fractured_json_options opts;
-    opts.max_total_line_length = 120;
+    opts.max_total_line_length = 110;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    { \"id\": 1, \"name\": \"Alice\" }, { \"id\": 2, \"name\": \"Bob\"   }, { \"id\": 3, \"name\": \"Carol\" },\n"
-        "    { \"id\": 4, \"name\": \"Dave\"  }, { \"id\": 5, \"name\": \"Eve\"   }\n"
+        "    {\"id\": 1, \"name\": \"Alice\"}, {\"id\": 2, \"name\": \"Bob\"  }, {\"id\": 3, \"name\": \"Carol\"},\n"
+        "    {\"id\": 4, \"name\": \"Dave\" }, {\"id\": 5, \"name\": \"Eve\"  }\n"
         "]");
   }
 
@@ -1830,29 +1830,29 @@ bool table_format_array_rows_test() {
   {
     // Table format: one row per line, columns aligned by position.
     simdjson::fractured_json_options opts;
-    opts.max_total_line_length = 50;
+    opts.max_total_line_length = 45;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        [ 1,      10 ],\n"
-        "        [ 1,      10 ],\n"
-        "        [ 1,      10 ],\n"
-        "        [ 10,     1  ],\n"
-        "        [ \"test\", 1  ]\n"
+        "        [1,      10],\n"
+        "        [1,      10],\n"
+        "        [1,      10],\n"
+        "        [10,     1 ],\n"
+        "        [\"test\", 1 ]\n"
         "    ]\n"
         "}");
   }
   {
     // Enough room to pack several aligned rows per line.
     simdjson::fractured_json_options opts;
-    opts.max_total_line_length = 64;
+    opts.max_total_line_length = 52;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        [ 1,      10 ], [ 1,      10 ], [ 1,      10 ],\n"
-        "        [ 10,     1  ], [ \"test\", 1  ]\n"
+        "        [1,      10], [1,      10], [1,      10],\n"
+        "        [10,     1 ], [\"test\", 1 ]\n"
         "    ]\n"
         "}");
   }
@@ -1864,7 +1864,7 @@ bool table_format_array_rows_test() {
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "{\n"
-        "    \"test\": [ [ 1, 10 ], [ 1, 10 ], [ 1, 10 ], [ 10, 1 ], [ \"test\", 1 ] ]\n"
+        "    \"test\": [ [1, 10], [1, 10], [1, 10], [10, 1], [\"test\", 1] ]\n"
         "}");
   }
 
@@ -1891,8 +1891,8 @@ bool table_format_array_rows_ragged_test() {
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
         "[\n"
-        "    [ 1, 2, 33 ],\n"
-        "    [ 1, 2     ]\n"
+        "    [1, 2, 33],\n"
+        "    [1, 2    ]\n"
         "]");
   }
 
@@ -1901,7 +1901,7 @@ bool table_format_array_rows_ragged_test() {
     opts.max_total_line_length = 26;
     auto formatted = simdjson::fractured_json(doc, opts);
     ASSERT_EQUAL(formatted,
-        "[ [ 1, 2, 33 ], [ 1, 2 ] ]");
+        "[ [1, 2, 33], [1, 2] ]");
   }
 
   std::cout << "Table format array rows ragged test passed." << std::endl;
@@ -1931,13 +1931,13 @@ bool table_format_respects_max_table_row_complexity_test() {
     const char* expected =
         "[\n"
         "    {\n"
-        "        \"a\": { \"b\": { \"x\": 1 } }\n"
+        "        \"a\": { \"b\": {\"x\": 1} }\n"
         "    },\n"
         "    {\n"
-        "        \"a\": { \"b\": { \"x\": 2 } }\n"
+        "        \"a\": { \"b\": {\"x\": 2} }\n"
         "    },\n"
         "    {\n"
-        "        \"a\": { \"b\": { \"x\": 3 } }\n"
+        "        \"a\": { \"b\": {\"x\": 3} }\n"
         "    }\n"
         "]";
     ASSERT_EQUAL(formatted, expected);
@@ -1952,9 +1952,9 @@ bool table_format_respects_max_table_row_complexity_test() {
 
     const char* expected =
         "[\n"
-        "    { \"a\": { \"b\": { \"x\": 1 } } },\n"
-        "    { \"a\": { \"b\": { \"x\": 2 } } },\n"
-        "    { \"a\": { \"b\": { \"x\": 3 } } }\n"
+        "    { \"a\": { \"b\": {\"x\": 1} } },\n"
+        "    { \"a\": { \"b\": {\"x\": 2} } },\n"
+        "    { \"a\": { \"b\": {\"x\": 3} } }\n"
         "]";
     ASSERT_EQUAL(formatted, expected);
   }
@@ -1986,8 +1986,8 @@ bool table_comma_placement_test() {
 
     const char* expected =
         "[\n"
-        "    { \"a\": 1 , \"b\": \"x\",  \"c\": 5 },\n"
-        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "    {\"a\": 1 , \"b\": \"x\",  \"c\": 5},\n"
+        "    {\"a\": 22, \"b\": \"yy\", \"c\": 5}\n"
         "]";
     ASSERT_EQUAL(formatted, expected);
   }
@@ -2002,8 +2002,8 @@ bool table_comma_placement_test() {
 
     const char* expected =
         "[\n"
-        "    { \"a\": 1,  \"b\": \"x\",  \"c\": 5 },\n"
-        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "    {\"a\": 1,  \"b\": \"x\",  \"c\": 5},\n"
+        "    {\"a\": 22, \"b\": \"yy\", \"c\": 5}\n"
         "]";
     ASSERT_EQUAL(formatted, expected);
   }
@@ -2018,8 +2018,8 @@ bool table_comma_placement_test() {
 
     const char* expected =
         "[\n"
-        "    { \"a\": 1 , \"b\": \"x\" , \"c\": 5 },\n"
-        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "    {\"a\": 1 , \"b\": \"x\" , \"c\": 5},\n"
+        "    {\"a\": 22, \"b\": \"yy\", \"c\": 5}\n"
         "]";
     ASSERT_EQUAL(formatted, expected);
   }
@@ -2053,8 +2053,8 @@ bool number_alignment_test() {
 
       const char* expected =
           "[\n"
-          "    { \"a\": 1 , \"b\": \"x\"  },\n"
-          "    { \"a\": 22, \"b\": \"yy\" }\n"
+          "    {\"a\": 1 , \"b\": \"x\" },\n"
+          "    {\"a\": 22, \"b\": \"yy\"}\n"
           "]";
       ASSERT_EQUAL(formatted, expected);
     }
@@ -2069,8 +2069,8 @@ bool number_alignment_test() {
 
       const char* expected =
           "[\n"
-          "    { \"a\":  1, \"b\": \"x\"  },\n"
-          "    { \"a\": 22, \"b\": \"yy\" }\n"
+          "    {\"a\":  1, \"b\": \"x\" },\n"
+          "    {\"a\": 22, \"b\": \"yy\"}\n"
           "]";
       ASSERT_EQUAL(formatted, expected);
     }
