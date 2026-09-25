@@ -168,9 +168,13 @@ simdjson_warn_unused simdjson_inline uint8_t *parse_string(const uint8_t *src, u
            within the unicode codepoint handling code. */
         src += bs_dist;
         dst += bs_dist;
-        if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
-          return nullptr;
-        }
+        // Decode adjacent Unicode escapes without returning to the
+        // quote-and-backslash scanner between code points.
+        do {
+          if (!handle_unicode_codepoint(&src, &dst, allow_replacement)) {
+            return nullptr;
+          }
+        } while (src[0] == '\\' && src[1] == 'u');
       } else {
         /* simple 1:1 conversion. Will eat bs_dist+2 characters in input and
          * write bs_dist+1 characters to output
