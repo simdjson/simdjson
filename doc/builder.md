@@ -436,15 +436,15 @@ support the Fractured JSON standard.
   std::string formatted = simdjson::to_fractured_json_string(data, opts);
 ```
 
-The result might be as follows.
+The result might be as follows. Columns are laid out in the order in which keys first appear.
 
 ```json
 {
     "records": [
-        { "active": true , "id": 1, "name": "Alice" },
-        { "active": false, "id": 2, "name": "Bob" },
-        { "active": true , "id": 3, "name": "Carol" },
-        { "active": false, "id": 4, "name": "Dave" }
+        {"id": 1, "name": "Alice", "active": true },
+        {"id": 2, "name": "Bob",   "active": false},
+        {"id": 3, "name": "Carol", "active": true },
+        {"id": 4, "name": "Dave",  "active": false}
     ]
 }
 ```
@@ -456,13 +456,20 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 - `max_compact_array_complexity` (default: 2): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.
 - `indent_spaces` (default: 4): Number of spaces per indentation level.
 - `always_expand_depth` (default: -1): Forces elements close to the root to always fully expand, regardless of other settings. -1 = none; 0 = root node only; 1 = root node and its children; etc.
-- `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.
-- `max_table_row_complexity` (default: 2): Maximum complexity for table formatting.
+- `enable_table_format` (default: true): Enable tabular formatting for arrays of similar objects or arrays. When enabled, the rows of such an array are written one per line with their columns aligned. Rows need not have identical keys: columns are ordered by the first occurrence of each key, and a row missing a key gets blank space in that column. Nested arrays/objects within rows are aligned recursively; if the aligned rows do not fit within `max_total_line_length`, the deepest levels are left unaligned, and if they still do not fit, the array is expanded normally.
+- `max_table_row_complexity` (default: 2): Maximum complexity of each row of a table. 0 = rows may only be scalars (a single column); 1 = rows may be flat arrays/objects; higher values allow deeper nesting.
 - `enable_compact_multiline` (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.
-- `min_compact_array_row_items` (default: 3): Minimum number of rows a compact multiline array must be able to pack per line to be used.
+- `min_compact_array_row_items` (default: 3): Minimum number of items per line for an array to be formatted as a compact multiline array. If fewer items fit on a line, another layout is used.
 - `simple_bracket_padding` (default: false): Add space inside brackets for containers that hold only scalar values. When true: `{ "key": "value" }`, when false: `{"key": "value"}`.
-- `nested_bracket_padding` (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: `{ "a": [ 1, 2 ] }`, when false: `{ "a": [1, 2]}`.
+- `nested_bracket_padding` (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: `{ "a": [1, 2] }`, when false: `{"a": [1, 2]}`.
 - `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.
 - `comma_padding` (default: true): Add space after commas in inline content. When true: `[1, 2, 3]`, when false: `[1,2,3]`.
-- `comma_placement` (default: `before_padding_except_numbers`): Placement of commas relative to column padding in table-formatted rows
-- `number_alignment` (default: `left`): Controls alignment of numbers in table columns or compact multiline arrays.
+- `comma_placement` (default: `before_padding_except_numbers`): Placement of commas relative to column padding in table-formatted rows and compact multiline arrays. One of:
+  - `table_comma_placement::before_padding`: commas come right after the value: `"b": 1,   "c": 2`.
+  - `table_comma_placement::after_padding`: commas come after the padding, so they line up in their own column: `"b": 1  , "c": 2`.
+  - `table_comma_placement::before_padding_except_numbers`: like `before_padding`, except that number columns use `after_padding`.
+- `number_alignment` (default: `left`): Controls alignment of numbers in table columns or compact multiline arrays. One of `number_list_alignment::left` or `number_list_alignment::right`. Numbers are always written exactly as in the input. (FracturedJson defaults to decimal-point alignment, which simdjson does not support.)
+
+Compared with the reference FracturedJson implementation, simdjson does not support the options related to comments, blank-line preservation, trailing commas, line-ending style, tab indentation, line prefixes, property-name padding in expanded objects (`MaxPropNamePadding`, `ColonBeforePropNamePadding`), or the `Decimal` and `Normalize` number alignments.
+
+The `min_table_rows` and `table_similarity_threshold` options found in earlier versions of simdjson have been removed.
