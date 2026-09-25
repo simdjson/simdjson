@@ -544,10 +544,10 @@ public:
   inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
-  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size) = delete;// unsafe
+  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size)
    *
    * Because padded_string_view guarantees SIMDJSON_PADDING trailing bytes, this
@@ -580,6 +580,13 @@ public:
   inline simdjson_result<document_stream> parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) */
   inline simdjson_result<document_stream> parse_many(const padded_string_view &v, size_t batch_size, stream_format format) noexcept;
+  /** @private An rvalue input is destroyed at the end of the full-expression, while
+   * the returned document_stream only holds a pointer to it: iterating the stream would
+   * then read freed memory. These deleted overloads also catch a std::string_view
+   * argument, which would otherwise convert implicitly to a padded_string temporary. */
+  inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size, stream_format format) = delete;// unsafe
+  /** @private @overload parse_many(const std::string &&s, size_t batch_size, stream_format format) */
+  inline simdjson_result<document_stream> parse_many(const padded_string &&s, size_t batch_size, stream_format format) = delete;// unsafe
 
   /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length

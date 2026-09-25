@@ -236,6 +236,9 @@ inline simdjson_result<document_stream> parser::iterate_many(padded_string_view 
 inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size, stream_format format) noexcept {
   return iterate_many(padded_string_view(s), batch_size, format);
 }
+inline simdjson_result<document_stream> parser::iterate_many(std::string &s, size_t batch_size, stream_format format) noexcept {
+  return iterate_many(pad(s), batch_size, format);
+}
 inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size, stream_format format) noexcept {
   return iterate_many(padded_string_view(s), batch_size, format);
 }

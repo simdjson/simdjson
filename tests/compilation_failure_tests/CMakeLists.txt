@@ -36,6 +36,20 @@ if (SIMDJSON_EXCEPTIONS)
   add_dual_compile_test(dangling_parser_parse_stdstring)
   add_dual_compile_test(dangling_parser_parse_padstring)
   add_dual_compile_test(unsafe_parse_many)
+  # parse_many()/iterate_many() return a document_stream that points at the input,
+  # so they must reject temporaries. A std::string_view argument converts implicitly
+  # to a padded_string temporary.
+  add_dual_compile_test(dangling_parse_many_stdstring)
+  add_dual_compile_test(dangling_parse_many_string_view)
+  add_dual_compile_test(dangling_parse_many_format)
+  add_dual_compile_test(dangling_iterate_many_stdstring)
+  add_dual_compile_test(dangling_iterate_many_padstring)
+  add_dual_compile_test(dangling_iterate_many_load)
+  add_dual_compile_test(dangling_iterate_many_string_view)
+  add_dual_compile_test(dangling_iterate_many_format)
+  if(NOT SIMDJSON_DISABLE_DEPRECATED_API)
+    add_dual_compile_test(dangling_iterate_many_deprecated)
+  endif()
 endif()
 
 # key_selector enforces a 63-character key-length limit at compile time. This
