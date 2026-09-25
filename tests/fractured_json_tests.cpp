@@ -1835,10 +1835,10 @@ bool table_format_array_rows_test() {
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        [ 1     , 10 ],\n"
-        "        [ 1     , 10 ],\n"
-        "        [ 1     , 10 ],\n"
-        "        [ 10    , 1  ],\n"
+        "        [ 1,      10 ],\n"
+        "        [ 1,      10 ],\n"
+        "        [ 1,      10 ],\n"
+        "        [ 10,     1  ],\n"
         "        [ \"test\", 1  ]\n"
         "    ]\n"
         "}");
@@ -1851,8 +1851,8 @@ bool table_format_array_rows_test() {
     ASSERT_EQUAL(formatted,
         "{\n"
         "    \"test\": [\n"
-        "        [ 1     , 10 ], [ 1     , 10 ], [ 1     , 10 ],\n"
-        "        [ 10    , 1  ], [ \"test\", 1  ]\n"
+        "        [ 1,      10 ], [ 1,      10 ], [ 1,      10 ],\n"
+        "        [ 10,     1  ], [ \"test\", 1  ]\n"
         "    ]\n"
         "}");
   }
@@ -1963,6 +1963,71 @@ bool table_format_respects_max_table_row_complexity_test() {
   return true;
 }
 
+bool table_comma_placement_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  const char* json = R"([{"a":1,"b":"x","c":5},{"a":22,"b":"yy","c":5}])";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 40;
+    opts.comma_placement = simdjson::table_comma_placement::before_padding_except_numbers;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted (default):\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "    { \"a\": 1 , \"b\": \"x\",  \"c\": 5 },\n"
+        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 40;
+    opts.comma_placement = simdjson::table_comma_placement::before_padding;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted (before_padding):\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "    { \"a\": 1,  \"b\": \"x\",  \"c\": 5 },\n"
+        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  {
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 40;
+    opts.comma_placement = simdjson::table_comma_placement::after_padding;
+
+    auto formatted = simdjson::fractured_json(doc, opts);
+    std::cout << "Formatted (after_padding):\n" << formatted << std::endl;
+
+    const char* expected =
+        "[\n"
+        "    { \"a\": 1 , \"b\": \"x\" , \"c\": 5 },\n"
+        "    { \"a\": 22, \"b\": \"yy\", \"c\": 5 }\n"
+        "]";
+    ASSERT_EQUAL(formatted, expected);
+  }
+
+  std::cout << "Table comma placement test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2023,9 +2088,10 @@ int main() {
   success = compact_multiline_aligned_packing_test() && success;
   success = compact_multiline_scalar_list_alignment_test() && success;
   success = table_format_respects_max_table_row_complexity_test() && success;
+  success = table_comma_placement_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 50 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 51 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

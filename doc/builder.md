@@ -464,3 +464,4 @@ The `fractured_json_options` struct allows you to customize the formatting behav
 - `nested_bracket_padding` (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: `{ "a": [ 1, 2 ] }`, when false: `{ "a": [1, 2]}`.
 - `colon_padding` (default: true): Add space after colons. When true: `"key": "value"`, when false: `"key":"value"`.
 - `comma_padding` (default: true): Add space after commas in inline content. When true: `[1, 2, 3]`, when false: `[1,2,3]`.
+- `comma_placement` (default: `before_padding_except_numbers`): Placement of commas relative to column padding in table-formatted rows

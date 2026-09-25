@@ -831,6 +831,8 @@ inline void fractured_string_builder::format_table_row_columns(
         }
       }
 
+      bool needs_comma = !is_last_col && (col_idx < last_present_idx);
+
       if (!column.children.empty()) {
         // Recurses into this cell's own columns instead of a plain value;
         // every row aligns those the same way (blank-padding missing
@@ -849,11 +851,25 @@ inline void fractured_string_builder::format_table_row_columns(
             format_table_array_row(sub_arr, sub_metrics, column.children, depth);
           }
         }
+        // value is already padded
+        if (needs_comma) {
+          format_.comma();
+          if (options_.comma_padding) {
+            format_.print_space();
+          }
+        }
       } else {
         const element_metrics& vm = child_metrics_at(value_metrics[col_idx]);
+        bool comma_before_pad = needs_comma && comma_goes_before_padding(column.type);
         {
           scoped_single_line_mode single_line(format_);
           format_element(values[col_idx], vm, depth);
+        }
+        if (comma_before_pad) {
+          format_.comma();
+          if (options_.comma_padding) {
+            format_.print_space();
+          }
         }
 
         size_t actual_len = vm.estimated_inline_len;
@@ -862,18 +878,19 @@ inline void fractured_string_builder::format_table_row_columns(
           format_.one_char(' ');
           actual_len++;
         }
-      }
 
-      if (!is_last_col) {
-        if (col_idx < last_present_idx) {
+        if (needs_comma && !comma_before_pad) {
           format_.comma();
           if (options_.comma_padding) {
             format_.print_space();
           }
-        } else {
-          for (size_t i = 0; i < comma_width; i++) {
-            format_.one_char(' ');
-          }
+        }
+      }
+
+      if (!is_last_col && !needs_comma) {
+        // Found, but no more real values follow: blank space where a comma would go.
+        for (size_t i = 0; i < comma_width; i++) {
+          format_.one_char(' ');
         }
       }
     } else {
@@ -970,6 +987,16 @@ inline void fractured_string_builder::format_table_row(
     if (elem.get_object().get(obj) == SUCCESS) {
       format_table_object_row(obj, row_metrics, columns, depth);
     }
+  }
+}
+
+inline bool fractured_string_builder::comma_goes_before_padding(table_column_type column_type) const {
+  switch (options_.comma_placement) {
+    case table_comma_placement::before_padding: return true;
+    case table_comma_placement::after_padding: return false;
+    case table_comma_placement::before_padding_except_numbers:
+    default:
+      return column_type != table_column_type::number;
   }
 }
 

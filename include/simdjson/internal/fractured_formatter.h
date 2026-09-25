@@ -141,6 +141,9 @@ private:
                                  const std::vector<const element_metrics*>& value_metrics,
                                  size_t depth);
 
+  /** Whether, for a column of the given type, the comma goes right after the value */
+  bool comma_goes_before_padding(table_column_type column_type) const;
+
   /** Format an array expanded: one item per line */
   void format_array_expanded(const dom::array& arr, const element_metrics& metrics, size_t depth);
 

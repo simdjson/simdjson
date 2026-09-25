@@ -6,6 +6,16 @@
 
 namespace simdjson {
 
+/** Specifies where commas should be in table-formatted elements. */
+enum class table_comma_placement {
+  /** Commas come right after the value */
+  before_padding,
+  /** Commas come after the column padding, so they line up in their own column. */
+  after_padding,
+  /** Commas come right after the value, except for columns of numbers */
+  before_padding_except_numbers,
+};
+
 /**
  * Configuration options for FracturedJson formatting.
  *
@@ -99,6 +109,12 @@ struct fractured_json_options {
    * When false: [1,2,3]
    */
   bool comma_padding = true;
+
+  /**
+   * Placement of commas relative to column padding in table-formatted rows
+   * (default: before_padding_except_numbers).
+   */
+  table_comma_placement comma_placement = table_comma_placement::before_padding_except_numbers;
 };
 
 /**
