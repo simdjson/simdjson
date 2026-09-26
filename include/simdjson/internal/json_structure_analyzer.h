@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
-#include <set>
+#include <utility>
 
 namespace simdjson {
 namespace internal {
@@ -25,6 +25,42 @@ enum class layout_mode {
   table,               // Tabular format for arrays of similar objects
   expanded             // Traditional multi-line with indentation
 };
+
+/** Kind of value found in a table column across all rows that have one. */
+enum class table_column_type {
+  unknown,
+  simple,   // string, bool, or null
+  number,
+  array,
+  object,
+  mixed     // rows disagree on kind
+};
+
+/** Column of a table-formatted array.*/
+struct table_column {
+  /** Column name for object rows; empty for array rows. */
+  std::string key{};
+  /** Rendered length of key */
+  size_t key_width = 0;
+  table_column_type type = table_column_type::unknown;
+  /** Widest rendered value in this column (when fully expanding all children) */
+  size_t width = 0;
+  /** Widest plain value in this column. */
+  size_t plain_width = 0;
+  /** subcolumns (only populated if every child is an array or every child is an object) */
+  std::vector<table_column> children{};
+};
+
+/** Whether rows from this column list use nested vs. simple bracket padding
+ * One shared decision, since picking it per-row would misalign width-aligned rows. */
+inline bool table_row_is_nested(const std::vector<table_column>& columns) {
+  for (const table_column& col : columns) {
+    if (col.type == table_column_type::object || col.type == table_column_type::array) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Metrics computed for a JSON element during structure analysis.
@@ -46,12 +82,31 @@ struct element_metrics {
   /** Is this an array where all elements have similar structure? */
   bool is_uniform_array = false;
 
-  /** For uniform arrays of objects: the common keys */
-  std::vector<std::string> common_keys{};
+  /** for uniform arrays: this array's columns for alignment */
+  std::vector<table_column> table_columns{};
+  /** Widest table row after pruning recursive columns that don't fit into line budget */
+  size_t table_row_width = 0;
+  /** Widest table row without pruning recursive columns that don't fit into line budget */
+  size_t table_row_width_full = 0;
 
   /** Child metrics for arrays and objects (in order of iteration) */
   std::vector<element_metrics> children{};
+
+  /** For scalar uniform arrays (table_columns empty): the rows' common type. */
+  table_column_type scalar_column_type = table_column_type::unknown;
 };
+
+/** children[idx], or a default-constructed element_metrics if idx is out of range */
+inline const element_metrics& child_metrics_at(const std::vector<element_metrics>& children, size_t idx) {
+  static const element_metrics empty{};
+  return idx < children.size() ? children[idx] : empty;
+}
+
+/** *ptr, or a default-constructed element_metrics if ptr is null. */
+inline const element_metrics& child_metrics_at(const element_metrics* ptr) {
+  static const element_metrics empty{};
+  return ptr ? *ptr : empty;
+}
 
 /**
  * Analyzes JSON structure to compute metrics for formatting decisions.
@@ -144,20 +199,35 @@ private:
   size_t estimate_number_length(uint64_t u) const;
 
   /**
-   * Check if an array contains uniform objects suitable for table formatting.
+   * Check if an array contains uniformly-shaped rows suitable for table
+   * formatting, filling in corresponding metrics
    * @param arr The array to check
-   * @param common_keys Output: keys common to all objects
-   * @return true if the array is suitable for table formatting
+   * @param metrics The array's metrics, with children already filled in
+   * @param depth The array's depth
    */
-  bool check_array_uniformity(const dom::array& arr,
-                               std::vector<std::string>& common_keys) const;
+  bool check_array_uniformity(const dom::array& arr, element_metrics& metrics, size_t depth) const;
 
-  /**
-   * Compute similarity between two objects.
-   * @return Fraction of keys that are common (0.0 to 1.0)
-   */
-  double compute_object_similarity(const dom::object& a,
-                                   const dom::object& b) const;
+  static table_column_type classify_table_value(dom::element_type type);
+
+  /** Find common type across a set of sibling values and the widest of their rendered lengths */
+  static void classify_and_measure(const std::vector<std::pair<dom::element, const element_metrics*>>& values,
+                                    table_column_type& common, size_t& max_width);
+
+  /** Recursively build table columns for an array */
+  void build_table_columns(const std::vector<std::pair<dom::element, const element_metrics*>>& values,
+                            std::vector<table_column>& out_columns) const;
+
+  /** Rendered width of a row, assuming each column's current */
+  size_t compute_columns_width(const std::vector<table_column>& columns) const;
+
+  /** Height of a column's recursion (0 = leaf). */
+  static size_t column_height(const table_column& column);
+
+  /** Flatten deepest columns of the table */
+  static bool flatten_deepest_columns(std::vector<table_column>& columns);
+
+  /** Bottom-up refresh of column widths after flatten_deepest_columns. */
+  void recompute_column_widths(std::vector<table_column>& columns) const;
 };
 
 } // namespace internal

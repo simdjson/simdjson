@@ -6,6 +6,24 @@
 
 namespace simdjson {
 
+/** Specifies where commas should be in table-formatted elements. */
+enum class table_comma_placement {
+  /** Commas come right after the value */
+  before_padding,
+  /** Commas come after the column padding, so they line up in their own column. */
+  after_padding,
+  /** Commas come right after the value, except for columns of numbers */
+  before_padding_except_numbers,
+};
+
+/** Options for how lists or columns of numbers should be aligned */
+enum class number_list_alignment {
+  /** Left-aligns numbers */
+  left,
+  /** Right-aligns numbers */
+  right,
+};
+
 /**
  * Configuration options for FracturedJson formatting.
  *
@@ -28,11 +46,11 @@ struct fractured_json_options {
   size_t max_inline_complexity = 2;
 
   /**
-   * Maximum complexity for compact array formatting (default: 1).
+   * Maximum complexity for compact array formatting (default: 2).
    * Arrays with elements of this complexity or less may have multiple
    * items per line.
    */
-  size_t max_compact_array_complexity = 1;
+  size_t max_compact_array_complexity = 2;
 
   /**
    * Number of spaces per indentation level (default: 4).
@@ -46,23 +64,20 @@ struct fractured_json_options {
   int always_expand_depth = -1;
 
   /**
-   * Enable tabular formatting for arrays of similar objects (default: true).
-   * When enabled, arrays of objects with identical keys are formatted
-   * as aligned tables.
+   * Enable tabular formatting for arrays of similar objects or arrays
+   * (default: true). When enabled, the rows of such an array are written one
+   * per line with their columns aligned. Rows need not have identical keys:
+   * columns are ordered by the first occurrence of each key, and a row
+   * missing a key gets blank space in that column.
    */
   bool enable_table_format = true;
 
   /**
-   * Minimum number of rows to trigger table mode (default: 3).
+   * Maximum complexity of each row of a table (default: 2).
+   * 0 = rows may only be scalars (a single column); 1 = rows may be flat
+   * arrays/objects; higher values allow deeper nesting.
    */
-  size_t min_table_rows = 3;
-
-  /**
-   * Similarity threshold for table detection (default: 0.8).
-   * Objects must share at least this fraction of keys to be formatted
-   * as a table.
-   */
-  double table_similarity_threshold = 0.8;
+  size_t max_table_row_complexity = 2;
 
   /**
    * Enable compact multiline arrays (default: true).
@@ -72,17 +87,23 @@ struct fractured_json_options {
   bool enable_compact_multiline = true;
 
   /**
+   * Minimum number of items per line for an array to be formatted as a
+   * compact multiline array (default: 3).
+   */
+  size_t min_compact_array_row_items = 3;
+
+  /**
    * Add space inside brackets for containers that hold only scalar values
-   * (default: true). When true: { "key": "value" }. When false:
+   * (default: false). When true: { "key": "value" }. When false:
    * {"key": "value"}.
    * @see nested_bracket_padding
    */
-  bool simple_bracket_padding = true;
+  bool simple_bracket_padding = false;
 
   /**
    * Add space inside brackets for containers that hold at least one
-   * nested array/object (default: true). When true: { "a": [ 1, 2 ] }.
-   * When false: { "a": [1, 2]}.
+   * nested array/object (default: true). When true: { "a": [1, 2] }.
+   * When false: {"a": [1, 2]}.
    * @see simple_bracket_padding
    */
   bool nested_bracket_padding = true;
@@ -100,6 +121,18 @@ struct fractured_json_options {
    * When false: [1,2,3]
    */
   bool comma_padding = true;
+
+  /**
+   * Placement of commas relative to column padding in table-formatted rows
+   * and compact multiline arrays (default: before_padding_except_numbers).
+   */
+  table_comma_placement comma_placement = table_comma_placement::before_padding_except_numbers;
+
+  /**
+   * Controls alignment of numbers in table columns or compact multiline arrays
+   * (default: left). Numbers are always written exactly as in the input.
+   */
+  number_list_alignment number_alignment = number_list_alignment::left;
 };
 
 /**

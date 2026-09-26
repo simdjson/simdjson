@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <unordered_map>
 
 namespace simdjson {
 namespace internal {
@@ -156,10 +157,14 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
   // Check if can inline
   metrics.can_inline = metrics.complexity <= current_opts_->max_inline_complexity;
 
-  // Check for uniform array (table formatting)
-  if (current_opts_->enable_table_format &&
-      metrics.child_count >= current_opts_->min_table_rows) {
-    metrics.is_uniform_array = check_array_uniformity(arr, metrics.common_keys);
+  // Check for uniform array (table formatting, or aligned compact multiline).
+  bool wants_table_columns =
+      (current_opts_->enable_table_format &&
+       max_child_complexity <= current_opts_->max_table_row_complexity) ||
+      (current_opts_->enable_compact_multiline &&
+       max_child_complexity <= current_opts_->max_compact_array_complexity);
+  if (wants_table_columns) {
+    metrics.is_uniform_array = check_array_uniformity(arr, metrics, depth);
   }
 
   return metrics;
@@ -260,87 +265,216 @@ inline size_t structure_analyzer::estimate_number_length(uint64_t u) const {
   return len;
 }
 
-inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
-                                                        std::vector<std::string>& common_keys) const {
-  common_keys.clear();
+inline table_column_type structure_analyzer::classify_table_value(dom::element_type type) {
+  switch (type) {
+    case dom::element_type::OBJECT: return table_column_type::object;
+    case dom::element_type::ARRAY: return table_column_type::array;
+    case dom::element_type::INT64:
+    case dom::element_type::UINT64:
+    case dom::element_type::DOUBLE: return table_column_type::number;
+    case dom::element_type::NULL_VALUE: return table_column_type::unknown;
+    default: return table_column_type::simple; // string, bool
+  }
+}
 
-  std::set<std::string> shared_keys;
-  dom::object first_obj;
-  bool have_first = false;
-  size_t object_count = 0;
+inline void structure_analyzer::classify_and_measure(
+    const std::vector<std::pair<dom::element, const element_metrics*>>& values,
+    table_column_type& common, size_t& max_width) {
+  common = table_column_type::unknown;
+  max_width = 0;
+  for (const auto& v : values) {
+    table_column_type t = classify_table_value(v.first.type());
+    if (t != table_column_type::unknown) {
+      if (common == table_column_type::unknown) common = t;
+      else if (t != common) common = table_column_type::mixed;
+    }
+    if (v.second) {
+      max_width = (std::max)(max_width, v.second->estimated_inline_len);
+    }
+  }
+}
 
-  for (dom::element elem : arr) {
-    if (elem.type() != dom::element_type::OBJECT) {
-      return false; // Not all elements are objects
+inline void structure_analyzer::build_table_columns(
+    const std::vector<std::pair<dom::element, const element_metrics*>>& values,
+    std::vector<table_column>& out_columns) const {
+  out_columns.clear();
+  if (values.empty()) {
+    return;
+  }
+
+  table_column_type common = table_column_type::unknown;
+  for (const auto& v : values) {
+    table_column_type t = classify_table_value(v.first.type());
+    if (t == table_column_type::unknown) continue;
+    if (common == table_column_type::unknown) common = t;
+    else if (t != common) { common = table_column_type::mixed; break; }
+  }
+  if (common != table_column_type::object && common != table_column_type::array) {
+    return;
+  }
+
+  std::vector<std::vector<std::pair<dom::element, const element_metrics*>>> per_column_values;
+
+  if (common == table_column_type::object) {
+    std::unordered_map<std::string_view, size_t> column_index;
+    for (const auto& v : values) {
+      if (v.first.type() != dom::element_type::OBJECT) continue;
+      dom::object obj;
+      if (v.first.get_object().get(obj) != SUCCESS) continue;
+
+      size_t field_idx = 0;
+      for (dom::key_value_pair field : obj) {
+        auto it = column_index.find(field.key);
+        size_t col_idx;
+        if (it == column_index.end()) {
+          col_idx = out_columns.size();
+          column_index.emplace(field.key, col_idx);
+          out_columns.emplace_back();
+          out_columns.back().key.assign(field.key.data(), field.key.size());
+          out_columns.back().key_width = estimate_string_length(field.key);
+          per_column_values.emplace_back();
+        } else {
+          col_idx = it->second;
+        }
+        const element_metrics* field_metrics = (v.second && field_idx < v.second->children.size())
+            ? &v.second->children[field_idx] : nullptr;
+        per_column_values[col_idx].emplace_back(field.value, field_metrics);
+        field_idx++;
+      }
+    }
+  } else { // array: columns by position
+    for (const auto& v : values) {
+      if (v.first.type() != dom::element_type::ARRAY) continue;
+      dom::array sub_arr;
+      if (v.first.get_array().get(sub_arr) != SUCCESS) continue;
+
+      size_t idx = 0;
+      for (dom::element item : sub_arr) {
+        if (out_columns.size() <= idx) {
+          out_columns.emplace_back();
+          per_column_values.emplace_back();
+        }
+        const element_metrics* item_metrics = (v.second && idx < v.second->children.size())
+            ? &v.second->children[idx] : nullptr;
+        per_column_values[idx].emplace_back(item, item_metrics);
+        idx++;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < out_columns.size(); i++) {
+    table_column_type col_type;
+    size_t max_width;
+    classify_and_measure(per_column_values[i], col_type, max_width);
+    out_columns[i].type = col_type;
+    out_columns[i].plain_width = max_width;
+
+    if (col_type == table_column_type::object || col_type == table_column_type::array) {
+      build_table_columns(per_column_values[i], out_columns[i].children);
     }
 
-    dom::object obj;
-    if (elem.get_object().get(obj) != SUCCESS) {
+    out_columns[i].width = out_columns[i].children.empty() ? max_width : compute_columns_width(out_columns[i].children);
+  }
+}
+
+inline bool structure_analyzer::check_array_uniformity(const dom::array& arr,
+                                                        element_metrics& metrics,
+                                                        size_t depth) const {
+  std::vector<std::pair<dom::element, const element_metrics*>> values;
+  values.reserve(metrics.child_count);
+
+  size_t row_idx = 0;
+  for (dom::element elem : arr) {
+    const element_metrics* row_metrics = (row_idx < metrics.children.size()) ? &metrics.children[row_idx] : nullptr;
+    values.emplace_back(elem, row_metrics);
+    row_idx++;
+  }
+
+  build_table_columns(values, metrics.table_columns);
+  if (metrics.table_columns.empty()) {
+    // Not uniformly object or array. Check for uniform scalar
+    table_column_type common;
+    size_t max_width;
+    classify_and_measure(values, common, max_width);
+    if (common != table_column_type::number && common != table_column_type::simple) {
       return false;
     }
-
-    std::set<std::string> current_keys;
-    for (dom::key_value_pair field : obj) {
-      current_keys.insert(std::string(field.key));
-    }
-
-    if (!have_first) {
-      shared_keys = current_keys;
-      first_obj = obj;
-      have_first = true;
-    } else {
-      // Check similarity threshold against the first object
-      double similarity = compute_object_similarity(first_obj, obj);
-      if (similarity < current_opts_->table_similarity_threshold) {
-        return false; // Objects are too dissimilar for table format
-      }
-
-      // Intersect with current keys
-      std::set<std::string> intersection;
-      std::set_intersection(shared_keys.begin(), shared_keys.end(),
-                            current_keys.begin(), current_keys.end(),
-                            std::inserter(intersection, intersection.begin()));
-      shared_keys = intersection;
-    }
-
-    object_count++;
+    metrics.scalar_column_type = common;
+    metrics.table_row_width = max_width;
+    metrics.table_row_width_full = max_width;
+    return true;
   }
 
-  if (object_count < current_opts_->min_table_rows) {
-    return false;
+  metrics.table_row_width_full = compute_columns_width(metrics.table_columns);
+
+  size_t row_indent_width = (depth + 1) * current_opts_->indent_spaces;
+  size_t budget = (row_indent_width + 1 >= current_opts_->max_total_line_length)
+      ? 0 : current_opts_->max_total_line_length - row_indent_width - 1;
+
+  size_t width = metrics.table_row_width_full;
+  while (width > budget && flatten_deepest_columns(metrics.table_columns)) {
+    recompute_column_widths(metrics.table_columns);
+    width = compute_columns_width(metrics.table_columns);
   }
 
-  // Require at least one common key for table formatting
-  if (shared_keys.empty()) {
-    return false;
-  }
-
-  common_keys.assign(shared_keys.begin(), shared_keys.end());
+  metrics.table_row_width = width;
   return true;
 }
 
-inline double structure_analyzer::compute_object_similarity(const dom::object& a,
-                                                             const dom::object& b) const {
-  std::set<std::string> keys_a, keys_b;
-  for (dom::key_value_pair field : a) {
-    keys_a.insert(std::string(field.key));
-  }
-  for (dom::key_value_pair field : b) {
-    keys_b.insert(std::string(field.key));
+inline size_t structure_analyzer::compute_columns_width(const std::vector<table_column>& columns) const {
+  size_t width = 2; // "{}" or "[]"
+  if (table_row_is_nested(columns) ? current_opts_->nested_bracket_padding : current_opts_->simple_bracket_padding) {
+    width += 2;
   }
 
-  std::set<std::string> intersection;
-  std::set_intersection(keys_a.begin(), keys_a.end(),
-                        keys_b.begin(), keys_b.end(),
-                        std::inserter(intersection, intersection.begin()));
+  for (const table_column& col : columns) {
+    if (!col.key.empty()) {
+      width += col.key_width;
+      width += current_opts_->colon_padding ? 2 : 1;
+    }
+    width += col.width;
+  }
+  if (columns.size() > 1) {
+    width += (columns.size() - 1) * (current_opts_->comma_padding ? 2 : 1);
+  }
+  return width;
+}
 
-  std::set<std::string> union_set;
-  std::set_union(keys_a.begin(), keys_a.end(),
-                 keys_b.begin(), keys_b.end(),
-                 std::inserter(union_set, union_set.begin()));
+inline size_t structure_analyzer::column_height(const table_column& column) {
+  size_t height = 0;
+  for (const table_column& child : column.children) {
+    height = (std::max)(height, column_height(child));
+  }
+  return column.children.empty() ? 0 : height + 1;
+}
 
-  if (union_set.empty()) return 1.0;
-  return static_cast<double>(intersection.size()) / static_cast<double>(union_set.size());
+inline bool structure_analyzer::flatten_deepest_columns(std::vector<table_column>& columns) {
+  size_t max_height = 0;
+  for (const table_column& col : columns) {
+    max_height = (std::max)(max_height, column_height(col));
+  }
+
+  bool changed = false;
+  for (table_column& col : columns) {
+    if (column_height(col) != max_height || max_height == 0) continue;
+    if (max_height == 1) {
+      col.children.clear();
+      col.width = col.plain_width;
+      changed = true;
+    } else {
+      changed |= flatten_deepest_columns(col.children);
+    }
+  }
+  return changed;
+}
+
+inline void structure_analyzer::recompute_column_widths(std::vector<table_column>& columns) const {
+  for (table_column& col : columns) {
+    if (!col.children.empty()) {
+      recompute_column_widths(col.children);
+      col.width = compute_columns_width(col.children);
+    }
+  }
 }
 
 inline layout_mode structure_analyzer::decide_layout(const element_metrics& metrics,
@@ -362,15 +496,41 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
     return layout_mode::single_line;
   }
 
-  // Check table mode
-  if (depth_allows_table && metrics.is_uniform_array && !metrics.common_keys.empty()) {
-    return layout_mode::table;
-  }
+  // Rows (table's or compact multiline's) render one level deeper than the
+  // array itself.
+  size_t row_indent_width = (depth + 1) * opts.indent_spaces;
 
   // Check compact multiline
-  if (depth_allows_inline_or_compact && opts.enable_compact_multiline &&
-      metrics.complexity <= opts.max_compact_array_complexity + 1) {
-    return layout_mode::compact_multiline;
+  // for uniform arrays fall back to table if we would have to flatten any formatting
+  bool compact_multiline_enabled = opts.enable_compact_multiline &&
+      metrics.complexity <= opts.max_compact_array_complexity + 1 &&
+      metrics.child_count >= opts.min_compact_array_row_items;
+  if (depth_allows_inline_or_compact && compact_multiline_enabled) {
+    bool aligned = metrics.is_uniform_array;
+    size_t comma_width = opts.comma_padding ? 2 : 1;
+    size_t avg_item_width;
+    if (aligned) {
+      avg_item_width = metrics.table_row_width_full + comma_width;
+    } else {
+      size_t sum = 0;
+      for (const element_metrics& child : metrics.children) {
+        sum += child.estimated_inline_len;
+      }
+      avg_item_width = comma_width + sum / metrics.child_count;
+    }
+
+    size_t row_pack_space = (row_indent_width >= opts.max_total_line_length)
+        ? 0 : opts.max_total_line_length - row_indent_width;
+    if (avg_item_width * opts.min_compact_array_row_items <= row_pack_space) {
+      return layout_mode::compact_multiline;
+    }
+  }
+
+  // Check Table mode
+  if (depth_allows_table && opts.enable_table_format &&
+      metrics.is_uniform_array &&
+      metrics.table_row_width + 1 + row_indent_width <= opts.max_total_line_length) {
+    return layout_mode::table;
   }
 
   return layout_mode::expanded;
@@ -381,7 +541,7 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
 //
 
 inline fractured_formatter::fractured_formatter(const fractured_json_options& opts)
-    : options_(opts), column_widths_{} {}
+    : options_(opts) {}
 
 simdjson_inline void fractured_formatter::print_newline() {
   if (current_layout_ == layout_mode::single_line) {
@@ -414,24 +574,8 @@ inline layout_mode fractured_formatter::get_layout_mode() const {
   return current_layout_;
 }
 
-inline void fractured_formatter::set_depth(size_t depth) {
-  current_depth_ = depth;
-}
-
-inline size_t fractured_formatter::get_depth() const {
-  return current_depth_;
-}
-
 inline void fractured_formatter::track_line_length(size_t chars) {
   current_line_length_ += chars;
-}
-
-inline void fractured_formatter::reset_line_length() {
-  current_line_length_ = 0;
-}
-
-inline size_t fractured_formatter::get_line_length() const {
-  return current_line_length_;
 }
 
 inline bool fractured_formatter::should_break_line(size_t upcoming_length) const {
@@ -440,39 +584,6 @@ inline bool fractured_formatter::should_break_line(size_t upcoming_length) const
 
 inline const fractured_json_options& fractured_formatter::options() const {
   return options_;
-}
-
-inline void fractured_formatter::begin_table_row() {
-  in_table_mode_ = true;
-  current_column_ = 0;
-}
-
-inline void fractured_formatter::end_table_row() {
-  in_table_mode_ = false;
-  current_column_ = 0;
-}
-
-inline void fractured_formatter::set_column_widths(const std::vector<size_t>& widths) {
-  column_widths_ = widths;
-}
-
-inline size_t fractured_formatter::get_column_index() const {
-  return current_column_;
-}
-
-inline void fractured_formatter::next_column() {
-  current_column_++;
-}
-
-inline void fractured_formatter::align_to_column_width(size_t actual_width) {
-  if (current_column_ < column_widths_.size()) {
-    size_t target_width = column_widths_[current_column_];
-    while (actual_width < target_width) {
-      one_char(' ');
-      actual_width++;
-      current_line_length_++;
-    }
-  }
 }
 
 //
@@ -560,8 +671,7 @@ inline void fractured_string_builder::format_array(const dom::array& arr,
 
 inline void fractured_string_builder::format_array_inline(const dom::array& arr,
                                                             const element_metrics& metrics) {
-  layout_mode prev_layout = format_.get_layout_mode();
-  format_.set_layout_mode(layout_mode::single_line);
+  scoped_single_line_mode single_line(format_);
 
   format_.start_array();
 
@@ -579,8 +689,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
       format_.print_space();
     }
     first = false;
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
+    const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     format_element(elem, child_metrics, 0);
     child_idx++;
   }
@@ -589,13 +698,16 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
     format_.print_space();
   }
   format_.end_array();
-
-  format_.set_layout_mode(prev_layout);
 }
 
 inline void fractured_string_builder::format_array_compact_multiline(const dom::array& arr,
                                                                        const element_metrics& metrics,
                                                                        size_t depth) {
+  if (metrics.is_uniform_array) {
+    format_array_compact_multiline_aligned(arr, metrics, depth);
+    return;
+  }
+
   format_.start_array();
   format_.print_newline();
   format_.print_indents(depth + 1);
@@ -605,8 +717,7 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
   size_t child_idx = 0;
 
   for (dom::element elem : arr) {
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
+    const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
 
     if (!first) {
       format_.comma();
@@ -627,10 +738,10 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     layout_mode item_layout = structure_analyzer::decide_layout(child_metrics, depth + 1, options_, !is_last);
     bool item_fits = item_layout == layout_mode::single_line;
     if (item_fits) {
-      layout_mode prev_layout = format_.get_layout_mode();
-      format_.set_layout_mode(layout_mode::single_line);
-      format_element(elem, child_metrics, depth + 1, !is_last);
-      format_.set_layout_mode(prev_layout);
+      {
+        scoped_single_line_mode single_line(format_);
+        format_element(elem, child_metrics, depth + 1, !is_last);
+      }
       format_.track_line_length(child_metrics.estimated_inline_len);
     } else {
       format_element(elem, child_metrics, depth + 1, !is_last);
@@ -645,18 +756,287 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
   format_.end_array();
 }
 
+inline void fractured_string_builder::format_array_compact_multiline_aligned(
+    const dom::array& arr, const element_metrics& metrics, size_t depth) {
+  const std::vector<table_column>& columns = metrics.table_columns;
+
+  format_.start_array();
+  format_.print_newline();
+  format_.print_indents(depth + 1);
+
+  size_t indent_width = (depth + 1) * options_.indent_spaces;
+  size_t available_line_space = (indent_width >= options_.max_total_line_length)
+      ? 0 : options_.max_total_line_length - indent_width;
+  size_t comma_width = options_.comma_padding ? 2 : 1;
+  size_t remaining_line_space = available_line_space;
+
+  bool first = true;
+  size_t child_idx = 0;
+
+  for (dom::element elem : arr) {
+    bool needs_comma = (child_idx + 1 < metrics.child_count);
+    size_t space_needed = metrics.table_row_width_full + (needs_comma ? comma_width : 0);
+
+    if (!first) {
+      if (remaining_line_space < space_needed) {
+        format_.print_newline();
+        format_.print_indents(depth + 1);
+        remaining_line_space = available_line_space;
+      } else if (options_.comma_padding) {
+        format_.print_space();
+      }
+    }
+    first = false;
+
+    const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
+    if (columns.empty()) {
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width_full, depth + 1,
+                              metrics.scalar_column_type);
+    } else {
+      format_table_row(elem, row_metrics, columns, depth + 1);
+    }
+    if (needs_comma) {
+      format_.comma();
+    }
+    remaining_line_space -= (std::min)(remaining_line_space, space_needed);
+    child_idx++;
+  }
+
+  format_.print_newline();
+  format_.print_indents(depth);
+  format_.end_array();
+}
+
+inline void fractured_string_builder::format_table_row_columns(
+    const std::vector<table_column>& columns,
+    const std::vector<bool>& found,
+    const std::vector<dom::element>& values,
+    const std::vector<const element_metrics*>& value_metrics,
+    size_t depth) {
+  const size_t num_columns = columns.size();
+  size_t last_present_idx = num_columns;
+  for (size_t i = 0; i < num_columns; i++) {
+    if (found[i]) last_present_idx = i;
+  }
+
+  size_t comma_width = options_.comma_padding ? 2 : 1;
+
+  for (size_t col_idx = 0; col_idx < num_columns; col_idx++) {
+    const table_column& column = columns[col_idx];
+    const bool is_last_col = (col_idx == num_columns - 1);
+
+    if (found[col_idx]) {
+      if (!column.key.empty()) {
+        format_.key(column.key);
+        if (options_.colon_padding) {
+          format_.print_space();
+        }
+      }
+
+      bool needs_comma = !is_last_col && (col_idx < last_present_idx);
+
+      if (!column.children.empty()) {
+        // Recurses into this cell's own columns instead of a plain value;
+        // every row aligns those the same way (blank-padding missing
+        // ones), so the result is always exactly column.width wide
+        // no padding needed afterward, unlike the leaf case below.
+        if (column.type == table_column_type::object) {
+          dom::object sub_obj;
+          if (values[col_idx].get_object().get(sub_obj) == SUCCESS) {
+            const element_metrics& sub_metrics = child_metrics_at(value_metrics[col_idx]);
+            format_table_object_row(sub_obj, sub_metrics, column.children, depth);
+          }
+        } else {
+          dom::array sub_arr;
+          if (values[col_idx].get_array().get(sub_arr) == SUCCESS) {
+            const element_metrics& sub_metrics = child_metrics_at(value_metrics[col_idx]);
+            format_table_array_row(sub_arr, sub_metrics, column.children, depth);
+          }
+        }
+        // value is already padded
+        if (needs_comma) {
+          format_.comma();
+          if (options_.comma_padding) {
+            format_.print_space();
+          }
+        }
+      } else {
+        const element_metrics& vm = child_metrics_at(value_metrics[col_idx]);
+        format_table_leaf_value(values[col_idx], vm, column.width, column.type, needs_comma,
+                                 /*add_comma_space=*/true, depth);
+      }
+
+      if (!is_last_col && !needs_comma) {
+        // Found, but no more real values follow: blank space where a comma would go.
+        for (size_t i = 0; i < comma_width; i++) {
+          format_.one_char(' ');
+        }
+      }
+    } else {
+      size_t slot_width = column.width;
+      if (!column.key.empty()) {
+        slot_width += column.key_width + (options_.colon_padding ? 2 : 1);
+      }
+      for (size_t i = 0; i < slot_width; i++) {
+        format_.one_char(' ');
+      }
+
+      if (!is_last_col) {
+        for (size_t i = 0; i < comma_width; i++) {
+          format_.one_char(' ');
+        }
+      }
+    }
+  }
+}
+
+inline void fractured_string_builder::format_table_object_row(
+    const dom::object& obj, const element_metrics& row_metrics,
+    const std::vector<table_column>& columns, size_t depth) {
+  const size_t num_columns = columns.size();
+  std::vector<bool> found(num_columns, false);
+  std::vector<dom::element> values(num_columns);
+  std::vector<const element_metrics*> value_metrics(num_columns, nullptr);
+
+  for (size_t col_idx = 0; col_idx < num_columns; col_idx++) {
+    size_t field_idx = 0;
+    for (dom::key_value_pair field : obj) {
+      if (field.key == columns[col_idx].key) {
+        found[col_idx] = true;
+        values[col_idx] = field.value;
+        value_metrics[col_idx] = (field_idx < row_metrics.children.size())
+            ? &row_metrics.children[field_idx] : nullptr;
+        break;
+      }
+      field_idx++;
+    }
+  }
+
+  bool nested = table_row_is_nested(columns);
+  format_.start_object();
+  if (nested ? options_.nested_bracket_padding : options_.simple_bracket_padding) {
+    format_.print_space();
+  }
+  format_table_row_columns(columns, found, values, value_metrics, depth);
+  if (nested ? options_.nested_bracket_padding : options_.simple_bracket_padding) {
+    format_.print_space();
+  }
+  format_.end_object();
+}
+
+inline void fractured_string_builder::format_table_array_row(
+    const dom::array& arr, const element_metrics& row_metrics,
+    const std::vector<table_column>& columns, size_t depth) {
+  const size_t num_columns = columns.size();
+  std::vector<bool> found(num_columns, false);
+  std::vector<dom::element> values(num_columns);
+  std::vector<const element_metrics*> value_metrics(num_columns, nullptr);
+
+  size_t idx = 0;
+  for (dom::element item : arr) {
+    if (idx >= num_columns) break;
+    found[idx] = true;
+    values[idx] = item;
+    value_metrics[idx] = (idx < row_metrics.children.size()) ? &row_metrics.children[idx] : nullptr;
+    idx++;
+  }
+
+  bool nested = table_row_is_nested(columns);
+  format_.start_array();
+  if (nested ? options_.nested_bracket_padding : options_.simple_bracket_padding) {
+    format_.print_space();
+  }
+  format_table_row_columns(columns, found, values, value_metrics, depth);
+  if (nested ? options_.nested_bracket_padding : options_.simple_bracket_padding) {
+    format_.print_space();
+  }
+  format_.end_array();
+}
+
+inline void fractured_string_builder::format_table_row(
+    const dom::element& elem, const element_metrics& row_metrics,
+    const std::vector<table_column>& columns, size_t depth) {
+  if (elem.type() == dom::element_type::ARRAY) {
+    dom::array arr;
+    if (elem.get_array().get(arr) == SUCCESS) {
+      format_table_array_row(arr, row_metrics, columns, depth);
+    }
+  } else {
+    dom::object obj;
+    if (elem.get_object().get(obj) == SUCCESS) {
+      format_table_object_row(obj, row_metrics, columns, depth);
+    }
+  }
+}
+
+inline bool fractured_string_builder::comma_goes_before_padding(table_column_type column_type) const {
+  switch (options_.comma_placement) {
+    case table_comma_placement::before_padding: return true;
+    case table_comma_placement::after_padding: return false;
+    case table_comma_placement::before_padding_except_numbers:
+    default:
+      return column_type != table_column_type::number;
+  }
+}
+
+inline void fractured_string_builder::format_table_leaf_value(
+    const dom::element& elem, const element_metrics& vm, size_t width,
+    table_column_type column_type, bool needs_comma, bool add_comma_space, size_t depth) {
+  bool comma_before_pad = needs_comma && comma_goes_before_padding(column_type);
+  bool comma_after_pad = needs_comma && !comma_before_pad;
+
+  bool right_align = column_type == table_column_type::number &&
+      options_.number_alignment == number_list_alignment::right;
+
+  size_t value_len = vm.estimated_inline_len;
+  size_t left_pad = 0;
+  size_t right_pad = 0;
+  if (right_align) {
+    left_pad = (width > value_len) ? width - value_len : 0;
+    comma_before_pad = needs_comma;
+    comma_after_pad = false;
+  } else {
+    right_pad = (width > value_len) ? width - value_len : 0;
+  }
+
+  for (size_t i = 0; i < left_pad; i++) {
+    format_.one_char(' ');
+  }
+
+  {
+    scoped_single_line_mode single_line(format_);
+    format_element(elem, vm, depth);
+  }
+
+  if (comma_before_pad) {
+    format_.comma();
+  }
+  for (size_t i = 0; i < right_pad; i++) {
+    format_.one_char(' ');
+  }
+  if (comma_after_pad) {
+    format_.comma();
+  }
+  if (needs_comma && add_comma_space && options_.comma_padding) {
+    format_.print_space();
+  }
+}
+
+inline void fractured_string_builder::format_table_scalar_row(
+    const dom::element& elem, const element_metrics& row_metrics, size_t width, size_t depth,
+    table_column_type column_type) {
+  format_table_leaf_value(elem, row_metrics, width, column_type,
+                          /*needs_comma=*/false, /*add_comma_space=*/false, depth);
+}
+
 inline void fractured_string_builder::format_array_as_table(const dom::array& arr,
                                                              const element_metrics& metrics,
                                                              size_t depth) {
-  const std::vector<std::string>& columns = metrics.common_keys;
-  if (columns.empty()) {
+  if (!metrics.is_uniform_array) {
     format_array_expanded(arr, metrics, depth);
     return;
   }
-
-  // Calculate column widths for alignment
-  std::vector<size_t> col_widths = calculate_column_widths(arr, columns);
-  format_.set_column_widths(col_widths);
+  const std::vector<table_column>& columns = metrics.table_columns;
 
   format_.start_array();
   format_.print_newline();
@@ -671,88 +1051,14 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
     first_row = false;
 
     format_.print_indents(depth + 1);
-    format_.begin_table_row();
 
-    // Format object as inline with aligned columns
-    dom::object obj;
-    if (elem.get_object().get(obj) != SUCCESS) {
-      child_idx++;
-      continue;
+    const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
+    if (columns.empty()) {
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width, depth + 1,
+                              metrics.scalar_column_type);
+    } else {
+      format_table_row(elem, row_metrics, columns, depth + 1);
     }
-
-    // Get child metrics for this row (object)
-    const element_metrics& row_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
-
-    format_.start_object();
-    if (bracket_padding_for(row_metrics)) {
-      format_.print_space();
-    }
-
-    bool first_col = true;
-    const size_t num_columns = columns.size();
-
-    for (size_t col_idx = 0; col_idx < num_columns; col_idx++) {
-      const std::string& key = columns[col_idx];
-      const bool is_last_col = (col_idx == num_columns - 1);
-
-      if (!first_col) {
-        format_.comma();
-        if (options_.comma_padding) {
-          format_.print_space();
-        }
-      }
-      first_col = false;
-
-      // Write key
-      format_.key(key);
-      if (options_.colon_padding) {
-        format_.print_space();
-      }
-
-      // Find the value for this key and its metrics
-      dom::element value;
-      bool found = false;
-      size_t field_idx = 0;
-      for (dom::key_value_pair field : obj) {
-        if (field.key == key) {
-          value = field.value;
-          found = true;
-          break;
-        }
-        field_idx++;
-      }
-
-      // Write value
-      if (found) {
-        layout_mode prev_layout = format_.get_layout_mode();
-        format_.set_layout_mode(layout_mode::single_line);
-        const element_metrics& value_metrics = (field_idx < row_metrics.children.size())
-            ? row_metrics.children[field_idx] : element_metrics{};
-        format_element(value, value_metrics, depth + 1);
-        format_.set_layout_mode(prev_layout);
-      } else {
-        format_.null_atom();
-      }
-
-      // Only pad non-last columns to align values across rows
-      if (!is_last_col) {
-        size_t actual_len = found ? measure_value_length(value) : 4; // 4 for "null"
-        size_t target_width = col_widths[col_idx];
-        while (actual_len < target_width) {
-          format_.one_char(' ');
-          actual_len++;
-        }
-      }
-
-      format_.next_column();
-    }
-
-    if (bracket_padding_for(row_metrics)) {
-      format_.print_space();
-    }
-    format_.end_object();
-    format_.end_table_row();
     child_idx++;
   }
 
@@ -779,8 +1085,7 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 
     format_.print_newline();
     format_.print_indents(depth + 1);
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
+    const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     bool is_last = (child_idx + 1 == metrics.child_count);
     format_element(elem, child_metrics, depth + 1, !is_last);
     child_idx++;
@@ -807,8 +1112,7 @@ inline void fractured_string_builder::format_object(const dom::object& obj,
 
 inline void fractured_string_builder::format_object_inline(const dom::object& obj,
                                                              const element_metrics& metrics) {
-  layout_mode prev_layout = format_.get_layout_mode();
-  format_.set_layout_mode(layout_mode::single_line);
+  scoped_single_line_mode single_line(format_);
 
   format_.start_object();
 
@@ -832,8 +1136,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
     if (options_.colon_padding) {
       format_.print_space();
     }
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
+    const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     format_element(field.value, child_metrics, 0);
     child_idx++;
   }
@@ -842,8 +1145,6 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
     format_.print_space();
   }
   format_.end_object();
-
-  format_.set_layout_mode(prev_layout);
 }
 
 inline void fractured_string_builder::format_object_expanded(const dom::object& obj,
@@ -868,8 +1169,7 @@ inline void fractured_string_builder::format_object_expanded(const dom::object& 
     if (options_.colon_padding) {
       format_.print_space();
     }
-    const element_metrics& child_metrics = (child_idx < metrics.children.size())
-        ? metrics.children[child_idx] : element_metrics{};
+    const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     bool is_last = (child_idx + 1 == metrics.child_count);
     format_element(field.value, child_metrics, depth + 1, !is_last);
     child_idx++;
@@ -929,107 +1229,6 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
 
 inline bool fractured_string_builder::bracket_padding_for(const element_metrics& metrics) const {
   return metrics.complexity >= 2 ? options_.nested_bracket_padding : options_.simple_bracket_padding;
-}
-
-inline size_t fractured_string_builder::measure_value_length(const dom::element& elem) const {
-  switch (elem.type()) {
-    case dom::element_type::STRING: {
-      std::string_view str;
-      if (elem.get_string().get(str) == SUCCESS) {
-        // Count actual escaped length
-        size_t len = 2; // quotes
-        for (char c : str) {
-          if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 32) {
-            len += 2; // escape sequence
-          } else {
-            len += 1;
-          }
-        }
-        return len;
-      }
-      return 2;
-    }
-    case dom::element_type::INT64: {
-      int64_t val;
-      if (elem.get_int64().get(val) == SUCCESS) {
-        if (val == 0) return 1;
-        // Handle INT64_MIN specially to avoid overflow when negating
-        if (val == INT64_MIN) return 20; // "-9223372036854775808" is 20 characters
-        size_t len = (val < 0) ? 1 : 0;
-        int64_t abs_val = (val < 0) ? -val : val;
-        while (abs_val > 0) { len++; abs_val /= 10; }
-        return len;
-      }
-      return 1;
-    }
-    case dom::element_type::UINT64: {
-      uint64_t val;
-      if (elem.get_uint64().get(val) == SUCCESS) {
-        if (val == 0) return 1;
-        size_t len = 0;
-        while (val > 0) { len++; val /= 10; }
-        return len;
-      }
-      return 1;
-    }
-    case dom::element_type::DOUBLE: {
-      double val;
-      if (elem.get_double().get(val) == SUCCESS) {
-#if SIMDJSON_ENABLE_NAN_INF
-        if (!std::isfinite(val)) {
-          if (std::isnan(val))
-            return 3; // "NaN"
-          // "-Infinity" (9) or "Infinity" (8)
-          return val < 0 ? 9 : 8;
-        }
-#endif
-        char buf[32];
-        int len = snprintf(buf, sizeof(buf), "%.17g", val);
-        return len > 0 ? static_cast<size_t>(len) : 1;
-      }
-      return 1;
-    }
-    case dom::element_type::BOOL: {
-      bool val;
-      if (elem.get_bool().get(val) == SUCCESS) {
-        return val ? 4 : 5; // "true" or "false"
-      }
-      return 5;
-    }
-    case dom::element_type::NULL_VALUE:
-      return 4; // "null"
-    default:
-      return 4;
-  }
-}
-
-inline std::vector<size_t> fractured_string_builder::calculate_column_widths(
-    const dom::array& arr,
-    const std::vector<std::string>& columns) const {
-
-  std::vector<size_t> widths(columns.size(), 0);
-
-  for (dom::element elem : arr) {
-    dom::object obj;
-    if (elem.get_object().get(obj) != SUCCESS) {
-      continue;
-    }
-
-    for (size_t col_idx = 0; col_idx < columns.size(); col_idx++) {
-      const std::string& key = columns[col_idx];
-
-      for (dom::key_value_pair field : obj) {
-        if (field.key == key) {
-          // Measure actual value length
-          size_t len = measure_value_length(field.value);
-          widths[col_idx] = (std::max)(widths[col_idx], len);
-          break;
-        }
-      }
-    }
-  }
-
-  return widths;
 }
 
 } // namespace internal
