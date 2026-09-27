@@ -55,11 +55,7 @@ std::string_view serialize(simdjson::builder::string_builder &sb,
     sb.end_object();
   }
   sb.end_array();
-  std::string_view result;
-  if (sb.view().get(result)) {
-    return ""; // unexpected (error)
-  }
-  return result;
+  return sb.view();
 }
 
 double pretty_print(const std::string &name, size_t num_chars,

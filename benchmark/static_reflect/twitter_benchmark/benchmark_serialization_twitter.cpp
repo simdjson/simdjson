@@ -57,10 +57,7 @@ template <class T> void bench_simdjson_static_reflection(T &data) {
   // First run to determine expected size
   simdjson::builder::string_builder sb_init;
   simdjson::builder::append(sb_init, data);
-  std::string_view p_init;
-  if (sb_init.view().get(p_init)) {
-    std::cerr << "Error!" << std::endl;
-  }
+  std::string_view p_init = sb_init.view();
   size_t output_volume = p_init.size();
   printf("# output volume: %zu bytes\n", output_volume);
 
@@ -70,10 +67,7 @@ template <class T> void bench_simdjson_static_reflection(T &data) {
                  // Fresh allocation each iteration - fair comparison
                  simdjson::builder::string_builder sb;
                  simdjson::builder::append(sb, data);
-                 std::string_view p;
-                 if (sb.view().get(p)) {
-                   std::cerr << "Error!" << std::endl;
-                 }
+                 std::string_view p = sb.view();
                  measured_volume = sb.size();
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");
@@ -85,10 +79,7 @@ template <class T> void bench_simdjson_static_reflection(T &data) {
 template <class T> void bench_simdjson_static_reflection_reuse(T &data) {
   simdjson::builder::string_builder sb;
   simdjson::builder::append(sb, data);
-  std::string_view p;
-  if (sb.view().get(p)) {
-    std::cerr << "Error!" << std::endl;
-  }
+  std::string_view p = sb.view();
   size_t output_volume = p.size();
   sb.clear();
   printf("# output volume: %zu bytes\n", output_volume);
@@ -98,10 +89,7 @@ template <class T> void bench_simdjson_static_reflection_reuse(T &data) {
                bench([&data, &measured_volume, &output_volume, &sb]() {
                  sb.clear();
                  simdjson::builder::append(sb, data);
-                 std::string_view p;
-                 if (sb.view().get(p)) {
-                   std::cerr << "Error!" << std::endl;
-                 }
+                 std::string_view p = sb.view();
                  measured_volume = sb.size();
                  if (measured_volume != output_volume) {
                    printf("mismatch\n");

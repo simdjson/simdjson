@@ -53,13 +53,13 @@ struct writer {
   // Snapshot string_builder state into a writer for the duration of
   // a write chain.
   simdjson_really_inline writer(string_builder &builder) noexcept
-      : ptr(builder.unsafe_data()), pos(builder.unsafe_position()),
-        cap(builder.unsafe_capacity()), sb(builder) {}
+      : ptr(builder.unsafe_data()), pos(builder.size()),
+        cap(builder.unsafe_make_existing_capacity_available()), sb(builder) {}
 
   // Write the local position back to the underlying string_builder.
   // Caller is responsible for invoking before the writer is dropped
   // (otherwise data is lost). Idempotent.
-  simdjson_really_inline void sync() noexcept { sb.unsafe_set_position(pos); }
+  simdjson_really_inline void sync() noexcept { sb.set_position(pos); }
 
   // Ensure at least `n` more bytes of free capacity. Grows the
   // underlying buffer if needed (rare path). Returns false on
@@ -83,14 +83,14 @@ struct writer {
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos))
       return false;
-    sb.unsafe_set_position(pos);
+    sb.set_position(pos);
     // even if 2*capacity overflows, the (std::max) below will pick the needed
     // value, so we do not need a separate overflow check here.
     if (!sb.unsafe_grow((std::max)(cap * 2, pos + n))) {
       return false;
     }
     ptr = sb.unsafe_data();
-    cap = sb.unsafe_capacity();
+    cap = sb.size();
     return true;
   }
 };
@@ -106,8 +106,8 @@ simdjson_really_inline void call_through_string_builder(writer &w,
   w.sync();
   f(w.sb);
   w.ptr = w.sb.unsafe_data();
-  w.pos = w.sb.unsafe_position();
-  w.cap = w.sb.unsafe_capacity();
+  w.pos = w.sb.size();
+  w.cap = w.sb.unsafe_make_existing_capacity_available();
 }
 
 template <class T>
@@ -493,11 +493,7 @@ simdjson_warn_unused simdjson_result<std::string> to_json_string(
     size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   append(b, z);
-  std::string_view s;
-  if (auto e = b.view().get(s); e) {
-    return e;
-  }
-  return std::string(s);
+  return b.extract_str();
 }
 
 template <class Z>
@@ -506,11 +502,7 @@ to_json(const Z &z, std::string &s,
         size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   append(b, z);
-  std::string_view view;
-  if (auto e = b.view().get(view); e) {
-    return e;
-  }
-  s.assign(view);
+  s = b.extract_str();
   return SUCCESS;
 }
 
@@ -586,11 +578,7 @@ simdjson_warn_unused simdjson_result<std::string> extract_from(
     size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if (auto e = b.view().get(s); e) {
-    return e;
-  }
-  return std::string(s);
+  return b.extract_str();
 }
 
 } // namespace builder
@@ -602,11 +590,7 @@ to_json(const Z &z, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::
                         string_builder::DEFAULT_INITIAL_CAPACITY) {
   SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::append(b, z);
-  std::string_view s;
-  if (auto e = b.view().get(s); e) {
-    return e;
-  }
-  return std::string(s);
+  return b.extract_str();
 }
 template <class Z>
 simdjson_warn_unused error_code
@@ -615,11 +599,7 @@ to_json(const Z &z, std::string &s,
             string_builder::DEFAULT_INITIAL_CAPACITY) {
   SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::append(b, z);
-  std::string_view view;
-  if (auto e = b.view().get(view); e) {
-    return e;
-  }
-  s.assign(view);
+  s = b.extract_str();
   return SUCCESS;
 }
 // Global namespace function for extract_from
@@ -631,11 +611,7 @@ extract_from(const T &obj,
                  string_builder::DEFAULT_INITIAL_CAPACITY) {
   SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if (auto e = b.view().get(s); e) {
-    return e;
-  }
-  return std::string(s);
+  return b.extract_str();
 }
 
 } // namespace simdjson

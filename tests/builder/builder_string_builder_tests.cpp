@@ -82,10 +82,8 @@ bool allchar_test() {
   sb.start_object();
   sb.append_key_value("input", allutf8);
   sb.end_object();
-  std::string_view p;
   ASSERT_TRUE(sb.validate_unicode());
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   simdjson::padded_string output = p;
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc;
@@ -133,9 +131,7 @@ bool append_char() {
   simdjson::builder::string_builder sb;
   sb.append('a');
   ASSERT_EQUAL(sb.size(), 1);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "a");
   TEST_SUCCEED();
 }
@@ -145,9 +141,7 @@ bool append_integer() {
   simdjson::builder::string_builder sb;
   sb.append(42);
   ASSERT_EQUAL(sb.size(), 2);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "42");
   TEST_SUCCEED();
 }
@@ -157,9 +151,7 @@ bool append_float() {
   simdjson::builder::string_builder sb;
   sb.append(1.1);
   ASSERT_EQUAL(sb.size(), 3);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "1.1");
   TEST_SUCCEED();
 }
@@ -303,9 +295,7 @@ bool append_null() {
   simdjson::builder::string_builder sb;
   sb.append_null();
   ASSERT_EQUAL(sb.size(), 4);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "null");
   TEST_SUCCEED();
 }
@@ -323,9 +313,7 @@ bool escape_and_append() {
   TEST_START();
   simdjson::builder::string_builder sb;
   sb.escape_and_append("Hello, \"world\"!");
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "Hello, \\\"world\\\"!");
   TEST_SUCCEED();
 }
@@ -334,9 +322,7 @@ bool escape_and_append_with_quotes() {
   TEST_START();
   simdjson::builder::string_builder sb;
   sb.escape_and_append_with_quotes("Hello, \"world\"!");
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "\"Hello, \\\"world\\\"!\"");
   TEST_SUCCEED();
 }
@@ -369,12 +355,7 @@ static std::string reference_escape(std::string_view in) {
 static bool check_escape_matches_reference(std::string_view in) {
   simdjson::builder::string_builder sb;
   sb.escape_and_append(in);
-  std::string_view got;
-  if (sb.view().get(got)) {
-    std::cerr << "FAIL: escape_and_append view() error for len=" << in.size()
-              << std::endl;
-    return false;
-  }
+  std::string_view got = sb.view();
   const std::string expected = reference_escape(in);
   if (got != expected) {
     std::cerr << "FAIL: write_string_escaped mismatch for len=" << in.size()
@@ -469,9 +450,7 @@ bool various_integers() {
   for (const auto &[value, expected] : test_cases) {
     simdjson::builder::string_builder sb;
     sb.append(value);
-    std::string_view p;
-    auto result = sb.view().get(p);
-    ASSERT_SUCCESS(result);
+    std::string_view p = sb.view();
     ASSERT_EQUAL(p, expected);
   }
   TEST_SUCCEED();
@@ -494,9 +473,7 @@ bool various_unsigned_integers() {
   for (const auto &[value, expected] : test_cases) {
     simdjson::builder::string_builder sb;
     sb.append(value);
-    std::string_view p;
-    auto result = sb.view().get(p);
-    ASSERT_SUCCESS(result);
+    std::string_view p = sb.view();
     ASSERT_EQUAL(p, expected);
   }
   TEST_SUCCEED();
@@ -506,9 +483,7 @@ bool append_raw() {
   TEST_START();
   simdjson::builder::string_builder sb;
   sb.append_raw("Test");
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "Test");
   TEST_SUCCEED();
 }
@@ -517,9 +492,7 @@ bool raw_with_length() {
   TEST_START();
   simdjson::builder::string_builder sb;
   sb.append_raw("Test String", 4);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "Test");
   TEST_SUCCEED();
 }
@@ -528,9 +501,7 @@ bool string_convertion() {
   TEST_START();
   simdjson::builder::string_builder sb;
   sb.append('a');
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "a");
   TEST_SUCCEED();
 }
@@ -599,9 +570,7 @@ bool car_test_long() {
   simdjson::builder::string_builder sb;
   Car c = {"Toyota", "Corolla", 2017, {30.0, 30.2, 30.513, 30.79}};
   serialize_car_long(c, sb);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,"
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
@@ -686,9 +655,7 @@ bool car_test() {
   simdjson::builder::string_builder sb;
   Car c = {"Toyota", "Corolla", 2017, {30.0, 30.2, 30.513, 30.79}};
   serialize_car(c, sb);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,"
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
@@ -702,9 +669,7 @@ bool issue2549() {
   sb.start_object();
   sb.append_key_value("car", c);
   sb.end_object();
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"car\":{\"make\":\"Toyota\",\"model\":\"Corolla\","
                   "\"year\":2017,\"tire_pressure\":[1.0,2.0,3.0]}}");
   TEST_SUCCEED();
@@ -715,9 +680,7 @@ bool car_test_template() {
   simdjson::builder::string_builder sb;
   Car c = {"Toyota", "Corolla", 2017, {30.0, 30.2, 30.513, 30.79}};
   serialize_car_template(c, sb);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,"
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
@@ -727,15 +690,12 @@ bool serialize_optional() {
   simdjson::builder::string_builder sb;
   std::optional<std::string> optional_string = "Hello, World!";
   sb.append(optional_string);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "\"Hello, World!\"");
   sb.clear();
   std::optional<std::string> optional_string_null = std::nullopt;
   sb.append(optional_string_null);
-  result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  p = sb.view();
   ASSERT_EQUAL(p, "null");
   TEST_SUCCEED();
 }
@@ -797,9 +757,7 @@ bool car_test_simple() {
   simdjson::builder::string_builder sb;
   Car c = {"Toyota", "Corolla", 2017, {30.0, 30.2, 30.513, 30.79}};
   serialize_car(c, sb);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,"
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
@@ -818,9 +776,7 @@ bool car_test_simple_complete() {
   sb.append_comma();
   sb.append_key_value("tire_pressure", c.tire_pressure);
   sb.end_object();
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"make\":\"Toyota\",\"model\":\"Corolla\",\"year\":2017,"
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
@@ -831,13 +787,9 @@ bool map_test() {
   std::map<std::string, double> c = {{"key1", 1}, {"key2", 1}};
   simdjson::builder::string_builder sb;
   sb.append(c);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "{\"key1\":1.0,\"key2\":1.0}");
-  std::string s;
-
-  ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+  std::string s = simdjson::to_json(c);
   ASSERT_EQUAL(s, "{\"key1\":1.0,\"key2\":1.0}");
   TEST_SUCCEED();
 }
@@ -850,12 +802,9 @@ bool ranges_test() {
   std::vector<Foo> c = {{1, 2.0f}, {3, 4.0f}, {5, 6.0f}, {7, 8.0f}};
   simdjson::builder::string_builder sb;
   sb.append(c | std::views::transform(&Foo::b));
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "[2.0,4.0,6.0,8.0]");
-  std::string s;
-  ASSERT_SUCCESS(simdjson::to_json(c | std::views::transform(&Foo::b)).get(s));
+  std::string s = simdjson::to_json(c | std::views::transform(&Foo::b));
   ASSERT_EQUAL(s, "[2.0,4.0,6.0,8.0]");
   TEST_SUCCEED();
 }
@@ -864,12 +813,9 @@ bool double_double_test() {
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
   simdjson::builder::string_builder sb;
   sb.append(c);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "[[1.0,2.0],[3.0,4.0]]");
-  std::string s;
-  ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+  std::string s = simdjson::to_json(c);
   ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
   TEST_SUCCEED();
 }
@@ -878,9 +824,7 @@ bool double_double_test_to_string() {
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
   simdjson::builder::string_builder sb;
   sb.append(c);
-  std::string_view p;
-  auto result = sb.view().get(p);
-  ASSERT_SUCCESS(result);
+  std::string_view p = sb.view();
   ASSERT_EQUAL(p, "[[1.0,2.0],[3.0,4.0]]");
   std::string s;
   simdjson::simdjson_error ec = simdjson::to_json(c, s);
