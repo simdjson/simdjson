@@ -1,3 +1,6 @@
+#include "../benchmark_utils/benchmark_helper.h"
+#include "citm_catalog_data.h"
+#include "nlohmann_citm_catalog_data.h"
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
@@ -7,9 +10,6 @@
 #include <nlohmann/json.hpp>
 #include <simdjson.h>
 #include <string>
-#include "citm_catalog_data.h"
-#include "nlohmann_citm_catalog_data.h"
-#include "../benchmark_utils/benchmark_helper.h"
 
 #ifdef SIMDJSON_COMPETITION_YYJSON
 #include "yyjson_citm_catalog_data.h"
@@ -85,13 +85,14 @@ void bench_yyjson(CitmCatalog &data) {
 }
 #endif
 
-// Fair allocation variant: allocates fresh buffer each iteration (matches other libraries)
+// Fair allocation variant: allocates fresh buffer each iteration (matches other
+// libraries)
 void bench_simdjson_static_reflection(CitmCatalog &data) {
   // First run to determine expected size
   simdjson::builder::string_builder sb_init;
   simdjson::builder::append(sb_init, data);
   std::string_view p_init;
-  if(sb_init.view().get(p_init)) {
+  if (sb_init.view().get(p_init)) {
     std::cerr << "Error!" << std::endl;
   }
   size_t output_volume = p_init.size();
@@ -104,7 +105,7 @@ void bench_simdjson_static_reflection(CitmCatalog &data) {
                  simdjson::builder::string_builder sb;
                  simdjson::builder::append(sb, data);
                  std::string_view p;
-                 if(sb.view().get(p)) {
+                 if (sb.view().get(p)) {
                    std::cerr << "Error!" << std::endl;
                  }
                  measured_volume = sb.size();
@@ -119,7 +120,7 @@ void bench_simdjson_static_reflection_reuse(CitmCatalog &data) {
   simdjson::builder::string_builder sb;
   simdjson::builder::append(sb, data);
   std::string_view p;
-  if(sb.view().get(p)) {
+  if (sb.view().get(p)) {
     std::cerr << "Error!" << std::endl;
   }
   size_t output_volume = p.size();
@@ -132,7 +133,7 @@ void bench_simdjson_static_reflection_reuse(CitmCatalog &data) {
                  sb.clear();
                  simdjson::builder::append(sb, data);
                  std::string_view p;
-                 if(sb.view().get(p)) {
+                 if (sb.view().get(p)) {
                    std::cerr << "Error!" << std::endl;
                  }
                  measured_volume = sb.size();
@@ -147,8 +148,10 @@ void bench_simdjson_static_reflection_reuse(CitmCatalog &data) {
 void bench_simdjson_to(CitmCatalog &data) {
   // First run to determine size
   std::string output_init;
-  if (simdjson::error_code err = simdjson::builder::to_json(data, output_init); err) {
-    std::cerr << "Error in to_json initialization!" << simdjson::error_message(err) << std::endl;
+  if (simdjson::error_code err = simdjson::builder::to_json(data, output_init);
+      err) {
+    std::cerr << "Error in to_json initialization!"
+              << simdjson::error_message(err) << std::endl;
     return;
   }
   size_t output_volume = output_init.size();
@@ -159,8 +162,11 @@ void bench_simdjson_to(CitmCatalog &data) {
                bench([&data, &measured_volume, &output_volume]() {
                  // Fresh allocation each iteration - fair comparison
                  std::string output;
-                 if (simdjson::error_code err = simdjson::builder::to_json(data, output); err) {
-                   std::cerr << "Error in to_json!" << simdjson::error_message(err) << std::endl;
+                 if (simdjson::error_code err =
+                         simdjson::builder::to_json(data, output);
+                     err) {
+                   std::cerr << "Error in to_json!"
+                             << simdjson::error_message(err) << std::endl;
                    return;
                  }
                  measured_volume = output.size();
@@ -173,8 +179,10 @@ void bench_simdjson_to(CitmCatalog &data) {
 // Optimized variant: reuses pre-allocated string
 void bench_simdjson_to_reuse(CitmCatalog &data) {
   std::string output;
-  if (simdjson::error_code err = simdjson::builder::to_json(data, output); err) {
-    std::cerr << "Error in to_json initialization!" << simdjson::error_message(err) << std::endl;
+  if (simdjson::error_code err = simdjson::builder::to_json(data, output);
+      err) {
+    std::cerr << "Error in to_json initialization!"
+              << simdjson::error_message(err) << std::endl;
     return;
   }
   size_t output_volume = output.size();
@@ -187,8 +195,11 @@ void bench_simdjson_to_reuse(CitmCatalog &data) {
   pretty_print(sizeof(data), output_volume, "bench_simdjson_to_reuse",
                bench([&data, &measured_volume, &output_volume, &output]() {
                  // Reuse the pre-allocated string - avoids allocation
-                 if (simdjson::error_code err = simdjson::builder::to_json(data, output); err) {
-                   std::cerr << "Error in to_json!" << simdjson::error_message(err) << std::endl;
+                 if (simdjson::error_code err =
+                         simdjson::builder::to_json(data, output);
+                     err) {
+                   std::cerr << "Error in to_json!"
+                             << simdjson::error_message(err) << std::endl;
                    return;
                  }
                  measured_volume = output.size();
@@ -199,9 +210,10 @@ void bench_simdjson_to_reuse(CitmCatalog &data) {
 }
 #endif
 
-simdjson::padded_string read_file(const std::string &file_path, size_t read_size = 65536) {
+simdjson::padded_string read_file(const std::string &file_path,
+                                  size_t read_size = 65536) {
   std::ifstream stream(file_path, std::ios::binary);
-  if(!stream) {
+  if (!stream) {
     std::cerr << "Could not open file '" << file_path << "'" << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -215,9 +227,12 @@ simdjson::padded_string read_file(const std::string &file_path, size_t read_size
   return builder.convert();
 }
 
-// Function to check if benchmark name matches any of the comma-separated filters
-bool matches_filter(const std::string& benchmark_name, const std::string& filter) {
-  if (filter.empty()) return true;
+// Function to check if benchmark name matches any of the comma-separated
+// filters
+bool matches_filter(const std::string &benchmark_name,
+                    const std::string &filter) {
+  if (filter.empty())
+    return true;
 
   // Split filter by comma
   size_t start = 0;
@@ -235,19 +250,19 @@ bool matches_filter(const std::string& benchmark_name, const std::string& filter
   return benchmark_name.find(token) != std::string::npos;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   std::string filter;
 
   // Parse command-line arguments
   for (int i = 1; i < argc; ++i) {
-      if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--filter") == 0) {
-          if (i + 1 < argc) {
-              filter = argv[++i];
-          } else {
-              std::cerr << "Error: -f/--filter requires an argument" << std::endl;
-              return EXIT_FAILURE;
-          }
+    if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--filter") == 0) {
+      if (i + 1 < argc) {
+        filter = argv[++i];
+      } else {
+        std::cerr << "Error: -f/--filter requires an argument" << std::endl;
+        return EXIT_FAILURE;
       }
+    }
   }
   // Testing correctness of round-trip (serialization + deserialization)
   simdjson::padded_string json_str = read_file(JSON_FILE);
@@ -255,20 +270,21 @@ int main(int argc, char* argv[]) {
   // Loading up the data into a structure.
   simdjson::ondemand::parser parser;
   simdjson::ondemand::document doc;
-  if(parser.iterate(json_str).get(doc)) {
+  if (parser.iterate(json_str).get(doc)) {
     std::cerr << "Error loading the document!" << std::endl;
     return EXIT_FAILURE;
   }
   CitmCatalog my_struct;
-  if(doc.get<CitmCatalog>().get(my_struct)) {
+  if (doc.get<CitmCatalog>().get(my_struct)) {
     std::cerr << "Error loading CitmCatalog!" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Benchmarking the serialization
-  // Note: simdjson benchmarks include both "fair" (fresh allocation) and "reuse" (buffer reuse) variants
-  // The "fair" variants allocate fresh memory each iteration, matching other libraries' behavior
-  // The "reuse" variants demonstrate the API's potential when buffer reuse is possible
+  // Note: simdjson benchmarks include both "fair" (fresh allocation) and
+  // "reuse" (buffer reuse) variants The "fair" variants allocate fresh memory
+  // each iteration, matching other libraries' behavior The "reuse" variants
+  // demonstrate the API's potential when buffer reuse is possible
 
   if (matches_filter("nlohmann", filter)) {
     bench_nlohmann(my_struct);
@@ -295,8 +311,8 @@ int main(int argc, char* argv[]) {
 #ifdef SIMDJSON_RUST_VERSION
   if (matches_filter("rust", filter)) {
     // Create a Rust-compatible CitmCatalog structure from the JSON string
-    serde_benchmark::CitmCatalog* rust_data =
-      serde_benchmark::citm_from_str(json_str.data(), json_str.size());
+    serde_benchmark::CitmCatalog *rust_data =
+        serde_benchmark::citm_from_str(json_str.data(), json_str.size());
 
     if (rust_data == nullptr) {
       printf("# Failed to initialize Rust data structure\n");

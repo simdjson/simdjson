@@ -344,11 +344,12 @@ bool escape_and_append_with_quotes() {
 // Scalar reference for JSON string-content escaping (matches escape_json_char).
 static std::string reference_escape(std::string_view in) {
   static const char *const ctrl[32] = {
-      "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
-      "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
-      "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
-      "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
-      "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
+      "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005",
+      "\\u0006", "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b",
+      "\\f",     "\\r",     "\\u000e", "\\u000f", "\\u0010", "\\u0011",
+      "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+      "\\u0018", "\\u0019", "\\u001a", "\\u001b", "\\u001c", "\\u001d",
+      "\\u001e", "\\u001f"};
   std::string out;
   out.reserve(in.size() * 2);
   for (unsigned char c : in) {
@@ -393,7 +394,7 @@ bool escape_write_string_escaped_exhaustive() {
     ASSERT_TRUE(check_escape_matches_reference(std::string(n, 'a')));
   }
 
-  const char specials[] = {'"',  '\\', '\n', '\t', '\r',
+  const char specials[] = {'"',  '\\', '\n',    '\t',    '\r',
                            '\b', '\f', char(0), char(1), char(31)};
   for (size_t n = 1; n <= 40; n++) {
     for (size_t pos = 0; pos < n; pos++) {

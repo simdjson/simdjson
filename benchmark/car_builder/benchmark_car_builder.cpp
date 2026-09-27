@@ -32,11 +32,8 @@ std::vector<Car> generate_random_cars(size_t count) {
     car.make = makes[make_dist(rng)];
     car.model = models[model_dist(rng)];
     car.year = year_dist(rng);
-    car.tire_pressure = {
-      pressure_dist(rng),
-      pressure_dist(rng),
-      pressure_dist(rng),
-      pressure_dist(rng)};
+    car.tire_pressure = {pressure_dist(rng), pressure_dist(rng),
+                         pressure_dist(rng), pressure_dist(rng)};
     cars.push_back(std::move(car));
   }
   return cars;
@@ -134,5 +131,3 @@ int main() {
   }
   return EXIT_SUCCESS;
 }
-
-
