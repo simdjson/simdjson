@@ -387,10 +387,11 @@ bool table_aligns_nan() {
       parser.parse(R"([{"a": 1, "b": 1},{"a": NaN, "b": 1}])"_padded).get(doc));
   fractured_json_options opts;
   opts.max_total_line_length = 40;
+  opts.max_inline_complexity = 1; // force table layout, never one line
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
-               "    { \"a\": 1  , \"b\": 1 },\n"
-               "    { \"a\": NaN, \"b\": 1 }\n"
+               "    {\"a\": 1  , \"b\": 1},\n"
+               "    {\"a\": NaN, \"b\": 1}\n"
                "]");
   TEST_SUCCEED();
 }
@@ -404,10 +405,11 @@ bool table_aligns_inf() {
           .get(doc));
   fractured_json_options opts;
   opts.max_total_line_length = 40;
+  opts.max_inline_complexity = 1; // force table layout, never one line
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
-               "    { \"a\": 1       , \"b\": 1 },\n"
-               "    { \"a\": Infinity, \"b\": 1 }\n"
+               "    {\"a\": 1       , \"b\": 1},\n"
+               "    {\"a\": Infinity, \"b\": 1}\n"
                "]");
   TEST_SUCCEED();
 }
@@ -421,10 +423,11 @@ bool table_aligns_neg_inf() {
           .get(doc));
   fractured_json_options opts;
   opts.max_total_line_length = 40;
+  opts.max_inline_complexity = 1; // force table layout, never one line
   ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
                "[\n"
-               "    { \"a\": 1        , \"b\": 1 },\n"
-               "    { \"a\": -Infinity, \"b\": 1 }\n"
+               "    {\"a\": 1        , \"b\": 1},\n"
+               "    {\"a\": -Infinity, \"b\": 1}\n"
                "]");
   TEST_SUCCEED();
 }
