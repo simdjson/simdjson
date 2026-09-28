@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -167,6 +167,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9ee1806825fd7b1fcf64725d783421d7" id="r_a9ee1806825fd7b1fcf64725d783421d7"><td class="memItemLeft" align="right" valign="top">simdjson_inline void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a9ee1806825fd7b1fcf64725d783421d7">append_raw</a> (const char *str, size_t len) noexcept</td></tr>
 <tr class="memdesc:a9ee1806825fd7b1fcf64725d783421d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append len characters from str.  <br /></td></tr>
 <tr class="separator:a9ee1806825fd7b1fcf64725d783421d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a3abcdced56998337337756532a017d" id="r_a2a3abcdced56998337337756532a017d"><td class="memTemplParams" colspan="2">template&lt;size_t N&gt; </td></tr>
+<tr class="memitem:a2a3abcdced56998337337756532a017d"><td class="memTemplItemLeft" align="right" valign="top">simdjson_inline void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a2a3abcdced56998337337756532a017d">append_raw_n</a> (const char *str) noexcept</td></tr>
+<tr class="memdesc:a2a3abcdced56998337337756532a017d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append exactly N characters from str.  <br /></td></tr>
+<tr class="separator:a2a3abcdced56998337337756532a017d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acff55a6c72df9c575f78d71400b0289a" id="r_acff55a6c72df9c575f78d71400b0289a"><td class="memItemLeft" align="right" valign="top">simdjson_inline&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#acff55a6c72df9c575f78d71400b0289a">operator std::string</a> () const noexcept(false)</td></tr>
 <tr class="memdesc:acff55a6c72df9c575f78d71400b0289a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an std::string from the written JSON buffer.  <br /></td></tr>
 <tr class="separator:acff55a6c72df9c575f78d71400b0289a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -185,6 +189,19 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8e4e7328f1d40078710853cb732d29fc" id="r_a8e4e7328f1d40078710853cb732d29fc"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a8e4e7328f1d40078710853cb732d29fc">size</a> () const noexcept</td></tr>
 <tr class="memdesc:a8e4e7328f1d40078710853cb732d29fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the current size of the written JSON buffer.  <br /></td></tr>
 <tr class="separator:a8e4e7328f1d40078710853cb732d29fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdf7cfa553560a4130e944919aa45be7" id="r_afdf7cfa553560a4130e944919aa45be7"><td class="memItemLeft" align="right" valign="top">simdjson_inline char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#afdf7cfa553560a4130e944919aa45be7">unsafe_data</a> () noexcept</td></tr>
+<tr class="separator:afdf7cfa553560a4130e944919aa45be7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a685990fb461d4a6fb779f2b1afd18ae0" id="r_a685990fb461d4a6fb779f2b1afd18ae0"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a685990fb461d4a6fb779f2b1afd18ae0">unsafe_position</a> () const noexcept</td></tr>
+<tr class="separator:a685990fb461d4a6fb779f2b1afd18ae0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13d648d5bfa437ddc0ea5d96529b52cb" id="r_a13d648d5bfa437ddc0ea5d96529b52cb"><td class="memItemLeft" align="right" valign="top">simdjson_inline size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a13d648d5bfa437ddc0ea5d96529b52cb">unsafe_capacity</a> () const noexcept</td></tr>
+<tr class="separator:a13d648d5bfa437ddc0ea5d96529b52cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad31c13c3485a976cb9807a5ed04da116" id="r_ad31c13c3485a976cb9807a5ed04da116"><td class="memItemLeft" align="right" valign="top">simdjson_inline void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#ad31c13c3485a976cb9807a5ed04da116">unsafe_set_position</a> (size_t p) noexcept</td></tr>
+<tr class="separator:ad31c13c3485a976cb9807a5ed04da116"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accb9edf0cc69abe6a0d7b569c17144ed" id="r_accb9edf0cc69abe6a0d7b569c17144ed"><td class="memItemLeft" align="right" valign="top">simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#accb9edf0cc69abe6a0d7b569c17144ed">unsafe_grow</a> (size_t needed_total_capacity) noexcept</td></tr>
+<tr class="memdesc:accb9edf0cc69abe6a0d7b569c17144ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make capacity available for at least <code>n</code> more bytes after the current position.  <br /></td></tr>
+<tr class="separator:accb9edf0cc69abe6a0d7b569c17144ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68361a3181315ed848b3a16357e10d86" id="r_a68361a3181315ed848b3a16357e10d86"><td class="memItemLeft" align="right" valign="top">simdjson_inline bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a68361a3181315ed848b3a16357e10d86">unsafe_is_valid</a> () const noexcept</td></tr>
+<tr class="separator:a68361a3181315ed848b3a16357e10d86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -214,7 +231,7 @@ Static Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00487">487</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00668">668</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -245,7 +262,7 @@ Static Public Attributes</h2></td></tr>
 
 <p>Append character c. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00538">538</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00719">719</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -278,7 +295,7 @@ template&lt;typename number_type , typename &gt; </div>
 <p>Append number (includes Booleans). </p>
 <p>Booleans are mapped to the strings false and true. Numbers are converted to strings abiding by the JSON standard. Floating-point numbers are converted to the shortest string that 'correctly' represents the number. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00643">643</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00840">840</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -307,7 +324,7 @@ template&lt;typename number_type , typename &gt; </div>
 
 <p>Append ":" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00960">960</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01142">1142</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -336,7 +353,7 @@ template&lt;typename number_type , typename &gt; </div>
 
 <p>Append "," to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00954">954</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01136">1136</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -379,7 +396,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append a key-value pair to the buffer. </p>
 <p>The key is escaped and surrounded by double quotes. The value is escaped if it is a string. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00968">968</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01150">1150</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -408,7 +425,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append the string 'null'. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00544">544</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00725">725</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -439,7 +456,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the C string directly, without escaping. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00807">807</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00979">979</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -480,7 +497,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append len characters from str. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00820">820</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00994">994</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -511,7 +528,40 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view directly, without escaping. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00813">813</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00987">987</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a2a3abcdced56998337337756532a017d" name="a2a3abcdced56998337337756532a017d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a3abcdced56998337337756532a017d">&#9670;&#160;</a></span>append_raw_n()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;size_t N&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline void simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::append_raw_n </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>str</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Append exactly N characters from str. </p>
+<p>The length is a template parameter so the compiler can fully inline the memcpy with a compile-time-constant size, avoiding the libc call. Used for compile-time-constant keys in the reflection struct atom. </p>
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01003">1003</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -542,7 +592,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns an error if memory allocation failed. The result is null-terminated.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00918">918</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01100">1100</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -571,7 +621,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Clear the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00553">553</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00734">734</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -600,7 +650,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "]" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00948">948</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01130">1130</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -629,7 +679,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "}" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00936">936</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01118">1118</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -660,7 +710,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00757">757</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00929">929</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -691,7 +741,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the character surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00785">785</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00957">957</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -722,7 +772,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the character surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00796">796</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00968">968</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -753,7 +803,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Append the std::string_view surrounded by double quotes, after escaping it. </p>
 <p>There is no UTF-8 validation. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00770">770</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00942">942</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -776,7 +826,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Throws if memory allocation failed</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content if needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00900">900</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01082">1082</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -799,7 +849,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Throws if memory allocation failed.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content if needed. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00904">904</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01086">1086</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -829,7 +879,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns the current size of the written JSON buffer. </p>
 <p>If an error occurred, returns 0. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00534">534</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00715">715</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -858,7 +908,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "[" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00942">942</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01124">1124</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -887,7 +937,174 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Append "{" to the buffer. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00930">930</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01112">1112</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a13d648d5bfa437ddc0ea5d96529b52cb" name="a13d648d5bfa437ddc0ea5d96529b52cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13d648d5bfa437ddc0ea5d96529b52cb">&#9670;&#160;</a></span>unsafe_capacity()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline size_t simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_capacity </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00258">258</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+
+</div>
+</div>
+<a id="afdf7cfa553560a4130e944919aa45be7" name="afdf7cfa553560a4130e944919aa45be7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdf7cfa553560a4130e944919aa45be7">&#9670;&#160;</a></span>unsafe_data()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline char * simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_data </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00256">256</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+
+</div>
+</div>
+<a id="accb9edf0cc69abe6a0d7b569c17144ed" name="accb9edf0cc69abe6a0d7b569c17144ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#accb9edf0cc69abe6a0d7b569c17144ed">&#9670;&#160;</a></span>unsafe_grow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline bool simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_grow </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>needed_total_capacity</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Make capacity available for at least <code>n</code> more bytes after the current position. </p>
+<p>Returns false if the allocation failed. </p>
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00262">262</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+
+</div>
+</div>
+<a id="a68361a3181315ed848b3a16357e10d86" name="a68361a3181315ed848b3a16357e10d86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a68361a3181315ed848b3a16357e10d86">&#9670;&#160;</a></span>unsafe_is_valid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline bool simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_is_valid </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00266">266</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+
+</div>
+</div>
+<a id="a685990fb461d4a6fb779f2b1afd18ae0" name="a685990fb461d4a6fb779f2b1afd18ae0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a685990fb461d4a6fb779f2b1afd18ae0">&#9670;&#160;</a></span>unsafe_position()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline size_t simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_position </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00257">257</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+
+</div>
+</div>
+<a id="ad31c13c3485a976cb9807a5ed04da116" name="ad31c13c3485a976cb9807a5ed04da116"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad31c13c3485a976cb9807a5ed04da116">&#9670;&#160;</a></span>unsafe_set_position()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline void simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::unsafe_set_position </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>p</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00259">259</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>
@@ -916,7 +1133,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 
 <p>Return true if the content is valid UTF-8. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00926">926</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01108">1108</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>
@@ -947,7 +1164,7 @@ template&lt;typename key_type , typename value_type &gt; </div>
 <p>Returns an error if memory allocation failed.</p>
 <p>The result may not be valid UTF-8 if some of your content was not valid UTF-8. Use <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975" title="Return true if the content is valid UTF-8.">validate_unicode()</a> to check the content. </p>
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l00911">911</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder-inl_8h_source.html#l01093">1093</a> of file <a class="el" href="json__string__builder-inl_8h_source.html">json_string_builder-inl.h</a>.</p>
 
 </div>
 </div>

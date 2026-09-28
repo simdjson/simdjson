@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['document_0',['document',['../classsimdjson_1_1dom_1_1document.html',1,'simdjson::dom::document'],['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document.html',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document']]],
-  ['document_5freference_1',['document_reference',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__reference.html',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand']]],
-  ['document_5fstream_2',['document_stream',['../classsimdjson_1_1dom_1_1document__stream.html',1,'simdjson::dom::document_stream'],['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html',1,'simdjson::SIMDJSON_IMPLEMENTATION::ondemand::document_stream']]],
-  ['dom_5fparser_5fimplementation_3',['dom_parser_implementation',['../classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1dom__parser__implementation.html',1,'simdjson::SIMDJSON_IMPLEMENTATION']]]
+  ['bigint_0',['bigint',['../structsimdjson__fast__float_1_1bigint.html',1,'simdjson_fast_float']]],
+  ['binary_5fformat_1',['binary_format',['../structsimdjson__fast__float_1_1binary__format.html',1,'simdjson_fast_float']]],
+  ['binary_5fformat_5flookup_5ftables_2',['binary_format_lookup_tables',['../structsimdjson__fast__float_1_1binary__format__lookup__tables.html',1,'simdjson_fast_float']]],
+  ['binary_5fformat_5flookup_5ftables_3c_20double_2c_20u_20_3e_3',['binary_format_lookup_tables&lt; double, U &gt;',['../structsimdjson__fast__float_1_1binary__format__lookup__tables_3_01double_00_01_u_01_4.html',1,'simdjson_fast_float']]],
+  ['binary_5fformat_5flookup_5ftables_3c_20float_2c_20u_20_3e_4',['binary_format_lookup_tables&lt; float, U &gt;',['../structsimdjson__fast__float_1_1binary__format__lookup__tables_3_01float_00_01_u_01_4.html',1,'simdjson_fast_float']]]
 ];

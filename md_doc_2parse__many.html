@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -102,7 +102,7 @@ $(document).ready(function(){initNavTree('md_doc_2parse__many.html',''); initRes
 <div class="line">{&quot;text&quot;:&quot;c&quot;}</div>
 <div class="line">...</div>
 </div><!-- fragment --><p> ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.</p>
-<h1><a class="anchor" id="autotoc_md137"></a>
+<h1><a class="anchor" id="autotoc_md174"></a>
 Contents</h1>
 <ul>
 <li>Motivations</li>
@@ -110,21 +110,22 @@ Contents</h1>
 <li>How it works</li>
 <li>Support</li>
 <li>API</li>
+<li>Streaming directly from a memory-mapped file</li>
 <li>Use cases</li>
 <li>Tracking your position</li>
 <li>Incomplete streams</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md138"></a>
+<h1><a class="anchor" id="autotoc_md175"></a>
 Motivation</h1>
 <p>The main motivation for this piece of software is to achieve maximum speed and offer a better quality of life in parsing files containing multiple small JSON documents.</p>
 <p>The JavaScript Object Notation (JSON) <a href="https://tools.ietf.org/html/rfc7159">RFC7159</a> is a handy serialization format. However, when serializing a large sequence of values as an array, or a possibly indeterminate-length or never- ending sequence of values, JSON may be inconvenient.</p>
 <p>Consider a sequence of one million values, each possibly one kilobyte when encoded &ndash; roughly one gigabyte. It is often desirable to process such a dataset incrementally without having to first read all of it before beginning to produce results.</p>
-<h1><a class="anchor" id="autotoc_md139"></a>
+<h1><a class="anchor" id="autotoc_md176"></a>
 Performance</h1>
 <p>The following is a chart comparing the speed of the different alternatives to parse a multiline JSON. The simdjson library provides a threaded and non-threaded <code>parse_many()</code> implementation. As the figure below shows, if you can, use threads, but if you cannot, the unthreaded mode is still fast! <a href="/doc/Multiline_JSON_Parse_Competition.png"><img src="/doc/Multiline_JSON_Parse_Competition.png" alt="Chart.png" class="inline"/></a></p>
-<h1><a class="anchor" id="autotoc_md140"></a>
+<h1><a class="anchor" id="autotoc_md177"></a>
 How it works</h1>
-<h2><a class="anchor" id="autotoc_md141"></a>
+<h2><a class="anchor" id="autotoc_md178"></a>
 Context</h2>
 <p>The parsing in simdjson is divided into 2 stages. First, in stage 1, we parse the document and find all the structural indexes (<code>{</code>, <code>}</code>, <code>]</code>, <code>[</code>, <code>,</code>, <code>"&lt;/tt&gt;, ...) and validate UTF8.  Then, in stage 2,
 we go through the document again and build the tape using structural indexes found during stage 1.
@@ -145,7 +146,7 @@ that we need to allocate some additional memory to store our ParsedJson data, fo
 inside a given file.  Memory allocation can be slow and become a bottleneck, therefore, we want to
 minimize it as much as possible.
 
-@subsection autotoc_md142 Design
+@subsection autotoc_md179 Design
 
 To achieve a minimum amount of allocations, we opted for a design where we create only one
 parser object and therefore allocate its memory once, and then recycle it for every document in a
@@ -167,7 +168,7 @@ sweet spot.
 5. When we reach the end of the batch, we call stage 1 on the next batch, starting from the end of
    the last document, and go to step 3.
 
-@subsection autotoc_md143 Threads
+@subsection autotoc_md180 Threads
 
 But how can we make use of threads if they are available?  We found a pretty cool algorithm that allows us to quickly
 identify the  position of the last JSON document in a given batch. Knowing exactly where the end of
@@ -189,7 +190,7 @@ A &lt;tt&gt;document_stream&lt;/tt&gt; instance uses at most two threads: there 
 You should expect the main thread to be fully occupied while the worker thread is partially busy
 (e.g., 80% of the time).
 
-@section autotoc_md144 Support
+@section autotoc_md181 Support
 
 
 Since we want to offer flexibility and not restrict ourselves to a specific file
@@ -207,15 +208,15 @@ Whitespace Characters:
 Some official formats **(non-exhaustive list)**:
 - &lt;a href="<a href="https://github.com/ndjson/ndjson-spec">https://github.com/ndjson/ndjson-spec</a>" &gt;Newline-Delimited JSON (NDJSON)&lt;/a&gt;
 - &lt;a href="<a href="http://jsonlines.org/">http://jsonlines.org/</a>" &gt;JSON lines (JSONL)&lt;/a&gt;
-- &lt;a href="<a href="https://tools.ietf.org/html/rfc7464">https://tools.ietf.org/html/rfc7464</a>" &gt;Record separator-delimited JSON (RFC 7464)&lt;/a&gt; &lt;- Not supported by simdjson!
+- &lt;a href="<a href="https://tools.ietf.org/html/rfc7464">https://tools.ietf.org/html/rfc7464</a>" &gt;Record separator-delimited JSON (RFC 7464)&lt;/a&gt;
 - &lt;a href="<a href="https://en.wikipedia.org/wiki/JSON_streaming">https://en.wikipedia.org/wiki/JSON_streaming</a>" &gt;More on Wikipedia...&lt;/a&gt;
 
-@section autotoc_md145 API
+@section autotoc_md182 API
 
 
 See &lt;a href="basics.md::newline-delimited-json-ndjson-and-json-lines" &gt;basics.md&lt;/a&gt; for an overview of the API.
 
-@section autotoc_md146 Use cases
+@section autotoc_md183 Use cases
 
 From &lt;a href="<a href="http://jsonlines.org/examples/">http://jsonlines.org/examples/</a>" &gt;jsonlines.org&lt;/a&gt;:
 
@@ -248,7 +249,7 @@ From &lt;a href="<a href="http://jsonlines.org/examples/">http://jsonlines.org/e
     work with than a directory full of XML files.
 
 
-@section autotoc_md147 Tracking your position
+@section autotoc_md184 Tracking your position
 
 
 Some users would like to know where the document they parsed is in the input array of bytes.
@@ -293,20 +294,86 @@ got full document at 29
 
 
 
-&lt;strong&gt;Advanced feature:&lt;/strong&gt;
-On non-Windows systems, you can use memory-file mapping to create a &lt;tt&gt;simdjson::padded_string_view&lt;/tt&gt;
-from a file on disk.
+@section autotoc_md185 Streaming directly from a memory-mapped file
+
+
+When your input is a large NDJSON / JSON-lines file on disk, the most
+efficient way to feed &lt;tt&gt;parse_many&lt;/tt&gt; is to use &lt;tt&gt;simdjson::padded_memory_map&lt;/tt&gt;.
+It returns a &lt;tt&gt;padded_string_view&lt;/tt&gt; with the right amount of trailing padding,
+so you can pass it directly to &lt;tt&gt;parse_many&lt;/tt&gt; without copying the file content
+into your own buffer first.
+
+&lt;tt&gt;padded_memory_map&lt;/tt&gt; is available on POSIX systems (Linux, macOS, BSD, ...) by
+default. On Windows it is an &lt;strong&gt;opt-in&lt;/strong&gt; feature with the following
+requirements:
+
+1. Build simdjson with &lt;tt&gt;-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON&lt;/tt&gt;, or — if
+   you consume simdjson as a pre-built library — define
+   &lt;tt&gt;SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1&lt;/tt&gt;, raise &lt;tt&gt;NTDDI_VERSION&lt;/tt&gt; to at
+   least &lt;tt&gt;NTDDI_WIN10_RS4&lt;/tt&gt; (&lt;tt&gt;0x0A000005&lt;/tt&gt;, Windows 10 version 1803), and
+   add &lt;tt&gt;onecore.lib&lt;/tt&gt; to your link line yourself. The Windows
+   implementation uses the modern memory APIs &lt;tt&gt;CreateFileMapping2&lt;/tt&gt; /
+   &lt;tt&gt;MapViewOfFile3&lt;/tt&gt;, which are available starting with that version of
+   Windows and are exported by &lt;tt&gt;onecore.lib&lt;/tt&gt;.
+2. &lt;tt&gt;\#include \&lt;windows.h\&gt;&lt;/tt&gt; before &lt;tt&gt;\#include "<a class="el" href="simdjson_8h.html">simdjson.h</a>"&lt;/tt&gt; in every
+   translation unit where you want to use &lt;tt&gt;padded_memory_map&lt;/tt&gt;. simdjson
+   deliberately does not pull in &lt;tt&gt;\&lt;windows.h\&gt;&lt;/tt&gt; itself, so the class is
+   only declared when the Win32 types are already visible.
+
+If either requirement is not met on Windows, the &lt;tt&gt;padded_memory_map&lt;/tt&gt; class is
+not declared at all and any code that references it fails to compile with an
+"unknown identifier" error. The availability of the class can be tested with
+the macro &lt;tt&gt;SIMDJSON_HAS_PADDED_MEMORY_MAP&lt;/tt&gt;.
+
+On POSIX, &lt;tt&gt;padded_memory_map&lt;/tt&gt; uses &lt;tt&gt;mmap&lt;/tt&gt; to map the file directly into
+memory with zero copies. On Windows (when enabled), it uses
+&lt;tt&gt;CreateFileMapping2&lt;/tt&gt; + &lt;tt&gt;MapViewOfFile3&lt;/tt&gt; for true zero-copy mapping
+whenever the file does not end within &lt;tt&gt;SIMDJSON_PADDING&lt;/tt&gt; bytes of a page
+boundary; for those rare cases, it transparently falls back to reading
+the file into a heap-allocated padded buffer so that the returned view
+always has &lt;tt&gt;SIMDJSON_PADDING&lt;/tt&gt; accessible zero bytes after the file content.
 
 @icode{cpp} 
-// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping
-// under Windows at this time.
+#ifdef _WIN32
+#include &lt;windows.h&gt; // Must come BEFORE &lt;simdjson.h&gt; on Windows
+#endif
+#include "<a class="el" href="simdjson_8h.html">simdjson.h</a>"
+
+// ...
+
+simdjson::padded_memory_map map("huge_stream.ndjson");
+if (!map.is_valid()) { /* file missing, unreadable, too large, ... */ return; }
+
+simdjson::dom::parser parser;
+simdjson::dom::document_stream stream;
+auto error = parser.parse_many(map.view()).get(stream);
+if (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; return; }
+
+for (auto doc : stream) {
+  // process each JSON document in the stream
+  std::cout &lt;&lt; doc &lt;&lt; std::endl;
+}
+@endicode 
+
+Important lifetime rule: the &lt;tt&gt;padded_string_view&lt;/tt&gt; returned by &lt;tt&gt;map.view()&lt;/tt&gt; is
+only valid while the &lt;tt&gt;padded_memory_map&lt;/tt&gt; instance is alive, so keep &lt;tt&gt;map&lt;/tt&gt;
+alive for as long as you are iterating the stream.
+
+The file must not be modified while the memory map is in use. If you need a
+fully independent copy of the data, use &lt;tt&gt;simdjson::padded_string::load(...)&lt;/tt&gt;
+instead.
+
+If you prefer single-document parsing on a memory-mapped file, the same
+pattern applies to &lt;tt&gt;parser.parse(...)&lt;/tt&gt;:
+
+@icode{cpp} 
 simdjson::padded_memory_map map(myfilename);
 if (!map.is_valid()) { /* handle error */ }
 simdjson::padded_string_view view = map.view(); // view is usable while padded_memory_map is in scope
-ondemand::document doc = parser.iterate(view); // parse the JSON
+simdjson::dom::element doc = parser.parse(view); // parse the JSON
 @endicode 
 
-@section autotoc_md148 Incomplete streams
+@section autotoc_md186 Incomplete streams
 
 
 Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the &lt;tt&gt;truncated_bytes()&lt;/tt&gt; method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect &lt;tt&gt;truncated_bytes()&lt;/tt&gt; to return zero.
@@ -316,18 +383,96 @@ Consider the following example where a truncated document (&lt;tt&gt;{"key":"int
 <div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;([1,2,3]  {&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4} {&quot;key&quot;:&quot;intentionally unclosed string  )&quot;_padded;</span></div>
 <div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</span></div>
 <div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a> stream;</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">parse_many</a>(json,json.size()).get(stream);</div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">parse_many</a>(json,json.size()).get(stream);</div>
 <div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
 <div class="line"><span class="keywordflow">for</span>(<span class="keyword">auto</span> doc : stream) {</div>
 <div class="line">   std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
 <div class="line">}</div>
 <div class="line">std::cout &lt;&lt; stream.<a class="code hl_function" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69">truncated_bytes</a>() &lt;&lt; <span class="stringliteral">&quot; bytes &quot;</span>&lt;&lt; std::endl; <span class="comment">// returns 39 bytes</span></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a></div><div class="ttdoc">A forward-only stream of documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream_8h_source.html#l00072">document_stream.h:72</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html_a6c2a07e08213dc9a51754940942f9e69"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69">simdjson::dom::document_stream::truncated_bytes</a></div><div class="ttdeci">size_t truncated_bytes() const noexcept</div><div class="ttdoc">After iterating through the stream, this method returns the number of bytes that were not parsed at t...</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream-inl_8h_source.html#l00269">document_stream-inl.h:269</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html_a6c2a07e08213dc9a51754940942f9e69"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69">simdjson::dom::document_stream::truncated_bytes</a></div><div class="ttdeci">size_t truncated_bytes() const noexcept</div><div class="ttdoc">After iterating through the stream, this method returns the number of bytes that were not parsed at t...</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream-inl_8h_source.html#l00279">document_stream-inl.h:279</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a></div><div class="ttdoc">A persistent document parser.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00030">parser.h:30</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a5c658556dd9e9396e9ce44ba4b01f2d1"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00172">parser-inl.h:172</a></div></div>
-</div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Importantly, it also assumes that no document reported an error: iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</p>
-<p>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using <code>current_index()</code> and <code>source()</code> on the iterator. </p>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_afb18710d2e2ef0fd40dda4887282bdb2"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00205">parser-inl.h:205</a></div></div>
+</div><!-- fragment --><p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.</p>
+<p>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Further, it is only applicable if the format is <code>whitespace_delimited</code> or <code>newline_delimited</code>. In <code>json_sequence</code> and <code>comma_delimited</code> mode, the value is meaningless. Importantly, it assumes no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</p>
+<p>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using <code>current_index()</code> and <code>source()</code> on the iterator.</p>
+<h1><a class="anchor" id="autotoc_md187"></a>
+JSON Text Sequences (RFC 7464)</h1>
+<p><a href="https://tools.ietf.org/html/rfc7464">RFC 7464</a> defines a format for streaming JSON values using ASCII Record Separator (RS, 0x1E) as a delimiter. Each JSON text is preceded by RS and optionally followed by ASCII Line Feed (LF, 0x0A).</p>
+<p>Example input: </p><div class="fragment"><div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc1&quot;}&lt;LF&gt;</div>
+<div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc2&quot;}&lt;LF&gt;</div>
+<div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc3&quot;}&lt;LF&gt;</div>
+</div><!-- fragment --><p>To parse JSON text sequences, use the <code>stream_format::json_sequence</code> parameter:</p>
+<div class="fragment"><div class="line"><span class="comment">// Build input with RS (0x1E) and LF (0x0A) delimiters</span></div>
+<div class="line">std::string input_str;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;a\&quot;:1}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;b\&quot;:2}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;c\&quot;:3}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> input(input_str);</div>
+<div class="line"> </div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a> stream;</div>
+<div class="line"><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">parse_many</a>(input, simdjson::dom::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                               <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">simdjson::stream_format::json_sequence</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">simdjson::stream_format::json_sequence</a></div><div class="ttdeci">@ json_sequence</div><div class="ttdoc">RFC 7464 JSON text sequences (RS-delimited)</div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html"><div class="ttname"><a href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a></div><div class="ttdoc">String with extra allocation for ease of use with parser::parse()</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00023">padded_string.h:23</a></div></div>
+</div><!-- fragment --><p>The <code>stream_format</code> enum has the following values:</p><ul>
+<li><code>stream_format::whitespace_delimited</code> (default): Standard NDJSON/JSON Lines format</li>
+<li><code>stream_format::json_sequence</code>: RFC 7464 format with RS delimiters</li>
+<li><code>stream_format::comma_delimited</code>: Comma-separated JSON documents</li>
+<li><code>stream_format::comma_delimited_array</code>: A single JSON array whose elements are iterated as comma-delimited documents (see below)</li>
+<li><code>stream_format::newline_delimited</code>: NDJSON/JSON Lines where each document occupies exactly one line (documents are separated by line feeds and no document contains a raw line feed). Same inputs as <code>whitespace_delimited</code>, but with a stronger contract. The delimiter-skip optimization that relies on that contract is implemented for ondemand <code>iterate_many</code>; DOM <code>parse_many</code> accepts the format and stages documents the same way as whitespace-delimited NDJSON. Use <code>whitespace_delimited</code> if unsure.</li>
+</ul>
+<p>The trailing LF after each JSON text is optional but recommended by the RFC for robustness.</p>
+<h1><a class="anchor" id="autotoc_md188"></a>
+Comma-Separated Documents</h1>
+<p>Some systems produce JSON documents separated by commas, like <code>{"a":1},{"b":2},{"c":3}</code>. This is common when extracting elements from a JSON array or when APIs return comma-separated results.</p>
+<p>To parse comma-separated documents, use the <code>stream_format::comma_delimited</code> parameter:</p>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;a&quot;:1},{&quot;b&quot;:2},{&quot;c&quot;:3})&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</span></div>
+<div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a> stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">parse_many</a>(json, simdjson::dom::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                               <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// Prints: {&quot;a&quot;:1}</span></div>
+<div class="line"><span class="comment">//         {&quot;b&quot;:2}</span></div>
+<div class="line"><span class="comment">//         {&quot;c&quot;:3}</span></div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a></div><div class="ttdeci">@ comma_delimited</div><div class="ttdoc">Comma-separated JSON documents (e.g., {...},{...},{...})</div></div>
+</div><!-- fragment --><p>Whitespace around the commas is allowed: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;a&quot;:1} , {&quot;b&quot;:2} , {&quot;c&quot;:3})&quot;_padded;  </span><span class="comment">// Also works</span></div>
+</div><!-- fragment --><p>Nested commas inside objects and arrays are preserved: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;arr&quot;:[1,2,3]},{&quot;obj&quot;:{&quot;x&quot;:1,&quot;y&quot;:2}})&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="comment">// Correctly parses as 2 documents, not 6</span></div>
+</div><!-- fragment --><p>Extra top-level separators are tolerated for compatibility with the legacy On-Demand comma-separated mode. Leading commas, trailing commas, and repeated commas are treated as empty separators rather than documents.</p>
+<p>Unlike the legacy <code>allow_comma_separated</code> parameter, <code>stream_format::comma_delimited</code> supports multi-batch processing and threading for optimal performance on large files.</p>
+<h1><a class="anchor" id="autotoc_md189"></a>
+JSON Array As A Document Stream</h1>
+<p>Sometimes an input is a single, well-formed JSON array — <code>[{"a":1},{"b":2},{"c":3}]</code> — but you want to iterate its elements one at a time without materializing the whole array. Use <code>stream_format::comma_delimited_array</code>:</p>
+<div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;([{&quot;a&quot;:1},{&quot;b&quot;:2},{&quot;c&quot;:3}])&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</span></div>
+<div class="line"><span class="stringliteral"><a class="code hl_class" href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a> stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">parse_many</a>(json, simdjson::dom::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                               <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">simdjson::stream_format::comma_delimited_array</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// Prints: {&quot;a&quot;:1}</span></div>
+<div class="line"><span class="comment">//         {&quot;b&quot;:2}</span></div>
+<div class="line"><span class="comment">//         {&quot;c&quot;:3}</span></div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">simdjson::stream_format::comma_delimited_array</a></div><div class="ttdeci">@ comma_delimited_array</div><div class="ttdoc">A single JSON array whose elements are iterated as comma-separated documents (e.g....</div></div>
+</div><!-- fragment --><p>The parser strips the outer <code>[</code> and <code>]</code> plus any surrounding JSON whitespace (space, tab, LF, CR) and then behaves exactly like <code>stream_format::comma_delimited</code> over the remaining bytes. All comma-delimited features are inherited: multi-batch processing, threading, mixed scalar types, and nested commas preserved inside inner objects and arrays.</p>
+<div class="fragment"><div class="line"><span class="comment">// All of these work:</span></div>
+<div class="line"><span class="keyword">auto</span> a = R<span class="stringliteral">&quot;([1, &quot;x&quot;, true, null, {&quot;k&quot;:&quot;v&quot;}, [1,2]])&quot;_padded;  </span><span class="comment">// mixed scalars</span></div>
+<div class="line"><span class="keyword">auto</span> b = R<span class="stringliteral">&quot;(  [ 1, 2, 3 ] )&quot;_padded;                          </span><span class="comment">// whitespace</span></div>
+<div class="line"><span class="keyword">auto</span> c = R<span class="stringliteral">&quot;([])&quot;_padded;                                      </span><span class="comment">// empty array → 0 docs</span></div>
+</div><!-- fragment --><p>If the input is not a well-formed outer array (missing <code>[</code>, missing <code>]</code>, or empty / all-whitespace), <code>parse_many</code> returns <code>TAPE_ERROR</code>. Content <b>inside</b> the array is not validated up front — individual document parse errors surface when you iterate, just like <code>comma_delimited</code>.</p>
+<p>Positions reported via <code>current_index()</code> are relative to the <b>stripped</b> buffer (the bytes between <code>[</code> and <code>]</code>), not the original input, for consistency with the existing BOM-stripping behavior. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -103,6 +103,7 @@ $(document).ready(function(){initNavTree('md_doc_2builder.html',''); initResizab
 <li>Overview: string_builder</li>
 <li>Example: string_builder</li>
 <li>C++26 static reflection<ul>
+<li>Renaming and skipping fields with annotations</li>
 <li>Without `string_buffer` instance</li>
 <li>Without `string_buffer` instance but with explicit error handling</li>
 <li>Pretty formatted (fractured JSON)</li>
@@ -111,7 +112,7 @@ $(document).ready(function(){initNavTree('md_doc_2builder.html',''); initResizab
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md45"></a>
+<h1><a class="anchor" id="autotoc_md68"></a>
 Overview: string_builder</h1>
 <p>The string_builder class is a low-level utility for constructing JSON strings representing documents. It is optimized for performance, potentially leveraging kernel-specific features like SIMD instructions for tasks such as string escaping. This class supports atomic types (e.g., booleans, numbers, strings) but does not handle composed types directly (like arrays or objects). Note that JSON strings are always encoded as UTF-8.</p>
 <p>An <code>string_builder</code> is created with an initial buffer capacity (e.g., 1kB). The memory is reallocated when needed. The efficiency of <code>string_builder</code> stems from its internal use of a resizable array or buffer. When you append data, it adds the characters to this buffer, resizing it only when necessary, typically in a way that minimizes reallocations. This approach contrasts with regular string concatenation, where each operation creates a new string, copying all previous content, leading to quadratic time complexity for repeated concatenations.</p>
@@ -142,7 +143,7 @@ Overview: string_builder</h1>
 <li><code>view()</code>: Returns a view of the written JSON buffer as a <code>simdjson_result&lt;std::string_view&gt;</code> (C++20).</li>
 </ul>
 <p>The later method (<code>view()</code>) is recommended. For performance reasons, we expect you to explicitly call <code>validate_unicode()</code> as needed (e.g., prior to calling <code>view()</code>).</p>
-<h1><a class="anchor" id="autotoc_md46"></a>
+<h1><a class="anchor" id="autotoc_md69"></a>
 Example: string_builder</h1>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">    std::string make;</div>
@@ -198,7 +199,7 @@ Example: string_builder</h1>
 <div class="line">    <span class="keywordflow">return</span> <span class="keyword">false</span>; <span class="comment">// there was an error</span></div>
 <div class="line">}</div>
 </div><!-- fragment --><p>In all cases, the <code>std::string_view</code> instance depends the corresponding <code>string_builder</code> instance.</p>
-<h2><a class="anchor" id="autotoc_md47"></a>
+<h2><a class="anchor" id="autotoc_md70"></a>
 C++20</h2>
 <p>If you have C++20, you can simplify the code, as the <code>std::vector&lt;double&gt;</code> is automatically supported. Further, we can pass the keys (which are compile-time constant) as template parameter (for improved performance).</p>
 <div class="fragment"><div class="line">Car c = {<span class="stringliteral">&quot;Toyota&quot;</span>, <span class="stringliteral">&quot;Corolla&quot;</span>, 2017, {30.0,30.2,30.513,30.79}};</div>
@@ -259,14 +260,10 @@ C++20</h2>
 <div class="line"> </div>
 <div class="line">} <span class="comment">// namespace simdjson</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md48"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md71"></a>
 C++26 static reflection</h1>
-<p>Static reflection (or compile-time reflection) in C++26 introduces a powerful compile-time mechanism that allows a program to inspect and manipulate its own structure, such as types, variables, functions, and other program elements, during compilation. Unlike runtime reflection in languages like Java or Python, C++26’s static reflection operates entirely at compile time, aligning with C++’s emphasis on zero-overhead abstractions and high performance. It means that you can delegate much of the work to the library. If you have a compiler with support C++26 static reflection, you can compile your code with the <code>SIMDJSON_STATIC_REFLECTION</code> macro set:</p>
-<div class="fragment"><div class="line"><span class="preprocessor">#define SIMDJSON_STATIC_REFLECTION 1</span></div>
-<div class="line"><span class="comment">//...</span></div>
-<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
-<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
-</div><!-- fragment --><p>And then you can append your data structures to a <code>string_builder</code> instance automatically. In most cases, it should work automatically:</p>
+<p>Static reflection (or compile-time reflection) in C++26 introduces a powerful compile-time mechanism that allows a program to inspect and manipulate its own structure, such as types, variables, functions, and other program elements, during compilation. Unlike runtime reflection in languages like Java or Python, C++26’s static reflection operates entirely at compile time, aligning with C++’s emphasis on zero-overhead abstractions and high performance. It means that you can delegate much of the work to the library.</p>
+<p>And then you can append your data structures to a <code>string_builder</code> instance automatically. In most cases, it should work automatically:</p>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">    std::string make;</div>
 <div class="line">    std::string model;</div>
@@ -283,7 +280,38 @@ C++26 static reflection</h1>
 <div class="line">    <span class="comment">// &quot;{\&quot;make\&quot;:\&quot;Toyota\&quot;,\&quot;model\&quot;:\&quot;Corolla\&quot;,\&quot;year\&quot;:2017,\&quot;tire_pressure\&quot;:[30.0,30.2,30.513,30.79]}&quot;</span></div>
 <div class="line">    <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md49"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md72"></a>
+Renaming and skipping fields with annotations</h3>
+<p><b>This is experimental: the syntax may change slightly in the future.</b></p>
+<p>When using C++26 static reflection for automatic serialization (and deserialization), you can annotate your struct members to rename the corresponding JSON keys or to exclude fields from the JSON representation.</p>
+<p>The syntax is:</p>
+<div class="fragment"><div class="line"><span class="comment">// rename cppFieldName (in C++) to json_key_name (in JSON)</span></div>
+<div class="line">[[= simdjson::rename&lt;<span class="stringliteral">&quot;json_key_name&quot;</span>&gt;]] std::string cppFieldName;</div>
+<div class="line"><span class="comment">// do not serialize or deserialize this field</span></div>
+<div class="line">[[= simdjson::skip]] <span class="keywordtype">int</span> internalState;</div>
+</div><!-- fragment --><p>For example:</p>
+<div class="fragment"><div class="line"><span class="keyword">struct </span>Person {</div>
+<div class="line">    [[= simdjson::rename&lt;<span class="stringliteral">&quot;first_name&quot;</span>&gt;]] std::string firstName = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line">    [[= simdjson::rename&lt;<span class="stringliteral">&quot;last_name&quot;</span>&gt;]]  std::string lastName = <span class="stringliteral">&quot;&quot;</span>;</div>
+<div class="line">    [[= simdjson::skip]] <span class="keywordtype">int</span> internalCache = 0;</div>
+<div class="line">    <span class="keywordtype">int</span> age = 0;</div>
+<div class="line">};</div>
+</div><!-- fragment --><p>Serialization then produces:</p>
+<div class="fragment"><div class="line">Person p{<span class="stringliteral">&quot;Alice&quot;</span>, <span class="stringliteral">&quot;Smith&quot;</span>, 999, 30};</div>
+<div class="line">std::string json = simdjson::to_json(p);</div>
+<div class="line"><span class="comment">// json == R&quot;({&quot;first_name&quot;:&quot;Alice&quot;,&quot;last_name&quot;:&quot;Smith&quot;,&quot;age&quot;:30})&quot;</span></div>
+<div class="line"><span class="comment">// Note: internalCache is omitted entirely.</span></div>
+</div><!-- fragment --><p>The <code>skip</code> annotation also affects deserialization: the field keeps its default value and any corresponding key in the input JSON is ignored.</p>
+<p>Other annotations, modelled after the Rust serde library, affect serialization:</p>
+<div class="fragment"><div class="line"><span class="keyword">struct </span>[[= simdjson::rename_all&lt;<a class="code hl_namespace" href="namespacesimdjson.html">simdjson</a>::case_style::camel_case&gt;]] Account {</div>
+<div class="line">  std::string user_name;                                <span class="comment">// &quot;userName&quot;</span></div>
+<div class="line">  [[= simdjson::skip_serializing]] std::string password; <span class="comment">// deserialized, never serialized</span></div>
+<div class="line">  [[= simdjson::skip_serializing_if&lt;simdjson::is_none&gt;]] std::optional&lt;std::string&gt; email; <span class="comment">// omitted when empty</span></div>
+<div class="line">  [[= simdjson::skip_serializing_if&lt;simdjson::is_empty&gt;]] std::vector&lt;std::string&gt; roles;  <span class="comment">// omitted when empty</span></div>
+<div class="line">  [[= simdjson::with&lt;yes_no&gt;]] <span class="keywordtype">bool</span> active;             <span class="comment">// custom serialization via yes_no::serialize</span></div>
+<div class="line">};</div>
+</div><!-- fragment --><p>Enumerators can be renamed with <code>rename</code> (or <code>rename_all</code> on the enumeration), a structure annotated with <code>transparent</code> is serialized as its single data member, and the members of a member annotated with <code>flatten</code> are written in place of that member. See <a href="basics.md#customizing-deserialization-with-annotations">Customizing (de)serialization with annotations</a> for the complete list, including the annotations that only affect deserialization (<code>alias</code>, <code>default_value</code>, <code>default_from</code>, <code>deny_unknown_fields</code>).</p>
+<h2><a class="anchor" id="autotoc_md73"></a>
 Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance</h2>
 <p>In some instances, you might want to create a string directly from your own data type. You can create a string directly, without an explicit <code>string_builder</code> instance with the <code>simdjson::to_json</code> template function. (Under the hood a <code>string_builder</code> instance may still be created.)</p>
 <div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
@@ -304,7 +332,7 @@ Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance</h2>
 <div class="line"><span class="keyword">auto</span> error = simdjson::to_json(c, s);</div>
 <div class="line"><span class="keywordflow">if</span>(error) { <span class="comment">/* there was an error */</span> }</div>
 </div><!-- fragment --><p>You can then also add a third parameter for the expected output size in bytes.</p>
-<h2><a class="anchor" id="autotoc_md50"></a>
+<h2><a class="anchor" id="autotoc_md74"></a>
 Extracting just some fields</h2>
 <p>In some instances, your class might have many fields that you do not want to serialize. You can achieve this result with the <code>simdjson::extract_from</code> template. In the following example, we serialize only the <code>year</code> and <code>price</code> fields on the <code>Car</code> instance. </p><div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
 <div class="line">    std::string make;</div>
@@ -320,7 +348,7 @@ Extracting just some fields</h2>
 <div class="line"><span class="comment">// std::string json_result;</span></div>
 <div class="line"><span class="comment">// auto error =  extract_from&lt;&quot;year&quot;, &quot;price&quot;&gt;(car).get(json_result);</span></div>
 <div class="line"><span class="comment">// if(error) { /* error handling */ }</span></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md51"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md75"></a>
 Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error handling</h2>
 <p>If prefer a version without exceptions and explicit error handling, you can use the following pattern:</p>
 <div class="fragment"><div class="line">std::string json;</div>
@@ -329,7 +357,7 @@ Without &lt;tt&gt;string_buffer&lt;/tt&gt; instance but with explicit error hand
 <div class="line">} <span class="keywordflow">else</span> {</div>
 <div class="line">  <span class="comment">// json contain the serialized JSON</span></div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md52"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md76"></a>
 Customization</h2>
 <p>If you want to serialize a value in a custom way, you can do it with a <code>tag_invoke</code> specialization like the following example which will map the year attribute to a string.</p>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;simdjson&gt;</span></div>
@@ -357,7 +385,7 @@ Customization</h2>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">} <span class="comment">// namespace simdjson</span></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md53"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md77"></a>
 Pretty formatted (fractured JSON)</h2>
 <p>In some instances, you may want your JSON to be more readable. For this pupose, we also support the Fractured JSON standard.</p>
 <div class="fragment"><div class="line">TableTestData data{</div>
@@ -366,34 +394,42 @@ Pretty formatted (fractured JSON)</h2>
 <div class="line"> </div>
 <div class="line">fractured_json_options opts;</div>
 <div class="line">opts.enable_table_format = <span class="keyword">true</span>;</div>
-<div class="line">opts.min_table_rows = 3;</div>
 <div class="line"> </div>
 <div class="line">std::string formatted = simdjson::to_fractured_json_string(data, opts);</div>
-</div><!-- fragment --><p>The result might be as follows.</p>
+</div><!-- fragment --><p>The result might be as follows. Columns are laid out in the order in which keys first appear.</p>
 <div class="fragment"><div class="line">{</div>
 <div class="line">    &quot;records&quot;: [</div>
-<div class="line">        { &quot;active&quot;: true , &quot;id&quot;: 1, &quot;name&quot;: &quot;Alice&quot; },</div>
-<div class="line">        { &quot;active&quot;: false, &quot;id&quot;: 2, &quot;name&quot;: &quot;Bob&quot; },</div>
-<div class="line">        { &quot;active&quot;: true , &quot;id&quot;: 3, &quot;name&quot;: &quot;Carol&quot; },</div>
-<div class="line">        { &quot;active&quot;: false, &quot;id&quot;: 4, &quot;name&quot;: &quot;Dave&quot; }</div>
+<div class="line">        {&quot;id&quot;: 1, &quot;name&quot;: &quot;Alice&quot;, &quot;active&quot;: true },</div>
+<div class="line">        {&quot;id&quot;: 2, &quot;name&quot;: &quot;Bob&quot;,   &quot;active&quot;: false},</div>
+<div class="line">        {&quot;id&quot;: 3, &quot;name&quot;: &quot;Carol&quot;, &quot;active&quot;: true },</div>
+<div class="line">        {&quot;id&quot;: 4, &quot;name&quot;: &quot;Dave&quot;,  &quot;active&quot;: false}</div>
 <div class="line">    ]</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The <code>fractured_json_options</code> struct allows you to customize the formatting behavior. It includes the following options:</p>
 <ul>
 <li><code>max_total_line_length</code> (default: 120): Maximum total characters per line. Content exceeding this will be expanded to multiple lines.</li>
-<li><code>max_inline_length</code> (default: 80): Maximum length for inlined elements. Simple arrays/objects shorter than this may be rendered inline.</li>
 <li><code>max_inline_complexity</code> (default: 2): Maximum nesting depth for inline rendering. Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting.</li>
-<li><code>max_compact_array_complexity</code> (default: 1): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.</li>
+<li><code>max_compact_array_complexity</code> (default: 2): Maximum complexity for compact array formatting. Arrays with elements of this complexity or less may have multiple items per line.</li>
 <li><code>indent_spaces</code> (default: 4): Number of spaces per indentation level.</li>
-<li><code>enable_table_format</code> (default: true): Enable tabular formatting for arrays of similar objects. When enabled, arrays of objects with identical keys are formatted as aligned tables.</li>
-<li><code>min_table_rows</code> (default: 3): Minimum number of rows to trigger table mode.</li>
-<li><code>table_similarity_threshold</code> (default: 0.8): Similarity threshold for table detection. Objects must share at least this fraction of keys to be formatted as a table.</li>
+<li><code>always_expand_depth</code> (default: -1): Forces elements close to the root to always fully expand, regardless of other settings. -1 = none; 0 = root node only; 1 = root node and its children; etc.</li>
+<li><code>enable_table_format</code> (default: true): Enable tabular formatting for arrays of similar objects or arrays. When enabled, the rows of such an array are written one per line with their columns aligned. Rows need not have identical keys: columns are ordered by the first occurrence of each key, and a row missing a key gets blank space in that column. Nested arrays/objects within rows are aligned recursively; if the aligned rows do not fit within <code>max_total_line_length</code>, the deepest levels are left unaligned, and if they still do not fit, the array is expanded normally.</li>
+<li><code>max_table_row_complexity</code> (default: 2): Maximum complexity of each row of a table. 0 = rows may only be scalars (a single column); 1 = rows may be flat arrays/objects; higher values allow deeper nesting.</li>
 <li><code>enable_compact_multiline</code> (default: true): Enable compact multiline arrays. When enabled, arrays of simple elements may have multiple items per line.</li>
-<li><code>max_items_per_line</code> (default: 10): Maximum array items per line in compact mode.</li>
-<li><code>simple_bracket_padding</code> (default: true): Add space inside brackets for simple containers. When true: <code>{ "key": "value" }</code>, when false: <code>{"key": "value"}</code>.</li>
+<li><code>min_compact_array_row_items</code> (default: 3): Minimum number of items per line for an array to be formatted as a compact multiline array. If fewer items fit on a line, another layout is used.</li>
+<li><code>simple_bracket_padding</code> (default: false): Add space inside brackets for containers that hold only scalar values. When true: <code>{ "key": "value" }</code>, when false: <code>{"key": "value"}</code>.</li>
+<li><code>nested_bracket_padding</code> (default: true): Add space inside brackets for containers that hold at least one nested array/object. When true: <code>{ "a": [1, 2] }</code>, when false: <code>{"a": [1, 2]}</code>.</li>
 <li><code>colon_padding</code> (default: true): Add space after colons. When true: <code>"key": "value"</code>, when false: <code>"key":"value"</code>.</li>
-<li><code>comma_padding</code> (default: true): Add space after commas in inline content. When true: <code>[1, 2, 3]</code>, when false: <code>[1,2,3]</code>. </li>
+<li><code>comma_padding</code> (default: true): Add space after commas in inline content. When true: <code>[1, 2, 3]</code>, when false: <code>[1,2,3]</code>.</li>
+<li><code>comma_placement</code> (default: <code>before_padding_except_numbers</code>): Placement of commas relative to column padding in table-formatted rows and compact multiline arrays. One of:<ul>
+<li><code>table_comma_placement::before_padding</code>: commas come right after the value: <code>"b": 1, "c": 2</code>.</li>
+<li><code>table_comma_placement::after_padding</code>: commas come after the padding, so they line up in their own column: <code>"b": 1 , "c": 2</code>.</li>
+<li><code>table_comma_placement::before_padding_except_numbers</code>: like <code>before_padding</code>, except that number columns use <code>after_padding</code>.</li>
 </ul>
+</li>
+<li><code>number_alignment</code> (default: <code>left</code>): Controls alignment of numbers in table columns or compact multiline arrays. One of <code>number_list_alignment::left</code> or <code>number_list_alignment::right</code>. Numbers are always written exactly as in the input. (FracturedJson defaults to decimal-point alignment, which simdjson does not support.)</li>
+</ul>
+<p>Compared with the reference FracturedJson implementation, simdjson does not support the options related to comments, blank-line preservation, trailing commas, line-ending style, tab indentation, line prefixes, property-name padding in expanded objects (<code>MaxPropNamePadding</code>, <code>ColonBeforePropNamePadding</code>), or the <code>Decimal</code> and <code>Normalize</code> number alignments.</p>
+<p>The <code>min_table_rows</code> and <code>table_similarity_threshold</code> options found in earlier versions of simdjson have been removed. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

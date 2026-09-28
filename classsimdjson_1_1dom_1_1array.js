@@ -1,6 +1,7 @@
 var classsimdjson_1_1dom_1_1array =
 [
     [ "iterator", "classsimdjson_1_1dom_1_1array_1_1iterator.html", "classsimdjson_1_1dom_1_1array_1_1iterator" ],
+    [ "reverse_iterator", "classsimdjson_1_1dom_1_1array_1_1reverse__iterator.html", null ],
     [ "array", "classsimdjson_1_1dom_1_1array.html#a8b3d6eaec52a2b44965e53d874e367e9", null ],
     [ "at", "classsimdjson_1_1dom_1_1array.html#a6a6373cc1542a7137b79978680a93d18", null ],
     [ "at_path", "classsimdjson_1_1dom_1_1array.html#aa9d596ea0c2e0a6732866d5d9c1fa3ec", null ],
@@ -12,5 +13,7 @@ var classsimdjson_1_1dom_1_1array =
     [ "number_of_slots", "classsimdjson_1_1dom_1_1array.html#a26e66312190e016c22093292974490ff", null ],
     [ "operator element", "classsimdjson_1_1dom_1_1array.html#a847fee5e11177e96b18f7318f4fd46c8", null ],
     [ "process_json_path_of_child_elements", "classsimdjson_1_1dom_1_1array.html#aee39c0fbcf1f7f6b75e9a31d86bedfe8", null ],
+    [ "rbegin", "classsimdjson_1_1dom_1_1array.html#a83a6f903a93ecd74d197b50dc096e270", null ],
+    [ "rend", "classsimdjson_1_1dom_1_1array.html#ae69bc4c51647fa61bea1e607f5b0b225", null ],
     [ "size", "classsimdjson_1_1dom_1_1array.html#a698f2f984d1a78a68962c06b2f047686", null ]
 ];

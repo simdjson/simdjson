@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['stage1_5fmode_0',['stage1_mode',['../namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811',1,'simdjson']]]
+  ['number_5flist_5falignment_0',['number_list_alignment',['../namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4',1,'simdjson']]]
 ];

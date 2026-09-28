@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -102,7 +102,7 @@ $(document).ready(function(){initNavTree('md_doc_2iterate__many.html',''); initR
 <div class="line">{&quot;text&quot;:&quot;c&quot;}</div>
 <div class="line">&quot;...&quot;</div>
 </div><!-- fragment --><p> ... you want to read the entries (individual JSON documents) as quickly and as conveniently as possible. Importantly, the input might span several gigabytes, but you want to use a small (fixed) amount of memory. Ideally, you'd also like the parallelize the processing (using more than one core) to speed up the process.</p>
-<h1><a class="anchor" id="autotoc_md111"></a>
+<h1><a class="anchor" id="autotoc_md138"></a>
 Contents</h1>
 <ul>
 <li>Motivations</li>
@@ -114,24 +114,26 @@ Contents</h1>
 </li>
 <li>Support</li>
 <li>API</li>
+<li>Streaming directly from a memory-mapped file</li>
 <li>Use cases</li>
 <li>Tracking your position</li>
 <li>Incomplete streams</li>
 <li>C++20 features</li>
+<li>C++26 features (static reflection)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md112"></a>
+<h1><a class="anchor" id="autotoc_md139"></a>
 Motivation</h1>
 <p>The main motivation for this piece of software is to achieve maximum speed and offer a better quality of life in parsing files containing multiple small JSON documents.</p>
 <p>The JavaScript Object Notation (JSON) <a href="https://tools.ietf.org/html/rfc7159">RFC7159</a> is a handy serialization format. However, when serializing a large sequence of values as an array, or a possibly indeterminate-length or never- ending sequence of values, JSON may be inconvenient.</p>
 <p>Consider a sequence of one million values, each possibly one kilobyte when encoded &ndash; roughly one gigabyte. It is often desirable to process such a dataset incrementally without having to first read all of it before beginning to produce results.</p>
-<h1><a class="anchor" id="autotoc_md113"></a>
+<h1><a class="anchor" id="autotoc_md140"></a>
 How it works</h1>
-<h2><a class="anchor" id="autotoc_md114"></a>
+<h2><a class="anchor" id="autotoc_md141"></a>
 Context</h2>
 <p>Before parsing anything, simdjson first preprocesses the JSON text by identifying all structural indexes (i.e. the starting position of any JSON value, as well as any important operators like <code>,</code>, <code>:</code>, <code>]</code> or <code>}</code>) and validating UTF8. This stage is referred to stage 1. However, during this process, simdjson has no knowledge of whether parsed a valid document, multiple documents, or even if the document is complete. Then, to iterate through the JSON text during parsing, we use what we call a JSON iterator that will navigate through the text using these structural indexes. This JSON iterator is not visible though, but it is the key component to make parsing work.</p>
 <p>Prior to iterate_many, most people who had to parse a multiline JSON file would proceed by reading the file line by line, using a utility function like <code>std::getline</code> or equivalent, and would then use the <code>parse</code> on each of those lines. From a performance point of view, this process is highly inefficient, in that it requires a lot of unnecessary memory allocation and makes use of the <code>getline</code> function, which is fundamentally slow, slower than the act of parsing with simdjson <a href="https://lemire.me/blog/2019/06/18/how-fast-is-getline-in-c/">(more on this here)</a>.</p>
 <p>Unlike the popular parser RapidJson, our DOM does not require the buffer once the parsing job is completed, the DOM and the buffer are completely independent. The drawback of this architecture is that we need to allocate some additional memory to store our ParsedJson data, for every document inside a given file. Memory allocation can be slow and become a bottleneck, therefore, we want to minimize it as much as possible.</p>
-<h2><a class="anchor" id="autotoc_md115"></a>
+<h2><a class="anchor" id="autotoc_md142"></a>
 Design</h2>
 <p>To achieve a minimum amount of allocations, we opted for a design where we create only one parser object and therefore allocate its memory once, and then recycle it for every document in a given file. But, knowing that they often have largely varying size, we need to make sure that we allocate enough memory so that all the documents can fit. This value is what we call the batch size. As of right now, we need to manually specify a value for this batch size, it has to be at least as big as the biggest document in your file, but not too big so that it submerges the cached memory. The bigger the batch size, the fewer we need to make allocations. We found that 1MB is somewhat a sweet spot.</p>
 <ol type="1">
@@ -141,13 +143,48 @@ Design</h2>
 <li>Each time the user calls <code>++</code> to read the next document, the JSON iterator moves to the start the next document.</li>
 <li>When we reach the end of the batch, we call stage 1 on the next batch, starting from the end of the last document, and go to step 3.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md116"></a>
+<h2><a class="anchor" id="autotoc_md143"></a>
 Threads</h2>
 <p>But how can we make use of threads if they are available? We found a pretty cool algorithm that allows us to quickly identify the position of the last JSON document in a given batch. Knowing exactly where the end of the last document in the batch is, we can safely parse through the last document without any worries that it might be incomplete. Therefore, we can run stage 1 on the next batch concurrently while parsing the documents in the current batch. Running stage 1 in a different thread can, in best cases, remove almost entirely its cost and replaces it by the overhead of a thread, which is orders of magnitude cheaper. Ain't that awesome!</p>
 <p>Thread support is only active if thread supported is detected in which case the macro SIMDJSON_THREADS_ENABLED is set. You can also manually pass <code>SIMDJSON_THREADS_ENABLED=1</code> flag to the library. Otherwise the library runs in single-thread mode.</p>
 <p>You should be consistent. If you link against the simdjson library built for multithreading (i.e., with <code>SIMDJSON_THREADS_ENABLED</code>), then you should build your application with multithreading system (setting <code>SIMDJSON_THREADS_ENABLED=1</code> and linking against a thread library).</p>
-<p>A <code>document_stream</code> instance uses at most two threads: there is a main thread and a worker thread.</p>
-<h1><a class="anchor" id="autotoc_md117"></a>
+<p>A <code>document_stream</code> instance uses at most two threads: there is a main thread and a worker thread. That caps the gain near a factor of two.</p>
+<h2><a class="anchor" id="autotoc_md144"></a>
+Parsing on many threads</h2>
+<p>Documents in a stream are independent, so you can cut the input yourself and parse the pieces on as many threads as you like. <code><a class="el" href="namespacesimdjson.html#a2d703447a8b1acf0b22a15a78b5346bb" title="Return the index-th document-aligned slice of a delimited stream.">simdjson::slice_at</a></code> does the cutting: it divides the input into blocks and moves each boundary forward to the next delimiter, so a document is never split.</p>
+<div class="fragment"><div class="line"> ++</div>
+<div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> json = <a class="code hl_function" href="structsimdjson_1_1padded__string.html#aaf017ffe731c738da5eb31c63b987d3a">simdjson::padded_string::load</a>(<span class="stringliteral">&quot;stream.ndjson&quot;</span>);</div>
+<div class="line"><span class="keyword">auto</span> view = <a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a>(json);</div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> block_size = 1 &lt;&lt; 20;</div>
+<div class="line"> </div>
+<div class="line">std::atomic&lt;size_t&gt; next{0};</div>
+<div class="line">std::vector&lt;std::thread&gt; pool;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> t = 0; t &lt; std::thread::hardware_concurrency(); t++) {</div>
+<div class="line">  pool.emplace_back([&amp;] {</div>
+<div class="line">    simdjson::ondemand::parser parser;</div>
+<div class="line">    parser.threaded = <span class="keyword">false</span>;</div>
+<div class="line">    <span class="keywordflow">for</span> (;;) {</div>
+<div class="line">      <span class="keywordtype">size_t</span> i = next.fetch_add(1);</div>
+<div class="line">      <span class="keywordflow">if</span> (i * block_size &gt;= view.size()) { <span class="keywordflow">break</span>; }</div>
+<div class="line">      <span class="keyword">auto</span> piece = <a class="code hl_function" href="namespacesimdjson.html#a2d703447a8b1acf0b22a15a78b5346bb">simdjson::slice_at</a>(view, <span class="charliteral">&#39;\n&#39;</span>, block_size, i);</div>
+<div class="line">      <span class="keywordflow">if</span> (piece.empty()) { <span class="keywordflow">continue</span>; }</div>
+<div class="line">      simdjson::ondemand::document_stream docs;</div>
+<div class="line">      <span class="keywordflow">if</span> (parser.iterate_many(piece, piece.size(),</div>
+<div class="line">                              <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697">simdjson::stream_format::newline_delimited</a>).get(docs)) { <span class="keywordflow">continue</span>; }</div>
+<div class="line">      <span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : docs) { <span class="comment">/* ... */</span> }</div>
+<div class="line">    }</div>
+<div class="line">  });</div>
+<div class="line">}</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;th : pool) { th.join(); }</div>
+<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00021">padded_string_view.h:21</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697">simdjson::stream_format::newline_delimited</a></div><div class="ttdeci">@ newline_delimited</div><div class="ttdoc">NDJSON/JSON Lines where each document occupies exactly one line: documents are separated by line feed...</div></div>
+<div class="ttc" id="anamespacesimdjson_html_a2d703447a8b1acf0b22a15a78b5346bb"><div class="ttname"><a href="namespacesimdjson.html#a2d703447a8b1acf0b22a15a78b5346bb">simdjson::slice_at</a></div><div class="ttdeci">padded_string_view slice_at(padded_string_view data, char delimiter, size_t block_size, size_t index) noexcept</div><div class="ttdoc">Return the index-th document-aligned slice of a delimited stream.</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view-inl_8h_source.html#l00185">padded_string_view-inl.h:185</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html"><div class="ttname"><a href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a></div><div class="ttdoc">String with extra allocation for ease of use with parser::parse()</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00023">padded_string.h:23</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html_aaf017ffe731c738da5eb31c63b987d3a"><div class="ttname"><a href="structsimdjson_1_1padded__string.html#aaf017ffe731c738da5eb31c63b987d3a">simdjson::padded_string::load</a></div><div class="ttdeci">static simdjson_result&lt; padded_string &gt; load(std::string_view path) noexcept</div><div class="ttdoc">Load this padded string from a file.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00176">padded_string-inl.h:176</a></div></div>
+</div><!-- fragment --><p>Give each thread its own parser and set <code>parser.threaded = false</code>: the parallelism is across slices, so a stage-1 thread per parser would only oversubscribe.</p>
+<p>A slice is empty when its block falls entirely inside one document, which happens only if that document is longer than <code>block_size</code>; skip it and continue. Iterate while <code>i * block_size &lt; view.size()</code> rather than stopping at the first empty slice.</p>
+<p>The delimiter must not occur inside a document: a line feed for NDJSON, or a record separator (<code>0x1E</code>) for RFC 7464.</p>
+<h1><a class="anchor" id="autotoc_md145"></a>
 Support</h1>
 <p>Since we want to offer flexibility and not restrict ourselves to a specific file format, we support any file that contains any amount of valid JSON document, <b>separated by one or more character that is considered whitespace</b> by the JSON spec. Anything that is not whitespace will be parsed as a JSON document and could lead to failure.</p>
 <p>Whitespace Characters:</p><ul>
@@ -160,10 +197,10 @@ Support</h1>
 <p>Some official formats **(non-exhaustive list)**:</p><ul>
 <li><a href="https://github.com/ndjson/ndjson-spec/">Newline-Delimited JSON (NDJSON)</a></li>
 <li><a href="http://jsonlines.org/">JSON lines (JSONL)</a></li>
-<li><a href="https://tools.ietf.org/html/rfc7464">Record separator-delimited JSON (RFC 7464)</a> &lt;- Not supported by simdjson!</li>
+<li><a href="https://tools.ietf.org/html/rfc7464">Record separator-delimited JSON (RFC 7464)</a></li>
 <li><a href="https://en.wikipedia.org/wiki/JSON_streaming">More on Wikipedia...</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md118"></a>
+<h1><a class="anchor" id="autotoc_md146"></a>
 API</h1>
 <p>Example:</p>
 <div class="fragment"><div class="line"><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
@@ -176,16 +213,44 @@ API</h1>
 <div class="line">}</div>
 <div class="line"><span class="comment">// Prints 1 2 3</span></div>
 </div><!-- fragment --><p>See <a href="basics.md#newline-delimited-json-ndjson-and-json-lines">basics.md</a> for an overview of the API.</p>
-<p><b>Advanced feature:</b> On non-Windows systems, you can use memory-file mapping to create a <code><a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">simdjson::padded_string_view</a></code> from a file on disk.</p>
-<div class="fragment"><div class="line"><span class="comment">// If the macro _WIN32 is defined, this will not work since we do not support memory-file mapping</span></div>
-<div class="line"><span class="comment">// under Windows at this time.</span></div>
-<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a> map(myfilename);</div>
+<h1><a class="anchor" id="autotoc_md147"></a>
+Streaming directly from a memory-mapped file</h1>
+<p>When your input is a large NDJSON / JSON-lines file on disk, the most efficient way to feed <code>iterate_many</code> is to use <code>simdjson::padded_memory_map</code>. It returns a <code>padded_string_view</code> with the right amount of trailing padding, so you can hand it straight to <code>iterate_many</code> without ever copying the file contents into your own buffer.</p>
+<p><code>padded_memory_map</code> is available on POSIX systems (Linux, macOS, BSD, ...) by default. On Windows it is an <b>opt-in</b> feature with the following requirements:</p>
+<ol type="1">
+<li>Build simdjson with <code>-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON</code>, or — if you consume simdjson as a pre-built library — define <code>SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1</code>, raise <code>NTDDI_VERSION</code> to at least <code>NTDDI_WIN10_RS4</code> (<code>0x0A000005</code>, Windows 10 version 1803), and add <code>onecore.lib</code> to your link line yourself. The Windows implementation uses the modern memory APIs <code>CreateFileMapping2</code> / <code>MapViewOfFile3</code>, which are available starting with that version of Windows and are exported by <code>onecore.lib</code>.</li>
+<li><code>#include &lt;windows.h&gt;</code> before <code>#include "simdjson.h"</code> in every translation unit where you want to use <code>padded_memory_map</code>. simdjson deliberately does not pull in <code>&lt;windows.h&gt;</code> itself, so the class is only declared when the Win32 types are already visible.</li>
+</ol>
+<p>If either requirement is not met on Windows, the <code>padded_memory_map</code> class is not declared at all and any code that references it fails to compile with an "unknown identifier" error. The availability of the class can be tested with the macro <code>SIMDJSON_HAS_PADDED_MEMORY_MAP</code>.</p>
+<p>On POSIX, <code>padded_memory_map</code> uses <code>mmap</code> to map the file directly into memory with zero copies. On Windows (when enabled), it uses <code>CreateFileMapping2</code> + <code>MapViewOfFile3</code> for true zero-copy mapping whenever the file does not end within <code>SIMDJSON_PADDING</code> bytes of a page boundary; for those rare cases, it transparently falls back to reading the file into a heap-allocated padded buffer so that the returned view always has <code>SIMDJSON_PADDING</code> accessible zero bytes after the file content.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#ifdef _WIN32</span></div>
+<div class="line"><span class="preprocessor">#include &lt;windows.h&gt;</span> <span class="comment">// Must come BEFORE &lt;simdjson.h&gt; on Windows</span></div>
+<div class="line"><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// ...</span></div>
+<div class="line"> </div>
+<div class="line">simdjson::padded_memory_map map(<span class="stringliteral">&quot;huge_stream.ndjson&quot;</span>);</div>
+<div class="line"><span class="keywordflow">if</span> (!map.is_valid()) { <span class="comment">/* file missing, unreadable, too large, ... */</span> <span class="keywordflow">return</span>; }</div>
+<div class="line"> </div>
+<div class="line">simdjson::ondemand::parser parser;</div>
+<div class="line">simdjson::ondemand::document_stream stream;</div>
+<div class="line"><span class="keyword">auto</span> error = parser.iterate_many(map.view()).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"> </div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  <span class="comment">// process each JSON document in the stream</span></div>
+<div class="line">  std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
+</div><!-- fragment --><p>Important lifetime rule: the <code>padded_string_view</code> returned by <code>map.view()</code> is only valid while the <code>padded_memory_map</code> instance is alive, so keep <code>map</code> alive for as long as you are iterating the stream.</p>
+<p>The file must not be modified while the memory map is in use. If you need a fully independent copy of the data, use <code>simdjson::padded_string::load(...)</code> instead.</p>
+<p>If you prefer single-document parsing on a memory-mapped file, the same pattern applies to <code>parser.iterate(...)</code>:</p>
+<div class="fragment"><div class="line">simdjson::padded_memory_map map(myfilename);</div>
 <div class="line"><span class="keywordflow">if</span> (!map.is_valid()) { <span class="comment">/* handle error */</span> }</div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> view = map.view(); <span class="comment">// view is usable while padded_memory_map is in scope</span></div>
 <div class="line">ondemand::document doc = parser.iterate(view); <span class="comment">// parse the JSON</span></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a></div><div class="ttdoc">A class representing a memory-mapped file with padding.</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00286">padded_string.h:286</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00018">padded_string_view.h:18</a></div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md119"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md148"></a>
 Use cases</h1>
 <p>From <a href="http://jsonlines.org/examples/">jsonlines.org</a>:</p>
 <ul>
@@ -204,7 +269,7 @@ Use cases</h1>
 <div class="line">{&quot;name&quot;: &quot;Deloise&quot;, &quot;wins&quot;: [[&quot;three of a kind&quot;, &quot;5♣&quot;]]}</div>
 </div><!-- fragment --> JSON Lines' biggest strength is in handling lots of similar nested data structures. One .jsonl file is easier to work with than a directory full of XML files.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md120"></a>
+<h1><a class="anchor" id="autotoc_md149"></a>
 Tracking your position</h1>
 <p>Some users would like to know where the document they parsed is in the input array of bytes. It is possible to do so by accessing directly the iterator and calling its <code>current_index()</code> method which reports the location (in bytes) of the current document in the input stream. You may also call the <code>source()</code> method to get a <code>std::string_view</code> instance on the document and <code>error()</code> to check if there were any error.</p>
 <p>Let us illustrate the idea with code:</p>
@@ -232,7 +297,7 @@ Tracking your position</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">got full document at 29</div>
 <div class="line">[1,2,3]</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md121"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md150"></a>
 Incomplete streams</h1>
 <p>Some users may need to work with truncated streams. The simdjson may truncate documents at the very end of the stream that cannot possibly be valid JSON (e.g., they contain unclosed strings, unmatched brackets, unmatched braces). After iterating through the stream, you may query the <code>truncated_bytes()</code> method which tells you how many bytes were truncated. If the stream is made of full (whole) documents, then you should expect <code>truncated_bytes()</code> to return zero.</p>
 <p>Consider the following example where a truncated document (<code>{"key":"intentionally unclosed string&lt;/tt&gt;) containing 39 bytes has been left within the stream. In such cases, the first two whole documents are parsed and returned, and the &lt;tt&gt;truncated_bytes()&lt;/tt&gt; method returns 39.
@@ -243,39 +308,115 @@ Incomplete streams</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">39 bytes</div>
 </div><!-- fragment --><p></code></p>
-<p><code>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Importantly, it also assumes that no document reported an error: iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</code></p>
+<p><code>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Further, it is only applicable if the format is <code>whitespace_delimited</code> or <code>newline_delimited</code>. In <code>json_sequence</code> and <code>comma_delimited</code> mode, the value is meaningless. Importantly, it assumes no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</code></p>
 <p><code>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using <code>current_index()</code> and <code>source()</code> on the iterator.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md122"></a>
+<h1><a class="anchor" id="autotoc_md151"></a>
 Comma-separated documents</h1>
 <p><code></code></p>
-<p><code>We also support comma-separated documents, but with some performance limitations. The <code>iterate_many</code> function takes in an option to allow parsing of comma separated documents (which defaults on false). In this mode, the entire buffer is processed in one batch. Therefore, the total size of the document should not exceed the maximal capacity of the parser (4 GB). This mode also effectively disallow multithreading. It is therefore mostly suitable for not "very large" inputs. In this mode, the batch_size parameter is effectively ignored, as it is set to at least the document size.</code></p>
-<p><code>Example:</code></p>
-<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( 1, 2, 3, 4, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, {&quot;hello&quot;: &quot;world&quot;} , [1, 2, 3])&quot;_padded;</span></div>
+<p><code>To parse comma-separated documents like <code>{"a":1},{"b":2},{"c":3}</code>, use the <code>stream_format::comma_delimited</code> parameter:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;a&quot;:1},{&quot;b&quot;:2},{&quot;c&quot;:3})&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// Prints: {&quot;a&quot;:1}</span></div>
+<div class="line"><span class="comment">//         {&quot;b&quot;:2}</span></div>
+<div class="line"><span class="comment">//         {&quot;c&quot;:3}</span></div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a></div><div class="ttdeci">@ comma_delimited</div><div class="ttdoc">Comma-separated JSON documents (e.g., {...},{...},{...})</div></div>
+</div><!-- fragment --><p></code></p>
+<p><code>Whitespace around the commas is allowed: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;a&quot;:1} , {&quot;b&quot;:2} , {&quot;c&quot;:3})&quot;_padded;  </span><span class="comment">// Also works</span></div>
+</div><!-- fragment --><p></code></p>
+<p><code>Nested commas inside objects and arrays are preserved: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;arr&quot;:[1,2,3]},{&quot;obj&quot;:{&quot;x&quot;:1,&quot;y&quot;:2}})&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="comment">// Correctly parses as 2 documents, not 6</span></div>
+</div><!-- fragment --><p></code></p>
+<p><code>Mixed document types are supported: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;(1, 2, 3, 4, &quot;a&quot;, &quot;b&quot;, &quot;c&quot;, {&quot;hello&quot;: &quot;world&quot;}, [1, 2, 3])&quot;_padded;</span></div>
 <div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
 <div class="line"><span class="stringliteral">ondemand::document_stream doc_stream;</span></div>
-<div class="line"><span class="stringliteral"></span><span class="comment">// We pass &#39;32&#39; as the batch size, but it is a bogus parameter because, since</span></div>
-<div class="line"><span class="comment">// we pass &#39;true&#39; to the allow_comma parameter, the batch size will be set to at least</span></div>
-<div class="line"><span class="comment">// the document size.</span></div>
-<div class="line"><span class="keyword">auto</span> error = parser.iterate_many(json, 32, <span class="keyword">true</span>).get(doc_stream);</div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a>).get(doc_stream);</div>
 <div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
 <div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : doc_stream) {</div>
 <div class="line">    std::cout &lt;&lt; doc.type() &lt;&lt; std::endl;</div>
 <div class="line">}</div>
+<div class="line"><span class="comment">// Prints: number number number number string string string object array</span></div>
 </div><!-- fragment --><p></code></p>
-<p><code> This will print:</code></p>
-<p><code></p><div class="fragment"><div class="line">number</div>
-<div class="line">number</div>
-<div class="line">number</div>
-<div class="line">number</div>
-<div class="line">string</div>
-<div class="line">string</div>
-<div class="line">string</div>
-<div class="line">object</div>
-<div class="line">array</div>
-</div><!-- fragment --><p></code></p>
+<p><code>Extra top-level separators are tolerated for compatibility with the legacy <code>allow_comma_separated</code> behavior. For example, leading commas, trailing commas, and repeated commas are treated as empty separators rather than documents.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md123"></a>
+<h2><a class="anchor" id="autotoc_md152"></a>
+Legacy &lt;tt&gt;allow_comma_separated&lt;/tt&gt; parameter (deprecated)</h2>
+<p><code></code></p>
+<p><code>The <code>allow_comma_separated</code> boolean parameter is deprecated. When set to <code>true</code>, it now internally maps to <code>stream_format::comma_delimited</code>.</code></p>
+<p><code>The old single-batch limitation no longer applies - comma-delimited parsing now supports multi-batch processing and threading for optimal performance on large files.</code></p>
+<p><code></code></p>
+<h1><a class="anchor" id="autotoc_md153"></a>
+JSON Text Sequences (RFC 7464)</h1>
+<p><code></code></p>
+<p><code><a href="https://tools.ietf.org/html/rfc7464">RFC 7464</a> defines a format for streaming JSON values using ASCII Record Separator (RS, 0x1E) as a delimiter. Each JSON text is preceded by RS and optionally followed by ASCII Line Feed (LF, 0x0A).</code></p>
+<p><code>Example input: </p><div class="fragment"><div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc1&quot;}&lt;LF&gt;</div>
+<div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc2&quot;}&lt;LF&gt;</div>
+<div class="line">&lt;RS&gt;{&quot;name&quot;:&quot;doc3&quot;}&lt;LF&gt;</div>
+</div><!-- fragment --><p></code></p>
+<p><code>To parse JSON text sequences, use the <code>stream_format::json_sequence</code> parameter:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="comment">// Build input with RS (0x1E) and LF (0x0A) delimiters</span></div>
+<div class="line">std::string input_str;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;a\&quot;:1}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;b\&quot;:2}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line">input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += <span class="stringliteral">&quot;{\&quot;c\&quot;:3}&quot;</span>; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> input(input_str);</div>
+<div class="line"> </div>
+<div class="line">ondemand::parser parser;</div>
+<div class="line">ondemand::document_stream stream;</div>
+<div class="line"><span class="keyword">auto</span> error = parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">simdjson::stream_format::json_sequence</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">simdjson::stream_format::json_sequence</a></div><div class="ttdeci">@ json_sequence</div><div class="ttdoc">RFC 7464 JSON text sequences (RS-delimited)</div></div>
+</div><!-- fragment --><p></code></p>
+<p><code>The <code>stream_format</code> enum has the following values:</p><ul>
+<li><code>stream_format::whitespace_delimited</code> (default): Standard NDJSON/JSON Lines format</li>
+<li><code>stream_format::json_sequence</code>: RFC 7464 format with RS delimiters</li>
+<li><code>stream_format::comma_delimited</code>: Comma-separated JSON documents</li>
+<li><code>stream_format::comma_delimited_array</code>: A single JSON array whose elements are iterated as comma-delimited documents (see below)</li>
+<li><code>stream_format::newline_delimited</code>: NDJSON/JSON Lines where each document occupies exactly one line (documents are separated by line feeds and no document contains a raw line feed). Same inputs as <code>whitespace_delimited</code>, but the stronger guarantee lets ondemand <code>iterate_many</code> find the end of a document without walking it—including skipping an unread remainder without structure-validating that remainder. Use <code>whitespace_delimited</code> if unsure. See Parsing on many threads for multi-thread slicing with <code>slice_at</code>.</li>
+</ul>
+<p></code></p>
+<p><code>The trailing LF after each JSON text is optional but recommended by the RFC for robustness.</code></p>
+<p><code></code></p>
+<h1><a class="anchor" id="autotoc_md154"></a>
+JSON Array As A Document Stream</h1>
+<p><code></code></p>
+<p><code>Sometimes an input is a single, well-formed JSON array — <code>[{"a":1},{"b":2},{"c":3}]</code> — but you want to iterate its elements one at a time without materializing the whole array. Use <code>stream_format::comma_delimited_array</code>:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;([{&quot;a&quot;:1},{&quot;b&quot;:2},{&quot;c&quot;:3}])&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">simdjson::stream_format::comma_delimited_array</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">    std::cout &lt;&lt; doc &lt;&lt; std::endl;</div>
+<div class="line">}</div>
+<div class="line"><span class="comment">// Prints: {&quot;a&quot;:1}</span></div>
+<div class="line"><span class="comment">//         {&quot;b&quot;:2}</span></div>
+<div class="line"><span class="comment">//         {&quot;c&quot;:3}</span></div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">simdjson::stream_format::comma_delimited_array</a></div><div class="ttdeci">@ comma_delimited_array</div><div class="ttdoc">A single JSON array whose elements are iterated as comma-separated documents (e.g....</div></div>
+</div><!-- fragment --><p></code></p>
+<p><code>The parser strips the outer <code>[</code> and <code>]</code> plus any surrounding JSON whitespace (space, tab, LF, CR) and then behaves exactly like <code>stream_format::comma_delimited</code> over the remaining bytes. All comma-delimited features are inherited: multi-batch processing, threading, mixed scalar types, and nested commas preserved inside inner objects and arrays.</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="comment">// All of these work:</span></div>
+<div class="line"><span class="keyword">auto</span> a = R<span class="stringliteral">&quot;([1, &quot;x&quot;, true, null, {&quot;k&quot;:&quot;v&quot;}, [1,2]])&quot;_padded;  </span><span class="comment">// mixed scalars</span></div>
+<div class="line"><span class="keyword">auto</span> b = R<span class="stringliteral">&quot;(  [ 1, 2, 3 ] )&quot;_padded;                          </span><span class="comment">// whitespace</span></div>
+<div class="line"><span class="keyword">auto</span> c = R<span class="stringliteral">&quot;([])&quot;_padded;                                      </span><span class="comment">// empty array → 0 docs</span></div>
+</div><!-- fragment --><p></code></p>
+<p><code>If the input is not a well-formed outer array (missing <code>[</code>, missing <code>]</code>, or empty / all-whitespace), <code>iterate_many</code> returns <code>TAPE_ERROR</code>. Content <b>inside</b> the array is not validated up front — individual document parse errors surface when you iterate, just like <code>comma_delimited</code>.</code></p>
+<p><code>Positions reported via <code>current_index()</code> are relative to the <b>stripped</b> buffer (the bytes between <code>[</code> and <code>]</code>), not the original input, for consistency with the existing BOM-stripping behavior.</code></p>
+<p><code></code></p>
+<h1><a class="anchor" id="autotoc_md155"></a>
 C++20 features</h1>
 <p><code></code></p>
 <p><code>In C++20, the standard introduced the notion of <em>customization point</em>. A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.</code></p>
@@ -354,7 +495,134 @@ C++20 features</h1>
 <div class="line">  cars.push_back(c);</div>
 <div class="line">}</div>
 <div class="ttc" id="anamespacesimdjson_html_a65b00a7a7a9c8fafe9eb3b9b413a36fa"><div class="ttname"><a href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa">simdjson::error_message</a></div><div class="ttdeci">const char * error_message(error_code error) noexcept</div><div class="ttdoc">It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...</div><div class="ttdef"><b>Definition</b> <a href="error-inl_8h_source.html#l00025">error-inl.h:25</a></div></div>
-</div><!-- fragment --><p> </code></p>
+</div><!-- fragment --><p></code></p>
+<p><code><b>Performance tip</b>: You will get better performance if you order the attributes (make, model) in the order they appear in the JSON document.</code></p>
+<p><code></code></p>
+<h1><a class="anchor" id="autotoc_md156"></a>
+C++26 features (static reflection)</h1>
+<p><code></code></p>
+<p><code>If you compile with a C++26 compiler that has <a href="https://wg21.link/P2996">P2996</a> static reflection enabled, simdjson detects it and can deserialize a stream of JSON documents directly into your own structures <b>without</b> writing any <code>tag_invoke</code> function. The library inspects the non-static public members of your type at compile time and produces the parsing code automatically.</code></p>
+<p><code>Consider the same <code>Car</code> structure used in the C++20 example, but <b>without</b> any <code>tag_invoke</code> glue:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">struct </span>Car {</div>
+<div class="line">  std::string make;</div>
+<div class="line">  std::string model;</div>
+<div class="line">  <span class="keywordtype">int</span> year;</div>
+<div class="line">  std::vector&lt;double&gt; tire_pressure;</div>
+<div class="line">};</div>
+</div><!-- fragment --><p></code></p>
+<p><code>With C++26 static reflection enabled, you can iterate a stream of cars and push them into a <code>std::vector&lt;Car&gt;</code> directly:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 40.1, 39.9 ] }</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 30.1, 31.0 ] }</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 29.8, 30.0 ] } )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">std::vector&lt;Car&gt; cars;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  Car c;</div>
+<div class="line">  <span class="keywordflow">if</span> ((error = doc.get&lt;Car&gt;().get(c))) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">  cars.push_back(c);</div>
+<div class="line">}</div>
+</div><!-- fragment --><p></code></p>
+<p><code>This works for every <code>stream_format</code> value supported by <code>iterate_many</code>. The following examples each parse the same three cars, but laid out using a different streaming convention.</code></p>
+<p><code></code></p>
+<h2><a class="anchor" id="autotoc_md157"></a>
+Whitespace-delimited (default, NDJSON / JSON Lines)</h2>
+<p><code></code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 40.1, 39.9 ] }</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 30.1, 31.0 ] }</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 29.8, 30.0 ] } )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56">simdjson::stream_format::whitespace_delimited</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">std::vector&lt;Car&gt; cars;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  cars.push_back((Car)doc); <span class="comment">// throws on error</span></div>
+<div class="line">}</div>
+<div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56">simdjson::stream_format::whitespace_delimited</a></div><div class="ttdeci">@ whitespace_delimited</div><div class="ttdoc">Whitespace-delimited JSON documents (default, includes NDJSON/JSONL)</div></div>
+</div><!-- fragment --><p></code></p>
+<p><code></code></p>
+<h2><a class="anchor" id="autotoc_md158"></a>
+Comma-delimited documents</h2>
+<p><code></code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 40.1, 39.9 ] },</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 30.1, 31.0 ] },</span></div>
+<div class="line"><span class="stringliteral">                { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</span></div>
+<div class="line"><span class="stringliteral">                  &quot;tire_pressure&quot;: [ 29.8, 30.0 ] } )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">simdjson::stream_format::comma_delimited</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">std::vector&lt;Car&gt; cars;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  Car c;</div>
+<div class="line">  <span class="keywordflow">if</span> ((error = doc.get&lt;Car&gt;().get(c))) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">  cars.push_back(c);</div>
+<div class="line">}</div>
+</div><!-- fragment --><p></code></p>
+<p><code></code></p>
+<h2><a class="anchor" id="autotoc_md159"></a>
+A single JSON array as a stream of documents</h2>
+<p><code></code></p>
+<p><code>When the input is a single JSON array, you can stream its elements one at a time without materializing the entire array as a <code>std::vector</code> upfront:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( [ { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
+<div class="line"><span class="stringliteral">                    &quot;tire_pressure&quot;: [ 40.1, 39.9 ] },</span></div>
+<div class="line"><span class="stringliteral">                  { &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012,</span></div>
+<div class="line"><span class="stringliteral">                    &quot;tire_pressure&quot;: [ 30.1, 31.0 ] },</span></div>
+<div class="line"><span class="stringliteral">                  { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999,</span></div>
+<div class="line"><span class="stringliteral">                    &quot;tire_pressure&quot;: [ 29.8, 30.0 ] } ] )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">simdjson::stream_format::comma_delimited_array</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">std::vector&lt;Car&gt; cars;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  Car c;</div>
+<div class="line">  <span class="keywordflow">if</span> ((error = doc.get&lt;Car&gt;().get(c))) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">  cars.push_back(c);</div>
+<div class="line">}</div>
+</div><!-- fragment --><p></code></p>
+<p><code></code></p>
+<h2><a class="anchor" id="autotoc_md160"></a>
+JSON Text Sequences (RFC 7464)</h2>
+<p><code></code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="comment">// Build input with RS (0x1E) and LF (0x0A) delimiters</span></div>
+<div class="line">std::string input_str;</div>
+<div class="line"><span class="keyword">auto</span> append = [&amp;](std::string_view doc) {</div>
+<div class="line">  input_str += <span class="stringliteral">&#39;\x1e&#39;</span>; input_str += doc; input_str += <span class="stringliteral">&#39;\x0a&#39;</span>;</div>
+<div class="line">};</div>
+<div class="line">append(R<span class="stringliteral">&quot;({ &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018, &quot;tire_pressure&quot;: [ 40.1, 39.9 ] })&quot;);</span></div>
+<div class="line"><span class="stringliteral">append(R</span><span class="stringliteral">&quot;({ &quot;make&quot;: &quot;Kia&quot;,    &quot;model&quot;: &quot;Soul&quot;,   &quot;year&quot;: 2012, &quot;tire_pressure&quot;: [ 30.1, 31.0 ] })&quot;);</span></div>
+<div class="line"><span class="stringliteral">append(R</span><span class="stringliteral">&quot;({ &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Tercel&quot;, &quot;year&quot;: 1999, &quot;tire_pressure&quot;: [ 29.8, 30.0 ] })&quot;);</span></div>
+<div class="line"><span class="stringliteral"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> input(input_str);</span></div>
+<div class="line"><span class="stringliteral"></span> </div>
+<div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
+<div class="line"><span class="stringliteral">ondemand::document_stream stream;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> error = parser.iterate_many(input, ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                 <a class="code hl_enumvalue" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">simdjson::stream_format::json_sequence</a>).get(stream);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">std::vector&lt;Car&gt; cars;</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> doc : stream) {</div>
+<div class="line">  Car c;</div>
+<div class="line">  <span class="keywordflow">if</span> ((error = doc.get&lt;Car&gt;().get(c))) { <span class="comment">/* handle error */</span> }</div>
+<div class="line">  cars.push_back(c);</div>
+<div class="line">}</div>
+</div><!-- fragment --><p></code></p>
+<p><code>In every case, the user-defined type (<code>Car</code> here) does not need a hand-written <code>tag_invoke</code> overload: the library generates the deserialization code from the type's public data members at compile time.</code></p>
+<p><code><b>Performance tip</b>: You will get better performance if you order the attributes (make, model) in the order they appear in the JSON document. </code></p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

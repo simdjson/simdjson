@@ -14,7 +14,10 @@ var classsimdjson_1_1dom_1_1parser =
     [ "operator=", "classsimdjson_1_1dom_1_1parser.html#af5b61dda345cef1feba7c4529dfe0259", null ],
     [ "parse", "classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984", null ],
     [ "parse_into_document", "classsimdjson_1_1dom_1_1parser.html#a1afc4d3b429363b503a5605d66081e30", null ],
-    [ "parse_many", "classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1", null ],
+    [ "parse_into_document_unpadded", "classsimdjson_1_1dom_1_1parser.html#a8aa3cc9f55814249e5751faba17e8d28", null ],
+    [ "parse_many", "classsimdjson_1_1dom_1_1parser.html#afc055ba3460bf453134dfd057c61b500", null ],
+    [ "parse_many", "classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2", null ],
+    [ "parse_unpadded", "classsimdjson_1_1dom_1_1parser.html#a8a27c6955bc5b542890b2c4825ee917c", null ],
     [ "set_max_capacity", "classsimdjson_1_1dom_1_1parser.html#a6977b4586bc601070cf100e2973a4cbc", null ],
     [ "threaded", "classsimdjson_1_1dom_1_1parser.html#a63fe2363db0d3acf458519698beaacf4", null ]
 ];

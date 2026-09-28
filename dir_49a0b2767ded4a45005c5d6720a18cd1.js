@@ -14,6 +14,7 @@ var dir_49a0b2767ded4a45005c5d6720a18cd1 =
     [ "ppc64", "dir_9b01d0736ef91c92ca1a5074971144b1.html", "dir_9b01d0736ef91c92ca1a5074971144b1" ],
     [ "rvv-vls", "dir_01690b9d1f138c527889b853e86b0ecd.html", "dir_01690b9d1f138c527889b853e86b0ecd" ],
     [ "westmere", "dir_0d145e48adcb2584d6aad0aa1d711d9e.html", "dir_0d145e48adcb2584d6aad0aa1d711d9e" ],
+    [ "annotations.h", "annotations_8h.html", null ],
     [ "arm64.h", "arm64_8h_source.html", null ],
     [ "base.h", "base_8h_source.html", null ],
     [ "builder.h", "builder_8h_source.html", null ],

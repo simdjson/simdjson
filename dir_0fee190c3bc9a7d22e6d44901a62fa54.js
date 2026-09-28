@@ -2,6 +2,7 @@ var dir_0fee190c3bc9a7d22e6d44901a62fa54 =
 [
     [ "atomic_ptr.h", "atomic__ptr_8h_source.html", null ],
     [ "dom_parser_implementation.h", "internal_2dom__parser__implementation_8h_source.html", null ],
+    [ "fast_float.h", "fast__float_8h_source.html", null ],
     [ "fractured_formatter.h", "fractured__formatter_8h_source.html", null ],
     [ "instruction_set.h", "instruction__set_8h_source.html", null ],
     [ "json_structure_analyzer.h", "json__structure__analyzer_8h_source.html", null ],

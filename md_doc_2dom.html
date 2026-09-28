@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -102,6 +102,7 @@ $(document).ready(function(){initNavTree('md_doc_2dom.html',''); initResizable()
 <li>DOM vs On-Demand</li>
 <li>The Basics: Loading and Parsing JSON Documents</li>
 <li>Using the Parsed JSON</li>
+<li>Reverse Array Iteration</li>
 <li>C++17 Support</li>
 <li>C++20 Support</li>
 <li>JSON Pointer</li>
@@ -112,17 +113,19 @@ $(document).ready(function(){initNavTree('md_doc_2dom.html',''); initResizable()
 </ul>
 </li>
 <li>Tree Walking and JSON Element Types</li>
+<li>Limiting the maximum depth</li>
 <li>Reusing the parser for maximum efficiency</li>
 <li>Server Loops: Long-Running Processes and Memory Capacity</li>
 <li>Best Use of the DOM API</li>
 <li>Padding and Temporary Copies</li>
+<li>Parsing Without Padding</li>
 <li>Performance Tips</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md86"></a>
+<h1><a class="anchor" id="autotoc_md110"></a>
 DOM vs On-Demand</h1>
 <p>The simdjson library offers two distinct approaches on how to access a JSON document. We support a conventional Document-Object-Model (DOM) front-end. In such a scenario, the JSON document is entirely parsed, validated and materialized in memory as the first step. The programmer may then access the parsed data using this in-memory model.</p>
 <p>On-Demand is a different model where you parse just what you need, directly into your own data structure. The On-Demand approach, when well tuned, can provide superior performance. <a href="https://github.com/simdjson/simdjson/blob/master/doc/basics.md">We refer you to the On-Demand documentation for further details</a>.</p>
-<h1><a class="anchor" id="autotoc_md87"></a>
+<h1><a class="anchor" id="autotoc_md111"></a>
 The Basics: Loading and Parsing JSON Documents using the DOM front-end</h1>
 <p>The simdjson library offers a simple DOM tree API, which you can access by creating a <code>dom::parser</code> and calling the <code>load()</code> method:</p>
 <div class="fragment"><div class="line">dom::parser parser;</div>
@@ -146,34 +149,43 @@ The Basics: Loading and Parsing JSON Documents using the DOM front-end</h1>
 </div><!-- fragment --><p>You can then parse the JSON document from the <code><a class="el" href="structsimdjson_1_1padded__string.html" title="String with extra allocation for ease of use with parser::parse()">simdjson::padded_string</a></code> instance:</p>
 <div class="fragment"><div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> doc = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(my_padded_data);</div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition</b> <a href="element_8h_source.html#l00034">element.h:34</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition</b> <a href="element_8h_source.html#l00036">element.h:36</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a></div><div class="ttdoc">A persistent document parser.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00030">parser.h:30</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a16c7d1e28125ef7d5703244483f70984"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">simdjson::dom::parser::parse</a></div><div class="ttdeci">simdjson_result&lt; element &gt; parse(const uint8_t *buf, size_t len, bool realloc_if_needed=true) &amp;noexcept</div><div class="ttdoc">Parse a JSON document and return a temporary reference to it.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00155">parser-inl.h:155</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a16c7d1e28125ef7d5703244483f70984"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">simdjson::dom::parser::parse</a></div><div class="ttdeci">simdjson_result&lt; element &gt; parse(const uint8_t *buf, size_t len, bool realloc_if_needed=true) &amp;noexcept</div><div class="ttdoc">Parse a JSON document and return a temporary reference to it.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00178">parser-inl.h:178</a></div></div>
 </div><!-- fragment --><p>Whenever you pass an <code>std::string</code> reference to <code>parser::parse</code>, the parser will access the bytes beyond the end of the string but before the end of the allocated memory (<code>std::string::capacity()</code>). If you are using a sanitizer that checks for reading uninitialized bytes or <code>std::string</code>'s container-overflow checks, you may encounter sanitizer warnings. You can safely ignore these warnings. Or you can call <code><a class="el" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16" title="Create a padded_string_view from a string.">simdjson::pad</a>(std::string&amp;)</code> to pad the string with <code>SIMDJSON_PADDING</code> spaces: this function returns a <code>simdjson::padding_string_view</code> which can be be passed to the parser's iterator function:</p>
 <div class="fragment"><div class="line">std::string json = <span class="stringliteral">&quot;[1]&quot;</span>;</div>
 <div class="line">dom::element doc = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(<a class="code hl_function" href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16">simdjson::pad</a>(json));</div>
-<div class="ttc" id="anamespacesimdjson_html_ac4131fd8cef9c8046d0bc9aee8d44d16"><div class="ttname"><a href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16">simdjson::pad</a></div><div class="ttdeci">padded_string_view pad(std::string &amp;s) noexcept</div><div class="ttdoc">Create a padded_string_view from a string.</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view-inl_8h_source.html#l00072">padded_string_view-inl.h:72</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_ac4131fd8cef9c8046d0bc9aee8d44d16"><div class="ttname"><a href="namespacesimdjson.html#ac4131fd8cef9c8046d0bc9aee8d44d16">simdjson::pad</a></div><div class="ttdeci">padded_string_view pad(std::string &amp;s) noexcept</div><div class="ttdoc">Create a padded_string_view from a string.</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view-inl_8h_source.html#l00081">padded_string_view-inl.h:81</a></div></div>
 </div><!-- fragment --><p>The parsed document resulting from the <code>parser.load</code> and <code>parser.parse</code> calls depends on the <code>parser</code> instance. Thus the <code>parser</code> instance must remain in scope. Furthermore, you must have at most one parsed document in play per <code>parser</code> instance. You cannot copy a <code>parser</code> instance, you may only move it.</p>
 <p>If you need to keep a document around long term, you can keep or move the parser instance. Note that moving a parser instance, or keeping one in a movable data structure like vector or map, can cause any outstanding <code>element</code>, <code>object</code> or <code>array</code> instances to be invalidated. The <code>element</code>, <code>object</code> or <code>array</code> instances are mere thin wrappers akin to an <code>std::vector&lt;int&gt;::iterator</code>: they are invalid when default constructed, they must be tied to a valid document instance. If you need to store a parser in a movable data structure, you should use a <code>std::unique_ptr</code> to avoid this invalidation(e.g., <code>std::unique_ptr&lt;dom::parser&gt; parser(new dom::parser{})</code>).</p>
 <p>During the<code>load</code> or <code>parse</code> calls, neither the input file nor the input string are ever modified. After calling <code>load</code> or <code>parse</code>, the source (either a file or a string) can be safely discarded. All of the JSON data is stored in the <code>parser</code> instance. The parsed document is also immutable in simdjson: you do not modify it by accessing it.</p>
 <p>For best performance, a <code>parser</code> instance should be reused over several files: otherwise you will needlessly reallocate memory, an expensive process. It is also possible to avoid entirely memory allocations during parsing when using simdjson. <a class="el" href="md_doc_2performance.html">See our performance notes for details</a>.</p>
 <p>If you need a lower-level interface, you may call the function <code>parser.parse(const char * p, size_t l)</code> on a pointer <code>p</code> while specifying the length of your input <code>l</code> in bytes.</p>
 <p><em>Windows-specific</em>: Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001). This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
-<p><b>Advanced feature:</b> On non-Windows systems, you can use memory-file mapping to create a <code><a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">simdjson::padded_string_view</a></code> from a file on disk.</p>
-<div class="fragment"><div class="line"><span class="comment">// if the macro _WIN32 is defined, this will not work since we do not support Windows</span></div>
-<div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a> map(TWITTER_JSON);</div>
+<p><b>Advanced feature:</b> You can use <code>simdjson::padded_memory_map</code> to create a <code><a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">simdjson::padded_string_view</a></code> from a file on disk without copying the file contents into your own buffer. On POSIX systems (Linux, macOS, BSD, ...) it uses <code>mmap</code> for true zero-copy access. On Windows it is available as an <b>opt-in</b> feature and requires:</p>
+<ol type="1">
+<li>Building simdjson with <code>-DSIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=ON</code>, or defining <code>SIMDJSON_ENABLE_MEMORY_FILE_MAPPING_ON_WINDOWS=1</code> and raising <code>NTDDI_VERSION</code> to at least <code>NTDDI_WIN10_RS4</code> (Windows 10, version 1803) and linking <code>onecore.lib</code> manually if you are consuming simdjson as a pre-built library.</li>
+<li><code>#include &lt;windows.h&gt;</code> before <code>#include "simdjson.h"</code> in every translation unit where you want to use <code>padded_memory_map</code>.</li>
+</ol>
+<p>When enabled on Windows, the implementation uses <code>CreateFileMapping2</code> and <code>MapViewOfFile3</code> for true zero-copy mapping whenever the file does not end within <code>SIMDJSON_PADDING</code> bytes of a page boundary; otherwise it falls back to reading the file into a padded heap buffer. If those requirements are not met, the class is not declared and the code below will fail to compile.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#ifdef _WIN32</span></div>
+<div class="line"><span class="preprocessor">#include &lt;windows.h&gt;</span> <span class="comment">// Must come BEFORE &lt;simdjson.h&gt; on Windows</span></div>
+<div class="line"><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
+<div class="line"><span class="comment">// ...</span></div>
+<div class="line">simdjson::padded_memory_map map(TWITTER_JSON);</div>
 <div class="line"><span class="keywordflow">if</span> (!map.is_valid()) { <span class="comment">/* handle error */</span> }</div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a> view = map.view(); <span class="comment">// view is usable while padded_memory_map is in scope</span></div>
 <div class="line">ondemand::document doc = parser.iterate(view); <span class="comment">// parse the JSON</span></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__memory__map_html"><div class="ttname"><a href="classsimdjson_1_1padded__memory__map.html">simdjson::padded_memory_map</a></div><div class="ttdoc">A class representing a memory-mapped file with padding.</div><div class="ttdef"><b>Definition</b> <a href="padded__string_8h_source.html#l00286">padded_string.h:286</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00018">padded_string_view.h:18</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1padded__string__view_html"><div class="ttname"><a href="classsimdjson_1_1padded__string__view.html">simdjson::padded_string_view</a></div><div class="ttdoc">User-provided string that promises it has extra padded bytes at the end for use with parser::parse().</div><div class="ttdef"><b>Definition</b> <a href="padded__string__view_8h_source.html#l00021">padded_string_view.h:21</a></div></div>
+<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
 </div><!-- fragment --><p>Using memory-file mapping requires some care. The file should not be modified while you are accessing it.</p>
-<h1><a class="anchor" id="autotoc_md88"></a>
+<h1><a class="anchor" id="autotoc_md112"></a>
 Using the Parsed JSON</h1>
 <p>Once you have an element, you can navigate it with idiomatic C++ iterators, operators and casts.</p>
 <ul>
 <li><b>Extracting Values (with exceptions):</b> You can cast a JSON element to a native type: <code>double(element)</code> or <code>double x = json_element</code>. This works for double, uint64_t, int64_t, bool, dom::object and dom::array. An exception (<code><a class="el" href="structsimdjson_1_1simdjson__error.html" title="Exception thrown when an exception-supporting simdjson method is called.">simdjson::simdjson_error</a></code>) is thrown if the cast is not possible.</li>
-<li><b>Extracting Values (without exceptions):</b> You can use a variant usage of <code>get()</code> with error codes to avoid exceptions. You first declare the variable of the appropriate type (<code>double</code>, <code>uint64_t</code>, <code>int64_t</code>, <code>bool</code>, <code>std::string_view</code>, <code>dom::object</code> and <code>dom::array</code>) and pass it by reference to <code>get()</code> which gives you back an error code: e.g., <div class="fragment"><div class="line"><a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a> error;</div>
+<li><b>Extracting Values (without exceptions):</b> You can use a variant usage of <code>get()</code> with error codes to avoid exceptions. You first declare the variable of the appropriate type (<code>double</code>, <code>uint64_t</code>, <code>int64_t</code>, <code>bool</code>, <code>std::string_view</code>, <code>std::u8string_view</code> (C++20), <code>dom::object</code> and <code>dom::array</code>) and pass it by reference to <code>get()</code> which gives you back an error code: e.g., <div class="fragment"><div class="line"><a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a> error;</div>
 <div class="line"><span class="comment">// _padded returns an simdjson::padded_string instance</span></div>
 <div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> numberstring = <span class="stringliteral">&quot;1.2&quot;</span>_padded; <span class="comment">// our JSON input (&quot;1.2&quot;)</span></div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
@@ -182,7 +194,7 @@ Using the Parsed JSON</h1>
 <div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span> EXIT_FAILURE; }</div>
 <div class="line">std::cout &lt;&lt; <span class="stringliteral">&quot;I parsed &quot;</span> &lt;&lt; value &lt;&lt; <span class="stringliteral">&quot; from &quot;</span> &lt;&lt; numberstring.<a class="code hl_function" href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">data</a>() &lt;&lt; std::endl;</div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">simdjson::error_code</a></div><div class="ttdeci">error_code</div><div class="ttdoc">All possible errors returned by simdjson.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00019">error.h:19</a></div></div>
-<div class="ttc" id="astructsimdjson_1_1padded__string_html_aadd3bb268cbba43012c5d17a8c1ab7ef"><div class="ttname"><a href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">simdjson::padded_string::data</a></div><div class="ttdeci">const char * data() const noexcept</div><div class="ttdoc">The string data.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00134">padded_string-inl.h:134</a></div></div>
+<div class="ttc" id="astructsimdjson_1_1padded__string_html_aadd3bb268cbba43012c5d17a8c1ab7ef"><div class="ttname"><a href="structsimdjson_1_1padded__string.html#aadd3bb268cbba43012c5d17a8c1ab7ef">simdjson::padded_string::data</a></div><div class="ttdeci">const char * data() const noexcept</div><div class="ttdoc">The string data.</div><div class="ttdef"><b>Definition</b> <a href="padded__string-inl_8h_source.html#l00139">padded_string-inl.h:139</a></div></div>
 </div><!-- fragment --> The strings contain unescaped valid UTF-8 strings: no unmatched surrogate is allowed. Internally, numbers are stored as either 64-bit integers or 64-bit floating-point numbers. Thus it is possible to get the full 64-bit integer range (either signed or unsigned). By default, the string <code>-0</code> is parsed as the integer 0 as in Python or C++. If you set the macro <code>SIMDJSON_MINUS_ZERO_AS_FLOAT</code> to <code>1</code> when building simdjson, you can get that <code>-0</code> is mapped to <code>-0.0</code> as in JavaScript. You can get the desired effect by building simdjson with cmake setting the <code>SIMDJSON_MINUS_ZERO_AS_FLOAT</code> to on: <code>cmake -B build -D SIMDJSON_MINUS_ZERO_AS_FLOAT=ON</code>.</li>
 <li><b>Big Integer Support (opt-in):</b> By default, integers that exceed the 64-bit range cause parsing to fail with <code>BIGINT_ERROR</code>. You can opt in to big integer support so that these numbers are stored as raw digit strings on the tape instead: <div class="fragment"><div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
 <div class="line">parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd">number_as_string</a>(<span class="keyword">true</span>); <span class="comment">// opt-in, default false</span></div>
@@ -197,7 +209,7 @@ Using the Parsed JSON</h1>
 <div class="line">    std::cout &lt;&lt; <span class="stringliteral">&quot;big integer: &quot;</span> &lt;&lt; digits &lt;&lt; std::endl;</div>
 <div class="line">  }</div>
 <div class="line">}</div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_ab22ef16bfd7fd4b45702f86619c354cd"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd">simdjson::dom::parser::number_as_string</a></div><div class="ttdeci">void number_as_string(bool enabled) noexcept</div><div class="ttdoc">When enabled, big integers (exceeding uint64 range) are stored as strings in the tape instead of retu...</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00617">parser.h:617</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_ab22ef16bfd7fd4b45702f86619c354cd"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#ab22ef16bfd7fd4b45702f86619c354cd">simdjson::dom::parser::number_as_string</a></div><div class="ttdeci">void number_as_string(bool enabled) noexcept</div><div class="ttdoc">When enabled, big integers (exceeding uint64 range) are stored as strings in the tape instead of retu...</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00711">parser.h:711</a></div></div>
 </div><!-- fragment --> When enabled, big integers have type <code>element_type::BIGINT</code>. Calling <code>get_int64()</code>, <code>get_uint64()</code>, or <code>get_double()</code> on a big integer returns <code>INCORRECT_TYPE</code>. Normal numbers (int64, uint64, double) are unaffected.</li>
 <li><b>Field Access:</b> To get the value of the "foo" field in an object, use <code>object["foo"]</code>.</li>
 <li><b>Array Iteration:</b> To iterate through an array, use <code>for (auto value : array) { ... }</code>. If you know the type of the value, you can cast it right there, too! <code>for (double value : array) { ... }</code></li>
@@ -206,10 +218,10 @@ Using the Parsed JSON</h1>
 <p>&zwj;Note that array[0] does not compile, because implementing [] gives the impression indexing is a O(1) operation, which it is not presently in simdjson. Instead, you should iterate over the elements using a for-loop, as in our examples. </p>
 </blockquote>
 * <b>Array and Object size</b> Given an array or an object, you can get its size (number of elements or keys) with the <code>size()</code> method.</li>
-<li><b>Checking an Element Type:</b> You can check an element's type with <code>element.type()</code>. It returns an <code>element_type</code> with values such as <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aacb4fb1757fb37c43cded35d3eb857c43" title="dom::array">simdjson::dom::element_type::ARRAY</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa8eee8e217391199668cbac89472ace53" title="dom::object">simdjson::dom::element_type::OBJECT</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c" title="int64_t">simdjson::dom::element_type::INT64</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa6de7acf711860176ba606e9aa2b85d5f" title="uint64_t: any integer that fits in uint64_t but not int64_t">simdjson::dom::element_type::UINT64</a></code>,<code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229" title="double: Any number with a &quot;.&quot; or &quot;e&quot; that fits in double.">simdjson::dom::element_type::DOUBLE</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949" title="std::string_view">simdjson::dom::element_type::STRING</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa97b2c144243b2b9d2c593ec268b62f5" title="bool">simdjson::dom::element_type::BOOL</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a" title="null">simdjson::dom::element_type::NULL_VALUE</a></code> or, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae" title="std::string_view: big integer stored as raw digit string">simdjson::dom::element_type::BIGINT</a></code> (when big integer support is enabled).</li>
+<li><b>Checking an Element Type:</b> You can check an element's type with <code>element.type()</code>. It returns an <code>element_type</code> with values such as <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aacb4fb1757fb37c43cded35d3eb857c43" title="dom::array">simdjson::dom::element_type::ARRAY</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa8eee8e217391199668cbac89472ace53" title="dom::object">simdjson::dom::element_type::OBJECT</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa4e866b275c85fbb439f6484251cfb31c" title="int64_t">simdjson::dom::element_type::INT64</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa6de7acf711860176ba606e9aa2b85d5f" title="uint64_t: any integer that fits in uint64_t but not int64_t">simdjson::dom::element_type::UINT64</a></code>,<code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229" title="double: Any number with a &quot;.&quot; or &quot;e&quot; that fits in double.">simdjson::dom::element_type::DOUBLE</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa63b588d5559f64f89a416e656880b949" title="std::string_view">simdjson::dom::element_type::STRING</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa97b2c144243b2b9d2c593ec268b62f5" title="bool">simdjson::dom::element_type::BOOL</a></code>, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aaa9f0aff2067f91437e50e4872b229e6a" title="null">simdjson::dom::element_type::NULL_VALUE</a></code> or, <code><a class="el" href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aa7f4c937d16ac710f52c288124cc886ae" title="The BIGINT type is for integers that do not fit in 64 bits. It is only present.">simdjson::dom::element_type::BIGINT</a></code> (when big integer support is enabled).</li>
 <li><b>Output to streams and strings:</b> Given a document or an element (or node) out of a JSON document, you can output a minified string version using the C++ stream idiom (<code>out &lt;&lt; element</code>). You can also request the construction of a minified string version (<code>simdjson::minify(element)</code>) or a prettified string version (<code>simdjson::prettify(element)</code>). Numbers are serialized as 64-bit floating-point numbers (<code>double</code>).</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md89"></a>
+<h2><a class="anchor" id="autotoc_md113"></a>
 Examples</h2>
 <p>The following code illustrates all of the above:</p>
 <div class="fragment"><div class="line"><span class="comment">//  R&quot;( ... )&quot; is a C++ raw string literal.</span></div>
@@ -264,7 +276,24 @@ Examples</h2>
 <div class="line"><span class="stringliteral">dom::parser parser;</span></div>
 <div class="line"><span class="stringliteral"></span><span class="keywordtype">double</span> v = parser.parse(abstract_json)[<span class="stringliteral">&quot;str&quot;</span>][<span class="stringliteral">&quot;123&quot;</span>][<span class="stringliteral">&quot;abc&quot;</span>];</div>
 <div class="line">cout &lt;&lt; <span class="stringliteral">&quot;number: &quot;</span> &lt;&lt; v &lt;&lt; endl;</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md90"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md114"></a>
+Reverse Array Iteration</h1>
+<p>Use <code>rbegin()</code> and <code>rend()</code> to visit the immediate elements of a DOM array from last to first. Incrementing a reverse iterator moves toward the start of the array; nested arrays and objects are returned as individual elements.</p>
+<div class="fragment"><div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
+<div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> json(<span class="stringliteral">&quot;[1,2,3]&quot;</span>, 7);</div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a> values;</div>
+<div class="line"><span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(json).get_array().get(values);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { std::cerr &lt;&lt; error &lt;&lt; std::endl; <span class="keywordflow">return</span>; }</div>
+<div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> it = values.<a class="code hl_function" href="classsimdjson_1_1dom_1_1array.html#a83a6f903a93ecd74d197b50dc096e270">rbegin</a>(); it != values.<a class="code hl_function" href="classsimdjson_1_1dom_1_1array.html#ae69bc4c51647fa61bea1e607f5b0b225">rend</a>(); ++it) {</div>
+<div class="line">  std::cout &lt;&lt; *it &lt;&lt; std::endl; <span class="comment">// 3, then 2, then 1</span></div>
+<div class="line">}</div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1array_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1array.html">simdjson::dom::array</a></div><div class="ttdoc">JSON array.</div><div class="ttdef"><b>Definition</b> <a href="dom_2array_8h_source.html#l00015">array.h:15</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1array_html_a83a6f903a93ecd74d197b50dc096e270"><div class="ttname"><a href="classsimdjson_1_1dom_1_1array.html#a83a6f903a93ecd74d197b50dc096e270">simdjson::dom::array::rbegin</a></div><div class="ttdeci">reverse_iterator rbegin() const noexcept</div><div class="ttdoc">Return the last array element, or rend() for an empty array.</div><div class="ttdef"><b>Definition</b> <a href="dom_2array-inl_8h_source.html#l00099">array-inl.h:99</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1array_html_ae69bc4c51647fa61bea1e607f5b0b225"><div class="ttname"><a href="classsimdjson_1_1dom_1_1array.html#ae69bc4c51647fa61bea1e607f5b0b225">simdjson::dom::array::rend</a></div><div class="ttdeci">reverse_iterator rend() const noexcept</div><div class="ttdoc">Return the reverse traversal sentinel, before the first element.</div><div class="ttdef"><b>Definition</b> <a href="dom_2array-inl_8h_source.html#l00104">array-inl.h:104</a></div></div>
+</div><!-- fragment --><p>An empty array has <code>rbegin() == rend()</code>. The reverse iterator is a forward iterator in reverse document order: it supports copying, dereferencing, incrementing, and equality comparisons, but not decrementing. As with forward iteration, the document must remain alive and must not be overwritten by another parse while its iterators or elements are in use.</p>
+<p>A complete reverse traversal takes O(n) time for n immediate array elements, uses O(1) additional space, and does not allocate or change the tape. Most steps take constant time. When numeric payload bits coincide with numeric type markers, locating the previous element can require scanning a run of markers. An individual <code>rbegin()</code> or increment can therefore take O(n) time in the worst case. Increments are amortized O(1) over a complete traversal, including arrays with nested values. The existing forward iterator remains unchanged; this API does not make the array bidirectional or enable <code>std::views::reverse(array)</code>.</p>
+<p>With exceptions enabled, <code>simdjson_result&lt;dom::array&gt;</code> also exposes <code>rbegin()</code> and <code>rend()</code> and throws its stored error if the result is unsuccessful. With exceptions disabled, obtain a <code>dom::array</code> with <code>.get(array)</code> as above.</p>
+<h1><a class="anchor" id="autotoc_md115"></a>
 C++17 Support</h1>
 <p>While the simdjson library can be used in any project using C++ 11 and above, field iteration has special support C++ 17's destructuring syntax. For example:</p>
 <div class="fragment"><div class="line">padded_string json = R<span class="stringliteral">&quot;(  { &quot;foo&quot;: 1, &quot;bar&quot;: 2 }  )&quot;_padded;</span></div>
@@ -285,7 +314,7 @@ C++17 Support</h1>
 <div class="line"><span class="keywordflow">for</span> (dom::key_value_pair field : object) {</div>
 <div class="line">  cout &lt;&lt; field.key &lt;&lt; <span class="stringliteral">&quot; = &quot;</span> &lt;&lt; field.value &lt;&lt; endl;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md91"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md116"></a>
 C++20 Support</h1>
 <p>simdjson library also supports some C++20 feature including <code>std::ranges</code>:</p>
 <div class="fragment"><div class="line"><span class="keyword">auto</span> cars_json = R<span class="stringliteral">&quot;( [</span></div>
@@ -298,7 +327,7 @@ C++20 Support</h1>
 <div class="line"><span class="keywordflow">for</span> (<span class="keyword">auto</span> car : parser.parse(cars_json).get_array() | std::views::transform(justmodel)) {</div>
 <div class="line">  std::cout &lt;&lt; car &lt;&lt; std::endl;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md92"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md117"></a>
 JSON Pointer</h1>
 <p>The simdjson library also supports <a href="https://tools.ietf.org/html/rfc6901">JSON pointer</a> through the <code>at_pointer()</code> method, letting you reach further down into the document in a single call:</p>
 <div class="fragment"><div class="line"><span class="keyword">auto</span> cars_json = R<span class="stringliteral">&quot;( [</span></div>
@@ -327,7 +356,7 @@ JSON Pointer</h1>
 <div class="line">    <span class="keywordtype">double</span> x = car.at_pointer(<span class="stringliteral">&quot;/tire_pressure/1&quot;</span>);</div>
 <div class="line">    cout &lt;&lt; x &lt;&lt; endl; <span class="comment">// Prints 39.9, 31 and 30</span></div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md93"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md118"></a>
 JSONPath</h1>
 <p>The simdjson library supports a subset of <a href="https://www.rfc-editor.org/rfc/rfc9535">JSONPath</a> (RFC 9535) through the <code>at_path()</code> method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using <code>.</code> to access a field and <code>[]</code> to access a specific index.</p>
 <p>Consider the following example:</p>
@@ -359,11 +388,11 @@ JSONPath</h1>
 <div class="line"><span class="keywordflow">if</span>(x != 20) { <span class="comment">/*won&#39;t happen*/</span> }</div>
 <div class="line">x = obj.at_path(<span class="stringliteral">&quot;$.d.foo2.a.2&quot;</span>);</div>
 <div class="line"><span class="keywordflow">if</span>(error) { <span class="comment">/*won&#39;t happen*/</span> }</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md94"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md119"></a>
 Using &lt;tt&gt;at_path_with_wildcard&lt;/tt&gt; for JSONPath Queries</h1>
 <p>The <code>at_path_with_wildcard</code> function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (<code>*</code>) in JSON paths. This allows users to retrieve multiple elements from a JSON document in a single query. For example, you can use <code>$.address.*</code> to fetch all fields within the <code>address</code> object or <code>$.phoneNumbers[*].numbers[*]</code> to retrieve all phone numbers across multiple objects in an array.</p>
 <p>The <code>*</code> wildcard matches all elements at a specific level. For instance, <code>$.address.*</code> retrieves all key-value pairs in the <code>address</code> object, while <code>$.*.streetAddress</code> fetches all <code>streetAddress</code> fields across objects at the root level. You can combine wildcards with array indexing. For example, <code>$.phoneNumbers[*].numbers[1]</code> retrieves the second number from each <code>numbers</code> array in the <code>phoneNumbers</code> array. If no elements match the wildcard query, the function returns an empty result. For instance, querying <code>$.empty_object.*</code> or <code>$.empty_array.*</code> will yield an empty set.</p>
-<h2><a class="anchor" id="autotoc_md95"></a>
+<h2><a class="anchor" id="autotoc_md120"></a>
 Example Usage</h2>
 <p>Here is an example demonstrating the use of <code>at_path_with_wildcard</code>:</p>
 <div class="fragment"><div class="line"><a class="code hl_struct" href="structsimdjson_1_1padded__string.html">simdjson::padded_string</a> json_string = R<span class="stringliteral">&quot;(</span></div>
@@ -421,7 +450,7 @@ Example Usage</h2>
 <div class="line">}</div>
 <div class="ttc" id="anamespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_html_ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df"><div class="ttname"><a href="namespacesimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand.html#ac915f0c06e5ab0363e09593bba651330ab1bc248a7ff2b2e95569f56de68615df">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::json_type::number</a></div><div class="ttdeci">@ number</div><div class="ttdoc">A JSON number ( 1 or -2.3 or 4.5e6 ...)</div></div>
 </div><!-- fragment --><p>This function is particularly useful for extracting data from complex JSON structures with nested arrays and objects. By leveraging wildcards, you can simplify your queries and reduce the need for multiple iterations.</p>
-<h1><a class="anchor" id="autotoc_md96"></a>
+<h1><a class="anchor" id="autotoc_md121"></a>
 Error Handling</h1>
 <p>All simdjson APIs that can fail return <code>simdjson_result&lt;T&gt;</code>, which is a &lt;value, error_code&gt; pair. You can retrieve the value with .get(), like so:</p>
 <div class="fragment"><div class="line">dom::element doc;</div>
@@ -460,7 +489,6 @@ Error Handling</h1>
 <div class="line">  std::cout &lt;&lt; res &lt;&lt; <span class="stringliteral">&quot; results.&quot;</span> &lt;&lt; std::endl;</div>
 <div class="line">}</div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_ac408e4da66b0ac7cf9734aa4973e0093"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#ac408e4da66b0ac7cf9734aa4973e0093">simdjson::dom::parser::load</a></div><div class="ttdeci">simdjson_result&lt; element &gt; load(std::string_view path) &amp;noexcept</div><div class="ttdoc">Load a JSON document from a file and return a reference to it.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00095">parser-inl.h:95</a></div></div>
-<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
 </div><!-- fragment --><p>The following is a similar example where one wants to get the id of the first tweet without triggering exceptions. To do this, we use <code>["statuses"].at(0)["id"]</code>. We break that expression down:</p>
 <ul>
 <li>Get the list of tweets (the <code>"statuses"</code> key of the document) using <code>["statuses"]</code>). The result is expected to be an array.</li>
@@ -482,9 +510,9 @@ Error Handling</h1>
 <div class="line">  std::cout &lt;&lt; identifier &lt;&lt; std::endl;</div>
 <div class="line">  <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html_aa8b5798004a859bf922778226b8c1cce"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html#aa8b5798004a859bf922778226b8c1cce">simdjson::dom::element::at</a></div><div class="ttdeci">simdjson_result&lt; element &gt; at(const std::string_view json_pointer) const noexcept</div><div class="ttdoc">Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard and allowed the...</div><div class="ttdef"><b>Definition</b> <a href="element-inl_8h_source.html#l00468">element-inl.h:468</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html_aa8b5798004a859bf922778226b8c1cce"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html#aa8b5798004a859bf922778226b8c1cce">simdjson::dom::element::at</a></div><div class="ttdeci">simdjson_result&lt; element &gt; at(const std::string_view json_pointer) const noexcept</div><div class="ttdoc">Version 0.4 of simdjson used an incorrect interpretation of the JSON Pointer standard and allowed the...</div><div class="ttdef"><b>Definition</b> <a href="element-inl_8h_source.html#l00485">element-inl.h:485</a></div></div>
 </div><!-- fragment --><p>The <code>at()</code> method has linear-time complexity: it should not be used to iterate over the content of an array.</p>
-<h2><a class="anchor" id="autotoc_md97"></a>
+<h2><a class="anchor" id="autotoc_md122"></a>
 Error Handling Example</h2>
 <p>This is how the example in "Using the Parsed JSON" could be written using only error code checking:</p>
 <div class="fragment"><div class="line"><span class="keyword">auto</span> cars_json = R<span class="stringliteral">&quot;( [</span></div>
@@ -589,7 +617,7 @@ Error Handling Example</h2>
 <div class="line">}</div>
 </div><!-- fragment --><p>To ensure you don't write any code that uses exceptions, compile with <code>SIMDJSON_EXCEPTIONS=OFF</code>. For example, if including the project via cmake:</p>
 <div class="fragment"><div class="line">target_compile_definitions(simdjson PUBLIC SIMDJSON_EXCEPTIONS=OFF)</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md98"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md123"></a>
 Exceptions</h2>
 <p>Users more comfortable with an exception flow may choose to directly cast the <code>simdjson_result&lt;T&gt;</code> to the desired type:</p>
 <div class="fragment"><div class="line">dom::element doc = parser.parse(json); <span class="comment">// Throws an exception if there was an error!</span></div>
@@ -604,7 +632,7 @@ Exceptions</h2>
 <div class="line">  std::cout &lt;&lt; <span class="stringliteral">&quot;ID: &quot;</span> &lt;&lt; tweets[<span class="stringliteral">&quot;statuses&quot;</span>].<a class="code hl_function" href="classsimdjson_1_1dom_1_1element.html#aa8b5798004a859bf922778226b8c1cce">at</a>(0)[<span class="stringliteral">&quot;id&quot;</span>] &lt;&lt; std::endl;</div>
 <div class="line">  <span class="keywordflow">return</span> EXIT_SUCCESS;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md99"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md124"></a>
 Tree Walking and JSON Element Types</h1>
 <p>Sometimes you don't necessarily have a document with a known type, and are trying to generically inspect or walk over JSON elements. To do that, you can use iterators and the type() method. For example, here's a quick and dirty recursive function that verbosely prints the JSON document as JSON (* ignoring nuances like trailing commas and escaping strings, for brevity's sake):</p>
 <div class="fragment"><div class="line"><span class="keywordtype">void</span> print_json(dom::element element) {</div>
@@ -650,13 +678,26 @@ Tree Walking and JSON Element Types</h1>
 <div class="line">  dom::parser parser;</div>
 <div class="line">  print_json(parser.load(<span class="stringliteral">&quot;twitter.json&quot;</span>));</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md100"></a>
+</div><!-- fragment --><p>Notice that we do not include <code>dom::element_type::BIGINT</code> in this example as <code>dom::element_type::BIGINT</code> type is only generated if the parser was set to support big integers (<code>parser.number_as_string(true)</code>).</p>
+<h1><a class="anchor" id="autotoc_md125"></a>
+Limiting the maximum depth</h1>
+<p>JSON documents can be nested arbitrarily deeply (<code>[[[[[[ ... ]]]]]]</code>). The simdjson library parses such documents iteratively: however deep the document is, parsing it costs the library no stack space.</p>
+<p>Code that walks the result is another matter. A recursive function applied to a document nested a thousand levels deep needs a thousand stack frames. Running out of stack is not a recoverable error: there is no exception and no error code, just a crash. A hostile input of a few kilobytes (<code>[[[[[[...</code>) is enough to cause one.</p>
+<p>So decide how deeply nested a document you are willing to accept, and tell the parser. The DOM parser refuses to parse a document nested more deeply than its <code>max_depth</code>, and reports <code>DEPTH_ERROR</code>:</p>
+<div class="fragment"><div class="line">dom::parser parser;</div>
+<div class="line"><span class="comment">// We refuse documents nested more than 30 levels deep.</span></div>
+<div class="line"><span class="keyword">auto</span> error = parser.allocate(0, 30);</div>
+<div class="line"><span class="keywordflow">if</span> (error) { <span class="comment">/* allocation failure */</span> }</div>
+<div class="line"><span class="keyword">auto</span> result = parser.parse(json); <span class="comment">// DEPTH_ERROR if json is nested too deeply</span></div>
+</div><!-- fragment --><p>The first argument to <code>allocate</code> is a capacity to reserve up front, not a limit: passing zero is fine, and the parser still grows its buffers by itself as documents are passed to it. If you know how large your documents are, you can skip the initial reallocations by reserving the capacity, e.g., <code>parser.allocate(1024 * 1024, 30)</code>. To put a hard limit on the document size, use <code>parser.set_max_capacity(1024 * 1024)</code>.</p>
+<p>The default depth limit is 1024 (<code><a class="el" href="namespacesimdjson.html#a6df2598eb1d4e1ea669c41831cc7325d" title="By default, simdjson supports this many nested objects and arrays.">simdjson::DEFAULT_MAX_DEPTH</a></code>). Real-world JSON is rarely nested more than a handful of levels, so a limit like 30 is generous, and it keeps a recursive traversal to a few tens of kilobytes of stack. You can query the current setting with <code>parser.max_depth()</code>.</p>
+<h1><a class="anchor" id="autotoc_md126"></a>
 Reusing the parser for maximum efficiency</h1>
 <p>If you're using simdjson to parse multiple documents, or in a loop, you should make a parser once and reuse it. The simdjson library will allocate and retain internal buffers between parses, keeping buffers hot in cache and keeping memory allocation and initialization to a minimum. In this manner, you can parse terabytes of JSON data without doing any new allocation.</p>
 <div class="fragment"><div class="line">dom::parser parser;</div>
 <div class="line"> </div>
 <div class="line"><span class="comment">// This initializes buffers and a document big enough to handle this JSON.</span></div>
-<div class="line">dom::element doc = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(<span class="stringliteral">&quot;[ true, false ]&quot;</span>_padded);</div>
+<div class="line">dom::element doc = parser.parse(<span class="stringliteral">&quot;[ true, false ]&quot;</span>_padded);</div>
 <div class="line">cout &lt;&lt; doc &lt;&lt; endl;</div>
 <div class="line"> </div>
 <div class="line"><span class="comment">// This reuses the existing buffers, and reuses and *overwrites* the old document</span></div>
@@ -673,7 +714,7 @@ Reusing the parser for maximum efficiency</h1>
 <p>&zwj;<b>You are only borrowing the document from the simdjson parser. Don't keep it long term!</b> </p>
 </blockquote>
 <p>This is key: don't keep the <code>document&amp;</code>, <code>dom::element</code>, <code>dom::array</code>, <code>dom::object</code> or <code>string_view</code> objects you get back from the API. Convert them to C++ native values, structs and arrays that you own.</p>
-<h1><a class="anchor" id="autotoc_md101"></a>
+<h1><a class="anchor" id="autotoc_md127"></a>
 Server Loops: Long-Running Processes and Memory Capacity</h1>
 <p>The simdjson library automatically expands its memory capacity when larger documents are parsed, so that you don't unexpectedly fail. In a short process that reads a bunch of files and then exits, this works pretty flawlessly.</p>
 <p>Server loops, though, are long-running processes that will keep the parser around forever. This means that if you encounter a really, really large document, simdjson will not resize back down. The simdjson library lets you adjust your allocation strategy to prevent your server from growing without bound:</p>
@@ -703,10 +744,10 @@ Server Loops: Long-Running Processes and Memory Capacity</h1>
 <div class="line">}</div>
 </div><!-- fragment --></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md102"></a>
+<h1><a class="anchor" id="autotoc_md128"></a>
 Best Use of the DOM API</h1>
 <p>The simdjson API provides access to the JSON DOM (document-object-model) content as a tree of <code>dom::element</code> instances, each representing an object, an array or an atomic type (null, true, false, number). These <code>dom::element</code> instances are lightweight objects (e.g., spanning 16 bytes) and it might be advantageous to pass them by value, as opposed to passing them by reference or by pointer.</p>
-<h1><a class="anchor" id="autotoc_md103"></a>
+<h1><a class="anchor" id="autotoc_md129"></a>
 Padding and Temporary Copies</h1>
 <p>The simdjson function <code>parser.parse</code> reads data from a padded buffer, containing SIMDJSON_PADDING extra bytes added at the end. If you are passing a <code>padded_string</code> to <code>parser.parse</code> or loading the JSON directly from disk (<code>parser.load</code>), padding is automatically handled. When calling <code>parser.parse</code> on a pointer (e.g., <code>parser.parse(my_char_pointer, my_length_in_bytes)</code>) a temporary copy is made by default with adequate padding and you, again, do not need to be concerned with padding.</p>
 <p>Some users may not be able use our <code>padded_string</code> class or to load the data directly from disk (<code>parser.load</code>). They may need to pass data pointers to the library. If these users wish to avoid temporary copies and corresponding temporary memory allocations, they may want to call <code>parser.parse</code> with the <code>realloc_if_needed</code> parameter set to false (e.g., <code>parser.parse(my_char_pointer, my_length_in_bytes, false)</code>). In such cases, they need to ensure that there are at least SIMDJSON_PADDING extra bytes at the end that can be safely accessed and read. They do not need to initialize the padded bytes to any value in particular. The following example is safe:</p>
@@ -718,7 +759,22 @@ Padding and Temporary Copies</h1>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
 <div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> element = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(padded_json_copy.get(), json_len, <span class="keyword">false</span>);</div>
 </div><!-- fragment --><p>Setting the <code>realloc_if_needed</code> parameter <code>false</code> in this manner may lead to better performance since copies are avoided, but it requires that the user takes more responsibilities: the simdjson library cannot verify that the input buffer was padded with SIMDJSON_PADDING extra bytes.</p>
-<h1><a class="anchor" id="autotoc_md104"></a>
+<p>If you are compiling your project with C++17 or better, you can use a <code>simdjson::padded_input</code>:</p>
+<div class="fragment"><div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a> parser;</div>
+<div class="line">std::string_view json = <span class="stringliteral">&quot;[1,2,3]&quot;</span>;</div>
+<div class="line">simdjson::padded_input input(json); <span class="comment">// Automatically pads if needed</span></div>
+<div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a> element = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(input);</div>
+</div><!-- fragment --><p>The actual padding only occurs if the JSON string ends near the boundary of a memory page, which is uncommon. Using a <code>simdjson::padded_input</code> is safe although sanitizers and tools like valgrind might report illegal reads (which are safe in our case because they remain in the mapped page). You should avoid <code>simdjson::padded_input</code> on systems without a page size of at least 4096: virtually all systems qualify except for some niche embedded systems running custom operating systems. Standard Linux, Windows, macOS, Android, iOS, etc., are all fine. Note that, most times, an <code>simdjson::padded_input</code> instance will not copy the data and will only act as a view (it does not own the memory).</p>
+<p>If you have a buffer with no trailing padding at all and you want neither to add padding nor to let the library make a padded copy, see Parsing Without Padding below.</p>
+<h1><a class="anchor" id="autotoc_md130"></a>
+Parsing Without Padding</h1>
+<p>If you have a buffer with <b>no</b> trailing padding and you do not want the library to copy it into a padded buffer, the DOM API offers <code>dom::parser::parse_unpadded</code>:</p>
+<div class="fragment"><div class="line">dom::parser parser;</div>
+<div class="line">std::string_view json = get_json();          <span class="comment">// exactly json.size() bytes, no padding</span></div>
+<div class="line">dom::element doc = parser.parse_unpadded(json);</div>
+</div><!-- fragment --><p>The <code>parse_unpadded</code> function parses directly from your buffer of exactly <code>len</code> bytes and is guaranteed never to read past <code>buf + len</code>. It is the zero-copy alternative to <code>parser.parse(buf, len, /* realloc_if_needed */ true)</code>, which instead allocates a padded copy of the whole input. As with <code>parse(buf, len, false)</code>, the input is read (never written) and must stay alive, together with the parser, while you use the returned document. Overloads accept <code>std::string_view</code>, <code>const char*</code>/length, and <code>const uint8_t*</code>/length, and <code>parse_into_document_unpadded</code> lets you supply your own <code>dom::document</code>.</p>
+<p>There is a performance penalty. <code>parse_unpadded</code> is slower than parsing an already-padded buffer with <code>parse()</code>. simdjson's value parsers normally read a few bytes (up to <code>SIMDJSON_PADDING</code>) past the end of each value, relying on the padding; near the end of an unpadded buffer that would read out of bounds, so <code>parse_unpadded</code> parses values in the final stretch of the buffer with extra care (it finishes the last string, and copies near-the-end numbers/atoms into a small padded scratch). On a string-heavy document such as <code>twitter.json</code> the penalty is on the order of a few percent of total parsing time. Prefer padding your input when you can; reach for <code>parse_unpadded</code> only when you genuinely cannot pad.</p>
+<h1><a class="anchor" id="autotoc_md131"></a>
 Performance Tips</h1>
 <ul>
 <li>For release builds, we recommend setting <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>

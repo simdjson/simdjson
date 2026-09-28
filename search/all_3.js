@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['8_20validation_20alone_0',['UTF-8 validation (alone)',['../md_doc_2basics.html#autotoc_md19',1,'']]]
+  ['7464_0',['7464',['../md_doc_2iterate__many.html#autotoc_md153',1,'JSON Text Sequences (RFC 7464)'],['../md_doc_2iterate__many.html#autotoc_md160',1,'JSON Text Sequences (RFC 7464)'],['../md_doc_2parse__many.html#autotoc_md187',1,'JSON Text Sequences (RFC 7464)']]]
 ];

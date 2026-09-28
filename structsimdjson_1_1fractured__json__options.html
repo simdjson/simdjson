@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -111,49 +111,74 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:adafb0a25988138e4f0bc35ed88fce4ec" id="r_adafb0a25988138e4f0bc35ed88fce4ec"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#adafb0a25988138e4f0bc35ed88fce4ec">max_total_line_length</a> = 120</td></tr>
 <tr class="memdesc:adafb0a25988138e4f0bc35ed88fce4ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum total characters per line (default: 120).  <br /></td></tr>
 <tr class="separator:adafb0a25988138e4f0bc35ed88fce4ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa989b95ceda987eed5726c6ee9ed7bd9" id="r_aa989b95ceda987eed5726c6ee9ed7bd9"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#aa989b95ceda987eed5726c6ee9ed7bd9">max_inline_length</a> = 80</td></tr>
-<tr class="memdesc:aa989b95ceda987eed5726c6ee9ed7bd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum length for inlined elements (default: 80).  <br /></td></tr>
-<tr class="separator:aa989b95ceda987eed5726c6ee9ed7bd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5e2e1761df34824b5f931c7863b72ea" id="r_ad5e2e1761df34824b5f931c7863b72ea"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#ad5e2e1761df34824b5f931c7863b72ea">max_inline_complexity</a> = 2</td></tr>
 <tr class="memdesc:ad5e2e1761df34824b5f931c7863b72ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum nesting depth for inline rendering (default: 2).  <br /></td></tr>
 <tr class="separator:ad5e2e1761df34824b5f931c7863b72ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4034151f62ad332e6ed2a988d4bb0981" id="r_a4034151f62ad332e6ed2a988d4bb0981"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a4034151f62ad332e6ed2a988d4bb0981">max_compact_array_complexity</a> = 1</td></tr>
-<tr class="memdesc:a4034151f62ad332e6ed2a988d4bb0981"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum complexity for compact array formatting (default: 1).  <br /></td></tr>
+<tr class="memitem:a4034151f62ad332e6ed2a988d4bb0981" id="r_a4034151f62ad332e6ed2a988d4bb0981"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a4034151f62ad332e6ed2a988d4bb0981">max_compact_array_complexity</a> = 2</td></tr>
+<tr class="memdesc:a4034151f62ad332e6ed2a988d4bb0981"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum complexity for compact array formatting (default: 2).  <br /></td></tr>
 <tr class="separator:a4034151f62ad332e6ed2a988d4bb0981"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d5efb29099d68101b772f3b353e298b" id="r_a8d5efb29099d68101b772f3b353e298b"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a8d5efb29099d68101b772f3b353e298b">indent_spaces</a> = 4</td></tr>
 <tr class="memdesc:a8d5efb29099d68101b772f3b353e298b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of spaces per indentation level (default: 4).  <br /></td></tr>
 <tr class="separator:a8d5efb29099d68101b772f3b353e298b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7357887f5b849e87f40021256d2efda2" id="r_a7357887f5b849e87f40021256d2efda2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a7357887f5b849e87f40021256d2efda2">always_expand_depth</a> = -1</td></tr>
+<tr class="memdesc:a7357887f5b849e87f40021256d2efda2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forces elements close to the root to always fully expand, regardless of other settings.  <br /></td></tr>
+<tr class="separator:a7357887f5b849e87f40021256d2efda2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89c9d667bc21991e75a9bfd228c2afeb" id="r_a89c9d667bc21991e75a9bfd228c2afeb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a89c9d667bc21991e75a9bfd228c2afeb">enable_table_format</a> = true</td></tr>
-<tr class="memdesc:a89c9d667bc21991e75a9bfd228c2afeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable tabular formatting for arrays of similar objects (default: true).  <br /></td></tr>
+<tr class="memdesc:a89c9d667bc21991e75a9bfd228c2afeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable tabular formatting for arrays of similar objects or arrays (default: true).  <br /></td></tr>
 <tr class="separator:a89c9d667bc21991e75a9bfd228c2afeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab81e20e5ee6ad08e525b66e55b7d06f5" id="r_ab81e20e5ee6ad08e525b66e55b7d06f5"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#ab81e20e5ee6ad08e525b66e55b7d06f5">min_table_rows</a> = 3</td></tr>
-<tr class="memdesc:ab81e20e5ee6ad08e525b66e55b7d06f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum number of rows to trigger table mode (default: 3).  <br /></td></tr>
-<tr class="separator:ab81e20e5ee6ad08e525b66e55b7d06f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcd65b01fdb86557bde80b4930c7c988" id="r_afcd65b01fdb86557bde80b4930c7c988"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#afcd65b01fdb86557bde80b4930c7c988">table_similarity_threshold</a> = 0.8</td></tr>
-<tr class="memdesc:afcd65b01fdb86557bde80b4930c7c988"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similarity threshold for table detection (default: 0.8).  <br /></td></tr>
-<tr class="separator:afcd65b01fdb86557bde80b4930c7c988"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae161ad283e9cd8c1a11f066e4bba6699" id="r_ae161ad283e9cd8c1a11f066e4bba6699"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#ae161ad283e9cd8c1a11f066e4bba6699">max_table_row_complexity</a> = 2</td></tr>
+<tr class="memdesc:ae161ad283e9cd8c1a11f066e4bba6699"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum complexity of each row of a table (default: 2).  <br /></td></tr>
+<tr class="separator:ae161ad283e9cd8c1a11f066e4bba6699"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af543f194c5ebe670709958edae3f1d1f" id="r_af543f194c5ebe670709958edae3f1d1f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#af543f194c5ebe670709958edae3f1d1f">enable_compact_multiline</a> = true</td></tr>
 <tr class="memdesc:af543f194c5ebe670709958edae3f1d1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable compact multiline arrays (default: true).  <br /></td></tr>
 <tr class="separator:af543f194c5ebe670709958edae3f1d1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af52fcb0e8887dc51a69de1edc55ed00f" id="r_af52fcb0e8887dc51a69de1edc55ed00f"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#af52fcb0e8887dc51a69de1edc55ed00f">max_items_per_line</a> = 10</td></tr>
-<tr class="memdesc:af52fcb0e8887dc51a69de1edc55ed00f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum array items per line in compact mode (default: 10).  <br /></td></tr>
-<tr class="separator:af52fcb0e8887dc51a69de1edc55ed00f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a56f513e33213c98ae4a85b07d501fc0b" id="r_a56f513e33213c98ae4a85b07d501fc0b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a56f513e33213c98ae4a85b07d501fc0b">simple_bracket_padding</a> = true</td></tr>
-<tr class="memdesc:a56f513e33213c98ae4a85b07d501fc0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add space inside brackets for simple containers (default: true).  <br /></td></tr>
+<tr class="memitem:acb07feec92926361007a056923f5f185" id="r_acb07feec92926361007a056923f5f185"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#acb07feec92926361007a056923f5f185">min_compact_array_row_items</a> = 3</td></tr>
+<tr class="memdesc:acb07feec92926361007a056923f5f185"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum number of items per line for an array to be formatted as a compact multiline array (default: 3).  <br /></td></tr>
+<tr class="separator:acb07feec92926361007a056923f5f185"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56f513e33213c98ae4a85b07d501fc0b" id="r_a56f513e33213c98ae4a85b07d501fc0b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a56f513e33213c98ae4a85b07d501fc0b">simple_bracket_padding</a> = false</td></tr>
+<tr class="memdesc:a56f513e33213c98ae4a85b07d501fc0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add space inside brackets for containers that hold only scalar values (default: false).  <br /></td></tr>
 <tr class="separator:a56f513e33213c98ae4a85b07d501fc0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d5385c89e09f31fbc30a452f8af7ab2" id="r_a9d5385c89e09f31fbc30a452f8af7ab2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a9d5385c89e09f31fbc30a452f8af7ab2">nested_bracket_padding</a> = true</td></tr>
+<tr class="memdesc:a9d5385c89e09f31fbc30a452f8af7ab2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add space inside brackets for containers that hold at least one nested array/object (default: true).  <br /></td></tr>
+<tr class="separator:a9d5385c89e09f31fbc30a452f8af7ab2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8dd1f91ebb219b2738751abf7e6c48b" id="r_aa8dd1f91ebb219b2738751abf7e6c48b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#aa8dd1f91ebb219b2738751abf7e6c48b">colon_padding</a> = true</td></tr>
 <tr class="memdesc:aa8dd1f91ebb219b2738751abf7e6c48b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add space after colons (default: true).  <br /></td></tr>
 <tr class="separator:aa8dd1f91ebb219b2738751abf7e6c48b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7252b66b5be52bd7c8bd297e928f9a05" id="r_a7252b66b5be52bd7c8bd297e928f9a05"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a7252b66b5be52bd7c8bd297e928f9a05">comma_padding</a> = true</td></tr>
 <tr class="memdesc:a7252b66b5be52bd7c8bd297e928f9a05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add space after commas in inline content (default: true).  <br /></td></tr>
 <tr class="separator:a7252b66b5be52bd7c8bd297e928f9a05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a579034e6efa38cc2d988cb96a6d9df6c" id="r_a579034e6efa38cc2d988cb96a6d9df6c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902a">table_comma_placement</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a579034e6efa38cc2d988cb96a6d9df6c">comma_placement</a> = <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902aa23f83bfa0f6a9534effe8bedaca8e51f">table_comma_placement::before_padding_except_numbers</a></td></tr>
+<tr class="memdesc:a579034e6efa38cc2d988cb96a6d9df6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Placement of commas relative to column padding in table-formatted rows and compact multiline arrays (default: before_padding_except_numbers).  <br /></td></tr>
+<tr class="separator:a579034e6efa38cc2d988cb96a6d9df6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3173cffbb5e5f31fba5972711101ca3a" id="r_a3173cffbb5e5f31fba5972711101ca3a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4">number_list_alignment</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1fractured__json__options.html#a3173cffbb5e5f31fba5972711101ca3a">number_alignment</a> = <a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4a811882fecd5c7618d7099ebbd39ea254">number_list_alignment::left</a></td></tr>
+<tr class="memdesc:a3173cffbb5e5f31fba5972711101ca3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Controls alignment of numbers in table columns or compact multiline arrays (default: left).  <br /></td></tr>
+<tr class="separator:a3173cffbb5e5f31fba5972711101ca3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Configuration options for FracturedJson formatting. </p>
 <p>FracturedJson intelligently chooses between different layout strategies (inline, compact multiline, table, expanded) based on content complexity, length, and structure similarity. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00016">16</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00034">34</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
+<a id="a7357887f5b849e87f40021256d2efda2" name="a7357887f5b849e87f40021256d2efda2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7357887f5b849e87f40021256d2efda2">&#9670;&#160;</a></span>always_expand_depth</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int simdjson::fractured_json_options::always_expand_depth = -1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Forces elements close to the root to always fully expand, regardless of other settings. </p>
+<p>(default: -1). -1 = none; 0 = root node only; 1 = root node and its children; etc. </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00064">64</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+
+</div>
+</div>
 <a id="aa8dd1f91ebb219b2738751abf7e6c48b" name="aa8dd1f91ebb219b2738751abf7e6c48b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa8dd1f91ebb219b2738751abf7e6c48b">&#9670;&#160;</a></span>colon_padding</h2>
 
@@ -169,7 +194,7 @@ Public Attributes</h2></td></tr>
 <p>Add space after colons (default: true). </p>
 <p>When true: "key": "value" When false: "key":"value" </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00091">91</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00116">116</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -188,7 +213,25 @@ Public Attributes</h2></td></tr>
 <p>Add space after commas in inline content (default: true). </p>
 <p>When true: [1, 2, 3] When false: [1,2,3] </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00098">98</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00123">123</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+
+</div>
+</div>
+<a id="a579034e6efa38cc2d988cb96a6d9df6c" name="a579034e6efa38cc2d988cb96a6d9df6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a579034e6efa38cc2d988cb96a6d9df6c">&#9670;&#160;</a></span>comma_placement</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902a">table_comma_placement</a> simdjson::fractured_json_options::comma_placement = <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902aa23f83bfa0f6a9534effe8bedaca8e51f">table_comma_placement::before_padding_except_numbers</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Placement of commas relative to column padding in table-formatted rows and compact multiline arrays (default: before_padding_except_numbers). </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00129">129</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -207,7 +250,7 @@ Public Attributes</h2></td></tr>
 <p>Enable compact multiline arrays (default: true). </p>
 <p>When enabled, arrays of simple elements may have multiple items per line. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00072">72</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00087">87</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -223,10 +266,10 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Enable tabular formatting for arrays of similar objects (default: true). </p>
-<p>When enabled, arrays of objects with identical keys are formatted as aligned tables. </p>
+<p>Enable tabular formatting for arrays of similar objects or arrays (default: true). </p>
+<p>When enabled, the rows of such an array are written one per line with their columns aligned. Rows need not have identical keys: columns are ordered by the first occurrence of each key, and a row missing a key gets blank space in that column. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00053">53</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00073">73</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -244,7 +287,7 @@ Public Attributes</h2></td></tr>
 
 <p>Number of spaces per indentation level (default: 4). </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00046">46</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00058">58</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -255,15 +298,15 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t simdjson::fractured_json_options::max_compact_array_complexity = 1</td>
+          <td class="memname">size_t simdjson::fractured_json_options::max_compact_array_complexity = 2</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Maximum complexity for compact array formatting (default: 1). </p>
+<p>Maximum complexity for compact array formatting (default: 2). </p>
 <p>Arrays with elements of this complexity or less may have multiple items per line. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00041">41</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00053">53</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -282,44 +325,26 @@ Public Attributes</h2></td></tr>
 <p>Maximum nesting depth for inline rendering (default: 2). </p>
 <p>Elements with complexity exceeding this will be expanded. Complexity 0 = scalar, 1 = flat array/object, 2 = one level of nesting. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00034">34</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00046">46</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
-<a id="aa989b95ceda987eed5726c6ee9ed7bd9" name="aa989b95ceda987eed5726c6ee9ed7bd9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa989b95ceda987eed5726c6ee9ed7bd9">&#9670;&#160;</a></span>max_inline_length</h2>
+<a id="ae161ad283e9cd8c1a11f066e4bba6699" name="ae161ad283e9cd8c1a11f066e4bba6699"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae161ad283e9cd8c1a11f066e4bba6699">&#9670;&#160;</a></span>max_table_row_complexity</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t simdjson::fractured_json_options::max_inline_length = 80</td>
+          <td class="memname">size_t simdjson::fractured_json_options::max_table_row_complexity = 2</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Maximum length for inlined elements (default: 80). </p>
-<p>Simple arrays/objects shorter than this may be rendered inline. </p>
+<p>Maximum complexity of each row of a table (default: 2). </p>
+<p>0 = rows may only be scalars (a single column); 1 = rows may be flat arrays/objects; higher values allow deeper nesting. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00027">27</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
-
-</div>
-</div>
-<a id="af52fcb0e8887dc51a69de1edc55ed00f" name="af52fcb0e8887dc51a69de1edc55ed00f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af52fcb0e8887dc51a69de1edc55ed00f">&#9670;&#160;</a></span>max_items_per_line</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">size_t simdjson::fractured_json_options::max_items_per_line = 10</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Maximum array items per line in compact mode (default: 10). </p>
-
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00077">77</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00080">80</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -338,25 +363,63 @@ Public Attributes</h2></td></tr>
 <p>Maximum total characters per line (default: 120). </p>
 <p>Content exceeding this will be expanded to multiple lines. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00021">21</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00039">39</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
-<a id="ab81e20e5ee6ad08e525b66e55b7d06f5" name="ab81e20e5ee6ad08e525b66e55b7d06f5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab81e20e5ee6ad08e525b66e55b7d06f5">&#9670;&#160;</a></span>min_table_rows</h2>
+<a id="acb07feec92926361007a056923f5f185" name="acb07feec92926361007a056923f5f185"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb07feec92926361007a056923f5f185">&#9670;&#160;</a></span>min_compact_array_row_items</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t simdjson::fractured_json_options::min_table_rows = 3</td>
+          <td class="memname">size_t simdjson::fractured_json_options::min_compact_array_row_items = 3</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Minimum number of rows to trigger table mode (default: 3). </p>
+<p>Minimum number of items per line for an array to be formatted as a compact multiline array (default: 3). </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00058">58</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00093">93</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+
+</div>
+</div>
+<a id="a9d5385c89e09f31fbc30a452f8af7ab2" name="a9d5385c89e09f31fbc30a452f8af7ab2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9d5385c89e09f31fbc30a452f8af7ab2">&#9670;&#160;</a></span>nested_bracket_padding</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool simdjson::fractured_json_options::nested_bracket_padding = true</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Add space inside brackets for containers that hold at least one nested array/object (default: true). </p>
+<p>When true: { "a": [1, 2] }. When false: {"a": [1, 2]}. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="structsimdjson_1_1fractured__json__options.html#a56f513e33213c98ae4a85b07d501fc0b" title="Add space inside brackets for containers that hold only scalar values (default: false).">simple_bracket_padding</a> </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00109">109</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+
+</div>
+</div>
+<a id="a3173cffbb5e5f31fba5972711101ca3a" name="a3173cffbb5e5f31fba5972711101ca3a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3173cffbb5e5f31fba5972711101ca3a">&#9670;&#160;</a></span>number_alignment</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4">number_list_alignment</a> simdjson::fractured_json_options::number_alignment = <a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4a811882fecd5c7618d7099ebbd39ea254">number_list_alignment::left</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Controls alignment of numbers in table columns or compact multiline arrays (default: left). </p>
+<p>Numbers are always written exactly as in the input. </p>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00135">135</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -367,34 +430,15 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">bool simdjson::fractured_json_options::simple_bracket_padding = true</td>
+          <td class="memname">bool simdjson::fractured_json_options::simple_bracket_padding = false</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Add space inside brackets for simple containers (default: true). </p>
-<p>When true: { "key": "value" } When false: {"key": "value"} </p>
+<p>Add space inside brackets for containers that hold only scalar values (default: false). </p>
+<p>When true: { "key": "value" }. When false: {"key": "value"}. </p><dl class="section see"><dt>See also</dt><dd><a class="el" href="structsimdjson_1_1fractured__json__options.html#a9d5385c89e09f31fbc30a452f8af7ab2" title="Add space inside brackets for containers that hold at least one nested array/object (default: true).">nested_bracket_padding</a> </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00084">84</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
-
-</div>
-</div>
-<a id="afcd65b01fdb86557bde80b4930c7c988" name="afcd65b01fdb86557bde80b4930c7c988"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afcd65b01fdb86557bde80b4930c7c988">&#9670;&#160;</a></span>table_similarity_threshold</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">double simdjson::fractured_json_options::table_similarity_threshold = 0.8</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Similarity threshold for table detection (default: 0.8). </p>
-<p>Objects must share at least this fraction of keys to be formatted as a table. </p>
-
-<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00065">65</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00101">101</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -141,7 +141,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A forward-only stream of documents. </p>
-<p>Produced by <a class="el" href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1" title="Parse a buffer containing many JSON documents.">parser::parse_many</a>. </p>
+<p>Produced by <a class="el" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2" title="Parse a buffer containing many JSON documents.">parser::parse_many</a>. </p>
 
 <p class="definition">Definition at line <a class="el" href="dom_2document__stream_8h_source.html#l00072">72</a> of file <a class="el" href="dom_2document__stream_8h_source.html">document_stream.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -170,12 +170,12 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 
 <p>Construct an uninitialized <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a>. </p>
 <div class="fragment"><div class="line"><a class="code hl_class" href="classsimdjson_1_1dom_1_1document__stream.html">document_stream</a> docs;</div>
-<div class="line">error = <a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">parser</a>.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">parse_many</a>(json).get(docs);</div>
+<div class="line">error = <a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">parser</a>.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">parse_many</a>(json).get(docs);</div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1document__stream_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1document__stream.html">simdjson::dom::document_stream</a></div><div class="ttdoc">A forward-only stream of documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2document__stream_8h_source.html#l00072">document_stream.h:72</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a></div><div class="ttdoc">A persistent document parser.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00030">parser.h:30</a></div></div>
-<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a5c658556dd9e9396e9ce44ba4b01f2d1"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a5c658556dd9e9396e9ce44ba4b01f2d1">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00172">parser-inl.h:172</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_afb18710d2e2ef0fd40dda4887282bdb2"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#afb18710d2e2ef0fd40dda4887282bdb2">simdjson::dom::parser::parse_many</a></div><div class="ttdeci">simdjson_result&lt; document_stream &gt; parse_many(const uint8_t *buf, size_t len, size_t batch_size=dom::DEFAULT_BATCH_SIZE) noexcept</div><div class="ttdoc">Parse a buffer containing many JSON documents.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00205">parser-inl.h:205</a></div></div>
 </div><!-- fragment --> 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00110">110</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00112">112</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -202,7 +202,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00122">122</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00125">125</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -232,7 +232,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 
 <p>Start iterating the documents in the stream. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00132">132</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00135">135</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -261,7 +261,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 
 <p>The end of the stream, for iterator comparison purposes. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00138">138</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00141">141</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -290,7 +290,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 
 <p>Returns the input size in bytes. </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00265">265</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00275">275</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -321,14 +321,15 @@ simdjson_inline <a class="el" href="classsimdjson_1_1dom_1_1document__stream.htm
 <p>If <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> differs from zero, then the input was truncated maybe because incomplete JSON documents were found at the end of the stream. You may need to process the bytes in the interval [<a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a>-<a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a>, <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a>).</p>
 <p>You should only call <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a6c2a07e08213dc9a51754940942f9e69" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> after streaming through all documents, like so:</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.parse_many(json,window); for(auto doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes();</p>
-<p>IMPORTANT: this value is only meaningful under the conditions below. It is computed from stage-1 bookkeeping, and outside these conditions it is not merely imprecise, it is arbitrary &ndash; it can exceed <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a> or wrap around to a huge value. Check it only when both of the following hold:</p>
+<p>IMPORTANT: this value is only meaningful under the conditions below. It is computed from stage-1 bookkeeping that the other stream formats do not maintain, and outside these conditions it is not merely imprecise, it is arbitrary &ndash; it can exceed <a class="el" href="classsimdjson_1_1dom_1_1document__stream.html#a2a08525ae815167b73b6393a8999e46b" title="Returns the input size in bytes.">size_in_bytes()</a> or wrap around to a huge value. Check it only when all of the following hold:</p>
 <ul>
+<li>the format is whitespace_delimited or newline_delimited. In json_sequence and comma_delimited mode the stage-1 filter rewrites the structural index in place and the bookkeeping is lost, so the value is meaningless even for a stream that parsed completely;</li>
 <li>you iterated all the way to the end of the stream;</li>
 <li>no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</li>
 </ul>
 <p>If you need to know about a truncated tail outside those conditions, track it yourself from the last successful document (see iterator::current_index() and iterator::source()). </p>
 
-<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00269">269</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="dom_2document__stream-inl_8h_source.html#l00279">279</a> of file <a class="el" href="dom_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -146,6 +146,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ae0bc6b9803e0c989e9defaf3edcaaae4" id="r_ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4">reset</a> () &amp;noexcept</td></tr>
 <tr class="memdesc:ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset the iterator so that we are pointing back at the beginning of the object.  <br /></td></tr>
 <tr class="separator:ae0bc6b9803e0c989e9defaf3edcaaae4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ab07e3ac913f97e27d4008bc7ba7785" id="r_a4ab07e3ac913f97e27d4008bc7ba7785"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__position.html">object_position</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a4ab07e3ac913f97e27d4008bc7ba7785">get_current_position</a> () const noexcept</td></tr>
+<tr class="memdesc:a4ab07e3ac913f97e27d4008bc7ba7785"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an opaque token representing the object's current scanning position.  <br /></td></tr>
+<tr class="separator:a4ab07e3ac913f97e27d4008bc7ba7785"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeefa70a2c6e244c91bc9805e6e0d9957" id="r_aeefa70a2c6e244c91bc9805e6e0d9957"><td class="memItemLeft" align="right" valign="top">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aeefa70a2c6e244c91bc9805e6e0d9957">revert_position</a> (<a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__position.html">object_position</a> position) noexcept</td></tr>
+<tr class="memdesc:aeefa70a2c6e244c91bc9805e6e0d9957"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the object's scanning position to a snapshot previously obtained from <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a4ab07e3ac913f97e27d4008bc7ba7785" title="Get an opaque token representing the object&#39;s current scanning position.">get_current_position()</a>.  <br /></td></tr>
+<tr class="separator:aeefa70a2c6e244c91bc9805e6e0d9957"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad210f9115679a625ada433add55eff51" id="r_ad210f9115679a625ada433add55eff51"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ad210f9115679a625ada433add55eff51">is_empty</a> () &amp;noexcept</td></tr>
 <tr class="memdesc:ad210f9115679a625ada433add55eff51"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method scans the beginning of the object and checks whether the object is empty.  <br /></td></tr>
 <tr class="separator:ad210f9115679a625ada433add55eff51"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -186,7 +192,7 @@ Protected Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A forward-only JSON object field iterator. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00021">21</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00130">130</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a034b27d7ff75832a574c2069af267111" name="a034b27d7ff75832a574c2069af267111"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a034b27d7ff75832a574c2069af267111">&#9670;&#160;</a></span>object() <span class="overload">[1/2]</span></h2>
@@ -240,7 +246,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00117">117</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00280">280</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -279,7 +285,7 @@ Protected Attributes</h2></td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00172">172</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00336">336</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -323,7 +329,7 @@ Protected Attributes</h2></td></tr>
 </ul>
 </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00132">132</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00296">296</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -354,7 +360,7 @@ Protected Attributes</h2></td></tr>
 <p>We recommend using a range-based for loop.</p>
 <p>Using the iterator directly is also possible but error-prone and discouraged. In particular, you must dereference the iterator exactly once per iteration (before calling '++'). Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00122">122</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00285">285</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -385,7 +391,7 @@ Protected Attributes</h2></td></tr>
 <p>whenever you are pointing at a key, calling skip_child() is unsafe because you will hit a string and you will assume that it is string value, and this mistake will lead you to make bad depth computation.</p>
 <p>We want to 'consume' the key. We could really just do _json_iter-&gt;return_current_and_advance(); at this point, but, for clarity, we will use the high-level API to eat the key. We assume that the compiler optimizes away most of the work.</p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00074">74</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00234">234</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -417,7 +423,7 @@ Protected Attributes</h2></td></tr>
 <p>To check that an object is empty, it is more performant to use the <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ad210f9115679a625ada433add55eff51" title="This method scans the beginning of the object and checks whether the object is empty.">is_empty()</a> method.</p>
 <p>Performance hint: You should only call <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aef6872e07743217fe2e2abe790a21d4c" title="This method scans the object and counts the number of key-value pairs.">count_fields()</a> as a last resort as it may require scanning the document twice or more. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00222">222</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00386">386</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -444,7 +450,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00128">128</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00292">292</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -472,7 +478,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00056">56</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00069">69</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -504,11 +510,13 @@ Protected Attributes</h2></td></tr>
 <p>By order-sensitive, we mean that fields must be accessed in the order they appear in the JSON text (although you can skip fields). See <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a55d8bd31e2f5e6b10986af2f48a544fc" title="Look up a field by name on an object, without regard to key order.">find_field_unordered()</a> and operator[] for an order-insensitive version.</p>
 <p>The following code reads z, then y, then x, and thus will not retrieve x or y if fed the JSON <code>{ "x": 1, "y": 2, "z": 3 }</code>:</p>
 <div class="fragment"><div class="line">simdjson::ondemand::parser <a class="code hl_class" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>;</div>
-<div class="line"><span class="keyword">auto</span> obj = <a class="code hl_class" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>.parse(R<span class="stringliteral">&quot;( { &quot;x&quot;: 1, &quot;y&quot;: 2, &quot;z&quot;: 3 } )&quot;_padded);</span></div>
-<div class="line"><span class="stringliteral"></span><span class="keywordtype">double</span> z = obj.find_field(<span class="stringliteral">&quot;z&quot;</span>);</div>
-<div class="line"><span class="keywordtype">double</span> y = obj.find_field(<span class="stringliteral">&quot;y&quot;</span>);</div>
-<div class="line"><span class="keywordtype">double</span> x = obj.find_field(<span class="stringliteral">&quot;x&quot;</span>);</div>
+<div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;x&quot;: 1, &quot;y&quot;: 2, &quot;z&quot;: 3 } )&quot;_padded;</span></div>
+<div class="line"><span class="stringliteral"></span><span class="keyword">auto</span> doc = <a class="code hl_class" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">parser</a>.<a class="code hl_function" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a0da712132ca4180a84907f2ca4ffbc5b">iterate</a>(json);</div>
+<div class="line"><span class="keywordtype">double</span> z = doc.find_field(<span class="stringliteral">&quot;z&quot;</span>);</div>
+<div class="line"><span class="keywordtype">double</span> y = doc.find_field(<span class="stringliteral">&quot;y&quot;</span>);</div>
+<div class="line"><span class="keywordtype">double</span> x = doc.find_field(<span class="stringliteral">&quot;x&quot;</span>);</div>
 <div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser</a></div><div class="ttdoc">A JSON fragment iterator.</div><div class="ttdef"><b>Definition</b> <a href="generic_2ondemand_2parser_8h_source.html#l00037">parser.h:37</a></div></div>
+<div class="ttc" id="aclasssimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser_html_a0da712132ca4180a84907f2ca4ffbc5b"><div class="ttname"><a href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a0da712132ca4180a84907f2ca4ffbc5b">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::iterate</a></div><div class="ttdeci">simdjson_warn_unused simdjson_result&lt; document &gt; iterate(padded_string_view json) &amp;noexcept</div><div class="ttdoc">Start iterating an on-demand JSON document.</div><div class="ttdef"><b>Definition</b> <a href="generic_2ondemand_2parser-inl_8h_source.html#l00054">parser-inl.h:54</a></div></div>
 </div><!-- fragment --><p> If you have multiple fields with a matching key ({"x": 1, "x": 1}) be mindful that only one field is returned.</p>
 <p><b>Raw Keys:</b> The lookup will be done against the <em>raw</em> key, and will not unescape keys. e.g. <code>object["a"]</code> will match <code>{ "a": 1 }</code>, but will <em>not</em> match <code>{ "\u0061": 1 }</code>.</p>
 <p>You must consume the fields on an object one at a time. A request for a new key invalidates previous field values: it makes them unsafe. The value instance you get from <code>content["bids"]</code> becomes invalid when you call <code>content["asks"]</code>. The array given by content["bids"].get_array() should not be accessed after you have called content["asks"].get_array(). You can detect such mistakes by first compiling and running the code in Debug mode (or with the macro <code>SIMDJSON_DEVELOPMENT_CHECKS</code> set to 1): an OUT_OF_ORDER_ITERATION error is generated.</p>
@@ -522,7 +530,7 @@ Protected Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00047">47</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00057">57</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -550,7 +558,7 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00032">32</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00036">36</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -594,7 +602,7 @@ Protected Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The value of the field, or NO_SUCH_FIELD if the field is not in the object. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00023">23</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00027">27</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -645,7 +653,40 @@ template&lt;typename Func &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>error_code indicating success or failure </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00186">186</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00350">350</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="a4ab07e3ac913f97e27d4008bc7ba7785" name="a4ab07e3ac913f97e27d4008bc7ba7785"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ab07e3ac913f97e27d4008bc7ba7785">&#9670;&#160;</a></span>get_current_position()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__position.html">object_position</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object::get_current_position </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get an opaque token representing the object's current scanning position. </p>
+<p>Pass it to <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aeefa70a2c6e244c91bc9805e6e0d9957" title="Return the object&#39;s scanning position to a snapshot previously obtained from get_current_position().">revert_position()</a> to return to this exact point later, without paying the cost of a full <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4" title="Reset the iterator so that we are pointing back at the beginning of the object.">reset()</a> and re-scan from the beginning.</p>
+<p>A typical use is an optional field that may or may not be next: capture the position, attempt <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aa25020165cc5a191026a243a10da6558" title="Look up a field by name on an object (order-sensitive).">find_field()</a>, and on NO_SUCH_FIELD, <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#aeefa70a2c6e244c91bc9805e6e0d9957" title="Return the object&#39;s scanning position to a snapshot previously obtained from get_current_position().">revert_position()</a> instead of <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4" title="Reset the iterator so that we are pointing back at the beginning of the object.">reset()</a> so that fields already consumed are not rescanned.</p>
+<p>The returned token is only valid for this object, and only until it is <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4" title="Reset the iterator so that we are pointing back at the beginning of the object.">reset()</a> or the parser iterate()s a new document; using it after either is undefined behavior (see <a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__position.html" title="An opaque snapshot of an object&#39;s scanning position, obtained from object::get_current_position() and...">object_position</a>).</p>
+<dl class="section return"><dt>Returns</dt><dd>An opaque position token. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00415">415</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -675,7 +716,7 @@ template&lt;typename Func &gt; </div>
 <p>This method scans the beginning of the object and checks whether the object is empty. </p>
 <p>The runtime complexity is constant time. After calling this function, if successful, the object is 'rewinded' at its beginning as if it had never been accessed. If the JSON is malformed (e.g., there is a missing comma), then an error is returned and it is no longer safe to continue. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00234">234</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00398">398</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -703,7 +744,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00044">44</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00051">51</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -731,7 +772,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00041">41</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00045">45</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -761,7 +802,7 @@ template&lt;typename Func &gt; </div>
 <p>Consumes the object and returns a string_view instance corresponding to the object as represented in JSON. </p>
 <p>It points inside the original byte array containing the JSON document. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00100">100</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00260">260</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -792,7 +833,7 @@ template&lt;typename Func &gt; </div>
 <p>You should still consume values only once even if you can iterate through the object more than once. If you unescape a string or a key within the object more than once, you have unsafe code. Note that rewinding an object means that you may need to reparse it anew: it is not a free operation.</p>
 <dl class="section return"><dt>Returns</dt><dd>true if the object contains some elements (not empty) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00241">241</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00408">408</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -820,7 +861,45 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00113">113</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00276">276</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="aeefa70a2c6e244c91bc9805e6e0d9957" name="aeefa70a2c6e244c91bc9805e6e0d9957"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeefa70a2c6e244c91bc9805e6e0d9957">&#9670;&#160;</a></span>revert_position()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::object::revert_position </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object__position.html">object_position</a>&#160;</td>
+          <td class="paramname"><em>position</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the object's scanning position to a snapshot previously obtained from <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a4ab07e3ac913f97e27d4008bc7ba7785" title="Get an opaque token representing the object&#39;s current scanning position.">get_current_position()</a>. </p>
+<p>Unlike <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#ae0bc6b9803e0c989e9defaf3edcaaae4" title="Reset the iterator so that we are pointing back at the beginning of the object.">reset()</a>, this does not rescan the object from the beginning: fields before the captured position remain consumed, and scanning resumes exactly where the snapshot was captured.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">position</td><td>A snapshot previously returned by <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1object.html#a4ab07e3ac913f97e27d4008bc7ba7785" title="Get an opaque token representing the object&#39;s current scanning position.">get_current_position()</a>, for this same object. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>SUCCESS, or OUT_OF_ORDER_ITERATION if called during active iteration (SIMDJSON_DEVELOPMENT_CHECKS builds only). </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00419">419</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -848,7 +927,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00066">66</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00226">226</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -876,7 +955,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00070">70</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00230">230</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -904,7 +983,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00108">108</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object-inl_8h_source.html#l00271">271</a> of file <a class="el" href="generic_2ondemand_2object-inl_8h_source.html">object-inl.h</a>.</p>
 
 </div>
 </div>
@@ -929,7 +1008,7 @@ template&lt;typename Func &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00309">309</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2object_8h_source.html#l00541">541</a> of file <a class="el" href="generic_2ondemand_2object_8h_source.html">object.h</a>.</p>
 
 </div>
 </div>

@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -182,7 +182,7 @@ $(document).ready(function(){initNavTree('generic_2dom__parser__implementation_8
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>}</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span><span class="keyword">inline</span> simdjson_warn_unused <a class="code hl_enumeration" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> dom_parser_implementation::set_max_depth(<span class="keywordtype">size_t</span> max_depth) <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">if</span>(max_depth == 0 || max_depth &gt; SIZE_MAX / <span class="keyword">sizeof</span>(open_container)) { <span class="keywordflow">return</span> <a class="code hl_enumvalue" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">CAPACITY</a>; }</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <span class="keywordflow">if</span>(max_depth == 0 || max_depth &gt; SIMDJSON_MAX_DEPTH || max_depth &gt; SIZE_MAX / <span class="keyword">sizeof</span>(open_container)) { <span class="keywordflow">return</span> <a class="code hl_enumvalue" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">CAPACITY</a>; }</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="comment">// Stage 2 stacks</span></div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  open_containers.reset(<span class="keyword">new</span> (std::nothrow) open_container[max_depth]);</div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  is_array.reset(<span class="keyword">new</span> (std::nothrow) <span class="keywordtype">bool</span>[max_depth]);</div>

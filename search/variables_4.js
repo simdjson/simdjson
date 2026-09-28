@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['first_0',['first',['../structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1implementation__simdjson__result__base.html#ae51247dce4e77f1e6067cfd4654cca30',1,'simdjson::SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base']]]
+  ['enable_5fcompact_5fmultiline_0',['enable_compact_multiline',['../structsimdjson_1_1fractured__json__options.html#af543f194c5ebe670709958edae3f1d1f',1,'simdjson::fractured_json_options']]],
+  ['enable_5ftable_5fformat_1',['enable_table_format',['../structsimdjson_1_1fractured__json__options.html#a89c9d667bc21991e75a9bfd228c2afeb',1,'simdjson::fractured_json_options']]]
 ];

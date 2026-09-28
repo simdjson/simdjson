@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -97,24 +97,29 @@ $(document).ready(function(){initNavTree('md_doc_2compile__time.html',''); initR
   <div class="headertitle"><div class="title">Parse json at compile time</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md54"></a></p><ul>
+<div class="textblock"><p><a class="anchor" id="autotoc_md78"></a></p><ul>
 <li>Introduction</li>
 <li>Example</li>
 <li>Concepts</li>
 <li>Loading from disk</li>
 <li>Limitations (compile-time errors)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md55"></a>
+<h1><a class="anchor" id="autotoc_md79"></a>
 Introduction</h1>
 <p>In some instances, you may want to configure your software at compile-time with a JSON document. Maybe you have a single code base but many different possible configurations, all resulting in different software. For example, you might be programming robots, using the same software, but different robot configurations.</p>
 <p>To achieve the desired result, you have a few options. You may start the software and parser a JSON file at runtime. Or you might convert your JSON data into C++ code that you can compile with your software.</p>
 <p>With C++26, there is another way: parse the JSON file along with your C++ code. In this manner, the JSON data becomes native C++ data.</p>
-<p>The simdjson library supports parsing JSON documents at compile time if you have C++26 support. To activate C++26 reflection support, you can compile your code with the <code>SIMDJSON_STATIC_REFLECTION</code> macro set:</p>
-<div class="fragment"><div class="line"><span class="preprocessor">#define SIMDJSON_STATIC_REFLECTION 1</span></div>
-<div class="line"><span class="comment">//...</span></div>
-<div class="line"><span class="preprocessor">#include &quot;<a class="code" href="simdjson_8h.html">simdjson.h</a>&quot;</span></div>
-<div class="ttc" id="asimdjson_8h_html"><div class="ttname"><a href="simdjson_8h.html">simdjson.h</a></div></div>
-</div><!-- fragment --><p>The <code>simdjson::compile_time::parse_json</code> function parses a JSON document at <b>compile time</b> and returns a <code>constexpr</code> structure reflecting its content. We support the full range of JSON values, which are mapped to C++ types as in the following table.</p>
+<p>The simdjson library supports parsing JSON documents at compile time if you have C++26 support. The <code>simdjson::compile_time::parse_json</code> function parses a JSON document at <b>compile time</b> and returns a <code>constexpr</code> structure reflecting its content. We support the full range of JSON values, which are mapped to C++ types as in the following table.</p>
+<p>For convenience, you can also use the <code>""_json</code> user-defined literal operator, which is available in the <code>simdjson::literals</code> namespace:</p>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span>simdjson::literals;</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> cfg = R<span class="stringliteral">&quot;(</span></div>
+<div class="line"><span class="stringliteral">{</span></div>
+<div class="line"><span class="stringliteral">    &quot;port&quot;: 8080,</span></div>
+<div class="line"><span class="stringliteral">    &quot;host&quot;: &quot;localhost&quot;</span></div>
+<div class="line"><span class="stringliteral">}</span></div>
+<div class="line"><span class="stringliteral">)&quot;_json;</span></div>
+</div><!-- fragment --><p>Alternatively, you can use the qualified name <code>simdjson::literals::operator""_json</code>.</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">JSON type   </th><th class="markdownTableHeadNone">C++ type    </th></tr>
@@ -131,7 +136,7 @@ Introduction</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>null</code>   </td><td class="markdownTableBodyNone"><code>std::nullptr_t</code>   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md56"></a>
+<h1><a class="anchor" id="autotoc_md80"></a>
 Example</h1>
 <p>Suppose you want to parse the following JSON document:</p>
 <div class="fragment"><div class="line">{</div>
@@ -141,7 +146,9 @@ Example</h1>
 <div class="line">}</div>
 </div><!-- fragment --><p><b>Reminder</b>: In C++, <code>R"( )"</code> allows us to write multi-line strings with unescaped quotes.</p>
 <p>You can do so, at compile-time, as follows:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> cfg = R<span class="stringliteral">&quot;(</span></div>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span>simdjson::literals;</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> cfg = R<span class="stringliteral">&quot;(</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">{</span></div>
 <div class="line"><span class="stringliteral">    &quot;port&quot;: 8080,</span></div>
@@ -155,7 +162,9 @@ Example</h1>
 <div class="line"><span class="comment">// std::string_view(cfg.host) == &quot;localhost&quot;</span></div>
 <div class="line"><span class="comment">// cfg.debug == true</span></div>
 </div><!-- fragment --><p>You can nest objects and arrays:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> data = R<span class="stringliteral">&quot;(</span></div>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span>simdjson::literals;</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> data = R<span class="stringliteral">&quot;(</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">{</span></div>
 <div class="line"><span class="stringliteral">    &quot;servers&quot;: [</span></div>
@@ -170,18 +179,22 @@ Example</h1>
 <div class="line"><span class="stringliteral"></span><span class="comment">// data.servers.size() == 2</span></div>
 <div class="line"><span class="comment">// std::string_view(data.servers[0].host) == &quot;s1&quot;</span></div>
 </div><!-- fragment --><p>Top-level arrays are allowed:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> arr = R<span class="stringliteral">&quot;(</span></div>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span>simdjson::literals;</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> arr = R<span class="stringliteral">&quot;(</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">[1, 2, 3]</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">)&quot;_json;</span></div>
 <div class="line"><span class="stringliteral"></span><span class="keyword">static_assert</span>(arr.size() == 3);</div>
 <div class="line"><span class="keyword">static_assert</span>(arr[1] == 2);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md57"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md81"></a>
 Concepts</h1>
 <p>Given that the parsed data is made of structures that depend on the JSON input, you might want to check that it conforms to your expectation. You can do so with concepts.</p>
 <p>Let us consider this example:</p>
-<div class="fragment"><div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> config = R<span class="stringliteral">&quot;(</span></div>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span>simdjson::literals;</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> config = R<span class="stringliteral">&quot;(</span></div>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral">[</span></div>
 <div class="line"><span class="stringliteral">  { &quot;name&quot;: &quot;Alice&quot;, &quot;age&quot;: 30 },</span></div>
@@ -218,7 +231,7 @@ Concepts</h1>
 <div class="line"><span class="stringliteral"></span> </div>
 <div class="line"><span class="stringliteral"></span><span class="comment">// Validate that the array satisfies the array_of_person concept</span></div>
 <div class="line"><span class="keyword">static_assert</span>(array_of_person&lt;<span class="keyword">decltype</span>(config)&gt;);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md58"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md82"></a>
 Loading from disk</h1>
 <p>In practice, you may have a JSON file, say <code>json_data</code> that you want to parse at compile time. You may do so as follows.</p>
 <div class="fragment"><div class="line"> ++</div>
@@ -228,7 +241,7 @@ Loading from disk</h1>
 <div class="line">};</div>
 <div class="line"> </div>
 <div class="line"><span class="keyword">constexpr</span> <span class="keyword">auto</span> json = simdjson::compile_time::parse_json&lt;json_data&gt;();</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md59"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md83"></a>
 Limitations (compile-time errors)</h1>
 <p>We have a few limitations which trigger compile-time errors if violated.</p>
 <ul>

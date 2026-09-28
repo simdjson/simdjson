@@ -9,6 +9,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1
     [ "append_raw", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a8ef2d52b7d6099cff5c69165edd8a7ef", null ],
     [ "append_raw", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a9ee1806825fd7b1fcf64725d783421d7", null ],
     [ "append_raw", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#aba3c308bc23e73cd4fe0c154a7e2a22a", null ],
+    [ "append_raw_n", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a2a3abcdced56998337337756532a017d", null ],
     [ "c_str", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a914d1fe0740448804f18be301e712da0", null ],
     [ "clear", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a9aaa18471e8b69c9dce68fdc48c6af0b", null ],
     [ "end_array", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a78f07884d55f4ed3e82c07daa0ec81f7", null ],
@@ -22,6 +23,7 @@ var classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1
     [ "size", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a8e4e7328f1d40078710853cb732d29fc", null ],
     [ "start_array", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a987e3f57fc1124f0a67fef5ea6c06c82", null ],
     [ "start_object", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a7f094bab497d4939adbe7196ec646068", null ],
+    [ "unsafe_grow", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#accb9edf0cc69abe6a0d7b569c17144ed", null ],
     [ "validate_unicode", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#abd3705658ebcf9442677f4a34a102975", null ],
     [ "view", "classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1builder_1_1string__builder.html#a8426e0339357dead16fa272590abc705", null ]
 ];

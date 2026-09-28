@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -151,9 +151,6 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1implementation.html">implementation</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An implementation of simdjson for a particular CPU architecture.  <a href="classsimdjson_1_1implementation.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classsimdjson_1_1padded__memory__map.html">padded_memory_map</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A class representing a memory-mapped file with padding.  <a href="classsimdjson_1_1padded__memory__map.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsimdjson_1_1padded__string.html">padded_string</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">String with extra allocation for ease of use with parser::parse()  <a href="structsimdjson_1_1padded__string.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -206,6 +203,28 @@ Typedefs</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
+<tr class="memitem:a1d2c63e9741e1bca213ba01eb428858a" id="r_a1d2c63e9741e1bca213ba01eb428858a"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858a">stream_format</a> { <br />
+&#160;&#160;<a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56">whitespace_delimited</a>
+, <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5">json_sequence</a>
+, <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c">comma_delimited</a>
+, <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5">comma_delimited_array</a>
+, <br />
+&#160;&#160;<a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697">newline_delimited</a>
+<br />
+ }</td></tr>
+<tr class="memdesc:a1d2c63e9741e1bca213ba01eb428858a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stream format for parse_many/iterate_many.  <a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858a">More...</a><br /></td></tr>
+<tr class="separator:a1d2c63e9741e1bca213ba01eb428858a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a47a79ca9e32320a64aa750ae09902a" id="r_a4a47a79ca9e32320a64aa750ae09902a"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902a">table_comma_placement</a> { <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902aa828f1e280921700974f225d84e0f68ca">before_padding</a>
+, <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902aa4636d45f97b514411173b20b672dc851">after_padding</a>
+, <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902aa23f83bfa0f6a9534effe8bedaca8e51f">before_padding_except_numbers</a>
+ }</td></tr>
+<tr class="memdesc:a4a47a79ca9e32320a64aa750ae09902a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specifies where commas should be in table-formatted elements.  <a href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902a">More...</a><br /></td></tr>
+<tr class="separator:a4a47a79ca9e32320a64aa750ae09902a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99fca0938a2bd6cc2e68619af3dc11a4" id="r_a99fca0938a2bd6cc2e68619af3dc11a4"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4">number_list_alignment</a> { <a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4a811882fecd5c7618d7099ebbd39ea254">left</a>
+, <a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4a7c4f29407893c334a6cb7a87bf045c0d">right</a>
+ }</td></tr>
+<tr class="memdesc:a99fca0938a2bd6cc2e68619af3dc11a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for how lists or columns of numbers should be aligned.  <a href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4">More...</a><br /></td></tr>
+<tr class="separator:a99fca0938a2bd6cc2e68619af3dc11a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b735a3a50ba79e3f7f14df5f77d8da9" id="r_a7b735a3a50ba79e3f7f14df5f77d8da9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> { <br />
 &#160;&#160;<a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">SUCCESS</a> = 0
 , <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a2d50048bbe409023df4e88f6ffe3bc71">CAPACITY</a>
@@ -248,22 +267,30 @@ Enumerations</h2></td></tr>
 , <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9ab70f5a6f0ac798d482e95a0fcc528676">TRAILING_CONTENT</a>
 , <br />
 &#160;&#160;<a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a3efa5cb684eb31639e2e36cda195e2d7">OUT_OF_CAPACITY</a>
+, <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a54aa33de8e5c553cc3d3f3c0a78a3699">UNKNOWN_FIELD</a>
 , <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9a69f1b9e7b9970fbb60416ebce2f894c3">NUM_ERROR_CODES</a>
 <br />
  }</td></tr>
 <tr class="memdesc:a7b735a3a50ba79e3f7f14df5f77d8da9"><td class="mdescLeft">&#160;</td><td class="mdescRight">All possible errors returned by simdjson.  <a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">More...</a><br /></td></tr>
 <tr class="separator:a7b735a3a50ba79e3f7f14df5f77d8da9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6ec9f0ce23fc51d87116b64fdbeb811" id="r_ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811">stage1_mode</a> { <b>regular</b>
+<tr class="memitem:ae6ec9f0ce23fc51d87116b64fdbeb811" id="r_ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811">stage1_mode</a> { <br />
+&#160;&#160;<b>regular</b>
 , <b>streaming_partial</b>
 , <b>streaming_final</b>
+, <b>json_sequence_partial</b>
+, <br />
+&#160;&#160;<b>json_sequence_final</b>
+, <b>comma_delimited_partial</b>
+, <b>comma_delimited_final</b>
+<br />
  }</td></tr>
 <tr class="memdesc:ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="mdescLeft">&#160;</td><td class="mdescRight">This enum is used with the dom_parser_implementation::stage1 function.  <a href="namespacesimdjson.html#ae6ec9f0ce23fc51d87116b64fdbeb811">More...</a><br /></td></tr>
 <tr class="separator:ae6ec9f0ce23fc51d87116b64fdbeb811"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44beb117a12abd0d8d18589dbc3dbe97" id="r_a44beb117a12abd0d8d18589dbc3dbe97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97ae36fce138c6f2f7a25e9ee06e7ed37ae">SIMDJSON_VERSION_MAJOR</a> = 4
-, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97ab442d4c66052c2f30b72a0d6f8dc8814">SIMDJSON_VERSION_MINOR</a> = 6
-, <a class="el" href="namespacesimdjson.html#a44beb117a12abd0d8d18589dbc3dbe97a5537fa0bdb6b7345ea789c51f74b10ee">SIMDJSON_VERSION_REVISION</a> = 11
+<tr class="memitem:a54136ca6084dc93d4e19c244fc7663e7" id="r_a54136ca6084dc93d4e19c244fc7663e7"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <a class="el" href="namespacesimdjson.html#a54136ca6084dc93d4e19c244fc7663e7ae36fce138c6f2f7a25e9ee06e7ed37ae">SIMDJSON_VERSION_MAJOR</a> = 5
+, <a class="el" href="namespacesimdjson.html#a54136ca6084dc93d4e19c244fc7663e7ab442d4c66052c2f30b72a0d6f8dc8814">SIMDJSON_VERSION_MINOR</a> = 0
+, <a class="el" href="namespacesimdjson.html#a54136ca6084dc93d4e19c244fc7663e7a5537fa0bdb6b7345ea789c51f74b10ee">SIMDJSON_VERSION_REVISION</a> = 0
  }</td></tr>
-<tr class="separator:a44beb117a12abd0d8d18589dbc3dbe97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a54136ca6084dc93d4e19c244fc7663e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -425,12 +452,21 @@ SIMDJSON_DLLIMPORTEXPORT const internal::available_implementation_list &amp;&#16
 <tr class="memitem:a687e6510cd2f94c7dc8a31a6db83d278" id="r_a687e6510cd2f94c7dc8a31a6db83d278"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a687e6510cd2f94c7dc8a31a6db83d278">pad_with_reserve</a> (std::string &amp;s) noexcept</td></tr>
 <tr class="memdesc:a687e6510cd2f94c7dc8a31a6db83d278"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classsimdjson_1_1padded__string__view.html" title="User-provided string that promises it has extra padded bytes at the end for use with parser::parse().">padded_string_view</a> from a string.  <br /></td></tr>
 <tr class="separator:a687e6510cd2f94c7dc8a31a6db83d278"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6dd630cf21f6eb9b5f2cfc553858376" id="r_aa6dd630cf21f6eb9b5f2cfc553858376"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#aa6dd630cf21f6eb9b5f2cfc553858376">get_page_size</a> () noexcept</td></tr>
+<tr class="memdesc:aa6dd630cf21f6eb9b5f2cfc553858376"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the system's memory page size.  <br /></td></tr>
+<tr class="separator:aa6dd630cf21f6eb9b5f2cfc553858376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d703447a8b1acf0b22a15a78b5346bb" id="r_a2d703447a8b1acf0b22a15a78b5346bb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a2d703447a8b1acf0b22a15a78b5346bb">slice_at</a> (<a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a> data, char delimiter, size_t block_size, size_t index) noexcept</td></tr>
+<tr class="memdesc:a2d703447a8b1acf0b22a15a78b5346bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the index-th document-aligned slice of a delimited stream.  <br /></td></tr>
+<tr class="separator:a2d703447a8b1acf0b22a15a78b5346bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:ad0bad3783275be4012bd5cfd0327875a" id="r_ad0bad3783275be4012bd5cfd0327875a"><td class="memItemLeft" align="right" valign="top">SIMDJSON_PUSH_DISABLE_UNUSED_WARNINGS constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#ad0bad3783275be4012bd5cfd0327875a">SIMDJSON_MAXSIZE_BYTES</a> = 0xFFFFFFFF</td></tr>
 <tr class="memdesc:ad0bad3783275be4012bd5cfd0327875a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum document size supported by simdjson.  <br /></td></tr>
 <tr class="separator:ad0bad3783275be4012bd5cfd0327875a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09e5a1fba28db730846e61fda3f6df3d" id="r_a09e5a1fba28db730846e61fda3f6df3d"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#a09e5a1fba28db730846e61fda3f6df3d">SIMDJSON_MAX_DEPTH</a> = <a class="el" href="namespacesimdjson.html#ad0bad3783275be4012bd5cfd0327875a">SIMDJSON_MAXSIZE_BYTES</a>/2</td></tr>
+<tr class="memdesc:a09e5a1fba28db730846e61fda3f6df3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum depth of nested objects and arrays supported by simdjson.  <br /></td></tr>
+<tr class="separator:a09e5a1fba28db730846e61fda3f6df3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aecdd750132f0eb123a6d61113b4197bf" id="r_aecdd750132f0eb123a6d61113b4197bf"><td class="memItemLeft" align="right" valign="top">constexpr size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">SIMDJSON_PADDING</a> = 64</td></tr>
 <tr class="memdesc:aecdd750132f0eb123a6d61113b4197bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">The amount of padding needed in a buffer to parse JSON.  <br /></td></tr>
 <tr class="separator:aecdd750132f0eb123a6d61113b4197bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -456,13 +492,13 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated:</a></b></dt><dd>This is an alias and will be removed, use error_code instead </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00395">395</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00396">396</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
-<a id="a44beb117a12abd0d8d18589dbc3dbe97" name="a44beb117a12abd0d8d18589dbc3dbe97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44beb117a12abd0d8d18589dbc3dbe97">&#9670;&#160;</a></span>anonymous enum</h2>
+<a id="a54136ca6084dc93d4e19c244fc7663e7" name="a54136ca6084dc93d4e19c244fc7663e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54136ca6084dc93d4e19c244fc7663e7">&#9670;&#160;</a></span>anonymous enum</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -473,11 +509,11 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a44beb117a12abd0d8d18589dbc3dbe97ae36fce138c6f2f7a25e9ee06e7ed37ae" name="a44beb117a12abd0d8d18589dbc3dbe97ae36fce138c6f2f7a25e9ee06e7ed37ae"></a>SIMDJSON_VERSION_MAJOR&#160;</td><td class="fielddoc"><p>The major version (MAJOR.minor.revision) of simdjson being used. </p>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a54136ca6084dc93d4e19c244fc7663e7ae36fce138c6f2f7a25e9ee06e7ed37ae" name="a54136ca6084dc93d4e19c244fc7663e7ae36fce138c6f2f7a25e9ee06e7ed37ae"></a>SIMDJSON_VERSION_MAJOR&#160;</td><td class="fielddoc"><p>The major version (MAJOR.minor.revision) of simdjson being used. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a44beb117a12abd0d8d18589dbc3dbe97ab442d4c66052c2f30b72a0d6f8dc8814" name="a44beb117a12abd0d8d18589dbc3dbe97ab442d4c66052c2f30b72a0d6f8dc8814"></a>SIMDJSON_VERSION_MINOR&#160;</td><td class="fielddoc"><p>The minor version (major.MINOR.revision) of simdjson being used. </p>
+<tr><td class="fieldname"><a id="a54136ca6084dc93d4e19c244fc7663e7ab442d4c66052c2f30b72a0d6f8dc8814" name="a54136ca6084dc93d4e19c244fc7663e7ab442d4c66052c2f30b72a0d6f8dc8814"></a>SIMDJSON_VERSION_MINOR&#160;</td><td class="fielddoc"><p>The minor version (major.MINOR.revision) of simdjson being used. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a44beb117a12abd0d8d18589dbc3dbe97a5537fa0bdb6b7345ea789c51f74b10ee" name="a44beb117a12abd0d8d18589dbc3dbe97a5537fa0bdb6b7345ea789c51f74b10ee"></a>SIMDJSON_VERSION_REVISION&#160;</td><td class="fielddoc"><p>The revision (major.minor.REVISION) of simdjson being used. </p>
+<tr><td class="fieldname"><a id="a54136ca6084dc93d4e19c244fc7663e7a5537fa0bdb6b7345ea789c51f74b10ee" name="a54136ca6084dc93d4e19c244fc7663e7a5537fa0bdb6b7345ea789c51f74b10ee"></a>SIMDJSON_VERSION_REVISION&#160;</td><td class="fielddoc"><p>The revision (major.minor.REVISION) of simdjson being used. </p>
 </td></tr>
 </table>
 
@@ -567,11 +603,45 @@ Variables</h2></td></tr>
 </td></tr>
 <tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9a3efa5cb684eb31639e2e36cda195e2d7" name="a7b735a3a50ba79e3f7f14df5f77d8da9a3efa5cb684eb31639e2e36cda195e2d7"></a>OUT_OF_CAPACITY&#160;</td><td class="fielddoc"><p>The capacity was exceeded, we cannot allocate enough memory. </p>
 </td></tr>
+<tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9a54aa33de8e5c553cc3d3f3c0a78a3699" name="a7b735a3a50ba79e3f7f14df5f77d8da9a54aa33de8e5c553cc3d3f3c0a78a3699"></a>UNKNOWN_FIELD&#160;</td><td class="fielddoc"><p>JSON field does not map to any member of the target (see simdjson::deny_unknown_fields) </p>
+</td></tr>
 <tr><td class="fieldname"><a id="a7b735a3a50ba79e3f7f14df5f77d8da9a69f1b9e7b9970fbb60416ebce2f894c3" name="a7b735a3a50ba79e3f7f14df5f77d8da9a69f1b9e7b9970fbb60416ebce2f894c3"></a>NUM_ERROR_CODES&#160;</td><td class="fielddoc"><p>Placeholder for end of error code list. </p>
 </td></tr>
 </table>
 
 <p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00019">19</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
+
+</div>
+</div>
+<a id="a99fca0938a2bd6cc2e68619af3dc11a4" name="a99fca0938a2bd6cc2e68619af3dc11a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99fca0938a2bd6cc2e68619af3dc11a4">&#9670;&#160;</a></span>number_list_alignment</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="namespacesimdjson.html#a99fca0938a2bd6cc2e68619af3dc11a4">simdjson::number_list_alignment</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Options for how lists or columns of numbers should be aligned. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a99fca0938a2bd6cc2e68619af3dc11a4a811882fecd5c7618d7099ebbd39ea254" name="a99fca0938a2bd6cc2e68619af3dc11a4a811882fecd5c7618d7099ebbd39ea254"></a>left&#160;</td><td class="fielddoc"><p>Left-aligns numbers. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a99fca0938a2bd6cc2e68619af3dc11a4a7c4f29407893c334a6cb7a87bf045c0d" name="a99fca0938a2bd6cc2e68619af3dc11a4a7c4f29407893c334a6cb7a87bf045c0d"></a>right&#160;</td><td class="fielddoc"><p>Right-aligns numbers. </p>
+</td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00020">20</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -599,6 +669,80 @@ Variables</h2></td></tr>
 <p>1) The regular mode expects a fully formed JSON document. 2) The streaming_partial mode expects a possibly truncated input within a stream on JSON documents. 3) The stream_final mode allows us to truncate final unterminated strings. It is useful in conjunction with streaming_partial. </p>
 
 <p class="definition">Definition at line <a class="el" href="internal_2dom__parser__implementation_8h_source.html#l00022">22</a> of file <a class="el" href="internal_2dom__parser__implementation_8h_source.html">dom_parser_implementation.h</a>.</p>
+
+</div>
+</div>
+<a id="a1d2c63e9741e1bca213ba01eb428858a" name="a1d2c63e9741e1bca213ba01eb428858a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d2c63e9741e1bca213ba01eb428858a">&#9670;&#160;</a></span>stream_format</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858a">simdjson::stream_format</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Stream format for parse_many/iterate_many. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56" name="a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56"></a>whitespace_delimited&#160;</td><td class="fielddoc"><p>Whitespace-delimited JSON documents (default, includes NDJSON/JSONL) </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5" name="a1d2c63e9741e1bca213ba01eb428858aaba771d4dd2f4b0813dc1a33f011ac4e5"></a>json_sequence&#160;</td><td class="fielddoc"><p>RFC 7464 JSON text sequences (RS-delimited) </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c" name="a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c"></a>comma_delimited&#160;</td><td class="fielddoc"><p>Comma-separated JSON documents (e.g., <code>{...},{...},{...}</code>) </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5" name="a1d2c63e9741e1bca213ba01eb428858aa8d57693b9600203b1f61b4d0a06b61b5"></a>comma_delimited_array&#160;</td><td class="fielddoc"><p>A single JSON array whose elements are iterated as comma-separated documents (e.g., <code>[{...},{...},{...}]</code>). </p>
+<p>The parser strips the outer <code>[</code> / <code>]</code> plus any surrounding JSON whitespace (space, tab, LF, CR) and then behaves like <code>comma_delimited</code> over the remaining bytes. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697" name="a1d2c63e9741e1bca213ba01eb428858aa70226533a749336efb853837484d1697"></a>newline_delimited&#160;</td><td class="fielddoc"><p>NDJSON/JSON Lines where each document occupies exactly one line: documents are separated by line feeds and no document contains a raw line feed. </p>
+<p>Same inputs as <code>whitespace_delimited</code>, but the stronger guarantee lets the parser find the end of a document without walking it. On ondemand <code>iterate_many</code>, an unread remainder may be skipped by jumping to the next line feed without structure-validating that remainder. Use <code>whitespace_delimited</code> if unsure. </p>
+</td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00061">61</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
+
+</div>
+</div>
+<a id="a4a47a79ca9e32320a64aa750ae09902a" name="a4a47a79ca9e32320a64aa750ae09902a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a47a79ca9e32320a64aa750ae09902a">&#9670;&#160;</a></span>table_comma_placement</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum class <a class="el" href="namespacesimdjson.html#a4a47a79ca9e32320a64aa750ae09902a">simdjson::table_comma_placement</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Specifies where commas should be in table-formatted elements. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a4a47a79ca9e32320a64aa750ae09902aa828f1e280921700974f225d84e0f68ca" name="a4a47a79ca9e32320a64aa750ae09902aa828f1e280921700974f225d84e0f68ca"></a>before_padding&#160;</td><td class="fielddoc"><p>Commas come right after the value. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a4a47a79ca9e32320a64aa750ae09902aa4636d45f97b514411173b20b672dc851" name="a4a47a79ca9e32320a64aa750ae09902aa4636d45f97b514411173b20b672dc851"></a>after_padding&#160;</td><td class="fielddoc"><p>Commas come after the column padding, so they line up in their own column. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a4a47a79ca9e32320a64aa750ae09902aa23f83bfa0f6a9534effe8bedaca8e51f" name="a4a47a79ca9e32320a64aa750ae09902aa23f83bfa0f6a9534effe8bedaca8e51f"></a>before_padding_except_numbers&#160;</td><td class="fielddoc"><p>Commas come right after the value, except for columns of numbers. </p>
+</td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="fractured__json_8h_source.html#l00010">10</a> of file <a class="el" href="fractured__json_8h_source.html">fractured_json.h</a>.</p>
 
 </div>
 </div>
@@ -703,7 +847,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01023">1023</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01255">1255</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -735,7 +879,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01031">1031</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01263">1263</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -761,7 +905,7 @@ template&lt;class T &gt; </div>
 <p>FracturedJson produces human-readable yet compact output by intelligently choosing between inline, compact multiline, table, and expanded layouts.</p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse(json_string); cout &lt;&lt; fractured_json(doc) &lt;&lt; endl; </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01009">1009</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01241">1241</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -796,7 +940,7 @@ template&lt;class T &gt; </div>
 <p>Format JSON using FracturedJson formatting with custom options. </p>
 <p><a class="el" href="classsimdjson_1_1dom_1_1parser.html" title="A persistent document parser.">dom::parser</a> parser; element doc = parser.parse(json_string); <a class="el" href="structsimdjson_1_1fractured__json__options.html" title="Configuration options for FracturedJson formatting.">fractured_json_options</a> opts; opts.max_total_line_length = 80; cout &lt;&lt; fractured_json(doc, opts) &lt;&lt; endl; </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01014">1014</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01246">1246</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -829,7 +973,7 @@ template&lt;class T &gt; </div>
 <p>// With static reflection MyStruct data = {...}; auto minified = simdjson::to_json_string(data); auto formatted = <a class="el" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a" title="Format a JSON string using FracturedJson formatting.">simdjson::fractured_json_string</a>(minified.value());</p>
 <p>// Or with any JSON string std::string json = R"({"key":"value"})"; auto formatted = simdjson::fractured_json_string(json); </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01056">1056</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01288">1288</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -869,7 +1013,7 @@ template&lt;class T &gt; </div>
 
 <p>Format a JSON string using FracturedJson formatting with custom options. </p>
 
-<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01060">1060</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="fractured__json-inl_8h_source.html#l01292">1292</a> of file <a class="el" href="fractured__json-inl_8h_source.html">fractured_json-inl.h</a>.</p>
 
 </div>
 </div>
@@ -953,7 +1097,38 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="jsonpathutil_8h_source.html#l00066">66</a> of file <a class="el" href="jsonpathutil_8h_source.html">jsonpathutil.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="jsonpathutil_8h_source.html#l00109">109</a> of file <a class="el" href="jsonpathutil_8h_source.html">jsonpathutil.h</a>.</p>
+
+</div>
+</div>
+<a id="aa6dd630cf21f6eb9b5f2cfc553858376" name="aa6dd630cf21f6eb9b5f2cfc553858376"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6dd630cf21f6eb9b5f2cfc553858376">&#9670;&#160;</a></span>get_page_size()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint32_t simdjson::get_page_size </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the system's memory page size. </p>
+<p>By default, we return 4096 bytes, which is the most common page size. On systems where the page size is not a multiple of 4096 bytes, and not a unix-like system, nor Windows, this function may return an incorrect value.</p>
+<dl class="section return"><dt>Returns</dt><dd>The page size in bytes. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00107">107</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1014,7 +1189,7 @@ template&lt;class T &gt; </div>
 
 <p>Returns true if mode == streaming_partial or mode == streaming_final. </p>
 
-<p class="definition">Definition at line <a class="el" href="internal_2dom__parser__implementation_8h_source.html#l00027">27</a> of file <a class="el" href="internal_2dom__parser__implementation_8h_source.html">dom_parser_implementation.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="internal_2dom__parser__implementation_8h_source.html#l00032">32</a> of file <a class="el" href="internal_2dom__parser__implementation_8h_source.html">dom_parser_implementation.h</a>.</p>
 
 </div>
 </div>
@@ -1051,7 +1226,7 @@ template&lt;class T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A string containing the equivalent JSON Pointer. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="jsonpathutil_8h_source.html#l00015">15</a> of file <a class="el" href="jsonpathutil_8h_source.html">jsonpathutil.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="jsonpathutil_8h_source.html#l00058">58</a> of file <a class="el" href="jsonpathutil_8h_source.html">jsonpathutil.h</a>.</p>
 
 </div>
 </div>
@@ -1358,7 +1533,7 @@ template&lt;class T &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00069">69</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00078">78</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1398,7 +1573,7 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00388">388</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="error_8h_source.html#l00389">389</a> of file <a class="el" href="error_8h_source.html">error.h</a>.</p>
 
 </div>
 </div>
@@ -1436,7 +1611,7 @@ template&lt;typename T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The padded string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00072">72</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00081">81</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1474,7 +1649,7 @@ template&lt;typename T &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The padded string. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00091">91</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00100">100</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
 
 </div>
 </div>
@@ -1526,6 +1701,70 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
+<a id="a2d703447a8b1acf0b22a15a78b5346bb" name="a2d703447a8b1acf0b22a15a78b5346bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d703447a8b1acf0b22a15a78b5346bb">&#9670;&#160;</a></span>slice_at()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a> simdjson::slice_at </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classsimdjson_1_1padded__string__view.html">padded_string_view</a>&#160;</td>
+          <td class="paramname"><em>data</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char&#160;</td>
+          <td class="paramname"><em>delimiter</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>block_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>index</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the index-th document-aligned slice of a delimited stream. </p>
+<p>The input is divided into blocks of block_size bytes and each boundary is moved forward to just past the next delimiter, so a document is never split. The delimiter must not occur inside a document: a line feed for NDJSON, a record separator (0x1E) for RFC 7464.</p>
+<p>Slices are contiguous and non-overlapping, and each may be parsed independently, so callers can process them on as many threads as they like.</p>
+<p>Iterate while index * block_size &lt; data.size(). A slice is empty when its block falls entirely inside one document, which happens only if that document is longer than block_size; skip it and continue. With block_size larger than the longest document, no slice is ever empty.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>The padded input. </td></tr>
+    <tr><td class="paramname">delimiter</td><td>The byte that separates documents. </td></tr>
+    <tr><td class="paramname">block_size</td><td>The nominal slice size, before snapping. </td></tr>
+    <tr><td class="paramname">index</td><td>Which slice to return, counting from zero. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p class="definition">Definition at line <a class="el" href="padded__string__view-inl_8h_source.html#l00185">185</a> of file <a class="el" href="padded__string__view-inl_8h_source.html">padded_string_view-inl.h</a>.</p>
+
+</div>
+</div>
 <a id="a3a02bf12c3c83e244264e6634033d233" name="a3a02bf12c3c83e244264e6634033d233"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3a02bf12c3c83e244264e6634033d233">&#9670;&#160;</a></span>to_json() <span class="overload">[1/2]</span></h2>
 
@@ -1554,7 +1793,7 @@ template&lt;class Z &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00274">274</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00303">303</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>
@@ -1592,7 +1831,7 @@ template&lt;class Z &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00283">283</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="json__string__builder_8h_source.html#l00312">312</a> of file <a class="el" href="json__string__builder_8h_source.html">json_string_builder.h</a>.</p>
 
 </div>
 </div>
@@ -2108,7 +2347,34 @@ template&lt;class T &gt; </div>
 <p>By default, simdjson supports this many nested objects and arrays. </p>
 <p>This is the default for parser::max_depth(). </p>
 
-<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00040">40</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00049">49</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
+
+</div>
+</div>
+<a id="a09e5a1fba28db730846e61fda3f6df3d" name="a09e5a1fba28db730846e61fda3f6df3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09e5a1fba28db730846e61fda3f6df3d">&#9670;&#160;</a></span>SIMDJSON_MAX_DEPTH</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">constexpr size_t simdjson::SIMDJSON_MAX_DEPTH = <a class="el" href="namespacesimdjson.html#ad0bad3783275be4012bd5cfd0327875a">SIMDJSON_MAXSIZE_BYTES</a>/2</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The maximum depth of nested objects and arrays supported by simdjson. </p>
+<p>A depth of SIMDJSON_MAXSIZE_BYTES/2 is not reasonable and would be adversarial, but it serves as an upper bound for validation purposes. </p>
+
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00032">32</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
 
 </div>
 </div>
@@ -2134,7 +2400,7 @@ template&lt;class T &gt; </div>
 
 <p>The maximum document size supported by simdjson. </p>
 
-<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00023">23</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00028">28</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
 
 </div>
 </div>
@@ -2161,7 +2427,7 @@ template&lt;class T &gt; </div>
 <p>The amount of padding needed in a buffer to parse JSON. </p>
 <p>The input buf should be readable up to buf + SIMDJSON_PADDING this is a stopgap; there should be a better description of the main loop and its behavior that abstracts over this See <a href="https://github.com/simdjson/simdjson/issues/174">https://github.com/simdjson/simdjson/issues/174</a> </p>
 
-<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00033">33</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="base_8h_source.html#l00042">42</a> of file <a class="el" href="base_8h_source.html">base.h</a>.</p>
 
 </div>
 </div>

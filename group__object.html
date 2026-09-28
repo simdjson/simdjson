@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -126,6 +126,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga9fd0d39ec786f26b7ea86f9bc8380bdd" id="r_ga9fd0d39ec786f26b7ea86f9bc8380bdd"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="structsimdjson_1_1simdjson__result.html">simdjson_result</a>&lt; <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__object.html#ga9fd0d39ec786f26b7ea86f9bc8380bdd">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::field_key</a> () noexcept</td></tr>
 <tr class="memdesc:ga9fd0d39ec786f26b7ea86f9bc8380bdd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current field's key.  <br /></td></tr>
 <tr class="separator:ga9fd0d39ec786f26b7ea86f9bc8380bdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga18b188759171409247faa38bde86f90f" id="r_ga18b188759171409247faa38bde86f90f"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__object.html#ga18b188759171409247faa38bde86f90f">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::field_key_with_length</a> (<a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> &amp;key, std::size_t &amp;len) noexcept</td></tr>
+<tr class="memdesc:ga18b188759171409247faa38bde86f90f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current field's key together with its raw byte length.  <br /></td></tr>
+<tr class="separator:ga18b188759171409247faa38bde86f90f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaaaf58bcf25e6d30a3469848d36c65a05" id="r_gaaaf58bcf25e6d30a3469848d36c65a05"><td class="memItemLeft" align="right" valign="top">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__object.html#gaaaf58bcf25e6d30a3469848d36c65a05">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::field_value</a> () noexcept</td></tr>
 <tr class="memdesc:gaaaf58bcf25e6d30a3469848d36c65a05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pass the : in the field and move to its value.  <br /></td></tr>
 <tr class="separator:gaaaf58bcf25e6d30a3469848d36c65a05"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,7 +173,7 @@ Functions</h2></td></tr>
 <p>May be called by start_root_object.</p>
 <dl class="section return"><dt>Returns</dt><dd>SUCCESS if it is possible to safely start an object from the root (document level). @error INCORRECT_TYPE if there is no opening { @error TAPE_ERROR if there is no matching } at end of document </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00050">50</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00071">71</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -199,7 +202,48 @@ Functions</h2></td></tr>
 
 <p>Get the current field's key. </p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00397">397</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00418">418</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+
+</div>
+</div>
+<a id="ga18b188759171409247faa38bde86f90f" name="ga18b188759171409247faa38bde86f90f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga18b188759171409247faa38bde86f90f">&#9670;&#160;</a></span>field_key_with_length()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">simdjson_warn_unused simdjson_inline <a class="el" href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9">error_code</a> simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value_iterator::field_key_with_length </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1raw__json__string.html">raw_json_string</a> &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::size_t &amp;&#160;</td>
+          <td class="paramname"><em>len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the current field's key together with its raw byte length. </p>
+<p>Like <a class="el" href="group__object.html#ga9fd0d39ec786f26b7ea86f9bc8380bdd" title="Get the current field&#39;s key.">field_key()</a>, but also returns the number of raw key bytes (the distance from the first key byte to the closing quote). The length is recovered from the structural index &ndash; the next structural token is the ':' &ndash; by stepping back over any whitespace to the closing quote, avoiding a forward SIMD scan for the closing quote. Leaves the iterator positioned exactly as <a class="el" href="group__object.html#ga9fd0d39ec786f26b7ea86f9bc8380bdd" title="Get the current field&#39;s key.">field_key()</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00426">426</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -228,7 +272,7 @@ Functions</h2></td></tr>
 
 <p>Pass the : in the field and move to its value. </p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00405">405</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00442">442</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -299,7 +343,7 @@ Functions</h2></td></tr>
 </div><!-- fragment --><p>Key is <em>raw JSON,</em> meaning it will be matched against the verbatim JSON without attempting to unescape it. This works well for typical ASCII and UTF-8 keys (almost all of them), but may fail to match some keys with escapes (\u, <br  />
 , etc.). </p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00111">111</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00132">132</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -337,7 +381,7 @@ Functions</h2></td></tr>
 , etc.). </p>
 <p>When find_field_unordered_raw is called, we can either be pointing at the first key, pointing outside (at the closing brace) or if a key was matched we can be either pointing right afterthe ':' right before the value (that we need skip), or we may have consumed the value and we might be at a comma or at the final brace (ready for a call to <a class="el" href="group__object.html#ga7956fe38cd8ecfbc8f709aa6f65c92b4" title="Moves to the next field in an object.">has_next_field()</a>).</p>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00208">208</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00229">229</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -368,7 +412,7 @@ Functions</h2></td></tr>
 <p>Looks for , and }. If } is found, the object is finished and the iterator advances past it. Otherwise, it advances to the next value.</p>
 <dl class="section return"><dt>Returns</dt><dd>whether there is another field in the object. @error TAPE_ERROR If there is a comma missing between fields. @error TAPE_ERROR If there is a comma, but not enough tokens remaining to have a key, :, and value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00095">95</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00116">116</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -398,7 +442,7 @@ Functions</h2></td></tr>
 <p>Start an object iteration. </p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the object had any fields (returns false for empty). @error INCORRECT_TYPE if there is no opening { </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00026">26</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00047">47</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -428,7 +472,7 @@ Functions</h2></td></tr>
 <p>Start an object iteration from the root. </p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the object had any fields (returns false for empty). @error INCORRECT_TYPE if there is no opening { @error TAPE_ERROR if there is no matching } at end of document </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00031">31</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00052">52</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -459,7 +503,7 @@ Functions</h2></td></tr>
 <p>Does not move the iterator unless the object is empty ({}).</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the object had any fields (returns false for empty). @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the <em>parent</em> array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that invalidates the document. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00036">36</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00057">57</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>
@@ -490,7 +534,7 @@ Functions</h2></td></tr>
 <p>Does not move the iterator unless the object is empty ({}).</p>
 <dl class="section return"><dt>Returns</dt><dd>Whether the object had any fields (returns false for empty). @error INCOMPLETE_ARRAY_OR_OBJECT If there are no more tokens (implying the <em>parent</em> array or object is incomplete). An INCOMPLETE_ARRAY_OR_OBJECT is an unrecoverable error that invalidates the document. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00080">80</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="value__iterator-inl_8h_source.html#l00101">101</a> of file <a class="el" href="value__iterator-inl_8h_source.html">value_iterator-inl.h</a>.</p>
 
 </div>
 </div>

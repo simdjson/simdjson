@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;4.6.11</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.0</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -99,11 +99,15 @@ $(document).ready(function(){initNavTree('deprecated.html',''); initResizable();
 <div class="contents">
 <div class="textblock"><dl class="reflist">
 <dt>File <a class="el" href="simdjson_8h.html">simdjson.h</a>  </dt>
-<dd><a class="anchor" id="_deprecated000003"></a>We will be removing this file so it is not confused with the top level <a class="el" href="simdjson_8h.html">simdjson.h</a>  </dd>
+<dd><a class="anchor" id="_deprecated000005"></a>We will be removing this file so it is not confused with the top level <a class="el" href="simdjson_8h.html">simdjson.h</a>  </dd>
 <dt>Member <a class="el" href="namespacesimdjson.html#a56e8e2fa6798b9e0da80bc51ae4a5f29">simdjson::error_message</a>  (int error) noexcept</dt>
 <dd><a class="anchor" id="_deprecated000002"></a>Error codes should be stored and returned as <code>error_code</code>, use <code><a class="el" href="namespacesimdjson.html#a65b00a7a7a9c8fafe9eb3b9b413a36fa" title="It is the convention throughout the code that the macro SIMDJSON_DEVELOPMENT_CHECKS determines whethe...">error_message()</a></code> instead.  </dd>
 <dt>Member <a class="el" href="namespacesimdjson.html#a63b494af834917af13120dcd57719bdb">simdjson::ErrorValues</a>  </dt>
-<dd><a class="anchor" id="_deprecated000001"></a>This is an alias and will be removed, use error_code instead </dd>
+<dd><a class="anchor" id="_deprecated000001"></a>This is an alias and will be removed, use error_code instead  </dd>
+<dt>Member <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#ab247e306c2f3dc49150d6b8702f6f413">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::iterate_many</a>  (const uint8_t *buf, size_t len, size_t batch_size=DEFAULT_BATCH_SIZE) noexcept</dt>
+<dd><a class="anchor" id="_deprecated000003"></a>Use <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c" title="Comma-separated JSON documents (e.g., {...},{...},{...})">stream_format::comma_delimited</a> instead. When true, maps internally to <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c" title="Comma-separated JSON documents (e.g., {...},{...},{...})">stream_format::comma_delimited</a>. Defaults to false.  </dd>
+<dt>Member <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1parser.html#a6d27a5df54da0765cba233f122f187cb">simdjson::SIMDJSON_IMPLEMENTATION::ondemand::parser::iterate_many</a>  (const uint8_t *buf, size_t len, size_t batch_size, bool allow_comma_separated) noexcept</dt>
+<dd><a class="anchor" id="_deprecated000004"></a>Use iterate_many with <a class="el" href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa0d2c133e3551d98c8713550e6a82ef9c" title="Comma-separated JSON documents (e.g., {...},{...},{...})">stream_format::comma_delimited</a> instead. </dd>
 </dl>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
