@@ -17,7 +17,9 @@
 #include <utility>     // std::index_sequence (window candidate dispatch)
 #include <type_traits> // std::integral_constant (window candidate dispatch)
 
-#if defined(__aarch64__) || defined(__ARM_NEON)
+// AArch64 only: 32-bit ARM (ARMv7) defines __ARM_NEON too, but lacks the
+// A64-only horizontal reductions (vmaxvq_u32) used below. See issue #2885.
+#if defined(__aarch64__)
   #include <arm_neon.h>
   #define SIMDJSON_KEY_SELECTOR_HAS_NEON 1
 #else
