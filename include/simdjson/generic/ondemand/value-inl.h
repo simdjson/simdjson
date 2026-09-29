@@ -246,7 +246,14 @@ simdjson_inline value::operator bool() noexcept(false) {
 #endif
 
 simdjson_inline simdjson_result<array_iterator> value::begin() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // get_array() returns a temporary here, so the iterator must not lock it.
+  array a;
+  SIMDJSON_TRY( get_array().get(a) );
+  return a.begin_unlocked();
+#else
   return get_array().begin();
+#endif
 }
 simdjson_inline simdjson_result<array_iterator> value::end() & noexcept {
   return {};

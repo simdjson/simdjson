@@ -32,6 +32,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -74,6 +83,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 

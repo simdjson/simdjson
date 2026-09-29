@@ -228,6 +228,16 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+  /**
+   * Like begin(), but the iterator does not lock this array. value::begin() and
+   * document::begin() iterate a temporary array that the iterator outlives, so a
+   * locking iterator would write to it after it is gone.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin_unlocked() noexcept;
+#endif
 
   friend class value;
   friend class document;
