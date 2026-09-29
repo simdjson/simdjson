@@ -140,7 +140,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat

@@ -230,6 +230,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
   } else {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index];
     size_t svlen = next_doc_index - current_index();
+    // When the scalar is followed by a truncated document, the structural
+    // indexes of that document were dropped and next_doc_index is the end of
+    // the input, so we bound the scalar by scanning the token itself.
+    size_t token_len = 0;
+    if (*start == '"') {
+      token_len = 1;
+      while (token_len < svlen) {
+        char c = start[token_len++];
+        if (c == '\\') {
+          token_len++;
+        } else if (c == '"') {
+          break;
+        }
+      }
+    } else {
+      while (token_len < svlen) {
+        char c = start[token_len];
+        if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+          break;
+        }
+        token_len++;
+      }
+    }
+    if (token_len > 0 && token_len < svlen) {
+      svlen = token_len;
+    }
     // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464 json_sequence
     // mode the scanner classifies RS as a scalar character, so an RS-prefixed
     // scalar document (number/true/false/null/string) has no closing structural

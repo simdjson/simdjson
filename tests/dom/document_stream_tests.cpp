@@ -622,6 +622,26 @@ namespace document_stream_tests {
     return true;
   }
 
+  // A scalar followed by a truncated document: source() must stop at the end
+  // of the scalar, so that current_index() + source().size() is its end.
+  bool source_scalar_before_truncated() {
+    std::cout << "Running " << __func__ << std::endl;
+    auto json = R"({"id":1},12,"a,\"b",{"id":2,"s":"trunc)"_padded;
+    std::string_view expected[3] = {R"({"id":1})", "12", R"("a,\"b")"};
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS( parser.parse_many(json, json.size(), simdjson::stream_format::comma_delimited).get(stream) );
+    size_t count = 0;
+    for(auto i = stream.begin(); i != stream.end(); ++i) {
+      ASSERT_SUCCESS( (*i).error() );
+      ASSERT_TRUE( count < 3 );
+      ASSERT_EQUAL( i.source(), expected[count] );
+      count++;
+    }
+    ASSERT_EQUAL( count, 3 );
+    return true;
+  }
+
   bool truncated_window() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is
@@ -2340,6 +2360,7 @@ namespace document_stream_tests {
            test_leading_spaces() &&
            test_crazy_leading_spaces() &&
            simple_example() &&
+           source_scalar_before_truncated() &&
            truncated_window() &&
            truncated_empty_stream_reused_parser() &&
            truncated_window_unclosed_string_in_object() &&

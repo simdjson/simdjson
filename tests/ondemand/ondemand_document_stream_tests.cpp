@@ -512,6 +512,80 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // source() must not depend on how much of the document was consumed,
+    // so that current_index() + source().size() gives the end of the document.
+    bool source_after_partial_read() {
+        TEST_START();
+        auto json = R"({"id":0,"a":[1,{"k":",]}"}]},{"id":1,"a":[2]},12,{"id":2,"s":"trunc)"_padded;
+        std::string_view expected[3] = {R"({"id":0,"a":[1,{"k":",]}"}]})", R"({"id":1,"a":[2]})", "12"};
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json, json.size(), stream_format::comma_delimited).get(stream));
+        size_t counter{0};
+        size_t end_of_last{0};
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+            auto doc = *i;
+            if (counter < 2) {
+                int64_t id;
+                ASSERT_SUCCESS(doc["id"].get_int64().get(id));
+                ASSERT_EQUAL(id, int64_t(counter));
+            } else {
+                int64_t v;
+                ASSERT_SUCCESS(doc.get_int64().get(v));
+                ASSERT_EQUAL(v, 12);
+            }
+            ASSERT_EQUAL(i.source(), expected[counter]);
+            end_of_last = i.current_index() + i.source().size();
+            counter++;
+        }
+        ASSERT_EQUAL(counter, 3);
+        ASSERT_EQUAL(end_of_last, std::string_view(json.data(), json.size()).find(R"(,{"id":2)"));
+        TEST_SUCCEED();
+    }
+
+    // source() must not crash when the stream is in an error state.
+    bool source_on_capacity_error() {
+        TEST_START();
+        std::string json_str = "[";
+        for (int i = 0; i < 100; i++) { json_str += R"({"a":"xxxxxxxxxxxxxxxxxxxx"},)"; }
+        padded_string json(json_str);
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json, 1024, stream_format::comma_delimited).get(stream));
+        size_t counter{0};
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_ERROR(i.error(), CAPACITY);
+            ASSERT_EQUAL(i.source(), std::string_view(json.data(), json.size()));
+            counter++;
+            break;
+        }
+        ASSERT_EQUAL(counter, 1);
+        TEST_SUCCEED();
+    }
+
+    // The padding may contain anything: a ':' right after the last string
+    // document must not be mistaken for the separator of a key.
+    bool string_document_with_colon_in_padding() {
+        TEST_START();
+        const std::string inputs[] = {R"("abc",{"id")", R"("abc" {"id")", R"("abc")"};
+        for (const std::string &input : inputs) {
+            std::vector<char> buffer(input.begin(), input.end());
+            buffer.resize(input.size() + SIMDJSON_PADDING, ':');
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            auto format = input.find(',') != std::string::npos ? stream_format::comma_delimited : stream_format::whitespace_delimited;
+            ASSERT_SUCCESS(parser.iterate_many(padded_string_view(buffer.data(), input.size(), buffer.size()), 1 << 20, format).get(stream));
+            size_t counter{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS(i.error());
+                ASSERT_EQUAL(i.source(), R"("abc")");
+                counter++;
+            }
+            ASSERT_EQUAL(counter, 1);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -2610,6 +2684,9 @@ bool run() {
             doc_index() &&
             doc_index_multiple_batches() &&
             source_test() &&
+            source_after_partial_read() &&
+            source_on_capacity_error() &&
+            string_document_with_colon_in_padding() &&
             truncated() &&
             truncated_complete_docs() &&
             truncated_empty_stream_reused_parser() &&

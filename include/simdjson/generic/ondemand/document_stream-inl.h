@@ -432,11 +432,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -450,6 +458,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
