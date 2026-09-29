@@ -432,6 +432,11 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
   // Always walk from the root of the document, whatever the current position
   // of the document iterator: the user may have already consumed part of the
   // document, so the iterator's current depth must not be used here.

@@ -561,6 +561,8 @@ There is one subtle case. When a chunk ends right after a number or an atom
 If your documents may be scalars, leave a scalar that touches the end of the chunk for the next round, as below.
 Documents that are objects or arrays do not have this problem.
 
+For a complete, standalone project that streams a gzip-compressed file with bounded memory, see [simdjson_compressed_demo](https://github.com/simdjson/simdjson_compressed_demo). It uses NDJSON, where a document never contains a raw newline, so each chunk can simply be cut after its last newline. Comma-separated input has no such delimiter, so you need to find where the last complete document ends, as below.
+
 The following function processes a comma-separated stream of documents or a single JSON array read from any `std::istream`:
 
 ```cpp
@@ -569,7 +571,7 @@ bool process_stream(std::istream &in, size_t chunk_size = 1 << 20) {
   ondemand::parser parser;
   std::vector<char> buffer;
   size_t len = 0; // bytes in the buffer that are yet to be consumed
-  bool first_chunk = true;
+  bool looking_for_bracket = true;
   bool eof = false;
   while (!eof) {
     // Read the next chunk after the leftover bytes, keeping room for the padding.
@@ -577,12 +579,14 @@ bool process_stream(std::istream &in, size_t chunk_size = 1 << 20) {
     in.read(buffer.data() + len, std::streamsize(chunk_size));
     len += size_t(in.gcount());
     eof = !in;
-    if (first_chunk) {
+    if (looking_for_bracket) {
       // If the input is a JSON array, blank out the opening '['.
       size_t i = 0;
       while (i < len && std::isspace(static_cast<unsigned char>(buffer[i]))) { i++; }
-      if (i < len && buffer[i] == '[') { buffer[i] = ' '; }
-      first_chunk = false;
+      if (i < len) {
+        if (buffer[i] == '[') { buffer[i] = ' '; }
+        looking_for_bracket = false;
+      }
     }
     if (eof) {
       // ... and the closing ']'.
@@ -597,13 +601,17 @@ bool process_stream(std::istream &in, size_t chunk_size = 1 << 20) {
     if (error) { return false; }
     size_t consumed = 0; // end of the last complete document
     for (auto it = stream.begin(); it != stream.end(); ++it) {
+      // An incomplete document at the end of the buffer is not an error: it is
+      // simply not returned. An error means invalid JSON, or a document larger
+      // than the batch size.
+      if (it.error()) { return false; }
       std::string_view source = it.source();
       size_t end = it.current_index() + source.size();
       // A scalar touching the end of the chunk may be cut short (12 instead of 123):
       // leave it for the next round.
       if (!eof && end == len && source[0] != '{' && source[0] != '[') { break; }
       ondemand::document_reference doc;
-      if ((*it).get(doc)) { break; }
+      if ((*it).get(doc)) { return false; }
       process(doc); // your code
       consumed = end;
     }
@@ -624,7 +632,7 @@ A few remarks:
 - The buffer must have `SIMDJSON_PADDING` spare bytes past the data, hence the `padded_string_view`.
 - The chunk size does not need to be larger than your documents: a document larger than a chunk simply accumulates over several rounds. However, the batch size passed to `iterate_many` (here `DEFAULT_BATCH_SIZE`, 1 MB) must be larger than your largest document.
 - Each round parses the leftover bytes again, so choose a chunk size that is large compared to your documents (a few megabytes is a good default).
-- With simdjson 5.0.1 and earlier, call `source()` before you access the document, as in the example: in earlier versions, `source()` could return the wrong range once the document had been partially consumed.
+- With simdjson 5.0.1 and earlier, `source()` could return the wrong range once the document had been partially consumed, or when a scalar document was followed by an incomplete one. A string document followed by an incomplete document could also be reported as a `TAPE_ERROR` when the padding bytes were not blank. If you must support these versions, call `source()` before you access the document and zero the padding bytes (`std::memset(buffer.data() + len, 0, SIMDJSON_PADDING)`) before calling `iterate_many`.
 
 
 C++20 features

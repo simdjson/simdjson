@@ -543,6 +543,49 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // source() must not crash when the stream is in an error state.
+    bool source_on_capacity_error() {
+        TEST_START();
+        std::string json_str = "[";
+        for (int i = 0; i < 100; i++) { json_str += R"({"a":"xxxxxxxxxxxxxxxxxxxx"},)"; }
+        padded_string json(json_str);
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(json, 1024, stream_format::comma_delimited).get(stream));
+        size_t counter{0};
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_ERROR(i.error(), CAPACITY);
+            ASSERT_EQUAL(i.source(), std::string_view(json.data(), json.size()));
+            counter++;
+            break;
+        }
+        ASSERT_EQUAL(counter, 1);
+        TEST_SUCCEED();
+    }
+
+    // The padding may contain anything: a ':' right after the last string
+    // document must not be mistaken for the separator of a key.
+    bool string_document_with_colon_in_padding() {
+        TEST_START();
+        const std::string inputs[] = {R"("abc",{"id")", R"("abc" {"id")", R"("abc")"};
+        for (const std::string &input : inputs) {
+            std::vector<char> buffer(input.begin(), input.end());
+            buffer.resize(input.size() + SIMDJSON_PADDING, ':');
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            auto format = input.find(',') != std::string::npos ? stream_format::comma_delimited : stream_format::whitespace_delimited;
+            ASSERT_SUCCESS(parser.iterate_many(padded_string_view(buffer.data(), input.size(), buffer.size()), 1 << 20, format).get(stream));
+            size_t counter{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS(i.error());
+                ASSERT_EQUAL(i.source(), R"("abc")");
+                counter++;
+            }
+            ASSERT_EQUAL(counter, 1);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -2642,6 +2685,8 @@ bool run() {
             doc_index_multiple_batches() &&
             source_test() &&
             source_after_partial_read() &&
+            source_on_capacity_error() &&
+            string_document_with_colon_in_padding() &&
             truncated() &&
             truncated_complete_docs() &&
             truncated_empty_stream_reused_parser() &&
