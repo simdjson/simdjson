@@ -78,10 +78,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
 
 simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
 #endif
   return array_iterator(iter);
 }
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline simdjson_result<array_iterator> array::begin_unlocked() noexcept {
+  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter);
+}
+#endif
 simdjson_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
@@ -105,6 +112,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -118,6 +128,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -125,8 +138,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -211,6 +233,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
