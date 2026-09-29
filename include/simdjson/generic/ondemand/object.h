@@ -142,8 +142,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -566,7 +577,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) && noexcept;
