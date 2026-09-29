@@ -327,6 +327,7 @@ The value returned by `truncated_bytes()` is only meaningful when all of the fol
 
 Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed `size_in_bytes()` or wrap around to a huge value such as `4294967295`. An empty input (zero bytes) or an input made only of white space contains no document, and `truncated_bytes()` returns zero for it.
 
+**In particular, do not use `truncated_bytes()` with `stream_format::comma_delimited` or `stream_format::comma_delimited_array`: the value it returns is arbitrary, even when every document was parsed.**
 
 If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully: `i.current_index() + i.source().size()` is the offset just past the end of that document. See [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks) for a complete example (written for On-Demand, but the same approach works with `parse_many`).
 
@@ -374,6 +375,11 @@ The trailing LF after each JSON text is optional but recommended by the RFC for 
 Comma-Separated Documents
 -------------------------
 
+**We discourage comma-separated documents.** They are not a standard format, and
+simdjson supports them only with significant limitations (see [Limitations of the comma-separated mode](#limitations-of-the-comma-separated-mode)).
+If you control the format, prefer a standard such as JSON Lines/NDJSON (`stream_format::whitespace_delimited`
+or `stream_format::newline_delimited`) or RFC 7464 (`stream_format::json_sequence`).
+
 Some systems produce JSON documents separated by commas, like `{"a":1},{"b":2},{"c":3}`. This is common when extracting elements from a JSON array or when APIs return comma-separated results.
 
 To parse comma-separated documents, use the `stream_format::comma_delimited` parameter:
@@ -404,11 +410,48 @@ auto json = R"({"arr":[1,2,3]},{"obj":{"x":1,"y":2}})"_padded;
 // Correctly parses as 2 documents, not 6
 ```
 
-Extra top-level separators are tolerated for compatibility with the legacy
-On-Demand comma-separated mode. Leading commas, trailing commas, and repeated
-commas are treated as empty separators rather than documents.
+`stream_format::comma_delimited` supports multi-batch processing and threading for optimal performance on large files.
 
-Unlike the legacy `allow_comma_separated` parameter, `stream_format::comma_delimited` supports multi-batch processing and threading for optimal performance on large files.
+### Limitations of the comma-separated mode
+
+The comma-separated mode is a convenience for reading such inputs, not a validator. It works by
+removing the commas found at the top level (outside of any object or array) and then splitting the
+remaining bytes as if the documents were separated by white space. Top-level commas are identified
+by counting braces and brackets. This has the following consequences, which apply to both
+`stream_format::comma_delimited` and `stream_format::comma_delimited_array`.
+
+- **Commas are not required.** Documents separated only by white space, or not separated at all, are
+  accepted as if commas were present: `{"a":1} {"b":2}`, `{"a":1}{"b":2}`, `1 2 3` and `"a""b"` all
+  produce separate documents without error. You cannot use this mode to check that an input is
+  properly comma-separated.
+- **Extra commas are ignored.** Leading, trailing and repeated top-level commas (`,,1,,2,`) are skipped
+  silently: they produce neither empty documents nor errors. This matches the legacy
+  On-Demand `allow_comma_separated` behavior.
+- **An incomplete last document is dropped silently.** Given `{"a":1},{"b":2},{"c":`, iteration returns
+  the first two documents and stops without reporting an error. `truncated_bytes()` does **not**
+  tell you how many bytes were dropped in this mode (see [Incomplete streams](#incomplete-streams)).
+- **Mismatched braces or brackets can hide the rest of the stream.** If a document is not balanced,
+  e.g., `{"a":[1,2},{"b":2},{"c":3}`, the parser can no longer tell which commas are at the top level.
+  Iteration may then end without returning any document and without reporting an error, whereas the
+  whitespace-delimited mode reports `TAPE_ERROR` on the same kind of input. When the input spans
+  several batches, you may instead get a `CAPACITY` error even though every document is small.
+- **Every batch must contain a top-level comma.** Except for the last batch, the parser can only end a
+  batch right after a top-level comma. A document together with the comma that follows it must fit
+  within `batch_size`. Furthermore, a run of documents separated only by white space (without commas)
+  is treated like a single document: if such a run is longer than `batch_size`, you get a `CAPACITY`
+  error, even though each document is small and the same input parses fine with
+  `stream_format::whitespace_delimited`.
+- **`truncated_bytes()` is meaningless.** The value it returns is arbitrary, even when every document
+  was parsed.
+
+Because of the silent cases above, if you must know that the whole input was consumed, do not rely on
+the absence of errors. Instead, compare the end of the last document you received
+(`i.current_index() + i.source().size()`) with the size of the input: only white space and commas
+should remain after it.
+
+If your input arrives in pieces (from `stdin`, from a decompressor, from the network),
+see [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks)
+(written for On-Demand, but the same approach works with `parse_many`).
 
 JSON Array As A Document Stream
 -------------------------------
@@ -441,6 +484,10 @@ auto c = R"([])"_padded;                                      // empty array →
 
 The **whole** array, from the opening `[` to the closing `]`, must be in the buffer you pass to `parse_many`: `comma_delimited_array` cannot be used on a piece of an array. If the array arrives in pieces (from `stdin`, from a decompressor, from the network), use `stream_format::comma_delimited` instead, as described in [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks).
 
-If the input is not a well-formed outer array (missing `[`, missing `]`, or empty / all-whitespace), `parse_many` returns `TAPE_ERROR`. Content **inside** the array is not validated up front — individual document parse errors surface when you iterate, just like `comma_delimited`.
+If the input does not start with `[` and end with `]` (ignoring white space), or if it is empty or all white space, `parse_many` returns `TAPE_ERROR`. That is the only check made on the outer array. Content **inside** the array is not validated up front — individual document parse errors surface when you iterate, just like `comma_delimited`.
+
+In particular, `comma_delimited_array` does **not** check that the input is a valid JSON array. Since the content is handled by the comma-separated mode, all of its [limitations](#limitations-of-the-comma-separated-mode) apply. For example, the invalid arrays `[1,,2]`, `[,1,2,]` and `[1 2]` are all accepted and produce the documents `1` and `2`. An input such as `[1],[2]` passes the initial check, and the problem is reported only during iteration, after the first document has been returned. If you need to validate the array, parse it as a single document with `parse` instead.
 
 Positions reported via `current_index()` are relative to the **stripped** buffer (the bytes between `[` and `]`), not the original input, for consistency with the existing BOM-stripping behavior.
+
+As with `comma_delimited`, `truncated_bytes()` is meaningless in this mode.
