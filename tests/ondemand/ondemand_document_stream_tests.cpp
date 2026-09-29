@@ -530,6 +530,37 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // Issue 2887: an empty input must report zero truncated bytes, even when
+    // the parser was previously used on a stream with a truncated tail.
+    bool truncated_empty_stream_reused_parser() {
+        TEST_START();
+        ondemand::parser parser;
+        auto truncated_json = R"({"a":1} {"b":2} {"c":)"_padded;
+        const std::pair<padded_string, stream_format> empty_inputs[] = {
+            {""_padded, stream_format::whitespace_delimited},
+            {""_padded, stream_format::newline_delimited},
+            {""_padded, stream_format::json_sequence},
+            {""_padded, stream_format::comma_delimited},
+            {"[]"_padded, stream_format::comma_delimited_array},
+            {"\xEF\xBB\xBF"_padded, stream_format::whitespace_delimited},
+        };
+        for (const auto &input : empty_inputs) {
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(truncated_json).get(stream));
+            size_t counter{0};
+            for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); counter++; }
+            ASSERT_EQUAL(counter, 2);
+            ASSERT_EQUAL(stream.truncated_bytes(), 5);
+
+            ASSERT_SUCCESS(parser.iterate_many(input.first, ondemand::DEFAULT_BATCH_SIZE, input.second).get(stream));
+            counter = 0;
+            for (auto doc : stream) { (void)doc; counter++; }
+            ASSERT_EQUAL(counter, 0);
+            ASSERT_EQUAL(stream.truncated_bytes(), 0);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated_complete_docs() {
         TEST_START();
         auto json = R"([1,2,3]  {"1":1,"2":3,"4":4} [1,2]  )"_padded;
@@ -2581,6 +2612,7 @@ bool run() {
             source_test() &&
             truncated() &&
             truncated_complete_docs() &&
+            truncated_empty_stream_reused_parser() &&
             truncated_unclosed_string() &&
             small_window() &&
             large_window() &&
