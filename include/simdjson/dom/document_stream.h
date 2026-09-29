@@ -114,9 +114,10 @@ public:
    * Check it only when all of the following hold:
    *
    *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence and comma_delimited mode the stage-1 filter rewrites the
-   *     structural index in place and the bookkeeping is lost, so the value is
-   *     meaningless even for a stream that parsed completely;
+   *     json_sequence, comma_delimited and comma_delimited_array mode the
+   *     stage-1 filter rewrites the structural index in place and the
+   *     bookkeeping is lost, so the value is meaningless even for a stream
+   *     that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -124,6 +125,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
   /**

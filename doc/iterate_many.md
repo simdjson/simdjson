@@ -385,7 +385,13 @@ This will print:
 39 bytes
 ```
 
-Importantly, you should only call `truncated_bytes()` after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Further, it is only applicable if the format is `whitespace_delimited` or `newline_delimited`. In `json_sequence` and `comma_delimited` mode, the value is meaningless. Importantly, it assumes no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.
+The value returned by `truncated_bytes()` is only meaningful when all of the following hold:
+
+- You have iterated through all of the documents. The stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.
+- The format is `whitespace_delimited` or `newline_delimited`. In `json_sequence`, `comma_delimited` and `comma_delimited_array` mode, the value is meaningless, even when every document was parsed.
+- No document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.
+
+Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed `size_in_bytes()` or wrap around to a huge value such as `4294967295`. An empty input (zero bytes) or an input made only of white space contains no document, and `truncated_bytes()` returns zero for it.
 
 If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using `current_index()` and `source()` on the iterator.
 

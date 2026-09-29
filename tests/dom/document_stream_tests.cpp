@@ -591,6 +591,37 @@ namespace document_stream_tests {
   }
 
 
+  // Issue 2887: an empty input must report zero truncated bytes, even when
+  // the parser was previously used on a stream with a truncated tail.
+  bool truncated_empty_stream_reused_parser() {
+    std::cout << "Running " << __func__ << std::endl;
+    simdjson::dom::parser parser;
+    auto truncated_json = R"({"a":1} {"b":2} {"c":)"_padded;
+    const std::pair<simdjson::padded_string, simdjson::stream_format> empty_inputs[] = {
+      {""_padded, simdjson::stream_format::whitespace_delimited},
+      {""_padded, simdjson::stream_format::newline_delimited},
+      {""_padded, simdjson::stream_format::json_sequence},
+      {""_padded, simdjson::stream_format::comma_delimited},
+      {"[]"_padded, simdjson::stream_format::comma_delimited_array},
+      {"\xEF\xBB\xBF"_padded, simdjson::stream_format::whitespace_delimited},
+    };
+    for (const auto &input : empty_inputs) {
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS( parser.parse_many(truncated_json).get(stream) );
+      size_t count = 0;
+      for (auto doc : stream) { ASSERT_SUCCESS( doc.error() ); count++; }
+      ASSERT_EQUAL( count, 2 );
+      ASSERT_EQUAL( stream.truncated_bytes(), 5 );
+
+      ASSERT_SUCCESS( parser.parse_many(input.first, simdjson::dom::DEFAULT_BATCH_SIZE, input.second).get(stream) );
+      count = 0;
+      for (auto doc : stream) { (void)doc; count++; }
+      ASSERT_EQUAL( count, 0 );
+      ASSERT_EQUAL( stream.truncated_bytes(), 0 );
+    }
+    return true;
+  }
+
   bool truncated_window() {
     std::cout << "Running " << __func__ << std::endl;
     // The last JSON document is
@@ -2310,6 +2341,7 @@ namespace document_stream_tests {
            test_crazy_leading_spaces() &&
            simple_example() &&
            truncated_window() &&
+           truncated_empty_stream_reused_parser() &&
            truncated_window_unclosed_string_in_object() &&
            truncated_window_unclosed_string() &&
            issue1307() &&

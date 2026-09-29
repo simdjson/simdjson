@@ -138,6 +138,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
