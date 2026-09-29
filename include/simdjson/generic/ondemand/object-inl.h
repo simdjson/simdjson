@@ -282,10 +282,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -498,9 +505,13 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::simd
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object>::end() noexcept {
   if (error()) { return error(); }

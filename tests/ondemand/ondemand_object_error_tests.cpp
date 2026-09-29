@@ -609,6 +609,45 @@ namespace object_error_tests {
     }));
     TEST_SUCCEED();
   }
+
+  // An iterator taken from a temporary object must not lock it: the temporary is
+  // gone by the time the iterator is destroyed (ASan: stack-use-after-scope).
+  bool iterator_from_temporary_object() {
+    TEST_START();
+    auto json = R"({ "a": { "x": 1, "y": 2 } })"_padded;
+    SUBTEST("simdjson_result<object> temporary", test_ondemand_doc(json, [&](auto doc) {
+      auto it = doc["a"].get_object().begin();
+      ASSERT_SUCCESS( it );
+      ondemand::field field;
+      ASSERT_SUCCESS( (*it).get(field) );
+      std::string_view key;
+      ASSERT_SUCCESS( field.unescaped_key().get(key) );
+      ASSERT_EQUAL( key, "x" );
+      return true;
+    }));
+    SUBTEST("object temporary", test_ondemand_doc(json, [&](auto doc) {
+      ondemand::object obj;
+      ASSERT_SUCCESS( doc["a"].get(obj) );
+      auto it = ondemand::object(obj).begin();
+      ASSERT_SUCCESS( it );
+      ondemand::field field;
+      ASSERT_SUCCESS( (*it).get(field) );
+      std::string_view key;
+      ASSERT_SUCCESS( field.unescaped_key().get(key) );
+      ASSERT_EQUAL( key, "x" );
+      return true;
+    }));
+    SUBTEST("named simdjson_result<object> still locks", test_ondemand_doc(json, [&](auto doc) {
+      auto obj = doc["a"].get_object();
+      for (auto field : obj) {
+        ASSERT_SUCCESS(field);
+        ASSERT_ERROR( obj["x"], OUT_OF_ORDER_ITERATION );
+        break;
+      }
+      return true;
+    }));
+    TEST_SUCCEED();
+  }
 #endif
 
   bool run() {
@@ -633,6 +672,7 @@ namespace object_error_tests {
            out_of_order_object_find_field_unordered_child_error() &&
            out_of_order_object_find_field_unordered_sibling_error() &&
            reentrant_object_access_during_iteration_error() &&
+           iterator_from_temporary_object() &&
 #endif
            true;
   }

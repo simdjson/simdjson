@@ -28,8 +28,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -231,12 +242,6 @@ protected:
 #if SIMDJSON_DEVELOPMENT_CHECKS
   bool locked{false};
   simdjson_inline void set_locked(bool _locked) noexcept;
-  /**
-   * Like begin(), but the iterator does not lock this array. value::begin() and
-   * document::begin() iterate a temporary array that the iterator outlives, so a
-   * locking iterator would write to it after it is gone.
-   */
-  simdjson_inline simdjson_result<array_iterator> begin_unlocked() noexcept;
 #endif
 
   friend class value;
@@ -259,7 +264,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;

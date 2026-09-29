@@ -76,19 +76,20 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return array_iterator(iter, this);
 #endif
   return array_iterator(iter);
 }
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-simdjson_inline simdjson_result<array_iterator> array::begin_unlocked() noexcept {
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+#endif
   return array_iterator(iter);
 }
-#endif
 simdjson_inline simdjson_result<array_iterator> array::end() noexcept {
   return array_iterator(iter);
 }
@@ -265,9 +266,13 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::simdj
 {
 }
 
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
