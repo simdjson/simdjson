@@ -190,7 +190,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat

@@ -328,7 +328,7 @@ The value returned by `truncated_bytes()` is only meaningful when all of the fol
 Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed `size_in_bytes()` or wrap around to a huge value such as `4294967295`. An empty input (zero bytes) or an input made only of white space contains no document, and `truncated_bytes()` returns zero for it.
 
 
-If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using `current_index()` and `source()` on the iterator.
+If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully: `i.current_index() + i.source().size()` is the offset just past the end of that document. See [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks) for a complete example (written for On-Demand, but the same approach works with `parse_many`).
 
 JSON Text Sequences (RFC 7464)
 ------------------------------
@@ -438,6 +438,8 @@ auto a = R"([1, "x", true, null, {"k":"v"}, [1,2]])"_padded;  // mixed scalars
 auto b = R"(  [ 1, 2, 3 ] )"_padded;                          // whitespace
 auto c = R"([])"_padded;                                      // empty array → 0 docs
 ```
+
+The **whole** array, from the opening `[` to the closing `]`, must be in the buffer you pass to `parse_many`: `comma_delimited_array` cannot be used on a piece of an array. If the array arrives in pieces (from `stdin`, from a decompressor, from the network), use `stream_format::comma_delimited` instead, as described in [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks).
 
 If the input is not a well-formed outer array (missing `[`, missing `]`, or empty / all-whitespace), `parse_many` returns `TAPE_ERROR`. Content **inside** the array is not validated up front — individual document parse errors surface when you iterate, just like `comma_delimited`.
 

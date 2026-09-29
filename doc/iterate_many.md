@@ -26,6 +26,9 @@ Contents
 - [Use cases](#use-cases)
 - [Tracking your position](#tracking-your-position)
 - [Incomplete streams](#incomplete-streams)
+- [Comma-separated documents](#comma-separated-documents)
+- [JSON Array As A Document Stream](#json-array-as-a-document-stream)
+- [Reading a large stream in chunks](#reading-a-large-stream-in-chunks)
 - [C++20 features](#c20-features)
 - [C++26 features (static reflection)](#c26-features-static-reflection)
 
@@ -393,7 +396,9 @@ The value returned by `truncated_bytes()` is only meaningful when all of the fol
 
 Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed `size_in_bytes()` or wrap around to a huge value such as `4294967295`. An empty input (zero bytes) or an input made only of white space contains no document, and `truncated_bytes()` returns zero for it.
 
-If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using `current_index()` and `source()` on the iterator.
+**In particular, do not use `truncated_bytes()` with `stream_format::comma_delimited` or `stream_format::comma_delimited_array`: the value it returns is arbitrary, even when every document was parsed.**
+
+If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully: `i.current_index() + i.source().size()` is the offset just past the end of that document (see [Reading a large stream in chunks](#reading-a-large-stream-in-chunks) for a complete example).
 
 Comma-separated documents
 -----------
@@ -443,6 +448,12 @@ for (auto doc : doc_stream) {
 Extra top-level separators are tolerated for compatibility with the legacy
 `allow_comma_separated` behavior. For example, leading commas, trailing commas,
 and repeated commas are treated as empty separators rather than documents.
+
+An incomplete document at the end of the input (e.g., `{"a":1},{"b":2},{"c":`) is
+silently dropped: iteration stops after the last complete document. However,
+`truncated_bytes()` does **not** tell you how many bytes were dropped in this mode.
+If your input arrives in pieces (from `stdin`, from a decompressor, from the network),
+see [Reading a large stream in chunks](#reading-a-large-stream-in-chunks).
 
 ### Legacy `allow_comma_separated` parameter (deprecated)
 
@@ -520,9 +531,100 @@ auto b = R"(  [ 1, 2, 3 ] )"_padded;                          // whitespace
 auto c = R"([])"_padded;                                      // empty array → 0 docs
 ```
 
+The **whole** array, from the opening `[` to the closing `]`, must be in the buffer you pass to `iterate_many`: `comma_delimited_array` cannot be used on a piece of an array. If the array is too large to fit in memory, or it arrives in pieces (from `stdin`, from a decompressor such as gzip, from the network), use `stream_format::comma_delimited` instead, as described in [Reading a large stream in chunks](#reading-a-large-stream-in-chunks).
+
 If the input is not a well-formed outer array (missing `[`, missing `]`, or empty / all-whitespace), `iterate_many` returns `TAPE_ERROR`. Content **inside** the array is not validated up front — individual document parse errors surface when you iterate, just like `comma_delimited`.
 
 Positions reported via `current_index()` are relative to the **stripped** buffer (the bytes between `[` and `]`), not the original input, for consistency with the existing BOM-stripping behavior.
+
+As with `comma_delimited`, `truncated_bytes()` is meaningless in this mode.
+
+Reading a large stream in chunks
+--------------------------------
+
+The fastest way to use `iterate_many` is to give it the whole input at once, e.g., a memory-mapped file.
+Sometimes that is not possible: the input might be compressed (gzip) and decompressed on the fly,
+or piped through `stdin`. You then read the input one chunk at a time into a buffer, and a document
+may straddle two chunks. The approach is the following:
+
+1. Append the next chunk to the bytes left over from the previous round.
+2. Call `iterate_many` on the buffer and process the complete documents. An incomplete document at the end of the buffer is not returned.
+3. Record where the last complete document ends: `i.current_index() + i.source().size()`.
+4. Move the remaining bytes to the front of the buffer and go back to step 1.
+
+Do not use `truncated_bytes()` for step 3: it does not work with `comma_delimited` (see [Incomplete streams](#incomplete-streams)).
+And do not use `comma_delimited_array` on the chunks: it requires the complete array.
+Instead, use `comma_delimited` and blank out the opening `[` and the closing `]` yourself (replacing them with a space keeps the offsets unchanged).
+
+There is one subtle case. When a chunk ends right after a number or an atom
+(e.g., `12` from `...,123,...`, or `tru` from `true`), there is no way to know that the value is cut short.
+If your documents may be scalars, leave a scalar that touches the end of the chunk for the next round, as below.
+Documents that are objects or arrays do not have this problem.
+
+The following function processes a comma-separated stream of documents or a single JSON array read from any `std::istream`:
+
+```cpp
+// Returns false if the input ends with an incomplete document.
+bool process_stream(std::istream &in, size_t chunk_size = 1 << 20) {
+  ondemand::parser parser;
+  std::vector<char> buffer;
+  size_t len = 0; // bytes in the buffer that are yet to be consumed
+  bool first_chunk = true;
+  bool eof = false;
+  while (!eof) {
+    // Read the next chunk after the leftover bytes, keeping room for the padding.
+    buffer.resize(len + chunk_size + SIMDJSON_PADDING);
+    in.read(buffer.data() + len, std::streamsize(chunk_size));
+    len += size_t(in.gcount());
+    eof = !in;
+    if (first_chunk) {
+      // If the input is a JSON array, blank out the opening '['.
+      size_t i = 0;
+      while (i < len && std::isspace(static_cast<unsigned char>(buffer[i]))) { i++; }
+      if (i < len && buffer[i] == '[') { buffer[i] = ' '; }
+      first_chunk = false;
+    }
+    if (eof) {
+      // ... and the closing ']'.
+      size_t i = len;
+      while (i > 0 && std::isspace(static_cast<unsigned char>(buffer[i - 1]))) { i--; }
+      if (i > 0 && buffer[i - 1] == ']') { buffer[i - 1] = ' '; }
+    }
+    ondemand::document_stream stream;
+    auto error = parser.iterate_many(padded_string_view(buffer.data(), len, buffer.size()),
+                                     ondemand::DEFAULT_BATCH_SIZE,
+                                     stream_format::comma_delimited).get(stream);
+    if (error) { return false; }
+    size_t consumed = 0; // end of the last complete document
+    for (auto it = stream.begin(); it != stream.end(); ++it) {
+      std::string_view source = it.source();
+      size_t end = it.current_index() + source.size();
+      // A scalar touching the end of the chunk may be cut short (12 instead of 123):
+      // leave it for the next round.
+      if (!eof && end == len && source[0] != '{' && source[0] != '[') { break; }
+      ondemand::document_reference doc;
+      if ((*it).get(doc)) { break; }
+      process(doc); // your code
+      consumed = end;
+    }
+    // Move the unconsumed bytes (an incomplete document) to the front.
+    std::memmove(buffer.data(), buffer.data() + consumed, len - consumed);
+    len -= consumed;
+  }
+  // Anything but whitespace and commas left over is an incomplete document.
+  for (size_t i = 0; i < len; i++) {
+    if (!std::isspace(static_cast<unsigned char>(buffer[i])) && buffer[i] != ',') { return false; }
+  }
+  return true;
+}
+```
+
+A few remarks:
+
+- The buffer must have `SIMDJSON_PADDING` spare bytes past the data, hence the `padded_string_view`.
+- The chunk size does not need to be larger than your documents: a document larger than a chunk simply accumulates over several rounds. However, the batch size passed to `iterate_many` (here `DEFAULT_BATCH_SIZE`, 1 MB) must be larger than your largest document.
+- Each round parses the leftover bytes again, so choose a chunk size that is large compared to your documents (a few megabytes is a good default).
+- With simdjson 5.0.1 and earlier, call `source()` before you access the document, as in the example: in earlier versions, `source()` could return the wrong range once the document had been partially consumed.
 
 
 C++20 features
