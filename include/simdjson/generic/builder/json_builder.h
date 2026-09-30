@@ -77,9 +77,12 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  // Slow path of ensure(). Kept out of line (simdjson_inline expands to
+  // simdjson_really_inline in release builds) so that the fully inlined
+  // serializer stays short: this is faster, and it keeps GCC from reasoning
+  // about the allocation sizes in grow_buffer(), which produced false
+  // -Wstringop-overflow warnings at the callers.
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
