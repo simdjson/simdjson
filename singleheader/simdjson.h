@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-28 12:06:03 -0400. version 5.0.1 Do not edit! */
+/* auto-generated on 2026-09-30 13:08:54 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2703,7 +2703,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "5.0.1"
+#define SIMDJSON_VERSION "5.0.2"
 
 namespace simdjson {
 enum {
@@ -2718,7 +2718,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 1
+  SIMDJSON_VERSION_REVISION = 2
 };
 } // namespace simdjson
 
@@ -7134,9 +7134,10 @@ public:
    * Check it only when all of the following hold:
    *
    *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence and comma_delimited mode the stage-1 filter rewrites the
-   *     structural index in place and the bookkeeping is lost, so the value is
-   *     meaningless even for a stream that parsed completely;
+   *     json_sequence, comma_delimited and comma_delimited_array mode the
+   *     stage-1 filter rewrites the structural index in place and the
+   *     bookkeeping is lost, so the value is meaningless even for a stream
+   *     that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -7144,6 +7145,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
   /**
@@ -11038,6 +11042,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
   } else {
     size_t next_doc_index = stream->batch_start + stream->parser->implementation->structural_indexes[stream->parser->implementation->next_structural_index];
     size_t svlen = next_doc_index - current_index();
+    // When the scalar is followed by a truncated document, the structural
+    // indexes of that document were dropped and next_doc_index is the end of
+    // the input, so we bound the scalar by scanning the token itself.
+    size_t token_len = 0;
+    if (*start == '"') {
+      token_len = 1;
+      while (token_len < svlen) {
+        char c = start[token_len++];
+        if (c == '\\') {
+          token_len++;
+        } else if (c == '"') {
+          break;
+        }
+      }
+    } else {
+      while (token_len < svlen) {
+        char c = start[token_len];
+        if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+          break;
+        }
+        token_len++;
+      }
+    }
+    if (token_len > 0 && token_len < svlen) {
+      svlen = token_len;
+    }
     // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464 json_sequence
     // mode the scanner classifies RS as a scalar character, so an RS-prefixed
     // scalar document (number/true/false/null/string) has no closing structural
@@ -11085,6 +11115,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -13723,19 +13756,6 @@ std::string fractured_json(simdjson_result<T> x, const fractured_json_options& o
   }
   return fractured_json(x.value(), options);
 }
-#endif
-
-// Explicit template instantiations for common types
-template std::string fractured_json(dom::element x);
-template std::string fractured_json(dom::element x, const fractured_json_options& options);
-template std::string fractured_json(dom::array x);
-template std::string fractured_json(dom::array x, const fractured_json_options& options);
-template std::string fractured_json(dom::object x);
-template std::string fractured_json(dom::object x, const fractured_json_options& options);
-
-#if SIMDJSON_EXCEPTIONS
-template std::string fractured_json(simdjson_result<dom::element> x);
-template std::string fractured_json(simdjson_result<dom::element> x, const fractured_json_options& options);
 #endif
 
 //
@@ -46690,9 +46710,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -49257,9 +49275,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -52301,9 +52317,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -55345,9 +55359,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -58504,9 +58516,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -61970,9 +61980,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -64926,9 +64934,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -67905,9 +67911,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -70887,9 +70891,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;
@@ -76969,8 +76971,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -77169,6 +77182,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -77190,7 +77207,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<arm64::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<arm64::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<arm64::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -77270,6 +77288,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -77312,6 +77339,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -78874,7 +78904,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -78882,6 +78914,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -78941,7 +78976,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -80803,8 +80841,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -81227,7 +81276,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<arm64::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<arm64::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<arm64::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<arm64::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -82943,9 +82993,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -82972,6 +83030,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -82985,6 +83046,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -82992,8 +83056,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -83078,6 +83151,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -83107,9 +83183,13 @@ simdjson_inline simdjson_result<arm64::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<arm64::ondemand::array_iterator> simdjson_result<arm64::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<arm64::ondemand::array_iterator> simdjson_result<arm64::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<arm64::ondemand::array_iterator> simdjson_result<arm64::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<arm64::ondemand::array_iterator> simdjson_result<arm64::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -83172,6 +83252,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -85521,6 +85654,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -85812,11 +85948,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -85830,6 +85974,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -86225,7 +86395,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -86268,7 +86439,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -87189,10 +87360,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -87405,9 +87583,13 @@ simdjson_inline simdjson_result<arm64::ondemand::object>::simdjson_result(arm64:
 simdjson_inline simdjson_result<arm64::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<arm64::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<arm64::ondemand::object_iterator> simdjson_result<arm64::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<arm64::ondemand::object_iterator> simdjson_result<arm64::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<arm64::ondemand::object_iterator> simdjson_result<arm64::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<arm64::ondemand::object_iterator> simdjson_result<arm64::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -94407,8 +94589,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -94607,6 +94800,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -94628,7 +94825,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<fallback::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<fallback::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<fallback::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -94708,6 +94906,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -94750,6 +94957,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -96312,7 +96522,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -96320,6 +96532,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -96379,7 +96594,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -98241,8 +98459,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -98665,7 +98894,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<fallback::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<fallback::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<fallback::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<fallback::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -100381,9 +100611,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -100410,6 +100648,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -100423,6 +100664,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -100430,8 +100674,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -100516,6 +100769,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -100545,9 +100801,13 @@ simdjson_inline simdjson_result<fallback::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<fallback::ondemand::array_iterator> simdjson_result<fallback::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<fallback::ondemand::array_iterator> simdjson_result<fallback::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<fallback::ondemand::array_iterator> simdjson_result<fallback::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<fallback::ondemand::array_iterator> simdjson_result<fallback::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -100610,6 +100870,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -102959,6 +103272,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -103250,11 +103566,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -103268,6 +103592,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -103663,7 +104013,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -103706,7 +104057,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -104627,10 +104978,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -104843,9 +105201,13 @@ simdjson_inline simdjson_result<fallback::ondemand::object>::simdjson_result(fal
 simdjson_inline simdjson_result<fallback::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<fallback::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<fallback::ondemand::object_iterator> simdjson_result<fallback::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<fallback::ondemand::object_iterator> simdjson_result<fallback::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<fallback::ondemand::object_iterator> simdjson_result<fallback::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<fallback::ondemand::object_iterator> simdjson_result<fallback::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -112322,8 +112684,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -112522,6 +112895,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -112543,7 +112920,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<haswell::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<haswell::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<haswell::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -112623,6 +113001,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -112665,6 +113052,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -114227,7 +114617,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -114235,6 +114627,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -114294,7 +114689,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -116156,8 +116554,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -116580,7 +116989,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<haswell::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<haswell::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<haswell::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<haswell::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -118296,9 +118706,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -118325,6 +118743,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -118338,6 +118759,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -118345,8 +118769,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -118431,6 +118864,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -118460,9 +118896,13 @@ simdjson_inline simdjson_result<haswell::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<haswell::ondemand::array_iterator> simdjson_result<haswell::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<haswell::ondemand::array_iterator> simdjson_result<haswell::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<haswell::ondemand::array_iterator> simdjson_result<haswell::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<haswell::ondemand::array_iterator> simdjson_result<haswell::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -118525,6 +118965,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -120874,6 +121367,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -121165,11 +121661,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -121183,6 +121687,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -121578,7 +122108,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -121621,7 +122152,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -122542,10 +123073,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -122758,9 +123296,13 @@ simdjson_inline simdjson_result<haswell::ondemand::object>::simdjson_result(hasw
 simdjson_inline simdjson_result<haswell::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<haswell::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<haswell::ondemand::object_iterator> simdjson_result<haswell::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<haswell::ondemand::object_iterator> simdjson_result<haswell::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<haswell::ondemand::object_iterator> simdjson_result<haswell::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<haswell::ondemand::object_iterator> simdjson_result<haswell::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -130237,8 +130779,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -130437,6 +130990,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -130458,7 +131015,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<icelake::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<icelake::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<icelake::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -130538,6 +131096,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -130580,6 +131147,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -132142,7 +132712,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -132150,6 +132722,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -132209,7 +132784,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -134071,8 +134649,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -134495,7 +135084,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<icelake::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<icelake::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<icelake::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<icelake::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -136211,9 +136801,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -136240,6 +136838,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -136253,6 +136854,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -136260,8 +136864,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -136346,6 +136959,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -136375,9 +136991,13 @@ simdjson_inline simdjson_result<icelake::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<icelake::ondemand::array_iterator> simdjson_result<icelake::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<icelake::ondemand::array_iterator> simdjson_result<icelake::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<icelake::ondemand::array_iterator> simdjson_result<icelake::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<icelake::ondemand::array_iterator> simdjson_result<icelake::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -136440,6 +137060,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -138789,6 +139462,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -139080,11 +139756,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -139098,6 +139782,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -139493,7 +140203,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -139536,7 +140247,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -140457,10 +141168,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -140673,9 +141391,13 @@ simdjson_inline simdjson_result<icelake::ondemand::object>::simdjson_result(icel
 simdjson_inline simdjson_result<icelake::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<icelake::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<icelake::ondemand::object_iterator> simdjson_result<icelake::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<icelake::ondemand::object_iterator> simdjson_result<icelake::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<icelake::ondemand::object_iterator> simdjson_result<icelake::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<icelake::ondemand::object_iterator> simdjson_result<icelake::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -148267,8 +148989,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -148467,6 +149200,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -148488,7 +149225,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -148568,6 +149306,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -148610,6 +149357,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -150172,7 +150922,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -150180,6 +150932,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -150239,7 +150994,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -152101,8 +152859,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -152525,7 +153294,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<ppc64::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -154241,9 +155011,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -154270,6 +155048,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -154283,6 +155064,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -154290,8 +155074,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -154376,6 +155169,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -154405,9 +155201,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> simdjson_result<ppc64::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> simdjson_result<ppc64::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> simdjson_result<ppc64::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<ppc64::ondemand::array_iterator> simdjson_result<ppc64::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -154470,6 +155270,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -156819,6 +157672,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -157110,11 +157966,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -157128,6 +157992,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -157523,7 +158413,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -157566,7 +158457,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -158487,10 +159378,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -158703,9 +159601,13 @@ simdjson_inline simdjson_result<ppc64::ondemand::object>::simdjson_result(ppc64:
 simdjson_inline simdjson_result<ppc64::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<ppc64::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> simdjson_result<ppc64::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> simdjson_result<ppc64::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> simdjson_result<ppc64::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<ppc64::ondemand::object_iterator> simdjson_result<ppc64::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -166604,8 +167506,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -166804,6 +167717,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -166825,7 +167742,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<westmere::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<westmere::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<westmere::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -166905,6 +167823,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -166947,6 +167874,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -168509,7 +169439,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -168517,6 +169449,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -168576,7 +169511,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -170438,8 +171376,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -170862,7 +171811,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<westmere::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<westmere::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<westmere::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<westmere::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -172578,9 +173528,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -172607,6 +173565,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -172620,6 +173581,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -172627,8 +173591,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -172713,6 +173686,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -172742,9 +173718,13 @@ simdjson_inline simdjson_result<westmere::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<westmere::ondemand::array_iterator> simdjson_result<westmere::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<westmere::ondemand::array_iterator> simdjson_result<westmere::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<westmere::ondemand::array_iterator> simdjson_result<westmere::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<westmere::ondemand::array_iterator> simdjson_result<westmere::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -172807,6 +173787,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -175156,6 +176189,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -175447,11 +176483,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -175465,6 +176509,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -175860,7 +176930,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -175903,7 +176974,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -176824,10 +177895,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -177040,9 +178118,13 @@ simdjson_inline simdjson_result<westmere::ondemand::object>::simdjson_result(wes
 simdjson_inline simdjson_result<westmere::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<westmere::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<westmere::ondemand::object_iterator> simdjson_result<westmere::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<westmere::ondemand::object_iterator> simdjson_result<westmere::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<westmere::ondemand::object_iterator> simdjson_result<westmere::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<westmere::ondemand::object_iterator> simdjson_result<westmere::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -184431,8 +185513,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -184631,6 +185724,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -184652,7 +185749,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<lsx::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<lsx::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<lsx::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<lsx::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -184732,6 +185830,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -184774,6 +185881,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -186336,7 +187446,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -186344,6 +187456,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -186403,7 +187518,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -188265,8 +189383,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -188689,7 +189818,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<lsx::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<lsx::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<lsx::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<lsx::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<lsx::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<lsx::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -190405,9 +191535,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -190434,6 +191572,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -190447,6 +191588,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -190454,8 +191598,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -190540,6 +191693,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -190569,9 +191725,13 @@ simdjson_inline simdjson_result<lsx::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<lsx::ondemand::array_iterator> simdjson_result<lsx::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<lsx::ondemand::array_iterator> simdjson_result<lsx::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<lsx::ondemand::array_iterator> simdjson_result<lsx::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<lsx::ondemand::array_iterator> simdjson_result<lsx::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -190634,6 +191794,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -192983,6 +194196,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -193274,11 +194490,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -193292,6 +194516,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -193687,7 +194937,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -193730,7 +194981,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -194651,10 +195902,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -194867,9 +196125,13 @@ simdjson_inline simdjson_result<lsx::ondemand::object>::simdjson_result(lsx::ond
 simdjson_inline simdjson_result<lsx::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<lsx::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<lsx::ondemand::object_iterator> simdjson_result<lsx::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<lsx::ondemand::object_iterator> simdjson_result<lsx::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<lsx::ondemand::object_iterator> simdjson_result<lsx::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<lsx::ondemand::object_iterator> simdjson_result<lsx::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -202281,8 +203543,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -202481,6 +203754,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -202502,7 +203779,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<lasx::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<lasx::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<lasx::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<lasx::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -202582,6 +203860,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -202624,6 +203911,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -204186,7 +205476,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -204194,6 +205486,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -204253,7 +205548,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -206115,8 +207413,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -206539,7 +207848,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<lasx::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<lasx::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<lasx::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<lasx::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<lasx::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<lasx::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -208255,9 +209565,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -208284,6 +209602,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -208297,6 +209618,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -208304,8 +209628,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -208390,6 +209723,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -208419,9 +209755,13 @@ simdjson_inline simdjson_result<lasx::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<lasx::ondemand::array_iterator> simdjson_result<lasx::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<lasx::ondemand::array_iterator> simdjson_result<lasx::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<lasx::ondemand::array_iterator> simdjson_result<lasx::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<lasx::ondemand::array_iterator> simdjson_result<lasx::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -208484,6 +209824,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -210833,6 +212226,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -211124,11 +212520,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -211142,6 +212546,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -211537,7 +212967,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -211580,7 +213011,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -212501,10 +213932,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -212717,9 +214155,13 @@ simdjson_inline simdjson_result<lasx::ondemand::object>::simdjson_result(lasx::o
 simdjson_inline simdjson_result<lasx::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<lasx::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<lasx::ondemand::object_iterator> simdjson_result<lasx::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<lasx::ondemand::object_iterator> simdjson_result<lasx::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<lasx::ondemand::object_iterator> simdjson_result<lasx::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<lasx::ondemand::object_iterator> simdjson_result<lasx::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
@@ -220134,8 +221576,19 @@ public:
    * Begin array iteration.
    *
    * Part of the std::iterable interface.
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this array while it is
+   * alive, so that reentrant access (at(), count_elements(), reset(), ...) is
+   * reported as OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<array_iterator> begin() & noexcept;
+  /**
+   * Begin iteration over a temporary array, e.g., `v.get_array().begin()`.
+   *
+   * The iterator does not depend on the array instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<array_iterator> begin() && noexcept;
   /**
    * Sentinel representing the end of the array.
    *
@@ -220334,6 +221787,10 @@ protected:
    * iter.is_alive() == false indicates iteration is complete.
    */
   value_iterator iter{};
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  bool locked{false};
+  simdjson_inline void set_locked(bool _locked) noexcept;
+#endif
 
   friend class value;
   friend class document;
@@ -220355,7 +221812,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> end() noexcept;
   inline simdjson_result<size_t> count_elements() & noexcept;
   inline simdjson_result<bool> is_empty() & noexcept;
@@ -220435,6 +221893,15 @@ public:
   /** Create a new, invalid array iterator. */
   simdjson_inline array_iterator() noexcept = default;
 
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  simdjson_inline ~array_iterator() noexcept;
+
+  simdjson_inline array_iterator(array_iterator&&) noexcept;
+  simdjson_inline array_iterator& operator=(array_iterator&&) noexcept;
+  simdjson_inline array_iterator(const array_iterator&) noexcept;
+  simdjson_inline array_iterator& operator=(const array_iterator&) noexcept;
+#endif
+
   //
   // Iterator interface
   //
@@ -220477,6 +221944,9 @@ public:
 private:
 #if SIMDJSON_DEVELOPMENT_CHECKS
    bool has_been_referenced{false};
+   array* parent{nullptr};
+
+   simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
 
@@ -222039,7 +223509,9 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited;
+   *   - the format is whitespace_delimited or newline_delimited. In
+   *     json_sequence, comma_delimited and comma_delimited_array mode the value
+   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -222047,6 +223519,9 @@ public:
    * If you need to know about a truncated tail outside those conditions, track
    * it yourself from the last successful document (see iterator::current_index()
    * and iterator::source()).
+   *
+   * An empty input (zero bytes) or an input made only of white space contains
+   * no document: truncated_bytes() returns zero.
    */
   inline size_t truncated_bytes() const noexcept;
 
@@ -222106,7 +223581,10 @@ public:
      *
      * The returned string_view instance is simply a map to the (unparsed)
      * source string: it may thus include white-space characters and all manner
-     * of padding.
+     * of padding. It spans the whole current document, whether or not you
+     * have already accessed (part of) the document. Thus
+     * current_index() + source().size() is the offset just past the end of the
+     * current document, which is useful when reading a stream in chunks.
      *
      * This function (source()) is experimental and the usage
      * may change in future versions of simdjson: we find the API somewhat
@@ -223968,8 +225446,19 @@ public:
    * Using the iterator directly is also possible but error-prone and discouraged. In particular,
    * you must dereference the iterator exactly once per iteration (before calling '++').
    * Doing otherwise is unsafe and may lead to errors. You are responsible for ensuring
+   *
+   * With SIMDJSON_DEVELOPMENT_CHECKS, the iterator locks this object while it is
+   * alive, so that reentrant access (find_field(), reset(), ...) is reported as
+   * OUT_OF_ORDER_ITERATION.
    */
-  simdjson_inline simdjson_result<object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<object_iterator> begin() & noexcept;
+  /**
+   * Get an iterator to the start of a temporary object, e.g., `v.get_object().begin()`.
+   *
+   * The iterator does not depend on the object instance and may outlive it, so
+   * it does not lock it.
+   */
+  simdjson_inline simdjson_result<object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<object_iterator> end() noexcept;
   /**
    * Look up a field by name on an object (order-sensitive). By order-sensitive, we mean that
@@ -224392,7 +225881,8 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept = default;
 
-  simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> begin() noexcept;
+  simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> begin() & noexcept;
+  simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> begin() && noexcept;
   simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> end() noexcept;
   simdjson_inline simdjson_result<rvv_vls::ondemand::value> find_field(std::string_view key) & noexcept;
   simdjson_inline simdjson_result<rvv_vls::ondemand::value> find_field(std::string_view key) && noexcept;
@@ -226108,9 +227598,17 @@ simdjson_inline simdjson_result<array> array::started(value_iterator &iter) noex
   return array(iter);
 }
 
-simdjson_inline simdjson_result<array_iterator> array::begin() noexcept {
+simdjson_inline simdjson_result<array_iterator> array::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  if (!iter.is_at_iterator_start()) { return OUT_OF_ORDER_ITERATION; }
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
+  return array_iterator(iter, this);
+#endif
+  return array_iterator(iter);
+}
+simdjson_inline simdjson_result<array_iterator> array::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The array is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return array_iterator(iter);
 }
@@ -226137,6 +227635,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
 simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t count{0};
   // Important: we do not consume any of the values.
   for(simdjson_unused auto v : *this) { count++; }
@@ -226150,6 +227651,9 @@ simdjson_inline simdjson_result<size_t> array::count_elements() & noexcept {
 SIMDJSON_POP_DISABLE_WARNINGS
 
 simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   bool is_not_empty;
   auto error = iter.reset_array().get(is_not_empty);
   if(error) { return error; }
@@ -226157,8 +227661,17 @@ simdjson_inline simdjson_result<bool> array::is_empty() & noexcept {
 }
 
 inline simdjson_result<bool> array::reset() & noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   return iter.reset_array();
 }
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline void array::set_locked(bool _locked) noexcept {
+  locked = _locked;
+}
+#endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
   if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
@@ -226243,6 +227756,9 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
 }
 
 simdjson_inline simdjson_result<value> array::at(size_t index) noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  if (locked) return OUT_OF_ORDER_ITERATION;
+#endif
   size_t i = 0;
   for (auto value : *this) {
     if (i == index) { return value; }
@@ -226272,9 +227788,13 @@ simdjson_inline simdjson_result<rvv_vls::ondemand::array>::simdjson_result(
 {
 }
 
-simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> simdjson_result<rvv_vls::ondemand::array>::begin() noexcept {
+simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> simdjson_result<rvv_vls::ondemand::array>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> simdjson_result<rvv_vls::ondemand::array>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<rvv_vls::ondemand::array_iterator> simdjson_result<rvv_vls::ondemand::array>::end() noexcept {
   if (error()) { return error(); }
@@ -226337,6 +227857,59 @@ namespace ondemand {
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
   : iter{_iter}
 {}
+
+#if SIMDJSON_DEVELOPMENT_CHECKS
+simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
+  : parent{_parent}, iter{_iter}
+{
+  if (parent) parent->set_locked(true);
+}
+
+simdjson_inline array_iterator::~array_iterator() noexcept
+{
+  if (parent) parent->set_locked(false);
+}
+
+simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{other.parent},
+    iter{std::move(other.iter)}
+{
+  other.parent = nullptr;
+}
+
+simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = other.parent;
+    iter = std::move(other.iter);
+
+    other.parent = nullptr;
+  }
+  return *this;
+}
+
+simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
+  : has_been_referenced{other.has_been_referenced},
+    parent{nullptr},
+    iter{other.iter}
+{}
+
+simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
+  if (this != &other)
+  {
+    if (parent)
+      parent->set_locked(false);
+    has_been_referenced = other.has_been_referenced;
+    parent = nullptr;
+    iter = other.iter;
+  }
+  return *this;
+}
+#endif
 
 simdjson_inline simdjson_result<value> array_iterator::operator*() noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -228686,6 +230259,9 @@ inline size_t document_stream::size_in_bytes() const noexcept {
 }
 
 inline size_t document_stream::truncated_bytes() const noexcept {
+  // Stage 1 returns EMPTY on zero-length input before it writes the index
+  // sentinels read below, so they would still hold a previous stream's values.
+  if (len == 0) { return 0; }
   if(error == CAPACITY) { return len - batch_start; }
   return parser->implementation->structural_indexes[parser->implementation->n_structural_indexes] - parser->implementation->structural_indexes[parser->implementation->n_structural_indexes + 1];
 }
@@ -228977,11 +230553,19 @@ simdjson_inline size_t document_stream::iterator::current_index() const noexcept
 }
 
 simdjson_inline std::string_view document_stream::iterator::source() const noexcept {
-  auto depth = stream->doc.iter.depth();
+  // On error (e.g., CAPACITY), there is no document to walk: return the rest of
+  // the input, as the DOM document_stream does.
+  if (stream->error) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->len - current_index());
+  }
+  // Always walk from the root of the document, whatever the current position
+  // of the document iterator: the user may have already consumed part of the
+  // document, so the iterator's current depth must not be used here.
+  depth_t depth = 1;
   auto cur_struct_index = stream->doc.iter._root - stream->parser->implementation->structural_indexes.get();
 
-  // If at root, process the first token to determine if scalar value
-  if (stream->doc.iter.at_root()) {
+  // Process the first token to determine if scalar value
+  {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':   // Depth=1 already at start of document
         break;
@@ -228995,6 +230579,32 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
           // normally the length would be next_index - current_index() - 1, except for the last document
           size_t svlen = next_index - current_index();
           const char *start = reinterpret_cast<const char*>(stream->buf) + current_index();
+          // When the scalar is followed by a truncated document, the structural
+          // indexes of that document were dropped and next_index is the end of
+          // the input, so we bound the scalar by scanning the token itself.
+          size_t token_len = 0;
+          if (*start == '"') {
+            token_len = 1;
+            while (token_len < svlen) {
+              char c = start[token_len++];
+              if (c == '\\') {
+                token_len++;
+              } else if (c == '"') {
+                break;
+              }
+            }
+          } else {
+            while (token_len < svlen) {
+              char c = start[token_len];
+              if (std::isspace(static_cast<unsigned char>(c)) || c == ',' || c == '{' || c == '[' || c == '\0' || static_cast<uint8_t>(c) == 0x1E) {
+                break;
+              }
+              token_len++;
+            }
+          }
+          if (token_len > 0 && token_len < svlen) {
+            svlen = token_len;
+          }
           // Trim trailing whitespace, NUL, and RS (0x1E). In RFC 7464
           // json_sequence mode the scanner classifies RS as a scalar
           // character, so an RS-prefixed scalar document (number / true /
@@ -229390,7 +231000,8 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 #endif // SIMDJSON_CHECK_EOF
       break;
     case '"':
-      if(*peek() == ':') {
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':') {
         // We are at a key!!!
         // This might happen if you just started an object and you skip it immediately.
         // Performance note: it would be nice to get rid of this check as it is somewhat
@@ -229433,7 +231044,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -230354,10 +231965,17 @@ simdjson_inline object::object(const value_iterator &_iter) noexcept
 {
 }
 
-simdjson_inline simdjson_result<object_iterator> object::begin() noexcept {
+simdjson_inline simdjson_result<object_iterator> object::begin() & noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
   return object_iterator(iter, this);
+#endif
+  return object_iterator(iter);
+}
+simdjson_inline simdjson_result<object_iterator> object::begin() && noexcept {
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  // The object is a temporary that the iterator may outlive: do not lock it.
+  if (!iter.is_at_iterator_start() || locked) { return OUT_OF_ORDER_ITERATION; }
 #endif
   return object_iterator(iter);
 }
@@ -230570,9 +232188,13 @@ simdjson_inline simdjson_result<rvv_vls::ondemand::object>::simdjson_result(rvv_
 simdjson_inline simdjson_result<rvv_vls::ondemand::object>::simdjson_result(error_code error) noexcept
     : implementation_simdjson_result_base<rvv_vls::ondemand::object>(error) {}
 
-simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> simdjson_result<rvv_vls::ondemand::object>::begin() noexcept {
+simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> simdjson_result<rvv_vls::ondemand::object>::begin() & noexcept {
   if (error()) { return error(); }
   return first.begin();
+}
+simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> simdjson_result<rvv_vls::ondemand::object>::begin() && noexcept {
+  if (error()) { return error(); }
+  return std::move(first).begin();
 }
 simdjson_inline simdjson_result<rvv_vls::ondemand::object_iterator> simdjson_result<rvv_vls::ondemand::object>::end() noexcept {
   if (error()) { return error(); }
