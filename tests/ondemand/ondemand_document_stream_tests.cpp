@@ -1085,7 +1085,7 @@ namespace document_stream_tests {
             if(count <= 3) {
                 ASSERT_SUCCESS(error);
             } else {
-                ASSERT_ERROR(error,TAPE_ERROR);
+                ASSERT_ERROR(error,INCOMPLETE_ARRAY_OR_OBJECT);
                 break;
             }
             count++;

@@ -88,6 +88,25 @@ namespace error_tests {
     auto error = doc.count_fields().get(cnt);
     return error != simdjson::SUCCESS;
   }
+  bool skip_child_incomplete_container() {
+    TEST_START();
+    auto check = [](const padded_string &json, simdjson::error_code expected) {
+      ondemand::parser parser;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.raw_json().error(), expected);
+      return true;
+    };
+    SUBTEST("unclosed array", check("["_padded, INCOMPLETE_ARRAY_OR_OBJECT));
+    SUBTEST("unclosed object", check("{"_padded, INCOMPLETE_ARRAY_OR_OBJECT));
+    SUBTEST("unclosed nested array", check("[[0]"_padded, INCOMPLETE_ARRAY_OR_OBJECT));
+    SUBTEST("unclosed nested object", check("{\"a\":{}"_padded, INCOMPLETE_ARRAY_OR_OBJECT));
+    SUBTEST("closed array", check("[]"_padded, SUCCESS));
+    SUBTEST("closed object", check("{}"_padded, SUCCESS));
+    SUBTEST("closed nested array", check("[[0]]"_padded, SUCCESS));
+    SUBTEST("closed nested object", check("{\"a\":{}}"_padded, SUCCESS));
+    TEST_SUCCEED();
+  }
   bool empty_document_error() {
     TEST_START();
     ondemand::parser parser;
@@ -466,6 +485,7 @@ namespace error_tests {
            badbadjson2() &&
            issue1834() &&
            issue1834_2() &&
+           skip_child_incomplete_container() &&
 #if SIMDJSON_EXCEPTIONS
            document_in_class() &&
            direct_document() &&
