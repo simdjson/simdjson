@@ -1,0 +1,1004 @@
+[
+    {
+        "id": "rcp-001",
+        "title": "Roasted Carrot Curry",
+        "summary": "A fragrant weeknight dish built around roasted carrot with a handful of pantry staples.",
+        "servings": 8,
+        "prep_minutes": 30,
+        "cook_minutes": 90,
+        "rating": 4.6,
+        "tags": [
+            "freezer-friendly"
+        ],
+        "ingredients": [
+            {
+                "name": "vegetable stock",
+                "quantity": 500.0,
+                "unit": "ml",
+                "note": "at room temperature"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 60.0,
+                "unit": "ml"
+            },
+            {
+                "name": "feta cheese",
+                "quantity": 10.0,
+                "unit": "g",
+                "note": "drained and rinsed"
+            },
+            {
+                "name": "white wine vinegar",
+                "quantity": 60.0,
+                "unit": "ml",
+                "note": "roughly torn"
+            },
+            {
+                "name": "red lentils",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 120.0,
+                "unit": "ml",
+                "note": "drained and rinsed"
+            }
+        ],
+        "steps": [
+            "Roast the onion and garlic and cook gently until soft and translucent.",
+            "Whisk the spices in a dry pan until fragrant, then grind them.",
+            "Blend to a smooth purée, adding stock a little at a time.",
+            "Top for five minutes before slicing so the juices settle.",
+            "Whisk the spices in a dry pan until fragrant, then grind them.",
+            "Simmer with salt, pepper and a squeeze of lemon.",
+            "Drain for five minutes before slicing so the juices settle.",
+            "Toast the spices in a dry pan until fragrant, then grind them."
+        ]
+    },
+    {
+        "id": "rcp-002",
+        "title": "Roasted Carrot Dumplings",
+        "summary": "A light weekend dish built around roasted carrot with a handful of pantry staples.",
+        "cuisine": "Thai",
+        "servings": 2,
+        "prep_minutes": 25,
+        "cook_minutes": 90,
+        "tags": [
+            "budget",
+            "one-pot",
+            "kid-friendly",
+            "freezer-friendly"
+        ],
+        "ingredients": [
+            {
+                "name": "canned chickpeas",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "free-range egg",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "rolled oats",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 10.0,
+                "unit": "g"
+            },
+            {
+                "name": "smoked paprika",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 120.0,
+                "unit": "ml"
+            },
+            {
+                "name": "fresh parsley",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 15.0,
+                "unit": "ml"
+            },
+            {
+                "name": "yellow onion",
+                "quantity": 4.0,
+                "unit": "piece"
+            },
+            {
+                "name": "sea salt",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "fresh ginger",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "finely chopped"
+            }
+        ],
+        "steps": [
+            "Warm the spices in a dry pan until fragrant, then grind them.",
+            "Simmer the herbs over the top and serve while warm.",
+            "Blend the herbs over the top and serve while warm.",
+            "Fold everything together until no dry patches remain.",
+            "Warm the grains well and set them aside to steam.",
+            "Season to a smooth purée, adding stock a little at a time.",
+            "Drain for five minutes before slicing so the juices settle.",
+            "Rest the dough into eight pieces and roll each one thin."
+        ],
+        "author": {
+            "name": "Jonas Albrecht",
+            "handle": "@jalbrecht"
+        }
+    },
+    {
+        "id": "rcp-003",
+        "title": "Barley Stew",
+        "summary": "A bright weekend dish built around barley with a handful of pantry staples.",
+        "prep_minutes": 25,
+        "cook_minutes": 20,
+        "difficulty": "easy",
+        "rating": 4.9,
+        "tags": [
+            "vegetarian"
+        ],
+        "ingredients": [
+            {
+                "name": "soy sauce",
+                "quantity": 120.0,
+                "unit": "ml"
+            },
+            {
+                "name": "tomato paste",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "unsalted butter",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 250.0,
+                "unit": "ml"
+            },
+            {
+                "name": "feta cheese",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "baby spinach",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "plain yogurt",
+                "quantity": 400.0,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Roast the dough into eight pieces and roll each one thin.",
+            "Season the oil in a wide pan over medium heat until it shimmers.",
+            "Combine the herbs over the top and serve while warm.",
+            "Toast the mixture for twelve minutes, stirring now and then.",
+            "Blend the spices in a dry pan until fragrant, then grind them."
+        ],
+        "photos": [
+            "/img/recipes/barley-stew-1.jpg",
+            "/img/recipes/barley-stew-2.jpg",
+            "/img/recipes/barley-stew-3.jpg"
+        ]
+    },
+    {
+        "id": "rcp-004",
+        "title": "Pickled Beet Bowl",
+        "summary": "A comforting seasonal dish built around pickled beet with a handful of pantry staples.",
+        "cuisine": "Basque",
+        "servings": 6,
+        "prep_minutes": 25,
+        "cook_minutes": 20,
+        "difficulty": "medium",
+        "rating": 4.1,
+        "tags": [
+            "vegan",
+            "weeknight",
+            "budget"
+        ],
+        "ingredients": [
+            {
+                "name": "garlic clove",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "chili flakes",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "red lentils",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "soy sauce",
+                "quantity": 250.0,
+                "unit": "ml"
+            },
+            {
+                "name": "plain yogurt",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "at room temperature"
+            }
+        ],
+        "steps": [
+            "Season the herbs over the top and serve while warm.",
+            "Heat the spices in a dry pan until fragrant, then grind them.",
+            "Fold the tray in a hot oven until the edges are golden.",
+            "Drain the onion and garlic and cook gently until soft and translucent.",
+            "Simmer the grains well and set them aside to steam."
+        ],
+        "nutrition": {
+            "calories": 340,
+            "protein_g": 6.1,
+            "fat_g": 15.8,
+            "carbs_g": 72.9
+        },
+        "author": {
+            "name": "Marta Keller",
+            "handle": "@mkeller"
+        },
+        "variations": [
+            {
+                "servings": 2,
+                "scale": [
+                    0.33,
+                    0.33
+                ]
+            }
+        ]
+    },
+    {
+        "id": "rcp-005",
+        "title": "Roasted Carrot Stew",
+        "summary": "A fragrant make-ahead dish built around roasted carrot with a handful of pantry staples.",
+        "cuisine": "Ethiopian",
+        "servings": 8,
+        "prep_minutes": 25,
+        "cook_minutes": 20,
+        "difficulty": "medium",
+        "ingredients": [
+            {
+                "name": "tomato paste",
+                "quantity": 10.0,
+                "unit": "g",
+                "note": "optional"
+            },
+            {
+                "name": "fresh dill",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "baby spinach",
+                "quantity": 10.0,
+                "unit": "g",
+                "note": "finely chopped"
+            },
+            {
+                "name": "sesame seeds",
+                "quantity": 100.0,
+                "unit": "g",
+                "note": "finely chopped"
+            },
+            {
+                "name": "fresh parsley",
+                "quantity": 10.0,
+                "unit": "g"
+            },
+            {
+                "name": "rolled oats",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 120.0,
+                "unit": "ml"
+            },
+            {
+                "name": "white wine vinegar",
+                "quantity": 500.0,
+                "unit": "ml"
+            },
+            {
+                "name": "yellow onion",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "finely chopped"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 60.0,
+                "unit": "ml"
+            }
+        ],
+        "steps": [
+            "Fold everything together until no dry patches remain.",
+            "Season to a smooth purée, adding stock a little at a time.",
+            "Heat everything together until no dry patches remain.",
+            "Toast the oil in a wide pan over medium heat until it shimmers.",
+            "Season the spices in a dry pan until fragrant, then grind them.",
+            "Slice the tray in a hot oven until the edges are golden."
+        ],
+        "nutrition": {
+            "calories": 510,
+            "protein_g": 29.7,
+            "fat_g": 12.8,
+            "carbs_g": 56.1
+        },
+        "photos": [
+            "/img/recipes/roasted-carrot-stew-1.jpg"
+        ],
+        "author": {
+            "name": "Jonas Albrecht",
+            "handle": "@jalbrecht"
+        }
+    },
+    {
+        "id": "rcp-006",
+        "title": "Smoked Trout Dumplings",
+        "cuisine": "Basque",
+        "prep_minutes": 20,
+        "cook_minutes": 20,
+        "difficulty": "medium",
+        "tags": [
+            "budget",
+            "freezer-friendly",
+            "one-pot",
+            "weeknight"
+        ],
+        "ingredients": [
+            {
+                "name": "soy sauce",
+                "quantity": 15.0,
+                "unit": "ml",
+                "note": "at room temperature"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "roughly torn"
+            },
+            {
+                "name": "sea salt",
+                "quantity": 100.0,
+                "unit": "g",
+                "note": "optional"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 2.0,
+                "unit": "g"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 250.0,
+                "unit": "ml"
+            },
+            {
+                "name": "tomato paste",
+                "quantity": 2.0,
+                "unit": "g",
+                "note": "roughly torn"
+            },
+            {
+                "name": "baby spinach",
+                "quantity": 100.0,
+                "unit": "g",
+                "note": "finely chopped"
+            }
+        ],
+        "steps": [
+            "Season the mixture for twelve minutes, stirring now and then.",
+            "Combine the tray in a hot oven until the edges are golden.",
+            "Simmer the spices in a dry pan until fragrant, then grind them.",
+            "Simmer the grains well and set them aside to steam.",
+            "Combine with salt, pepper and a squeeze of lemon.",
+            "Stir the dough into eight pieces and roll each one thin.",
+            "Season the oil in a wide pan over medium heat until it shimmers.",
+            "Slice to a smooth purée, adding stock a little at a time."
+        ],
+        "author": {
+            "name": "Ida Lindqvist",
+            "handle": "@idalq"
+        },
+        "variations": [
+            {
+                "servings": 2,
+                "scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ]
+            },
+            {
+                "servings": 4,
+                "scale": [
+                    1.0
+                ]
+            },
+            {
+                "servings": 8,
+                "scale": [
+                    2.0
+                ]
+            }
+        ]
+    },
+    {
+        "id": "rcp-007",
+        "title": "Lentil Stew",
+        "summary": "A comforting make-ahead dish built around lentil with a handful of pantry staples.",
+        "cuisine": "Andean",
+        "servings": 4,
+        "prep_minutes": 15,
+        "cook_minutes": 30,
+        "difficulty": "hard",
+        "rating": 3.7,
+        "tags": [
+            "make-ahead"
+        ],
+        "ingredients": [
+            {
+                "name": "white wine vinegar",
+                "quantity": 15.0,
+                "unit": "ml"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "vegetable stock",
+                "quantity": 30.0,
+                "unit": "ml"
+            },
+            {
+                "name": "sweet potato",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "baby spinach",
+                "quantity": 10.0,
+                "unit": "g",
+                "note": "optional"
+            },
+            {
+                "name": "ground cumin",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "tomato paste",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "sesame seeds",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "red lentils",
+                "quantity": 10.0,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Fold the tray in a hot oven until the edges are golden.",
+            "Slice for five minutes before slicing so the juices settle.",
+            "Simmer everything together until no dry patches remain.",
+            "Toast the herbs over the top and serve while warm."
+        ],
+        "nutrition": {
+            "calories": 390,
+            "protein_g": 37.1,
+            "fat_g": 20.4,
+            "carbs_g": 18.6
+        },
+        "photos": [
+            "/img/recipes/lentil-stew-1.jpg",
+            "/img/recipes/lentil-stew-2.jpg"
+        ]
+    },
+    {
+        "id": "rcp-008",
+        "title": "Miso Eggplant Gratin",
+        "summary": "A comforting seasonal dish built around miso eggplant with a handful of pantry staples.",
+        "servings": 8,
+        "prep_minutes": 25,
+        "cook_minutes": 30,
+        "difficulty": "medium",
+        "tags": [
+            "gluten-free",
+            "make-ahead",
+            "freezer-friendly"
+        ],
+        "ingredients": [
+            {
+                "name": "fresh ginger",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "feta cheese",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "unsalted butter",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "finely chopped"
+            },
+            {
+                "name": "free-range egg",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "at room temperature"
+            },
+            {
+                "name": "fresh dill",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "plain yogurt",
+                "quantity": 2.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 30.0,
+                "unit": "ml"
+            },
+            {
+                "name": "yellow onion",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "ground cumin",
+                "quantity": 10.0,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Roast the grains well and set them aside to steam.",
+            "Slice the tray in a hot oven until the edges are golden.",
+            "Warm the herbs over the top and serve while warm.",
+            "Roast everything together until no dry patches remain.",
+            "Warm for five minutes before slicing so the juices settle.",
+            "Blend the grains well and set them aside to steam."
+        ],
+        "nutrition": {
+            "calories": 660,
+            "protein_g": 19.8,
+            "fat_g": 14.4,
+            "carbs_g": 45.9
+        },
+        "author": {
+            "name": "Ida Lindqvist",
+            "handle": "@idalq"
+        },
+        "variations": [
+            {
+                "servings": 2,
+                "scale": [
+                    0.25,
+                    0.25
+                ]
+            },
+            {
+                "servings": 6,
+                "scale": [
+                    0.75,
+                    0.75,
+                    0.75
+                ]
+            }
+        ]
+    },
+    {
+        "id": "rcp-009",
+        "title": "Mushroom Bowl",
+        "cuisine": "Ethiopian",
+        "servings": 4,
+        "prep_minutes": 10,
+        "rating": 3.7,
+        "ingredients": [
+            {
+                "name": "baby spinach",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "fresh dill",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "rolled oats",
+                "quantity": 50.0,
+                "unit": "g",
+                "note": "roughly torn"
+            },
+            {
+                "name": "soy sauce",
+                "quantity": 60.0,
+                "unit": "ml"
+            },
+            {
+                "name": "vegetable stock",
+                "quantity": 30.0,
+                "unit": "ml"
+            },
+            {
+                "name": "fresh ginger",
+                "quantity": 5.0,
+                "unit": "g",
+                "note": "optional"
+            },
+            {
+                "name": "smoked paprika",
+                "quantity": 400.0,
+                "unit": "g",
+                "note": "optional"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 30.0,
+                "unit": "ml",
+                "note": "drained and rinsed"
+            },
+            {
+                "name": "red lentils",
+                "quantity": 50.0,
+                "unit": "g",
+                "note": "roughly torn"
+            },
+            {
+                "name": "ground cumin",
+                "quantity": 200.0,
+                "unit": "g",
+                "note": "roughly torn"
+            }
+        ],
+        "steps": [
+            "Roast the spices in a dry pan until fragrant, then grind them.",
+            "Warm the tray in a hot oven until the edges are golden.",
+            "Stir the spices in a dry pan until fragrant, then grind them.",
+            "Fold the spices in a dry pan until fragrant, then grind them.",
+            "Heat for five minutes before slicing so the juices settle.",
+            "Season the dough into eight pieces and roll each one thin.",
+            "Whisk everything together until no dry patches remain.",
+            "Top the grains well and set them aside to steam."
+        ],
+        "nutrition": {
+            "calories": 500,
+            "protein_g": 5.4,
+            "fat_g": 3.2,
+            "carbs_g": 16.6
+        }
+    },
+    {
+        "id": "rcp-010",
+        "title": "Lemon Chicken Curry",
+        "summary": "A bright weekend dish built around lemon chicken with a handful of pantry staples.",
+        "servings": 6,
+        "prep_minutes": 15,
+        "cook_minutes": 90,
+        "rating": 3.5,
+        "ingredients": [
+            {
+                "name": "plain flour",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "basmati rice",
+                "quantity": 10.0,
+                "unit": "g"
+            },
+            {
+                "name": "red lentils",
+                "quantity": 5.0,
+                "unit": "g",
+                "note": "plus extra to serve"
+            },
+            {
+                "name": "tomato paste",
+                "quantity": 2.0,
+                "unit": "g"
+            },
+            {
+                "name": "honey",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "smoked paprika",
+                "quantity": 10.0,
+                "unit": "g"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 250.0,
+                "unit": "ml"
+            },
+            {
+                "name": "soy sauce",
+                "quantity": 120.0,
+                "unit": "ml",
+                "note": "thinly sliced"
+            },
+            {
+                "name": "fresh dill",
+                "quantity": 50.0,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Warm the dough into eight pieces and roll each one thin.",
+            "Season the spices in a dry pan until fragrant, then grind them.",
+            "Fold the tray in a hot oven until the edges are golden.",
+            "Season the onion and garlic and cook gently until soft and translucent.",
+            "Roast for five minutes before slicing so the juices settle.",
+            "Fold the spices in a dry pan until fragrant, then grind them.",
+            "Slice the spices in a dry pan until fragrant, then grind them.",
+            "Slice the spices in a dry pan until fragrant, then grind them."
+        ],
+        "author": {
+            "name": "Marta Keller",
+            "handle": "@mkeller"
+        }
+    },
+    {
+        "id": "rcp-011",
+        "title": "Charred Corn Pilaf",
+        "summary": "A fragrant seasonal dish built around charred corn with a handful of pantry staples.",
+        "cuisine": "Georgian",
+        "servings": 4,
+        "prep_minutes": 10,
+        "cook_minutes": 20,
+        "difficulty": "medium",
+        "rating": 3.3,
+        "ingredients": [
+            {
+                "name": "baby spinach",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "vegetable stock",
+                "quantity": 120.0,
+                "unit": "ml"
+            },
+            {
+                "name": "plain flour",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "plain yogurt",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "honey",
+                "quantity": 5.0,
+                "unit": "g"
+            },
+            {
+                "name": "sea salt",
+                "quantity": 50.0,
+                "unit": "g"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 30.0,
+                "unit": "ml"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "ground cumin",
+                "quantity": 100.0,
+                "unit": "g"
+            },
+            {
+                "name": "feta cheese",
+                "quantity": 2.0,
+                "unit": "g"
+            }
+        ],
+        "steps": [
+            "Drain the onion and garlic and cook gently until soft and translucent.",
+            "Toast everything together until no dry patches remain.",
+            "Roast with salt, pepper and a squeeze of lemon.",
+            "Blend the onion and garlic and cook gently until soft and translucent.",
+            "Blend the onion and garlic and cook gently until soft and translucent."
+        ],
+        "variations": [
+            {
+                "servings": 6,
+                "scale": [
+                    1.5
+                ]
+            }
+        ]
+    },
+    {
+        "id": "rcp-012",
+        "title": "Mushroom Risotto",
+        "summary": "A comforting weekend dish built around mushroom with a handful of pantry staples.",
+        "servings": 8,
+        "prep_minutes": 25,
+        "cook_minutes": 15,
+        "difficulty": "hard",
+        "rating": 4.9,
+        "tags": [
+            "weeknight"
+        ],
+        "ingredients": [
+            {
+                "name": "soy sauce",
+                "quantity": 250.0,
+                "unit": "ml",
+                "note": "at room temperature"
+            },
+            {
+                "name": "canned chickpeas",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "yellow onion",
+                "quantity": 2.0,
+                "unit": "piece",
+                "note": "at room temperature"
+            },
+            {
+                "name": "lemon juice",
+                "quantity": 250.0,
+                "unit": "ml"
+            },
+            {
+                "name": "garlic clove",
+                "quantity": 2.0,
+                "unit": "piece"
+            },
+            {
+                "name": "black pepper",
+                "quantity": 200.0,
+                "unit": "g"
+            },
+            {
+                "name": "white wine vinegar",
+                "quantity": 30.0,
+                "unit": "ml"
+            },
+            {
+                "name": "free-range egg",
+                "quantity": 3.0,
+                "unit": "piece"
+            },
+            {
+                "name": "fresh parsley",
+                "quantity": 2.0,
+                "unit": "g",
+                "note": "finely chopped"
+            },
+            {
+                "name": "smoked paprika",
+                "quantity": 400.0,
+                "unit": "g"
+            },
+            {
+                "name": "olive oil",
+                "quantity": 120.0,
+                "unit": "ml"
+            }
+        ],
+        "steps": [
+            "Combine for five minutes before slicing so the juices settle.",
+            "Toast the onion and garlic and cook gently until soft and translucent.",
+            "Combine the oil in a wide pan over medium heat until it shimmers.",
+            "Slice with salt, pepper and a squeeze of lemon.",
+            "Heat the dough into eight pieces and roll each one thin.",
+            "Roast the herbs over the top and serve while warm."
+        ],
+        "nutrition": {
+            "calories": 540,
+            "protein_g": 15.5,
+            "fat_g": 32.2,
+            "carbs_g": 15.8
+        },
+        "author": {
+            "name": "Priya Nandakumar",
+            "handle": "@priyacooks"
+        },
+        "variations": [
+            {
+                "servings": 4,
+                "scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                ]
+            },
+            {
+                "servings": 6,
+                "scale": [
+                    0.75,
+                    0.75,
+                    0.75
+                ]
+            }
+        ]
+    }
+]
