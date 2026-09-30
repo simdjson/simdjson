@@ -77,9 +77,7 @@ struct writer {
     return grow_slow(n);
   }
 
-  // Slow path of ensure(). Out-of-line via simdjson_inline (not
-  // simdjson_really_inline) to keep the hot path short.
-  simdjson_inline bool grow_slow(size_t n) noexcept {
+  simdjson_never_inline bool grow_slow(size_t n) noexcept {
     // Detect overflow.
     // This is pedantic except maybe on 32-bit targets.
     if (simdjson_unlikely(pos + n < pos)) return false;

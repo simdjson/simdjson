@@ -1268,19 +1268,6 @@ std::string fractured_json(simdjson_result<T> x, const fractured_json_options& o
 }
 #endif
 
-// Explicit template instantiations for common types
-template std::string fractured_json(dom::element x);
-template std::string fractured_json(dom::element x, const fractured_json_options& options);
-template std::string fractured_json(dom::array x);
-template std::string fractured_json(dom::array x, const fractured_json_options& options);
-template std::string fractured_json(dom::object x);
-template std::string fractured_json(dom::object x, const fractured_json_options& options);
-
-#if SIMDJSON_EXCEPTIONS
-template std::string fractured_json(simdjson_result<dom::element> x);
-template std::string fractured_json(simdjson_result<dom::element> x, const fractured_json_options& options);
-#endif
-
 //
 // String-based API for formatting any JSON string
 //
