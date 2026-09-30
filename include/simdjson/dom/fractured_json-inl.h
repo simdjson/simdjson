@@ -1268,11 +1268,6 @@ std::string fractured_json(simdjson_result<T> x, const fractured_json_options& o
 }
 #endif
 
-// Note: no explicit instantiation definitions here. This is a header, so
-// they would force every translation unit that includes simdjson.h to
-// instantiate and optimize the whole formatter, even when it is unused.
-// The templates are instantiated implicitly where they are called.
-
 //
 // String-based API for formatting any JSON string
 //
