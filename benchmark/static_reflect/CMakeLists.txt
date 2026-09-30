@@ -56,3 +56,4 @@ endif(SIMDJSON_USE_RUST)
 # Add the benchmark executable targets
 add_subdirectory(twitter_benchmark)
 add_subdirectory(citm_catalog_benchmark)
+add_subdirectory(recipe_book_benchmark)
