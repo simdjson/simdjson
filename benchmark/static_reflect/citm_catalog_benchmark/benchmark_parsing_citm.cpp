@@ -7,6 +7,9 @@
 #include <nlohmann/json.hpp>
 #include <simdjson.h>
 #include <string>
+#ifdef SIMDJSON_COMPETITION_GLAZE
+#include <glaze/glaze.hpp>
+#endif
 #include "citm_catalog_data.h"
 #include "nlohmann_citm_catalog_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
@@ -288,6 +291,24 @@ void bench_rapidjson_parsing(const std::string &json_str) {
 }
 #endif
 
+#ifdef SIMDJSON_COMPETITION_GLAZE
+void bench_glaze_parsing(const std::string &json_str) {
+  size_t input_volume = json_str.size();
+  printf("# input volume: %zu bytes\n", input_volume);
+
+  volatile bool result = true;
+  pretty_print(1, input_volume, "bench_glaze_parsing",
+               bench([&json_str, &result]() {
+                 CitmCatalog data;
+                 auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json_str);
+                 if (ec) {
+                   result = false;
+                   printf("parse error\n");
+                 }
+               }));
+}
+#endif
+
 #ifdef SIMDJSON_COMPETITION_YYJSON
 CitmCatalog yyjson_deserialize(const std::string &json_str) {
     yyjson_doc *doc = yyjson_read(json_str.c_str(), json_str.size(), 0);
@@ -543,6 +564,11 @@ int main(int argc, char *argv[]) {
 #ifdef SIMDJSON_COMPETITION_YYJSON
   if (matches_filter("yyjson", filter)) {
     bench_yyjson_parsing(json_str);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_GLAZE
+  if (matches_filter("glaze", filter)) {
+    bench_glaze_parsing(json_str);
   }
 #endif
   if (matches_filter("simdjson_static_reflection", filter)) {
