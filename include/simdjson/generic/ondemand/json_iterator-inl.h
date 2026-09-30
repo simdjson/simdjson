@@ -183,7 +183,7 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
     }
   }
 
-  return report_error(TAPE_ERROR, "not enough close braces");
+  return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS

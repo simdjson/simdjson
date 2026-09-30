@@ -207,7 +207,7 @@ namespace parse_api_tests {
 
     std::cout << "truncated document " << std::endl;
     ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
-    ASSERT_EQUAL( simdjson::to_json_string(doc).get(output), TAPE_ERROR );
+    ASSERT_EQUAL( simdjson::to_json_string(doc).get(output), INCOMPLETE_ARRAY_OR_OBJECT );
 
     std::cout << "correct document with new doc" << std::endl;
     ondemand::document doc2;
@@ -226,7 +226,7 @@ namespace parse_api_tests {
 
     std::cout << "unclosed string document " << std::endl;
     ASSERT_SUCCESS( parser.iterate(jsonbad).get(doc) );
-    ASSERT_EQUAL( simdjson::to_json_string(doc).get(output), TAPE_ERROR );
+    ASSERT_EQUAL( simdjson::to_json_string(doc).get(output), INCOMPLETE_ARRAY_OR_OBJECT );
 
     // next two lines are terrible code.
     doc.~document();
