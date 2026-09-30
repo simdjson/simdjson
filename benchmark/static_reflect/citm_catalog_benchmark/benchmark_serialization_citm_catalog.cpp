@@ -35,6 +35,33 @@ void bench_reflect_cpp(CitmCatalog &data) {
 }
 #endif // SIMDJSON_BENCH_CPP_REFLECT
 
+#ifdef SIMDJSON_COMPETITION_GLAZE
+#include <glaze/glaze.hpp>
+void bench_glaze(CitmCatalog &data) {
+  std::string output;
+  if (glz::write_json(data, output)) {
+    printf("glaze serialization error\n");
+    return;
+  }
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(1, output_volume, "bench_glaze",
+               bench([&data, &measured_volume, &output_volume]() {
+                 std::string output;
+                 if (glz::write_json(data, output)) {
+                   printf("glaze serialization error\n");
+                   return;
+                 }
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif // SIMDJSON_COMPETITION_GLAZE
+
 #ifdef SIMDJSON_RUST_VERSION
 #include "../serde-benchmark/serde_benchmark.h"
 
@@ -304,6 +331,11 @@ int main(int argc, char* argv[]) {
       bench_rust(rust_data);
       serde_benchmark::free_citm(rust_data);
     }
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_GLAZE
+  if (matches_filter("glaze", filter)) {
+    bench_glaze(my_struct);
   }
 #endif
 #if SIMDJSON_BENCH_CPP_REFLECT
