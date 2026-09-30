@@ -330,8 +330,8 @@ codepage, and they may call SetFileApisToOEM accordingly.
 
 Some users may want to browse code along with the compiled assembly:
 
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/98Kx9Kqjn)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/PKG7GdbPo)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/5jaofeq48)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/K3M6Y4Knc)
 
 **Summary of input types:**
 
@@ -4372,7 +4372,7 @@ Performance tips
 - Read [our performance notes](performance.md) for advanced topics.
 - To better understand the operation of your On-Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless `SIMDJSON_VERBOSE_LOGGING` is defined, logging is entirely disabled and thus carries no overhead.
 - The On-Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind`, `reset` and similar methods.
-- If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: [https://godbolt.org/z/xE4GWs573](https://godbolt.org/z/xE4GWs573).
+- If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. See [this example](https://godbolt.org/z/d8E57scTP).
 - Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
 - For release builds, we recommend setting the `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.

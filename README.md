@@ -129,10 +129,10 @@ Usage documentation is available:
 Godbolt
 -------------
 
-Some users may want to browse code along with the compiled assembly. You want to check out the following lists of examples:
-* [C++26 reflection example](https://godbolt.org/z/K3Px64TqK)
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/7G5qE4sr9)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/e9dWb9E4v)
+Some users may want to browse code along with the compiled assembly. The following examples use simdjson 5.0.1:
+* [C++26 reflection example](https://godbolt.org/z/vc5j1vzje)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/5jaofeq48)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/K3M6Y4Knc)
 
 Performance results
 -------------------
