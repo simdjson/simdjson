@@ -28,5 +28,12 @@ if(TARGET yyjson)
     target_compile_definitions(benchmark_serialization_twitter PRIVATE SIMDJSON_COMPETITION_YYJSON)
 endif()
 
+if(TARGET glaze)
+    target_link_libraries(benchmark_serialization_twitter PRIVATE glaze)
+    target_compile_definitions(benchmark_serialization_twitter PRIVATE SIMDJSON_COMPETITION_GLAZE)
+    target_link_libraries(benchmark_parsing_twitter PRIVATE glaze)
+    target_compile_definitions(benchmark_parsing_twitter PRIVATE SIMDJSON_COMPETITION_GLAZE)
+endif()
+
 target_compile_definitions(benchmark_serialization_twitter PRIVATE JSON_FILE="${EXAMPLE_JSON}")
 target_compile_definitions(benchmark_parsing_twitter PRIVATE JSON_FILE="${EXAMPLE_JSON}")

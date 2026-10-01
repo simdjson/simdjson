@@ -92,7 +92,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -103,11 +109,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -132,14 +168,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }

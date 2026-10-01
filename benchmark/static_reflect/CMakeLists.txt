@@ -6,6 +6,16 @@ CPMAddPackage(
   EXCLUDE_FROM_ALL YES
 )
 
+# Include glaze
+CPMAddPackage(
+  NAME glaze
+  URL https://github.com/stephenberry/glaze/archive/d78832c82289c61a9315bfbc35332cec9f4e93ca.zip
+  DOWNLOAD_ONLY YES
+)
+add_library(glaze INTERFACE)
+target_include_directories(glaze SYSTEM INTERFACE "${glaze_SOURCE_DIR}/include")
+target_compile_definitions(glaze INTERFACE SIMDJSON_COMPETITION_GLAZE)
+
 option(SIMDJSON_USE_RUST "Build the static_reflect benchmark" OFF)
 
 if(SIMDJSON_USE_RUST)
@@ -46,3 +56,4 @@ endif(SIMDJSON_USE_RUST)
 # Add the benchmark executable targets
 add_subdirectory(twitter_benchmark)
 add_subdirectory(citm_catalog_benchmark)
+add_subdirectory(recipe_book_benchmark)
