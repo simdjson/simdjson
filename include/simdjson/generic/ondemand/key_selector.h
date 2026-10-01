@@ -1052,7 +1052,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -1062,7 +1062,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -1223,14 +1223,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
