@@ -32,6 +32,16 @@ struct document_only_type {
   int64_t x{};
 };
 
+// Large enough (> 32 bytes) and not trivially copyable, so that containers
+// deserialize it in place rather than through a temporary.
+struct large_type {
+  int64_t x{};
+  std::string padding;
+  std::string name;
+};
+static_assert(sizeof(large_type) > 32);
+static_assert(!std::is_trivially_copyable_v<large_type>);
+
 namespace simdjson {
 template <typename simdjson_value>
 error_code tag_invoke(deserialize_tag, simdjson_value &val, throwing_type &out) {
@@ -51,6 +61,23 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, throwing_type &out) 
 template <typename simdjson_value>
 error_code tag_invoke(deserialize_tag, simdjson_value &val, nothrow_type &out) noexcept {
   return val.get_int64().get(out.x);
+}
+
+template <typename simdjson_value>
+error_code tag_invoke(deserialize_tag, simdjson_value &val, large_type &out) {
+  // Partially fill the element before failing, so that a failed element left
+  // in the container would be visible.
+  out.name = "partial";
+  if (auto error = val.get_int64().get(out.x)) {
+    return error;
+  }
+#if SIMDJSON_EXCEPTIONS
+  if (out.x < 0) {
+    throw std::runtime_error("negative");
+  }
+#endif
+  out.name = "complete";
+  return SUCCESS;
 }
 
 // A throwing customization defined for document only.
@@ -169,6 +196,42 @@ static_assert(!custom_deserializable<ondemand::document, ondemand::document>);
 #endif
 
 // ---- runtime checks --------------------------------------------------------
+
+// Strings and large elements are deserialized in place in the container. On an
+// error code, the failed element is removed and the earlier ones are kept.
+bool error_code_through_string_container() {
+  TEST_START();
+  auto json = R"({"a": ["x", "y", 1, "z"]})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  std::vector<std::string> out;
+  ASSERT_ERROR(doc["a"].get<std::vector<std::string>>(out), INCORRECT_TYPE);
+  ASSERT_EQUAL(out.size(), 2);
+  ASSERT_EQUAL(out[0], "x");
+  ASSERT_EQUAL(out[1], "y");
+  TEST_SUCCEED();
+}
+
+bool error_code_through_large_container() {
+  TEST_START();
+  auto json = R"({"a": [1, 2, "x", 4]})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  std::vector<large_type> out;
+  ASSERT_ERROR(doc["a"].get<std::vector<large_type>>(out), INCORRECT_TYPE);
+  ASSERT_EQUAL(out.size(), 2);
+  ASSERT_EQUAL(out[0].x, 1);
+  ASSERT_EQUAL(out[1].x, 2);
+  ASSERT_EQUAL(out[1].name, "complete");
+  TEST_SUCCEED();
+}
+
+bool run_error_code_tests() {
+  return error_code_through_string_container() &&
+         error_code_through_large_container();
+}
 
 #if SIMDJSON_EXCEPTIONS
 
@@ -364,6 +427,22 @@ bool error_code_through_container() {
   TEST_SUCCEED();
 }
 
+// An exception thrown while deserializing an element in place removes that
+// element and keeps the earlier ones.
+bool throw_through_large_container() {
+  TEST_START();
+  auto json = R"({"a": [1, 2, -1, 4]})"_padded;
+  ondemand::parser parser;
+  ondemand::document doc = parser.iterate(json);
+  std::vector<large_type> out;
+  ASSERT_TRUE(throws_negative([&] { (void)doc["a"].get<std::vector<large_type>>(out); }));
+  ASSERT_EQUAL(out.size(), 2);
+  ASSERT_EQUAL(out[0].x, 1);
+  ASSERT_EQUAL(out[1].x, 2);
+  ASSERT_EQUAL(out[1].name, "complete");
+  TEST_SUCCEED();
+}
+
 bool no_throw_on_valid_input() {
   TEST_START();
   auto json = R"({"a": [1, 2, 3], "b": 4})"_padded;
@@ -386,10 +465,12 @@ bool run() {
          throw_through_reflected_struct() && recursive_tree() &&
 #endif
          error_code_through_container() &&
-         no_throw_on_valid_input();
+         throw_through_large_container() &&
+         no_throw_on_valid_input() &&
+         run_error_code_tests();
 }
 #else
-bool run() { return true; }
+bool run() { return run_error_code_tests(); }
 #endif // SIMDJSON_EXCEPTIONS
 
 } // namespace tag_invoke_exception_tests
