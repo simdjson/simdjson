@@ -156,7 +156,9 @@ namespace json_path_tests {
 
         // A target that is a prefix of the key, or an extension of it, does not.
         ASSERT_SUCCESS(parser.iterate(long_json).get(doc));
-        ASSERT_ERROR(doc.at_path("." + long_name.substr(1)).get(val), NO_SUCH_FIELD);
+        // Built with append: "." + long_name.substr(1) inserts into a
+        // temporary and trips a bogus -Wrestrict warning with GCC 12.
+        ASSERT_ERROR(doc.at_path(std::string(".").append(long_name, 1)).get(val), NO_SUCH_FIELD);
         ASSERT_SUCCESS(parser.iterate(long_json).get(doc));
         ASSERT_ERROR(doc.at_path("." + long_name + "k").get(val), NO_SUCH_FIELD);
 
