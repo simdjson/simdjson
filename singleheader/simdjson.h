@@ -1,4 +1,4 @@
-/* auto-generated on 2026-09-30 13:08:54 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-01 08:20:57 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -243,6 +243,18 @@
 #define SIMDJSON_CONSTEVAL 0
 #endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // !defined(SIMDJSON_CONSTEVAL)
+
+// SIMDJSON_CONSTEXPR_STRING is 'constexpr' when the standard library supports
+// constexpr std::string (e.g., libstdc++ 12 or better), and empty otherwise. It
+// lets functions that build a std::string be constant expressions when possible
+// while still compiling against older standard libraries.
+#if !defined(SIMDJSON_CONSTEXPR_STRING)
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#define SIMDJSON_CONSTEXPR_STRING constexpr
+#else
+#define SIMDJSON_CONSTEXPR_STRING
+#endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#endif // !defined(SIMDJSON_CONSTEXPR_STRING)
 #endif // SIMDJSON_COMPILER_CHECK_H
 /* end file simdjson/compiler_check.h */
 /* including simdjson/portability.h: #include "simdjson/portability.h" */
@@ -80365,7 +80377,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -80375,7 +80387,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -80536,14 +80548,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -81874,7 +81887,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -81885,11 +81904,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -81914,14 +81963,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -97983,7 +98043,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -97993,7 +98053,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -98154,14 +98214,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -99492,7 +99553,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -99503,11 +99570,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -99532,14 +99629,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -116078,7 +116186,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -116088,7 +116196,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -116249,14 +116357,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -117587,7 +117696,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -117598,11 +117713,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -117627,14 +117772,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -134173,7 +134329,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -134183,7 +134339,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -134344,14 +134500,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -135682,7 +135839,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -135693,11 +135856,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -135722,14 +135915,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -152383,7 +152587,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -152393,7 +152597,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -152554,14 +152758,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -153892,7 +154097,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -153903,11 +154114,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -153932,14 +154173,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -170900,7 +171152,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -170910,7 +171162,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -171071,14 +171323,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -172409,7 +172662,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -172420,11 +172679,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -172449,14 +172738,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -188907,7 +189207,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -188917,7 +189217,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -189078,14 +189378,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -190416,7 +190717,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -190427,11 +190734,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -190456,14 +190793,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -206937,7 +207285,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -206947,7 +207295,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -207108,14 +207456,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -208446,7 +208795,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -208457,11 +208812,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -208486,14 +208871,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
@@ -224970,7 +225366,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-constexpr void append_uint(std::string& s, std::size_t v) {
+SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -224980,7 +225376,7 @@ constexpr void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-constexpr void append_byte(std::string& s, unsigned b) {
+SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
@@ -225141,14 +225537,15 @@ struct key_selector {
      * match_raw() does step by step.
      *
      * Everything it reports is derived from the compile-time tables, so describe()
-     * is itself usable in a constant expression:
+     * is itself usable in a constant expression when the standard library supports
+     * constexpr std::string (__cpp_lib_constexpr_string):
      *
      *   static_assert(!key_selector<"name", "city">::describe().empty());
      *
      * It allocates a std::string and is meant for documentation, debugging and
      * tests, not for any hot path.
      */
-    static constexpr std::string describe() {
+    static SIMDJSON_CONSTEXPR_STRING std::string describe() {
         std::string s;
         s += "key_selector: ";
         key_selector_detail::append_uint(s, N);
@@ -226479,7 +226876,13 @@ template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::string): building a temporary and
+    // move-assigning it is markedly slower.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 
@@ -226490,11 +226893,41 @@ template <concepts::constructible_from_u8string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::u8string_view>) {
   std::u8string_view str;
   SIMDJSON_TRY(val.get_u8string().get(str));
-  out = T{str};
+  if constexpr (requires { out.assign(str.data(), str.size()); }) {
+    // Copy straight into out (e.g., std::u8string), as for std::string above.
+    out.assign(str.data(), str.size());
+  } else {
+    out = T{str};
+  }
   return SUCCESS;
 }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
+
+namespace details {
+// Whether to deserialize the elements of the container T directly into a new
+// element (emplace_one(out) and then get) rather than into a temporary that is
+// then moved into the container. A temporary of a trivially copyable type lives
+// in registers and is cheap to move, and value-initializing a small element in
+// place costs more than it saves (GCC zeroes it with rep stos). But moving a
+// large element, or a string (whose deserialization then needs a temporary
+// string and a move assignment of its own), is expensive.
+template <typename T>
+concept deserialize_in_place =
+    concepts::returns_reference<T> && requires(T &c) { c.pop_back(); } &&
+    !std::is_trivially_copyable_v<typename T::value_type> &&
+    (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
+
+// Removes the last element of the container on destruction while armed.
+template <typename T>
+struct pop_back_guard {
+  T &container;
+  bool armed{true};
+  ~pop_back_guard() {
+    if (armed) { container.pop_back(); }
+  }
+};
+} // namespace details
 
 /**
  * STL containers have several constructors including one that takes a single
@@ -226519,14 +226952,25 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
-  for (auto v : arr) {
-    // Deserialize into a temporary first: an error or an exception (a user
-    // tag_invoke may throw) must not leave a default-constructed element behind.
-    value_type temp;
-    if (auto const err = v.get<value_type>(temp); err) {
-      return err;
+  if constexpr (details::deserialize_in_place<T>) {
+    for (auto v : arr) {
+      auto &slot = concepts::emplace_one(out);
+      // An error or an exception (a user tag_invoke may throw) must not leave
+      // a partially deserialized element behind.
+      details::pop_back_guard<T> guard{out};
+      SIMDJSON_TRY(v.get<value_type>(slot));
+      guard.armed = false;
     }
-    concepts::emplace_one(out, std::move(temp));
+  } else {
+    for (auto v : arr) {
+      // Deserialize into a temporary first: an error or an exception (a user
+      // tag_invoke may throw) must not leave a default-constructed element behind.
+      value_type temp;
+      if (auto const err = v.get<value_type>(temp); err) {
+        return err;
+      }
+      concepts::emplace_one(out, std::move(temp));
+    }
   }
   return SUCCESS;
 }
