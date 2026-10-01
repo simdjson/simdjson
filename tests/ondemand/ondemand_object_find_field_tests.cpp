@@ -1020,9 +1020,11 @@ namespace object_tests {
   bool key_selector_describe() {
     TEST_START();
     using fields = ondemand::key_selector<"name", "city">;
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
     // describe() is usable in a constant expression.
     static_assert(!fields::describe().empty(),
                   "describe() must be usable at compile time");
+#endif
     // The exact text shown in doc/basics.md (keys differ in their first byte, so a
     // single 8-bit window at offset 0 distinguishes them).
     const std::string expected =

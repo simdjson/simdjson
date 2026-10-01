@@ -196,4 +196,16 @@
 #define SIMDJSON_CONSTEVAL 0
 #endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
 #endif // !defined(SIMDJSON_CONSTEVAL)
+
+// SIMDJSON_CONSTEXPR_STRING is 'constexpr' when the standard library supports
+// constexpr std::string (e.g., libstdc++ 12 or better), and empty otherwise. It
+// lets functions that build a std::string be constant expressions when possible
+// while still compiling against older standard libraries.
+#if !defined(SIMDJSON_CONSTEXPR_STRING)
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#define SIMDJSON_CONSTEXPR_STRING constexpr
+#else
+#define SIMDJSON_CONSTEXPR_STRING
+#endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#endif // !defined(SIMDJSON_CONSTEXPR_STRING)
 #endif // SIMDJSON_COMPILER_CHECK_H

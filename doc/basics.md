@@ -2688,7 +2688,10 @@ human-readable, multi-line `std::string` explaining exactly how the selector
 classifies a key: which strategy was chosen, which bytes (or character positions)
 it inspects, and the contents of the lookup tables. Because it is derived entirely
 from the compile-time tables, `describe()` is itself a constant expression — you
-can use it in a `static_assert`, or simply print it at runtime.
+can use it in a `static_assert`, or simply print it at runtime. (Using it at compile
+time requires a standard library with constexpr `std::string`, i.e.,
+`__cpp_lib_constexpr_string`; with older standard libraries such as libstdc++ 11,
+`describe()` is only available at runtime.)
 
 The most common strategy is a **single 8-bit window**: the matcher reads two bytes
 of the key at a fixed offset, extracts eight bits, and uses them to index a table
