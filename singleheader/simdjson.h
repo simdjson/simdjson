@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-01 08:20:57 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-01 09:32:07 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -9380,7 +9380,6 @@ inline void array::process_json_path_of_child_elements(std::vector<element>::ite
     if(error) {
       continue;
     }
-    accumulator.reserve(accumulator.size() + child_result.size());
     accumulator.insert(accumulator.end(),
                         std::make_move_iterator(child_result.begin()),
                         std::make_move_iterator(child_result.end()));
@@ -9721,7 +9720,6 @@ inline void object::process_json_path_of_child_elements(std::vector<element>::it
     if(error) {
       continue;
     }
-    accumulator.reserve(accumulator.size() + child_result.size());
     accumulator.insert(accumulator.end(),
                         std::make_move_iterator(child_result.begin()),
                         std::make_move_iterator(child_result.end()));
