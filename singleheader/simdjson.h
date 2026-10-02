@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-01 09:32:07 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-01 09:33:54 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -7140,16 +7140,11 @@ public:
    *   size_t truncated = stream.truncated_bytes();
    *
    * IMPORTANT: this value is only meaningful under the conditions below. It is
-   * computed from stage-1 bookkeeping that the other stream formats do not
-   * maintain, and outside these conditions it is not merely imprecise, it is
+   * computed from stage-1 bookkeeping, and outside these conditions it is not
+   * merely imprecise, it is
    * arbitrary -- it can exceed size_in_bytes() or wrap around to a huge value.
    * Check it only when all of the following hold:
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the
-   *     stage-1 filter rewrites the structural index in place and the
-   *     bookkeeping is lost, so the value is meaningless even for a stream
-   *     that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -78914,9 +78909,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -96580,9 +96572,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -114723,9 +114712,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -132866,9 +132852,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -151124,9 +151107,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -169689,9 +169669,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -187744,9 +187721,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -205822,9 +205796,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.
@@ -223903,9 +223874,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.

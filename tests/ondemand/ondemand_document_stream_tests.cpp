@@ -652,6 +652,52 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // truncated_bytes() must also be right for the formats whose stage-1 filter
+    // compacts the structural index in place (json_sequence and comma_delimited).
+    bool truncated_bytes_filtered_formats() {
+        TEST_START();
+        struct case_t { stream_format format; std::string json; size_t batch_size; size_t docs; size_t truncated; };
+        const std::vector<case_t> cases = {
+            {stream_format::json_sequence, "\x1e{\"a\":1}\n\x1e[2]\n", 1000000, 2, 0},
+            {stream_format::json_sequence, "\x1e{\"a\":1}\n\x1e[2]", 1000000, 2, 0},
+            {stream_format::json_sequence, "\x1e{\"a\":1}\n", 1000000, 1, 0},
+            {stream_format::json_sequence, "\x1e{\"a\":1}", 1000000, 1, 0},
+            {stream_format::json_sequence, "\x1e{\"a\":1}\n\x1e" "4\n", 1000000, 2, 0},
+            {stream_format::json_sequence, "\x1e" "3\n\x1e" "4\n", 1000000, 2, 0},
+            {stream_format::json_sequence, "\x1e{\"a\":1}\n\x1e{\"b\":2}\n\x1e{\"c\":3}\n\x1e[1,2,3,4]\n", 32, 4, 0},
+            {stream_format::comma_delimited, "{\"a\":1},{\"b\":2}", 1000000, 2, 0},
+            {stream_format::comma_delimited, "1,2,3", 1000000, 3, 0},
+            {stream_format::comma_delimited, "{\"a\":1}", 1000000, 1, 0},
+            {stream_format::comma_delimited, "{\"a\":1},{\"b\":2},{\"c\":3},[1,2,3,4],5,6", 32, 6, 0},
+            {stream_format::comma_delimited, "{\"a\":1},{\"b\":", 1000000, 1, 5},
+            {stream_format::comma_delimited_array, "[{\"a\":1},{\"b\":2},3]", 1000000, 3, 0},
+        };
+        for (const auto &c : cases) {
+            padded_string json(c.json);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(json, c.batch_size, c.format).get(stream));
+            size_t counter{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS((*i).error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(stream.truncated_bytes(), c.truncated);
+            dom::parser dparser;
+            dom::document_stream dstream;
+            ASSERT_SUCCESS(dparser.parse_many(json, c.batch_size, c.format).get(dstream));
+            counter = 0;
+            for (auto doc : dstream) {
+                ASSERT_SUCCESS(doc.error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(dstream.truncated_bytes(), c.truncated);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated_unclosed_string() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -2654,6 +2700,7 @@ bool run() {
             reflection_stream_tests() &&
 #endif
             json_sequence_tests() &&
+            truncated_bytes_filtered_formats() &&
             comma_delimited_tests() &&
             stdstring_with_format() &&
             issue2181() &&

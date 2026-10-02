@@ -225,8 +225,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -346,8 +349,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
