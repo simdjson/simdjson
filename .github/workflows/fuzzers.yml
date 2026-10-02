@@ -131,6 +131,7 @@ jobs:
         path: corpus.tar
 
     - name: Store the corpus externally
+      continue-on-error: true
       run: |
         gzip --keep corpus.tar
         curl -F"filedata=@corpus.tar.gz" https://simdjson:${{ secrets.fuzzdatapassword }}@www.pauldreik.se/fuzzdata/index.php
