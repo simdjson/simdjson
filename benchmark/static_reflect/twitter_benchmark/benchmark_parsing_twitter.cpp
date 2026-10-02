@@ -10,6 +10,9 @@
 #ifdef SIMDJSON_COMPETITION_GLAZE
 #include <glaze/glaze.hpp>
 #endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+#include "jsonifier_twitter_data.h"
+#endif
 #include "twitter_data.h"
 #include "nlohmann_twitter_data.h"
 #include "../benchmark_utils/benchmark_helper.h"
@@ -150,6 +153,23 @@ void bench_glaze_parsing(const std::string &json_str) {
 }
 #endif
 
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+void bench_jsonifier_parsing(const std::string &json_str) {
+  size_t input_volume = json_str.size();
+  printf("# input volume: %zu bytes\n", input_volume);
+  jsonifier::jsonifier_core<> parser;
+  volatile bool result = true;
+  pretty_print(1, input_volume, "bench_jsonifier_parsing",
+               bench([&json_str, &result, &parser]() {
+                 TwitterData data;
+                 if (!parser.parseJson<jsonifier::parse_options{.partialRead = true, .knownOrder = true}>(data, json_str)) {
+                   result = false;
+                   printf("parse error\n");
+                 }
+               }));
+}
+#endif
+
 #ifdef SIMDJSON_COMPETITION_YYJSON
 void bench_yyjson_parsing(const std::string &json_str) {
   size_t input_volume = json_str.size();
@@ -238,6 +258,11 @@ int main(int argc, char* argv[]) {
 #ifdef SIMDJSON_COMPETITION_GLAZE
   if (matches_filter("glaze", filter)) {
     bench_glaze_parsing(json_str);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+  if (matches_filter("jsonifier", filter)) {
+    bench_jsonifier_parsing(json_str);
   }
 #endif
   if (matches_filter("simdjson_static_reflection", filter)) {
