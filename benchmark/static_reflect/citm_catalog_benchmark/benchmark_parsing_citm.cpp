@@ -10,9 +10,12 @@
 #ifdef SIMDJSON_COMPETITION_GLAZE
 #include <glaze/glaze.hpp>
 #endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+#include "jsonifier_citm_catalog_data.h"
+#endif
+#include "../benchmark_utils/benchmark_helper.h"
 #include "citm_catalog_data.h"
 #include "nlohmann_citm_catalog_data.h"
-#include "../benchmark_utils/benchmark_helper.h"
 
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
 #include "rapidjson_citm_catalog_data.h"
@@ -30,21 +33,23 @@ void bench_rust_parsing(const std::string &json_str) {
   printf("# input volume: %zu bytes\n", input_volume);
 
   volatile bool result = true;
-  pretty_print(1, input_volume, "bench_rust_parsing",
-               bench([&json_str, &result]() {
-                 serde_benchmark::CitmCatalog *catalog = serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
-                 result = (catalog != nullptr);
-                 if (catalog) {
-                   serde_benchmark::free_citm(catalog);
-                 }
-                 if (!result) {
-                   printf("parse error\n");
-                 }
-               }));
+  pretty_print(
+      1, input_volume, "bench_rust_parsing", bench([&json_str, &result]() {
+        serde_benchmark::CitmCatalog *catalog =
+            serde_benchmark::citm_from_str(json_str.c_str(), json_str.size());
+        result = (catalog != nullptr);
+        if (catalog) {
+          serde_benchmark::free_citm(catalog);
+        }
+        if (!result) {
+          printf("parse error\n");
+        }
+      }));
 }
 #endif
 
-template <class T> void bench_simdjson_static_reflection_parsing(const std::string &json_str) {
+template <class T>
+void bench_simdjson_static_reflection_parsing(const std::string &json_str) {
   size_t input_volume = json_str.size();
   printf("# input volume: %zu bytes\n", input_volume);
 
@@ -57,12 +62,12 @@ template <class T> void bench_simdjson_static_reflection_parsing(const std::stri
                bench([&mutable_json, &result]() {
                  simdjson::ondemand::parser parser;
                  simdjson::ondemand::document doc;
-                 if(parser.iterate(mutable_json).get(doc)) {
+                 if (parser.iterate(mutable_json).get(doc)) {
                    result = false;
                    return;
                  }
                  T my_struct;
-                 if(doc.get<T>().get(my_struct)) {
+                 if (doc.get<T>().get(my_struct)) {
                    result = false;
                  }
                  if (!result) {
@@ -72,7 +77,8 @@ template <class T> void bench_simdjson_static_reflection_parsing(const std::stri
 }
 
 #if SIMDJSON_STATIC_REFLECTION
-template <class T> void bench_simdjson_from_parsing(const std::string &json_str) {
+template <class T>
+void bench_simdjson_from_parsing(const std::string &json_str) {
   size_t input_volume = json_str.size();
   printf("# input volume: %zu bytes\n", input_volume);
 
@@ -84,77 +90,77 @@ template <class T> void bench_simdjson_from_parsing(const std::string &json_str)
                bench([&padded, &result]() {
                  T my_struct;
                  auto err = simdjson::from(padded).get(my_struct);
-                  if (err) {
-                    result = false;
-                    printf("parse error: %s\n", simdjson::error_message(err));
-                    return;
-                  }
+                 if (err) {
+                   result = false;
+                   printf("parse error: %s\n", simdjson::error_message(err));
+                   return;
+                 }
                }));
 }
 #endif
 
 // nlohmann::json deserialization functions
 void from_json(const nlohmann::json &j, CITMPrice &p) {
-    j.at("amount").get_to(p.amount);
-    j.at("audienceSubCategoryId").get_to(p.audienceSubCategoryId);
-    j.at("seatCategoryId").get_to(p.seatCategoryId);
+  j.at("amount").get_to(p.amount);
+  j.at("audienceSubCategoryId").get_to(p.audienceSubCategoryId);
+  j.at("seatCategoryId").get_to(p.seatCategoryId);
 }
 
 void from_json(const nlohmann::json &j, CITMArea &a) {
-    j.at("areaId").get_to(a.areaId);
-    j.at("blockIds").get_to(a.blockIds);
+  j.at("areaId").get_to(a.areaId);
+  j.at("blockIds").get_to(a.blockIds);
 }
 
 void from_json(const nlohmann::json &j, CITMSeatCategory &s) {
-    j.at("areas").get_to(s.areas);
-    j.at("seatCategoryId").get_to(s.seatCategoryId);
+  j.at("areas").get_to(s.areas);
+  j.at("seatCategoryId").get_to(s.seatCategoryId);
 }
 
 void from_json(const nlohmann::json &j, CITMPerformance &p) {
-    j.at("id").get_to(p.id);
-    j.at("eventId").get_to(p.eventId);
-    if (j.contains("logo") && !j["logo"].is_null()) {
-        p.logo = j["logo"].get<std::string>();
-    }
-    if (j.contains("name") && !j["name"].is_null()) {
-        p.name = j["name"].get<std::string>();
-    }
-    j.at("prices").get_to(p.prices);
-    j.at("seatCategories").get_to(p.seatCategories);
-    if (j.contains("seatMapImage") && !j["seatMapImage"].is_null()) {
-        p.seatMapImage = j["seatMapImage"].get<std::string>();
-    }
-    j.at("start").get_to(p.start);
-    j.at("venueCode").get_to(p.venueCode);
+  j.at("id").get_to(p.id);
+  j.at("eventId").get_to(p.eventId);
+  if (j.contains("logo") && !j["logo"].is_null()) {
+    p.logo = j["logo"].get<std::string>();
+  }
+  if (j.contains("name") && !j["name"].is_null()) {
+    p.name = j["name"].get<std::string>();
+  }
+  j.at("prices").get_to(p.prices);
+  j.at("seatCategories").get_to(p.seatCategories);
+  if (j.contains("seatMapImage") && !j["seatMapImage"].is_null()) {
+    p.seatMapImage = j["seatMapImage"].get<std::string>();
+  }
+  j.at("start").get_to(p.start);
+  j.at("venueCode").get_to(p.venueCode);
 }
 
 void from_json(const nlohmann::json &j, CITMEvent &e) {
-    j.at("id").get_to(e.id);
-    j.at("name").get_to(e.name);
-    if (j.contains("description") && !j["description"].is_null()) {
-        e.description = j["description"].get<std::string>();
-    }
-    if (j.contains("logo") && !j["logo"].is_null()) {
-        e.logo = j["logo"].get<std::string>();
-    }
-    j.at("subTopicIds").get_to(e.subTopicIds);
-    if (j.contains("subjectCode") && !j["subjectCode"].is_null()) {
-        e.subjectCode = j["subjectCode"].get<std::string>();
-    }
-    if (j.contains("subtitle") && !j["subtitle"].is_null()) {
-        e.subtitle = j["subtitle"].get<std::string>();
-    }
-    j.at("topicIds").get_to(e.topicIds);
+  j.at("id").get_to(e.id);
+  j.at("name").get_to(e.name);
+  if (j.contains("description") && !j["description"].is_null()) {
+    e.description = j["description"].get<std::string>();
+  }
+  if (j.contains("logo") && !j["logo"].is_null()) {
+    e.logo = j["logo"].get<std::string>();
+  }
+  j.at("subTopicIds").get_to(e.subTopicIds);
+  if (j.contains("subjectCode") && !j["subjectCode"].is_null()) {
+    e.subjectCode = j["subjectCode"].get<std::string>();
+  }
+  if (j.contains("subtitle") && !j["subtitle"].is_null()) {
+    e.subtitle = j["subtitle"].get<std::string>();
+  }
+  j.at("topicIds").get_to(e.topicIds);
 }
 
 void from_json(const nlohmann::json &j, CitmCatalog &c) {
-    j.at("events").get_to(c.events);
-    j.at("performances").get_to(c.performances);
+  j.at("events").get_to(c.events);
+  j.at("performances").get_to(c.performances);
 }
 
 CitmCatalog nlohmann_deserialize(const std::string &json_str) {
-    nlohmann::json j = nlohmann::json::parse(json_str);
-    return j.get<CitmCatalog>();
+  nlohmann::json j = nlohmann::json::parse(json_str);
+  return j.get<CitmCatalog>();
 }
 
 void bench_nlohmann_parsing(const std::string &json_str) {
@@ -176,101 +182,101 @@ void bench_nlohmann_parsing(const std::string &json_str) {
 
 #ifdef SIMDJSON_COMPETITION_RAPIDJSON
 CitmCatalog rapidjson_deserialize(const std::string &json_str) {
-    rapidjson::Document doc;
-    doc.Parse(json_str.c_str());
+  rapidjson::Document doc;
+  doc.Parse(json_str.c_str());
 
-    if (doc.HasParseError()) {
-        throw std::runtime_error("RapidJSON parse error");
+  if (doc.HasParseError()) {
+    throw std::runtime_error("RapidJSON parse error");
+  }
+
+  CitmCatalog catalog;
+
+  // Parse events
+  if (doc.HasMember("events") && doc["events"].IsObject()) {
+    for (auto &m : doc["events"].GetObject()) {
+      CITMEvent event;
+      const auto &e = m.value;
+
+      event.id = e["id"].GetUint64();
+      event.name = e["name"].GetString();
+      if (e.HasMember("description") && !e["description"].IsNull()) {
+        event.description = e["description"].GetString();
+      }
+      if (e.HasMember("logo") && !e["logo"].IsNull()) {
+        event.logo = e["logo"].GetString();
+      }
+
+      event.subTopicIds.clear();
+      for (auto &id : e["subTopicIds"].GetArray()) {
+        event.subTopicIds.push_back(id.GetUint64());
+      }
+
+      if (e.HasMember("subjectCode") && !e["subjectCode"].IsNull()) {
+        event.subjectCode = e["subjectCode"].GetString();
+      }
+      if (e.HasMember("subtitle") && !e["subtitle"].IsNull()) {
+        event.subtitle = e["subtitle"].GetString();
+      }
+
+      event.topicIds.clear();
+      for (auto &id : e["topicIds"].GetArray()) {
+        event.topicIds.push_back(id.GetUint64());
+      }
+
+      catalog.events[m.name.GetString()] = event;
     }
+  }
 
-    CitmCatalog catalog;
+  // Parse performances
+  if (doc.HasMember("performances") && doc["performances"].IsArray()) {
+    for (auto &p : doc["performances"].GetArray()) {
+      CITMPerformance perf;
 
-    // Parse events
-    if (doc.HasMember("events") && doc["events"].IsObject()) {
-        for (auto& m : doc["events"].GetObject()) {
-            CITMEvent event;
-            const auto& e = m.value;
+      perf.id = p["id"].GetUint64();
+      perf.eventId = p["eventId"].GetUint64();
+      if (p.HasMember("logo") && !p["logo"].IsNull()) {
+        perf.logo = p["logo"].GetString();
+      }
+      if (p.HasMember("name") && !p["name"].IsNull()) {
+        perf.name = p["name"].GetString();
+      }
 
-            event.id = e["id"].GetUint64();
-            event.name = e["name"].GetString();
-            if (e.HasMember("description") && !e["description"].IsNull()) {
-                event.description = e["description"].GetString();
-            }
-            if (e.HasMember("logo") && !e["logo"].IsNull()) {
-                event.logo = e["logo"].GetString();
-            }
+      // Parse prices
+      for (auto &price : p["prices"].GetArray()) {
+        CITMPrice pr;
+        pr.amount = price["amount"].GetUint64();
+        pr.audienceSubCategoryId = price["audienceSubCategoryId"].GetUint64();
+        pr.seatCategoryId = price["seatCategoryId"].GetUint64();
+        perf.prices.push_back(pr);
+      }
 
-            event.subTopicIds.clear();
-            for (auto& id : e["subTopicIds"].GetArray()) {
-                event.subTopicIds.push_back(id.GetUint64());
-            }
+      // Parse seat categories
+      for (auto &sc : p["seatCategories"].GetArray()) {
+        CITMSeatCategory seatCat;
+        seatCat.seatCategoryId = sc["seatCategoryId"].GetUint64();
 
-            if (e.HasMember("subjectCode") && !e["subjectCode"].IsNull()) {
-                event.subjectCode = e["subjectCode"].GetString();
-            }
-            if (e.HasMember("subtitle") && !e["subtitle"].IsNull()) {
-                event.subtitle = e["subtitle"].GetString();
-            }
-
-            event.topicIds.clear();
-            for (auto& id : e["topicIds"].GetArray()) {
-                event.topicIds.push_back(id.GetUint64());
-            }
-
-            catalog.events[m.name.GetString()] = event;
+        for (auto &area : sc["areas"].GetArray()) {
+          CITMArea ar;
+          ar.areaId = area["areaId"].GetUint64();
+          for (auto &block : area["blockIds"].GetArray()) {
+            ar.blockIds.push_back(block.GetUint64());
+          }
+          seatCat.areas.push_back(ar);
         }
+        perf.seatCategories.push_back(seatCat);
+      }
+
+      if (p.HasMember("seatMapImage") && !p["seatMapImage"].IsNull()) {
+        perf.seatMapImage = p["seatMapImage"].GetString();
+      }
+      perf.start = p["start"].GetUint64();
+      perf.venueCode = p["venueCode"].GetString();
+
+      catalog.performances.push_back(perf);
     }
+  }
 
-    // Parse performances
-    if (doc.HasMember("performances") && doc["performances"].IsArray()) {
-        for (auto& p : doc["performances"].GetArray()) {
-            CITMPerformance perf;
-
-            perf.id = p["id"].GetUint64();
-            perf.eventId = p["eventId"].GetUint64();
-            if (p.HasMember("logo") && !p["logo"].IsNull()) {
-                perf.logo = p["logo"].GetString();
-            }
-            if (p.HasMember("name") && !p["name"].IsNull()) {
-                perf.name = p["name"].GetString();
-            }
-
-            // Parse prices
-            for (auto& price : p["prices"].GetArray()) {
-                CITMPrice pr;
-                pr.amount = price["amount"].GetUint64();
-                pr.audienceSubCategoryId = price["audienceSubCategoryId"].GetUint64();
-                pr.seatCategoryId = price["seatCategoryId"].GetUint64();
-                perf.prices.push_back(pr);
-            }
-
-            // Parse seat categories
-            for (auto& sc : p["seatCategories"].GetArray()) {
-                CITMSeatCategory seatCat;
-                seatCat.seatCategoryId = sc["seatCategoryId"].GetUint64();
-
-                for (auto& area : sc["areas"].GetArray()) {
-                    CITMArea ar;
-                    ar.areaId = area["areaId"].GetUint64();
-                    for (auto& block : area["blockIds"].GetArray()) {
-                        ar.blockIds.push_back(block.GetUint64());
-                    }
-                    seatCat.areas.push_back(ar);
-                }
-                perf.seatCategories.push_back(seatCat);
-            }
-
-            if (p.HasMember("seatMapImage") && !p["seatMapImage"].IsNull()) {
-                perf.seatMapImage = p["seatMapImage"].GetString();
-            }
-            perf.start = p["start"].GetUint64();
-            perf.venueCode = p["venueCode"].GetString();
-
-            catalog.performances.push_back(perf);
-        }
-    }
-
-    return catalog;
+  return catalog;
 }
 
 void bench_rapidjson_parsing(const std::string &json_str) {
@@ -300,7 +306,8 @@ void bench_glaze_parsing(const std::string &json_str) {
   pretty_print(1, input_volume, "bench_glaze_parsing",
                bench([&json_str, &result]() {
                  CitmCatalog data;
-                 auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(data, json_str);
+                 auto ec = glz::read<glz::opts{.error_on_unknown_keys = false}>(
+                     data, json_str);
                  if (ec) {
                    result = false;
                    printf("parse error\n");
@@ -309,162 +316,193 @@ void bench_glaze_parsing(const std::string &json_str) {
 }
 #endif
 
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+void bench_jsonifier_parsing(const std::string &json_str) {
+  size_t input_volume = json_str.size();
+  printf("# input volume: %zu bytes\n", input_volume);
+  jsonifier::jsonifier_core<> parser;
+  volatile bool result = true;
+  pretty_print(
+      1, input_volume, "bench_jsonifier_parsing",
+      bench([&json_str, &result, &parser]() {
+        CitmCatalog data;
+        if (!parser.parseJson<jsonifier::parse_options{.knownOrder = true}>(
+                data, json_str)) {
+          result = false;
+          printf("parse error\n");
+        }
+      }));
+}
+#endif
+
 #ifdef SIMDJSON_COMPETITION_YYJSON
 CitmCatalog yyjson_deserialize(const std::string &json_str) {
-    yyjson_doc *doc = yyjson_read(json_str.c_str(), json_str.size(), 0);
-    if (!doc) {
-        throw std::runtime_error("YYJson parse error");
-    }
+  yyjson_doc *doc = yyjson_read(json_str.c_str(), json_str.size(), 0);
+  if (!doc) {
+    throw std::runtime_error("YYJson parse error");
+  }
 
-    yyjson_val *root = yyjson_doc_get_root(doc);
-    CitmCatalog catalog;
+  yyjson_val *root = yyjson_doc_get_root(doc);
+  CitmCatalog catalog;
 
-    // Parse events
-    yyjson_val *events = yyjson_obj_get(root, "events");
-    if (events) {
-        size_t idx, max;
-        yyjson_val *key, *val;
-        yyjson_obj_foreach(events, idx, max, key, val) {
-            CITMEvent event;
+  // Parse events
+  yyjson_val *events = yyjson_obj_get(root, "events");
+  if (events) {
+    size_t idx, max;
+    yyjson_val *key, *val;
+    yyjson_obj_foreach(events, idx, max, key, val) {
+      CITMEvent event;
 
-            event.id = yyjson_get_uint(yyjson_obj_get(val, "id"));
-            const char* name = yyjson_get_str(yyjson_obj_get(val, "name"));
-            if (name) event.name = name;
+      event.id = yyjson_get_uint(yyjson_obj_get(val, "id"));
+      const char *name = yyjson_get_str(yyjson_obj_get(val, "name"));
+      if (name)
+        event.name = name;
 
-            yyjson_val *desc = yyjson_obj_get(val, "description");
-            if (desc && !yyjson_is_null(desc)) {
-                const char* str = yyjson_get_str(desc);
-                if (str) event.description = str;
-            }
+      yyjson_val *desc = yyjson_obj_get(val, "description");
+      if (desc && !yyjson_is_null(desc)) {
+        const char *str = yyjson_get_str(desc);
+        if (str)
+          event.description = str;
+      }
 
-            yyjson_val *logo = yyjson_obj_get(val, "logo");
-            if (logo && !yyjson_is_null(logo)) {
-                const char* str = yyjson_get_str(logo);
-                if (str) event.logo = str;
-            }
+      yyjson_val *logo = yyjson_obj_get(val, "logo");
+      if (logo && !yyjson_is_null(logo)) {
+        const char *str = yyjson_get_str(logo);
+        if (str)
+          event.logo = str;
+      }
 
-            yyjson_val *subTopics = yyjson_obj_get(val, "subTopicIds");
-            if (subTopics) {
-                size_t sidx, smax;
-                yyjson_val *sval;
-                yyjson_arr_foreach(subTopics, sidx, smax, sval) {
-                    event.subTopicIds.push_back(yyjson_get_uint(sval));
-                }
-            }
-
-            yyjson_val *subjectCode = yyjson_obj_get(val, "subjectCode");
-            if (subjectCode && !yyjson_is_null(subjectCode)) {
-                const char* str = yyjson_get_str(subjectCode);
-                if (str) event.subjectCode = str;
-            }
-
-            yyjson_val *subtitle = yyjson_obj_get(val, "subtitle");
-            if (subtitle && !yyjson_is_null(subtitle)) {
-                const char* str = yyjson_get_str(subtitle);
-                if (str) event.subtitle = str;
-            }
-
-            yyjson_val *topics = yyjson_obj_get(val, "topicIds");
-            if (topics) {
-                size_t tidx, tmax;
-                yyjson_val *tval;
-                yyjson_arr_foreach(topics, tidx, tmax, tval) {
-                    event.topicIds.push_back(yyjson_get_uint(tval));
-                }
-            }
-
-            const char* keyStr = yyjson_get_str(key);
-            if (keyStr) {
-                catalog.events[keyStr] = event;
-            }
+      yyjson_val *subTopics = yyjson_obj_get(val, "subTopicIds");
+      if (subTopics) {
+        size_t sidx, smax;
+        yyjson_val *sval;
+        yyjson_arr_foreach(subTopics, sidx, smax, sval) {
+          event.subTopicIds.push_back(yyjson_get_uint(sval));
         }
-    }
+      }
 
-    // Parse performances
-    yyjson_val *performances = yyjson_obj_get(root, "performances");
-    if (performances) {
-        size_t idx, max;
-        yyjson_val *val;
-        yyjson_arr_foreach(performances, idx, max, val) {
-            CITMPerformance perf;
+      yyjson_val *subjectCode = yyjson_obj_get(val, "subjectCode");
+      if (subjectCode && !yyjson_is_null(subjectCode)) {
+        const char *str = yyjson_get_str(subjectCode);
+        if (str)
+          event.subjectCode = str;
+      }
 
-            perf.id = yyjson_get_uint(yyjson_obj_get(val, "id"));
-            perf.eventId = yyjson_get_uint(yyjson_obj_get(val, "eventId"));
+      yyjson_val *subtitle = yyjson_obj_get(val, "subtitle");
+      if (subtitle && !yyjson_is_null(subtitle)) {
+        const char *str = yyjson_get_str(subtitle);
+        if (str)
+          event.subtitle = str;
+      }
 
-            yyjson_val *logo = yyjson_obj_get(val, "logo");
-            if (logo && !yyjson_is_null(logo)) {
-                const char* str = yyjson_get_str(logo);
-                if (str) perf.logo = str;
-            }
-
-            yyjson_val *name = yyjson_obj_get(val, "name");
-            if (name && !yyjson_is_null(name)) {
-                const char* str = yyjson_get_str(name);
-                if (str) perf.name = str;
-            }
-
-            // Parse prices
-            yyjson_val *prices = yyjson_obj_get(val, "prices");
-            if (prices) {
-                size_t pidx, pmax;
-                yyjson_val *pval;
-                yyjson_arr_foreach(prices, pidx, pmax, pval) {
-                    CITMPrice price;
-                    price.amount = yyjson_get_uint(yyjson_obj_get(pval, "amount"));
-                    price.audienceSubCategoryId = yyjson_get_uint(yyjson_obj_get(pval, "audienceSubCategoryId"));
-                    price.seatCategoryId = yyjson_get_uint(yyjson_obj_get(pval, "seatCategoryId"));
-                    perf.prices.push_back(price);
-                }
-            }
-
-            // Parse seat categories
-            yyjson_val *seatCats = yyjson_obj_get(val, "seatCategories");
-            if (seatCats) {
-                size_t scidx, scmax;
-                yyjson_val *scval;
-                yyjson_arr_foreach(seatCats, scidx, scmax, scval) {
-                    CITMSeatCategory seatCat;
-                    seatCat.seatCategoryId = yyjson_get_uint(yyjson_obj_get(scval, "seatCategoryId"));
-
-                    yyjson_val *areas = yyjson_obj_get(scval, "areas");
-                    if (areas) {
-                        size_t aidx, amax;
-                        yyjson_val *aval;
-                        yyjson_arr_foreach(areas, aidx, amax, aval) {
-                            CITMArea area;
-                            area.areaId = yyjson_get_uint(yyjson_obj_get(aval, "areaId"));
-
-                            yyjson_val *blocks = yyjson_obj_get(aval, "blockIds");
-                            if (blocks) {
-                                size_t bidx, bmax;
-                                yyjson_val *bval;
-                                yyjson_arr_foreach(blocks, bidx, bmax, bval) {
-                                    area.blockIds.push_back(yyjson_get_uint(bval));
-                                }
-                            }
-                            seatCat.areas.push_back(area);
-                        }
-                    }
-                    perf.seatCategories.push_back(seatCat);
-                }
-            }
-
-            yyjson_val *seatMapImage = yyjson_obj_get(val, "seatMapImage");
-            if (seatMapImage && !yyjson_is_null(seatMapImage)) {
-                const char* str = yyjson_get_str(seatMapImage);
-                if (str) perf.seatMapImage = str;
-            }
-
-            perf.start = yyjson_get_uint(yyjson_obj_get(val, "start"));
-            const char* venueCode = yyjson_get_str(yyjson_obj_get(val, "venueCode"));
-            if (venueCode) perf.venueCode = venueCode;
-
-            catalog.performances.push_back(perf);
+      yyjson_val *topics = yyjson_obj_get(val, "topicIds");
+      if (topics) {
+        size_t tidx, tmax;
+        yyjson_val *tval;
+        yyjson_arr_foreach(topics, tidx, tmax, tval) {
+          event.topicIds.push_back(yyjson_get_uint(tval));
         }
-    }
+      }
 
-    yyjson_doc_free(doc);
-    return catalog;
+      const char *keyStr = yyjson_get_str(key);
+      if (keyStr) {
+        catalog.events[keyStr] = event;
+      }
+    }
+  }
+
+  // Parse performances
+  yyjson_val *performances = yyjson_obj_get(root, "performances");
+  if (performances) {
+    size_t idx, max;
+    yyjson_val *val;
+    yyjson_arr_foreach(performances, idx, max, val) {
+      CITMPerformance perf;
+
+      perf.id = yyjson_get_uint(yyjson_obj_get(val, "id"));
+      perf.eventId = yyjson_get_uint(yyjson_obj_get(val, "eventId"));
+
+      yyjson_val *logo = yyjson_obj_get(val, "logo");
+      if (logo && !yyjson_is_null(logo)) {
+        const char *str = yyjson_get_str(logo);
+        if (str)
+          perf.logo = str;
+      }
+
+      yyjson_val *name = yyjson_obj_get(val, "name");
+      if (name && !yyjson_is_null(name)) {
+        const char *str = yyjson_get_str(name);
+        if (str)
+          perf.name = str;
+      }
+
+      // Parse prices
+      yyjson_val *prices = yyjson_obj_get(val, "prices");
+      if (prices) {
+        size_t pidx, pmax;
+        yyjson_val *pval;
+        yyjson_arr_foreach(prices, pidx, pmax, pval) {
+          CITMPrice price;
+          price.amount = yyjson_get_uint(yyjson_obj_get(pval, "amount"));
+          price.audienceSubCategoryId =
+              yyjson_get_uint(yyjson_obj_get(pval, "audienceSubCategoryId"));
+          price.seatCategoryId =
+              yyjson_get_uint(yyjson_obj_get(pval, "seatCategoryId"));
+          perf.prices.push_back(price);
+        }
+      }
+
+      // Parse seat categories
+      yyjson_val *seatCats = yyjson_obj_get(val, "seatCategories");
+      if (seatCats) {
+        size_t scidx, scmax;
+        yyjson_val *scval;
+        yyjson_arr_foreach(seatCats, scidx, scmax, scval) {
+          CITMSeatCategory seatCat;
+          seatCat.seatCategoryId =
+              yyjson_get_uint(yyjson_obj_get(scval, "seatCategoryId"));
+
+          yyjson_val *areas = yyjson_obj_get(scval, "areas");
+          if (areas) {
+            size_t aidx, amax;
+            yyjson_val *aval;
+            yyjson_arr_foreach(areas, aidx, amax, aval) {
+              CITMArea area;
+              area.areaId = yyjson_get_uint(yyjson_obj_get(aval, "areaId"));
+
+              yyjson_val *blocks = yyjson_obj_get(aval, "blockIds");
+              if (blocks) {
+                size_t bidx, bmax;
+                yyjson_val *bval;
+                yyjson_arr_foreach(blocks, bidx, bmax, bval) {
+                  area.blockIds.push_back(yyjson_get_uint(bval));
+                }
+              }
+              seatCat.areas.push_back(area);
+            }
+          }
+          perf.seatCategories.push_back(seatCat);
+        }
+      }
+
+      yyjson_val *seatMapImage = yyjson_obj_get(val, "seatMapImage");
+      if (seatMapImage && !yyjson_is_null(seatMapImage)) {
+        const char *str = yyjson_get_str(seatMapImage);
+        if (str)
+          perf.seatMapImage = str;
+      }
+
+      perf.start = yyjson_get_uint(yyjson_obj_get(val, "start"));
+      const char *venueCode = yyjson_get_str(yyjson_obj_get(val, "venueCode"));
+      if (venueCode)
+        perf.venueCode = venueCode;
+
+      catalog.performances.push_back(perf);
+    }
+  }
+
+  yyjson_doc_free(doc);
+  return catalog;
 }
 
 void bench_yyjson_parsing(const std::string &json_str) {
@@ -505,9 +543,12 @@ std::string read_file(std::string filename) {
   return out;
 }
 
-// Function to check if benchmark name matches any of the comma-separated filters
-bool matches_filter(const std::string& benchmark_name, const std::string& filter) {
-  if (filter.empty()) return true;
+// Function to check if benchmark name matches any of the comma-separated
+// filters
+bool matches_filter(const std::string &benchmark_name,
+                    const std::string &filter) {
+  if (filter.empty())
+    return true;
 
   // Split filter by comma
   size_t start = 0;
@@ -569,6 +610,11 @@ int main(int argc, char *argv[]) {
 #ifdef SIMDJSON_COMPETITION_GLAZE
   if (matches_filter("glaze", filter)) {
     bench_glaze_parsing(json_str);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+  if (matches_filter("jsonifier", filter)) {
+    bench_jsonifier_parsing(json_str);
   }
 #endif
   if (matches_filter("simdjson_static_reflection", filter)) {
