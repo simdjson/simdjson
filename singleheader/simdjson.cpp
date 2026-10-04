@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-03 22:24:52 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-04 09:02:57 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -21573,10 +21573,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -29130,10 +29133,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -36662,10 +36668,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -44465,10 +44474,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -52810,10 +52822,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -60218,10 +60233,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -67530,10 +67548,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -75259,10 +75280,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }
@@ -80291,10 +80315,13 @@ simdjson_warn_unused simdjson_inline error_code tape_builder_impl<UNPADDED>::vis
   // practice unless you are in the strange scenario where you have many JSON
   // documents made of single atoms.
   //
-  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[iter.remaining_len() + SIMDJSON_PADDING]);
+  // In a stream, the input goes on with other documents: copy up to the next
+  // structural only, not to the end of the batch.
+  const size_t len = (std::min)(iter.remaining_len(), size_t(*iter.next_structural) - size_t(*(iter.next_structural - 1)));
+  std::unique_ptr<uint8_t[]>copy(new (std::nothrow) uint8_t[len + SIMDJSON_PADDING]);
   if (copy.get() == nullptr) { return MEMALLOC; }
-  std::memcpy(copy.get(), value, iter.remaining_len());
-  std::memset(copy.get() + iter.remaining_len(), ' ', SIMDJSON_PADDING);
+  std::memcpy(copy.get(), value, len);
+  std::memset(copy.get() + len, ' ', SIMDJSON_PADDING);
   error_code error = visit_number(iter, copy.get());
   return error;
 }

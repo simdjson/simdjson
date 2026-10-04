@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-03 22:24:52 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-04 09:02:57 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -11008,6 +11008,7 @@ inline void document_stream::start() noexcept {
   if (error) { return; }
   error = parser->ensure_capacity(batch_size);
   if (error) { return; }
+  parser->implementation->_number_as_string = parser->number_as_string();
   // Always run the first stage 1 parse immediately
   batch_start = 0;
   error = run_stage1(*parser, batch_start);
