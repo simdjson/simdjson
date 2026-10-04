@@ -168,6 +168,47 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     SIMDJSON_TRY(val.get_array().get(arr));
   }
 
+  if constexpr (std::is_same_v<T, std::vector<value_type>> && !std::is_same_v<value_type, bool>) {
+    // Collect the elements in a per-thread scratch vector that keeps its
+    // capacity from call to call, then move them into out after reserving the
+    // exact size: out is allocated once instead of being regrown. A nested
+    // array of the same type finds the scratch busy and takes the paths below.
+    struct scratch_space {
+      std::vector<value_type> elements{};
+      bool busy{false};
+    };
+    static thread_local scratch_space scratch;
+    if (!scratch.busy && out.empty()) {
+      struct release_scratch {
+        scratch_space &s;
+        T &out;
+        size_t parsed{0};
+        bool complete{false};
+        // On an error or an exception, out gets the elements parsed so far (as
+        // with the loops below), without allocating. Kept out of the hot path.
+        simdjson_never_inline void keep_parsed() noexcept {
+          s.elements.resize(parsed);
+          out.swap(s.elements);
+        }
+        ~release_scratch() {
+          if (simdjson_unlikely(!complete)) { keep_parsed(); }
+          s.elements.clear();
+          // Do not hold on to the memory of a very large array.
+          if (s.elements.capacity() * sizeof(value_type) > (1 << 20)) { std::vector<value_type>().swap(s.elements); }
+          s.busy = false;
+        }
+      } release{scratch, out};
+      scratch.busy = true;
+      for (auto v : arr) {
+        SIMDJSON_TRY(v.get<value_type>(scratch.elements.emplace_back()));
+        release.parsed++;
+      }
+      out.reserve(release.parsed);
+      release.complete = true;
+      for (auto &e : scratch.elements) { out.emplace_back(std::move(e)); }
+      return SUCCESS;
+    }
+  }
   if constexpr (details::deserialize_in_place<T>) {
     for (auto v : arr) {
       auto &slot = concepts::emplace_one(out);

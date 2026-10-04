@@ -10,6 +10,12 @@ on:
   schedule:
     - cron: 23 */8 * * *
 
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build:
     if: >-

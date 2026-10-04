@@ -1,6 +1,18 @@
 name: Ubuntu 22.04 CI (CLANG 13)
 
-on: [push, pull_request]
+# Rarely broken by pull requests: runs on master only. Use 'Run workflow'
+# in the Actions tab to test a branch.
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   ubuntu-build:

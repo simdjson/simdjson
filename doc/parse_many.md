@@ -322,12 +322,9 @@ Consider the following example where a truncated document (`{"key":"intentionall
 The value returned by `truncated_bytes()` is only meaningful when all of the following hold:
 
 - You have iterated through all of the documents. The stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.
-- The format is `whitespace_delimited` or `newline_delimited`. In `json_sequence`, `comma_delimited` and `comma_delimited_array` mode, the value is meaningless, even when every document was parsed.
 - No document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.
 
 Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed `size_in_bytes()` or wrap around to a huge value such as `4294967295`. An empty input (zero bytes) or an input made only of white space contains no document, and `truncated_bytes()` returns zero for it.
-
-**In particular, do not use `truncated_bytes()` with `stream_format::comma_delimited` or `stream_format::comma_delimited_array`: the value it returns is arbitrary, even when every document was parsed.**
 
 If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully: `i.current_index() + i.source().size()` is the offset just past the end of that document. See [Reading a large stream in chunks](iterate_many.md#reading-a-large-stream-in-chunks) for a complete example (written for On-Demand, but the same approach works with `parse_many`).
 
@@ -441,8 +438,6 @@ by counting braces and brackets. This has the following consequences, which appl
   is treated like a single document: if such a run is longer than `batch_size`, you get a `CAPACITY`
   error, even though each document is small and the same input parses fine with
   `stream_format::whitespace_delimited`.
-- **`truncated_bytes()` is meaningless.** The value it returns is arbitrary, even when every document
-  was parsed.
 
 Because of the silent cases above, if you must know that the whole input was consumed, do not rely on
 the absence of errors. Instead, compare the end of the last document you received
@@ -489,5 +484,3 @@ If the input does not start with `[` and end with `]` (ignoring white space), or
 In particular, `comma_delimited_array` does **not** check that the input is a valid JSON array. Since the content is handled by the comma-separated mode, all of its [limitations](#limitations-of-the-comma-separated-mode) apply. For example, the invalid arrays `[1,,2]`, `[,1,2,]` and `[1 2]` are all accepted and produce the documents `1` and `2`. An input such as `[1],[2]` passes the initial check, and the problem is reported only during iteration, after the first document has been returned. If you need to validate the array, parse it as a single document with `parse` instead.
 
 Positions reported via `current_index()` are relative to the **stripped** buffer (the bytes between `[` and `]`), not the original input, for consistency with the existing BOM-stripping behavior.
-
-As with `comma_delimited`, `truncated_bytes()` is meaningless in this mode.

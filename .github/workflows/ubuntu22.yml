@@ -1,6 +1,17 @@
 name: Ubuntu 22.04 CI (GCC 11)
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   ubuntu-build:

@@ -1801,6 +1801,41 @@ namespace document_stream_tests {
     TEST_SUCCEED();
   }
 
+  // parse_many() must honor number_as_string() on a parser that never ran parse().
+  bool parse_many_number_as_string() {
+    TEST_START();
+    auto input = simdjson::padded_string(std::string("[123456789012345678901234]\n{\"b\": 1}\n123456789012345678901234\n"));
+    simdjson::dom::parser parser;
+    parser.number_as_string(true);
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+      simdjson::dom::element element;
+      ASSERT_SUCCESS(doc.get(element));
+      count++;
+    }
+    ASSERT_EQUAL(count, 3);
+    TEST_SUCCEED();
+  }
+
+  // Documents that are bare numbers, including one at the very end of the input.
+  bool root_numbers_in_stream() {
+    TEST_START();
+    auto input = simdjson::padded_string(std::string("1\n2.5\n-3e2 [4]\n\t17"));
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input).get(stream));
+    std::string got;
+    for (auto doc : stream) {
+      simdjson::dom::element element;
+      ASSERT_SUCCESS(doc.get(element));
+      std::stringstream ss; ss << element; got += ss.str(); got += "|";
+    }
+    ASSERT_EQUAL(got, "1|2.5|-300.0|[4]|17|");
+    TEST_SUCCEED();
+  }
+
   // Pins the contract documented on truncated_bytes(): reliable for
   // whitespace/newline-delimited streams iterated to the end with no document
   // error. It is deliberately NOT checked for json_sequence/comma_delimited,
@@ -2342,6 +2377,8 @@ namespace document_stream_tests {
   bool run() {
     return json_sequence_tests() &&
            scalar_at_window_boundary() &&
+           parse_many_number_as_string() &&
+           root_numbers_in_stream() &&
            truncated_bytes_documented_cases() &&
            source_on_failed_document() &&
            comma_delimited_tests() &&

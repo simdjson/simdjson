@@ -151,6 +151,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -225,8 +227,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -313,6 +318,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -346,8 +353,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 

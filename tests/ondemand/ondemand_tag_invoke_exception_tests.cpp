@@ -36,8 +36,8 @@ struct document_only_type {
 // deserialize it in place rather than through a temporary.
 struct large_type {
   int64_t x{};
-  std::string padding;
-  std::string name;
+  std::string padding{};
+  std::string name{};
 };
 static_assert(sizeof(large_type) > 32);
 static_assert(!std::is_trivially_copyable_v<large_type>);
