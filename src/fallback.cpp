@@ -196,7 +196,14 @@ simdjson_inline bool validate_string() {
     if (buf[idx] == '\\') {
       idx += 2;
     } else if (simdjson_unlikely(buf[idx] & 0x80)) {
+#if SIMDJSON_UTF8VALIDATION
       validate_utf8_character();
+#else
+      // Not validating: a non-ASCII byte is opaque string content. Advancing one byte is
+      // enough, because no byte of a multi-byte sequence can be a quote, a backslash or a
+      // control character.
+      idx++;
+#endif
     } else {
       if (buf[idx] < 0x20) { error = UNESCAPED_CHARS; }
       idx++;
