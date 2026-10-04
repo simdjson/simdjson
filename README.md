@@ -140,13 +140,24 @@ Performance results
 The simdjson library uses three-quarters less instructions than state-of-the-art parser [RapidJSON](https://rapidjson.org). To our knowledge, simdjson is the first fully-validating JSON parser
 to run at [gigabytes per second](https://en.wikipedia.org/wiki/Gigabyte) (GB/s) on commodity processors. It can parse millions of JSON documents per second on a single core.
 
-The following figure represents parsing speed in GB/s for parsing various files
-on an Intel Skylake processor (3.4 GHz) using the GNU GCC 10 compiler (with the -O3 flag).
-We compare against the best and fastest C++ libraries on benchmarks that load and process the data.
-The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8)) validation and exact
-number parsing.
+The following figures show how fast simdjson maps JSON to and from your own
+C++ structs, using C++26 static reflection with GCC 16.2 (-O3). The task is to parse
+[twitter.json](jsonexamples/twitter.json) into native data structures and to serialize
+them back to JSON, on an Intel Xeon Gold 6548N (Emerald Rapids) processor. We compare
+against the fastest C, C++ and Rust libraries, including [Glaze](https://github.com/stephenberry/glaze)
+and [Serde](https://serde.rs). The simdjson library offers full unicode ([UTF-8](https://en.wikipedia.org/wiki/UTF-8))
+validation and exact number parsing. You can reproduce these results with our
+[static reflection benchmarks](benchmark/static_reflect).
 
-<img src="doc/rome.png" width="60%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="doc/perf_parsing_twitter_dark.png">
+  <img src="doc/perf_parsing_twitter.png" width="80%" alt="Parsing twitter.json into native structs: simdjson 5.11 GB/s, Serde 1.85 GB/s, Glaze 1.67 GB/s, yyjson 1.18 GB/s, RapidJSON 0.85 GB/s, nlohmann::json 0.15 GB/s">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="doc/perf_serialization_twitter_dark.png">
+  <img src="doc/perf_serialization_twitter.png" width="80%" alt="Serializing native structs to twitter.json: simdjson 11.2 GB/s, Glaze 6.72 GB/s, Serde 1.85 GB/s, yyjson 1.55 GB/s, reflect-cpp 1.20 GB/s, nlohmann::json 0.19 GB/s">
+</picture>
 
 The simdjson library offers high speed whether it processes tiny files (e.g., 300 bytes)
 or larger files (e.g., 3MB). The following plot presents parsing
