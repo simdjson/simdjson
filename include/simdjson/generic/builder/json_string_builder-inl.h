@@ -962,7 +962,32 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     // compiler can inline mem* (see simdjson::internal::to_chars_buffer_size).
     constexpr size_t max_number_size = simdjson::internal::to_chars_buffer_size;
     if (capacity_check(max_number_size)) {
-      char *end = internal::write_double(buffer.get() + position, double(v));
+#if SIMDJSON_ENABLE_NAN_INF
+      // Check if the input might be NaN or infinity
+      if (simdjson_unlikely(!std::isfinite(v))) {
+        if (std::isnan(v)) {
+          constexpr char nan_literal[] = "NaN";
+          constexpr size_t nan_len = sizeof(nan_literal) - 1;
+
+          std::memcpy(buffer.get() + position, nan_literal, nan_len);
+          position += nan_len;
+        } else {
+          constexpr char inf_literal[] = "Infinity";
+          constexpr size_t inf_len = sizeof(inf_literal) - 1;
+          if (v < 0) {
+            buffer.get()[position] = '-';
+            ++position;
+          }
+          std::memcpy(buffer.get() + position, inf_literal, inf_len);
+          position += inf_len;
+        }
+        return;
+      }
+#endif
+
+      // We could specialize for float.
+      char *end = simdjson::internal::to_chars(buffer.get() + position, nullptr,
+                                               double(v));
       position = end - buffer.get();
     }
   }

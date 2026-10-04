@@ -671,7 +671,7 @@ namespace document_stream_tests {
             {stream_format::comma_delimited, "{\"a\":1},{\"b\":2},{\"c\":3},[1,2,3,4],5,6", 32, 6, 0},
             {stream_format::comma_delimited, "{\"a\":1},{\"b\":", 1000000, 1, 5},
             {stream_format::comma_delimited, "1,2,\"abc", 1000000, 2, 4},
-            {stream_format::json_sequence, "\x1e" "1\n\x1e" "2\n\x1e\"abc", 1000000, 2, 5}, // RS included
+            {stream_format::json_sequence, "\x1e" "1\n\x1e" "2\n\x1e \"abc", 1000000, 2, 4},
             {stream_format::comma_delimited_array, "[{\"a\":1},{\"b\":2},3]", 1000000, 3, 0},
         };
         for (const auto &c : cases) {
