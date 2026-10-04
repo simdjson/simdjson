@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -162,7 +162,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream_8h_source.html#l00218">218</a> of file <a class="el" href="generic_2ondemand_2document__stream_8h_source.html">document_stream.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream_8h_source.html#l00223">223</a> of file <a class="el" href="generic_2ondemand_2document__stream_8h_source.html">document_stream.h</a>.</p>
 
 </div>
 </div>
@@ -254,7 +254,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
 
 <p>Start iterating the documents in the stream. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00197">197</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00200">200</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -283,7 +283,7 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
 
 <p>The end of the stream, for iterator comparison purposes. </p>
 
-<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00203">203</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00206">206</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 
 </div>
 </div>
@@ -345,11 +345,11 @@ simdjson_inline <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_
 <p><a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html" title="A forward-only stream of documents.">document_stream</a> stream = parser.iterate_many(json,window); for(auto &amp; doc : stream) { // do something with doc } size_t truncated = stream.truncated_bytes();</p>
 <p>IMPORTANT: this value is only meaningful under the conditions below.</p>
 <ul>
-<li>the format is whitespace_delimited or newline_delimited;</li>
 <li>you iterated all the way to the end of the stream;</li>
 <li>no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</li>
 </ul>
-<p>If you need to know about a truncated tail outside those conditions, track it yourself from the last successful document (see iterator::current_index() and iterator::source()). </p>
+<p>If you need to know about a truncated tail outside those conditions, track it yourself from the last successful document (see iterator::current_index() and iterator::source()).</p>
+<p>An empty input (zero bytes) or an input made only of white space contains no document: <a class="el" href="classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1document__stream.html#acd3fd372dfd30fcce1d6a103c6682d0e" title="After iterating through the stream, this method returns the number of bytes that were not parsed at t...">truncated_bytes()</a> returns zero. </p>
 
 <p class="definition">Definition at line <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html#l00140">140</a> of file <a class="el" href="generic_2ondemand_2document__stream-inl_8h_source.html">document_stream-inl.h</a>.</p>
 

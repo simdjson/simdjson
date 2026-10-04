@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -118,6 +118,9 @@ Contents</h1>
 <li>Use cases</li>
 <li>Tracking your position</li>
 <li>Incomplete streams</li>
+<li>Comma-separated documents</li>
+<li>JSON Array As A Document Stream</li>
+<li>Reading a large stream in chunks</li>
 <li>C++20 features</li>
 <li>C++26 features (static reflection)</li>
 </ul>
@@ -308,12 +311,19 @@ Incomplete streams</h1>
 <div class="line">{&quot;1&quot;:1,&quot;2&quot;:3,&quot;4&quot;:4}</div>
 <div class="line">39 bytes</div>
 </div><!-- fragment --><p></code></p>
-<p><code>Importantly, you should only call <code>truncated_bytes()</code> after iterating through all of the documents since the stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet. Further, it is only applicable if the format is <code>whitespace_delimited</code> or <code>newline_delimited</code>. In <code>json_sequence</code> and <code>comma_delimited</code> mode, the value is meaningless. Importantly, it assumes no document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</code></p>
-<p><code>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully, using <code>current_index()</code> and <code>source()</code> on the iterator.</code></p>
+<p><code>The value returned by <code>truncated_bytes()</code> is only meaningful when all of the following hold:</code></p>
+<p><code></p><ul>
+<li>You have iterated through all of the documents. The stream cannot tell whether there are truncated documents at the very end when it may not have accessed that part of the data yet.</li>
+<li>No document reported an error. Iteration stops at the first failed document, which can leave the bookkeeping from a mid-stream batch.</li>
+</ul>
+<p></code></p>
+<p><code>Outside these conditions, the value is not merely imprecise: it is arbitrary, and it may exceed <code>size_in_bytes()</code> or wrap around to a huge value such as <code>4294967295</code>. An empty input (zero bytes) or an input made only of white space contains no document, and <code>truncated_bytes()</code> returns zero for it.</code></p>
+<p><code>If you need to detect a truncated tail outside those conditions, track it yourself from the last document that parsed successfully: <code>i.current_index() + i.source().size()</code> is the offset just past the end of that document (see Reading a large stream in chunks for a complete example).</code></p>
 <p><code></code></p>
 <h1><a class="anchor" id="autotoc_md151"></a>
 Comma-separated documents</h1>
 <p><code></code></p>
+<p><code><b>We discourage comma-separated documents.</b> They are not a standard format, and simdjson supports them only with significant limitations (see Limitations of the comma-separated mode). If you control the format, prefer a standard such as JSON Lines/NDJSON (<code>stream_format::whitespace_delimited</code> or <code>stream_format::newline_delimited</code>) or RFC 7464 (<code>stream_format::json_sequence</code>).</code></p>
 <p><code>To parse comma-separated documents like <code>{"a":1},{"b":2},{"c":3}</code>, use the <code>stream_format::comma_delimited</code> parameter:</code></p>
 <p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;({&quot;a&quot;:1},{&quot;b&quot;:2},{&quot;c&quot;:3})&quot;_padded;</span></div>
 <div class="line"><span class="stringliteral">ondemand::parser parser;</span></div>
@@ -345,15 +355,29 @@ Comma-separated documents</h1>
 <div class="line">}</div>
 <div class="line"><span class="comment">// Prints: number number number number string string string object array</span></div>
 </div><!-- fragment --><p></code></p>
-<p><code>Extra top-level separators are tolerated for compatibility with the legacy <code>allow_comma_separated</code> behavior. For example, leading commas, trailing commas, and repeated commas are treated as empty separators rather than documents.</code></p>
 <p><code></code></p>
 <h2><a class="anchor" id="autotoc_md152"></a>
+Limitations of the comma-separated mode</h2>
+<p><code></code></p>
+<p><code>The comma-separated mode is a convenience for reading such inputs, not a validator. It works by removing the commas found at the top level (outside of any object or array) and then splitting the remaining bytes as if the documents were separated by white space. Top-level commas are identified by counting braces and brackets. This has the following consequences, which apply to both <code>stream_format::comma_delimited</code> and <code>stream_format::comma_delimited_array</code>.</code></p>
+<p><code></p><ul>
+<li><b>Commas are not required.</b> Documents separated only by white space, or not separated at all, are accepted as if commas were present: <code>{"a":1} {"b":2}</code>, <code>{"a":1}{"b":2}</code>, <code>1 2 3</code> and <code>"a""b"</code> all produce separate documents without error. You cannot use this mode to check that an input is properly comma-separated.</li>
+<li><b>Extra commas are ignored.</b> Leading, trailing and repeated top-level commas (<code>,,1,,2,</code>) are skipped silently: they produce neither empty documents nor errors. This matches the legacy <code>allow_comma_separated</code> behavior.</li>
+<li><b>An incomplete last document is dropped silently.</b> Given <code>{"a":1},{"b":2},{"c":</code>, iteration returns the first two documents and stops without reporting an error. <code>truncated_bytes()</code> does <b>not</b> tell you how many bytes were dropped in this mode (see Incomplete streams).</li>
+<li><b>Mismatched braces or brackets can hide the rest of the stream.</b> If a document is not balanced, e.g., <code>{"a":[1,2},{"b":2},{"c":3}</code>, the parser can no longer tell which commas are at the top level. Iteration may then end without returning any document and without reporting an error, whereas the whitespace-delimited mode reports <code>TAPE_ERROR</code> on the same kind of input. When the input spans several batches, you may instead get a <code>CAPACITY</code> error even though every document is small.</li>
+<li><b>Every batch must contain a top-level comma.</b> Except for the last batch, the parser can only end a batch right after a top-level comma. A document together with the comma that follows it must fit within <code>batch_size</code>. Furthermore, a run of documents separated only by white space (without commas) is treated like a single document: if such a run is longer than <code>batch_size</code>, you get a <code>CAPACITY</code> error, even though each document is small and the same input parses fine with <code>stream_format::whitespace_delimited</code>.</li>
+</ul>
+<p></code></p>
+<p><code>Because of the silent cases above, if you must know that the whole input was consumed, do not rely on the absence of errors. Instead, compare the end of the last document you received (<code>i.current_index() + i.source().size()</code>) with the size of the input: only white space and commas should remain after it.</code></p>
+<p><code>If your input arrives in pieces (from <code>stdin</code>, from a decompressor, from the network), see Reading a large stream in chunks.</code></p>
+<p><code></code></p>
+<h2><a class="anchor" id="autotoc_md153"></a>
 Legacy &lt;tt&gt;allow_comma_separated&lt;/tt&gt; parameter (deprecated)</h2>
 <p><code></code></p>
 <p><code>The <code>allow_comma_separated</code> boolean parameter is deprecated. When set to <code>true</code>, it now internally maps to <code>stream_format::comma_delimited</code>.</code></p>
 <p><code>The old single-batch limitation no longer applies - comma-delimited parsing now supports multi-batch processing and threading for optimal performance on large files.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md153"></a>
+<h1><a class="anchor" id="autotoc_md154"></a>
 JSON Text Sequences (RFC 7464)</h1>
 <p><code></code></p>
 <p><code><a href="https://tools.ietf.org/html/rfc7464">RFC 7464</a> defines a format for streaming JSON values using ASCII Record Separator (RS, 0x1E) as a delimiter. Each JSON text is preceded by RS and optionally followed by ASCII Line Feed (LF, 0x0A).</code></p>
@@ -389,7 +413,7 @@ JSON Text Sequences (RFC 7464)</h1>
 <p></code></p>
 <p><code>The trailing LF after each JSON text is optional but recommended by the RFC for robustness.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md154"></a>
+<h1><a class="anchor" id="autotoc_md155"></a>
 JSON Array As A Document Stream</h1>
 <p><code></code></p>
 <p><code>Sometimes an input is a single, well-formed JSON array — <code>[{"a":1},{"b":2},{"c":3}]</code> — but you want to iterate its elements one at a time without materializing the whole array. Use <code>stream_format::comma_delimited_array</code>:</code></p>
@@ -413,10 +437,96 @@ JSON Array As A Document Stream</h1>
 <div class="line"><span class="keyword">auto</span> b = R<span class="stringliteral">&quot;(  [ 1, 2, 3 ] )&quot;_padded;                          </span><span class="comment">// whitespace</span></div>
 <div class="line"><span class="keyword">auto</span> c = R<span class="stringliteral">&quot;([])&quot;_padded;                                      </span><span class="comment">// empty array → 0 docs</span></div>
 </div><!-- fragment --><p></code></p>
-<p><code>If the input is not a well-formed outer array (missing <code>[</code>, missing <code>]</code>, or empty / all-whitespace), <code>iterate_many</code> returns <code>TAPE_ERROR</code>. Content <b>inside</b> the array is not validated up front — individual document parse errors surface when you iterate, just like <code>comma_delimited</code>.</code></p>
+<p><code>The <b>whole</b> array, from the opening <code>[</code> to the closing <code>]</code>, must be in the buffer you pass to <code>iterate_many</code>: <code>comma_delimited_array</code> cannot be used on a piece of an array. If the array is too large to fit in memory, or it arrives in pieces (from <code>stdin</code>, from a decompressor such as gzip, from the network), use <code>stream_format::comma_delimited</code> instead, as described in Reading a large stream in chunks.</code></p>
+<p><code>If the input does not start with <code>[</code> and end with <code>]</code> (ignoring white space), or if it is empty or all white space, <code>iterate_many</code> returns <code>TAPE_ERROR</code>. That is the only check made on the outer array. Content <b>inside</b> the array is not validated up front — individual document parse errors surface when you iterate, just like <code>comma_delimited</code>.</code></p>
+<p><code>In particular, <code>comma_delimited_array</code> does <b>not</b> check that the input is a valid JSON array. Since the content is handled by the comma-separated mode, all of its limitations apply. For example, the invalid arrays <code>[1,,2]</code>, <code>[,1,2,]</code> and <code>[1 2]</code> are all accepted and produce the documents <code>1</code> and <code>2</code>. An input such as <code>[1],[2]</code> passes the initial check, and the problem is reported only during iteration, after the first document has been returned. If you need to validate the array, parse it as a single document with <code>iterate</code> or <code>parse</code> instead.</code></p>
 <p><code>Positions reported via <code>current_index()</code> are relative to the <b>stripped</b> buffer (the bytes between <code>[</code> and <code>]</code>), not the original input, for consistency with the existing BOM-stripping behavior.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md155"></a>
+<h1><a class="anchor" id="autotoc_md156"></a>
+Reading a large stream in chunks</h1>
+<p><code></code></p>
+<p><code>The fastest way to use <code>iterate_many</code> is to give it the whole input at once, e.g., a memory-mapped file. Sometimes that is not possible: the input might be compressed (gzip) and decompressed on the fly, or piped through <code>stdin</code>. You then read the input one chunk at a time into a buffer, and a document may straddle two chunks. The approach is the following:</code></p>
+<p><code></p><ol type="1">
+<li>Append the next chunk to the bytes left over from the previous round.</li>
+<li>Call <code>iterate_many</code> on the buffer and process the complete documents. An incomplete document at the end of the buffer is not returned.</li>
+<li>Record where the last complete document ends: <code>i.current_index() + i.source().size()</code>.</li>
+<li>Move the remaining bytes to the front of the buffer and go back to step 1.</li>
+</ol>
+<p></code></p>
+<p><code>Do not use <code>truncated_bytes()</code> for step 3: it does not work with <code>comma_delimited</code> (see Incomplete streams). And do not use <code>comma_delimited_array</code> on the chunks: it requires the complete array. Instead, use <code>comma_delimited</code> and blank out the opening <code>[</code> and the closing <code>]</code> yourself (replacing them with a space keeps the offsets unchanged).</code></p>
+<p><code>There is one subtle case. When a chunk ends right after a number or an atom (e.g., <code>12</code> from <code>...,123,...</code>, or <code>tru</code> from <code>true</code>), there is no way to know that the value is cut short. If your documents may be scalars, leave a scalar that touches the end of the chunk for the next round, as below. Documents that are objects or arrays do not have this problem.</code></p>
+<p><code>For a complete, standalone project that streams a gzip-compressed file with bounded memory, see <a href="https://github.com/simdjson/simdjson_compressed_demo">simdjson_compressed_demo</a>. It uses NDJSON, where a document never contains a raw newline, so each chunk can simply be cut after its last newline. Comma-separated input has no such delimiter, so you need to find where the last complete document ends, as below.</code></p>
+<p><code>The following function processes a comma-separated stream of documents or a single JSON array read from any <code>std::istream</code>:</code></p>
+<p><code></p><div class="fragment"><div class="line"><span class="comment">// Returns false if the input ends with an incomplete document.</span></div>
+<div class="line"><span class="keywordtype">bool</span> process_stream(std::istream &amp;in, <span class="keywordtype">size_t</span> chunk_size = 1 &lt;&lt; 20) {</div>
+<div class="line">  ondemand::parser parser;</div>
+<div class="line">  std::vector&lt;char&gt; buffer;</div>
+<div class="line">  <span class="keywordtype">size_t</span> len = 0; <span class="comment">// bytes in the buffer that are yet to be consumed</span></div>
+<div class="line">  <span class="keywordtype">bool</span> looking_for_bracket = <span class="keyword">true</span>;</div>
+<div class="line">  <span class="keywordtype">bool</span> eof = <span class="keyword">false</span>;</div>
+<div class="line">  <span class="keywordflow">while</span> (!eof) {</div>
+<div class="line">    <span class="comment">// Read the next chunk after the leftover bytes, keeping room for the padding.</span></div>
+<div class="line">    buffer.resize(len + chunk_size + SIMDJSON_PADDING);</div>
+<div class="line">    in.read(buffer.data() + len, std::streamsize(chunk_size));</div>
+<div class="line">    len += size_t(in.gcount());</div>
+<div class="line">    eof = !in;</div>
+<div class="line">    <span class="keywordflow">if</span> (looking_for_bracket) {</div>
+<div class="line">      <span class="comment">// If the input is a JSON array, blank out the opening &#39;[&#39;.</span></div>
+<div class="line">      <span class="keywordtype">size_t</span> i = 0;</div>
+<div class="line">      <span class="keywordflow">while</span> (i &lt; len &amp;&amp; std::isspace(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(buffer[i]))) { i++; }</div>
+<div class="line">      <span class="keywordflow">if</span> (i &lt; len) {</div>
+<div class="line">        <span class="keywordflow">if</span> (buffer[i] == <span class="charliteral">&#39;[&#39;</span>) { buffer[i] = <span class="charliteral">&#39; &#39;</span>; }</div>
+<div class="line">        looking_for_bracket = <span class="keyword">false</span>;</div>
+<div class="line">      }</div>
+<div class="line">    }</div>
+<div class="line">    <span class="keywordflow">if</span> (eof) {</div>
+<div class="line">      <span class="comment">// ... and the closing &#39;]&#39;.</span></div>
+<div class="line">      <span class="keywordtype">size_t</span> i = len;</div>
+<div class="line">      <span class="keywordflow">while</span> (i &gt; 0 &amp;&amp; std::isspace(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(buffer[i - 1]))) { i--; }</div>
+<div class="line">      <span class="keywordflow">if</span> (i &gt; 0 &amp;&amp; buffer[i - 1] == <span class="charliteral">&#39;]&#39;</span>) { buffer[i - 1] = <span class="charliteral">&#39; &#39;</span>; }</div>
+<div class="line">    }</div>
+<div class="line">    ondemand::document_stream stream;</div>
+<div class="line">    <span class="keyword">auto</span> error = parser.iterate_many(padded_string_view(buffer.data(), len, buffer.size()),</div>
+<div class="line">                                     ondemand::DEFAULT_BATCH_SIZE,</div>
+<div class="line">                                     stream_format::comma_delimited).get(stream);</div>
+<div class="line">    <span class="keywordflow">if</span> (error) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">    <span class="keywordtype">size_t</span> consumed = 0; <span class="comment">// end of the last complete document</span></div>
+<div class="line">    <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = stream.begin(); it != stream.end(); ++it) {</div>
+<div class="line">      <span class="comment">// An incomplete document at the end of the buffer is not an error: it is</span></div>
+<div class="line">      <span class="comment">// simply not returned. An error means invalid JSON, or a document larger</span></div>
+<div class="line">      <span class="comment">// than the batch size.</span></div>
+<div class="line">      <span class="keywordflow">if</span> (it.error()) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">      std::string_view source = it.source();</div>
+<div class="line">      <span class="keywordtype">size_t</span> end = it.current_index() + source.size();</div>
+<div class="line">      <span class="comment">// A scalar touching the end of the chunk may be cut short (12 instead of 123):</span></div>
+<div class="line">      <span class="comment">// leave it for the next round.</span></div>
+<div class="line">      <span class="keywordflow">if</span> (!eof &amp;&amp; end == len &amp;&amp; source[0] != <span class="charliteral">&#39;{&#39;</span> &amp;&amp; source[0] != <span class="charliteral">&#39;[&#39;</span>) { <span class="keywordflow">break</span>; }</div>
+<div class="line">      ondemand::document_reference doc;</div>
+<div class="line">      <span class="keywordflow">if</span> ((*it).get(doc)) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">      process(doc); <span class="comment">// your code</span></div>
+<div class="line">      consumed = end;</div>
+<div class="line">    }</div>
+<div class="line">    <span class="comment">// Move the unconsumed bytes (an incomplete document) to the front.</span></div>
+<div class="line">    std::memmove(buffer.data(), buffer.data() + consumed, len - consumed);</div>
+<div class="line">    len -= consumed;</div>
+<div class="line">  }</div>
+<div class="line">  <span class="comment">// Anything but whitespace and commas left over is an incomplete document.</span></div>
+<div class="line">  <span class="keywordflow">for</span> (<span class="keywordtype">size_t</span> i = 0; i &lt; len; i++) {</div>
+<div class="line">    <span class="keywordflow">if</span> (!std::isspace(<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(buffer[i])) &amp;&amp; buffer[i] != <span class="charliteral">&#39;,&#39;</span>) { <span class="keywordflow">return</span> <span class="keyword">false</span>; }</div>
+<div class="line">  }</div>
+<div class="line">  <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p></code></p>
+<p><code>A few remarks:</code></p>
+<p><code></p><ul>
+<li>The buffer must have <code>SIMDJSON_PADDING</code> spare bytes past the data, hence the <code>padded_string_view</code>.</li>
+<li>The chunk size does not need to be larger than your documents: a document larger than a chunk simply accumulates over several rounds. However, the batch size passed to <code>iterate_many</code> (here <code>DEFAULT_BATCH_SIZE</code>, 1 MB) must be larger than your largest document.</li>
+<li>Each round parses the leftover bytes again, so choose a chunk size that is large compared to your documents (a few megabytes is a good default).</li>
+<li>With simdjson 5.0.1 and earlier, <code>source()</code> could return the wrong range once the document had been partially consumed, or when a scalar document was followed by an incomplete one. A string document followed by an incomplete document could also be reported as a <code>TAPE_ERROR</code> when the padding bytes were not blank. If you must support these versions, call <code>source()</code> before you access the document and zero the padding bytes (<code>std::memset(buffer.data() + len, 0, SIMDJSON_PADDING)</code>) before calling <code>iterate_many</code>.</li>
+</ul>
+<p></code></p>
+<p><code></code></p>
+<h1><a class="anchor" id="autotoc_md157"></a>
 C++20 features</h1>
 <p><code></code></p>
 <p><code>In C++20, the standard introduced the notion of <em>customization point</em>. A customization point is a function or function object that can be customized for different types. It allows library authors to provide default behavior while giving users the ability to override this behavior for specific types.</code></p>
@@ -498,7 +608,7 @@ C++20 features</h1>
 </div><!-- fragment --><p></code></p>
 <p><code><b>Performance tip</b>: You will get better performance if you order the attributes (make, model) in the order they appear in the JSON document.</code></p>
 <p><code></code></p>
-<h1><a class="anchor" id="autotoc_md156"></a>
+<h1><a class="anchor" id="autotoc_md158"></a>
 C++26 features (static reflection)</h1>
 <p><code></code></p>
 <p><code>If you compile with a C++26 compiler that has <a href="https://wg21.link/P2996">P2996</a> static reflection enabled, simdjson detects it and can deserialize a stream of JSON documents directly into your own structures <b>without</b> writing any <code>tag_invoke</code> function. The library inspects the non-static public members of your type at compile time and produces the parsing code automatically.</code></p>
@@ -530,7 +640,7 @@ C++26 features (static reflection)</h1>
 </div><!-- fragment --><p></code></p>
 <p><code>This works for every <code>stream_format</code> value supported by <code>iterate_many</code>. The following examples each parse the same three cars, but laid out using a different streaming convention.</code></p>
 <p><code></code></p>
-<h2><a class="anchor" id="autotoc_md157"></a>
+<h2><a class="anchor" id="autotoc_md159"></a>
 Whitespace-delimited (default, NDJSON / JSON Lines)</h2>
 <p><code></code></p>
 <p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
@@ -551,7 +661,7 @@ Whitespace-delimited (default, NDJSON / JSON Lines)</h2>
 <div class="ttc" id="anamespacesimdjson_html_a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56"><div class="ttname"><a href="namespacesimdjson.html#a1d2c63e9741e1bca213ba01eb428858aa2903fd625a49fadfd09016b81d2def56">simdjson::stream_format::whitespace_delimited</a></div><div class="ttdeci">@ whitespace_delimited</div><div class="ttdoc">Whitespace-delimited JSON documents (default, includes NDJSON/JSONL)</div></div>
 </div><!-- fragment --><p></code></p>
 <p><code></code></p>
-<h2><a class="anchor" id="autotoc_md158"></a>
+<h2><a class="anchor" id="autotoc_md160"></a>
 Comma-delimited documents</h2>
 <p><code></code></p>
 <p><code></p><div class="fragment"><div class="line"><span class="keyword">auto</span> json = R<span class="stringliteral">&quot;( { &quot;make&quot;: &quot;Toyota&quot;, &quot;model&quot;: &quot;Camry&quot;,  &quot;year&quot;: 2018,</span></div>
@@ -573,7 +683,7 @@ Comma-delimited documents</h2>
 <div class="line">}</div>
 </div><!-- fragment --><p></code></p>
 <p><code></code></p>
-<h2><a class="anchor" id="autotoc_md159"></a>
+<h2><a class="anchor" id="autotoc_md161"></a>
 A single JSON array as a stream of documents</h2>
 <p><code></code></p>
 <p><code>When the input is a single JSON array, you can stream its elements one at a time without materializing the entire array as a <code>std::vector</code> upfront:</code></p>
@@ -596,7 +706,7 @@ A single JSON array as a stream of documents</h2>
 <div class="line">}</div>
 </div><!-- fragment --><p></code></p>
 <p><code></code></p>
-<h2><a class="anchor" id="autotoc_md160"></a>
+<h2><a class="anchor" id="autotoc_md162"></a>
 JSON Text Sequences (RFC 7464)</h2>
 <p><code></code></p>
 <p><code></p><div class="fragment"><div class="line"><span class="comment">// Build input with RS (0x1E) and LF (0x0A) delimiters</span></div>

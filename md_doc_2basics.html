@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -305,8 +305,8 @@ Advanced input options</h2>
 </div><!-- fragment --><p><b>Windows-specific notes.</b> Windows users compiling with C++17 or better may use <code>wchar_t</code> strings to support non-ASCII filenames: <code>padded_string::load(L"twitter.json")</code>. Windows users who need to read files with non-ANSI characters in the name should set their code page to UTF-8 (65001). This should be the default with Windows 11 and better. Further, they may use the AreFileApisANSI function to determine whether the filename is interpreted using the ANSI or the system default OEM codepage, and they may call SetFileApisToOEM accordingly.</p>
 <p>Some users may want to browse code along with the compiled assembly:</p>
 <ul>
-<li><a href="https://godbolt.org/z/98Kx9Kqjn">simdjson examples with errors handled through exceptions</a></li>
-<li><a href="https://godbolt.org/z/PKG7GdbPo">simdjson examples with errors without exceptions</a></li>
+<li><a href="https://godbolt.org/z/5jaofeq48">simdjson examples with errors handled through exceptions</a></li>
+<li><a href="https://godbolt.org/z/K3M6Y4Knc">simdjson examples with errors without exceptions</a></li>
 </ul>
 <p><b>Summary of input types:</b></p>
 <table class="markdownTable">
@@ -1928,7 +1928,7 @@ Compile-time restrictions</h2>
 <h2><a class="anchor" id="autotoc_md44"></a>
 Inspecting the matching algorithm with &lt;tt&gt;describe()&lt;/tt&gt;</h2>
 <p><code></code></p>
-<p><code>A selector picks one of a few matching strategies at compile time depending on its keys. The static member function <code>key_selector&lt;...&gt;::describe()</code> returns a human-readable, multi-line <code>std::string</code> explaining exactly how the selector classifies a key: which strategy was chosen, which bytes (or character positions) it inspects, and the contents of the lookup tables. Because it is derived entirely from the compile-time tables, <code>describe()</code> is itself a constant expression — you can use it in a <code>static_assert</code>, or simply print it at runtime.</code></p>
+<p><code>A selector picks one of a few matching strategies at compile time depending on its keys. The static member function <code>key_selector&lt;...&gt;::describe()</code> returns a human-readable, multi-line <code>std::string</code> explaining exactly how the selector classifies a key: which strategy was chosen, which bytes (or character positions) it inspects, and the contents of the lookup tables. Because it is derived entirely from the compile-time tables, <code>describe()</code> is itself a constant expression — you can use it in a <code>static_assert</code>, or simply print it at runtime. (Using it at compile time requires a standard library with constexpr <code>std::string</code>, i.e., <code>__cpp_lib_constexpr_string</code>; with older standard libraries such as libstdc++ 11, <code>describe()</code> is only available at runtime.)</code></p>
 <p><code>The most common strategy is a <b>single 8-bit window</b>: the matcher reads two bytes of the key at a fixed offset, extracts eight bits, and uses them to index a table that maps directly to a key. For a two-key selector whose keys differ in their first byte:</code></p>
 <p><code></p><div class="fragment"><div class="line"><span class="keyword">using </span>fields = ondemand::key_selector&lt;<span class="stringliteral">&quot;name&quot;</span>, <span class="stringliteral">&quot;city&quot;</span>&gt;;</div>
 <div class="line">std::cout &lt;&lt; fields::describe();</div>
@@ -3208,7 +3208,7 @@ Performance tips</h1>
 <li>Read <a class="el" href="md_doc_2performance.html">our performance notes</a> for advanced topics.</li>
 <li>To better understand the operation of your On-Demand parser, and whether it is performing as well as you think it should be, there is a logger feature built in to simdjson! To use it, define the pre-processor directive <code>SIMDJSON_VERBOSE_LOGGING</code> prior to including the <code><a class="el" href="simdjson_8h.html">simdjson.h</a></code> header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless <code>SIMDJSON_VERBOSE_LOGGING</code> is defined, logging is entirely disabled and thus carries no overhead.</li>
 <li>The On-Demand front-end works best when doing a single pass over the input: avoid calling <code>count_elements</code>, <code>rewind</code>, <code>reset</code> and similar methods.</li>
-<li>If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. The following example may work: <a href="https://godbolt.org/z/xE4GWs573">https://godbolt.org/z/xE4GWs573</a>.</li>
+<li>If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. See <a href="https://godbolt.org/z/d8E57scTP">this example</a>.</li>
 <li>Given a field <code>field</code> in an object, calling <code>field.key()</code> is often faster than <code>field.unescaped_key()</code> so if you do not need an unescaped <code>std::string_view</code> instance, prefer <code>field.key()</code>. Similarly, we expect <code>field.escaped_key()</code> to be faster than <code>field.unescaped_key()</code> even though both return a <code>std::string_view</code> instance.</li>
 <li>For release builds, we recommend setting the <code>NDEBUG</code> pre-processor directive when compiling the <code>simdjson</code> library. Importantly, using the optimization flags <code>-O2</code> or <code>-O3</code> under GCC and LLVM clang does not set the <code>NDEBUG</code> directive, you must set it manually (e.g., <code>-DNDEBUG</code>).</li>
 <li>For long streams of JSON documents, consider <a class="el" href="md_doc_2iterate__many.html">`iterate_many`</a> and <a class="el" href="md_doc_2parse__many.html">`parse_many`</a> for better performance.</li>

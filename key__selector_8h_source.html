@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -1156,7 +1156,7 @@ $(document).ready(function(){initNavTree('key__selector_8h_source.html',''); ini
 <div class="line"><a id="l01052" name="l01052"></a><span class="lineno"> 1052</span><span class="comment">// --- describe() string helpers (constexpr; no std::to_string, which is not) ---</span></div>
 <div class="line"><a id="l01053" name="l01053"></a><span class="lineno"> 1053</span> </div>
 <div class="line"><a id="l01054" name="l01054"></a><span class="lineno"> 1054</span><span class="comment">// Append the decimal form of v to s.</span></div>
-<div class="line"><a id="l01055" name="l01055"></a><span class="lineno"> 1055</span><span class="keyword">constexpr</span> <span class="keywordtype">void</span> append_uint(std::string&amp; s, std::size_t v) {</div>
+<div class="line"><a id="l01055" name="l01055"></a><span class="lineno"> 1055</span>SIMDJSON_CONSTEXPR_STRING <span class="keywordtype">void</span> append_uint(std::string&amp; s, std::size_t v) {</div>
 <div class="line"><a id="l01056" name="l01056"></a><span class="lineno"> 1056</span>    <span class="keywordflow">if</span> (v == 0) { s.push_back(<span class="charliteral">&#39;0&#39;</span>); <span class="keywordflow">return</span>; }</div>
 <div class="line"><a id="l01057" name="l01057"></a><span class="lineno"> 1057</span>    <span class="keywordtype">char</span> buf[20];</div>
 <div class="line"><a id="l01058" name="l01058"></a><span class="lineno"> 1058</span>    std::size_t n = 0;</div>
@@ -1166,7 +1166,7 @@ $(document).ready(function(){initNavTree('key__selector_8h_source.html',''); ini
 <div class="line"><a id="l01062" name="l01062"></a><span class="lineno"> 1062</span> </div>
 <div class="line"><a id="l01063" name="l01063"></a><span class="lineno"> 1063</span><span class="comment">// Append a byte as its decimal value, plus the printable character in quotes</span></div>
 <div class="line"><a id="l01064" name="l01064"></a><span class="lineno"> 1064</span><span class="comment">// when it is in the printable ASCII range (e.g. &quot;110 (&#39;n&#39;)&quot;).</span></div>
-<div class="line"><a id="l01065" name="l01065"></a><span class="lineno"> 1065</span><span class="keyword">constexpr</span> <span class="keywordtype">void</span> append_byte(std::string&amp; s, <span class="keywordtype">unsigned</span> b) {</div>
+<div class="line"><a id="l01065" name="l01065"></a><span class="lineno"> 1065</span>SIMDJSON_CONSTEXPR_STRING <span class="keywordtype">void</span> append_byte(std::string&amp; s, <span class="keywordtype">unsigned</span> b) {</div>
 <div class="line"><a id="l01066" name="l01066"></a><span class="lineno"> 1066</span>    append_uint(s, b);</div>
 <div class="line"><a id="l01067" name="l01067"></a><span class="lineno"> 1067</span>    <span class="keywordflow">if</span> (b &gt;= 0x20 &amp;&amp; b &lt; 0x7f) {</div>
 <div class="line"><a id="l01068" name="l01068"></a><span class="lineno"> 1068</span>        s += <span class="stringliteral">&quot; (&#39;&quot;</span>;</div>
@@ -1281,152 +1281,152 @@ $(document).ready(function(){initNavTree('key__selector_8h_source.html',''); ini
 <div class="line"><a id="l01214" name="l01214"></a><span class="lineno"> 1214</span>        <span class="keywordflow">return</span> keys[i];</div>
 <div class="line"><a id="l01215" name="l01215"></a><span class="lineno"> 1215</span>    }</div>
 <div class="line"><a id="l01216" name="l01216"></a><span class="lineno"> 1216</span> </div>
-<div class="line"><a id="l01233" name="l01233"></a><span class="lineno"> 1233</span>    <span class="keyword">static</span> <span class="keyword">constexpr</span> std::string describe() {</div>
-<div class="line"><a id="l01234" name="l01234"></a><span class="lineno"> 1234</span>        std::string s;</div>
-<div class="line"><a id="l01235" name="l01235"></a><span class="lineno"> 1235</span>        s += <span class="stringliteral">&quot;key_selector: &quot;</span>;</div>
-<div class="line"><a id="l01236" name="l01236"></a><span class="lineno"> 1236</span>        key_selector_detail::append_uint(s, N);</div>
-<div class="line"><a id="l01237" name="l01237"></a><span class="lineno"> 1237</span>        s += <span class="stringliteral">&quot; keys, max key length &quot;</span>;</div>
-<div class="line"><a id="l01238" name="l01238"></a><span class="lineno"> 1238</span>        key_selector_detail::append_uint(s, max_key_len);</div>
-<div class="line"><a id="l01239" name="l01239"></a><span class="lineno"> 1239</span>        s += <span class="stringliteral">&quot;\nkeys:\n&quot;</span>;</div>
-<div class="line"><a id="l01240" name="l01240"></a><span class="lineno"> 1240</span>        <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
-<div class="line"><a id="l01241" name="l01241"></a><span class="lineno"> 1241</span>            s += <span class="stringliteral">&quot;  [&quot;</span>;</div>
-<div class="line"><a id="l01242" name="l01242"></a><span class="lineno"> 1242</span>            key_selector_detail::append_uint(s, i);</div>
-<div class="line"><a id="l01243" name="l01243"></a><span class="lineno"> 1243</span>            s += <span class="stringliteral">&quot;] \&quot;&quot;</span>;</div>
-<div class="line"><a id="l01244" name="l01244"></a><span class="lineno"> 1244</span>            s += keys[i];</div>
-<div class="line"><a id="l01245" name="l01245"></a><span class="lineno"> 1245</span>            s += <span class="stringliteral">&quot;\&quot; (length &quot;</span>;</div>
-<div class="line"><a id="l01246" name="l01246"></a><span class="lineno"> 1246</span>            key_selector_detail::append_uint(s, keys[i].size());</div>
-<div class="line"><a id="l01247" name="l01247"></a><span class="lineno"> 1247</span>            s += <span class="stringliteral">&quot;)\n&quot;</span>;</div>
-<div class="line"><a id="l01248" name="l01248"></a><span class="lineno"> 1248</span>        }</div>
-<div class="line"><a id="l01249" name="l01249"></a><span class="lineno"> 1249</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span> (window.ok) {</div>
-<div class="line"><a id="l01250" name="l01250"></a><span class="lineno"> 1250</span>            <span class="comment">// Mirrors the window fast path of match_raw().</span></div>
-<div class="line"><a id="l01251" name="l01251"></a><span class="lineno"> 1251</span>            s += <span class="stringliteral">&quot;algorithm: single 8-bit window\n&quot;</span>;</div>
-<div class="line"><a id="l01252" name="l01252"></a><span class="lineno"> 1252</span>            s += <span class="stringliteral">&quot;  step 1: read 2 bytes at offset &quot;</span>;</div>
-<div class="line"><a id="l01253" name="l01253"></a><span class="lineno"> 1253</span>            key_selector_detail::append_uint(s, window.byte_offset);</div>
-<div class="line"><a id="l01254" name="l01254"></a><span class="lineno"> 1254</span>            s += <span class="stringliteral">&quot;, interpret them as a little-endian 16-bit value, shift right by &quot;</span>;</div>
-<div class="line"><a id="l01255" name="l01255"></a><span class="lineno"> 1255</span>            key_selector_detail::append_uint(s, window.shift);</div>
-<div class="line"><a id="l01256" name="l01256"></a><span class="lineno"> 1256</span>            s += <span class="stringliteral">&quot; bits, and keep the low 8 bits\n&quot;</span>;</div>
-<div class="line"><a id="l01257" name="l01257"></a><span class="lineno"> 1257</span>            s += <span class="stringliteral">&quot;  step 2: map that byte through a 256-entry table to a key index (&quot;</span>;</div>
-<div class="line"><a id="l01258" name="l01258"></a><span class="lineno"> 1258</span>            key_selector_detail::append_uint(s, N);</div>
-<div class="line"><a id="l01259" name="l01259"></a><span class="lineno"> 1259</span>            s += <span class="stringliteral">&quot; means no match):\n&quot;</span>;</div>
-<div class="line"><a id="l01260" name="l01260"></a><span class="lineno"> 1260</span>            <span class="keywordflow">for</span> (std::size_t b = 0; b &lt; 256; ++b) {</div>
-<div class="line"><a id="l01261" name="l01261"></a><span class="lineno"> 1261</span>                <span class="keywordflow">if</span> (window.window_to_key[b] &lt; N) {</div>
-<div class="line"><a id="l01262" name="l01262"></a><span class="lineno"> 1262</span>                    s += <span class="stringliteral">&quot;    byte &quot;</span>;</div>
-<div class="line"><a id="l01263" name="l01263"></a><span class="lineno"> 1263</span>                    key_selector_detail::append_byte(s, <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(b));</div>
-<div class="line"><a id="l01264" name="l01264"></a><span class="lineno"> 1264</span>                    s += <span class="stringliteral">&quot; -&gt; key &quot;</span>;</div>
-<div class="line"><a id="l01265" name="l01265"></a><span class="lineno"> 1265</span>                    key_selector_detail::append_uint(s, window.window_to_key[b]);</div>
-<div class="line"><a id="l01266" name="l01266"></a><span class="lineno"> 1266</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l01267" name="l01267"></a><span class="lineno"> 1267</span>                }</div>
-<div class="line"><a id="l01268" name="l01268"></a><span class="lineno"> 1268</span>            }</div>
-<div class="line"><a id="l01269" name="l01269"></a><span class="lineno"> 1269</span>            s += <span class="stringliteral">&quot;  step 3: confirm the candidate by checking the closing quote sits at the key&#39;s length and comparing the key bytes\n&quot;</span>;</div>
-<div class="line"><a id="l01270" name="l01270"></a><span class="lineno"> 1270</span>        } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span>            <span class="comment">// Mirrors the perfect-hash path of match_raw().</span></div>
-<div class="line"><a id="l01272" name="l01272"></a><span class="lineno"> 1272</span>            <span class="keywordflow">if</span> <span class="keyword">constexpr</span> (phf.num_positions == key_selector_detail::HD_MODE) {</div>
-<div class="line"><a id="l01273" name="l01273"></a><span class="lineno"> 1273</span>                s += <span class="stringliteral">&quot;algorithm: hash-and-displace perfect hash\n&quot;</span>;</div>
-<div class="line"><a id="l01274" name="l01274"></a><span class="lineno"> 1274</span>                s += <span class="stringliteral">&quot;  step 1: bucket = (first_byte + last_byte*3 + length*17) mod 256\n&quot;</span>;</div>
-<div class="line"><a id="l01275" name="l01275"></a><span class="lineno"> 1275</span>                s += <span class="stringliteral">&quot;  step 2: keyhash = base-31 rolling hash of the length and the first &quot;</span>;</div>
-<div class="line"><a id="l01276" name="l01276"></a><span class="lineno"> 1276</span>                key_selector_detail::append_uint(s, phf.hd_hash_variant);</div>
-<div class="line"><a id="l01277" name="l01277"></a><span class="lineno"> 1277</span>                s += <span class="stringliteral">&quot; bytes\n&quot;</span>;</div>
-<div class="line"><a id="l01278" name="l01278"></a><span class="lineno"> 1278</span>                s += <span class="stringliteral">&quot;  step 3: slot = (displacement[bucket] + keyhash) mod &quot;</span>;</div>
-<div class="line"><a id="l01279" name="l01279"></a><span class="lineno"> 1279</span>                key_selector_detail::append_uint(s, table_size);</div>
-<div class="line"><a id="l01280" name="l01280"></a><span class="lineno"> 1280</span>                s += <span class="stringliteral">&quot;\n  step 4: slot_to_key[slot] gives the candidate key index\n&quot;</span>;</div>
-<div class="line"><a id="l01281" name="l01281"></a><span class="lineno"> 1281</span>                s += <span class="stringliteral">&quot;  per-key derivation:\n&quot;</span>;</div>
-<div class="line"><a id="l01282" name="l01282"></a><span class="lineno"> 1282</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
-<div class="line"><a id="l01283" name="l01283"></a><span class="lineno"> 1283</span>                    std::string_view k = keys[i];</div>
-<div class="line"><a id="l01284" name="l01284"></a><span class="lineno"> 1284</span>                    std::size_t bucket = key_selector_detail::hd_bucket_hash(k);</div>
-<div class="line"><a id="l01285" name="l01285"></a><span class="lineno"> 1285</span>                    std::size_t kh = (phf.hd_hash_variant == key_selector_detail::HD_HASH_2BYTE_FLAG)</div>
-<div class="line"><a id="l01286" name="l01286"></a><span class="lineno"> 1286</span>                        ? key_selector_detail::hd_key_hash_2(k)</div>
-<div class="line"><a id="l01287" name="l01287"></a><span class="lineno"> 1287</span>                        : key_selector_detail::hd_key_hash_4(k);</div>
-<div class="line"><a id="l01288" name="l01288"></a><span class="lineno"> 1288</span>                    std::size_t slot = (phf.asso_values[0][bucket] + kh) &amp; (table_size - 1);</div>
-<div class="line"><a id="l01289" name="l01289"></a><span class="lineno"> 1289</span>                    s += <span class="stringliteral">&quot;    \&quot;&quot;</span>;</div>
-<div class="line"><a id="l01290" name="l01290"></a><span class="lineno"> 1290</span>                    s += k;</div>
-<div class="line"><a id="l01291" name="l01291"></a><span class="lineno"> 1291</span>                    s += <span class="stringliteral">&quot;\&quot;: bucket=&quot;</span>;</div>
-<div class="line"><a id="l01292" name="l01292"></a><span class="lineno"> 1292</span>                    key_selector_detail::append_uint(s, bucket);</div>
-<div class="line"><a id="l01293" name="l01293"></a><span class="lineno"> 1293</span>                    s += <span class="stringliteral">&quot; displacement=&quot;</span>;</div>
-<div class="line"><a id="l01294" name="l01294"></a><span class="lineno"> 1294</span>                    key_selector_detail::append_uint(s, phf.asso_values[0][bucket]);</div>
-<div class="line"><a id="l01295" name="l01295"></a><span class="lineno"> 1295</span>                    s += <span class="stringliteral">&quot; keyhash=&quot;</span>;</div>
-<div class="line"><a id="l01296" name="l01296"></a><span class="lineno"> 1296</span>                    key_selector_detail::append_uint(s, kh);</div>
-<div class="line"><a id="l01297" name="l01297"></a><span class="lineno"> 1297</span>                    s += <span class="stringliteral">&quot; slot=&quot;</span>;</div>
-<div class="line"><a id="l01298" name="l01298"></a><span class="lineno"> 1298</span>                    key_selector_detail::append_uint(s, slot);</div>
-<div class="line"><a id="l01299" name="l01299"></a><span class="lineno"> 1299</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l01300" name="l01300"></a><span class="lineno"> 1300</span>                }</div>
-<div class="line"><a id="l01301" name="l01301"></a><span class="lineno"> 1301</span>            } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l01302" name="l01302"></a><span class="lineno"> 1302</span>                s += <span class="stringliteral">&quot;algorithm: gperf-style perfect hash over &quot;</span>;</div>
-<div class="line"><a id="l01303" name="l01303"></a><span class="lineno"> 1303</span>                key_selector_detail::append_uint(s, phf.num_positions);</div>
-<div class="line"><a id="l01304" name="l01304"></a><span class="lineno"> 1304</span>                s += <span class="stringliteral">&quot; character position(s)\n&quot;</span>;</div>
-<div class="line"><a id="l01305" name="l01305"></a><span class="lineno"> 1305</span>                s += <span class="stringliteral">&quot;  step 1: h = key length\n&quot;</span>;</div>
-<div class="line"><a id="l01306" name="l01306"></a><span class="lineno"> 1306</span>                s += <span class="stringliteral">&quot;  step 2: for each position below, add its association value for the key byte there (a position past the key&#39;s length contributes 0):\n&quot;</span>;</div>
-<div class="line"><a id="l01307" name="l01307"></a><span class="lineno"> 1307</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; phf.num_positions; ++i) {</div>
-<div class="line"><a id="l01308" name="l01308"></a><span class="lineno"> 1308</span>                    s += <span class="stringliteral">&quot;    position &quot;</span>;</div>
-<div class="line"><a id="l01309" name="l01309"></a><span class="lineno"> 1309</span>                    <span class="keywordflow">if</span> (phf.positions[i] == key_selector_detail::POS_LAST_CHAR) {</div>
-<div class="line"><a id="l01310" name="l01310"></a><span class="lineno"> 1310</span>                        s += <span class="stringliteral">&quot;last character&quot;</span>;</div>
-<div class="line"><a id="l01311" name="l01311"></a><span class="lineno"> 1311</span>                    } <span class="keywordflow">else</span> {</div>
-<div class="line"><a id="l01312" name="l01312"></a><span class="lineno"> 1312</span>                        s += <span class="stringliteral">&quot;byte index &quot;</span>;</div>
-<div class="line"><a id="l01313" name="l01313"></a><span class="lineno"> 1313</span>                        key_selector_detail::append_uint(s, phf.positions[i]);</div>
-<div class="line"><a id="l01314" name="l01314"></a><span class="lineno"> 1314</span>                    }</div>
-<div class="line"><a id="l01315" name="l01315"></a><span class="lineno"> 1315</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l01316" name="l01316"></a><span class="lineno"> 1316</span>                }</div>
-<div class="line"><a id="l01317" name="l01317"></a><span class="lineno"> 1317</span>                s += <span class="stringliteral">&quot;  step 3: slot = h mod &quot;</span>;</div>
-<div class="line"><a id="l01318" name="l01318"></a><span class="lineno"> 1318</span>                key_selector_detail::append_uint(s, table_size);</div>
-<div class="line"><a id="l01319" name="l01319"></a><span class="lineno"> 1319</span>                s += <span class="stringliteral">&quot; (a power of two, applied as a bitmask)\n&quot;</span>;</div>
-<div class="line"><a id="l01320" name="l01320"></a><span class="lineno"> 1320</span>                s += <span class="stringliteral">&quot;  step 4: slot_to_key[slot] gives the candidate key index\n&quot;</span>;</div>
-<div class="line"><a id="l01321" name="l01321"></a><span class="lineno"> 1321</span>                s += <span class="stringliteral">&quot;  per-key derivation:\n&quot;</span>;</div>
-<div class="line"><a id="l01322" name="l01322"></a><span class="lineno"> 1322</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
-<div class="line"><a id="l01323" name="l01323"></a><span class="lineno"> 1323</span>                    std::string_view k = keys[i];</div>
-<div class="line"><a id="l01324" name="l01324"></a><span class="lineno"> 1324</span>                    std::size_t h = k.size();</div>
-<div class="line"><a id="l01325" name="l01325"></a><span class="lineno"> 1325</span>                    <span class="keywordflow">for</span> (std::size_t pi = 0; pi &lt; phf.num_positions; ++pi) {</div>
-<div class="line"><a id="l01326" name="l01326"></a><span class="lineno"> 1326</span>                        std::size_t pos = phf.positions[pi];</div>
-<div class="line"><a id="l01327" name="l01327"></a><span class="lineno"> 1327</span>                        std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)</div>
-<div class="line"><a id="l01328" name="l01328"></a><span class="lineno"> 1328</span>                                          ? (k.size() - 1) : pos;</div>
-<div class="line"><a id="l01329" name="l01329"></a><span class="lineno"> 1329</span>                        <span class="keywordflow">if</span> (idx &lt; k.size()) {</div>
-<div class="line"><a id="l01330" name="l01330"></a><span class="lineno"> 1330</span>                            h += phf.asso_values[pi][<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(k[idx])];</div>
-<div class="line"><a id="l01331" name="l01331"></a><span class="lineno"> 1331</span>                        }</div>
-<div class="line"><a id="l01332" name="l01332"></a><span class="lineno"> 1332</span>                    }</div>
-<div class="line"><a id="l01333" name="l01333"></a><span class="lineno"> 1333</span>                    std::size_t slot = h &amp; (table_size - 1);</div>
-<div class="line"><a id="l01334" name="l01334"></a><span class="lineno"> 1334</span>                    s += <span class="stringliteral">&quot;    \&quot;&quot;</span>;</div>
-<div class="line"><a id="l01335" name="l01335"></a><span class="lineno"> 1335</span>                    s += k;</div>
-<div class="line"><a id="l01336" name="l01336"></a><span class="lineno"> 1336</span>                    s += <span class="stringliteral">&quot;\&quot;: h=&quot;</span>;</div>
-<div class="line"><a id="l01337" name="l01337"></a><span class="lineno"> 1337</span>                    key_selector_detail::append_uint(s, h);</div>
-<div class="line"><a id="l01338" name="l01338"></a><span class="lineno"> 1338</span>                    s += <span class="stringliteral">&quot; slot=&quot;</span>;</div>
-<div class="line"><a id="l01339" name="l01339"></a><span class="lineno"> 1339</span>                    key_selector_detail::append_uint(s, slot);</div>
-<div class="line"><a id="l01340" name="l01340"></a><span class="lineno"> 1340</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l01341" name="l01341"></a><span class="lineno"> 1341</span>                }</div>
-<div class="line"><a id="l01342" name="l01342"></a><span class="lineno"> 1342</span>            }</div>
-<div class="line"><a id="l01343" name="l01343"></a><span class="lineno"> 1343</span>            s += <span class="stringliteral">&quot;  occupied slots (slot -&gt; key):\n&quot;</span>;</div>
-<div class="line"><a id="l01344" name="l01344"></a><span class="lineno"> 1344</span>            <span class="keywordflow">for</span> (std::size_t slot = 0; slot &lt; table_size; ++slot) {</div>
-<div class="line"><a id="l01345" name="l01345"></a><span class="lineno"> 1345</span>                <span class="keywordflow">if</span> (phf.slot_to_key[slot] &lt; N) {</div>
-<div class="line"><a id="l01346" name="l01346"></a><span class="lineno"> 1346</span>                    s += <span class="stringliteral">&quot;    slot &quot;</span>;</div>
-<div class="line"><a id="l01347" name="l01347"></a><span class="lineno"> 1347</span>                    key_selector_detail::append_uint(s, slot);</div>
-<div class="line"><a id="l01348" name="l01348"></a><span class="lineno"> 1348</span>                    s += <span class="stringliteral">&quot; -&gt; key &quot;</span>;</div>
-<div class="line"><a id="l01349" name="l01349"></a><span class="lineno"> 1349</span>                    key_selector_detail::append_uint(s, phf.slot_to_key[slot]);</div>
-<div class="line"><a id="l01350" name="l01350"></a><span class="lineno"> 1350</span>                    s += <span class="stringliteral">&quot; (\&quot;&quot;</span>;</div>
-<div class="line"><a id="l01351" name="l01351"></a><span class="lineno"> 1351</span>                    s += keys[phf.slot_to_key[slot]];</div>
-<div class="line"><a id="l01352" name="l01352"></a><span class="lineno"> 1352</span>                    s += <span class="stringliteral">&quot;\&quot;, length &quot;</span>;</div>
-<div class="line"><a id="l01353" name="l01353"></a><span class="lineno"> 1353</span>                    key_selector_detail::append_uint(s, phf.slot_key_len[slot]);</div>
-<div class="line"><a id="l01354" name="l01354"></a><span class="lineno"> 1354</span>                    s += <span class="stringliteral">&quot;)\n&quot;</span>;</div>
-<div class="line"><a id="l01355" name="l01355"></a><span class="lineno"> 1355</span>                }</div>
-<div class="line"><a id="l01356" name="l01356"></a><span class="lineno"> 1356</span>            }</div>
-<div class="line"><a id="l01357" name="l01357"></a><span class="lineno"> 1357</span>            s += <span class="stringliteral">&quot;  confirm the candidate by checking the key length matches and comparing the key bytes\n&quot;</span>;</div>
-<div class="line"><a id="l01358" name="l01358"></a><span class="lineno"> 1358</span>        }</div>
-<div class="line"><a id="l01359" name="l01359"></a><span class="lineno"> 1359</span>        <span class="keywordflow">return</span> s;</div>
-<div class="line"><a id="l01360" name="l01360"></a><span class="lineno"> 1360</span>    }</div>
-<div class="line"><a id="l01361" name="l01361"></a><span class="lineno"> 1361</span>};</div>
-<div class="line"><a id="l01362" name="l01362"></a><span class="lineno"> 1362</span> </div>
-<div class="line"><a id="l01363" name="l01363"></a><span class="lineno"> 1363</span><span class="keyword">namespace </span>key_selector_detail {</div>
-<div class="line"><a id="l01364" name="l01364"></a><span class="lineno"> 1364</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>&gt; <span class="keyword">struct </span>is_key_selector : std::false_type {};</div>
-<div class="line"><a id="l01365" name="l01365"></a><span class="lineno"> 1365</span><span class="keyword">template</span> &lt;constevalutil::fixed_string... Keys&gt;</div>
-<div class="line"><a id="l01366" name="l01366"></a><span class="lineno"> 1366</span><span class="keyword">struct </span>is_key_selector&lt;key_selector&lt;Keys...&gt;&gt; : std::true_type {};</div>
-<div class="line"><a id="l01367" name="l01367"></a><span class="lineno"> 1367</span>} <span class="comment">// namespace key_selector_detail</span></div>
-<div class="line"><a id="l01368" name="l01368"></a><span class="lineno"> 1368</span> </div>
-<div class="line"><a id="l01374" name="l01374"></a><span class="lineno"> 1374</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a id="l01375" name="l01375"></a><span class="lineno"> 1375</span><span class="keyword">concept </span>key_selector_type = key_selector_detail::is_key_selector&lt;T&gt;::value;</div>
-<div class="line"><a id="l01376" name="l01376"></a><span class="lineno"> 1376</span> </div>
-<div class="line"><a id="l01377" name="l01377"></a><span class="lineno"> 1377</span>} <span class="comment">// namespace ondemand</span></div>
-<div class="line"><a id="l01378" name="l01378"></a><span class="lineno"> 1378</span>} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
-<div class="line"><a id="l01379" name="l01379"></a><span class="lineno"> 1379</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l01380" name="l01380"></a><span class="lineno"> 1380</span> </div>
-<div class="line"><a id="l01381" name="l01381"></a><span class="lineno"> 1381</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_SUPPORTS_CONCEPTS</span></div>
-<div class="line"><a id="l01382" name="l01382"></a><span class="lineno"> 1382</span> </div>
-<div class="line"><a id="l01383" name="l01383"></a><span class="lineno"> 1383</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_GENERIC_ONDEMAND_KEY_SELECTOR_H</span></div>
+<div class="line"><a id="l01234" name="l01234"></a><span class="lineno"> 1234</span>    <span class="keyword">static</span> SIMDJSON_CONSTEXPR_STRING std::string describe() {</div>
+<div class="line"><a id="l01235" name="l01235"></a><span class="lineno"> 1235</span>        std::string s;</div>
+<div class="line"><a id="l01236" name="l01236"></a><span class="lineno"> 1236</span>        s += <span class="stringliteral">&quot;key_selector: &quot;</span>;</div>
+<div class="line"><a id="l01237" name="l01237"></a><span class="lineno"> 1237</span>        key_selector_detail::append_uint(s, N);</div>
+<div class="line"><a id="l01238" name="l01238"></a><span class="lineno"> 1238</span>        s += <span class="stringliteral">&quot; keys, max key length &quot;</span>;</div>
+<div class="line"><a id="l01239" name="l01239"></a><span class="lineno"> 1239</span>        key_selector_detail::append_uint(s, max_key_len);</div>
+<div class="line"><a id="l01240" name="l01240"></a><span class="lineno"> 1240</span>        s += <span class="stringliteral">&quot;\nkeys:\n&quot;</span>;</div>
+<div class="line"><a id="l01241" name="l01241"></a><span class="lineno"> 1241</span>        <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
+<div class="line"><a id="l01242" name="l01242"></a><span class="lineno"> 1242</span>            s += <span class="stringliteral">&quot;  [&quot;</span>;</div>
+<div class="line"><a id="l01243" name="l01243"></a><span class="lineno"> 1243</span>            key_selector_detail::append_uint(s, i);</div>
+<div class="line"><a id="l01244" name="l01244"></a><span class="lineno"> 1244</span>            s += <span class="stringliteral">&quot;] \&quot;&quot;</span>;</div>
+<div class="line"><a id="l01245" name="l01245"></a><span class="lineno"> 1245</span>            s += keys[i];</div>
+<div class="line"><a id="l01246" name="l01246"></a><span class="lineno"> 1246</span>            s += <span class="stringliteral">&quot;\&quot; (length &quot;</span>;</div>
+<div class="line"><a id="l01247" name="l01247"></a><span class="lineno"> 1247</span>            key_selector_detail::append_uint(s, keys[i].size());</div>
+<div class="line"><a id="l01248" name="l01248"></a><span class="lineno"> 1248</span>            s += <span class="stringliteral">&quot;)\n&quot;</span>;</div>
+<div class="line"><a id="l01249" name="l01249"></a><span class="lineno"> 1249</span>        }</div>
+<div class="line"><a id="l01250" name="l01250"></a><span class="lineno"> 1250</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span> (window.ok) {</div>
+<div class="line"><a id="l01251" name="l01251"></a><span class="lineno"> 1251</span>            <span class="comment">// Mirrors the window fast path of match_raw().</span></div>
+<div class="line"><a id="l01252" name="l01252"></a><span class="lineno"> 1252</span>            s += <span class="stringliteral">&quot;algorithm: single 8-bit window\n&quot;</span>;</div>
+<div class="line"><a id="l01253" name="l01253"></a><span class="lineno"> 1253</span>            s += <span class="stringliteral">&quot;  step 1: read 2 bytes at offset &quot;</span>;</div>
+<div class="line"><a id="l01254" name="l01254"></a><span class="lineno"> 1254</span>            key_selector_detail::append_uint(s, window.byte_offset);</div>
+<div class="line"><a id="l01255" name="l01255"></a><span class="lineno"> 1255</span>            s += <span class="stringliteral">&quot;, interpret them as a little-endian 16-bit value, shift right by &quot;</span>;</div>
+<div class="line"><a id="l01256" name="l01256"></a><span class="lineno"> 1256</span>            key_selector_detail::append_uint(s, window.shift);</div>
+<div class="line"><a id="l01257" name="l01257"></a><span class="lineno"> 1257</span>            s += <span class="stringliteral">&quot; bits, and keep the low 8 bits\n&quot;</span>;</div>
+<div class="line"><a id="l01258" name="l01258"></a><span class="lineno"> 1258</span>            s += <span class="stringliteral">&quot;  step 2: map that byte through a 256-entry table to a key index (&quot;</span>;</div>
+<div class="line"><a id="l01259" name="l01259"></a><span class="lineno"> 1259</span>            key_selector_detail::append_uint(s, N);</div>
+<div class="line"><a id="l01260" name="l01260"></a><span class="lineno"> 1260</span>            s += <span class="stringliteral">&quot; means no match):\n&quot;</span>;</div>
+<div class="line"><a id="l01261" name="l01261"></a><span class="lineno"> 1261</span>            <span class="keywordflow">for</span> (std::size_t b = 0; b &lt; 256; ++b) {</div>
+<div class="line"><a id="l01262" name="l01262"></a><span class="lineno"> 1262</span>                <span class="keywordflow">if</span> (window.window_to_key[b] &lt; N) {</div>
+<div class="line"><a id="l01263" name="l01263"></a><span class="lineno"> 1263</span>                    s += <span class="stringliteral">&quot;    byte &quot;</span>;</div>
+<div class="line"><a id="l01264" name="l01264"></a><span class="lineno"> 1264</span>                    key_selector_detail::append_byte(s, <span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span><span class="keyword">&gt;</span>(b));</div>
+<div class="line"><a id="l01265" name="l01265"></a><span class="lineno"> 1265</span>                    s += <span class="stringliteral">&quot; -&gt; key &quot;</span>;</div>
+<div class="line"><a id="l01266" name="l01266"></a><span class="lineno"> 1266</span>                    key_selector_detail::append_uint(s, window.window_to_key[b]);</div>
+<div class="line"><a id="l01267" name="l01267"></a><span class="lineno"> 1267</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l01268" name="l01268"></a><span class="lineno"> 1268</span>                }</div>
+<div class="line"><a id="l01269" name="l01269"></a><span class="lineno"> 1269</span>            }</div>
+<div class="line"><a id="l01270" name="l01270"></a><span class="lineno"> 1270</span>            s += <span class="stringliteral">&quot;  step 3: confirm the candidate by checking the closing quote sits at the key&#39;s length and comparing the key bytes\n&quot;</span>;</div>
+<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l01272" name="l01272"></a><span class="lineno"> 1272</span>            <span class="comment">// Mirrors the perfect-hash path of match_raw().</span></div>
+<div class="line"><a id="l01273" name="l01273"></a><span class="lineno"> 1273</span>            <span class="keywordflow">if</span> <span class="keyword">constexpr</span> (phf.num_positions == key_selector_detail::HD_MODE) {</div>
+<div class="line"><a id="l01274" name="l01274"></a><span class="lineno"> 1274</span>                s += <span class="stringliteral">&quot;algorithm: hash-and-displace perfect hash\n&quot;</span>;</div>
+<div class="line"><a id="l01275" name="l01275"></a><span class="lineno"> 1275</span>                s += <span class="stringliteral">&quot;  step 1: bucket = (first_byte + last_byte*3 + length*17) mod 256\n&quot;</span>;</div>
+<div class="line"><a id="l01276" name="l01276"></a><span class="lineno"> 1276</span>                s += <span class="stringliteral">&quot;  step 2: keyhash = base-31 rolling hash of the length and the first &quot;</span>;</div>
+<div class="line"><a id="l01277" name="l01277"></a><span class="lineno"> 1277</span>                key_selector_detail::append_uint(s, phf.hd_hash_variant);</div>
+<div class="line"><a id="l01278" name="l01278"></a><span class="lineno"> 1278</span>                s += <span class="stringliteral">&quot; bytes\n&quot;</span>;</div>
+<div class="line"><a id="l01279" name="l01279"></a><span class="lineno"> 1279</span>                s += <span class="stringliteral">&quot;  step 3: slot = (displacement[bucket] + keyhash) mod &quot;</span>;</div>
+<div class="line"><a id="l01280" name="l01280"></a><span class="lineno"> 1280</span>                key_selector_detail::append_uint(s, table_size);</div>
+<div class="line"><a id="l01281" name="l01281"></a><span class="lineno"> 1281</span>                s += <span class="stringliteral">&quot;\n  step 4: slot_to_key[slot] gives the candidate key index\n&quot;</span>;</div>
+<div class="line"><a id="l01282" name="l01282"></a><span class="lineno"> 1282</span>                s += <span class="stringliteral">&quot;  per-key derivation:\n&quot;</span>;</div>
+<div class="line"><a id="l01283" name="l01283"></a><span class="lineno"> 1283</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
+<div class="line"><a id="l01284" name="l01284"></a><span class="lineno"> 1284</span>                    std::string_view k = keys[i];</div>
+<div class="line"><a id="l01285" name="l01285"></a><span class="lineno"> 1285</span>                    std::size_t bucket = key_selector_detail::hd_bucket_hash(k);</div>
+<div class="line"><a id="l01286" name="l01286"></a><span class="lineno"> 1286</span>                    std::size_t kh = (phf.hd_hash_variant == key_selector_detail::HD_HASH_2BYTE_FLAG)</div>
+<div class="line"><a id="l01287" name="l01287"></a><span class="lineno"> 1287</span>                        ? key_selector_detail::hd_key_hash_2(k)</div>
+<div class="line"><a id="l01288" name="l01288"></a><span class="lineno"> 1288</span>                        : key_selector_detail::hd_key_hash_4(k);</div>
+<div class="line"><a id="l01289" name="l01289"></a><span class="lineno"> 1289</span>                    std::size_t slot = (phf.asso_values[0][bucket] + kh) &amp; (table_size - 1);</div>
+<div class="line"><a id="l01290" name="l01290"></a><span class="lineno"> 1290</span>                    s += <span class="stringliteral">&quot;    \&quot;&quot;</span>;</div>
+<div class="line"><a id="l01291" name="l01291"></a><span class="lineno"> 1291</span>                    s += k;</div>
+<div class="line"><a id="l01292" name="l01292"></a><span class="lineno"> 1292</span>                    s += <span class="stringliteral">&quot;\&quot;: bucket=&quot;</span>;</div>
+<div class="line"><a id="l01293" name="l01293"></a><span class="lineno"> 1293</span>                    key_selector_detail::append_uint(s, bucket);</div>
+<div class="line"><a id="l01294" name="l01294"></a><span class="lineno"> 1294</span>                    s += <span class="stringliteral">&quot; displacement=&quot;</span>;</div>
+<div class="line"><a id="l01295" name="l01295"></a><span class="lineno"> 1295</span>                    key_selector_detail::append_uint(s, phf.asso_values[0][bucket]);</div>
+<div class="line"><a id="l01296" name="l01296"></a><span class="lineno"> 1296</span>                    s += <span class="stringliteral">&quot; keyhash=&quot;</span>;</div>
+<div class="line"><a id="l01297" name="l01297"></a><span class="lineno"> 1297</span>                    key_selector_detail::append_uint(s, kh);</div>
+<div class="line"><a id="l01298" name="l01298"></a><span class="lineno"> 1298</span>                    s += <span class="stringliteral">&quot; slot=&quot;</span>;</div>
+<div class="line"><a id="l01299" name="l01299"></a><span class="lineno"> 1299</span>                    key_selector_detail::append_uint(s, slot);</div>
+<div class="line"><a id="l01300" name="l01300"></a><span class="lineno"> 1300</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l01301" name="l01301"></a><span class="lineno"> 1301</span>                }</div>
+<div class="line"><a id="l01302" name="l01302"></a><span class="lineno"> 1302</span>            } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l01303" name="l01303"></a><span class="lineno"> 1303</span>                s += <span class="stringliteral">&quot;algorithm: gperf-style perfect hash over &quot;</span>;</div>
+<div class="line"><a id="l01304" name="l01304"></a><span class="lineno"> 1304</span>                key_selector_detail::append_uint(s, phf.num_positions);</div>
+<div class="line"><a id="l01305" name="l01305"></a><span class="lineno"> 1305</span>                s += <span class="stringliteral">&quot; character position(s)\n&quot;</span>;</div>
+<div class="line"><a id="l01306" name="l01306"></a><span class="lineno"> 1306</span>                s += <span class="stringliteral">&quot;  step 1: h = key length\n&quot;</span>;</div>
+<div class="line"><a id="l01307" name="l01307"></a><span class="lineno"> 1307</span>                s += <span class="stringliteral">&quot;  step 2: for each position below, add its association value for the key byte there (a position past the key&#39;s length contributes 0):\n&quot;</span>;</div>
+<div class="line"><a id="l01308" name="l01308"></a><span class="lineno"> 1308</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; phf.num_positions; ++i) {</div>
+<div class="line"><a id="l01309" name="l01309"></a><span class="lineno"> 1309</span>                    s += <span class="stringliteral">&quot;    position &quot;</span>;</div>
+<div class="line"><a id="l01310" name="l01310"></a><span class="lineno"> 1310</span>                    <span class="keywordflow">if</span> (phf.positions[i] == key_selector_detail::POS_LAST_CHAR) {</div>
+<div class="line"><a id="l01311" name="l01311"></a><span class="lineno"> 1311</span>                        s += <span class="stringliteral">&quot;last character&quot;</span>;</div>
+<div class="line"><a id="l01312" name="l01312"></a><span class="lineno"> 1312</span>                    } <span class="keywordflow">else</span> {</div>
+<div class="line"><a id="l01313" name="l01313"></a><span class="lineno"> 1313</span>                        s += <span class="stringliteral">&quot;byte index &quot;</span>;</div>
+<div class="line"><a id="l01314" name="l01314"></a><span class="lineno"> 1314</span>                        key_selector_detail::append_uint(s, phf.positions[i]);</div>
+<div class="line"><a id="l01315" name="l01315"></a><span class="lineno"> 1315</span>                    }</div>
+<div class="line"><a id="l01316" name="l01316"></a><span class="lineno"> 1316</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l01317" name="l01317"></a><span class="lineno"> 1317</span>                }</div>
+<div class="line"><a id="l01318" name="l01318"></a><span class="lineno"> 1318</span>                s += <span class="stringliteral">&quot;  step 3: slot = h mod &quot;</span>;</div>
+<div class="line"><a id="l01319" name="l01319"></a><span class="lineno"> 1319</span>                key_selector_detail::append_uint(s, table_size);</div>
+<div class="line"><a id="l01320" name="l01320"></a><span class="lineno"> 1320</span>                s += <span class="stringliteral">&quot; (a power of two, applied as a bitmask)\n&quot;</span>;</div>
+<div class="line"><a id="l01321" name="l01321"></a><span class="lineno"> 1321</span>                s += <span class="stringliteral">&quot;  step 4: slot_to_key[slot] gives the candidate key index\n&quot;</span>;</div>
+<div class="line"><a id="l01322" name="l01322"></a><span class="lineno"> 1322</span>                s += <span class="stringliteral">&quot;  per-key derivation:\n&quot;</span>;</div>
+<div class="line"><a id="l01323" name="l01323"></a><span class="lineno"> 1323</span>                <span class="keywordflow">for</span> (std::size_t i = 0; i &lt; N; ++i) {</div>
+<div class="line"><a id="l01324" name="l01324"></a><span class="lineno"> 1324</span>                    std::string_view k = keys[i];</div>
+<div class="line"><a id="l01325" name="l01325"></a><span class="lineno"> 1325</span>                    std::size_t h = k.size();</div>
+<div class="line"><a id="l01326" name="l01326"></a><span class="lineno"> 1326</span>                    <span class="keywordflow">for</span> (std::size_t pi = 0; pi &lt; phf.num_positions; ++pi) {</div>
+<div class="line"><a id="l01327" name="l01327"></a><span class="lineno"> 1327</span>                        std::size_t pos = phf.positions[pi];</div>
+<div class="line"><a id="l01328" name="l01328"></a><span class="lineno"> 1328</span>                        std::size_t idx = (pos == key_selector_detail::POS_LAST_CHAR)</div>
+<div class="line"><a id="l01329" name="l01329"></a><span class="lineno"> 1329</span>                                          ? (k.size() - 1) : pos;</div>
+<div class="line"><a id="l01330" name="l01330"></a><span class="lineno"> 1330</span>                        <span class="keywordflow">if</span> (idx &lt; k.size()) {</div>
+<div class="line"><a id="l01331" name="l01331"></a><span class="lineno"> 1331</span>                            h += phf.asso_values[pi][<span class="keyword">static_cast&lt;</span><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span><span class="keyword">&gt;</span>(k[idx])];</div>
+<div class="line"><a id="l01332" name="l01332"></a><span class="lineno"> 1332</span>                        }</div>
+<div class="line"><a id="l01333" name="l01333"></a><span class="lineno"> 1333</span>                    }</div>
+<div class="line"><a id="l01334" name="l01334"></a><span class="lineno"> 1334</span>                    std::size_t slot = h &amp; (table_size - 1);</div>
+<div class="line"><a id="l01335" name="l01335"></a><span class="lineno"> 1335</span>                    s += <span class="stringliteral">&quot;    \&quot;&quot;</span>;</div>
+<div class="line"><a id="l01336" name="l01336"></a><span class="lineno"> 1336</span>                    s += k;</div>
+<div class="line"><a id="l01337" name="l01337"></a><span class="lineno"> 1337</span>                    s += <span class="stringliteral">&quot;\&quot;: h=&quot;</span>;</div>
+<div class="line"><a id="l01338" name="l01338"></a><span class="lineno"> 1338</span>                    key_selector_detail::append_uint(s, h);</div>
+<div class="line"><a id="l01339" name="l01339"></a><span class="lineno"> 1339</span>                    s += <span class="stringliteral">&quot; slot=&quot;</span>;</div>
+<div class="line"><a id="l01340" name="l01340"></a><span class="lineno"> 1340</span>                    key_selector_detail::append_uint(s, slot);</div>
+<div class="line"><a id="l01341" name="l01341"></a><span class="lineno"> 1341</span>                    s += <span class="stringliteral">&quot;\n&quot;</span>;</div>
+<div class="line"><a id="l01342" name="l01342"></a><span class="lineno"> 1342</span>                }</div>
+<div class="line"><a id="l01343" name="l01343"></a><span class="lineno"> 1343</span>            }</div>
+<div class="line"><a id="l01344" name="l01344"></a><span class="lineno"> 1344</span>            s += <span class="stringliteral">&quot;  occupied slots (slot -&gt; key):\n&quot;</span>;</div>
+<div class="line"><a id="l01345" name="l01345"></a><span class="lineno"> 1345</span>            <span class="keywordflow">for</span> (std::size_t slot = 0; slot &lt; table_size; ++slot) {</div>
+<div class="line"><a id="l01346" name="l01346"></a><span class="lineno"> 1346</span>                <span class="keywordflow">if</span> (phf.slot_to_key[slot] &lt; N) {</div>
+<div class="line"><a id="l01347" name="l01347"></a><span class="lineno"> 1347</span>                    s += <span class="stringliteral">&quot;    slot &quot;</span>;</div>
+<div class="line"><a id="l01348" name="l01348"></a><span class="lineno"> 1348</span>                    key_selector_detail::append_uint(s, slot);</div>
+<div class="line"><a id="l01349" name="l01349"></a><span class="lineno"> 1349</span>                    s += <span class="stringliteral">&quot; -&gt; key &quot;</span>;</div>
+<div class="line"><a id="l01350" name="l01350"></a><span class="lineno"> 1350</span>                    key_selector_detail::append_uint(s, phf.slot_to_key[slot]);</div>
+<div class="line"><a id="l01351" name="l01351"></a><span class="lineno"> 1351</span>                    s += <span class="stringliteral">&quot; (\&quot;&quot;</span>;</div>
+<div class="line"><a id="l01352" name="l01352"></a><span class="lineno"> 1352</span>                    s += keys[phf.slot_to_key[slot]];</div>
+<div class="line"><a id="l01353" name="l01353"></a><span class="lineno"> 1353</span>                    s += <span class="stringliteral">&quot;\&quot;, length &quot;</span>;</div>
+<div class="line"><a id="l01354" name="l01354"></a><span class="lineno"> 1354</span>                    key_selector_detail::append_uint(s, phf.slot_key_len[slot]);</div>
+<div class="line"><a id="l01355" name="l01355"></a><span class="lineno"> 1355</span>                    s += <span class="stringliteral">&quot;)\n&quot;</span>;</div>
+<div class="line"><a id="l01356" name="l01356"></a><span class="lineno"> 1356</span>                }</div>
+<div class="line"><a id="l01357" name="l01357"></a><span class="lineno"> 1357</span>            }</div>
+<div class="line"><a id="l01358" name="l01358"></a><span class="lineno"> 1358</span>            s += <span class="stringliteral">&quot;  confirm the candidate by checking the key length matches and comparing the key bytes\n&quot;</span>;</div>
+<div class="line"><a id="l01359" name="l01359"></a><span class="lineno"> 1359</span>        }</div>
+<div class="line"><a id="l01360" name="l01360"></a><span class="lineno"> 1360</span>        <span class="keywordflow">return</span> s;</div>
+<div class="line"><a id="l01361" name="l01361"></a><span class="lineno"> 1361</span>    }</div>
+<div class="line"><a id="l01362" name="l01362"></a><span class="lineno"> 1362</span>};</div>
+<div class="line"><a id="l01363" name="l01363"></a><span class="lineno"> 1363</span> </div>
+<div class="line"><a id="l01364" name="l01364"></a><span class="lineno"> 1364</span><span class="keyword">namespace </span>key_selector_detail {</div>
+<div class="line"><a id="l01365" name="l01365"></a><span class="lineno"> 1365</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span>&gt; <span class="keyword">struct </span>is_key_selector : std::false_type {};</div>
+<div class="line"><a id="l01366" name="l01366"></a><span class="lineno"> 1366</span><span class="keyword">template</span> &lt;constevalutil::fixed_string... Keys&gt;</div>
+<div class="line"><a id="l01367" name="l01367"></a><span class="lineno"> 1367</span><span class="keyword">struct </span>is_key_selector&lt;key_selector&lt;Keys...&gt;&gt; : std::true_type {};</div>
+<div class="line"><a id="l01368" name="l01368"></a><span class="lineno"> 1368</span>} <span class="comment">// namespace key_selector_detail</span></div>
+<div class="line"><a id="l01369" name="l01369"></a><span class="lineno"> 1369</span> </div>
+<div class="line"><a id="l01375" name="l01375"></a><span class="lineno"> 1375</span><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a id="l01376" name="l01376"></a><span class="lineno"> 1376</span><span class="keyword">concept </span>key_selector_type = key_selector_detail::is_key_selector&lt;T&gt;::value;</div>
+<div class="line"><a id="l01377" name="l01377"></a><span class="lineno"> 1377</span> </div>
+<div class="line"><a id="l01378" name="l01378"></a><span class="lineno"> 1378</span>} <span class="comment">// namespace ondemand</span></div>
+<div class="line"><a id="l01379" name="l01379"></a><span class="lineno"> 1379</span>} <span class="comment">// namespace SIMDJSON_IMPLEMENTATION</span></div>
+<div class="line"><a id="l01380" name="l01380"></a><span class="lineno"> 1380</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l01381" name="l01381"></a><span class="lineno"> 1381</span> </div>
+<div class="line"><a id="l01382" name="l01382"></a><span class="lineno"> 1382</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_SUPPORTS_CONCEPTS</span></div>
+<div class="line"><a id="l01383" name="l01383"></a><span class="lineno"> 1383</span> </div>
+<div class="line"><a id="l01384" name="l01384"></a><span class="lineno"> 1384</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_GENERIC_ONDEMAND_KEY_SELECTOR_H</span></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_aecdd750132f0eb123a6d61113b4197bf"><div class="ttname"><a href="namespacesimdjson.html#aecdd750132f0eb123a6d61113b4197bf">simdjson::SIMDJSON_PADDING</a></div><div class="ttdeci">constexpr size_t SIMDJSON_PADDING</div><div class="ttdoc">The amount of padding needed in a buffer to parse JSON.</div><div class="ttdef"><b>Definition</b> <a href="base_8h_source.html#l00042">base.h:42</a></div></div>
 </div><!-- fragment --></div><!-- contents -->

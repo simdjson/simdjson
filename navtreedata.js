@@ -209,77 +209,81 @@ var NAVTREE =
       [ "Tracking your position", "md_doc_2iterate__many.html#autotoc_md149", null ],
       [ "Incomplete streams", "md_doc_2iterate__many.html#autotoc_md150", null ],
       [ "Comma-separated documents", "md_doc_2iterate__many.html#autotoc_md151", [
-        [ "Legacy <tt>allow_comma_separated</tt> parameter (deprecated)", "md_doc_2iterate__many.html#autotoc_md152", null ]
+        [ "Limitations of the comma-separated mode", "md_doc_2iterate__many.html#autotoc_md152", null ],
+        [ "Legacy <tt>allow_comma_separated</tt> parameter (deprecated)", "md_doc_2iterate__many.html#autotoc_md153", null ]
       ] ],
-      [ "JSON Text Sequences (RFC 7464)", "md_doc_2iterate__many.html#autotoc_md153", null ],
-      [ "JSON Array As A Document Stream", "md_doc_2iterate__many.html#autotoc_md154", null ],
-      [ "C++20 features", "md_doc_2iterate__many.html#autotoc_md155", null ],
-      [ "C++26 features (static reflection)", "md_doc_2iterate__many.html#autotoc_md156", [
-        [ "Whitespace-delimited (default, NDJSON / JSON Lines)", "md_doc_2iterate__many.html#autotoc_md157", null ],
-        [ "Comma-delimited documents", "md_doc_2iterate__many.html#autotoc_md158", null ],
-        [ "A single JSON array as a stream of documents", "md_doc_2iterate__many.html#autotoc_md159", null ],
-        [ "JSON Text Sequences (RFC 7464)", "md_doc_2iterate__many.html#autotoc_md160", null ]
+      [ "JSON Text Sequences (RFC 7464)", "md_doc_2iterate__many.html#autotoc_md154", null ],
+      [ "JSON Array As A Document Stream", "md_doc_2iterate__many.html#autotoc_md155", null ],
+      [ "Reading a large stream in chunks", "md_doc_2iterate__many.html#autotoc_md156", null ],
+      [ "C++20 features", "md_doc_2iterate__many.html#autotoc_md157", null ],
+      [ "C++26 features (static reflection)", "md_doc_2iterate__many.html#autotoc_md158", [
+        [ "Whitespace-delimited (default, NDJSON / JSON Lines)", "md_doc_2iterate__many.html#autotoc_md159", null ],
+        [ "Comma-delimited documents", "md_doc_2iterate__many.html#autotoc_md160", null ],
+        [ "A single JSON array as a stream of documents", "md_doc_2iterate__many.html#autotoc_md161", null ],
+        [ "JSON Text Sequences (RFC 7464)", "md_doc_2iterate__many.html#autotoc_md162", null ]
       ] ]
     ] ],
     [ "A Better Way to Parse Documents?", "md_doc_2ondemand__design.html", [
-      [ "Algorithm", "md_doc_2ondemand__design.html#autotoc_md165", [
-        [ "DOM Parsers", "md_doc_2ondemand__design.html#autotoc_md161", null ],
-        [ "Event-Based Parsers (SAX, SAJ, etc.)", "md_doc_2ondemand__design.html#autotoc_md162", null ],
-        [ "Schema-Based Parser Generators", "md_doc_2ondemand__design.html#autotoc_md163", null ],
-        [ "Type Blindness and Branch Misprediction", "md_doc_2ondemand__design.html#autotoc_md164", null ],
-        [ "Starting the iteration", "md_doc_2ondemand__design.html#autotoc_md166", null ]
+      [ "Algorithm", "md_doc_2ondemand__design.html#autotoc_md167", [
+        [ "DOM Parsers", "md_doc_2ondemand__design.html#autotoc_md163", null ],
+        [ "Event-Based Parsers (SAX, SAJ, etc.)", "md_doc_2ondemand__design.html#autotoc_md164", null ],
+        [ "Schema-Based Parser Generators", "md_doc_2ondemand__design.html#autotoc_md165", null ],
+        [ "Type Blindness and Branch Misprediction", "md_doc_2ondemand__design.html#autotoc_md166", null ],
+        [ "Starting the iteration", "md_doc_2ondemand__design.html#autotoc_md168", null ]
       ] ],
-      [ "Design Features", "md_doc_2ondemand__design.html#autotoc_md167", [
-        [ "String Parsing", "md_doc_2ondemand__design.html#autotoc_md168", null ],
-        [ "Iteration Safety", "md_doc_2ondemand__design.html#autotoc_md169", null ],
-        [ "Benefits of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md170", null ],
-        [ "Limitations of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md171", null ],
-        [ "Applicability of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md172", null ]
+      [ "Design Features", "md_doc_2ondemand__design.html#autotoc_md169", [
+        [ "String Parsing", "md_doc_2ondemand__design.html#autotoc_md170", null ],
+        [ "Iteration Safety", "md_doc_2ondemand__design.html#autotoc_md171", null ],
+        [ "Benefits of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md172", null ],
+        [ "Limitations of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md173", null ],
+        [ "Applicability of the On-Demand Approach", "md_doc_2ondemand__design.html#autotoc_md174", null ]
       ] ],
-      [ "Checking Your CPU Selection (x64 systems)", "md_doc_2ondemand__design.html#autotoc_md173", null ]
+      [ "Checking Your CPU Selection (x64 systems)", "md_doc_2ondemand__design.html#autotoc_md175", null ]
     ] ],
     [ "parse_many", "md_doc_2parse__many.html", [
-      [ "Contents", "md_doc_2parse__many.html#autotoc_md174", null ],
-      [ "Motivation", "md_doc_2parse__many.html#autotoc_md175", null ],
-      [ "Performance", "md_doc_2parse__many.html#autotoc_md176", null ],
-      [ "How it works", "md_doc_2parse__many.html#autotoc_md177", [
-        [ "Context", "md_doc_2parse__many.html#autotoc_md178", null ],
-        [ "Design", "md_doc_2parse__many.html#autotoc_md179", null ],
-        [ "Threads", "md_doc_2parse__many.html#autotoc_md180", null ]
+      [ "Contents", "md_doc_2parse__many.html#autotoc_md176", null ],
+      [ "Motivation", "md_doc_2parse__many.html#autotoc_md177", null ],
+      [ "Performance", "md_doc_2parse__many.html#autotoc_md178", null ],
+      [ "How it works", "md_doc_2parse__many.html#autotoc_md179", [
+        [ "Context", "md_doc_2parse__many.html#autotoc_md180", null ],
+        [ "Design", "md_doc_2parse__many.html#autotoc_md181", null ],
+        [ "Threads", "md_doc_2parse__many.html#autotoc_md182", null ]
       ] ],
-      [ "Support", "md_doc_2parse__many.html#autotoc_md181", null ],
-      [ "API", "md_doc_2parse__many.html#autotoc_md182", null ],
-      [ "Use cases", "md_doc_2parse__many.html#autotoc_md183", null ],
-      [ "Tracking your position", "md_doc_2parse__many.html#autotoc_md184", null ],
-      [ "Streaming directly from a memory-mapped file", "md_doc_2parse__many.html#autotoc_md185", null ],
-      [ "Incomplete streams", "md_doc_2parse__many.html#autotoc_md186", null ],
-      [ "JSON Text Sequences (RFC 7464)", "md_doc_2parse__many.html#autotoc_md187", null ],
-      [ "Comma-Separated Documents", "md_doc_2parse__many.html#autotoc_md188", null ],
-      [ "JSON Array As A Document Stream", "md_doc_2parse__many.html#autotoc_md189", null ]
+      [ "Support", "md_doc_2parse__many.html#autotoc_md183", null ],
+      [ "API", "md_doc_2parse__many.html#autotoc_md184", null ],
+      [ "Use cases", "md_doc_2parse__many.html#autotoc_md185", null ],
+      [ "Tracking your position", "md_doc_2parse__many.html#autotoc_md186", null ],
+      [ "Streaming directly from a memory-mapped file", "md_doc_2parse__many.html#autotoc_md187", null ],
+      [ "Incomplete streams", "md_doc_2parse__many.html#autotoc_md188", null ],
+      [ "JSON Text Sequences (RFC 7464)", "md_doc_2parse__many.html#autotoc_md189", null ],
+      [ "Comma-Separated Documents", "md_doc_2parse__many.html#autotoc_md190", [
+        [ "Limitations of the comma-separated mode", "md_doc_2parse__many.html#autotoc_md191", null ]
+      ] ],
+      [ "JSON Array As A Document Stream", "md_doc_2parse__many.html#autotoc_md192", null ]
     ] ],
     [ "Performance Notes", "md_doc_2performance.html", [
-      [ "NDEBUG macro", "md_doc_2performance.html#autotoc_md190", null ],
-      [ "Reusing the parser for maximum efficiency", "md_doc_2performance.html#autotoc_md191", null ],
-      [ "Reusing string buffers", "md_doc_2performance.html#autotoc_md192", null ],
-      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2performance.html#autotoc_md193", null ],
-      [ "Large files and huge page support", "md_doc_2performance.html#autotoc_md194", null ],
-      [ "Number parsing", "md_doc_2performance.html#autotoc_md195", null ],
-      [ "Visual Studio", "md_doc_2performance.html#autotoc_md196", null ],
-      [ "Power Usage and Downclocking", "md_doc_2performance.html#autotoc_md197", null ],
-      [ "Free Padding", "md_doc_2performance.html#autotoc_md198", null ]
+      [ "NDEBUG macro", "md_doc_2performance.html#autotoc_md193", null ],
+      [ "Reusing the parser for maximum efficiency", "md_doc_2performance.html#autotoc_md194", null ],
+      [ "Reusing string buffers", "md_doc_2performance.html#autotoc_md195", null ],
+      [ "Server Loops: Long-Running Processes and Memory Capacity", "md_doc_2performance.html#autotoc_md196", null ],
+      [ "Large files and huge page support", "md_doc_2performance.html#autotoc_md197", null ],
+      [ "Number parsing", "md_doc_2performance.html#autotoc_md198", null ],
+      [ "Visual Studio", "md_doc_2performance.html#autotoc_md199", null ],
+      [ "Power Usage and Downclocking", "md_doc_2performance.html#autotoc_md200", null ],
+      [ "Free Padding", "md_doc_2performance.html#autotoc_md201", null ]
     ] ],
     [ "Tape structure in simdjson", "md_doc_2tape.html", [
-      [ "Example", "md_doc_2tape.html#autotoc_md200", [
-        [ "The Tape", "md_doc_2tape.html#autotoc_md201", null ]
+      [ "Example", "md_doc_2tape.html#autotoc_md203", [
+        [ "The Tape", "md_doc_2tape.html#autotoc_md204", null ]
       ] ],
-      [ "General formal of the tape elements", "md_doc_2tape.html#autotoc_md202", null ],
-      [ "Simple JSON values", "md_doc_2tape.html#autotoc_md203", null ],
-      [ "Integer and Double values", "md_doc_2tape.html#autotoc_md204", null ],
-      [ "Big Integers", "md_doc_2tape.html#autotoc_md205", null ],
-      [ "Root node", "md_doc_2tape.html#autotoc_md206", null ],
-      [ "Strings", "md_doc_2tape.html#autotoc_md207", null ],
-      [ "Arrays", "md_doc_2tape.html#autotoc_md208", null ],
-      [ "Objects", "md_doc_2tape.html#autotoc_md209", null ]
+      [ "General formal of the tape elements", "md_doc_2tape.html#autotoc_md205", null ],
+      [ "Simple JSON values", "md_doc_2tape.html#autotoc_md206", null ],
+      [ "Integer and Double values", "md_doc_2tape.html#autotoc_md207", null ],
+      [ "Big Integers", "md_doc_2tape.html#autotoc_md208", null ],
+      [ "Root node", "md_doc_2tape.html#autotoc_md209", null ],
+      [ "Strings", "md_doc_2tape.html#autotoc_md210", null ],
+      [ "Arrays", "md_doc_2tape.html#autotoc_md211", null ],
+      [ "Objects", "md_doc_2tape.html#autotoc_md212", null ]
     ] ],
     [ "Deprecated List", "deprecated.html", null ],
     [ "Topics", "topics.html", "topics" ],
@@ -313,11 +317,11 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "amalgamated_8h_source.html",
-"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8e5f2ff46639e6c1cffb73d4e071e491",
-"classsimdjson_1_1dom_1_1object_1_1iterator.html#a83b3c467632c017400f95ff05d2367b3",
-"group__object.html#gaa0c31077aeadb6fc627d4c5750e58ecb",
-"md_doc_2ondemand__design.html#autotoc_md163",
-"structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#ab261642a30f5e26b0769ce701cd5b9f8"
+"classsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1value.html#a8bf7a0fcf3c6d5f1ded5b5a5ac2d7d0c",
+"classsimdjson_1_1dom_1_1object_1_1iterator.html#a6d335de77b8c5b731566e48f6cacd95d",
+"group__object.html#ga7956fe38cd8ecfbc8f709aa6f65c92b4",
+"md_doc_2iterate__many.html#autotoc_md162",
+"structsimdjson_1_1_s_i_m_d_j_s_o_n___i_m_p_l_e_m_e_n_t_a_t_i_o_n_1_1ondemand_1_1number.html#a41dc1bfd660e0b9c86cb5a5171fd7c02"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

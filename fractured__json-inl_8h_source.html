@@ -29,7 +29,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="logotiny.png"/></td>
   <td id="projectalign">
-   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.1</span>
+   <div id="projectname">simdjson<span id="projectnumber">&#160;5.0.2</span>
    </div>
    <div id="projectbrief">Ridiculously Fast JSON</div>
   </td>
@@ -1376,49 +1376,36 @@ $(document).ready(function(){initNavTree('fractured__json-inl_8h_source.html',''
 <div class="line"><a id="l01268" name="l01268"></a><span class="lineno"> 1268</span>}</div>
 <div class="line"><a id="l01269" name="l01269"></a><span class="lineno"> 1269</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l01270" name="l01270"></a><span class="lineno"> 1270</span> </div>
-<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span><span class="comment">// Explicit template instantiations for common types</span></div>
-<div class="line"><a id="l01272" name="l01272"></a><span class="lineno"> 1272</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::element x);</div>
-<div class="line"><a id="l01273" name="l01273"></a><span class="lineno"> 1273</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::element x, <span class="keyword">const</span> fractured_json_options&amp; options);</div>
-<div class="line"><a id="l01274" name="l01274"></a><span class="lineno"> 1274</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::array x);</div>
-<div class="line"><a id="l01275" name="l01275"></a><span class="lineno"> 1275</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::array x, <span class="keyword">const</span> fractured_json_options&amp; options);</div>
-<div class="line"><a id="l01276" name="l01276"></a><span class="lineno"> 1276</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::object x);</div>
-<div class="line"><a id="l01277" name="l01277"></a><span class="lineno"> 1277</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(dom::object x, <span class="keyword">const</span> fractured_json_options&amp; options);</div>
+<div class="line"><a id="l01271" name="l01271"></a><span class="lineno"> 1271</span><span class="comment">//</span></div>
+<div class="line"><a id="l01272" name="l01272"></a><span class="lineno"> 1272</span><span class="comment">// String-based API for formatting any JSON string</span></div>
+<div class="line"><a id="l01273" name="l01273"></a><span class="lineno"> 1273</span><span class="comment">//</span></div>
+<div class="line"><a id="l01274" name="l01274"></a><span class="lineno"> 1274</span> </div>
+<div class="foldopen" id="foldopen01275" data-start="{" data-end="}">
+<div class="line"><a id="l01275" name="l01275"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a"> 1275</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(std::string_view json_str) {</div>
+<div class="line"><a id="l01276" name="l01276"></a><span class="lineno"> 1276</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(json_str, <a class="code hl_struct" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a>{});</div>
+<div class="line"><a id="l01277" name="l01277"></a><span class="lineno"> 1277</span>}</div>
+</div>
 <div class="line"><a id="l01278" name="l01278"></a><span class="lineno"> 1278</span> </div>
-<div class="line"><a id="l01279" name="l01279"></a><span class="lineno"> 1279</span><span class="preprocessor">#if SIMDJSON_EXCEPTIONS</span></div>
-<div class="line"><a id="l01280" name="l01280"></a><span class="lineno"> 1280</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(simdjson_result&lt;dom::element&gt; x);</div>
-<div class="line"><a id="l01281" name="l01281"></a><span class="lineno"> 1281</span><span class="keyword">template</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(simdjson_result&lt;dom::element&gt; x, <span class="keyword">const</span> fractured_json_options&amp; options);</div>
-<div class="line"><a id="l01282" name="l01282"></a><span class="lineno"> 1282</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l01283" name="l01283"></a><span class="lineno"> 1283</span> </div>
-<div class="line"><a id="l01284" name="l01284"></a><span class="lineno"> 1284</span><span class="comment">//</span></div>
-<div class="line"><a id="l01285" name="l01285"></a><span class="lineno"> 1285</span><span class="comment">// String-based API for formatting any JSON string</span></div>
-<div class="line"><a id="l01286" name="l01286"></a><span class="lineno"> 1286</span><span class="comment">//</span></div>
-<div class="line"><a id="l01287" name="l01287"></a><span class="lineno"> 1287</span> </div>
-<div class="foldopen" id="foldopen01288" data-start="{" data-end="}">
-<div class="line"><a id="l01288" name="l01288"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a"> 1288</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(std::string_view json_str) {</div>
-<div class="line"><a id="l01289" name="l01289"></a><span class="lineno"> 1289</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(json_str, <a class="code hl_struct" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a>{});</div>
-<div class="line"><a id="l01290" name="l01290"></a><span class="lineno"> 1290</span>}</div>
+<div class="foldopen" id="foldopen01279" data-start="{" data-end="}">
+<div class="line"><a id="l01279" name="l01279"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a14c3570e05ee337b2ed5d6a2d9b904a4"> 1279</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(std::string_view json_str,</div>
+<div class="line"><a id="l01280" name="l01280"></a><span class="lineno"> 1280</span>                                          <span class="keyword">const</span> <a class="code hl_struct" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a>&amp; options) {</div>
+<div class="line"><a id="l01281" name="l01281"></a><span class="lineno"> 1281</span>  <span class="comment">// Parse the JSON string</span></div>
+<div class="line"><a id="l01282" name="l01282"></a><span class="lineno"> 1282</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> parser;</div>
+<div class="line"><a id="l01283" name="l01283"></a><span class="lineno"> 1283</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> doc;</div>
+<div class="line"><a id="l01284" name="l01284"></a><span class="lineno"> 1284</span>  <span class="comment">// Need to pad the string for simdjson</span></div>
+<div class="line"><a id="l01285" name="l01285"></a><span class="lineno"> 1285</span>  <span class="keyword">auto</span> padded = <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">padded_string</a>(json_str);</div>
+<div class="line"><a id="l01286" name="l01286"></a><span class="lineno"> 1286</span>  <span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(padded).get(doc);</div>
+<div class="line"><a id="l01287" name="l01287"></a><span class="lineno"> 1287</span>  <span class="keywordflow">if</span> (error) {</div>
+<div class="line"><a id="l01288" name="l01288"></a><span class="lineno"> 1288</span>    <span class="comment">// If parsing fails, return the original string</span></div>
+<div class="line"><a id="l01289" name="l01289"></a><span class="lineno"> 1289</span>    <span class="keywordflow">return</span> std::string(json_str);</div>
+<div class="line"><a id="l01290" name="l01290"></a><span class="lineno"> 1290</span>  }</div>
+<div class="line"><a id="l01291" name="l01291"></a><span class="lineno"> 1291</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(doc, options);</div>
+<div class="line"><a id="l01292" name="l01292"></a><span class="lineno"> 1292</span>}</div>
 </div>
-<div class="line"><a id="l01291" name="l01291"></a><span class="lineno"> 1291</span> </div>
-<div class="foldopen" id="foldopen01292" data-start="{" data-end="}">
-<div class="line"><a id="l01292" name="l01292"></a><span class="lineno"><a class="line" href="namespacesimdjson.html#a14c3570e05ee337b2ed5d6a2d9b904a4"> 1292</a></span><span class="keyword">inline</span> std::string <a class="code hl_function" href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">fractured_json_string</a>(std::string_view json_str,</div>
-<div class="line"><a id="l01293" name="l01293"></a><span class="lineno"> 1293</span>                                          <span class="keyword">const</span> <a class="code hl_struct" href="structsimdjson_1_1fractured__json__options.html">fractured_json_options</a>&amp; options) {</div>
-<div class="line"><a id="l01294" name="l01294"></a><span class="lineno"> 1294</span>  <span class="comment">// Parse the JSON string</span></div>
-<div class="line"><a id="l01295" name="l01295"></a><span class="lineno"> 1295</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1parser.html">dom::parser</a> parser;</div>
-<div class="line"><a id="l01296" name="l01296"></a><span class="lineno"> 1296</span>  <a class="code hl_class" href="classsimdjson_1_1dom_1_1element.html">dom::element</a> doc;</div>
-<div class="line"><a id="l01297" name="l01297"></a><span class="lineno"> 1297</span>  <span class="comment">// Need to pad the string for simdjson</span></div>
-<div class="line"><a id="l01298" name="l01298"></a><span class="lineno"> 1298</span>  <span class="keyword">auto</span> padded = <a class="code hl_struct" href="structsimdjson_1_1padded__string.html">padded_string</a>(json_str);</div>
-<div class="line"><a id="l01299" name="l01299"></a><span class="lineno"> 1299</span>  <span class="keyword">auto</span> error = parser.<a class="code hl_function" href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">parse</a>(padded).get(doc);</div>
-<div class="line"><a id="l01300" name="l01300"></a><span class="lineno"> 1300</span>  <span class="keywordflow">if</span> (error) {</div>
-<div class="line"><a id="l01301" name="l01301"></a><span class="lineno"> 1301</span>    <span class="comment">// If parsing fails, return the original string</span></div>
-<div class="line"><a id="l01302" name="l01302"></a><span class="lineno"> 1302</span>    <span class="keywordflow">return</span> std::string(json_str);</div>
-<div class="line"><a id="l01303" name="l01303"></a><span class="lineno"> 1303</span>  }</div>
-<div class="line"><a id="l01304" name="l01304"></a><span class="lineno"> 1304</span>  <span class="keywordflow">return</span> <a class="code hl_function" href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">fractured_json</a>(doc, options);</div>
-<div class="line"><a id="l01305" name="l01305"></a><span class="lineno"> 1305</span>}</div>
-</div>
-<div class="line"><a id="l01306" name="l01306"></a><span class="lineno"> 1306</span> </div>
-<div class="line"><a id="l01307" name="l01307"></a><span class="lineno"> 1307</span>} <span class="comment">// namespace simdjson</span></div>
-<div class="line"><a id="l01308" name="l01308"></a><span class="lineno"> 1308</span> </div>
-<div class="line"><a id="l01309" name="l01309"></a><span class="lineno"> 1309</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOM_FRACTURED_JSON_INL_H</span></div>
+<div class="line"><a id="l01293" name="l01293"></a><span class="lineno"> 1293</span> </div>
+<div class="line"><a id="l01294" name="l01294"></a><span class="lineno"> 1294</span>} <span class="comment">// namespace simdjson</span></div>
+<div class="line"><a id="l01295" name="l01295"></a><span class="lineno"> 1295</span> </div>
+<div class="line"><a id="l01296" name="l01296"></a><span class="lineno"> 1296</span><span class="preprocessor">#endif </span><span class="comment">// SIMDJSON_DOM_FRACTURED_JSON_INL_H</span></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1element_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1element.html">simdjson::dom::element</a></div><div class="ttdoc">A JSON element.</div><div class="ttdef"><b>Definition</b> <a href="element_8h_source.html#l00036">element.h:36</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html">simdjson::dom::parser</a></div><div class="ttdoc">A persistent document parser.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser_8h_source.html#l00030">parser.h:30</a></div></div>
 <div class="ttc" id="aclasssimdjson_1_1dom_1_1parser_html_a16c7d1e28125ef7d5703244483f70984"><div class="ttname"><a href="classsimdjson_1_1dom_1_1parser.html#a16c7d1e28125ef7d5703244483f70984">simdjson::dom::parser::parse</a></div><div class="ttdeci">simdjson_result&lt; element &gt; parse(const uint8_t *buf, size_t len, bool realloc_if_needed=true) &amp;noexcept</div><div class="ttdoc">Parse a JSON document and return a temporary reference to it.</div><div class="ttdef"><b>Definition</b> <a href="dom_2parser-inl_8h_source.html#l00178">parser-inl.h:178</a></div></div>
@@ -1432,7 +1419,7 @@ $(document).ready(function(){initNavTree('fractured__json-inl_8h_source.html',''
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aacb4fb1757fb37c43cded35d3eb857c43"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aacb4fb1757fb37c43cded35d3eb857c43">simdjson::dom::element_type::ARRAY</a></div><div class="ttdeci">@ ARRAY</div><div class="ttdoc">dom::array</div></div>
 <div class="ttc" id="anamespacesimdjson_1_1dom_html_a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229"><div class="ttname"><a href="namespacesimdjson_1_1dom.html#a6e1dee3a823ecfee91086d3478bbab3aafd3e4ece78a7d422280d5ed379482229">simdjson::dom::element_type::DOUBLE</a></div><div class="ttdeci">@ DOUBLE</div><div class="ttdoc">double: Any number with a &quot;.&quot; or &quot;e&quot; that fits in double.</div></div>
 <div class="ttc" id="anamespacesimdjson_html"><div class="ttname"><a href="namespacesimdjson.html">simdjson</a></div><div class="ttdoc">The top level simdjson namespace, containing everything the library provides.</div><div class="ttdef"><b>Definition</b> <a href="arm64_2base_8h_source.html#l00008">base.h:8</a></div></div>
-<div class="ttc" id="anamespacesimdjson_html_a64861b6d9d98dc3c85683b50cc6d224a"><div class="ttname"><a href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">simdjson::fractured_json_string</a></div><div class="ttdeci">std::string fractured_json_string(std::string_view json_str)</div><div class="ttdoc">Format a JSON string using FracturedJson formatting.</div><div class="ttdef"><b>Definition</b> <a href="fractured__json-inl_8h_source.html#l01288">fractured_json-inl.h:1288</a></div></div>
+<div class="ttc" id="anamespacesimdjson_html_a64861b6d9d98dc3c85683b50cc6d224a"><div class="ttname"><a href="namespacesimdjson.html#a64861b6d9d98dc3c85683b50cc6d224a">simdjson::fractured_json_string</a></div><div class="ttdeci">std::string fractured_json_string(std::string_view json_str)</div><div class="ttdoc">Format a JSON string using FracturedJson formatting.</div><div class="ttdef"><b>Definition</b> <a href="fractured__json-inl_8h_source.html#l01275">fractured_json-inl.h:1275</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a74f7d8c95c93575eebbf0555aacbc36f"><div class="ttname"><a href="namespacesimdjson.html#a74f7d8c95c93575eebbf0555aacbc36f">simdjson::fractured_json</a></div><div class="ttdeci">std::string fractured_json(T x)</div><div class="ttdoc">Format JSON using FracturedJson formatting with default options.</div><div class="ttdef"><b>Definition</b> <a href="fractured__json-inl_8h_source.html#l01241">fractured_json-inl.h:1241</a></div></div>
 <div class="ttc" id="anamespacesimdjson_html_a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681"><div class="ttname"><a href="namespacesimdjson.html#a7b735a3a50ba79e3f7f14df5f77d8da9aa4ffc800804829a88c5b52ac3c4c6681">simdjson::SUCCESS</a></div><div class="ttdeci">@ SUCCESS</div><div class="ttdoc">No error.</div><div class="ttdef"><b>Definition</b> <a href="error_8h_source.html#l00020">error.h:20</a></div></div>
 <div class="ttc" id="astructsimdjson_1_1fractured__json__options_html"><div class="ttname"><a href="structsimdjson_1_1fractured__json__options.html">simdjson::fractured_json_options</a></div><div class="ttdoc">Configuration options for FracturedJson formatting.</div><div class="ttdef"><b>Definition</b> <a href="fractured__json_8h_source.html#l00034">fractured_json.h:34</a></div></div>
