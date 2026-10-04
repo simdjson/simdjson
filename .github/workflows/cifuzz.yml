@@ -1,5 +1,12 @@
 name: CIFuzz
 on: [pull_request]
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   Fuzzing:
     runs-on: ubuntu-latest

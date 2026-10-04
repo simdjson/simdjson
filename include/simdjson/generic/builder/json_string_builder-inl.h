@@ -58,6 +58,9 @@
 #endif
 #if SIMDJSON_EXPERIMENTAL_HAS_SSE2
 #include <emmintrin.h>
+#if defined(__AVX2__)
+#include <immintrin.h>
+#endif
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
@@ -566,12 +569,38 @@ simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
 
 // Writes the escaped version of input to out, returning the number of bytes
 // written.
-inline size_t write_string_escaped(const std::string_view input, char *out) {
+simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out) {
   const size_t len = input.size();
   const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
   const char *const initout = out;
 
   size_t i = 0;
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 && defined(__AVX2__)
+  while (i + 32 <= len) {
+    const __m256i word = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src + i));
+    const __m256i flags = _mm256_or_si256(
+        _mm256_or_si256(_mm256_cmpeq_epi8(word, _mm256_set1_epi8(34)),   // '"'
+                        _mm256_cmpeq_epi8(word, _mm256_set1_epi8(92))),  // '\\'
+        _mm256_cmpeq_epi8(_mm256_subs_epu8(word, _mm256_set1_epi8(31)),
+                          _mm256_setzero_si256()));                      // control
+    const uint32_t mask = uint32_t(_mm256_movemask_epi8(flags));
+    if (simdjson_likely(mask == 0)) {
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), word);
+      out += 32;
+    } else {
+      for (size_t half = 0; half < 32; half += 16) {
+        const uint64_t m = (mask >> half) & 0xFFFF;
+        if (m == 0) {
+          escape_store16(out, escape_load16(src + i + half));
+          out += 16;
+        } else {
+          out = escape_block(src, out, i + half, i + half + 16, m);
+        }
+      }
+    }
+    i += 32;
+  }
+#endif
   while (i + 16 <= len) {
     escape_vector word = escape_load16(src + i);
     escape_vector flags = escape_flags(word);
@@ -743,96 +772,135 @@ simdjson_inline void string_builder::clear() noexcept {
 
 namespace internal {
 
-static const char decimal_table[200] = {
-    0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30, 0x34, 0x30, 0x35,
-    0x30, 0x36, 0x30, 0x37, 0x30, 0x38, 0x30, 0x39, 0x31, 0x30, 0x31, 0x31,
-    0x31, 0x32, 0x31, 0x33, 0x31, 0x34, 0x31, 0x35, 0x31, 0x36, 0x31, 0x37,
-    0x31, 0x38, 0x31, 0x39, 0x32, 0x30, 0x32, 0x31, 0x32, 0x32, 0x32, 0x33,
-    0x32, 0x34, 0x32, 0x35, 0x32, 0x36, 0x32, 0x37, 0x32, 0x38, 0x32, 0x39,
-    0x33, 0x30, 0x33, 0x31, 0x33, 0x32, 0x33, 0x33, 0x33, 0x34, 0x33, 0x35,
-    0x33, 0x36, 0x33, 0x37, 0x33, 0x38, 0x33, 0x39, 0x34, 0x30, 0x34, 0x31,
-    0x34, 0x32, 0x34, 0x33, 0x34, 0x34, 0x34, 0x35, 0x34, 0x36, 0x34, 0x37,
-    0x34, 0x38, 0x34, 0x39, 0x35, 0x30, 0x35, 0x31, 0x35, 0x32, 0x35, 0x33,
-    0x35, 0x34, 0x35, 0x35, 0x35, 0x36, 0x35, 0x37, 0x35, 0x38, 0x35, 0x39,
-    0x36, 0x30, 0x36, 0x31, 0x36, 0x32, 0x36, 0x33, 0x36, 0x34, 0x36, 0x35,
-    0x36, 0x36, 0x36, 0x37, 0x36, 0x38, 0x36, 0x39, 0x37, 0x30, 0x37, 0x31,
-    0x37, 0x32, 0x37, 0x33, 0x37, 0x34, 0x37, 0x35, 0x37, 0x36, 0x37, 0x37,
-    0x37, 0x38, 0x37, 0x39, 0x38, 0x30, 0x38, 0x31, 0x38, 0x32, 0x38, 0x33,
-    0x38, 0x34, 0x38, 0x35, 0x38, 0x36, 0x38, 0x37, 0x38, 0x38, 0x38, 0x39,
-    0x39, 0x30, 0x39, 0x31, 0x39, 0x32, 0x39, 0x33, 0x39, 0x34, 0x39, 0x35,
-    0x39, 0x36, 0x39, 0x37, 0x39, 0x38, 0x39, 0x39,
-};
+// Integer to decimal: James Edward Anhalt III's algorithm
+static const char jeaiii_dd[201] =
+    "00010203040506070809101112131415161718192021222324252627282930313233343536373839"
+    "40414243444546474849505152535455565758596061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
+static const char jeaiii_fd[201] =
+    "0\0" "1\0" "2\0" "3\0" "4\0" "5\0" "6\0" "7\0" "8\0" "9\0"
+    "10111213141516171819202122232425262728293031323334353637383940414243444546474849"
+    "50515253545556575859606162636465666768697071727374757677787980818283848586878889"
+    "90919293949596979899";
 
-// Forward unsigned-int writer (cascade-on-magnitude, no upfront digit_count).
-// Built from a non-recursive DAG of always_inline helpers -- gcc and MSVC
-// refuse to inline recursive `always_inline`/`__forceinline` functions.
-// Caller must guarantee at least 20 bytes available at p. All helpers
-// return pointer past the last digit written.
-
-// Caller guarantees v < 100. Writes 1-2 digits.
-simdjson_really_inline char* write_lt100(char* p, uint64_t v) noexcept {
-  if (v < 10) { *p++ = char('0' + v); return p; }
-  std::memcpy(p, &decimal_table[v * 2], 2);
-  return p + 2;
+simdjson_really_inline void jeaiii_write_dd(char *p, uint64_t k) noexcept {
+  std::memcpy(p, &jeaiii_dd[2 * k], 2);
+}
+simdjson_really_inline void jeaiii_write_fd(char *p, uint64_t k) noexcept {
+  std::memcpy(p, &jeaiii_fd[2 * k], 2);
 }
 
-// Caller guarantees v < 10000. Writes 1-4 digits.
-simdjson_really_inline char* write_lt10000(char* p, uint64_t v) noexcept {
-  if (v < 100) return write_lt100(p, v);
-  uint64_t hi = v / 100, lo = v % 100;
-  if (v < 1000) {
-    *p++ = char('0' + hi);
+// Caller guarantees n < 10^8. Writes 1 to 8 digits.
+simdjson_really_inline char *jeaiii_lt1e8(char *b, uint32_t n) noexcept {
+  constexpr uint64_t mask24 = (uint64_t(1) << 24) - 1;
+  constexpr uint64_t mask32 = (uint64_t(1) << 32) - 1;
+  if (n < 100) {
+    jeaiii_write_fd(b, n);
+    return n < 10 ? b + 1 : b + 2;
+  }
+  if (n < 1000000) {
+    if (n < 10000) {
+      const uint32_t f0 = uint32_t(10 * (1 << 24) / 1e3 + 1) * n;
+      jeaiii_write_fd(b, f0 >> 24);
+      b -= n < 1000;
+      const uint32_t f2 = uint32_t(f0 & mask24) * 100;
+      jeaiii_write_dd(b + 2, f2 >> 24);
+      return b + 4;
+    }
+    const uint64_t f0 = uint64_t(10 * (1ull << 32) / 1e5 + 1) * n;
+    jeaiii_write_fd(b, f0 >> 32);
+    b -= n < 100000;
+    const uint64_t f2 = (f0 & mask32) * 100;
+    jeaiii_write_dd(b + 2, f2 >> 32);
+    const uint64_t f4 = (f2 & mask32) * 100;
+    jeaiii_write_dd(b + 4, f4 >> 32);
+    return b + 6;
+  }
+  const uint64_t f0 = uint64_t(10 * (1ull << 48) / 1e7 + 1) * n >> 16;
+  jeaiii_write_fd(b, f0 >> 32);
+  b -= n < 10000000;
+  const uint64_t f2 = (f0 & mask32) * 100;
+  jeaiii_write_dd(b + 2, f2 >> 32);
+  const uint64_t f4 = (f2 & mask32) * 100;
+  jeaiii_write_dd(b + 4, f4 >> 32);
+  const uint64_t f6 = (f4 & mask32) * 100;
+  jeaiii_write_dd(b + 6, f6 >> 32);
+  return b + 8;
+}
+
+// Caller guarantees z < 10^8. Always writes exactly 8 digits.
+simdjson_really_inline char *jeaiii_8_digits(char *b, uint32_t z) noexcept {
+  constexpr uint64_t mask32 = (uint64_t(1) << 32) - 1;
+  const uint64_t f0 = (uint64_t((1ull << 48) / 1e6 + 1) * z >> 16) + 1;
+  jeaiii_write_dd(b, f0 >> 32);
+  const uint64_t f2 = (f0 & mask32) * 100;
+  jeaiii_write_dd(b + 2, f2 >> 32);
+  const uint64_t f4 = (f2 & mask32) * 100;
+  jeaiii_write_dd(b + 4, f4 >> 32);
+  const uint64_t f6 = (f4 & mask32) * 100;
+  jeaiii_write_dd(b + 6, f6 >> 32);
+  return b + 8;
+}
+
+// Caller guarantees 10^8 <= n < 2^32. Writes 9 or 10 digits.
+simdjson_really_inline char *jeaiii_9_or_10(char *b, uint64_t n) noexcept {
+  constexpr uint64_t mask57 = (uint64_t(1) << 57) - 1;
+  const uint64_t f0 = uint64_t(10 * (1ull << 57) / 1e9 + 1) * n;
+  jeaiii_write_fd(b, f0 >> 57);
+  b -= n < 1000000000;
+  const uint64_t f2 = (f0 & mask57) * 100;
+  jeaiii_write_dd(b + 2, f2 >> 57);
+  const uint64_t f4 = (f2 & mask57) * 100;
+  jeaiii_write_dd(b + 4, f4 >> 57);
+  const uint64_t f6 = (f4 & mask57) * 100;
+  jeaiii_write_dd(b + 6, f6 >> 57);
+  const uint64_t f8 = (f6 & mask57) * 100;
+  jeaiii_write_dd(b + 8, f8 >> 57);
+  return b + 10;
+}
+
+simdjson_really_inline char *write_uint_jeaiii(char *b, uint64_t n) noexcept {
+  if (n < 100000000) {
+    return jeaiii_lt1e8(b, uint32_t(n));
+  }
+  if (n < (uint64_t(1) << 32)) {
+    return jeaiii_9_or_10(b, n);
+  }
+  // At least 10 digits: the low 8 digits, and 2 to 12 digits above them.
+  const uint32_t z = uint32_t(n % 100000000);
+  uint64_t u = n / 100000000;
+  if (u < 100000000) {
+    // u has 2 to 8 digits (if u < 10, n would be below 2^32).
+    b = jeaiii_lt1e8(b, uint32_t(u));
+  } else if (u < (uint64_t(1) << 32)) {
+    b = jeaiii_9_or_10(b, u);
   } else {
-    std::memcpy(p, &decimal_table[hi * 2], 2);
-    p += 2;
+    // u has 11 or 12 digits: split off 8 more.
+    const uint32_t y = uint32_t(u % 100000000);
+    u /= 100000000;
+    b = jeaiii_lt1e8(b, uint32_t(u)); // 3 or 4 digits
+    b = jeaiii_8_digits(b, y);
   }
-  std::memcpy(p, &decimal_table[lo * 2], 2);
-  return p + 2;
+  return jeaiii_8_digits(b, z);
 }
 
-// Caller guarantees v < 10000. Always writes exactly 4 digits.
-simdjson_really_inline void write_4_digits(char* p, uint64_t v) noexcept {
-  uint64_t hi = v / 100, lo = v % 100;
-  std::memcpy(p,     &decimal_table[hi * 2], 2);
-  std::memcpy(p + 2, &decimal_table[lo * 2], 2);
-}
-
-// Caller guarantees v < 10^8. Writes 1-8 digits.
-simdjson_really_inline char* write_lt1e8(char* p, uint64_t v) noexcept {
-  if (v < 10000) return write_lt10000(p, v);
-  uint64_t hi = v / 10000, lo = v % 10000;
-  p = write_lt10000(p, hi);
-  write_4_digits(p, lo);
-  return p + 4;
-}
-
-simdjson_really_inline char* write_uint_jeaiii(char* p, uint64_t v) noexcept {
-  if (v < 10000ULL) return write_lt10000(p, v);
-  if (v < 100000000ULL) {                   // 5-8 digits
-    uint64_t hi = v / 10000, lo = v % 10000;
-    p = write_lt10000(p, hi);
-    write_4_digits(p, lo);
-    return p + 4;
-  }
-  if (v < 10000000000000000ULL) {           // 9-16 digits
-    uint64_t hi = v / 100000000ULL, lo = v % 100000000ULL;
-    p = write_lt1e8(p, hi);
-    uint64_t lo_hi = lo / 10000, lo_lo = lo % 10000;
-    write_4_digits(p,     lo_hi);
-    write_4_digits(p + 4, lo_lo);
+// Writes v at p, which must have to_chars_buffer_size bytes available, and
+// returns the end of what was written.
+simdjson_inline char *write_double(char *p, double v) noexcept {
+#if SIMDJSON_ENABLE_NAN_INF
+  if (simdjson_unlikely(!std::isfinite(v))) {
+    if (std::isnan(v)) {
+      std::memcpy(p, "NaN", 3);
+      return p + 3;
+    }
+    if (v < 0) {
+      *p++ = '-';
+    }
+    std::memcpy(p, "Infinity", 8);
     return p + 8;
   }
-  // 17-20 digits
-  uint64_t hi = v / 10000000000000000ULL, lo = v % 10000000000000000ULL;
-  p = write_lt10000(p, hi);
-  uint64_t lo_a = lo / 100000000ULL, lo_b = lo % 100000000ULL;
-  uint64_t lo_a_hi = lo_a / 10000, lo_a_lo = lo_a % 10000;
-  uint64_t lo_b_hi = lo_b / 10000, lo_b_lo = lo_b % 10000;
-  write_4_digits(p,      lo_a_hi);
-  write_4_digits(p + 4,  lo_a_lo);
-  write_4_digits(p + 8,  lo_b_hi);
-  write_4_digits(p + 12, lo_b_lo);
-  return p + 16;
+#endif
+  return simdjson::internal::to_chars(p, nullptr, v);
 }
 } // namespace internal
 

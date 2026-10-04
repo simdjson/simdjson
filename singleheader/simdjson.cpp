@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-01 08:20:57 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-01 09:33:54 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -19563,8 +19563,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -19684,8 +19687,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -20216,9 +20222,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -20245,8 +20251,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -27107,8 +27111,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -27228,8 +27235,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -27760,9 +27770,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -27789,8 +27799,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -34626,8 +34634,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -34747,8 +34758,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -35279,9 +35293,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -35308,8 +35322,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -42416,8 +42428,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -42537,8 +42552,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -43069,9 +43087,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -43098,8 +43116,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -50748,8 +50764,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -50869,8 +50888,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -51401,9 +51423,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -51430,8 +51452,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -58143,8 +58163,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -58264,8 +58287,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -58796,9 +58822,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -58825,8 +58851,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -65442,8 +65466,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -65563,8 +65590,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -66095,9 +66125,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -66124,8 +66154,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -73158,8 +73186,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -73279,8 +73310,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -73811,9 +73845,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return EMPTY; }
@@ -73840,8 +73874,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(have_unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);
@@ -78793,8 +78825,11 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -78914,8 +78949,11 @@ simdjson_inline uint32_t filter_comma_delimited(
     }
   }
 
-  // Update structural index count
+  // Update structural index count. Compaction left a stale index in the slot
+  // past the end: restore the EOF sentinel that stage 1 had planted there, which
+  // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
+  parser.structural_indexes[write_idx] = uint32_t(len);
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -80652,9 +80690,9 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = find_next_document_index_json_sequence(parser, len, true, next_batch_start, scan_len);
-    // NOTE: the filter above compacted structural_indexes in place, so the
-    // value copied here is a stale pre-compaction index; this is why
-    // truncated_bytes() is documented as meaningless in json_sequence mode.
+    // The filter compacted structural_indexes in place and restored the EOF
+    // sentinel past the compacted end, so the copy below is either the start
+    // of a truncated document or len, as in streaming_final.
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
@@ -80681,8 +80719,6 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
   } else if (partial == stage1_mode::comma_delimited_final) {
     // Comma-delimited: final batch, last document extends to EOF
-    // (like json_sequence, the filter compacts in place, so truncated_bytes()
-    // is documented as meaningless for this format)
     if(unclosed_string) { parser.n_structural_indexes--; }
     uint32_t next_batch_start = uint32_t(len);
     parser.n_structural_indexes = filter_comma_delimited(parser, len, true, next_batch_start);

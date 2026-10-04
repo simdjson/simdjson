@@ -118,9 +118,6 @@ public:
    *
    * IMPORTANT: this value is only meaningful under the conditions below.
    *
-   *   - the format is whitespace_delimited or newline_delimited. In
-   *     json_sequence, comma_delimited and comma_delimited_array mode the value
-   *     is meaningless even for a stream that parsed completely;
    *   - you iterated all the way to the end of the stream;
    *   - no document reported an error. Iteration stops at the first failed
    *     document, which can leave the bookkeeping from a mid-stream batch.

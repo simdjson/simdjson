@@ -5,6 +5,7 @@
 #include <optional>
 #include <memory>
 #include <limits>
+#include <map>
 
 using namespace simdjson;
 
@@ -255,12 +256,68 @@ namespace builder_tests {
     TEST_SUCCEED();
   }
 
+  // Structures are written through an unchecked writer after reserving an
+  // upper bound on their size. Exercise the cases where the output reaches
+  // that bound (every string byte escaped as \u00XX, widest numbers).
+  bool test_size_bound() {
+    TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+    struct Worst {
+      std::string controls{};
+      std::map<std::string, int64_t> by_key{};
+      std::vector<uint64_t> big{};
+      std::vector<double> doubles{};
+      std::optional<std::string> maybe{};
+    };
+    std::string controls;
+    std::string escaped_controls;
+    for (size_t i = 0; i < 100; i++) {
+      controls += char(1 + i % 7);
+      escaped_controls += "\\u000" + std::to_string(1 + i % 7);
+    }
+    std::string escaped_quotes;
+    for (size_t i = 0; i < 33; i++) {
+      escaped_quotes += "\\\"";
+    }
+    Worst worst;
+    worst.controls = controls;
+    worst.by_key[controls] = (std::numeric_limits<int64_t>::min)();
+    worst.big = {(std::numeric_limits<uint64_t>::max)(), 0, 10000000000000000000ULL};
+    worst.doubles = {-1.7976931348623157e308, 2.2250738585072014e-308};
+    worst.maybe = std::string(33, '"');
+    const std::string expected = "{\"controls\":\"" + escaped_controls + "\",\"by_key\":{\"" +
+        escaped_controls + "\":-9223372036854775808},\"big\":[18446744073709551615,0,10000000000000000000]," +
+        "\"doubles\":[-1.7976931348623157e+308,2.2250738585072014e-308],\"maybe\":\"" +
+        escaped_quotes + "\"}";
+
+    std::string json = "previous content that must go away";
+    ASSERT_SUCCESS(builder::to_json(worst, json));
+    ASSERT_EQUAL(json, expected);
+    ASSERT_SUCCESS(builder::to_json_string(worst).get(json));
+    ASSERT_EQUAL(json, expected);
+
+    // Appending to a builder that already holds data, with little capacity.
+    builder::string_builder sb(1);
+    sb.append_raw("[");
+    builder::append(sb, worst);
+    sb.append_raw(",");
+    builder::append(sb, worst);
+    sb.append_raw("]");
+    std::string_view view;
+    ASSERT_SUCCESS(sb.view().get(view));
+    ASSERT_EQUAL(view, "[" + expected + "," + expected + "]");
+
+#endif
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return test_empty_values() &&
            test_special_characters() &&
            test_numeric_limits() &&
            test_nested_structures() &&
-           test_issue2827_optional();
+           test_issue2827_optional() &&
+           test_size_bound();
   }
 
 } // namespace builder_tests

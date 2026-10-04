@@ -669,7 +669,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
