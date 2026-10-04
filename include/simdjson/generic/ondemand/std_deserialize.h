@@ -203,8 +203,8 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
         SIMDJSON_TRY(v.get<value_type>(scratch.elements.emplace_back()));
         release.parsed++;
       }
-      release.complete = true;
       out.reserve(release.parsed);
+      release.complete = true;
       for (auto &e : scratch.elements) { out.emplace_back(std::move(e)); }
       return SUCCESS;
     }

@@ -607,7 +607,8 @@ simdjson_really_inline size_t size_bound([[maybe_unused]] const T &t) noexcept {
 // reserving that many bytes first, and through the checked writer otherwise.
 template <class T>
 simdjson_really_inline void append_bounded(string_builder &b, const T &t) {
-  if constexpr (bound_detail::is_bounded<T>()) {
+  // On 32-bit systems, the bound could overflow: keep the checked writer.
+  if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<T>()) {
     const size_t bound = bound_detail::size_bound(t) + unchecked_slack;
     const size_t pos = b.unsafe_position();
     // The bound is a sum of in-memory sizes times a small constant: it cannot
@@ -708,7 +709,7 @@ void append(string_builder &b, const Z &z) {
 
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
-  if constexpr (bound_detail::is_bounded<Z>()) {
+  if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
