@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-01 09:33:54 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-03 22:24:52 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -16222,7 +16222,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -19489,6 +19494,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -19567,7 +19574,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -19654,6 +19661,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -19691,7 +19700,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -23923,7 +23932,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -27037,6 +27051,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -27115,7 +27131,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -27202,6 +27218,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -27239,7 +27257,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -31447,7 +31465,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -34560,6 +34583,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -34638,7 +34663,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -34725,6 +34750,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -34762,7 +34789,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -39128,7 +39155,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -42354,6 +42386,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -42432,7 +42466,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -42519,6 +42553,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -42556,7 +42592,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -47159,7 +47195,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -50690,6 +50731,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -50768,7 +50811,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -50855,6 +50898,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -50892,7 +50937,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -55042,7 +55087,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -58089,6 +58139,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -58167,7 +58219,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -58254,6 +58306,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -58291,7 +58345,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -62378,7 +62432,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -65392,6 +65451,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -65470,7 +65531,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -65557,6 +65618,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -65594,7 +65657,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -69701,7 +69764,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -73112,6 +73180,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -73190,7 +73260,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -73277,6 +73347,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -73314,7 +73386,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
@@ -77005,7 +77077,12 @@ SIMDJSON_NO_SANITIZE_UNDEFINED
 simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  const uint8_t *const swar_end = p + 16;
+  // Identifiers, timestamps and counters often have eight digits or more.
+  if (is_made_of_eight_digits_fast(p)) {
+    i = i * 100000000 + parse_eight_digits_unrolled(p);
+    p += 8;
+  }
+  const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
     p += 4;
@@ -78751,6 +78828,8 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // RS as a scalar, making the digit a scalar continuation, not a start.
   // We must: (1) remove RS from structural_indexes, and (2) for scalars, add the
   // actual value start position.
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_rs_pos = 0;
   uint32_t rs_count = 0;
@@ -78829,7 +78908,7 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) {
     // Only RS markers here: the last one opens a record continuing past the
@@ -78916,6 +78995,8 @@ simdjson_inline uint32_t filter_comma_delimited(
 
   // Track depth to identify root-level commas (depth 0)
   int depth = 0;
+  // The EOF sentinel: len, or where a discarded unclosed string starts.
+  const uint32_t sentinel = parser.structural_indexes[parser.n_structural_indexes];
   uint32_t write_idx = 0;
   uint32_t last_root_comma_pos = 0;
   uint32_t root_comma_count = 0;
@@ -78953,7 +79034,7 @@ simdjson_inline uint32_t filter_comma_delimited(
   // past the end: restore the EOF sentinel that stage 1 had planted there, which
   // document_stream::truncated_bytes() reads after a final batch.
   parser.n_structural_indexes = write_idx;
-  parser.structural_indexes[write_idx] = uint32_t(len);
+  parser.structural_indexes[write_idx] = sentinel;
 
   if (parser.n_structural_indexes == 0) { return 0; }
 
