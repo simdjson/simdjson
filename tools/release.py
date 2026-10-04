@@ -164,11 +164,13 @@ if(cp.returncode != 0):
     print("Failed to run amalgamate")
 
 print("running doxygen")
-cp = subprocess.run(["doxygen"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=maindir)  # doesn't capture output
-print("the commandline is {}".format(cp.args))
-
-if(cp.returncode != 0):
-    print("Failed to run doxygen")
+try:
+    cp = subprocess.run(["doxygen"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=maindir)  # doesn't capture output
+    print("the commandline is {}".format(cp.args))
+    if(cp.returncode != 0):
+        print("Failed to run doxygen")
+except FileNotFoundError:
+    print("doxygen is not installed, skipping the documentation")
 
 
 pattern = re.compile(r"https://simdjson.org/api/(\d+\.\d+\.\d+)/index.html")
