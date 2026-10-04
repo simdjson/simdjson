@@ -1,0 +1,138 @@
+name: Release
+
+# Manually triggered. Releases the current master commit, but only if every CI
+# check on that commit has passed: a failing, cancelled or unfinished check
+# stops the release. Then bumps the version (patch, minor or major) with
+# tools/release.py, which also regenerates the single header, tests the single
+# header, commits the version bump to master, tags it and publishes a GitHub
+# release with the single-header files attached.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Which part of the version to bump'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  checks: read
+  statuses: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-ci-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.gate.outputs.sha }}
+    steps:
+      - name: Require every CI check on master to have passed
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha=$(gh api "repos/$REPO/commits/master" --jq .sha)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Checking the CI of master at $sha"
+          # Latest run of every check on the commit, except this workflow's own jobs.
+          gh api --paginate "repos/$REPO/commits/$sha/check-runs?per_page=100" \
+            --jq '.check_runs[] | select(.name | startswith("release-") | not)
+                  | "\(.status)\t\(.conclusion)\t\(.name)\t\(.html_url)"' > checks.tsv
+          total=$(wc -l < checks.tsv)
+          bad=$(awk -F'\t' '$1 != "completed" || ($2 != "success" && $2 != "skipped" && $2 != "neutral")' checks.tsv)
+          state=$(gh api "repos/$REPO/commits/$sha/status" --jq '.state + " " + (.total_count | tostring)')
+          echo "$total check runs; commit status: $state"
+          if [ "$total" -eq 0 ]; then
+            echo "::error::No CI check ran on $sha: refusing to release."
+            exit 1
+          fi
+          if [ -n "$bad" ]; then
+            echo "::error::Some CI checks on $sha did not pass: refusing to release."
+            echo "$bad"
+            exit 1
+          fi
+          case "$state" in
+            "pending 0"|success*) ;;
+            *) echo "::error::The commit status of $sha is '$state': refusing to release."; exit 1 ;;
+          esac
+          echo "All $total CI checks passed."
+
+  release-publish:
+    needs: release-ci-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release-ci-gate.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Compute new version
+        id: version
+        run: |
+          current=$(git describe --abbrev=0 --tags)
+          current=${current#v}
+          IFS=. read -r major minor patch <<< "$current"
+          case "${{ inputs.bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "unknown bump type"; exit 1 ;;
+          esac
+          new="$major.$minor.$patch"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "Releasing $current -> $new (${{ inputs.bump }})"
+
+      - name: Bump the version and regenerate the single header
+        run: |
+          new="${{ steps.version.outputs.new }}"
+          python3 tools/release.py "$new"
+          rm -f CMakeLists.txt.bak Doxyfile.bak
+          grep -q "SIMDJSON_VERSION \"$new\"" include/simdjson/simdjson_version.h
+          grep -q "VERSION $new" CMakeLists.txt
+          grep -q "PROJECT_NUMBER         = \"$new\"" Doxyfile
+
+      - name: Test the single header
+        run: |
+          cd singleheader
+          c++ -O2 -std=c++17 -o amalgamate_demo amalgamate_demo.cpp simdjson.cpp
+          ./amalgamate_demo ../jsonexamples/twitter.json ../jsonexamples/amazon_cellphones.ndjson
+          rm -f amalgamate_demo
+
+      - name: Commit, tag and push
+        run: |
+          new="${{ steps.version.outputs.new }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CMakeLists.txt Doxyfile include/simdjson/simdjson_version.h singleheader/simdjson.h singleheader/simdjson.cpp singleheader/singleheader.zip
+          # master may already carry the new version (a release candidate).
+          if ! git diff --cached --quiet; then
+            git commit -m "$new"
+          fi
+          git tag -a "v$new" -m "version $new"
+          # Not forced: if master moved since the CI check, the push is rejected.
+          git push origin HEAD:master
+          git push origin "v$new"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new="${{ steps.version.outputs.new }}"
+          gh release create "v$new" \
+            --title "Version $new" \
+            --generate-notes \
+            --notes-start-tag "v${{ steps.version.outputs.current }}" \
+            singleheader/simdjson.h \
+            singleheader/simdjson.cpp \
+            singleheader/singleheader.zip
