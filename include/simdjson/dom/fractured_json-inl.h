@@ -317,11 +317,15 @@ inline void structure_analyzer::build_table_columns(
 
   if (common == table_column_type::object) {
     std::unordered_map<std::string_view, size_t> column_index;
+    // Last row (1-based) that filled each column, to detect duplicate keys.
+    std::vector<size_t> column_last_row;
+    size_t row = 0;
     for (const auto& v : values) {
       if (v.first.type() != dom::element_type::OBJECT) continue;
       dom::object obj;
       if (v.first.get_object().get(obj) != SUCCESS) continue;
 
+      row++;
       size_t field_idx = 0;
       for (dom::key_value_pair field : obj) {
         auto it = column_index.find(field.key);
@@ -331,11 +335,22 @@ inline void structure_analyzer::build_table_columns(
           column_index.emplace(field.key, col_idx);
           out_columns.emplace_back();
           out_columns.back().key.assign(field.key.data(), field.key.size());
+          out_columns.back().has_key = true;
           out_columns.back().key_width = estimate_string_length(field.key);
           per_column_values.emplace_back();
+          column_last_row.push_back(0);
         } else {
           col_idx = it->second;
         }
+        // A row with a duplicate key cannot be laid out as a table: each
+        // column holds one value per row, so the later duplicates would be
+        // lost. Returning no columns also disables the aligned compact
+        // multiline layout for this array, which needs the same columns.
+        if (column_last_row[col_idx] == row) {
+          out_columns.clear();
+          return;
+        }
+        column_last_row[col_idx] = row;
         const element_metrics* field_metrics = (v.second && field_idx < v.second->children.size())
             ? &v.second->children[field_idx] : nullptr;
         per_column_values[col_idx].emplace_back(field.value, field_metrics);
@@ -428,7 +443,7 @@ inline size_t structure_analyzer::compute_columns_width(const std::vector<table_
   }
 
   for (const table_column& col : columns) {
-    if (!col.key.empty()) {
+    if (col.has_key) {
       width += col.key_width;
       width += current_opts_->colon_padding ? 2 : 1;
     }
@@ -826,7 +841,7 @@ inline void fractured_string_builder::format_table_row_columns(
     const bool is_last_col = (col_idx == num_columns - 1);
 
     if (found[col_idx]) {
-      if (!column.key.empty()) {
+      if (column.has_key) {
         format_.key(column.key);
         if (options_.colon_padding) {
           format_.print_space();
@@ -874,7 +889,7 @@ inline void fractured_string_builder::format_table_row_columns(
       }
     } else {
       size_t slot_width = column.width;
-      if (!column.key.empty()) {
+      if (column.has_key) {
         slot_width += column.key_width + (options_.colon_padding ? 2 : 1);
       }
       for (size_t i = 0; i < slot_width; i++) {

@@ -38,8 +38,10 @@ enum class table_column_type {
 
 /** Column of a table-formatted array.*/
 struct table_column {
-  /** Column name for object rows; empty for array rows. */
+  /** Column name for object rows (may be the empty string). */
   std::string key{};
+  /** True for object rows (the column has a key), false for array rows. */
+  bool has_key = false;
   /** Rendered length of key */
   size_t key_width = 0;
   table_column_type type = table_column_type::unknown;
