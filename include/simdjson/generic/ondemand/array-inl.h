@@ -206,7 +206,7 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
         callback(val);
       } else {
         error_code err = element.for_each_at_path_with_wildcard(remaining_path, callback);
-        if(err) { return err; }
+        if(err && !internal::is_wildcard_mismatch(err, remaining_path)) { return err; }
       }
     }
     return SUCCESS;

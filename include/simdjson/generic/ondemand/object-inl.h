@@ -373,7 +373,8 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
       if (remaining_path.empty()) {
         callback(val);
       } else {
-        SIMDJSON_TRY(val.for_each_at_path_with_wildcard(remaining_path, callback));
+        error_code err = val.for_each_at_path_with_wildcard(remaining_path, callback);
+        if (err && !internal::is_wildcard_mismatch(err, remaining_path)) { return err; }
       }
     }
     return SUCCESS;

@@ -154,11 +154,52 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
   } else if ((i+2 < json_path.size()) && json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
     key = "*";
     i += 3;
+  } else if ((i + 1 < json_path.size()) && json_path[i] == '[' &&
+             json_path[i + 1] >= '0' && json_path[i + 1] <= '9') {
+    // Array index: [0], [12]. Without a closing ']', return an empty key and
+    // the original path, as for a malformed bracket-quoted key.
+    const size_t key_start = i + 1;
+    size_t key_end = key_start;
+    while (key_end < json_path.length() && json_path[key_end] >= '0' && json_path[key_end] <= '9') {
+      ++key_end;
+    }
+    if (key_end >= json_path.length() || json_path[key_end] != ']') {
+      return {key, json_path};
+    }
+    key = json_path.substr(key_start, key_end - key_start);
+    i = key_end + 1; // past ]
   }
 
 
   return std::make_pair(key, json_path.substr(i));
 }
+
+namespace internal {
+/**
+ * Returns true if get_next_key_and_json_path can read every segment of the
+ * JSONPath.
+ */
+inline bool json_path_is_well_formed(std::string_view json_path) noexcept {
+  while (!json_path.empty()) {
+    auto result_pair = get_next_key_and_json_path(json_path);
+    if (result_pair.first.empty()) { return false; }
+    json_path = result_pair.second;
+  }
+  return true;
+}
+
+/**
+ * Returns true if the error means that an element reached through a wildcard
+ * does not have the rest of the path: a missing key, an index out of range, or
+ * a scalar where the path goes on. Such an element is skipped, as in the DOM
+ * at_path_with_wildcard. A malformed path is not skipped, since it would fail
+ * the same way for every element.
+ */
+inline bool is_wildcard_mismatch(error_code error, std::string_view remaining_path) noexcept {
+  return error == NO_SUCH_FIELD || error == INDEX_OUT_OF_BOUNDS ||
+         (error == INVALID_JSON_POINTER && json_path_is_well_formed(remaining_path));
+}
+} // namespace internal
 
 } // namespace simdjson
 #endif // SIMDJSON_JSONPATHUTIL_H
