@@ -2107,6 +2107,95 @@ bool number_alignment_test() {
   return true;
 }
 
+// Formatting must not change the content: re-parsing the output and
+// minifying it must give the same JSON as minifying the input. Table rows
+// order their keys by first occurrence across rows, so only use this with
+// inputs whose rows already have their keys in a consistent order.
+static bool same_content(const std::string& input, const std::string& formatted) {
+  simdjson::dom::parser p1, p2;
+  simdjson::dom::element a, b;
+  if (p1.parse(input).get(a)) { return false; }
+  if (p2.parse(formatted).get(b)) {
+    std::cerr << "Formatted output is not valid JSON:\n" << formatted << std::endl;
+    return false;
+  }
+  return simdjson::minify(a) == simdjson::minify(b);
+}
+
+// An empty key is a valid key. Table rows used to drop it, together with the
+// colon, which produced invalid JSON such as [ [ {1} ] ].
+bool table_format_empty_key_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    std::string json = R"([[{"":1}]])";
+    auto formatted = simdjson::fractured_json_string(json);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    [ {\"\": 1} ]\n"
+        "]");
+    ASSERT_TRUE(same_content(json, formatted));
+  }
+  {
+    // Table with an empty-key column, including blank padding for a row.
+    std::string json = R"({"t":[{"":1,"b":2},{"":10}]})";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"t\": [\n"
+        "        {\"\": 1 , \"b\": 2},\n"
+        "        {\"\": 10        }\n"
+        "    ]\n"
+        "}");
+    ASSERT_TRUE(same_content(json, formatted));
+  }
+  std::cout << "Table format empty key test passed." << std::endl;
+  return true;
+}
+
+// Duplicate keys are valid JSON (RFC 8259 only says names SHOULD be unique)
+// and the DOM keeps them. A table column holds one value per row, so table
+// rows used to lose every duplicate after the first one.
+bool table_format_duplicate_key_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    std::string json = R"([[{"a":1,"a":2}]])";
+    auto formatted = simdjson::fractured_json_string(json);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    [ {\"a\": 1, \"a\": 2} ]\n"
+        "]");
+    ASSERT_TRUE(same_content(json, formatted));
+  }
+  {
+    std::string json = R"({"t":[{"a":1,"a":2},{"a":3}]})";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "{\n"
+        "    \"t\": [\n"
+        "        {\"a\": 1, \"a\": 2},\n"
+        "        {\"a\": 3}\n"
+        "    ]\n"
+        "}");
+    ASSERT_TRUE(same_content(json, formatted));
+  }
+  {
+    // Keys are compared after unescaping: "\u0061" is a duplicate of "a".
+    std::string json = R"([[{"a":1,"\u0061":2}]])";
+    auto formatted = simdjson::fractured_json_string(json);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    [ {\"a\": 1, \"a\": 2} ]\n"
+        "]");
+    ASSERT_TRUE(same_content(json, formatted));
+  }
+  std::cout << "Table format duplicate key test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2169,9 +2258,11 @@ int main() {
   success = table_format_respects_max_table_row_complexity_test() && success;
   success = table_comma_placement_test() && success;
   success = number_alignment_test() && success;
+  success = table_format_empty_key_test() && success;
+  success = table_format_duplicate_key_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 52 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 54 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;
