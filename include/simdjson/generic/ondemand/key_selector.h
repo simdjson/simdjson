@@ -46,6 +46,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -265,7 +268,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -614,7 +618,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -661,15 +666,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
