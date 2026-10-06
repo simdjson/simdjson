@@ -152,7 +152,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
