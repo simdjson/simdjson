@@ -385,6 +385,39 @@ namespace json_pointer_tests {
     }
 #endif
 
+    bool empty_pointer_on_containers() {
+        TEST_START();
+        auto json = R"({"a":[1,2],"b":{"c":3}})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::object obj;
+        ondemand::array arr;
+        ondemand::value val;
+        // A default-constructed std::string_view has a null data(): reading
+        // json_pointer[0] used to crash here.
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.get_object().get(obj));
+        ASSERT_ERROR(obj.at_pointer(std::string_view{}).get(val), INVALID_JSON_POINTER);
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc["a"].get_array().get(arr));
+        ASSERT_ERROR(arr.at_pointer(std::string_view{}).get(val), INVALID_JSON_POINTER);
+        ASSERT_ERROR(arr.at_pointer("").get(val), INVALID_JSON_POINTER);
+        // On a value, the empty pointer refers to the value itself (RFC 6901).
+        ondemand::value b;
+        std::string_view raw;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc["b"].get(b));
+        ASSERT_SUCCESS(b.at_pointer(std::string_view{}).get(val));
+        ASSERT_SUCCESS(val.raw_json().get(raw));
+        ASSERT_EQUAL(raw, R"({"c":3})");
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc["a"].get(b));
+        ASSERT_SUCCESS(b.at_pointer("").get(val));
+        ASSERT_SUCCESS(val.raw_json().get(raw));
+        ASSERT_EQUAL(raw, "[1,2]");
+        TEST_SUCCEED();
+    }
+
     bool issue2154() { // mistakenly taking value as path should not raise INVALID_JSON_POINTER
 #if SIMDJSON_EXCEPTIONS
       std::cout << "issue 2154" << std::endl;
@@ -416,6 +449,7 @@ namespace json_pointer_tests {
     bool run() {
         return
                 issue2154() &&
+                empty_pointer_on_containers() &&
 #if SIMDJSON_EXCEPTIONS
                 json_pointer_invalidation_exceptions() &&
 #endif

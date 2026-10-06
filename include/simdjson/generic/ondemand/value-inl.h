@@ -380,6 +380,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
