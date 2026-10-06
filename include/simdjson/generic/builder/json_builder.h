@@ -219,7 +219,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -490,6 +493,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -711,6 +721,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {

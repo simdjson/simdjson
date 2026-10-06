@@ -173,6 +173,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
