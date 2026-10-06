@@ -670,6 +670,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
