@@ -130,9 +130,9 @@ Godbolt
 -------------
 
 Some users may want to browse code along with the compiled assembly. The following examples use simdjson 5.0.1:
-* [C++26 reflection example](https://godbolt.org/z/vc5j1vzje)
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/5jaofeq48)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/K3M6Y4Knc)
+* [C++26 reflection example](https://godbolt.org/z/zf6Mzn4Kx)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/jMcYM43Ed)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/rWMTs68rv)
 
 Performance results
 -------------------
