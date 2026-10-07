@@ -305,7 +305,9 @@ inline void structure_analyzer::build_table_columns(
   table_column_type common = table_column_type::unknown;
   for (const auto& v : values) {
     table_column_type t = classify_table_value(v.first.type());
-    if (t == table_column_type::unknown) continue;
+    // Null cannot be projected into object or array columns. Keep these
+    // values intact by falling back to ordinary value formatting.
+    if (t == table_column_type::unknown) return;
     if (common == table_column_type::unknown) common = t;
     else if (t != common) { common = table_column_type::mixed; break; }
   }

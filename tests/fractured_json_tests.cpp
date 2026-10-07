@@ -2196,6 +2196,37 @@ bool table_format_duplicate_key_test() {
   return true;
 }
 
+// Null is a value, not a missing row or cell. It must survive formatting
+// alongside objects or arrays, including recursively aligned columns.
+bool table_format_null_container_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  const std::string inputs[] = {
+      R"([{"a":{"x":1}},{"a":null}])",
+      R"([{"a":[1]},{"a":null}])",
+      R"([[[1]],[null]])",
+      R"([[{"x":1}],[null]])",
+      R"([null,{"a":1},{"a":22},null])",
+      R"([null,[1],[22],null])",
+      R"([{"a":{"x":1}},{"a":null},{"a":{"x":2}}])",
+      R"([[[{"x":1}],[null]]])",
+  };
+  simdjson::fractured_json_options options[3];
+  // Exercise defaults, table layout, and aligned compact multiline layout.
+  options[1].max_inline_complexity = 0;
+  options[1].enable_compact_multiline = false;
+  options[2].max_inline_complexity = 0;
+  options[2].enable_table_format = false;
+  options[2].min_compact_array_row_items = 1;
+  for (const auto& opts : options) {
+    for (const auto& json : inputs) {
+      auto formatted = simdjson::fractured_json_string(json, opts);
+      ASSERT_TRUE(same_content(json, formatted));
+    }
+  }
+  std::cout << "Table format null container test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2260,9 +2291,10 @@ int main() {
   success = number_alignment_test() && success;
   success = table_format_empty_key_test() && success;
   success = table_format_duplicate_key_test() && success;
+  success = table_format_null_container_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 54 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;
