@@ -211,15 +211,15 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
     }
     return SUCCESS;
   } else {
-    // Specific index case in which we access the element at the given index
+    // Specific index case in which we access the element at the given index.
+    // The index is read as DOM reads it: a leading zero is INVALID_JSON_POINTER
+    // and an index that does not fit in size_t is INDEX_OUT_OF_BOUNDS.
     size_t idx = 0;
-
-    for (char c : key) {
-      if(c < '0' || c > '9'){
-        return INVALID_JSON_POINTER;
-      }
-      idx = idx*10 + (c - '0');
-    }
+    size_t idx_length = 0;
+    error_code error = internal::parse_json_pointer_array_index(key, idx, idx_length);
+    // A key that is not made of digits only cannot name an array element.
+    if (error == INCORRECT_TYPE || (!error && idx_length != key.size())) { return INVALID_JSON_POINTER; }
+    if (error) { return error; }
 
     auto element = at(idx);
     value val;

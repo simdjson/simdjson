@@ -313,6 +313,21 @@ namespace wildcard_tests {
   bool wildcard_with_array_indexes() {
     TEST_START();
     ASSERT_TRUE(check_wildcard_matches(R"({"a":[10,20,30]})", "$.a[0]", {10}));
+    // An index is read as in DOM: a leading zero is invalid and an index that
+    // does not fit in size_t is out of bounds. Under a wildcard, it matches nothing.
+    {
+      auto json = R"({"a":[10,20,30]})"_padded;
+      ondemand::parser parser;
+      const char *leading_zero[] = {"$.a[01]", "$.a[00]"};
+      for (const char *path : leading_zero) {
+        std::cout << "  " << path << std::endl;
+        auto doc = parser.iterate(json);
+        ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), INVALID_JSON_POINTER);
+      }
+      auto doc = parser.iterate(json);
+      ASSERT_ERROR(doc.for_each_at_path_with_wildcard("$.a[18446744073709551616]", [](ondemand::value) {}), INDEX_OUT_OF_BOUNDS);
+    }
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":[[10,11],[20,21]]})", "$.a[*][01]", {}));
     ASSERT_TRUE(check_wildcard_matches(R"({"a":{"x":[1,2],"y":[3,4]}})", "$.a.*[0]", {1, 3}));
     ASSERT_TRUE(check_wildcard_matches(R"({"a":[[1,2],[3],[5,6]]})", "$.a[*][1]", {2, 6}));
     ASSERT_TRUE(check_wildcard_matches(R"({"a":[[1,2],[3,4]]})", "$.a[1][*]", {3, 4}));
