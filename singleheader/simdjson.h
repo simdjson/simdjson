@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-04 09:02:57 -0400. version 5.0.2 Do not edit! */
+/* auto-generated on 2026-10-06 19:24:53 -0400. version 5.0.2 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -12131,8 +12131,10 @@ enum class table_column_type {
 
 /** Column of a table-formatted array.*/
 struct table_column {
-  /** Column name for object rows; empty for array rows. */
+  /** Column name for object rows (may be the empty string). */
   std::string key{};
+  /** True for object rows (the column has a key), false for array rows. */
+  bool has_key = false;
   /** Rendered length of key */
   size_t key_width = 0;
   table_column_type type = table_column_type::unknown;
@@ -12813,11 +12815,15 @@ inline void structure_analyzer::build_table_columns(
 
   if (common == table_column_type::object) {
     std::unordered_map<std::string_view, size_t> column_index;
+    // Last row (1-based) that filled each column, to detect duplicate keys.
+    std::vector<size_t> column_last_row;
+    size_t row = 0;
     for (const auto& v : values) {
       if (v.first.type() != dom::element_type::OBJECT) continue;
       dom::object obj;
       if (v.first.get_object().get(obj) != SUCCESS) continue;
 
+      row++;
       size_t field_idx = 0;
       for (dom::key_value_pair field : obj) {
         auto it = column_index.find(field.key);
@@ -12827,11 +12833,22 @@ inline void structure_analyzer::build_table_columns(
           column_index.emplace(field.key, col_idx);
           out_columns.emplace_back();
           out_columns.back().key.assign(field.key.data(), field.key.size());
+          out_columns.back().has_key = true;
           out_columns.back().key_width = estimate_string_length(field.key);
           per_column_values.emplace_back();
+          column_last_row.push_back(0);
         } else {
           col_idx = it->second;
         }
+        // A row with a duplicate key cannot be laid out as a table: each
+        // column holds one value per row, so the later duplicates would be
+        // lost. Returning no columns also disables the aligned compact
+        // multiline layout for this array, which needs the same columns.
+        if (column_last_row[col_idx] == row) {
+          out_columns.clear();
+          return;
+        }
+        column_last_row[col_idx] = row;
         const element_metrics* field_metrics = (v.second && field_idx < v.second->children.size())
             ? &v.second->children[field_idx] : nullptr;
         per_column_values[col_idx].emplace_back(field.value, field_metrics);
@@ -12924,7 +12941,7 @@ inline size_t structure_analyzer::compute_columns_width(const std::vector<table_
   }
 
   for (const table_column& col : columns) {
-    if (!col.key.empty()) {
+    if (col.has_key) {
       width += col.key_width;
       width += current_opts_->colon_padding ? 2 : 1;
     }
@@ -13322,7 +13339,7 @@ inline void fractured_string_builder::format_table_row_columns(
     const bool is_last_col = (col_idx == num_columns - 1);
 
     if (found[col_idx]) {
-      if (!column.key.empty()) {
+      if (column.has_key) {
         format_.key(column.key);
         if (options_.colon_padding) {
           format_.print_space();
@@ -13370,7 +13387,7 @@ inline void fractured_string_builder::format_table_row_columns(
       }
     } else {
       size_t slot_width = column.width;
-      if (!column.key.empty()) {
+      if (column.has_key) {
         slot_width += column.key_width + (options_.colon_padding ? 2 : 1);
       }
       for (size_t i = 0; i < slot_width; i++) {
@@ -17432,6 +17449,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -20263,6 +20284,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -23571,6 +23596,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -26879,6 +26908,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -30302,6 +30335,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -34032,6 +34069,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -37278,6 +37319,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -40502,6 +40547,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -43742,6 +43791,10 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
   // Identifiers, timestamps and counters often have eight digits or more.
+  // Prior related work: jsonifier parses integers as eight-digit SWAR words
+  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
+  // takes one such word with parse_eight_digits_unrolled, the routine
+  // simdjson uses for long fractions.
   if (is_made_of_eight_digits_fast(p)) {
     i = i * 100000000 + parse_eight_digits_unrolled(p);
     p += 8;
@@ -46903,7 +46956,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -47174,6 +47230,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -47395,6 +47458,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -49729,7 +49794,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -50000,6 +50068,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -50221,6 +50296,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -53032,7 +53109,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -53303,6 +53383,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -53524,6 +53611,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -56335,7 +56424,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -56606,6 +56698,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -56827,6 +56926,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -59753,7 +59854,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -60024,6 +60128,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -60245,6 +60356,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -63478,7 +63591,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -63749,6 +63865,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -63970,6 +64093,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -66693,7 +66818,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -66964,6 +67092,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -67185,6 +67320,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -69931,7 +70068,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -70202,6 +70342,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -70423,6 +70570,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -73172,7 +73321,10 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
@@ -73443,6 +73595,13 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
@@ -73664,6 +73823,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -76144,7 +76305,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/arm64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for arm64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for arm64 */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -81756,6 +81917,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -81975,7 +82139,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -82324,7 +82489,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -82371,15 +82537,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -84353,6 +84519,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -85555,7 +85724,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -86249,6 +86420,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -89865,7 +90039,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -93848,7 +94024,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/fallback/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for fallback: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for fallback */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -99460,6 +99636,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -99679,7 +99858,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -100028,7 +100208,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -100075,15 +100256,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -102057,6 +102238,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -103259,7 +103443,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -103953,6 +104139,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -107569,7 +107758,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -112029,7 +112220,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/haswell/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for haswell: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for haswell */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -117641,6 +117832,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -117860,7 +118054,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -118209,7 +118404,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -118256,15 +118452,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -120238,6 +120434,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -121440,7 +121639,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -122134,6 +122335,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -125750,7 +125954,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -130210,7 +130416,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/icelake/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for icelake: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for icelake */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -135822,6 +136028,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -136041,7 +136250,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -136390,7 +136600,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -136437,15 +136648,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -138419,6 +138630,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -139621,7 +139835,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -140315,6 +140531,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -143931,7 +144150,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -148506,7 +148727,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/ppc64/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for ppc64: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for ppc64 */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -154118,6 +154339,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -154337,7 +154561,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -154686,7 +154911,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -154733,15 +154959,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -156715,6 +156941,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -157917,7 +158146,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -158611,6 +158842,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -162227,7 +162461,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -167109,7 +167345,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/westmere/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for westmere: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for westmere */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -172721,6 +172957,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -172940,7 +173179,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -173289,7 +173529,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -173336,15 +173577,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -175318,6 +175559,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -176520,7 +176764,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -177214,6 +177460,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -180830,7 +181079,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -185202,7 +185453,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/lsx/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for lsx: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for lsx */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -190814,6 +191065,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -191033,7 +191287,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -191382,7 +191637,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -191429,15 +191685,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -193411,6 +193667,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -194613,7 +194872,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -195307,6 +195568,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -198923,7 +199187,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -203318,7 +203584,7 @@ simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *ds
 /* end file simdjson/lasx/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for lasx: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for lasx */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -208930,6 +209196,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -209149,7 +209418,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -209498,7 +209768,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -209545,15 +209816,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -211527,6 +211798,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -212729,7 +213003,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -213423,6 +213699,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -217039,7 +217318,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -221437,7 +221718,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* end file simdjson/rvv-vls/begin.h */
 /* including simdjson/generic/ondemand/amalgamated.h for rvv_vls: #include "simdjson/generic/ondemand/amalgamated.h" */
 /* begin file simdjson/generic/ondemand/amalgamated.h for rvv_vls */
-#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_BUILDER_DEPENDENCIES_H)
+#if defined(SIMDJSON_CONDITIONAL_INCLUDE) && !defined(SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H)
 #error simdjson/generic/ondemand/dependencies.h must be included before simdjson/generic/ondemand/amalgamated.h!
 #endif
 
@@ -227049,6 +227330,9 @@ namespace ondemand {
 
 namespace key_selector_detail {
 
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
+
 // ============================================================================
 // Compile-time perfect-hash generator.
 // It scales to ~100 keys at compile time by determining association values one (position, character)
@@ -227268,7 +227552,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -227617,7 +227902,8 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
@@ -227664,15 +227950,15 @@ template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
 consteval phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -229646,6 +229932,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -230848,7 +231137,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -231542,6 +231833,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -235158,7 +235452,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
