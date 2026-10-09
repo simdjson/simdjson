@@ -1057,7 +1057,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
+inline SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -1067,7 +1067,7 @@ SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
+inline SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";
