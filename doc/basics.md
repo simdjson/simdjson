@@ -503,11 +503,11 @@ Disabling diagnostic pragmas
 By default, simdjson uses pragmas (e.g., `#pragma GCC diagnostic ignored`) to silence some
 compiler warnings in its own code. Some packaging policies forbid such pragmas: for example,
 CRAN does not allow R packages to suppress compiler diagnostics. Define the macro
-`SIMDJSON_NO_DIAGNOSTIC_PRAGMAS` prior to including the `simdjson.h` header (and when building
+`SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION` prior to including the `simdjson.h` header (and when building
 the library) so that simdjson never suppresses compiler diagnostics:
 
 ```cpp
-#define SIMDJSON_NO_DIAGNOSTIC_PRAGMAS
+#define SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION
 #include "simdjson.h"
 ```
 

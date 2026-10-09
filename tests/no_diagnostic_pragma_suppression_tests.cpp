@@ -1,4 +1,4 @@
-// Built with SIMDJSON_NO_DIAGNOSTIC_PRAGMAS (and SIMDJSON_DISABLE_DEPRECATED_API)
+// Built with SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION (and SIMDJSON_DISABLE_DEPRECATED_API)
 // so that simdjson does not suppress any compiler diagnostic: the headers must
 // still compile without warnings under the strict developer flags (-Werror).
 #include "simdjson.h"
