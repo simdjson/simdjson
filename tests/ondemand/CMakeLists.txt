@@ -49,6 +49,14 @@ add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance 
 add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wildcard_tests                 LABELS ondemand acceptance per_implementation)
+# Includes simdjson.h from two translation units with SIMDJSON_CONSTEXPR_STRING
+# empty (as with a standard library lacking constexpr std::string), so that
+# non-inline definitions in headers show up as link errors.
+add_cpp_test(ondemand_odr_tests SOURCES ondemand_odr_tests.cpp ondemand_odr_tests_other.cpp LABELS ondemand acceptance)
+target_compile_definitions(ondemand_odr_tests PRIVATE "SIMDJSON_CONSTEXPR_STRING=")
+if(NOT SIMDJSON_STATIC_REFLECTION_ENABLED AND NOT CMAKE_CXX_STANDARD GREATER_EQUAL 20)
+  set_target_properties(ondemand_odr_tests PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+endif()
 if(NOT SIMDJSON_SANITIZE)
   add_cpp_test(ondemand_padded_input                 LABELS ondemand acceptance per_implementation)
   add_cpp_test(ondemand_cacheline                    LABELS ondemand acceptance per_implementation)
