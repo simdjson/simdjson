@@ -31,15 +31,22 @@ static inline char printable_char(char c) {
   }
 }
 
-template<typename... Args>
-static inline std::string string_format(const std::string& format, const Args&... args)
+// Without arguments, there is nothing to format: calling snprintf with a
+// non-literal format string and no arguments triggers -Wformat-security.
+static inline std::string string_format(const std::string& format)
+{
+  return format;
+}
+
+template<typename Arg, typename... Args>
+static inline std::string string_format(const std::string& format, const Arg& arg, const Args&... args)
 {
   SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
-  int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) + 1;
+  int size_s = std::snprintf(nullptr, 0, format.c_str(), arg, args...) + 1;
   auto size = static_cast<size_t>(size_s);
   if (size <= 0) return std::string();
   std::unique_ptr<char[]> buf(new char[size]);
-  std::snprintf(buf.get(), size, format.c_str(), args...);
+  std::snprintf(buf.get(), size, format.c_str(), arg, args...);
   SIMDJSON_POP_DISABLE_WARNINGS
   return std::string(buf.get(), buf.get() + size - 1);
 }

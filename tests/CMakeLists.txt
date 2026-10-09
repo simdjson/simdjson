@@ -40,5 +40,15 @@ endif()
 # SIMDJSON_FORCE_IMPLEMENTATION, so we know we're testing what we think we're testing
 add_cpp_test(checkimplementation LABELS other per_implementation)
 
+# The headers must compile cleanly (-Werror) when simdjson suppresses no diagnostics.
+add_cpp_test(no_diagnostic_pragma_suppression_tests LABELS other acceptance)
+target_compile_definitions(no_diagnostic_pragma_suppression_tests PRIVATE SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION SIMDJSON_DISABLE_DEPRECATED_API)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # -Weffc++ is a style lint: it flags the deliberate 'void operator++(int)' of
+  # the single-pass C++20 range iterators (ranges.h). Set on the source file so
+  # that it comes after the -Weffc++ of simdjson-internal-flags.
+  set_source_files_properties(no_diagnostic_pragma_suppression_tests.cpp PROPERTIES COMPILE_OPTIONS -Wno-effc++)
+endif()
+
 add_subdirectory(builder)
 add_subdirectory(compile_time)

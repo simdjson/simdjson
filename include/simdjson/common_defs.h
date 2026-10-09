@@ -62,6 +62,12 @@ float from_chars_float(const char *first) noexcept;
 #define SIMDJSON_ENABLE_NAN_INF 0
 #endif
 
+// By default, simdjson uses pragmas to silence some compiler warnings in its
+// own code. Define SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION prior to including
+// simdjson.h (or when building simdjson) to never suppress compiler diagnostics.
+// This is useful when packaging policies forbid such pragmas (e.g., CRAN for R).
+// You may then see additional warnings, depending on your compiler and flags.
+
 } // namespace simdjson
 
 #if defined(__GNUC__)
@@ -97,8 +103,13 @@ float from_chars_float(const char *first) noexcept;
   #endif
 
   #define SIMDJSON_PUSH_DISABLE_WARNINGS __pragma(warning( push ))
+  #ifdef SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION
+  #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS SIMDJSON_PUSH_DISABLE_WARNINGS
+  #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER)
+  #else
   #define SIMDJSON_PUSH_DISABLE_ALL_WARNINGS __pragma(warning( push, 0 ))
   #define SIMDJSON_DISABLE_VS_WARNING(WARNING_NUMBER) __pragma(warning( disable : WARNING_NUMBER ))
+  #endif
   // Get rid of Intellisense-only warnings (Code Analysis)
   // Though __has_include is C++17, it is supported in Visual Studio 2017 or better (_MSC_VER>=1910).
   #ifdef __has_include
@@ -172,7 +183,11 @@ float from_chars_float(const char *first) noexcept;
   #endif // __clang__
 
   #define SIMDJSON_PRAGMA(P) _Pragma(#P)
+  #ifdef SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION
+  #define SIMDJSON_DISABLE_GCC_WARNING(WARNING)
+  #else
   #define SIMDJSON_DISABLE_GCC_WARNING(WARNING) SIMDJSON_PRAGMA(GCC diagnostic ignored #WARNING)
+  #endif
   #if SIMDJSON_CLANG_VISUAL_STUDIO
   #define SIMDJSON_DISABLE_UNDESIRED_WARNINGS SIMDJSON_DISABLE_GCC_WARNING(-Wmicrosoft-include)
   #else

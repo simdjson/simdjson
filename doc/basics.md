@@ -497,6 +497,25 @@ disable these checks on a best-effort basis but the C++ standard does not provid
 a direct way to check for a release build.
 
 
+Disabling diagnostic pragmas
+--------------------
+
+By default, simdjson uses pragmas (e.g., `#pragma GCC diagnostic ignored`) to silence some
+compiler warnings in its own code. Some packaging policies forbid such pragmas: for example,
+CRAN does not allow R packages to suppress compiler diagnostics. Define the macro
+`SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION` prior to including the `simdjson.h` header (and when building
+the library) so that simdjson never suppresses compiler diagnostics:
+
+```cpp
+#define SIMDJSON_NO_DIAGNOSTIC_PRAGMA_SUPPRESSION
+#include "simdjson.h"
+```
+
+You may then see additional warnings, depending on your compiler and flags. In particular,
+the deprecated parts of the API call one another and may emit deprecation warnings: also
+define `SIMDJSON_DISABLE_DEPRECATED_API` to leave them out.
+
+
 Warnign: Mixing debug and release simdjson code is unsafe: you either build all your code
 using simdjson in release mode or all of it in debug mode.
 
