@@ -40,5 +40,9 @@ endif()
 # SIMDJSON_FORCE_IMPLEMENTATION, so we know we're testing what we think we're testing
 add_cpp_test(checkimplementation LABELS other per_implementation)
 
+# The headers must compile cleanly (-Werror) when simdjson suppresses no diagnostics.
+add_cpp_test(no_diagnostic_pragmas_tests LABELS other acceptance)
+target_compile_definitions(no_diagnostic_pragmas_tests PRIVATE SIMDJSON_NO_DIAGNOSTIC_PRAGMAS SIMDJSON_DISABLE_DEPRECATED_API)
+
 add_subdirectory(builder)
 add_subdirectory(compile_time)
