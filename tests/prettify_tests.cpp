@@ -60,6 +60,7 @@ bool prettify_test() {
   return true;
 }
 
+#if SIMDJSON_EXCEPTIONS
 bool prettify_result_test() {
   simdjson::dom::parser parser;
   auto result = parser.parse(std::string("[1,2]"));
@@ -68,7 +69,11 @@ bool prettify_result_test() {
   auto formatted = simdjson::prettify(result);
   return formatted == simdjson::prettify(doc) && formatted != "[1,2]";
 }
+#endif
 
 int main() {
-  return prettify_result_test() && prettify_test() ? EXIT_SUCCESS : EXIT_FAILURE;
+#if SIMDJSON_EXCEPTIONS
+  if (!prettify_result_test()) { return EXIT_FAILURE; }
+#endif
+  return prettify_test() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
