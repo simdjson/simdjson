@@ -60,4 +60,15 @@ bool prettify_test() {
   return true;
 }
 
-int main() { return prettify_test() ? EXIT_SUCCESS : EXIT_FAILURE; }
+bool prettify_result_test() {
+  simdjson::dom::parser parser;
+  auto result = parser.parse(std::string("[1,2]"));
+  simdjson::dom::element doc;
+  if (result.get(doc) != simdjson::SUCCESS) { return false; }
+  auto formatted = simdjson::prettify(result);
+  return formatted == simdjson::prettify(doc) && formatted != "[1,2]";
+}
+
+int main() {
+  return prettify_result_test() && prettify_test() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
