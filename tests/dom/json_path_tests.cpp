@@ -443,6 +443,15 @@ bool json_path_with_wildcard() {
 
   ASSERT_EQUAL(values.size(), 0);
 
+  // $.phoneNumbers[1].numbers[*]: an index before a wildcard
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$.phoneNumbers[1].numbers[*]").get(values));
+
+  ASSERT_EQUAL(values.size(), 3);
+  for (int i = 0; i < 3; i++) {
+    ASSERT_SUCCESS(values[i].get(string_value));
+    ASSERT_EQUAL(string_value, expected_numbers[3 + i]);
+  }
+
   TEST_SUCCEED();
 }
 

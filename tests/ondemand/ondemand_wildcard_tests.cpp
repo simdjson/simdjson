@@ -266,15 +266,92 @@ namespace wildcard_tests {
       if (v.get_string().get(sv) == SUCCESS) { names.push_back(sv); }
     });
 
-    // This might error or return partial results
-    if (error) {
-      // If it errors, that's acceptable
-      TEST_SUCCEED();
+    // The third element is skipped, as in DOM
+    ASSERT_SUCCESS(error);
+    ASSERT_EQUAL(names.size(), 2);
+
+    TEST_SUCCEED();
+  }
+
+  // Runs the query and checks the integers it matched, in order.
+  bool check_wildcard_matches(const char *json_text, const char *path, const std::vector<int64_t> &expected) {
+    std::cout << "  " << path << " on " << json_text << std::endl;
+    auto json = padded_string(std::string(json_text));
+    ondemand::parser parser;
+    auto doc = parser.iterate(json);
+    std::vector<int64_t> found;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard(path, [&](ondemand::value v) {
+      int64_t x = 0;
+      if (v.get_int64().get(x) == SUCCESS) { found.push_back(x); }
+    }));
+    ASSERT_EQUAL(found.size(), expected.size());
+    for (size_t i = 0; i < found.size(); i++) {
+      ASSERT_EQUAL(found[i], expected[i]);
     }
+    return true;
+  }
 
-    // Should have at least 2 results
-    ASSERT_TRUE(names.size() >= 2);
+  // https://github.com/simdjson/simdjson/issues/2906
+  // An element that does not have the rest of the path is skipped, as in DOM:
+  // the walk goes on with the next element.
+  bool wildcard_skips_elements_without_the_path() {
+    TEST_START();
+    // A missing key
+    ASSERT_TRUE(check_wildcard_matches(R"({"items":[{"id":1},{"other":2},{"id":3},{"id":4}]})", "$.items[*].id", {1, 3, 4}));
+    // A missing key one level down
+    ASSERT_TRUE(check_wildcard_matches(R"({"items":[{"a":{"b":1}},{"a":{}},{"a":{"b":3}}]})", "$.items[*].a.b", {1, 3}));
+    // Scalars and an array where the path names a key, at either level
+    ASSERT_TRUE(check_wildcard_matches(R"({"items":[{"a":1},2,{"a":3}]})", "$.items[*].a", {1, 3}));
+    ASSERT_TRUE(check_wildcard_matches(R"({"items":[{"a":{"b":1}},{"a":1},[5],"s",{"a":{"b":4}}]})", "$.items[*].a.b", {1, 4}));
+    // The same through an object wildcard
+    ASSERT_TRUE(check_wildcard_matches(R"({"x":{"a":1},"y":{"b":2},"z":{"a":3}})", "$.*.a", {1, 3}));
+    TEST_SUCCEED();
+  }
 
+  // Array indexes in brackets, before or after a wildcard. An array that is
+  // too short is skipped.
+  bool wildcard_with_array_indexes() {
+    TEST_START();
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":[10,20,30]})", "$.a[0]", {10}));
+    // An index is read as in DOM: a leading zero is invalid and an index that
+    // does not fit in size_t is out of bounds. Under a wildcard, it matches nothing.
+    {
+      auto json = R"({"a":[10,20,30]})"_padded;
+      ondemand::parser parser;
+      const char *leading_zero[] = {"$.a[01]", "$.a[00]"};
+      for (const char *path : leading_zero) {
+        std::cout << "  " << path << std::endl;
+        auto doc = parser.iterate(json);
+        ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), INVALID_JSON_POINTER);
+      }
+      auto doc = parser.iterate(json);
+      ASSERT_ERROR(doc.for_each_at_path_with_wildcard("$.a[18446744073709551616]", [](ondemand::value) {}), INDEX_OUT_OF_BOUNDS);
+    }
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":[[10,11],[20,21]]})", "$.a[*][01]", {}));
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":{"x":[1,2],"y":[3,4]}})", "$.a.*[0]", {1, 3}));
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":[[1,2],[3],[5,6]]})", "$.a[*][1]", {2, 6}));
+    ASSERT_TRUE(check_wildcard_matches(R"({"a":[[1,2],[3,4]]})", "$.a[1][*]", {3, 4}));
+    // The example in doc/basics.md
+    ASSERT_TRUE(check_wildcard_matches(R"({"phoneNumbers":[{"numbers":[1,2]},{"numbers":[3,4]}]})", "$.phoneNumbers[*].numbers[1]", {2, 4}));
+    TEST_SUCCEED();
+  }
+
+  // A malformed path after a wildcard is still an error: it would fail the
+  // same way for every element.
+  bool wildcard_malformed_path_after_wildcard() {
+    TEST_START();
+    auto json = R"({"a":[{"b":1},{"b":2}]})"_padded;
+    ondemand::parser parser;
+    const char *malformed[] = {
+        R"($.a[*]['b)",
+        R"($.a[*][1)",
+        R"($.a[*][1x])",
+    };
+    for (const char *path : malformed) {
+      std::cout << "  malformed path: " << path << std::endl;
+      auto doc = parser.iterate(json);
+      ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [](ondemand::value) {}), INVALID_JSON_POINTER);
+    }
     TEST_SUCCEED();
   }
 
@@ -519,6 +596,9 @@ namespace wildcard_tests {
            wildcard_with_nested_objects() &&
            mixed_types_in_array() &&
            wildcard_nonexistent_field() &&
+           wildcard_skips_elements_without_the_path() &&
+           wildcard_with_array_indexes() &&
+           wildcard_malformed_path_after_wildcard() &&
            root_array_wildcard() &&
            wildcard_raw_json_issue_2684() &&
            unterminated_bracket_quote() &&
