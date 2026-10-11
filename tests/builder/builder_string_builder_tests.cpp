@@ -746,6 +746,21 @@ bool append_key_value_template() {
   ASSERT_EQUAL(p, "\"key\":\"value\"\"bool\":true\"int\":5\"nullptr\":null");
   TEST_SUCCEED();
 }
+bool append_key_value_template_padding() {
+  TEST_START();
+  simdjson::builder::string_builder sb(1);
+  sb.append_key_value<"short", "x">();
+  sb.append_key_value<"tire_pressure">(2); // "tire_pressure": is 16 bytes
+  sb.append_key_value<"a_key_longer_than_16_bytes">(1);
+  sb.escape_and_append_with_quotes<"k">();
+  sb.append_key_value<"n", nullptr>();
+  std::string_view p;
+  auto result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "\"short\":\"x\"\"tire_pressure\":2\"a_key_longer_than_16_bytes\":1"
+                  "\"k\"\"n\":null");
+  TEST_SUCCEED();
+}
 bool serialize_optional() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -962,6 +977,7 @@ bool run() {
 #if SIMDJSON_SUPPORTS_CONCEPTS
          issue2549() && car_test_template() &&
          escape_and_append_with_quotes_template() && append_key_value_template() &&
+         append_key_value_template_padding() &&
          serialize_optional() && issue2827_optional_serialization() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&

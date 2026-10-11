@@ -47,6 +47,10 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+
+consteval std::size_t padded_key_length(std::size_t length) {
+  return (length + 15) / 16 * 16;
+}
 #endif  // SIMDJSON_CONSTEVAL
 
 
@@ -98,13 +102,18 @@ template <typename Text>
 consteval std::size_t static_string_size() {
   return Text::text().size();
 }
+template <typename Text>
+consteval std::size_t padded_static_string_size() {
+  return padded_key_length(static_string_size<Text>());
+}
 
 template <typename Text>
 consteval auto make_static_string() {
-  std::array<char, static_string_size<Text>()> out{};
-  std::string escaped = Text::text();
-  for (std::size_t i = 0; i < out.size(); ++i) {
-    out[i] = escaped[i];
+  std::array<char, padded_static_string_size<Text>()> out{};
+  std::string text = Text::text();
+  // The tail past text.size() stays zero: it is the padding.
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    out[i] = text[i];
   }
   return out;
 }
@@ -116,10 +125,6 @@ template <fixed_string str>
 struct quoted_escaped_text {
   static consteval std::string text() { return consteval_to_quoted_escaped(str.view()); }
 };
-
-// JSON-escaped and quoted form of str.
-template <fixed_string str>
-inline constexpr auto& quoted_escaped = static_string<quoted_escaped_text<str>>;
 #endif // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 

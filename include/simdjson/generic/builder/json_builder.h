@@ -135,10 +135,6 @@ using unchecked_writer = basic_writer<false>;
 // 16-byte blocks).
 inline constexpr size_t unchecked_slack = 64;
 
-consteval size_t padded_key_length(size_t length) {
-  return (length + 15) / 16 * 16;
-}
-
 // === Helper: invoke a string_builder member that writes variable-length
 // content (escape_and_append_with_quotes etc), syncing the writer's local
 // state before the call and reloading after. Used for string fields where
@@ -228,16 +224,16 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
           constexpr size_t rest_key_len = first_key_len + 1;
           constexpr auto first_key = std::define_static_string(
               constevalutil::consteval_to_quoted_escaped(key_name) + ":" +
-              std::string(padded_key_length(first_key_len) - first_key_len, '\0'));
+              std::string(constevalutil::padded_key_length(first_key_len) - first_key_len, '\0'));
           constexpr auto rest_key = std::define_static_string(
               std::string(",") + constevalutil::consteval_to_quoted_escaped(key_name) + ":" +
-              std::string(padded_key_length(rest_key_len) - rest_key_len, '\0'));
-          if (!w.ensure(padded_key_length(rest_key_len))) { return; }
+              std::string(constevalutil::padded_key_length(rest_key_len) - rest_key_len, '\0'));
+          if (!w.ensure(constevalutil::padded_key_length(rest_key_len))) { return; }
           if (first) {
-            std::memcpy(w.ptr + w.pos, first_key, padded_key_length(first_key_len));
+            std::memcpy(w.ptr + w.pos, first_key, constevalutil::padded_key_length(first_key_len));
             w.pos += first_key_len;
           } else {
-            std::memcpy(w.ptr + w.pos, rest_key, padded_key_length(rest_key_len));
+            std::memcpy(w.ptr + w.pos, rest_key, constevalutil::padded_key_length(rest_key_len));
             w.pos += rest_key_len;
           }
           first = false;
