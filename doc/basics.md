@@ -2245,6 +2245,8 @@ The `for_each_at_path_with_wildcard` function in simdjson extends the JSONPath q
 
 The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level. You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the callback is simply never called. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield no callbacks.
 
+As in the DOM function `at_path_with_wildcard` and in RFC 9535, an element that does not match the rest of the path is skipped: given `{"items":[{"id":1},{"other":2},{"id":3}]}`, the query `$.items[*].id` calls the callback for `1` and `3` and returns `SUCCESS`. A missing field or an out-of-bounds index before a wildcard (e.g., `$.missing[*].id`) also yields no callbacks and returns `SUCCESS`. Without a wildcard, a path that matches nothing returns an error (e.g., `NO_SUCH_FIELD` or `INDEX_OUT_OF_BOUNDS`). Document errors (e.g., `TAPE_ERROR` or `DEPTH_ERROR`) are always returned. Array indexes can be written with brackets (`$.matrix[0][1]`) or with a dot (`$.matrix.0.1`); an index with a leading zero (`[01]`) is invalid.
+
 ### Example Usage
 
 Here is an example demonstrating the use of `for_each_at_path_with_wildcard`:
