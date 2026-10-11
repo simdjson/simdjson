@@ -629,8 +629,41 @@ bool at_path_error_propagation() {
   TEST_SUCCEED();
 }
 
+// The path is parsed once, not again at every node the wildcards reach: a long
+// path after a couple of wildcards on a large document used to take
+// O(nodes * path length) time (OSS-Fuzz 6040346321289216).
+bool long_path_after_wildcards() {
+  TEST_START();
+  std::string json = "[";
+  for (size_t i = 0; i < 2000; i++) {
+    if (i > 0) { json += ","; }
+    json += R"([{"k":[7]},{"k":[8]},{"j":0},3,{"k":[]}])";
+  }
+  json += "]";
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k[0]").get(values));
+  ASSERT_EQUAL(values.size(), 4000);
+  int64_t value;
+  ASSERT_SUCCESS(values[0].get_int64().get(value));
+  ASSERT_EQUAL(value, 7);
+  ASSERT_SUCCESS(values[1].get_int64().get(value));
+  ASSERT_EQUAL(value, 8);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k.*").get(values));
+  ASSERT_EQUAL(values.size(), 4000);
+  const std::string long_key(1000000, 'x');
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*." + long_key).get(values));
+  ASSERT_EQUAL(values.size(), 0);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k." + long_key + ".*").get(values));
+  ASSERT_EQUAL(values.size(), 0);
+  TEST_SUCCEED();
+}
+
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
+      long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
