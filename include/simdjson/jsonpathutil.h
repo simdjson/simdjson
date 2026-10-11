@@ -7,6 +7,7 @@
 
 #include <limits>
 #include <utility>
+#include <vector>
 
 namespace simdjson {
 namespace internal {
@@ -159,6 +160,69 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
 
   return std::make_pair(key, json_path.substr(i));
 }
+
+namespace internal {
+/**
+ * A JSONPath as the DOM at_path_with_wildcard() consumes it, parsed once.
+ *
+ * Every node visited at a given depth sees the same remaining path, so we
+ * parse it up front rather than at each node: re-scanning (and converting)
+ * the remaining path at every node costs O(nodes * path length), which
+ * made a long path after a couple of wildcards take minutes on a large
+ * document.
+ */
+struct wildcard_json_path {
+  enum class tail_type { invalid, all_values, pointer };
+  // One JSON pointer ("/key") per leading segment, "/*" being a wildcard.
+  std::vector<std::string> steps{};
+  // What to do once the steps are exhausted.
+  tail_type tail{tail_type::invalid};
+  // The rest of the path, as a JSON pointer, when tail == pointer.
+  std::string tail_pointer{};
+};
+
+/**
+ * Splits json_path the same way the recursive DOM at_path_with_wildcard()
+ * historically did, one level at a time, but in a single pass.
+ */
+inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
+  wildcard_json_path result;
+  // The remaining path (always a suffix of json_path) contains a '*' if and
+  // only if it starts at or before the last one.
+  const size_t last_star = json_path.rfind('*');
+  std::string_view path = json_path;
+  while (true) {
+    size_t i = 0;
+    if (!path.empty() && path.front() == '$') {
+      i = 1;
+    }
+    if (i >= path.size() || (path[i] != '.' && path[i] != '[')) {
+      result.tail = wildcard_json_path::tail_type::invalid;
+      return result;
+    }
+    const size_t offset = json_path.size() - path.size();
+    if (last_star == std::string_view::npos || last_star < offset) {
+      result.tail_pointer = json_path_to_pointer_conversion(path);
+      result.tail = (result.tail_pointer == "-1")
+                        ? wildcard_json_path::tail_type::invalid
+                        : wildcard_json_path::tail_type::pointer;
+      return result;
+    }
+    if ((path.compare(i, 3, "[*]") == 0 && path.size() == i + 3) ||
+        (path.compare(i, 2, ".*") == 0 && path.size() == i + 2)) {
+      result.tail = wildcard_json_path::tail_type::all_values;
+      return result;
+    }
+    std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(path);
+    if (key_and_json_path.first.empty()) {
+      result.tail = wildcard_json_path::tail_type::invalid;
+      return result;
+    }
+    result.steps.push_back(std::string("/") + std::string(key_and_json_path.first));
+    path = key_and_json_path.second;
+  }
+}
+} // namespace internal
 
 } // namespace simdjson
 #endif // SIMDJSON_JSONPATHUTIL_H
