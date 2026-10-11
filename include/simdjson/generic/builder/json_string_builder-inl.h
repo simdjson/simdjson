@@ -1040,7 +1040,12 @@ string_builder::escape_and_append_with_quotes(const char *input) noexcept {
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <constevalutil::fixed_string key>
 simdjson_inline void string_builder::escape_and_append_with_quotes() noexcept {
+#if SIMDJSON_CONSTEVAL
+  constexpr auto& escaped = constevalutil::quoted_escaped<key>;
+  append_raw_n<escaped.size()>(escaped.data());
+#else
   escape_and_append_with_quotes(constevalutil::string_constant<key>::value);
+#endif
 }
 #endif
 

@@ -87,6 +87,26 @@ template <fixed_string str>
 struct string_constant {
     static constexpr std::string_view value = str.view();
 };
+
+#if SIMDJSON_CONSTEVAL
+consteval std::size_t quoted_escaped_size(std::string_view input) {
+  return consteval_to_quoted_escaped(input).size();
+}
+
+template <fixed_string str>
+consteval auto make_quoted_escaped() {
+  std::array<char, quoted_escaped_size(str.view())> out{};
+  std::string escaped = consteval_to_quoted_escaped(str.view());
+  for (std::size_t i = 0; i < out.size(); ++i) {
+    out[i] = escaped[i];
+  }
+  return out;
+}
+
+// JSON-escaped and quoted form of str.
+template <fixed_string str>
+inline constexpr auto quoted_escaped = make_quoted_escaped<str>();
+#endif // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace constevalutil

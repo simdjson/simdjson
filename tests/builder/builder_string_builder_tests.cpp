@@ -721,6 +721,18 @@ bool car_test_template() {
                   "\"tire_pressure\":[30.0,30.2,30.513,30.79]}");
   TEST_SUCCEED();
 }
+bool escape_and_append_with_quotes_template() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.escape_and_append_with_quotes<"">();
+  sb.escape_and_append_with_quotes<"plain">();
+  sb.escape_and_append_with_quotes<"a\"b\\c\n\x01">();
+  std::string_view p;
+  auto result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "\"\"\"plain\"\"a\\\"b\\\\c\\n\\u0001\"");
+  TEST_SUCCEED();
+}
 bool serialize_optional() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -935,7 +947,8 @@ bool run() {
 #endif
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
-         issue2549() && car_test_template() && serialize_optional() &&
+         issue2549() && car_test_template() &&
+         escape_and_append_with_quotes_template() && serialize_optional() &&
          issue2827_optional_serialization() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&
