@@ -1,5 +1,6 @@
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <limits>
 #include <type_traits>
@@ -1040,7 +1041,11 @@ string_builder::escape_and_append_with_quotes(const char *input) noexcept {
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <constevalutil::fixed_string key>
 simdjson_inline void string_builder::escape_and_append_with_quotes() noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<constevalutil::quoted_escaped_text<key>>();
+#else
   escape_and_append_with_quotes(constevalutil::string_constant<key>::value);
+#endif
 }
 #endif
 
@@ -1074,6 +1079,18 @@ simdjson_inline void string_builder::append_raw_n(const char *str) noexcept {
     position += N;
   }
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_CONSTEVAL
+template <typename Text>
+simdjson_inline void string_builder::append_static_string() noexcept {
+  constexpr auto& padded = constevalutil::static_string<Text>;
+  if (capacity_check(padded.size())) {
+    std::memcpy(buffer.get() + position, padded.data(), padded.size());
+    position += constevalutil::static_string_size<Text>();
+  }
+}
+#endif
+
 #if SIMDJSON_SUPPORTS_CONCEPTS
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
@@ -1240,11 +1257,24 @@ string_builder::append_key_value(key_type key, value_type value) noexcept {
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
+#if SIMDJSON_CONSTEVAL
+template <constevalutil::fixed_string key>
+struct quoted_key_text {
+  static consteval std::string text() {
+    return constevalutil::consteval_to_quoted_escaped(key.view()) + ":";
+  }
+};
+#endif
+
 template <constevalutil::fixed_string key, typename value_type>
 simdjson_inline void
 string_builder::append_key_value(value_type value) noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<quoted_key_text<key>>();
+#else
   escape_and_append_with_quotes<key>();
   append_colon();
+#endif
   SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
     append_null();
   }
@@ -1260,6 +1290,56 @@ string_builder::append_key_value(value_type value) noexcept {
   }
   else {
     append(value);
+  }
+}
+
+#if SIMDJSON_CONSTEVAL
+template <typename T>
+concept compile_time_formattable =
+  constevalutil::is_fixed_string<std::remove_cvref_t<T>> ||
+  std::same_as<std::remove_cvref_t<T>, bool> ||
+  std::same_as<std::remove_cvref_t<T>, std::nullptr_t>;
+
+template <constevalutil::fixed_string key, auto value>
+requires compile_time_formattable<decltype(value)>
+struct key_value_text {
+  static consteval std::string text() {
+    using value_type = std::remove_cvref_t<decltype(value)>;
+    std::string out = constevalutil::consteval_to_quoted_escaped(key.view()) + ':';
+    SIMDJSON_IF_CONSTEXPR(constevalutil::is_fixed_string<value_type>)
+      out += constevalutil::consteval_to_quoted_escaped(value.view());
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, bool>)
+      out += value ? "true" : "false";
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, std::nullptr_t>)
+      out += "null";
+    return out;
+  }
+};
+#endif
+
+template <constevalutil::fixed_string key, constevalutil::fixed_string value>
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<key_value_text<key, value>>();
+#else
+  escape_and_append_with_quotes<key>();
+  append_colon();
+  escape_and_append_with_quotes<value>();
+#endif
+}
+
+template <constevalutil::fixed_string key, auto value>
+requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+#if SIMDJSON_CONSTEVAL
+  SIMDJSON_IF_CONSTEXPR(compile_time_formattable<decltype(value)>) {
+    append_static_string<key_value_text<key, value>>();
+  } else
+#endif
+  {
+    append_key_value<key>(value);
   }
 }
 #endif

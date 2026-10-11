@@ -47,6 +47,10 @@ consteval std::string consteval_to_quoted_escaped(std::string_view input) {
   out.push_back('"');
   return out;
 }
+
+consteval std::size_t padded_key_length(std::size_t length) {
+  return (length + 15) / 16 * 16;
+}
 #endif  // SIMDJSON_CONSTEVAL
 
 
@@ -83,10 +87,45 @@ struct fixed_string {
 template <std::size_t N>
 fixed_string(const char (&)[N]) -> fixed_string<N>;
 
+template <typename T>
+inline constexpr bool is_fixed_string = false;
+template <std::size_t N>
+inline constexpr bool is_fixed_string<constevalutil::fixed_string<N>> = true;
+
 template <fixed_string str>
 struct string_constant {
     static constexpr std::string_view value = str.view();
 };
+
+#if SIMDJSON_CONSTEVAL
+template <typename Text>
+consteval std::size_t static_string_size() {
+  return Text::text().size();
+}
+template <typename Text>
+consteval std::size_t padded_static_string_size() {
+  return padded_key_length(static_string_size<Text>());
+}
+
+template <typename Text>
+consteval auto make_static_string() {
+  std::array<char, padded_static_string_size<Text>()> out{};
+  std::string text = Text::text();
+  // The tail past text.size() stays zero: it is the padding.
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    out[i] = text[i];
+  }
+  return out;
+}
+
+template <typename Text>
+inline constexpr auto static_string = make_static_string<Text>();
+
+template <fixed_string str>
+struct quoted_escaped_text {
+  static consteval std::string text() { return consteval_to_quoted_escaped(str.view()); }
+};
+#endif // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 } // namespace constevalutil

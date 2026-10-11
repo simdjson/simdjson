@@ -153,6 +153,13 @@ public:
   template<constevalutil::fixed_string key, typename value_type>
   simdjson_inline void append_key_value(value_type value) noexcept;
 
+  template<constevalutil::fixed_string key, constevalutil::fixed_string value>
+  simdjson_inline void append_key_value() noexcept;
+
+  template<constevalutil::fixed_string key, auto value>
+  requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
+  simdjson_inline void append_key_value() noexcept;
+
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
@@ -194,6 +201,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    */
   template <size_t N>
   simdjson_inline void append_raw_n(const char *str) noexcept;
+
 #if SIMDJSON_EXCEPTIONS
   /**
    * Creates an std::string from the written JSON buffer.
@@ -272,6 +280,15 @@ private:
    * to be called before writing to the buffer. It should be fast.
    */
   simdjson_inline bool capacity_check(size_t upcoming_bytes);
+
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_CONSTEVAL
+  /**
+   * Append constevalutil::static_string<Text>. The whole zero-padded array is
+   * copied in 16-byte blocks, but position only advances by the text length.
+   */
+  template <typename Text>
+  simdjson_inline void append_static_string() noexcept;
+#endif
 
   /**
    * Grow the buffer to at least desired_capacity bytes.
