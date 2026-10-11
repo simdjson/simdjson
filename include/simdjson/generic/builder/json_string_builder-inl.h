@@ -1246,11 +1246,28 @@ string_builder::append_key_value(key_type key, value_type value) noexcept {
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
+#if SIMDJSON_CONSTEVAL
+template <constevalutil::fixed_string key>
+struct quoted_key_text {
+  static consteval std::string text() {
+    return constevalutil::consteval_to_quoted_escaped(key.view()) + ":";
+  }
+};
+
+template <constevalutil::fixed_string key>
+inline constexpr auto& quoted_key_literal = constevalutil::static_string<quoted_key_text<key>>;
+#endif
+
 template <constevalutil::fixed_string key, typename value_type>
 simdjson_inline void
 string_builder::append_key_value(value_type value) noexcept {
+#if SIMDJSON_CONSTEVAL
+  constexpr auto& literal = quoted_key_literal<key>;
+  append_raw_n<literal.size()>(literal.data());
+#else
   escape_and_append_with_quotes<key>();
   append_colon();
+#endif
   SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
     append_null();
   }
