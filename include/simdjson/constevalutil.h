@@ -83,29 +83,43 @@ struct fixed_string {
 template <std::size_t N>
 fixed_string(const char (&)[N]) -> fixed_string<N>;
 
+template <typename T>
+inline constexpr bool is_fixed_string = false;
+template <std::size_t N>
+inline constexpr bool is_fixed_string<constevalutil::fixed_string<N>> = true;
+
 template <fixed_string str>
 struct string_constant {
     static constexpr std::string_view value = str.view();
 };
 
 #if SIMDJSON_CONSTEVAL
-consteval std::size_t quoted_escaped_size(std::string_view input) {
-  return consteval_to_quoted_escaped(input).size();
+template <typename Text>
+consteval std::size_t static_string_size() {
+  return Text::text().size();
 }
 
-template <fixed_string str>
-consteval auto make_quoted_escaped() {
-  std::array<char, quoted_escaped_size(str.view())> out{};
-  std::string escaped = consteval_to_quoted_escaped(str.view());
+template <typename Text>
+consteval auto make_static_string() {
+  std::array<char, static_string_size<Text>()> out{};
+  std::string escaped = Text::text();
   for (std::size_t i = 0; i < out.size(); ++i) {
     out[i] = escaped[i];
   }
   return out;
 }
 
+template <typename Text>
+inline constexpr auto static_string = make_static_string<Text>();
+
+template <fixed_string str>
+struct quoted_escaped_text {
+  static consteval std::string text() { return consteval_to_quoted_escaped(str.view()); }
+};
+
 // JSON-escaped and quoted form of str.
 template <fixed_string str>
-inline constexpr auto quoted_escaped = make_quoted_escaped<str>();
+inline constexpr auto& quoted_escaped = static_string<quoted_escaped_text<str>>;
 #endif // SIMDJSON_CONSTEVAL
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 

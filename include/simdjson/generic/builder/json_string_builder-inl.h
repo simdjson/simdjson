@@ -1,5 +1,6 @@
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <limits>
 #include <type_traits>
@@ -1268,18 +1269,59 @@ string_builder::append_key_value(value_type value) noexcept {
   }
 }
 
+#if SIMDJSON_CONSTEVAL
+template <typename T>
+concept compile_time_formattable =
+  constevalutil::is_fixed_string<std::remove_cvref_t<T>> ||
+  std::same_as<std::remove_cvref_t<T>, bool> ||
+  std::same_as<std::remove_cvref_t<T>, std::nullptr_t>;
+
+template <constevalutil::fixed_string key, auto value>
+requires compile_time_formattable<decltype(value)>
+struct key_value_text {
+  static consteval std::string text() {
+    using value_type = std::remove_cvref_t<decltype(value)>;
+    std::string out = constevalutil::consteval_to_quoted_escaped(key.view()) + ':';
+    SIMDJSON_IF_CONSTEXPR(constevalutil::is_fixed_string<value_type>)
+      out += constevalutil::consteval_to_quoted_escaped(value.view());
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, bool>)
+      out += value ? "true" : "false";
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, std::nullptr_t>)
+      out += "null";
+    return out;
+  }
+};
+
+template <constevalutil::fixed_string key, auto value>
+inline constexpr auto& key_value_literal = constevalutil::static_string<key_value_text<key, value>>;
+#endif
+
 template <constevalutil::fixed_string key, constevalutil::fixed_string value>
 simdjson_inline void
 string_builder::append_key_value() noexcept {
+#if SIMDJSON_CONSTEVAL
+  constexpr auto& literal = key_value_literal<key, value>;
+  append_raw_n<literal.size()>(literal.data());
+#else
   escape_and_append_with_quotes<key>();
   append_colon();
   escape_and_append_with_quotes<value>();
+#endif
 }
 
 template <constevalutil::fixed_string key, auto value>
+requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
 simdjson_inline void
 string_builder::append_key_value() noexcept {
-  append_key_value<key>(value);
+#if SIMDJSON_CONSTEVAL
+  SIMDJSON_IF_CONSTEXPR(compile_time_formattable<decltype(value)>) {
+    constexpr auto& literal = key_value_literal<key, value>;
+    append_raw_n<literal.size()>(literal.data());
+  } else
+#endif
+  {
+    append_key_value<key>(value);
+  }
 }
 #endif
 

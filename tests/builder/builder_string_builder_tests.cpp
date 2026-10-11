@@ -739,10 +739,11 @@ bool append_key_value_template() {
   sb.append_key_value<"key", "value">();
   sb.append_key_value<"bool", true>();
   sb.append_key_value<"int", 5>();
+  sb.append_key_value<"nullptr", nullptr>();
   std::string_view p;
   auto result = sb.view().get(p);
   ASSERT_SUCCESS(result);
-  ASSERT_EQUAL(p, "\"key\":\"value\"\"bool\":true\"int\":5");
+  ASSERT_EQUAL(p, "\"key\":\"value\"\"bool\":true\"int\":5\"nullptr\":null");
   TEST_SUCCEED();
 }
 bool serialize_optional() {

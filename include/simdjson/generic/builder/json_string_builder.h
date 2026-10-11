@@ -157,6 +157,7 @@ public:
   simdjson_inline void append_key_value() noexcept;
 
   template<constevalutil::fixed_string key, auto value>
+  requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
   simdjson_inline void append_key_value() noexcept;
 
   // Support for optional types (std::optional, etc.)
