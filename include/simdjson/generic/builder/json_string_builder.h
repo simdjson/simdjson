@@ -153,6 +153,12 @@ public:
   template<constevalutil::fixed_string key, typename value_type>
   simdjson_inline void append_key_value(value_type value) noexcept;
 
+  template<constevalutil::fixed_string key, constevalutil::fixed_string value>
+  simdjson_inline void append_key_value() noexcept;
+
+  template<constevalutil::fixed_string key, auto value>
+  simdjson_inline void append_key_value() noexcept;
+
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)

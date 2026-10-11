@@ -733,6 +733,18 @@ bool escape_and_append_with_quotes_template() {
   ASSERT_EQUAL(p, "\"\"\"plain\"\"a\\\"b\\\\c\\n\\u0001\"");
   TEST_SUCCEED();
 }
+bool append_key_value_template() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append_key_value<"key", "value">();
+  sb.append_key_value<"bool", true>();
+  sb.append_key_value<"int", 5>();
+  std::string_view p;
+  auto result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "\"key\":\"value\"\"bool\":true\"int\":5");
+  TEST_SUCCEED();
+}
 bool serialize_optional() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -948,8 +960,8 @@ bool run() {
 #endif
 #if SIMDJSON_SUPPORTS_CONCEPTS
          issue2549() && car_test_template() &&
-         escape_and_append_with_quotes_template() && serialize_optional() &&
-         issue2827_optional_serialization() &&
+         escape_and_append_with_quotes_template() && append_key_value_template() &&
+         serialize_optional() && issue2827_optional_serialization() &&
 #endif
          append_char() && append_integer() && append_float() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF

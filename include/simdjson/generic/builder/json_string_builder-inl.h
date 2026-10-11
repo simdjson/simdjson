@@ -1267,6 +1267,20 @@ string_builder::append_key_value(value_type value) noexcept {
     append(value);
   }
 }
+
+template <constevalutil::fixed_string key, constevalutil::fixed_string value>
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+  escape_and_append_with_quotes<key>();
+  append_colon();
+  escape_and_append_with_quotes<value>();
+}
+
+template <constevalutil::fixed_string key, auto value>
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+  append_key_value<key>(value);
+}
 #endif
 
 } // namespace builder
