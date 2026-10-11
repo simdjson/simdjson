@@ -49,6 +49,28 @@ simdjson_inline error_code parse_json_pointer_array_index(std::string_view json_
 
   return SUCCESS;
 }
+
+/**
+ * Returns true if the error means that a JSONPath segment matched nothing
+ * (missing field, index out of bounds, value of the wrong type, or a scalar
+ * reached while path segments remain), as opposed to a document error.
+ * A wildcard walk skips such branches, as RFC 9535 and DOM's
+ * at_path_with_wildcard do.
+ */
+simdjson_inline bool is_matching_failure_error(error_code error) noexcept {
+  return error == NO_SUCH_FIELD || error == INDEX_OUT_OF_BOUNDS ||
+         error == INCORRECT_TYPE || error == INVALID_JSON_POINTER;
+}
+
+/**
+ * Returns true if a wildcard follows in the remaining JSONPath. A segment that
+ * matches nothing before a wildcard yields an empty result instead of an
+ * error, as in DOM's at_path_with_wildcard. Like DOM, this treats a '*' inside
+ * a quoted key as a wildcard.
+ */
+simdjson_inline bool json_path_has_wildcard(std::string_view json_path) noexcept {
+  return json_path.find('*') != std::string_view::npos;
+}
 } // namespace internal
 
 /**
@@ -155,6 +177,15 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
   } else if ((i+2 < json_path.size()) && json_path[i] == '[' && json_path[i+1] == '*' && json_path[i+2] == ']') { // i.e [*].additional_keys or [*]["additional_keys"]
     key = "*";
     i += 3;
+  } else if (i < json_path.size() && json_path[i] == '[') { // i.e. [0] or [123]
+    size_t j = i + 1;
+    while (j < json_path.size() && json_path[j] >= '0' && json_path[j] <= '9') {
+      ++j;
+    }
+    if (j > i + 1 && j < json_path.size() && json_path[j] == ']') {
+      key = json_path.substr(i + 1, j - i - 1);
+      i = j + 1;
+    }
   }
 
 

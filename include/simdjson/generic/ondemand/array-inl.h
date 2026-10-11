@@ -207,30 +207,36 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
       if (remaining_path.empty()) {
         callback(val);
       } else {
-        error_code err = element.for_each_at_path_with_wildcard(remaining_path, callback);
-        if(err) { return err; }
+        // An element that does not match the rest of the path is skipped.
+        error_code err = val.for_each_at_path_with_wildcard(remaining_path, callback);
+        if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
     return SUCCESS;
   } else {
     // Specific index case in which we access the element at the given index
-    size_t idx = 0;
-
     for (char c : key) {
       if(c < '0' || c > '9'){
         return INVALID_JSON_POINTER;
       }
-      idx = idx*10 + (c - '0');
     }
-
-    auto element = at(idx);
+    // Rejects leading zeros and indexes that overflow size_t, as DOM does.
+    size_t idx;
+    size_t idx_length;
+    error_code error = internal::parse_json_pointer_array_index(key, idx, idx_length);
     value val;
-    SIMDJSON_TRY(element.get(val));
+    if (!error) { error = at(idx).get(val); }
+    if (error) {
+      if (error == INDEX_OUT_OF_BOUNDS && internal::json_path_has_wildcard(remaining_path)) {
+        return SUCCESS;
+      }
+      return error;
+    }
     if (remaining_path.empty()){
       callback(val);
       return SUCCESS;
     } else {
-      return element.for_each_at_path_with_wildcard(remaining_path, callback);
+      return val.for_each_at_path_with_wildcard(remaining_path, callback);
     }
   }
 }
