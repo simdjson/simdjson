@@ -249,7 +249,11 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
       result.tail = wildcard_json_path::tail_type::invalid;
       return result;
     }
-    result.steps.push_back(std::string("/") + std::string(key_and_json_path.first));
+    std::string step;
+    step.reserve(key_and_json_path.first.size() + 1);
+    step += '/';
+    step.append(key_and_json_path.first.data(), key_and_json_path.first.size());
+    result.steps.push_back(std::move(step));
     path = key_and_json_path.second;
   }
 }
