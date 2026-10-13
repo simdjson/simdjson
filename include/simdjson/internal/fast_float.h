@@ -345,7 +345,7 @@ using parse_options = parse_options_t<char>;
 // disable -Wcast-align=strict (GCC only)
 #define SIMDJSON_FASTFLOAT_SIMD_DISABLE_WARNINGS                                        \
   _Pragma("GCC diagnostic push")                                               \
-      SIMDJSON_DISABLE_GCC_WARNING(-Wcast-align)
+      _Pragma("GCC diagnostic ignored \"-Wcast-align\"")
 #else
 #define SIMDJSON_FASTFLOAT_SIMD_DISABLE_WARNINGS
 #endif

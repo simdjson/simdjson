@@ -437,12 +437,12 @@ using std::operator<<;
 // Clang, GNUC, MSVC warning suppression macros:
 
 #if defined(__clang__)
-SIMDJSON_DISABLE_GCC_WARNING(-Wreserved-user-defined-literal)
+# pragma clang diagnostic ignored "-Wreserved-user-defined-literal"
 # pragma clang diagnostic push
-SIMDJSON_DISABLE_GCC_WARNING(-Wuser-defined-literals)
+# pragma clang diagnostic ignored "-Wuser-defined-literals"
 #elif nssv_COMPILER_GNUC_VERSION >= 480
 #  pragma  GCC  diagnostic push
-SIMDJSON_DISABLE_GCC_WARNING(-Wliteral-suffix)
+#  pragma  GCC  diagnostic ignored "-Wliteral-suffix"
 #endif // __clang__
 
 #if nssv_COMPILER_MSVC_VERSION >= 140
