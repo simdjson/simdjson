@@ -375,13 +375,21 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
       if (remaining_path.empty()) {
         callback(val);
       } else {
-        SIMDJSON_TRY(val.for_each_at_path_with_wildcard(remaining_path, callback));
+        // A field that does not match the rest of the path is skipped.
+        error_code err = val.for_each_at_path_with_wildcard(remaining_path, callback);
+        if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
     return SUCCESS;
   } else {
     value val;
-    SIMDJSON_TRY(find_field(key).get(val));
+    error_code error = find_field(key).get(val);
+    if (error) {
+      if (error == NO_SUCH_FIELD && internal::json_path_has_wildcard(remaining_path)) {
+        return SUCCESS;
+      }
+      return error;
+    }
 
     if (remaining_path.empty()) {
       callback(val);

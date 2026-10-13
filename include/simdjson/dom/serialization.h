@@ -312,7 +312,7 @@ template <class T> std::string prettify(simdjson_result<T> x) {
   if (x.error()) {
     throw simdjson_error(x.error());
   }
-  return to_string(x.value());
+  return prettify(x.value());
 }
 #endif
 
