@@ -252,7 +252,19 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
     std::string step;
     step.reserve(key_and_json_path.first.size() + 1);
     step += '/';
-    step.append(key_and_json_path.first.data(), key_and_json_path.first.size());
+    // The step is consumed by at_pointer, which unescapes ~0/~1, so '~' and
+    // '/' in the key must be escaped as json_path_to_pointer_conversion does:
+    // a raw '/' splits the step into two pointer tokens and a raw '~'
+    // invalidates it, either way addressing the wrong element.
+    for (const char c : key_and_json_path.first) {
+      if (c == '~') {
+        step += "~0";
+      } else if (c == '/') {
+        step += "~1";
+      } else {
+        step += c;
+      }
+    }
     result.steps.push_back(std::move(step));
     path = key_and_json_path.second;
   }
