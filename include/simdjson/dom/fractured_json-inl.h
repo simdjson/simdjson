@@ -213,8 +213,18 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 inline size_t structure_analyzer::estimate_string_length(std::string_view s) const {
   size_t len = 2; // quotes
   for (char c : s) {
-    if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 32) {
-      len += 2; // escape sequence (at least)
+    unsigned char uc = static_cast<unsigned char>(c);
+    if (c == '"' || c == '\\') {
+      len += 2; // \" and \\ are two-character escapes
+    } else if (uc < 0x20) {
+      switch (c) {
+        case '\b': case '\f': case '\n': case '\r': case '\t':
+          len += 2; // two-character escapes: \b \f \n \r \t
+          break;
+        default:
+          len += 6; // \u00XX — six-character escape for other control chars
+          break;
+      }
     } else {
       len += 1;
     }

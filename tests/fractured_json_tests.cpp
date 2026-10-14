@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -836,6 +837,89 @@ bool control_characters_test() {
   }
 
   std::cout << "Control characters test passed." << std::endl;
+  return true;
+}
+
+// Regression test: table column padding with a string containing a tab
+// (control character emitted as \t) inside an array of objects, which
+// triggers FracturedJson's table-formatting path.
+bool table_format_tab_control_char_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  // Original bug-report input, but force table mode with a tight line budget.
+  const char* json =
+      "[{\"a\":\"\\u0000\",\"b\":\"x\"},{\"a\":\"hello\",\"b\":\"y\"}]";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  // First, show default output (inline expected).
+  auto formatted_default = simdjson::fractured_json(doc);
+  std::cout << "DEFAULT: " << formatted_default << std::endl;
+
+  // Force table mode with a tight max_total_line_length.
+  simdjson::fractured_json_options opts;
+  opts.enable_table_format = true;
+  opts.max_total_line_length = 40;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  // The formatter must still emit valid JSON.
+  error = parser.parse(formatted).get(doc);
+  if (error) {
+    std::cerr << "Re-parse error: " << error << std::endl;
+    return false;
+  }
+
+  // Split formatted output into lines.
+  std::vector<std::string> lines;
+  {
+    std::istringstream iss(formatted);
+    std::string line;
+    while (std::getline(iss, line)) {
+      lines.push_back(line);
+    }
+  }
+
+  // Find the two object rows: lines containing "\"b\"" (the second column).
+  // There must be exactly two such lines — one per row.
+  std::vector<std::string> rows;
+  for (const auto& line : lines) {
+    if (line.find("\"b\"") != std::string::npos &&
+        line.find("\"a\"") != std::string::npos) {
+      rows.push_back(line);
+    }
+  }
+  if (rows.size() != 2) {
+    std::cerr << "Expected 2 table rows, got " << rows.size() << std::endl;
+    for (const auto& l : lines) std::cerr << "  [" << l << "]\n";
+    return false;
+  }
+
+  // Column "b" must start at the same horizontal index in both rows.
+  size_t col_b_row1 = rows[0].find("\"b\"");
+  size_t col_b_row2 = rows[1].find("\"b\"");
+  std::cout << "Row 1: [" << rows[0] << "]  col b at " << col_b_row1 << std::endl;
+  std::cout << "Row 2: [" << rows[1] << "]  col b at " << col_b_row2 << std::endl;
+
+  if (col_b_row1 == std::string::npos || col_b_row2 == std::string::npos) {
+    std::cerr << "Column \"b\" not found in one of the rows" << std::endl;
+    return false;
+  }
+  if (col_b_row1 != col_b_row2) {
+    std::cerr << "Column misalignment: \"b\" at " << col_b_row1
+              << " vs " << col_b_row2
+              << " (delta " << (col_b_row1 - col_b_row2) << ")" << std::endl;
+    return false;
+  }
+
+  std::cout << "Table format tab control char test passed." << std::endl;
   return true;
 }
 
@@ -2256,6 +2340,7 @@ int main() {
   success = large_array_test() && success;
   success = reflection_workflow_test() && success;
   success = control_characters_test() && success;
+  success = table_format_tab_control_char_test() && success;
   success = single_element_test() && success;
 
   // Option tests
