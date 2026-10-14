@@ -888,7 +888,7 @@ bool table_format_tab_control_char_test() {
   }
 
   // Find the two object rows: lines containing "\"b\"" (the second column).
-  // There must be exactly two such lines — one per row.
+  // There must be exactly two such lines -- one per row.
   std::vector<std::string> rows;
   for (const auto& line : lines) {
     if (line.find("\"b\"") != std::string::npos &&

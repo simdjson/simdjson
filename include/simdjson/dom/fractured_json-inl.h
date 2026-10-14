@@ -222,7 +222,7 @@ inline size_t structure_analyzer::estimate_string_length(std::string_view s) con
           len += 2; // two-character escapes: \b \f \n \r \t
           break;
         default:
-          len += 6; // \u00XX — six-character escape for other control chars
+          len += 6; // \u00XX -- six-character escape for other control chars
           break;
       }
     } else {
