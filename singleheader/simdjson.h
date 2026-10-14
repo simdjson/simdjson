@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-12 00:12:12 -0400. version 5.0.4 Do not edit! */
+/* auto-generated on 2026-10-14 15:49:28 -0400. version 5.0.5 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2715,7 +2715,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "5.0.4"
+#define SIMDJSON_VERSION "5.0.5"
 
 namespace simdjson {
 enum {
@@ -2730,7 +2730,7 @@ enum {
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 4
+  SIMDJSON_VERSION_REVISION = 5
 };
 } // namespace simdjson
 
@@ -9136,7 +9136,19 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
     std::string step;
     step.reserve(key_and_json_path.first.size() + 1);
     step += '/';
-    step.append(key_and_json_path.first.data(), key_and_json_path.first.size());
+    // The step is consumed by at_pointer, which unescapes ~0/~1, so '~' and
+    // '/' in the key must be escaped as json_path_to_pointer_conversion does:
+    // a raw '/' splits the step into two pointer tokens and a raw '~'
+    // invalidates it, either way addressing the wrong element.
+    for (const char c : key_and_json_path.first) {
+      if (c == '~') {
+        step += "~0";
+      } else if (c == '/') {
+        step += "~1";
+      } else {
+        step += c;
+      }
+    }
     result.steps.push_back(std::move(step));
     path = key_and_json_path.second;
   }
@@ -12783,8 +12795,18 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 inline size_t structure_analyzer::estimate_string_length(std::string_view s) const {
   size_t len = 2; // quotes
   for (char c : s) {
-    if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 32) {
-      len += 2; // escape sequence (at least)
+    unsigned char uc = static_cast<unsigned char>(c);
+    if (c == '"' || c == '\\') {
+      len += 2; // \" and \\ are two-character escapes
+    } else if (uc < 0x20) {
+      switch (c) {
+        case '\b': case '\f': case '\n': case '\r': case '\t':
+          len += 2; // two-character escapes: \b \f \n \r \t
+          break;
+        default:
+          len += 6; // \u00XX -- six-character escape for other control chars
+          break;
+      }
     } else {
       len += 1;
     }
@@ -245449,10 +245471,10 @@ simdjson_fastfloat_really_inline bool rounds_to_nearest() noexcept {
 //  https://stackoverflow.com/questions/46079446/is-there-a-warning-for-floating-point-equality-checking-in-visual-studio-2013
 #elif defined(__clang__)
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfloat-equal"
+SIMDJSON_DISABLE_GCC_WARNING(-Wfloat-equal)
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+SIMDJSON_DISABLE_GCC_WARNING(-Wfloat-equal)
 #endif
   return (fmini + 1.0f == 1.0f - fmini);
 #ifdef SIMDJSON_FASTFLOAT_VISUAL_STUDIO
@@ -245693,7 +245715,7 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
 #ifdef __clang__
 #pragma clang diagnostic push
 #if (!defined(__APPLE_CC__) && __clang_major__ >= 10) || (__clang_major__ >= 13)
-#pragma clang diagnostic ignored "-Wc++20-extensions"
+SIMDJSON_DISABLE_GCC_WARNING(-Wc++20-extensions)
 #endif
 #endif
   if simdjson_fastfloat_unlikely (pns.too_many_digits) {
