@@ -357,9 +357,16 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code object::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  auto result_pair = get_next_key_and_json_path(json_path);
-  std::string_view key = result_pair.first;
-  std::string_view remaining_path = result_pair.second;
+  // The path is split once: every field reached by a wildcard sees the same
+  // remaining path, so re-parsing it at each one would be quadratic.
+  const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  return for_each_at_path_segments(path, 0, callback);
+}
+
+template <typename Func>
+inline error_code object::for_each_at_path_segments(const std::vector<internal::json_path_segment> &path, size_t index, Func &callback) noexcept {
+  std::string_view key = path[index].key;
+  const bool last = index + 1 == path.size();
   // Empty key means the path segment could not be parsed (including malformed
   // bracket-quoted keys). Match DOM at_path_with_wildcard and avoid treating
   // "no progress" as a recursive lookup of "".
@@ -372,11 +379,11 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
     for (auto field : *this) {
       value val;
       SIMDJSON_TRY(field.value().get(val));
-      if (remaining_path.empty()) {
+      if (last) {
         callback(val);
       } else {
         // A field that does not match the rest of the path is skipped.
-        error_code err = val.for_each_at_path_with_wildcard(remaining_path, callback);
+        error_code err = val.for_each_at_path_segments(path, index + 1, callback);
         if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
@@ -385,17 +392,17 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
     value val;
     error_code error = find_field(key).get(val);
     if (error) {
-      if (error == NO_SUCH_FIELD && internal::json_path_has_wildcard(remaining_path)) {
+      if (error == NO_SUCH_FIELD && path[index].wildcard_follows) {
         return SUCCESS;
       }
       return error;
     }
 
-    if (remaining_path.empty()) {
+    if (last) {
       callback(val);
       return SUCCESS;
     } else {
-      return val.for_each_at_path_with_wildcard(remaining_path, callback);
+      return val.for_each_at_path_segments(path, index + 1, callback);
     }
   }
 }

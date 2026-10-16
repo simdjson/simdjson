@@ -676,6 +676,41 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  // The path is split once, not again at every value the wildcards reach: a
+  // long path after a couple of wildcards on a large document used to take
+  // O(values * path length) time (OSS-Fuzz 6599621728862208).
+  bool long_path_after_wildcards() {
+    TEST_START();
+    std::string json = "[";
+    for (size_t i = 0; i < 2000; i++) {
+      if (i > 0) { json += ","; }
+      json += R"([{"k":[7]},{"k":[8]},{"j":0},3,{"k":[]}])";
+    }
+    json += "]";
+    padded_string padded(json);
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::vector<int64_t> values;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k[0]", [&](ondemand::value v) {
+      int64_t value = 0;
+      if (v.get_int64().get(value) == SUCCESS) { values.push_back(value); }
+    }));
+    ASSERT_EQUAL(values.size(), 4000);
+    ASSERT_EQUAL(values[0], 7);
+    ASSERT_EQUAL(values[1], 8);
+    size_t count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k.*", [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 4000);
+    const std::string long_key(1000000, 'x');
+    count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*." + long_key, [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 0);
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k." + long_key + ".*", [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 0);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
@@ -694,7 +729,8 @@ namespace wildcard_tests {
            wildcard_malformed_deterministic_fuzz() &&
            deeply_nested_wildcard() &&
            wildcard_skip_nonmatching_elements_issue_2906() &&
-           wildcard_index_segment_validation();
+           wildcard_index_segment_validation() &&
+           long_path_after_wildcards();
   }
 }
 
