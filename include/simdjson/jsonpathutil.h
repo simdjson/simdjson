@@ -61,16 +61,6 @@ simdjson_inline bool is_matching_failure_error(error_code error) noexcept {
   return error == NO_SUCH_FIELD || error == INDEX_OUT_OF_BOUNDS ||
          error == INCORRECT_TYPE || error == INVALID_JSON_POINTER;
 }
-
-/**
- * Returns true if a wildcard follows in the remaining JSONPath. A segment that
- * matches nothing before a wildcard yields an empty result instead of an
- * error, as in DOM's at_path_with_wildcard. Like DOM, this treats a '*' inside
- * a quoted key as a wildcard.
- */
-simdjson_inline bool json_path_has_wildcard(std::string_view json_path) noexcept {
-  return json_path.find('*') != std::string_view::npos;
-}
 } // namespace internal
 
 /**
@@ -193,6 +183,53 @@ inline std::pair<std::string_view, std::string_view> get_next_key_and_json_path(
 }
 
 namespace internal {
+/**
+ * One level of a JSONPath as the On-Demand for_each_at_path_with_wildcard()
+ * consumes it.
+ */
+struct json_path_segment {
+  // The key or array index at this level, "*" for a wildcard. Empty if the
+  // path could not be parsed at this level.
+  std::string_view key{};
+  // Whether a '*' occurs in the rest of the path, after this segment. A
+  // segment that matches nothing before a wildcard yields an empty result
+  // instead of an error, as in DOM's at_path_with_wildcard. Like DOM, this
+  // treats a '*' inside a quoted key as a wildcard.
+  bool wildcard_follows{false};
+};
+
+/**
+ * Splits json_path with get_next_key_and_json_path(), one segment per level,
+ * as the On-Demand for_each_at_path_with_wildcard() historically did at each
+ * node. The keys point into json_path, which must outlive the result.
+ *
+ * Every node visited at a given depth sees the same remaining path, so we
+ * split it once up front: re-scanning the remaining path at every node costs
+ * O(nodes * path length), which made a long path after a wildcard take
+ * minutes on a large document.
+ *
+ * The last segment either has an empty key (the path is invalid there) or
+ * is the end of the path.
+ */
+inline std::vector<json_path_segment> split_json_path(std::string_view json_path) {
+  std::vector<json_path_segment> segments;
+  // The remaining path (always a suffix of json_path) contains a '*' if and
+  // only if it starts at or before the last one.
+  const size_t last_star = json_path.rfind('*');
+  std::string_view path = json_path;
+  do {
+    std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(path);
+    path = key_and_json_path.second;
+    const size_t offset = json_path.size() - path.size();
+    json_path_segment segment;
+    segment.key = key_and_json_path.first;
+    segment.wildcard_follows = last_star != std::string_view::npos && last_star >= offset;
+    segments.push_back(segment);
+    if (segment.key.empty()) { break; }
+  } while (!path.empty());
+  return segments;
+}
+
 /**
  * A JSONPath as the DOM at_path_with_wildcard() consumes it, parsed once.
  *

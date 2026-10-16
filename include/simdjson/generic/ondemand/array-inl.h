@@ -190,12 +190,18 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code array::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  auto result_pair = get_next_key_and_json_path(json_path);
-  std::string_view key = result_pair.first;
-  std::string_view remaining_path = result_pair.second;
+  // The path is split once: every element reached by a wildcard sees the same
+  // remaining path, so re-parsing it at each one would be quadratic.
+  const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  return for_each_at_path_segments(path, 0, callback);
+}
+
+template <typename Func>
+inline error_code array::for_each_at_path_segments(const std::vector<internal::json_path_segment> &path, size_t index, Func &callback) noexcept {
+  std::string_view key = path[index].key;
+  const bool last = index + 1 == path.size();
   // Empty key means the path segment could not be parsed (including malformed
-  // bracket-quoted keys). Without this check, an empty key is treated as index
-  // 0 and remaining_path may be unchanged, causing infinite recursion.
+  // bracket-quoted keys).
   if (key.empty()) {
     return INVALID_JSON_POINTER;
   }
@@ -204,11 +210,11 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
     for(auto element: *this) {
       value val;
         SIMDJSON_TRY(element.get(val));
-      if (remaining_path.empty()) {
+      if (last) {
         callback(val);
       } else {
         // An element that does not match the rest of the path is skipped.
-        error_code err = val.for_each_at_path_with_wildcard(remaining_path, callback);
+        error_code err = val.for_each_at_path_segments(path, index + 1, callback);
         if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
@@ -227,16 +233,16 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
     value val;
     if (!error) { error = at(idx).get(val); }
     if (error) {
-      if (error == INDEX_OUT_OF_BOUNDS && internal::json_path_has_wildcard(remaining_path)) {
+      if (error == INDEX_OUT_OF_BOUNDS && path[index].wildcard_follows) {
         return SUCCESS;
       }
       return error;
     }
-    if (remaining_path.empty()){
+    if (last){
       callback(val);
       return SUCCESS;
     } else {
-      return val.for_each_at_path_with_wildcard(remaining_path, callback);
+      return val.for_each_at_path_segments(path, index + 1, callback);
     }
   }
 }
