@@ -586,6 +586,28 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // An invalid last document that is never closed ("[1 2") must not have
+    // its source() run past the end of the input, whatever the padding holds.
+    bool source_of_unclosed_last_document() {
+        TEST_START();
+        const std::string input = "[1] [1 2";
+        for (char pad : {'\0', ']'}) {
+            std::vector<char> buffer(input.begin(), input.end());
+            buffer.resize(input.size() + SIMDJSON_PADDING, pad);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(padded_string_view(buffer.data(), input.size(), buffer.size())).get(stream));
+            auto i = stream.begin();
+            ASSERT_TRUE(i != stream.end());
+            ASSERT_EQUAL(i.source(), "[1]");
+            ++i;
+            ASSERT_TRUE(i != stream.end());
+            ASSERT_EQUAL(i.source(), "[1 2");
+            ASSERT_TRUE(i.current_index() + i.source().size() <= input.size());
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -2736,6 +2758,7 @@ bool run() {
             source_after_partial_read() &&
             source_on_capacity_error() &&
             string_document_with_colon_in_padding() &&
+            source_of_unclosed_last_document() &&
             truncated() &&
             truncated_complete_docs() &&
             truncated_empty_stream_reused_parser() &&

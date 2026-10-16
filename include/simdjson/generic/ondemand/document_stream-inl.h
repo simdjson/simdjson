@@ -501,7 +501,10 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
     cur_struct_index++;
   }
 
-  while (cur_struct_index <= static_cast<int64_t>(stream->parser->implementation->n_structural_indexes)) {
+  // The structural index at n_structural_indexes is the end of the batch, not
+  // a token: it must not be read as a closing bracket.
+  const int64_t n_structural_indexes = static_cast<int64_t>(stream->parser->implementation->n_structural_indexes);
+  while (cur_struct_index < n_structural_indexes) {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':
         depth++;
@@ -512,6 +515,11 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
     }
     if (depth == 0) { break; }
     cur_struct_index++;
+  }
+  // An invalid last document such as "[1 2" is never closed: it runs to the
+  // end of the batch, and not one byte past it.
+  if (cur_struct_index >= n_structural_indexes) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index] - current_index());
   }
 
   return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + stream->batch_start + 1);;
