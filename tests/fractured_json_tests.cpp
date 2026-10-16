@@ -2311,6 +2311,29 @@ bool table_format_null_container_test() {
   return true;
 }
 
+// Regression test: a double column in a table must align like any other.
+// estimate_number_length(double) used snprintf("%.17g"), which over-counts
+// against the shortest form base_formatter emits with to_chars (0.1 is
+// "0.10000000000000001", 19 chars, but serializes as "0.1"). The column width
+// came out 19, so one row padded to 19 and the other did not, and the next
+// column no longer lined up.
+bool table_format_double_column_alignment_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  std::string json = R"([{"x":0.5,"y":1},{"x":0.1,"y":2}])";
+  simdjson::fractured_json_options opts;
+  opts.enable_table_format = true;
+  opts.max_total_line_length = 40;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    {\"x\": 0.5, \"y\": 1},\n"
+      "    {\"x\": 0.1, \"y\": 2}\n"
+      "]");
+  ASSERT_TRUE(same_content(json, formatted));
+  std::cout << "Table format double column alignment test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2377,6 +2400,7 @@ int main() {
   success = table_format_empty_key_test() && success;
   success = table_format_duplicate_key_test() && success;
   success = table_format_null_container_test() && success;
+  success = table_format_double_column_alignment_test() && success;
 
   if (success) {
     std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;

@@ -246,10 +246,14 @@ inline size_t structure_analyzer::estimate_number_length(double d) const {
     return 4; // "null" for invalid numbers
 #endif
   }
-  // Rough estimate: up to 17 significant digits + sign + decimal point + exponent
-  char buf[32];
-  int len = snprintf(buf, sizeof(buf), "%.17g", d);
-  return len > 0 ? static_cast<size_t>(len) : 20;
+  // Must match base_formatter::number(double), which serializes finite values
+  // with internal::to_chars (shortest round-trip). snprintf("%.17g") over-counts
+  // (e.g. 0.1 becomes "0.10000000000000001", 19 chars, vs the emitted "0.1"),
+  // which misaligns double columns in table formatting the same way escaped
+  // control characters did before #2929.
+  char buf[simdjson::internal::to_chars_buffer_size];
+  char *end = simdjson::internal::to_chars(buf, buf + sizeof(buf), d);
+  return static_cast<size_t>(end - buf);
 }
 
 inline size_t structure_analyzer::estimate_number_length(int64_t i) const {
