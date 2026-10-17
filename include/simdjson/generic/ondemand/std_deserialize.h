@@ -330,6 +330,14 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       std::is_default_constructible_v<element_type>,
       "The specified type inside the unique_ptr must default constructible.");
 
+  // A null pointer is serialized as null.
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
+
   // Own the allocation before get(): a user tag_invoke may throw.
   std::unique_ptr<element_type> ptr(new (std::nothrow) element_type());
   if (!ptr) {
@@ -973,6 +981,12 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept(false) {
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
   std::unique_ptr<T> ptr(new (std::nothrow) T());
   if (!ptr) {
     return MEMALLOC;
@@ -985,6 +999,12 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &out) noexcept(false) {
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
   std::shared_ptr<T> ptr(new (std::nothrow) T());
   if (!ptr) {
     return MEMALLOC;
