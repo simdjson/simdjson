@@ -813,10 +813,7 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
   } else {
     string_builder b(initial_capacity);
     append(b, z);
-    std::string_view view;
-    if(auto e = b.view().get(view); e) { return e; }
-    s.assign(view);
-    return SUCCESS;
+    return b.move_to(s);
   }
 }
 
@@ -879,9 +876,9 @@ template<constevalutil::fixed_string... FieldNames, typename T>
 simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
+  std::string s;
+  if(auto e = b.move_to(s); e) { return e; }
+  return s;
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -903,9 +900,9 @@ template<constevalutil::fixed_string... FieldNames, typename T>
 simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
+  std::string s;
+  if(auto e = b.move_to(s); e) { return e; }
+  return s;
 }
 
 } // namespace simdjson

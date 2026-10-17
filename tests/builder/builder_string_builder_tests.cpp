@@ -501,6 +501,29 @@ bool various_unsigned_integers() {
   TEST_SUCCEED();
 }
 
+bool move_to_string() {
+  TEST_START();
+  simdjson::builder::string_builder sb(4); // small, so that we grow
+  std::string expected;
+  for (size_t i = 0; i < 1000; i++) {
+    sb.append(uint64_t(i));
+    sb.append_comma();
+    expected += std::to_string(i) + ",";
+  }
+  std::string out = "previous content";
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, expected);
+  ASSERT_EQUAL(sb.size(), 0);
+  // The builder remains usable.
+  sb.append_raw("Test");
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "Test");
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, "Test");
+  TEST_SUCCEED();
+}
+
 bool append_raw() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -987,7 +1010,7 @@ bool run() {
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
-         escape_write_string_escaped_exhaustive() && append_raw() &&
+         escape_write_string_escaped_exhaustive() && move_to_string() && append_raw() &&
          raw_with_length() && string_convertion() && buffer_growth() &&
          unicode_validation() && true;
 }
