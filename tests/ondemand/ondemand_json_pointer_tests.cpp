@@ -446,10 +446,44 @@ namespace json_pointer_tests {
       return true;
     }
 
+    // OSS-Fuzz 573717767: with SIMDJSON_DEVELOPMENT_CHECKS, walking a
+    // document nested deeper than max_depth() overflowed the buffer that
+    // records where each open container starts (an assertion failure).
+    // It must report DEPTH_ERROR instead, as the DOM parser does.
+    bool deeply_nested_pointer() {
+        TEST_START();
+        const size_t depth_limit = 16;
+        for (size_t n : {depth_limit - 1, depth_limit, depth_limit + 1}) {
+            std::string json = std::string(n, '[') + "1" + std::string(n, ']');
+            std::string pointer;
+            std::string path;
+            for (size_t i = 0; i < n; i++) { pointer += "/0"; path += ".0"; }
+            auto padded = padded_string(json);
+            ondemand::parser parser;
+            ASSERT_SUCCESS(parser.allocate(padded.size(), depth_limit));
+            ondemand::document doc;
+            int64_t x;
+            ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+            auto by_pointer = doc.at_pointer(pointer).get_int64().get(x);
+            ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+            auto by_path = doc.at_path(path).get_int64().get(x);
+#if SIMDJSON_DEVELOPMENT_CHECKS
+            // The root container is at depth 1: max_depth() - 1 levels fit.
+            error_code expected = n < depth_limit ? SUCCESS : DEPTH_ERROR;
+#else
+            error_code expected = SUCCESS;
+#endif
+            ASSERT_ERROR(by_pointer, expected);
+            ASSERT_ERROR(by_path, expected);
+        }
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
                 issue2154() &&
                 empty_pointer_on_containers() &&
+                deeply_nested_pointer() &&
 #if SIMDJSON_EXCEPTIONS
                 json_pointer_invalidation_exceptions() &&
 #endif
