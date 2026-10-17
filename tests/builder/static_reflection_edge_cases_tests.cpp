@@ -311,13 +311,105 @@ namespace builder_tests {
     TEST_SUCCEED();
   }
 
+  // https://github.com/simdjson/simdjson/issues/2935
+  // A structure that contains itself (through a smart pointer or a container)
+  // used to exceed the constexpr evaluation depth.
+#if SIMDJSON_STATIC_REFLECTION
+  enum class LogicOperation { And, Or };
+  struct Rule {
+    LogicOperation operation{};
+    std::vector<std::string> keywords{};
+    std::unique_ptr<Rule> subrule{};
+  };
+  struct Tree {
+    int value{};
+    std::vector<Tree> children{};
+    std::shared_ptr<Tree> parent_copy{};
+  };
+  struct Odd;
+  struct Even {
+    int n{};
+    std::unique_ptr<Odd> next{};
+  };
+  struct Odd {
+    int n{};
+    std::unique_ptr<Even> next{};
+  };
+#endif
+
+  bool test_issue2935_recursive_types() {
+    TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+    Rule rule{.operation = LogicOperation::And, .keywords = {"foo", "bar"}};
+    rule.subrule = std::make_unique<Rule>(Rule{.operation = LogicOperation::Or, .keywords = {"x"}});
+    std::string json;
+    ASSERT_SUCCESS(simdjson::to_json(rule).get(json));
+    ASSERT_EQUAL(json, R"({"operation":"And","keywords":["foo","bar"],"subrule":{"operation":"Or","keywords":["x"],"subrule":null}})");
+    ASSERT_SUCCESS(builder::to_json_string(rule).get(json));
+    ASSERT_EQUAL(json, R"({"operation":"And","keywords":["foo","bar"],"subrule":{"operation":"Or","keywords":["x"],"subrule":null}})");
+    {
+      ondemand::parser parser;
+      auto padded = pad(json);
+      auto doc_result = parser.iterate(padded);
+      ASSERT_SUCCESS(doc_result);
+      Rule back;
+      ASSERT_SUCCESS(doc_result.get<Rule>().get(back));
+      ASSERT_TRUE(back.operation == LogicOperation::And);
+      ASSERT_EQUAL(back.keywords.size(), 2);
+      ASSERT_TRUE(back.subrule != nullptr);
+      ASSERT_TRUE(back.subrule->operation == LogicOperation::Or);
+      ASSERT_EQUAL(back.subrule->keywords[0], "x");
+      ASSERT_TRUE(back.subrule->subrule == nullptr);
+    }
+
+    Tree tree{.value = 1};
+    tree.children.push_back(Tree{.value = 2});
+    tree.children.push_back(Tree{.value = 3, .children = {Tree{.value = 4}}});
+    tree.parent_copy = std::make_shared<Tree>(Tree{.value = 5});
+    ASSERT_SUCCESS(simdjson::to_json(tree).get(json));
+    ASSERT_EQUAL(json, R"({"value":1,"children":[{"value":2,"children":[],"parent_copy":null},{"value":3,"children":[{"value":4,"children":[],"parent_copy":null}],"parent_copy":null}],"parent_copy":{"value":5,"children":[],"parent_copy":null}})");
+    {
+      ondemand::parser parser;
+      auto padded = pad(json);
+      auto doc_result = parser.iterate(padded);
+      ASSERT_SUCCESS(doc_result);
+      Tree back;
+      ASSERT_SUCCESS(doc_result.get<Tree>().get(back));
+      ASSERT_EQUAL(back.children.size(), 2);
+      ASSERT_EQUAL(back.children[1].children[0].value, 4);
+      ASSERT_TRUE(back.children[0].parent_copy == nullptr);
+      ASSERT_TRUE(back.parent_copy != nullptr);
+      ASSERT_EQUAL(back.parent_copy->value, 5);
+    }
+
+    Even even{.n = 0};
+    even.next = std::make_unique<Odd>(Odd{.n = 1});
+    even.next->next = std::make_unique<Even>(Even{.n = 2});
+    ASSERT_SUCCESS(simdjson::to_json(even).get(json));
+    ASSERT_EQUAL(json, R"({"n":0,"next":{"n":1,"next":{"n":2,"next":null}}})");
+    {
+      ondemand::parser parser;
+      auto padded = pad(json);
+      auto doc_result = parser.iterate(padded);
+      ASSERT_SUCCESS(doc_result);
+      Even back;
+      ASSERT_SUCCESS(doc_result.get<Even>().get(back));
+      ASSERT_TRUE(back.next != nullptr && back.next->next != nullptr);
+      ASSERT_EQUAL(back.next->next->n, 2);
+      ASSERT_TRUE(back.next->next->next == nullptr);
+    }
+#endif
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return test_empty_values() &&
            test_special_characters() &&
            test_numeric_limits() &&
            test_nested_structures() &&
            test_issue2827_optional() &&
-           test_size_bound();
+           test_size_bound() &&
+           test_issue2935_recursive_types();
   }
 
 } // namespace builder_tests

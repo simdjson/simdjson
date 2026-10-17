@@ -160,6 +160,51 @@ consteval bool is_serialized_member(std::meta::info dm) {
       && !simdjson::detail::has_annotation(dm, ^^simdjson::detail::skip_serializing_tag);
 }
 
+template <class Target, class T, class... Visiting>
+consteval bool members_reach();
+
+// Whether a value of type T may hold a value of type Target, directly or
+// through optionals, smart pointers, containers and members. Visiting lists
+// the structures being searched, so that the search terminates.
+template <class Target, class T, class... Visiting>
+consteval bool reaches() {
+  if constexpr (std::is_same_v<T, Target>) {
+    return true;
+  } else if constexpr ((std::is_same_v<T, Visiting> || ...) || require_custom_serialization<T> ||
+                       std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>) {
+    return false;
+  } else if constexpr (concepts::optional_type<T> || concepts::smart_pointer<T>) {
+    return reaches<Target, std::remove_cvref_t<decltype(*std::declval<const T &>())>, Visiting...>();
+  } else if constexpr (concepts::string_view_keyed_map<T>) {
+    return reaches<Target, std::remove_cvref_t<typename T::mapped_type>, Visiting...>();
+  } else if constexpr (concepts::container_but_not_string<T> || concepts::appendable_containers<T>) {
+    return reaches<Target, std::remove_cvref_t<std::ranges::range_value_t<T>>, Visiting...>();
+  } else if constexpr (std::is_class_v<T>) {
+    return members_reach<Target, T, Visiting...>();
+  } else {
+    return false;
+  }
+}
+
+template <class Target, class T, class... Visiting>
+consteval bool members_reach() {
+  bool found = false;
+  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_serialized_member(dm)) {
+      found = found || reaches<Target, std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>, T, Visiting...>();
+    }
+  };
+  return found;
+}
+
+// Whether the structure T may contain itself, as in
+// struct Rule { std::unique_ptr<Rule> subrule; }. Serializing such a type
+// recurses at runtime, which simdjson_really_inline functions cannot do.
+template <class T>
+consteval bool is_recursive() {
+  return members_reach<T, T>();
+}
+
 // False when the member has a skip_serializing_if<pred> annotation and
 // pred(value) is true.
 template <auto dm, typename V>
@@ -381,6 +426,31 @@ simdjson_really_inline constexpr void atom(W &w, const number_type t) {
   }
 }
 
+namespace annotation_detail {
+
+template <class W, class T>
+simdjson_really_inline void atom_object(W &w, const T &t) {
+  if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
+    // A transparent structure is serialized as its single member.
+    constexpr auto dm = simdjson::detail::transparent_member(^^T);
+    atom_member<dm>(w, t.[:dm:]);
+  } else {
+    bool first = true;
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '{';
+    atom_fields(w, t, first);
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '}';
+  }
+}
+
+template <class W, class T>
+void atom_object_outlined(W &w, const T &t) {
+  atom_object(w, t);
+}
+
+} // namespace annotation_detail
+
 template <class W, class T>
   requires(std::is_class_v<T> && !concepts::container_but_not_string<T> &&
            !concepts::string_view_keyed_map<T> &&
@@ -392,17 +462,11 @@ template <class W, class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
 simdjson_really_inline constexpr void atom(W &w, const T &t) {
-  if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
-    // A transparent structure is serialized as its single member.
-    constexpr auto dm = simdjson::detail::transparent_member(^^T);
-    annotation_detail::atom_member<dm>(w, t.[:dm:]);
+  if constexpr (annotation_detail::is_recursive<T>()) {
+    // Break the cycle of simdjson_really_inline calls.
+    annotation_detail::atom_object_outlined(w, t);
   } else {
-    bool first = true;
-    if (!w.ensure(1)) { return; }
-    w.ptr[w.pos++] = '{';
-    annotation_detail::atom_fields(w, t, first);
-    if (!w.ensure(1)) { return; }
-    w.ptr[w.pos++] = '}';
+    annotation_detail::atom_object(w, t);
   }
 }
 
@@ -502,25 +566,30 @@ namespace bound_detail {
 // Whether size_bound covers everything that atom() writes for T: not when a
 // member is serialized by a with<Adapter> serializer, which writes an unknown
 // amount through the string_builder.
-template <class T>
+// Visiting lists the structures being checked, so that a recursive type
+// (struct Node { std::unique_ptr<Node> next; }) does not recurse forever: a
+// type already being visited adds nothing, its members get checked once.
+template <class T, class... Visiting>
 consteval bool is_bounded() {
-  if constexpr (require_custom_serialization<T>) {
+  if constexpr ((std::is_same_v<T, Visiting> || ...)) {
+    return true;
+  } else if constexpr (require_custom_serialization<T>) {
     return false;
   } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view> ||
                        std::is_same_v<T, const char *> || std::is_arithmetic_v<T> || std::is_enum_v<T>) {
     return true;
   } else if constexpr (concepts::optional_type<T> || concepts::smart_pointer<T>) {
-    return is_bounded<std::remove_cvref_t<decltype(*std::declval<const T &>())>>();
+    return is_bounded<std::remove_cvref_t<decltype(*std::declval<const T &>())>, Visiting...>();
   } else if constexpr (concepts::string_view_keyed_map<T>) {
-    return is_bounded<std::remove_cvref_t<typename T::mapped_type>>();
+    return is_bounded<std::remove_cvref_t<typename T::mapped_type>, Visiting...>();
   } else if constexpr (concepts::container_but_not_string<T> || concepts::appendable_containers<T>) {
-    return is_bounded<std::remove_cvref_t<std::ranges::range_value_t<T>>>();
+    return is_bounded<std::remove_cvref_t<std::ranges::range_value_t<T>>, Visiting...>();
   } else {
     bool bounded = true;
     template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
       if constexpr (annotation_detail::is_serialized_member(dm)) {
         bounded = bounded && simdjson::detail::annotation_of_template(dm, ^^simdjson::detail::with_t) == std::meta::info{} &&
-                  is_bounded<std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>>();
+                  is_bounded<std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>, T, Visiting...>();
       }
     };
     return bounded;
@@ -556,6 +625,11 @@ simdjson_really_inline size_t fields_bound(const T &t) noexcept {
     }
   };
   return bound;
+}
+
+template <class T>
+size_t fields_bound_outlined(const T &t) noexcept {
+  return fields_bound(t);
 }
 
 template <class T>
@@ -602,6 +676,9 @@ simdjson_really_inline size_t size_bound([[maybe_unused]] const T &t) noexcept {
   } else if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
     constexpr auto dm = simdjson::detail::transparent_member(^^T);
     return size_bound(t.[:dm:]);
+  } else if constexpr (annotation_detail::is_recursive<T>()) {
+    // Break the cycle of simdjson_really_inline calls.
+    return 2 + fields_bound_outlined(t);
   } else {
     return 2 + fields_bound(t);
   }
