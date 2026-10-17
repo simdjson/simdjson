@@ -11,6 +11,8 @@
 #include "simdjson/generic/ondemand/raw_json_string-inl.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <cstring> // std::memset (zeroing the root-number scratch padding)
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -679,8 +681,10 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iter
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1+1];
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     if(numberparsing::check_if_integer(json, max_len)) {
       if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
@@ -701,8 +705,10 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
-  uint8_t tmpbuf[1074+8+1+1];
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     if(numberparsing::check_if_integer(json, max_len)) {
       if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
@@ -825,8 +831,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -845,8 +853,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // Per https://www.exploringbinary.com/maximum-number-of-decimal-digits-in-binary-floating-point-numbers/,
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
-  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -865,8 +875,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_
   // We use the same buffer size as get_root_double: the number of significant
   // digits that matter is smaller for binary32, but the JSON document may still
   // spell out a long number that we must parse (and round) faithfully.
-  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
@@ -882,8 +894,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_
 simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_root_float_in_string(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("float");
-  uint8_t tmpbuf[1074+8+1+1]; // +1 for null termination.
-  tmpbuf[1074+8+1] = '\0'; // make sure that buffer is always null terminated.
+  // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
+  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  // Null terminate, and zero the padding as allocate_padded_buffer does.
+  std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 1082 characters");
     return NUMBER_ERROR;
