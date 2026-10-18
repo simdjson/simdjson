@@ -705,6 +705,33 @@ inline void fractured_string_builder::format_array(const dom::array& arr,
   }
 }
 
+// The children of an inline value are written inline as well. Going through
+// format_element() would let decide_layout() pick another layout for them
+// (e.g. at a depth not past always_expand_depth), which a single line cannot
+// show: it would only add table padding and drop the comma padding.
+inline void fractured_string_builder::format_element_inline(const dom::element& elem,
+                                                              const element_metrics& metrics) {
+  switch (elem.type()) {
+    case dom::element_type::ARRAY: {
+      dom::array arr;
+      if (elem.get_array().get(arr) == SUCCESS) {
+        format_array_inline(arr, metrics);
+      }
+      break;
+    }
+    case dom::element_type::OBJECT: {
+      dom::object obj;
+      if (elem.get_object().get(obj) == SUCCESS) {
+        format_object_inline(obj, metrics);
+      }
+      break;
+    }
+    default:
+      format_scalar(elem);
+      break;
+  }
+}
+
 inline void fractured_string_builder::format_array_inline(const dom::array& arr,
                                                             const element_metrics& metrics) {
   scoped_single_line_mode single_line(format_);
@@ -726,7 +753,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
     }
     first = false;
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
-    format_element(elem, child_metrics, 0);
+    format_element_inline(elem, child_metrics);
     child_idx++;
   }
 
@@ -1179,7 +1206,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
       format_.print_space();
     }
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
-    format_element(field.value, child_metrics, 0);
+    format_element_inline(field.value, child_metrics);
     child_idx++;
   }
 

@@ -1595,6 +1595,27 @@ bool always_expand_depth_test() {
   return true;
 }
 
+// always_expand_depth applies to the depth a value is rendered at, not to the
+// children of a value written inline: those must be written inline too, with
+// the usual comma padding and no table padding.
+bool always_expand_depth_inline_children_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"({"b":[[1,2],[4,555]],"c":{"d":{"e":1,"f":2}}})";
+  simdjson::fractured_json_options opts;
+  opts.always_expand_depth = 0;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"b\": [ [1, 2], [4, 555] ],\n"
+      "    \"c\": { \"d\": {\"e\": 1, \"f\": 2} }\n"
+      "}");
+
+  std::cout << "Always expand depth inline children test passed." << std::endl;
+  return true;
+}
+
 
 bool table_format_union_columns_with_blank_padding_test() {
   std::cout << "Running " << __func__ << std::endl;
@@ -2481,6 +2502,7 @@ int main() {
   success = compact_multiline_mixed_row_counts_separators_test() && success;
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
+  success = always_expand_depth_inline_children_test() && success;
   success = table_format_union_columns_with_blank_padding_test() && success;
   success = table_format_respects_max_total_line_length_test() && success;
   success = table_nested_cell_padding_test() && success;

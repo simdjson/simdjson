@@ -104,6 +104,9 @@ private:
   void format_array(const dom::array& arr, const element_metrics& metrics, size_t depth,
                      bool has_trailing_comma = false, size_t key_width = 0);
 
+  /** Format an element on a single line, whatever its depth */
+  void format_element_inline(const dom::element& elem, const element_metrics& metrics);
+
   /** Format an array inline: [1, 2, 3] */
   void format_array_inline(const dom::array& arr, const element_metrics& metrics);
 
