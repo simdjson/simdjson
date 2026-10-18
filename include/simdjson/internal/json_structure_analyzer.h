@@ -171,11 +171,17 @@ public:
                                  const fractured_json_options& opts);
 
   /** Decide layout at the given render depth. Kept out of analysis since
-   * the same metrics can render inline or expanded at different depths. */
+   * the same metrics can render inline or expanded at different depths.
+   * key_width is the width of the key, colon and colon padding written
+   * before the value on its first line (0 if the value has no key). */
   static layout_mode decide_layout(const element_metrics& metrics,
                                     size_t depth,
                                     const fractured_json_options& opts,
-                                    bool has_trailing_comma = false);
+                                    bool has_trailing_comma = false,
+                                    size_t key_width = 0);
+
+  /** Estimate inline length for a string (including quotes and escaping) */
+  size_t estimate_string_length(std::string_view s) const;
 
 private:
   const fractured_json_options* current_opts_ = nullptr;
@@ -191,9 +197,6 @@ private:
 
   /** Analyze an object element */
   element_metrics analyze_object(const dom::object& obj, size_t depth) const;
-
-  /** Estimate inline length for a string (including quotes and escaping) */
-  size_t estimate_string_length(std::string_view s) const;
 
   /** Estimate inline length for a number */
   size_t estimate_number_length(double d) const;

@@ -1323,6 +1323,55 @@ bool nested_array_respects_max_total_line_length_test() {
   return true;
 }
 
+// An inline value in an expanded object shares its line with the key, so the
+// key, the colon and its padding count toward max_total_line_length.
+bool object_key_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"({"a_long_key":[1,2,3],"another_key":{"c":true}})";
+  simdjson::fractured_json_options opts;
+
+  // "    "a_long_key": [1, 2, 3]," is exactly 28 wide.
+  opts.max_total_line_length = 28;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\": [1, 2, 3],\n"
+      "    \"another_key\": {\n"
+      "        \"c\": true\n"
+      "    }\n"
+      "}");
+
+  opts.max_total_line_length = 27;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\": [\n"
+      "        1, 2, 3\n"
+      "    ],\n"
+      "    \"another_key\": {\n"
+      "        \"c\": true\n"
+      "    }\n"
+      "}");
+
+  // Without colon padding the key takes one character less.
+  opts.colon_padding = false;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\":[1, 2, 3],\n"
+      "    \"another_key\":{\n"
+      "        \"c\":true\n"
+      "    }\n"
+      "}");
+
+  std::cout << "Object key counted in length test passed." << std::endl;
+  return true;
+}
+
 bool compact_multiline_item_respects_max_total_line_length_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -2379,6 +2428,7 @@ int main() {
   success = compact_multiline_breaks_after_expanded_item_test() && success;
   success = nested_object_respects_max_total_line_length_test() && success;
   success = nested_array_respects_max_total_line_length_test() && success;
+  success = object_key_counted_in_length_test() && success;
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
   success = trailing_comma_counted_in_length_test() && success;
   success = nested_bracket_padding_test() && success;
