@@ -362,6 +362,11 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
   // The path is split once: every field reached by a wildcard sees the same
   // remaining path, so re-parsing it at each one would be quadratic.
   const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  // A path that cannot be parsed matches nothing, whatever the document: say
+  // so rather than letting the walk skip it as a mismatch below a wildcard.
+  if (path.back().key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
   return for_each_at_path_segments(path, 0, callback);
 }
 

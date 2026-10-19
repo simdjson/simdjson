@@ -469,24 +469,19 @@ bool unterminated_bracket_quote_wildcard() {
       R"($["*)",
       R"($['*)",
       R"($["a"*)", // quote closed but ']' missing before '*'
+      // A malformed later segment is reported too, not skipped as a mismatch.
+      R"($["a"]["b*)",
+      R"($["a"]['b*)",
   };
   for (const char *path : first_segment_malformed) {
-    std::cout << "  malformed first segment: " << path << std::endl;
+    std::cout << "  malformed path: " << path << std::endl;
     ASSERT_EQUAL(doc.at_path_with_wildcard(path).error(), INVALID_JSON_POINTER);
   }
 
-  // When the first segment is valid but a later bracket-quote is not, child
-  // processing swallows the error and returns an empty result (SUCCESS).
-  // The important property is no throw/abort.
-  const char *later_segment_malformed[] = {
-      R"($["a"]["b*)",
-      R"($["a"]['b*)",
-      R"($["ok"].*)", // ok is a scalar; wildcard suffix yields empty
-  };
-  for (const char *path : later_segment_malformed) {
-    std::cout << "  later-segment / empty result path: " << path << std::endl;
+  // ok is a scalar: the wildcard suffix yields an empty result.
+  {
     std::vector<dom::element> values;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard(path).get(values));
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($["ok"].*)").get(values));
     ASSERT_EQUAL(values.size(), 0);
   }
 
@@ -545,6 +540,40 @@ bool wildcard_key_with_slash_or_tilde() {
   ASSERT_SUCCESS(values[0].get(value));
   ASSERT_EQUAL(value, 3);
 
+  TEST_SUCCEED();
+}
+
+// A path that cannot be parsed after a wildcard is reported, whatever the
+// document, instead of silently matching nothing.
+bool malformed_path_after_wildcard() {
+  std::cout << "Running malformed_path_after_wildcard test" << std::endl;
+  const char *malformed[] = {
+      R"($.a[*]['b)",
+      R"($.a[*][1)",
+      R"($.a[*].b[)",
+      R"($.a[*]b)",
+      R"($.*.b[0)",
+      R"($.a[*][*)",
+      R"($[*]x)",
+  };
+  for (const char *source : {R"({"a":[{"b":[1]},{"b":[2]}]})", R"([[{"b":[1]}]])", "[]", "5"}) {
+    const padded_string json(std::string_view{source});
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    for (const char *path : malformed) {
+      std::cout << "  " << json << " " << path << std::endl;
+      ASSERT_EQUAL(doc.at_path_with_wildcard(path).error(), INVALID_JSON_POINTER);
+    }
+  }
+  // As in at_path, a bracketed segment after the last wildcard is read as a
+  // JSON Pointer token: [b] is the key "b".
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(R"({"a":[{"b":1},{"b":2}]})"_padded).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a[*][b]").get(values));
+  ASSERT_EQUAL(values.size(), 2);
   TEST_SUCCEED();
 }
 
@@ -696,6 +725,7 @@ bool long_path_after_wildcards() {
 
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
+      malformed_path_after_wildcard() &&
       wildcard_key_with_slash_or_tilde() &&
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
