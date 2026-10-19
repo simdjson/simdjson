@@ -101,6 +101,19 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  bool root_bool_rejects_invalid_fifth_char() {
+    TEST_START();
+    for (auto bad : {"falsx", "fals1", "fals "}) {
+      ondemand::parser parser;
+      padded_string json{std::string(bad)};
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      bool b;
+      ASSERT_ERROR(doc.get_bool().get(b), INCORRECT_TYPE);
+    }
+    TEST_SUCCEED();
+  }
+
   bool replacement_char() {
     auto fun_phrase = R"( ["I \u2665 Unicode. Even broken \ud800 Unicode." ])"_padded;
     std::string_view expected_fun = "I \xe2\x99\xa5 Unicode. Even broken \xef\xbf\xbd Unicode.";
@@ -693,6 +706,7 @@ namespace misc_tests {
            skipbom() &&
            issue1981_success() &&
            issue1981_failure() &&
+           root_bool_rejects_invalid_fifth_char() &&
            replacement_char() &&
            wobbly_tests() &&
            issue_uffff() &&
