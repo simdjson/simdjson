@@ -1442,6 +1442,53 @@ bool trailing_comma_counted_in_length_test() {
   return true;
 }
 
+// A compact multiline row of mixed (non-uniform) items must count the space
+// before an item and the comma after it when deciding whether the item still
+// fits on the current line.
+bool compact_multiline_mixed_row_counts_separators_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"([true,"abc",12345,false,"de",null,678])";
+  simdjson::fractured_json_options opts;
+
+  // "    true, "abc", 12345," is 23 wide; " false," would make it 30.
+  opts.max_total_line_length = 29;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true, \"abc\", 12345,\n"
+      "    false, \"de\", null, 678\n"
+      "]");
+
+  // "    false, "de", null," is 22 wide; " 678" (the last item, so no comma)
+  // would make it 26.
+  opts.max_total_line_length = 25;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true, \"abc\", 12345,\n"
+      "    false, \"de\", null,\n"
+      "    678\n"
+      "]");
+
+  // Without comma padding only the trailing comma is added:
+  // "    true,"abc",12345," is 21 wide; "false," would make it 27.
+  opts.comma_padding = false;
+  opts.max_total_line_length = 26;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true,\"abc\",12345,\n"
+      "    false,\"de\",null,678\n"
+      "]");
+
+  std::cout << "Compact multiline mixed row separators test passed." << std::endl;
+  return true;
+}
+
 bool nested_bracket_padding_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -2431,6 +2478,7 @@ int main() {
   success = object_key_counted_in_length_test() && success;
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
   success = trailing_comma_counted_in_length_test() && success;
+  success = compact_multiline_mixed_row_counts_separators_test() && success;
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
   success = table_format_union_columns_with_blank_padding_test() && success;

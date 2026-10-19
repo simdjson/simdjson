@@ -754,14 +754,19 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
   for (dom::element elem : arr) {
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
+    bool is_last = (child_idx + 1 == metrics.child_count);
 
     if (!first) {
       format_.comma();
       format_.track_line_length(1);
 
-      // Check if we should break to new line
+      // Check if we should break to new line. Staying on this line also
+      // takes the padding space before the item and the comma after it.
+      size_t upcoming_length = child_metrics.estimated_inline_len +
+                               (options_.comma_padding ? 1 : 0) +
+                               (is_last ? 0 : 1);
       if (prev_item_was_expanded ||
-          format_.should_break_line(child_metrics.estimated_inline_len)) {
+          format_.should_break_line(upcoming_length)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
       } else if (options_.comma_padding) {
@@ -770,7 +775,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    bool is_last = (child_idx + 1 == metrics.child_count);
     layout_mode item_layout = structure_analyzer::decide_layout(child_metrics, depth + 1, options_, !is_last);
     bool item_fits = item_layout == layout_mode::single_line;
     if (item_fits) {
