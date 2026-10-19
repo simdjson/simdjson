@@ -613,6 +613,45 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  // raw_json() on a document, an array or an object ends on its last byte, not on
+  // the white space after it.
+  simdjson_warn_unused bool raw_json_ends_on_the_value() {
+    TEST_START();
+    const std::pair<std::string, std::string_view> documents[] = {
+      {"  [1,2]  \n", "[1,2]"},
+      {" {\"a\" : 1}\n\n", "{\"a\" : 1}"},
+      {" 42 ", "42"},
+      {"-1.5e3\t", "-1.5e3"},
+      {" true\r\n", "true"},
+      {" \"str ing\"  ", "\"str ing\""},
+      {"\"a\\\"b\" ", "\"a\\\"b\""},
+      {"\"c\\\\\" ", "\"c\\\\\""},
+    };
+    for (const auto &d : documents) {
+      ondemand::parser parser;
+      padded_string json(d.first);
+      std::string_view raw;
+      ASSERT_SUCCESS(parser.iterate(json).raw_json().get(raw));
+      ASSERT_EQUAL(raw, d.second);
+    }
+    auto json = R"([ [1] , {"a":1}
+, [ ] ,{ } ])"_padded;
+    const std::string_view expected[] = {"[1]", "{\"a\":1}", "[ ]", "{ }"};
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    size_t i = 0;
+    for (auto element : doc) {
+      std::string_view raw;
+      ASSERT_SUCCESS(element.raw_json().get(raw));
+      ASSERT_TRUE(i < 4);
+      ASSERT_EQUAL(raw, expected[i]);
+      i++;
+    }
+    ASSERT_EQUAL(i, 4);
+    TEST_SUCCEED();
+  }
+
   simdjson_warn_unused bool big_integer() {
     TEST_START();
     simdjson::ondemand::parser parser;
@@ -732,6 +771,7 @@ namespace misc_tests {
            big_integer_in_string() &&
            big_integer() &&
            raw_json_token() &&
+           raw_json_ends_on_the_value() &&
            doc_ref() &&
            true;
   }
