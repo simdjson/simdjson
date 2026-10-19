@@ -511,7 +511,8 @@ inline void structure_analyzer::recompute_column_widths(std::vector<table_column
 inline layout_mode structure_analyzer::decide_layout(const element_metrics& metrics,
                                                       size_t depth,
                                                       const fractured_json_options& opts,
-                                                      bool has_trailing_comma) {
+                                                      bool has_trailing_comma,
+                                                      size_t key_width) {
   if (metrics.child_count == 0) {
     return layout_mode::single_line;
   }
@@ -521,7 +522,8 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
   bool depth_allows_table = signed_depth >= opts.always_expand_depth;
 
   // Check inline feasibility
-  size_t reserved_width = depth * opts.indent_spaces + (has_trailing_comma ? 1 : 0);
+  size_t reserved_width = depth * opts.indent_spaces + key_width +
+                          (has_trailing_comma ? 1 : 0);
   if (depth_allows_inline_or_compact && metrics.can_inline &&
       metrics.estimated_inline_len + reserved_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
@@ -656,19 +658,20 @@ simdjson_inline std::string_view fractured_string_builder::str() const {
 inline void fractured_string_builder::format_element(const dom::element& elem,
                                                        const element_metrics& metrics,
                                                        size_t depth,
-                                                       bool has_trailing_comma) {
+                                                       bool has_trailing_comma,
+                                                       size_t key_width) {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        format_array(arr, metrics, depth, has_trailing_comma);
+        format_array(arr, metrics, depth, has_trailing_comma, key_width);
       }
       break;
     }
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        format_object(obj, metrics, depth, has_trailing_comma);
+        format_object(obj, metrics, depth, has_trailing_comma, key_width);
       }
       break;
     }
@@ -681,8 +684,10 @@ inline void fractured_string_builder::format_element(const dom::element& elem,
 inline void fractured_string_builder::format_array(const dom::array& arr,
                                                     const element_metrics& metrics,
                                                     size_t depth,
-                                                    bool has_trailing_comma) {
-  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+                                                    bool has_trailing_comma,
+                                                    size_t key_width) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_,
+                                                         has_trailing_comma, key_width);
   switch (layout) {
     case layout_mode::single_line:
       format_array_inline(arr, metrics);
@@ -1132,8 +1137,10 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 inline void fractured_string_builder::format_object(const dom::object& obj,
                                                      const element_metrics& metrics,
                                                      size_t depth,
-                                                     bool has_trailing_comma) {
-  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+                                                     bool has_trailing_comma,
+                                                     size_t key_width) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_,
+                                                         has_trailing_comma, key_width);
   if (layout == layout_mode::single_line) {
     format_object_inline(obj, metrics);
   } else {
@@ -1202,7 +1209,10 @@ inline void fractured_string_builder::format_object_expanded(const dom::object& 
     }
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     bool is_last = (child_idx + 1 == metrics.child_count);
-    format_element(field.value, child_metrics, depth + 1, !is_last);
+    // An inline value shares its line with the key, the colon and its padding.
+    size_t key_width = analyzer_.estimate_string_length(field.key) + 1 +
+                       (options_.colon_padding ? 1 : 0);
+    format_element(field.value, child_metrics, depth + 1, !is_last, key_width);
     child_idx++;
   }
 
