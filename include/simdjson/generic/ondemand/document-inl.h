@@ -333,7 +333,13 @@ simdjson_warn_unused simdjson_inline error_code document::consume() noexcept {
   auto error = is_scalar().get(scalar);
   if(error) { return error; }
   if(scalar) {
-    iter.return_current_and_advance();
+    // Step over the scalar and leave depth 0, as skip_child() does: otherwise a
+    // document_stream takes the next document as the rest of this one. At depth
+    // 0 the scalar has already been consumed (e.g., by get_int64()).
+    if(iter.depth() > 0) {
+      iter.return_current_and_advance();
+      iter.ascend_to(0);
+    }
     return SUCCESS;
   }
   error = iter.skip_child(0);

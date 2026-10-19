@@ -1118,6 +1118,41 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // raw_json() (and to_json_string) on a scalar document must not consume
+    // the next document.
+    bool raw_json_of_scalar_documents() {
+        TEST_START();
+        auto json = R"(1 "a" true [2] null {"b":3} 4)"_padded;
+        const std::vector<std::string_view> expected = {"1", "\"a\"", "true", "[2]", "null", "{\"b\":3}", "4"};
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json).get(stream) );
+        std::vector<std::string> got;
+        for (auto doc : stream) {
+            std::string_view raw;
+            ASSERT_SUCCESS( to_json_string(doc).get(raw) ); // calls raw_json()
+            got.emplace_back(raw);
+        }
+        ASSERT_EQUAL( got.size(), expected.size() );
+        for (size_t i = 0; i < got.size(); i++) { ASSERT_EQUAL( got[i], expected[i] ); }
+        // Same after the scalar has already been read.
+        auto numbers = "5 6 7"_padded;
+        ASSERT_SUCCESS( parser.iterate_many(numbers).get(stream) );
+        int64_t total = 0;
+        size_t count = 0;
+        for (auto doc : stream) {
+            int64_t v;
+            ASSERT_SUCCESS( doc.get_int64().get(v) );
+            std::string_view raw;
+            ASSERT_SUCCESS( to_json_string(doc).get(raw) );
+            ASSERT_EQUAL( raw, std::to_string(v) );
+            total += v; count++;
+        }
+        ASSERT_EQUAL( count, 3 );
+        ASSERT_EQUAL( total, 18 );
+        TEST_SUCCEED();
+    }
+
     // Same documents as whitespace_delimited, including across batch
     // boundaries where the fast path runs out of delimiters and falls back.
     bool newline_delimited_agrees_with_default() {
@@ -2795,6 +2830,7 @@ bool run() {
             delimited_full_read() &&
             newline_delimited_edge_cases() &&
             newline_delimited_scalars() &&
+            raw_json_of_scalar_documents() &&
             newline_delimited_agrees_with_default() &&
             stress_data_race() &&
             stress_data_race_with_error() &&
