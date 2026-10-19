@@ -676,6 +676,52 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  // A path that cannot be parsed after a wildcard is reported, whatever the
+  // document, instead of silently matching nothing.
+  bool malformed_path_after_wildcard() {
+    TEST_START();
+    const char *malformed[] = {
+      R"($.a[*]['b)",
+      R"($.a[*][1)",
+      R"($.a[*][1x])",
+      R"($.a[*][b])",
+      R"($.a[*].b[)",
+      R"($.a[*]b)",
+      R"($.*.b[0)",
+      R"($.a[*][*)",
+      R"($[*]x)",
+      R"($.missing[*][1)",
+    };
+    for (const char *source : {R"({"a":[{"b":[1]},{"b":[2]}]})", R"([[{"b":[1]}]])", "[]", "5"}) {
+      const padded_string json(std::string_view{source});
+      for (const char *path : malformed) {
+        std::cout << "  " << json << " " << path << std::endl;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t count = 0;
+        ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [&](ondemand::value) { count++; }), INVALID_JSON_POINTER);
+        ASSERT_EQUAL(count, 0);
+      }
+    }
+    // The array, object and value entry points check the path too.
+    auto json = R"({"o":{"a":[{"b":1}]},"v":[[{"b":1}]]})"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object o;
+    ASSERT_SUCCESS(doc["o"].get_object().get(o));
+    ASSERT_ERROR(o.for_each_at_path_with_wildcard("$.a[*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    ondemand::value v;
+    ASSERT_SUCCESS(doc["v"].get(v));
+    ASSERT_ERROR(v.for_each_at_path_with_wildcard("$[*][*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array a;
+    ASSERT_SUCCESS(doc["v"].get_array().get(a));
+    ASSERT_ERROR(a.for_each_at_path_with_wildcard("$[*][*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    TEST_SUCCEED();
+  }
+
   // The path is split once, not again at every value the wildcards reach: a
   // long path after a couple of wildcards on a large document used to take
   // O(values * path length) time (OSS-Fuzz 6599621728862208).
@@ -730,6 +776,7 @@ namespace wildcard_tests {
            deeply_nested_wildcard() &&
            wildcard_skip_nonmatching_elements_issue_2906() &&
            wildcard_index_segment_validation() &&
+           malformed_path_after_wildcard() &&
            long_path_after_wildcards();
   }
 }
