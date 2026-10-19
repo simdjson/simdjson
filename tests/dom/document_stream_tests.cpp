@@ -130,6 +130,25 @@ namespace document_stream_tests {
     return true;
   }
 
+  bool whitespace_only_middle_batch() {
+    std::cout << "Running " << __func__ << std::endl;
+    // With batch_size 32, the second batch is nothing but spaces: stage 1
+    // reports EMPTY for it and the stream must still go on to [2] [3] [4].
+    const std::string json = "[1]" + std::string(61, ' ') + "[2] [3] [4]";
+    const simdjson::padded_string input(json);
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+    size_t count = 0;
+    for (auto i = stream.begin(); i != stream.end(); ++i) {
+      ASSERT_SUCCESS((*i).error());
+      ASSERT_EQUAL(i.current_index(), count == 0 ? 0 : 60 + 4 * count);
+      count++;
+    }
+    ASSERT_EQUAL(count, 4);
+    ASSERT_EQUAL(stream.truncated_bytes(), 0);
+    return true;
+  }
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
     const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
@@ -2394,6 +2413,7 @@ namespace document_stream_tests {
            unquoted_key() &&
            stress_data_race() &&
            stress_data_race_with_error() &&
+           whitespace_only_middle_batch() &&
            test_leading_spaces() &&
            test_crazy_leading_spaces() &&
            simple_example() &&

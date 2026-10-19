@@ -789,6 +789,25 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    bool whitespace_only_middle_batch() {
+        TEST_START();
+        // With batch_size 32, the second batch is nothing but spaces: stage 1
+        // reports EMPTY for it and the stream must still go on to [2] [3] [4].
+        const std::string json = "[1]" + std::string(61, ' ') + "[2] [3] [4]";
+        const padded_string input(json);
+        size_t count{0};
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+        for(auto i = stream.begin(); i != stream.end(); ++i) {
+            ASSERT_SUCCESS(i.error());
+            ASSERT_EQUAL(i.current_index(), count == 0 ? 0 : 60 + 4 * count);
+            count++;
+        }
+        ASSERT_EQUAL(count, 4);
+        ASSERT_EQUAL(stream.truncated_bytes(), 0);
+        TEST_SUCCEED();
+    }
     bool test_leading_spaces() {
         TEST_START();
         auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
@@ -2765,6 +2784,7 @@ bool run() {
             truncated_unclosed_string() &&
             small_window() &&
             large_window() &&
+            whitespace_only_middle_batch() &&
             test_leading_spaces() &&
             test_crazy_leading_spaces() &&
             adversarial_single_document() &&
