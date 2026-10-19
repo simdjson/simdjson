@@ -881,7 +881,9 @@ public:
   /**
    * Consumes the document and returns a string_view instance corresponding to the
    * document as represented in JSON. It points inside the original byte array containing
-   * the JSON document.
+   * the JSON document. It starts at the first byte of the document and ends at its last
+   * byte: it does not include the white space that follows the document, nor, in a
+   * document_stream, the separators or the documents that follow it.
    */
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
@@ -1244,6 +1246,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  /** @copydoc simdjson_inline simdjson_result<std::string_view> document::raw_json() noexcept */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
@@ -1370,6 +1374,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  /** @copydoc simdjson_inline simdjson_result<std::string_view> document::raw_json() noexcept */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;

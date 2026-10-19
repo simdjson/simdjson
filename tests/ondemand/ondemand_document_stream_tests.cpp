@@ -1153,6 +1153,51 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // raw_json() on each document of a stream ends on the last byte of the
+    // document: it includes neither the white space or separator that follows
+    // it nor, when a truncated document follows, that document.
+    bool raw_json_ends_on_the_document() {
+        TEST_START();
+        struct test_case {
+            stream_format format;
+            std::string input;
+            std::vector<std::string_view> expected;
+            size_t truncated;
+        };
+        const std::vector<test_case> cases = {
+            {stream_format::whitespace_delimited, "true [1] false {\"a\":1}  \"s\" \n",
+             {"true", "[1]", "false", "{\"a\":1}", "\"s\""}, 0},
+            {stream_format::whitespace_delimited, "1\n[2]\n{\"b\":3}\n\"x y\"\n",
+             {"1", "[2]", "{\"b\":3}", "\"x y\""}, 0},
+            {stream_format::whitespace_delimited, "1[2]\"s\"{\"k\":1}\"a\\\"b\" \"c\\\\\" -1.5e3",
+             {"1", "[2]", "\"s\"", "{\"k\":1}", "\"a\\\"b\"", "\"c\\\\\"", "-1.5e3"}, 0},
+            {stream_format::whitespace_delimited, "1 \"a b\" [2,", {"1", "\"a b\""}, 3},
+            {stream_format::whitespace_delimited, "[1]  [2,", {"[1]"}, 3},
+            {stream_format::comma_delimited, "1, [2] , {\"c\":3},\"q\" ,4",
+             {"1", "[2]", "{\"c\":3}", "\"q\"", "4"}, 0},
+            {stream_format::comma_delimited, "1, \"a\", [2,", {"1", "\"a\""}, 3},
+            {stream_format::json_sequence, "\x1e" "1\n\x1e[2]\n\x1e\"s\"\n\x1e{\"d\":4}\n",
+             {"1", "[2]", "\"s\"", "{\"d\":4}"}, 0},
+        };
+        for (const auto &c : cases) {
+            padded_string json(c.input);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE, c.format).get(stream) );
+            size_t i = 0;
+            for (auto doc : stream) {
+                std::string_view raw;
+                ASSERT_SUCCESS( doc.raw_json().get(raw) );
+                ASSERT_TRUE( i < c.expected.size() );
+                ASSERT_EQUAL( raw, c.expected[i] );
+                i++;
+            }
+            ASSERT_EQUAL( i, c.expected.size() );
+            ASSERT_EQUAL( stream.truncated_bytes(), c.truncated );
+        }
+        TEST_SUCCEED();
+    }
+
     // Same documents as whitespace_delimited, including across batch
     // boundaries where the fast path runs out of delimiters and falls back.
     bool newline_delimited_agrees_with_default() {
@@ -2831,6 +2876,7 @@ bool run() {
             newline_delimited_edge_cases() &&
             newline_delimited_scalars() &&
             raw_json_of_scalar_documents() &&
+            raw_json_ends_on_the_document() &&
             newline_delimited_agrees_with_default() &&
             stress_data_race() &&
             stress_data_race_with_error() &&

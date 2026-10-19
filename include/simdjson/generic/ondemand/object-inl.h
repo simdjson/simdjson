@@ -264,7 +264,9 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek()};
+  // After 'consume()', the last token consumed is the closing brace: we end on it
+  // rather than on the next token, which may follow white space.
+  const uint8_t * final_point{iter._json_iter->token.peek(-1) + 1};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
