@@ -1032,6 +1032,54 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // A structural error abandons the current document: its iterator lets go
+    // of the parser. Moving on used to restart that iterator in the middle of
+    // the broken document, and the next walk read the parser through it. The
+    // stream must stop at the broken document, reporting its error.
+    bool stream_stops_after_fatal_error() {
+        TEST_START();
+        std::string lines = "{\"a\" 1}\n";
+        std::string seq = "\x1E{\"a\" 1}\n";
+        std::string commas = "{\"a\" 1},";
+        for (int i = 0; i < 20; i++) {
+            lines += "{\"b\":2}\n";
+            seq += "\x1E{\"b\":2}\n";
+            commas += "{\"b\":2},";
+        }
+        struct { padded_string json; stream_format fmt; } cases[] = {
+            { padded_string(lines), stream_format::whitespace_delimited },
+            { padded_string(lines), stream_format::newline_delimited },
+            { padded_string(seq), stream_format::json_sequence },
+            { padded_string(commas), stream_format::comma_delimited },
+        };
+        for (auto &c : cases) {
+            // One batch, then batches of a few documents (with threads, the
+            // next batch is indexed while we iterate).
+            for (size_t batch_size : { c.json.size(), size_t(64) }) {
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(c.json, batch_size, c.fmt).get(stream) );
+                size_t count = 0;
+                for (auto doc : stream) {
+                    ondemand::object obj;
+                    auto error = doc.get_object().get(obj);
+                    if (count == 0) {
+                        ASSERT_SUCCESS( error );
+                        for (auto field : obj) {
+                            std::string_view key;
+                            ASSERT_ERROR( field.unescaped_key().get(key), TAPE_ERROR );
+                        }
+                    } else {
+                        ASSERT_ERROR( error, TAPE_ERROR );
+                    }
+                    count++;
+                }
+                ASSERT_EQUAL( count, 2 );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
     bool delimited_full_read() {
         TEST_START();
         auto json = R"({"a":1,"b":2}
@@ -2819,6 +2867,7 @@ bool source_across_batches() {
 bool run() {
         return
             shrinking_batch_size_reuses_buffers() &&
+            stream_stops_after_fatal_error() &&
 #if SIMDJSON_STATIC_REFLECTION
             reflection_stream_tests() &&
 #endif

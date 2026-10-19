@@ -352,6 +352,13 @@ simdjson_inline bool document_stream::skip_to_delimiter(uint8_t delimiter) noexc
 }
 
 inline void document_stream::next_document() noexcept {
+  // Iteration stops at the first document that met a fatal error. The error
+  // may have abandoned the document's iterator, which then no longer has a
+  // parser to walk the rest of the document with.
+  if (!doc.iter.is_alive() || doc.iter.error) {
+    error = doc.iter.error ? doc.iter.error : TAPE_ERROR;
+    return;
+  }
   // A delimiter that cannot occur inside a document tells us where the current
   // one ends, so we can jump there instead of walking every structural. Only
   // valid while the iterator is still inside the document: a consumed document
