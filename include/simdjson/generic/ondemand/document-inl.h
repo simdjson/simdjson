@@ -33,7 +33,8 @@ simdjson_inline document document::start(json_iterator &&iter) noexcept {
 }
 
 inline void document::rewind() noexcept {
-  iter.rewind();
+  // A document that is no longer alive is left as it is (see is_alive()).
+  static_cast<void>(iter.rewind());
 }
 
 inline std::string document::to_debug_string() noexcept {
@@ -428,7 +429,9 @@ simdjson_inline simdjson_result<std::string_view> document::raw_json_token() noe
 }
 
 simdjson_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
-  rewind(); // Rewind the document each time at_pointer is called
+  // Rewind the document each time at_pointer is called. After a fatal error,
+  // the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_pointer.empty()) {
     return this->get_value();
   }
@@ -446,7 +449,9 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
 }
 
 simdjson_inline simdjson_result<value> document::at_path(std::string_view json_path) noexcept {
-  rewind(); // Rewind the document each time at_pointer is called
+  // Rewind the document each time at_path is called. After a fatal error,
+  // the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return this->get_value();
   }
@@ -469,7 +474,9 @@ template <typename Func>
 template <typename Func>
 #endif
 simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  rewind(); // Rewind the document each time for_each_at_path_with_wildcard is called
+  // Rewind the document each time for_each_at_path_with_wildcard is called. After
+  // a fatal error, the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return INVALID_JSON_POINTER;
   }

@@ -479,9 +479,49 @@ namespace json_pointer_tests {
         TEST_SUCCEED();
     }
 
+    // A structural error abandons the document: is_alive() becomes false and
+    // the iterator lets go of the parser. at_pointer() rewinds the document on
+    // each call and used to read the parser through the abandoned iterator. It
+    // must report the error instead, whichever lookup comes next.
+    bool at_pointer_after_fatal_error() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+        int64_t x;
+        auto missing_colon = R"({"a";1,"b":2})"_padded;
+        ASSERT_SUCCESS(parser.iterate(missing_colon).get(doc));
+        ASSERT_ERROR(doc.at_pointer("/a").get(val), TAPE_ERROR);
+        ASSERT_FALSE(doc.is_alive());
+        ASSERT_ERROR(doc.at_pointer("/b").get(val), TAPE_ERROR);
+        ASSERT_ERROR(doc.at_pointer("").get(val), TAPE_ERROR);
+        doc.rewind();
+        ASSERT_FALSE(doc.is_alive());
+        ASSERT_ERROR(doc.at_pointer("/b").get(val), TAPE_ERROR);
+        ondemand::document_reference ref(doc);
+        ASSERT_ERROR(ref.at_pointer("/b").get(val), TAPE_ERROR);
+        auto missing_comma = R"({"a":1 "b":2})"_padded;
+        ASSERT_SUCCESS(parser.iterate(missing_comma).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer("/a").get_int64().get(x));
+        ASSERT_EQUAL(x, 1);
+        ASSERT_ERROR(doc.at_pointer("/b").get(val), TAPE_ERROR);
+        ASSERT_FALSE(doc.is_alive());
+        ASSERT_ERROR(doc.at_pointer("/a").get(val), TAPE_ERROR);
+        auto unclosed = R"({"a":1,"b":2)"_padded;
+        ASSERT_SUCCESS(parser.iterate(unclosed).get(doc));
+        ASSERT_ERROR(doc.at_pointer("/a").get(val), INCOMPLETE_ARRAY_OR_OBJECT);
+        ASSERT_FALSE(doc.is_alive());
+        ASSERT_ERROR(doc.at_pointer("/b").get(val), INCOMPLETE_ARRAY_OR_OBJECT);
+        // A document that was never iterated has nothing to rewind either.
+        ondemand::document empty_doc;
+        ASSERT_ERROR(empty_doc.at_pointer("/a").get(val), UNINITIALIZED);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
                 issue2154() &&
+                at_pointer_after_fatal_error() &&
                 empty_pointer_on_containers() &&
                 deeply_nested_pointer() &&
 #if SIMDJSON_EXCEPTIONS
