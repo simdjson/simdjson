@@ -761,7 +761,16 @@ simdjson_inline error_code string_builder::move_to(std::string &out) noexcept {
     // Most of the buffer is unused: copy the bytes out, so that a small
     // result does not keep the whole buffer allocated. The builder keeps its
     // buffer for what it writes next.
+#if SIMDJSON_EXCEPTIONS
+    try {
+      out.assign(buffer.data(), position);
+    } catch (...) { // std::bad_alloc
+      return simdjson::MEMALLOC;
+    }
+#else
+    // Without exceptions, a failed allocation terminates the program.
     out.assign(buffer.data(), position);
+#endif
     position = 0;
     return simdjson::SUCCESS;
   }

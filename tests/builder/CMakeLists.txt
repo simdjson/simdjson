@@ -1,6 +1,7 @@
 # All remaining tests link with simdjson proper
 include_directories(..)
 add_cpp_test(builder_string_builder_tests                LABELS ondemand acceptance per_implementation)
+add_cpp_test(builder_move_to_allocation_tests          LABELS ondemand acceptance per_implementation)
 if(SIMDJSON_STATIC_REFLECTION_ENABLED)
   add_cpp_test(static_reflection_custom_tests            LABELS ondemand acceptance per_implementation)
   add_cpp_test(static_reflection_builder_tests           LABELS ondemand acceptance per_implementation)
