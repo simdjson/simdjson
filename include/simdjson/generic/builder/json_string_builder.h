@@ -248,7 +248,10 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
 
   /**
    * Moves the written JSON buffer into out, replacing its content, without
-   * copying it. The builder is left empty and gives up its memory.
+   * copying it. When the content fills less than half of the buffer, it is
+   * copied instead, so that a small result does not keep the whole buffer
+   * allocated. The builder is left empty: it keeps its buffer when the
+   * content was copied, and gives up its memory when the buffer was moved.
    * Returns an error, and leaves out unchanged, if memory allocation failed.
    *
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
