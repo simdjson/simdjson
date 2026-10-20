@@ -34,7 +34,11 @@ simdjson_inline uint32_t token_iterator::peek_index(token_position position) con
   return *position;
 }
 simdjson_inline uint32_t token_iterator::peek_length(token_position position) const noexcept {
-  return *(position+1) - *position;
+  // In the last batch of a document_stream, the index past the end of the
+  // structural indexes holds the start of the truncated bytes (see
+  // document_stream::truncated_bytes()), which can come before the end of the
+  // input: a token at the end is then empty.
+  return *(position+1) > *position ? *(position+1) - *position : 0;
 }
 
 simdjson_inline uint32_t token_iterator::peek_root_length(token_position position) const noexcept {
@@ -49,7 +53,7 @@ simdjson_inline uint32_t token_iterator::peek_index(int32_t delta) const noexcep
   return *(_position+delta);
 }
 simdjson_inline uint32_t token_iterator::peek_length(int32_t delta) const noexcept {
-  return *(_position+delta+1) - *(_position+delta);
+  return peek_length(_position+delta);
 }
 
 simdjson_inline token_position token_iterator::position() const noexcept {

@@ -1246,6 +1246,62 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // raw_json_token() of a value at the end of the last document of a stream
+    // is empty. The value after the ':' of an incomplete last document sits at
+    // the end of the structural indexes, and the index after it holds the start
+    // of the truncated bytes, which can come before the end of the input: the
+    // token length wrapped around to ~4 GB, and to_json_string(value&), which
+    // trims the token, read past the input.
+    bool raw_json_token_in_truncated_last_document() {
+        TEST_START();
+        const std::vector<std::pair<stream_format, std::string>> cases = {
+            {stream_format::whitespace_delimited, "},{\"\":\""},
+            {stream_format::newline_delimited, "},{\"\":\""},
+            {stream_format::comma_delimited, "},{\"\":\""},
+            {stream_format::json_sequence, "},{\"\":\""},
+            {stream_format::whitespace_delimited, "{\"a\":1}},{\"b\":\""},
+            {stream_format::json_sequence, "\x1e}\x1e{\"\":\""},
+        };
+        for (const auto &c : cases) {
+            padded_string json(c.second);
+            const char *end = json.data() + json.size();
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE, c.first).get(stream) );
+            bool value_at_end = false;
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ondemand::document_reference ref;
+                if ((*i).get(ref)) { break; }
+                ondemand::document &doc = ref;
+                ondemand::object obj;
+                if (!doc.get_object().get(obj)) {
+                    for (auto field : obj) {
+                        ondemand::value v;
+                        if (field.value().get(v)) { break; }
+                        std::string_view token = v.raw_json_token();
+                        ASSERT_TRUE( token.data() <= end );
+                        ASSERT_TRUE( token.size() <= size_t(end - token.data()) );
+                        if (token.data() == end) { value_at_end = true; }
+                        std::string_view json_string;
+                        if (!to_json_string(v).get(json_string)) {
+                            ASSERT_TRUE( json_string.size() <= size_t(end - json_string.data()) );
+                        }
+                        break;
+                    }
+                }
+                if (!doc.is_alive()) { break; }
+                // Read each document to its end, as an application logging it
+                // would: the stream then goes on to the incomplete last document.
+                doc.rewind();
+                std::string_view whole;
+                (void)to_json_string(doc).get(whole);
+                if (!doc.is_alive()) { break; }
+            }
+            ASSERT_TRUE( value_at_end );
+        }
+        TEST_SUCCEED();
+    }
+
     // Same documents as whitespace_delimited, including across batch
     // boundaries where the fast path runs out of delimiters and falls back.
     bool newline_delimited_agrees_with_default() {
@@ -2926,6 +2982,7 @@ bool run() {
             newline_delimited_scalars() &&
             raw_json_of_scalar_documents() &&
             raw_json_ends_on_the_document() &&
+            raw_json_token_in_truncated_last_document() &&
             newline_delimited_agrees_with_default() &&
             stress_data_race() &&
             stress_data_race_with_error() &&
