@@ -761,27 +761,37 @@ namespace document_stream_tests {
     // within the batch. An invalid document whose brackets balance but which ends
     // with a ',' must not let On-Demand read that string: stage 1 leaves the
     // document to the next batch, where it is reported as TAPE_ERROR.
+    //
+    // Stage 1 of the fallback implementation has its own copy of this logic: we
+    // check every implementation that the system supports.
     bool unfinished_document_at_batch_end() {
         TEST_START();
-        for (stream_format format : {stream_format::whitespace_delimited, stream_format::newline_delimited}) {
-            for (const char *doc : {"[,1],", "{\"a\":,1},"}) {
-                padded_string json("[1] " + std::string(doc) + "\"" + std::string(40, 'x'));
-                ondemand::parser parser;
-                ondemand::document_stream stream;
-                ASSERT_SUCCESS( parser.iterate_many(json, 32, format).get(stream) );
-                auto i = stream.begin();
-                ASSERT_TRUE( i != stream.end() );
-                ondemand::document_reference first;
-                ASSERT_SUCCESS( (*i).get(first) );
-                int64_t x;
-                ASSERT_SUCCESS( first.at(0).get_int64().get(x) );
-                ASSERT_EQUAL( x, 1 );
-                ++i;
-                ASSERT_TRUE( i != stream.end() );
-                ondemand::document_reference second;
-                ASSERT_ERROR( (*i).get(second), TAPE_ERROR );
+        const implementation *active = get_active_implementation();
+        for (const implementation *impl : get_available_implementations()) {
+            if (!impl->supported_by_runtime_system()) { continue; }
+            get_active_implementation() = impl;
+            std::cout << "    " << impl->name() << std::endl;
+            for (stream_format format : {stream_format::whitespace_delimited, stream_format::newline_delimited}) {
+                for (const char *doc : {"[,1],", "{\"a\":,1},"}) {
+                    padded_string json("[1] " + std::string(doc) + "\"" + std::string(40, 'x'));
+                    ondemand::parser parser;
+                    ondemand::document_stream stream;
+                    ASSERT_SUCCESS( parser.iterate_many(json, 32, format).get(stream) );
+                    auto i = stream.begin();
+                    ASSERT_TRUE( i != stream.end() );
+                    ondemand::document_reference first;
+                    ASSERT_SUCCESS( (*i).get(first) );
+                    int64_t x;
+                    ASSERT_SUCCESS( first.at(0).get_int64().get(x) );
+                    ASSERT_EQUAL( x, 1 );
+                    ++i;
+                    ASSERT_TRUE( i != stream.end() );
+                    ondemand::document_reference second;
+                    ASSERT_ERROR( (*i).get(second), TAPE_ERROR );
+                }
             }
         }
+        get_active_implementation() = active;
         TEST_SUCCEED();
     }
 
@@ -790,20 +800,27 @@ namespace document_stream_tests {
     // be the next record, here a string that does not close within the batch.
     bool json_sequence_unfinished_document_at_batch_end() {
         TEST_START();
-        padded_string json("\x1e [\x1etrue\"a\",\"" + std::string(63, 'x'));
-        ondemand::parser parser;
-        ondemand::document_stream stream;
-        ASSERT_SUCCESS( parser.iterate_many(json, 9, stream_format::json_sequence).get(stream) );
-        size_t count = 0;
-        for (auto doc : stream) {
-            if (++count > 2) { break; }
-            ondemand::array array;
-            if (doc.get_array().get(array)) { continue; }
-            for (auto element : array) {
-                std::string_view s;
-                ASSERT_TRUE( element.get_string().get(s) != SUCCESS );
+        const implementation *active = get_active_implementation();
+        for (const implementation *impl : get_available_implementations()) {
+            if (!impl->supported_by_runtime_system()) { continue; }
+            get_active_implementation() = impl;
+            std::cout << "    " << impl->name() << std::endl;
+            padded_string json("\x1e [\x1etrue\"a\",\"" + std::string(63, 'x'));
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(json, 9, stream_format::json_sequence).get(stream) );
+            size_t count = 0;
+            for (auto doc : stream) {
+                if (++count > 2) { break; }
+                ondemand::array array;
+                if (doc.get_array().get(array)) { continue; }
+                for (auto element : array) {
+                    std::string_view s;
+                    ASSERT_TRUE( element.get_string().get(s) != SUCCESS );
+                }
             }
         }
+        get_active_implementation() = active;
         TEST_SUCCEED();
     }
 

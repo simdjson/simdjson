@@ -254,8 +254,14 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
     }
     // We truncate the input to the end of the last complete document (or zero).
-    auto new_structural_indexes = find_next_document_index(parser, !unclosed_string && ends_with_partial_scalar(parser, len));
+    // See json_structural_indexer.h for ends_with_unfinished_document().
+    const bool partial_scalar = !unclosed_string && ends_with_partial_scalar(parser, len);
+    const bool unfinished = ends_with_unfinished_document(parser);
+    auto new_structural_indexes = find_next_document_index(parser, partial_scalar || unfinished);
     if (new_structural_indexes == 0 && parser.n_structural_indexes > 0) {
+      // The batch holds a single document, whose brackets balance but which
+      // cannot be valid JSON: it is not too big, it is invalid.
+      if (unfinished && find_next_document_index(parser, partial_scalar) != 0) { return TAPE_ERROR; }
       if(parser.structural_indexes[0] == 0) {
         // If the buffer is partial and we started at index 0 but the document is
         // incomplete, it's too big to parse.
@@ -313,6 +319,9 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     }
     parser.n_structural_indexes = new_structural_indexes;
     parser.structural_indexes[parser.n_structural_indexes] = next_batch_start;
+    // Repeat the RS that starts the next batch, as in json_structural_indexer.h:
+    // an invalid last document may make the On-Demand API skip it as a value.
+    parser.structural_indexes[parser.n_structural_indexes + 1] = next_batch_start;
   } else if (partial == stage1_mode::json_sequence_final) {
     // RFC 7464: final batch, last document extends to EOF
     // As above: a discarded unclosed string caps how far the filter may scan.
