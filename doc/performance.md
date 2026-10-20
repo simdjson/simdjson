@@ -173,6 +173,20 @@ Recent versions of Microsoft Visual Studio on Windows provides support for the L
 
 We recommend Visual Studio users prefer LLVM (clang-cl). It compiles to faster release binaries. Furthermore, it compilers faster in release mode.
 
+### Strict aliasing
+
+Neither the Visual Studio compiler nor LLVM Clang targeting Visual Studio (clang-cl) relies on the C++ aliasing rules ("strict aliasing") by default. After storing an integer through a pointer, the compiler must then assume that any other value in memory may have changed, including the pointers held in simdjson's parser state, and it reloads them. The Visual Studio compiler has no option to change this behavior. With clang-cl, you can enable strict aliasing with the flag `/clang:-fstrict-aliasing` (or `-fstrict-aliasing` if you invoke `clang` with an MSVC target). With CMake:
+
+```cmake
+if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  add_compile_options(/clang:-fstrict-aliasing)
+endif()
+```
+
+Much of simdjson is inlined into your own code, so the flag should apply to your code as well as to the simdjson library. The simdjson library is routinely built and tested with strict aliasing (it is the default with GCC and LLVM Clang on Linux and macOS), but you should only enable it if your own code respects the aliasing rules.
+
+You get the same behavior on other systems if you build with `-fno-strict-aliasing`. In our tests (GCC 16 and LLVM Clang 21, Intel Emerald Rapids), `-fno-strict-aliasing` did not measurably affect DOM parsing, but it slowed down some On-Demand workloads by up to 9% (e.g., JSON Pointer queries with `at_pointer`).
+
 
 Power Usage and Downclocking
 --------------
