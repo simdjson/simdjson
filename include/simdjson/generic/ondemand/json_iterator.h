@@ -312,6 +312,8 @@ protected:
   simdjson_inline token_position end_position() const noexcept;
   /// The end of the buffer.
   simdjson_inline token_position end() const noexcept;
+  /// Whether the string starting at src closes before the end of the document_stream batch.
+  simdjson_inline bool string_closes_in_batch(const uint8_t *src) const noexcept;
 
   friend class document;
   friend class document_stream;

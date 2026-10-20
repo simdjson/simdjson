@@ -402,6 +402,8 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
   // This code only updates the structural index in the parser, it does not update any json_iterator
   // instance.
   size_t remaining = len - _batch_start;
+  // The bytes of the batch, to which json_iterator::unescape() bounds its strings.
+  p._document_len = remaining <= batch_size ? remaining : batch_size;
   stage1_mode mode;
   if (remaining <= batch_size) {
     // Final batch

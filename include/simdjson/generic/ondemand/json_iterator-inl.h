@@ -12,6 +12,8 @@
 #include "simdjson/generic/ondemand/token_iterator-inl.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
+#include <cstring>
+
 namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
@@ -376,7 +378,28 @@ simdjson_inline token_position json_iterator::position() const noexcept {
   return token.position();
 }
 
+// A document_stream batch may stop before the end of the input. Its last structural
+// index is then where the next batch starts, which can be a string that stage 1 found
+// unclosed, and an invalid document can reach it as a value or a key. Every string of
+// the batch closes within the bytes that stage 1 indexed, so we refuse to unescape one
+// that does not: parse_string() looks for the closing quote without any bound.
+simdjson_inline bool json_iterator::string_closes_in_batch(const uint8_t *src) const noexcept {
+  const uint8_t *const end = token.buf + parser->_document_len;
+  const uint8_t *p = src;
+  while (p < end) {
+    const uint8_t *quote = static_cast<const uint8_t *>(std::memchr(p, '"', size_t(end - p)));
+    if (quote == nullptr) { return false; }
+    // The quote is escaped if an odd number of backslashes precedes it.
+    const uint8_t *run = quote;
+    while (run > src && run[-1] == '\\') { run--; }
+    if (((quote - run) & 1) == 0) { return true; }
+    p = quote + 1;
+  }
+  return false;
+}
+
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_json_string in, bool allow_replacement) noexcept {
+  if (_streaming && !string_closes_in_batch(reinterpret_cast<const uint8_t *>(in.raw()))) { return STRING_ERROR; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape(in, _string_buf_loc, allow_replacement);
 #if !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)
@@ -391,6 +414,7 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
 }
 
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
+  if (_streaming && !string_closes_in_batch(reinterpret_cast<const uint8_t *>(in.raw()))) { return STRING_ERROR; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape_wobbly(in, _string_buf_loc);
 #if !defined(SIMDJSON_VISUAL_STUDIO) && !defined(SIMDJSON_CLANG_VISUAL_STUDIO)

@@ -756,6 +756,64 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // A batch that stops before the end of the input ends its structural
+    // indexes with the start of the next batch: here a string that stage 1
+    // found unclosed. An invalid document whose last ',' is read as a separator
+    // (the leading ',' makes skipping the value consume the ']' or '}') reaches
+    // that index as one more value or key. Its string does not close within the
+    // batch, so unescaping it is an error rather than a scan past the input.
+    bool unescape_string_unclosed_in_batch() {
+        TEST_START();
+        const std::string tail(40, 'x');
+        for (stream_format format : {stream_format::whitespace_delimited, stream_format::newline_delimited}) {
+            {
+                // A value: [,1] then the unclosed string at offset 5.
+                padded_string json("[,1],\"" + tail);
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(json, 32, format).get(stream) );
+                auto i = stream.begin();
+                ASSERT_TRUE( i != stream.end() );
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS( (*i).get(doc) );
+                ondemand::array array;
+                ASSERT_SUCCESS( doc.get_array().get(array) );
+                auto element = array.begin();
+                std::string_view s;
+                ASSERT_ERROR( (*element).get_string().get(s), INCORRECT_TYPE );
+                ++element;
+                ASSERT_TRUE( element != array.end() );
+                ondemand::value v;
+                ASSERT_SUCCESS( (*element).get(v) );
+                ASSERT_ERROR( v.get_string().get(s), STRING_ERROR );
+                // The same string read again, through the other unescape.
+                ASSERT_ERROR( v.get_wobbly_string().get(s), STRING_ERROR );
+            }
+            {
+                // A key: {"a":,1} then the unclosed string at offset 9, with the
+                // ':' that follows it at offset 32, just past the batch.
+                padded_string json("{\"a\":,1},\"" + std::string(22, 'x') + ":" + std::string(17, 'x'));
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(json, 32, format).get(stream) );
+                auto i = stream.begin();
+                ASSERT_TRUE( i != stream.end() );
+                ondemand::document_reference doc;
+                ASSERT_SUCCESS( (*i).get(doc) );
+                ondemand::object object;
+                ASSERT_SUCCESS( doc.get_object().get(object) );
+                auto field = object.begin();
+                std::string_view s;
+                ASSERT_SUCCESS( (*field).unescaped_key().get(s) );
+                ASSERT_EQUAL( s, "a" );
+                ++field;
+                ASSERT_TRUE( field != object.end() );
+                ASSERT_ERROR( (*field).unescaped_key().get(s), STRING_ERROR );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
     bool small_window() {
         TEST_START();
         std::vector<char> input;
@@ -2911,6 +2969,7 @@ bool run() {
             truncated_complete_docs() &&
             truncated_empty_stream_reused_parser() &&
             truncated_unclosed_string() &&
+            unescape_string_unclosed_in_batch() &&
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
