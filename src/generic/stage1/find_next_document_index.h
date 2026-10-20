@@ -43,6 +43,23 @@ simdjson_inline bool ends_with_partial_scalar(dom_parser_implementation &parser,
          e != ' ' && e != '\t' && e != '\n' && e != '\r';
 }
 
+/**
+ * The structural index past the last one of a partial batch is where the next
+ * batch starts: it can be a string that does not close within the batch. The
+ * On-Demand API reads a value or a key only after '{', '[', ',' or ':', and it
+ * moves past a token without reading it as a value only when that token is ',',
+ * ':', ']' or '}'. A last document that ends with '{', '[', ',' or ':', or that is
+ * followed by ',', ':', ']' or '}', is invalid JSON, yet its brackets may balance:
+ * walking it, the On-Demand API could read the next batch as a value. We leave
+ * such a document to the next batch, so that the batch ends between two documents.
+ */
+simdjson_inline bool ends_with_unfinished_document(dom_parser_implementation &parser) {
+  const uint8_t last = parser.buf[parser.structural_indexes[parser.n_structural_indexes - 1]];
+  const uint8_t next = parser.buf[parser.structural_indexes[parser.n_structural_indexes]];
+  return last == '{' || last == '[' || last == ',' || last == ':' ||
+         next == ',' || next == ':' || next == ']' || next == '}';
+}
+
 simdjson_inline uint32_t find_next_document_index(dom_parser_implementation &parser, bool defer_last = false) {
   // Variant: do not count separately, just figure out depth
   if(parser.n_structural_indexes == 0) { return 0; }
