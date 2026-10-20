@@ -807,6 +807,98 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // Visit every value, as an application dumping a document would, carrying on
+    // after errors, and tell whether an error was found.
+    void walk_ignoring_errors(ondemand::value v, int depth, bool &error_found) {
+        if (depth > 16) { return; }
+        ondemand::json_type t;
+        if (v.type().get(t)) { error_found = true; return; }
+        switch (t) {
+            case ondemand::json_type::array: {
+                ondemand::array a;
+                if (v.get_array().get(a)) { error_found = true; return; }
+                for (auto element : a) {
+                    ondemand::value child;
+                    if (element.get(child)) { error_found = true; continue; }
+                    walk_ignoring_errors(child, depth + 1, error_found);
+                }
+                break;
+            }
+            case ondemand::json_type::object: {
+                ondemand::object o;
+                if (v.get_object().get(o)) { error_found = true; return; }
+                for (auto field : o) {
+                    std::string_view key;
+                    if (field.unescaped_key().get(key)) { error_found = true; continue; }
+                    ondemand::value child;
+                    if (field.value().get(child)) { error_found = true; continue; }
+                    walk_ignoring_errors(child, depth + 1, error_found);
+                }
+                break;
+            }
+            case ondemand::json_type::string: {
+                std::string_view s;
+                if (v.get_string().get(s)) { error_found = true; }
+                break;
+            }
+            case ondemand::json_type::number: {
+                double d;
+                if (v.get_double().get(d)) { error_found = true; }
+                break;
+            }
+            case ondemand::json_type::boolean: {
+                bool b;
+                if (v.get_bool().get(b)) { error_found = true; }
+                break;
+            }
+            default: {
+                bool is_null;
+                if (v.is_null().get(is_null)) { error_found = true; }
+                break;
+            }
+        }
+    }
+
+    // Invalid documents with unbalanced brackets at the end of a batch. Walking
+    // them used to step past the last structural index of the batch, into index
+    // slots that do not belong to it: by starting an array on the first token
+    // of the next batch (whitespace and newline-delimited streams), or by
+    // reading a value or skipping a token past the end (JSON text sequence).
+    // Stage 1 ends each batch between two documents; the invalid input must be
+    // reported, as an error or as truncated bytes.
+    bool unbalanced_document_at_batch_end() {
+        TEST_START();
+        const char a[] = "[,+,,,,,,[,,,,,,],],],[,,,,,,],],]],],],]]][,,]]][,,,,,,,[,,],],[,,,,,,],],]]],]]],]]]";
+        const char b[] = "[,+,,,,,,[,,,,,,],,]],[,,,,,,],],]],],],]]][,,,,,,,[,,,,,\x00\x11,],],[,,,,,,],],]]],]]],]]]";
+        const char c[] = "\n:]+1\n{]]\"a\"]: ,,:: ] ]\n]\x1e \x1e\x1e],}\x1e,,}\x1e[\x1e],[";
+        struct stream_case { std::string input; stream_format format; size_t batch_size; };
+        const std::vector<stream_case> cases = {
+            { std::string(a, sizeof(a) - 1), stream_format::whitespace_delimited, 64 },
+            { std::string(a, sizeof(a) - 1), stream_format::newline_delimited, 64 },
+            { std::string(b, sizeof(b) - 1), stream_format::whitespace_delimited, 64 },
+            { std::string(b, sizeof(b) - 1), stream_format::newline_delimited, 64 },
+            { std::string(c, sizeof(c) - 1), stream_format::json_sequence, 41 },
+        };
+        for (const stream_case &test : cases) {
+            padded_string json(test.input);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(json, test.batch_size, test.format).get(stream) );
+            bool error_found = false;
+            size_t count = 0;
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                if (++count > 100) { break; }
+                ondemand::document_reference doc;
+                if ((*i).get(doc)) { error_found = true; continue; }
+                ondemand::value v;
+                if (doc.get_value().get(v)) { error_found = true; continue; }
+                walk_ignoring_errors(v, 0, error_found);
+            }
+            ASSERT_TRUE( error_found || stream.truncated_bytes() > 0 );
+        }
+        TEST_SUCCEED();
+    }
+
     bool small_window() {
         TEST_START();
         std::vector<char> input;
@@ -3021,6 +3113,7 @@ bool run() {
             truncated_unclosed_string() &&
             unfinished_document_at_batch_end() &&
             json_sequence_unfinished_document_at_batch_end() &&
+            unbalanced_document_at_batch_end() &&
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
