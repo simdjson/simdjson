@@ -524,6 +524,57 @@ bool move_to_string() {
   TEST_SUCCEED();
 }
 
+bool move_to_small_result_does_not_keep_buffer() {
+  TEST_START();
+  // A small result is copied out, so that it does not keep the whole buffer.
+  simdjson::builder::string_builder sb;
+  sb.append_raw("[1,2]");
+  std::string out;
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, "[1,2]");
+  ASSERT_TRUE(out.capacity() <
+              simdjson::builder::string_builder::DEFAULT_INITIAL_CAPACITY);
+  TEST_SUCCEED();
+}
+
+bool move_to_large_result_is_not_copied() {
+  TEST_START();
+  // A result that fills most of the buffer is handed over without a copy.
+  simdjson::builder::string_builder sb;
+  const std::string expected(
+      simdjson::builder::string_builder::DEFAULT_INITIAL_CAPACITY * 3 / 4, 'x');
+  sb.append_raw(expected);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  const char *data = p.data();
+  std::string out;
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, expected);
+  ASSERT_TRUE(out.data() == data);
+  TEST_SUCCEED();
+}
+
+bool move_to_small_result_keeps_builder_buffer() {
+  TEST_START();
+  // After copying out a small result, the builder reuses its buffer.
+  simdjson::builder::string_builder sb;
+  sb.append_raw("[1,2]");
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  const char *data = p.data();
+  std::string out;
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, "[1,2]");
+  ASSERT_EQUAL(sb.size(), 0);
+  sb.append_raw("[3]");
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[3]");
+  ASSERT_TRUE(p.data() == data);
+  ASSERT_SUCCESS(sb.move_to(out));
+  ASSERT_EQUAL(out, "[3]");
+  TEST_SUCCEED();
+}
+
 bool append_raw() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -1010,7 +1061,10 @@ bool run() {
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
-         escape_write_string_escaped_exhaustive() && move_to_string() && append_raw() &&
+         escape_write_string_escaped_exhaustive() && move_to_string() &&
+         move_to_small_result_does_not_keep_buffer() &&
+         move_to_large_result_is_not_copied() &&
+         move_to_small_result_keeps_builder_buffer() && append_raw() &&
          raw_with_length() && string_convertion() && buffer_growth() &&
          unicode_validation() && true;
 }

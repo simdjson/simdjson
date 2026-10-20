@@ -757,6 +757,14 @@ simdjson_inline error_code string_builder::move_to(std::string &out) noexcept {
   if (!is_valid) {
     return simdjson::OUT_OF_CAPACITY;
   }
+  if (position <= buffer.capacity() / 2) {
+    // Most of the buffer is unused: copy the bytes out, so that a small
+    // result does not keep the whole buffer allocated. The builder keeps its
+    // buffer for what it writes next.
+    out.assign(buffer.data(), position);
+    position = 0;
+    return simdjson::SUCCESS;
+  }
   buffer.resize(position); // shrinking never allocates
   out = std::move(buffer);
   std::string().swap(buffer);
