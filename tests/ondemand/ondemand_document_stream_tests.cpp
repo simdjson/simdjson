@@ -869,6 +869,61 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // Visit every array of a value, as an application dumping it would, and
+    // tell whether one of them was found incomplete.
+    void visit_arrays(ondemand::value v, int depth, bool &incomplete) {
+        if (depth > 8) { return; }
+        ondemand::json_type t;
+        if (v.type().get(t)) { return; }
+        if (t != ondemand::json_type::array) {
+            double d;
+            (void)v.get_double().get(d);
+            return;
+        }
+        ondemand::array a;
+        auto error = v.get_array().get(a);
+        if (error == INCOMPLETE_ARRAY_OR_OBJECT) { incomplete = true; }
+        if (error) { return; }
+        for (auto element : a) {
+            ondemand::value child;
+            if (element.get(child)) { return; }
+            visit_arrays(child, depth + 1, incomplete);
+        }
+    }
+
+    // A batch of a document_stream can end with a truncated document, whose
+    // first token is then at end_position(), with the index slots after it
+    // outside the batch. An array starting there is incomplete:
+    // start_container() used to step past the end of the batch, and
+    // started_array() then read an index slot outside the batch.
+    bool start_container_at_end_of_truncated_batch() {
+        TEST_START();
+        const char a[] = "[,+,,,,,,[,,,,,,],],],[,,,,,,],],]],],],]]][,,]]][,,,,,,,[,,],],[,,,,,,],],]]],]]],]]]";
+        const char b[] = "[,+,,,,,,[,,,,,,],,]],[,,,,,,],],]],],],]]][,,,,,,,[,,,,,\x00\x11,],],[,,,,,,],],]]],]]],]]]";
+        const std::vector<std::string> inputs = {
+            std::string(a, sizeof(a) - 1),
+            std::string(b, sizeof(b) - 1),
+        };
+        for (stream_format format : {stream_format::whitespace_delimited, stream_format::newline_delimited}) {
+            for (const std::string &input : inputs) {
+                padded_string json(input);
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(json, 64, format).get(stream) );
+                bool incomplete = false;
+                for (auto i = stream.begin(); i != stream.end(); ++i) {
+                    ondemand::document_reference doc;
+                    if ((*i).get(doc)) { continue; }
+                    ondemand::value v;
+                    if (doc.get_value().get(v)) { continue; }
+                    visit_arrays(v, 0, incomplete);
+                }
+                ASSERT_TRUE( incomplete );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
     bool document_stream_test() {
         TEST_START();
         fflush(NULL);
@@ -2869,6 +2924,7 @@ bool run() {
             test_crazy_leading_spaces() &&
             adversarial_single_document() &&
             adversarial_single_document_array() &&
+            start_container_at_end_of_truncated_batch() &&
             document_stream_test() &&
             document_stream_utf8_test() &&
             delimited_partial_read() &&

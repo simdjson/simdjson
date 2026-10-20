@@ -1045,6 +1045,12 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::start_container(
      */
     json = _json_iter->peek();
     if (*json != start_char) { return incorrect_type_error(incorrect_type_message); }
+    // In a document_stream batch, end_position() can hold the first token of a
+    // truncated document, and the index slots past it are not part of the
+    // batch: a container cannot start there.
+    if (_json_iter->streaming() && _json_iter->at_end()) {
+      return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] or } at end");
+    }
     _json_iter->return_current_and_advance();
   }
 
