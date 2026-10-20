@@ -62,12 +62,14 @@ simdjson_inline raw_json_string field::key() const noexcept {
 
 simdjson_inline std::string_view field::key_raw_json_token() const noexcept {
   SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
-  return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(-1) - first.buf + 1);
+  // The ':' is the token just before the value. Use the value's start position
+  // rather than the current position, which moves once the value is consumed.
+  return std::string_view(reinterpret_cast<const char*>(first.buf-1), second.iter._json_iter->token.peek(second.iter.start_position() - 1) - first.buf + 1);
 }
 
 simdjson_inline std::string_view field::escaped_key() const noexcept {
   SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() by Visual Studio won't let us.
-  auto end_quote = second.iter._json_iter->token.peek(-1);
+  auto end_quote = second.iter._json_iter->token.peek(second.iter.start_position() - 1);
   while(*end_quote != '"') end_quote--;
   return std::string_view(reinterpret_cast<const char*>(first.buf), end_quote - first.buf);
 }
