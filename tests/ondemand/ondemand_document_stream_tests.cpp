@@ -756,6 +756,57 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // A batch that stops before the end of the input ends its structural indexes
+    // with the start of the next batch, which can be a string that does not close
+    // within the batch. An invalid document whose brackets balance but which ends
+    // with a ',' must not let On-Demand read that string: stage 1 leaves the
+    // document to the next batch, where it is reported as TAPE_ERROR.
+    bool unfinished_document_at_batch_end() {
+        TEST_START();
+        for (stream_format format : {stream_format::whitespace_delimited, stream_format::newline_delimited}) {
+            for (const char *doc : {"[,1],", "{\"a\":,1},"}) {
+                padded_string json("[1] " + std::string(doc) + "\"" + std::string(40, 'x'));
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(json, 32, format).get(stream) );
+                auto i = stream.begin();
+                ASSERT_TRUE( i != stream.end() );
+                ondemand::document_reference first;
+                ASSERT_SUCCESS( (*i).get(first) );
+                int64_t x;
+                ASSERT_SUCCESS( first.at(0).get_int64().get(x) );
+                ASSERT_EQUAL( x, 1 );
+                ++i;
+                ASSERT_TRUE( i != stream.end() );
+                ondemand::document_reference second;
+                ASSERT_ERROR( (*i).get(second), TAPE_ERROR );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
+    // In a JSON text sequence, the next batch starts at an RS. An invalid last
+    // document may make On-Demand skip that RS as a value: what follows must not
+    // be the next record, here a string that does not close within the batch.
+    bool json_sequence_unfinished_document_at_batch_end() {
+        TEST_START();
+        padded_string json("\x1e [\x1etrue\"a\",\"" + std::string(63, 'x'));
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(json, 9, stream_format::json_sequence).get(stream) );
+        size_t count = 0;
+        for (auto doc : stream) {
+            if (++count > 2) { break; }
+            ondemand::array array;
+            if (doc.get_array().get(array)) { continue; }
+            for (auto element : array) {
+                std::string_view s;
+                ASSERT_TRUE( element.get_string().get(s) != SUCCESS );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
     bool small_window() {
         TEST_START();
         std::vector<char> input;
@@ -2911,6 +2962,8 @@ bool run() {
             truncated_complete_docs() &&
             truncated_empty_stream_reused_parser() &&
             truncated_unclosed_string() &&
+            unfinished_document_at_batch_end() &&
+            json_sequence_unfinished_document_at_batch_end() &&
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
