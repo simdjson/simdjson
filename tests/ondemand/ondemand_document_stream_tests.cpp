@@ -1294,7 +1294,8 @@ namespace document_stream_tests {
                 // would: the stream then goes on to the incomplete last document.
                 doc.rewind();
                 std::string_view whole;
-                (void)to_json_string(doc).get(whole);
+                auto whole_error = to_json_string(doc).get(whole);
+                (void)whole_error;
                 if (!doc.is_alive()) { break; }
             }
             ASSERT_TRUE( value_at_end );
