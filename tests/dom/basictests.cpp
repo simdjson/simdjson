@@ -2317,7 +2317,11 @@ namespace format_tests {
     ASSERT_EQUAL( minify(array), minify(doc) );
     dom::object object;
     ASSERT_SUCCESS( doc.at(2).get_object().get(object) );
-    ASSERT_EQUAL( prettify(object), prettify(doc.at(2)) );
+    // doc.at(2) is a simdjson_result. prettify() accepts that only when
+    // exceptions are on; the noexcept builds take the element itself.
+    dom::element at_two;
+    ASSERT_SUCCESS( doc.at(2).get(at_two) );
+    ASSERT_EQUAL( prettify(object), prettify(at_two) );
     ASSERT_EQUAL( minify(object), R"({"k":{"l":[]}})" );
     return true;
   }
