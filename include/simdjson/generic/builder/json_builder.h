@@ -27,7 +27,7 @@ namespace builder {
 // included at the point this header is parsed; without these forwards,
 // name lookup falls back to the wrong outer namespace).
 namespace internal {
-simdjson_really_inline char *write_uint_jeaiii(char *p, uint64_t v) noexcept;
+using simdjson::internal::write_uint_jeaiii;
 simdjson_inline char *write_double(char *p, double v) noexcept;
 } // namespace internal
 simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out);
