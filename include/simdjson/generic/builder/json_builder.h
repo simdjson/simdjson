@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_GENERIC_BUILDER_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_STRING_BUILDER_H
+#define SIMDJSON_GENERIC_BUILDER_H
 #include "simdjson/generic/builder/json_string_builder.h"
 #include "simdjson/concepts.h"
 #include "simdjson/annotations.h"
@@ -909,4 +909,4 @@ simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, siz
 
 #endif // SIMDJSON_STATIC_REFLECTION
 
-#endif
+#endif // SIMDJSON_GENERIC_BUILDER_H

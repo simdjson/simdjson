@@ -814,11 +814,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 
 
 #if SIMDJSON_EXCEPTIONS
-template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator T() noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return first;
-}
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;

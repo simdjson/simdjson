@@ -33,11 +33,6 @@ public:
   simdjson_inline value_iterator() noexcept = default;
 
   /**
-   * Denote that we're starting a document.
-   */
-  simdjson_inline void start_document() noexcept;
-
-  /**
    * Skips a non-iterated or partially-iterated JSON value, whether it is a scalar, array or object.
    *
    * Optimized for scalars.
@@ -437,16 +432,7 @@ protected:
   simdjson_warn_unused simdjson_inline error_code start_container(uint8_t start_char, const char *incorrect_type_message, const char *type) noexcept;
   simdjson_warn_unused simdjson_inline error_code end_container() noexcept;
 
-  /**
-   * Advance to a place expecting a value (increasing depth).
-   *
-   * @return The current token (the one left behind).
-   * @error TAPE_ERROR If the document ended early.
-   */
-  simdjson_inline simdjson_result<const uint8_t *> advance_to_value() noexcept;
-
   simdjson_warn_unused simdjson_inline error_code incorrect_type_error(const char *message) const noexcept;
-  simdjson_warn_unused simdjson_inline error_code error_unless_more_tokens(uint32_t tokens=1) const noexcept;
 
   simdjson_inline bool is_at_start() const noexcept;
   /**

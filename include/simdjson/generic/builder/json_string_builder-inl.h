@@ -121,6 +121,12 @@ inline bool has_json_escapable_byte(uint64_t x) {
 
 **/
 
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
+#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
+#endif
+
+// With block escaping (SSE2/NEON), write_string_escaped scans the input itself.
+#if !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 // Scalar fallback for finding next quotable character
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character_scalar(const std::string_view view,
@@ -136,82 +142,7 @@ find_next_json_quotable_character_scalar(const std::string_view view,
 // SIMD-accelerated position finding that directly locates the first quotable
 // character, combining detection and position extraction in a single pass to
 // minimize redundant work.
-#if SIMDJSON_EXPERIMENTAL_HAS_NEON
-simdjson_inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-  const size_t len = view.size();
-  const uint8_t *ptr =
-      reinterpret_cast<const uint8_t *>(view.data()) + location;
-  size_t remaining = len - location;
-
-  // SIMD constants for characters requiring escape
-  uint8x16_t v34 = vdupq_n_u8(34);  // '"'
-  uint8x16_t v92 = vdupq_n_u8(92);  // '\\'
-  uint8x16_t v32 = vdupq_n_u8(32);  // control char threshold
-
-  while (remaining >= 16) {
-    uint8x16_t word = vld1q_u8(ptr);
-
-    // Check for quotable characters: '"', '\\', or control chars (< 32)
-    uint8x16_t needs_escape = vceqq_u8(word, v34);
-    needs_escape = vorrq_u8(needs_escape, vceqq_u8(word, v92));
-    needs_escape = vorrq_u8(needs_escape, vcltq_u8(word, v32));
-
-    const uint8x8_t res = vshrn_n_u16(vreinterpretq_u16_u8(needs_escape), 4);
-    const uint64_t mask = vget_lane_u64(vreinterpret_u64_u8(res), 0);
-    if(mask != 0) {
-      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-      auto trailing_zero = trailing_zeroes(mask);
-      return offset + (trailing_zero >> 2);
-    }
-    ptr += 16;
-    remaining -= 16;
-  }
-
-  // Scalar fallback for remaining bytes
-  size_t current = len - remaining;
-  return find_next_json_quotable_character_scalar(view, current);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
-simdjson_inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-  const size_t len = view.size();
-  const uint8_t *ptr =
-      reinterpret_cast<const uint8_t *>(view.data()) + location;
-  size_t remaining = len - location;
-
-  // SIMD constants
-  __m128i v34 = _mm_set1_epi8(34);  // '"'
-  __m128i v92 = _mm_set1_epi8(92);  // '\\'
-  __m128i v31 = _mm_set1_epi8(31);  // for control char detection
-
-  while (remaining >= 16) {
-    __m128i word = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr));
-
-    // Check for quotable characters
-    __m128i needs_escape = _mm_cmpeq_epi8(word, v34);
-    needs_escape = _mm_or_si128(needs_escape, _mm_cmpeq_epi8(word, v92));
-    needs_escape = _mm_or_si128(
-        needs_escape,
-        _mm_cmpeq_epi8(_mm_subs_epu8(word, v31), _mm_setzero_si128()));
-
-    int mask = _mm_movemask_epi8(needs_escape);
-    if (mask != 0) {
-      // Found quotable character - use trailing zero count to find position
-      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-      return offset + trailing_zeroes(mask);
-    }
-    ptr += 16;
-    remaining -= 16;
-  }
-
-  // Scalar fallback for remaining bytes
-  size_t current = len - remaining;
-  return find_next_json_quotable_character_scalar(view, current);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
+#if SIMDJSON_EXPERIMENTAL_HAS_LASX
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -384,6 +315,7 @@ find_next_json_quotable_character(const std::string_view view,
   return find_next_json_quotable_character_scalar(view, location);
 }
 #endif
+#endif // !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
 SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
     "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
@@ -410,10 +342,6 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
     out += v.size();
   }
 }
-
-#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
-#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
-#endif
 
 #if SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
