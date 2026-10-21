@@ -104,6 +104,13 @@ inline element_metrics structure_analyzer::analyze_scalar(const dom::element& el
       }
       break;
     }
+    case dom::element_type::BIGINT: {
+      std::string_view digits;
+      if (elem.get_bigint().get(digits) == SUCCESS) {
+        metrics.estimated_inline_len = digits.size();
+      }
+      break;
+    }
     case dom::element_type::BOOL: {
       bool val;
       if (elem.get_bool().get(val) == SUCCESS) {
@@ -285,7 +292,8 @@ inline table_column_type structure_analyzer::classify_table_value(dom::element_t
     case dom::element_type::ARRAY: return table_column_type::array;
     case dom::element_type::INT64:
     case dom::element_type::UINT64:
-    case dom::element_type::DOUBLE: return table_column_type::number;
+    case dom::element_type::DOUBLE:
+    case dom::element_type::BIGINT: return table_column_type::number;
     case dom::element_type::NULL_VALUE: return table_column_type::unknown;
     default: return table_column_type::simple; // string, bool
   }
@@ -1281,6 +1289,14 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
       double val;
       if (elem.get_double().get(val) == SUCCESS) {
         format_.number(val);
+      }
+      break;
+    }
+    case dom::element_type::BIGINT: {
+      // Big integer stored as string: output the raw digits (no quotes)
+      std::string_view digits;
+      if (elem.get_bigint().get(digits) == SUCCESS) {
+        format_.chars(digits.data(), digits.data() + digits.size());
       }
       break;
     }
