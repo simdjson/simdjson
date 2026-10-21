@@ -218,6 +218,28 @@ namespace adversarial {
   }
 }
 
+namespace result_forwarding {
+  // get_values on a failed simdjson_result must leave the output untouched,
+  // not read the (default-constructed) array or object.
+  bool get_values_on_error() {
+    TEST_START();
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(R"({"a":1})"_padded).get(doc) );
+    std::vector<dom::element> out;
+    simdjson_result<dom::array> not_an_array = doc.get_array();
+    ASSERT_ERROR( not_an_array.error(), INCORRECT_TYPE );
+    ASSERT_EQUAL( not_an_array.get_values(out).size(), 0 );
+    simdjson_result<dom::object> not_an_object = doc["a"].get_object();
+    ASSERT_ERROR( not_an_object.error(), INCORRECT_TYPE );
+    ASSERT_EQUAL( not_an_object.get_values(out).size(), 0 );
+    TEST_SUCCEED();
+  }
+  bool run() {
+    return get_values_on_error();
+  }
+}
+
 int main(int argc, char *argv[]) {
   std::cout << std::unitbuf;
   int c;
@@ -255,6 +277,7 @@ int main(int argc, char *argv[]) {
   if (!(true
         && parser_load::run()
         && adversarial::run()
+        && result_forwarding::run()
   )) {
     return EXIT_FAILURE;
   }

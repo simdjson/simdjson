@@ -52,6 +52,7 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::s
   return first.at_key(key);
 }
 inline std::vector<dom::element>& simdjson_result<dom::object>::get_values(std::vector<dom::element>& out) const noexcept {
+  if (error()) { return out; }
   return first.get_values(out);
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key_case_insensitive(std::string_view key) const noexcept {

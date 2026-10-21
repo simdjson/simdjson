@@ -1217,8 +1217,6 @@ public:
 
   using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator*;
   using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator->;
-  template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
-  explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
   explicit simdjson_inline operator uint64_t() noexcept(false);

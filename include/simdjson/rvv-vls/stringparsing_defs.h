@@ -33,23 +33,6 @@ simdjson_inline backslash_and_quote backslash_and_quote::copy_and_find(const uin
   return { (v == '\\').to_bitmask(), (v == '"').to_bitmask() };
 }
 
-struct escaping {
-  static constexpr uint64_t BYTES_PROCESSED = sizeof(simd8<uint8_t>);
-  simdjson_inline static escaping copy_and_find(const uint8_t *src, uint8_t *dst);
-
-  simdjson_inline bool has_escape() { return escape_bits != 0; }
-  simdjson_inline int escape_index() { return trailing_zeroes(escape_bits) / 4; }
-
-  uint64_t escape_bits;
-}; // struct escaping
-
-simdjson_inline escaping escaping::copy_and_find(const uint8_t *src, uint8_t *dst) {
-  static_assert(SIMDJSON_PADDING >= (BYTES_PROCESSED - 1), "escaping finder must process fewer than SIMDJSON_PADDING bytes");
-  simd8<uint8_t> v(src);
-  v.store(dst);
-  return { ((v == '"') | (v == '\\') | (v == 32)).to_bitmask() };
-}
-
 
 } // unnamed namespace
 } // namespace rvv_vls

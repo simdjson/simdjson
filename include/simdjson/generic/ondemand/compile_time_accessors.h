@@ -68,49 +68,6 @@ namespace json_path {
 
 using ::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value;
 
-// Path step types
-enum class step_type {
-  field,        // .field_name or ["field_name"]
-  array_index   // [index]
-};
-
-// Represents a single step in a JSON path
-template<std::size_t N>
-struct path_step {
-  step_type type;
-  char key[N];  // Field name (empty for array indices)
-  std::size_t index;  // Array index (0 for field access)
-
-  constexpr path_step(step_type t, const char (&k)[N], std::size_t idx = 0)
-    : type(t), index(idx) {
-    for (std::size_t i = 0; i < N; ++i) {
-      key[i] = k[i];
-    }
-  }
-
-  constexpr std::string_view key_view() const {
-    return {key, N - 1};
-  }
-};
-
-// Helper to create field step
-template<std::size_t N>
-consteval auto make_field_step(const char (&name)[N]) {
-  return path_step<N>(step_type::field, name, 0);
-}
-
-// Helper to create array index step
-consteval auto make_index_step(std::size_t idx) {
-  return path_step<1>(step_type::array_index, "", idx);
-}
-
-// Parse state for compile-time JSON path parsing
-struct parse_result {
-  bool success;
-  std::size_t pos;
-  std::string_view error_msg;
-};
-
 // Compile-time JSON path parser
 // Supports subset: .field, ["field"], [index], nested combinations
 template<constevalutil::fixed_string Path>
@@ -124,77 +81,6 @@ struct json_path_parser {
     }
     return 0;
   }
-
-  // Count the number of steps in the path at compile time
-  static consteval std::size_t count_steps() {
-    std::size_t count = 0;
-    std::size_t i = skip_root();
-
-    while (i < path_str.size()) {
-      if (path_str[i] == '.') {
-        // Field access: .field
-        ++i;
-        if (i >= path_str.size()) break;
-
-        // Skip field name
-        while (i < path_str.size() && path_str[i] != '.' && path_str[i] != '[') {
-          ++i;
-        }
-        ++count;
-      } else if (path_str[i] == '[') {
-        // Array or bracket notation
-        ++i;
-        if (i >= path_str.size()) break;
-
-        if (path_str[i] == '"' || path_str[i] == '\'') {
-          // Field access: ["field"] or ['field']
-          char quote = path_str[i];
-          ++i;
-          while (i < path_str.size() && path_str[i] != quote) {
-            ++i;
-          }
-          if (i < path_str.size()) ++i; // skip closing quote
-          if (i < path_str.size() && path_str[i] == ']') ++i;
-        } else {
-          // Array index: [0], [123]
-          while (i < path_str.size() && path_str[i] != ']') {
-            ++i;
-          }
-          if (i < path_str.size()) ++i; // skip ]
-        }
-        ++count;
-      } else {
-        ++i;
-      }
-    }
-
-    return count;
-  }
-
-  // Parse a field name at compile time
-  static consteval std::size_t parse_field_name(std::size_t start, char* out, std::size_t max_len) {
-    std::size_t len = 0;
-    std::size_t i = start;
-
-    while (i < path_str.size() && path_str[i] != '.' && path_str[i] != '[' && len < max_len - 1) {
-      out[len++] = path_str[i++];
-    }
-    out[len] = '\0';
-    return i;
-  }
-
-  // Parse an array index at compile time
-  static consteval std::pair<std::size_t, std::size_t> parse_array_index(std::size_t start) {
-    std::size_t index = 0;
-    std::size_t i = start;
-
-    while (i < path_str.size() && path_str[i] >= '0' && path_str[i] <= '9') {
-      index = index * 10 + (path_str[i] - '0');
-      ++i;
-    }
-
-    return {i, index};
-  }
 };
 
 // Compile-time path accessor generator
@@ -203,7 +89,6 @@ struct path_accessor {
   using value = ::simdjson::SIMDJSON_IMPLEMENTATION::ondemand::value;
 
   static constexpr auto parser = json_path_parser<Path>();
-  static constexpr std::size_t num_steps = parser.count_steps();
   static constexpr std::string_view path_view = Path.view();
 
   // Compile-time accessor generation
@@ -316,93 +201,6 @@ private:
     }
 
     return current_type;
-  }
-
-private:
-  // Walk path and extract directly into final field using compile-time reflection
-  template<std::meta::info CurrentType, std::size_t PathPos, typename TargetType>
-  static inline error_code extract_with_reflection(simdjson_result<value> current, TargetType& target_ref) noexcept {
-    if (current.error()) return current.error();
-
-    // Base case: end of path - extract into target
-    if constexpr (PathPos >= path_view.size()) {
-      return current.get(target_ref);
-    }
-    // Field access: .field_name
-    else if constexpr (path_view[PathPos] == '.') {
-      constexpr auto field_info = parse_next_field(PathPos);
-      constexpr std::string_view field_name = std::get<0>(field_info);
-      constexpr std::size_t next_pos = std::get<1>(field_info);
-
-      constexpr auto member_info = find_member_by_name(CurrentType, field_name);
-      static_assert(member_info != ^^void, "Field not found in struct");
-
-      constexpr auto member_type = std::meta::type_of(member_info);
-
-      auto obj_result = current.get_object();
-      if (obj_result.error()) return obj_result.error();
-      auto obj = obj_result.value_unsafe();
-      auto field_value = obj.find_field_unordered(field_name);
-
-      if constexpr (next_pos >= path_view.size()) {
-        return field_value.get(target_ref);
-      } else {
-        return extract_with_reflection<member_type, next_pos>(field_value, target_ref);
-      }
-    }
-    // Bracket notation: [index] or ["field"]
-    else if constexpr (path_view[PathPos] == '[') {
-      constexpr auto bracket_info = parse_bracket(PathPos);
-      constexpr bool is_field = std::get<0>(bracket_info);
-      constexpr std::size_t next_pos = std::get<2>(bracket_info);
-
-      if constexpr (is_field) {
-        constexpr std::string_view field_name = std::get<1>(bracket_info);
-        constexpr auto member_info = find_member_by_name(CurrentType, field_name);
-        static_assert(member_info != ^^void, "Field not found in struct");
-        constexpr auto member_type = std::meta::type_of(member_info);
-
-        auto obj_result = current.get_object();
-        if (obj_result.error()) return obj_result.error();
-        auto obj = obj_result.value_unsafe();
-        auto field_value = obj.find_field_unordered(field_name);
-
-        if constexpr (next_pos >= path_view.size()) {
-          return field_value.get(target_ref);
-        } else {
-          return extract_with_reflection<member_type, next_pos>(field_value, target_ref);
-        }
-      } else {
-        constexpr std::size_t index = std::get<3>(bracket_info);
-        constexpr auto elem_type = get_element_type_reflected(CurrentType);
-        static_assert(elem_type != ^^void, "Could not determine array element type");
-
-        auto arr_result = current.get_array();
-        if (arr_result.error()) return arr_result.error();
-        auto arr = arr_result.value_unsafe();
-        auto elem_value = arr.at(index);
-
-        if constexpr (next_pos >= path_view.size()) {
-          return elem_value.get(target_ref);
-        } else {
-          return extract_with_reflection<elem_type, next_pos>(elem_value, target_ref);
-        }
-      }
-    }
-    // Skip unexpected characters and continue
-    else {
-      return extract_with_reflection<CurrentType, PathPos + 1>(current, target_ref);
-    }
-  }
-
-  // Find member by name in reflected type
-  static consteval std::meta::info find_member_by_name(std::meta::info type_refl, std::string_view name) {
-    auto members = std::meta::nonstatic_data_members_of(type_refl, std::meta::access_context::unchecked());
-    for (auto mem : members) {
-      if (std::meta::identifier_of(mem) == name) {
-        return mem;
-      }
-    }
   }
 
   // Generate compile-time accessor code by walking the path
@@ -534,55 +332,6 @@ public:
   }
 
 private:
-  // Check if type has member with given name
-  template<typename Type>
-  static consteval bool has_member(std::string_view member_name) {
-    constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
-    for (auto mem : members) {
-      if (std::meta::identifier_of(mem) == member_name) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // Get type of member by name
-  template<typename Type>
-  static consteval auto get_member_type(std::string_view member_name) {
-    constexpr auto members = std::meta::nonstatic_data_members_of(^^Type, std::meta::access_context::unchecked());
-    for (auto mem : members) {
-      if (std::meta::identifier_of(mem) == member_name) {
-        return std::meta::type_of(mem);
-      }
-    }
-    return ^^void;
-  }
-
-  // Check if non-reflected type is array-like
-  template<typename Type>
-  static consteval bool is_container_type() {
-    using BaseType = std::remove_cvref_t<Type>;
-    if constexpr (requires { typename BaseType::value_type; }) {
-      return true;
-    }
-    if constexpr (std::is_array_v<BaseType>) {
-      return true;
-    }
-    return false;
-  }
-
-  // Extract element type from non-reflected container
-  template<typename Type>
-  using extract_element_type = std::conditional_t<
-    requires { typename std::remove_cvref_t<Type>::value_type; },
-    typename std::remove_cvref_t<Type>::value_type,
-    std::conditional_t<
-      std::is_array_v<std::remove_cvref_t<Type>>,
-      std::remove_extent_t<std::remove_cvref_t<Type>>,
-      void
-    >
-  >;
-
   // Validate path matches struct definition
   static consteval bool validate_path() {
     if constexpr (!std::is_class_v<T>) {

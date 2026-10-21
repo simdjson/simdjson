@@ -74,6 +74,7 @@ inline simdjson_result<dom::element> simdjson_result<dom::array>::at(size_t inde
 }
 
 inline std::vector<dom::element>& simdjson_result<dom::array>::get_values(std::vector<dom::element>& out) const noexcept {
+  if (error()) { return out; }
   return first.get_values(out);
 }
 

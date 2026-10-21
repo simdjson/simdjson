@@ -13,17 +13,12 @@
 
 #include "simdjson/compile_time_json.h"
 #include "simdjson/internal/fast_float.h"
-#include <array>
-#include <cstdint>
-#include <meta>
-#include <limits>
-#include <string_view>
-
 #include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstdint>
 #include <expected>
+#include <limits>
 #include <meta>
 #include <string>
 #include <string_view>
@@ -83,34 +78,6 @@ consteval auto make_data_member_options(auto&& name_str) {
   std::meta::data_member_options options{};
   options.name = std::forward<decltype(name_str)>(name_str);
   return options;
-}
-
-// JSON string may contain embedded nulls, and C++26 reflection does not yet
-// support std::string_view as a data member type. As a workaround, we define
-// a custom type that holds a const char* and a size.
-template <char... Vals> struct fixed_json_string {
-  // Statically-allocated array to hold the characters and a null terminator
-  static constexpr char inner_data[] = {Vals..., '\0'};
-
-  // Constant for the length of the string view (excluding the null terminator)
-  static constexpr std::size_t inner_size = sizeof...(Vals);
-
-  // The std::string_view over the data.
-  // We use data and size to avoid including the null terminator in the view.
-  static constexpr std::string_view view = {inner_data, inner_size};
-
-  constexpr operator std::string_view() { return view; }
-  constexpr const char *c_str() { return view.data(); }
-  constexpr const char *data() { return view.data(); }
-  constexpr size_t size() { return view.size(); }
-};
-
-consteval std::meta::info to_fixed_json_string(std::string_view in) {
-  std::vector<std::meta::info> Args = {};
-  for (char c : in) {
-    Args.push_back(std::meta::reflect_constant(c));
-  }
-  return std::meta::substitute(^^fixed_json_string, Args);
 }
 
 /**
