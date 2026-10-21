@@ -756,6 +756,28 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // A finished document at the end of a batch is part of this batch. The
+    // first byte of the next batch is not one of its tokens, even when that
+    // byte is ',', ':', ']' or '}'.
+    bool complete_document_before_next_batch_punctuation() {
+        TEST_START();
+        std::string json = R"({"k":"abcdefghijklmno"})";
+        while (json.size() < 32) { json.push_back(' '); }
+        json += R"(,{"z":2})";
+        const padded_string input(json);
+        ondemand::parser parser;
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS( parser.iterate_many(input, 32).get(stream) );
+        auto i = stream.begin();
+        ASSERT_TRUE( i != stream.end() );
+        ondemand::document_reference first;
+        ASSERT_SUCCESS( (*i).get(first) );
+        std::string_view key;
+        ASSERT_SUCCESS( first["k"].get_string().get(key) );
+        ASSERT_EQUAL( key, "abcdefghijklmno" );
+        TEST_SUCCEED();
+    }
+
     // A batch that stops before the end of the input ends its structural indexes
     // with the start of the next batch, which can be a string that does not close
     // within the batch. An invalid document whose brackets balance but which ends
@@ -3129,6 +3151,7 @@ bool run() {
             truncated_empty_stream_reused_parser() &&
             truncated_unclosed_string() &&
             unfinished_document_at_batch_end() &&
+            complete_document_before_next_batch_punctuation() &&
             json_sequence_unfinished_document_at_batch_end() &&
             unbalanced_document_at_batch_end() &&
             small_window() &&

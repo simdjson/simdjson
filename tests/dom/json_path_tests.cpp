@@ -543,6 +543,67 @@ bool wildcard_key_with_slash_or_tilde() {
   TEST_SUCCEED();
 }
 
+// A '*' inside the final segment is part of the key, as in at_path and
+// On-Demand. It used to be reported as INVALID_JSON_POINTER because the
+// parser looped once more on the empty remainder.
+bool star_in_final_segment() {
+  std::cout << "Running star_in_final_segment test" << std::endl;
+  auto json = R"({"a":{"b*":{"c":7}},"foo*":9,"d":[{"b*":2},{"b*":3},{"x":4}]})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+
+  int64_t scalar = 0;
+  ASSERT_SUCCESS(doc.at_path("$.a.b*.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+  ASSERT_SUCCESS(doc.at_path("$.foo*").get(scalar));
+  ASSERT_EQUAL(scalar, 9);
+
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a.b*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].at_path("$.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a['b*']").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].at_path("$.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a.b*.c").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.foo*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 9);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.d[*]['b*']").get(values));
+  ASSERT_EQUAL(values.size(), 2);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 2);
+  ASSERT_SUCCESS(values[1].get(scalar));
+  ASSERT_EQUAL(scalar, 3);
+
+  // A quoted '*' is the wildcard, matching On-Demand, so this is every child.
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$['*']").get(values));
+  ASSERT_EQUAL(values.size(), 3);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*").get(values));
+  ASSERT_EQUAL(values.size(), 3);
+
+  // A key that is not present is an empty match, not a parse error.
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.missing*").get(values));
+  ASSERT_EQUAL(values.size(), 0);
+
+  // A truncated bracket after a real key is still a parse error.
+  ASSERT_EQUAL(doc.at_path_with_wildcard("$.d[*]['b*'][").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path_with_wildcard(R"($.d[*]['b)").error(), INVALID_JSON_POINTER);
+
+  TEST_SUCCEED();
+}
+
 // A path that cannot be parsed after a wildcard is reported, whatever the
 // document, instead of silently matching nothing.
 bool malformed_path_after_wildcard() {
@@ -725,6 +786,7 @@ bool long_path_after_wildcards() {
 
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
+      star_in_final_segment() &&
       malformed_path_after_wildcard() &&
       wildcard_key_with_slash_or_tilde() &&
       long_path_after_wildcards() &&

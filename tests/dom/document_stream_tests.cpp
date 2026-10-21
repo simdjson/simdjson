@@ -86,6 +86,41 @@ namespace document_stream_tests {
       simdjson::dom::document_stream s1 = parse_many_stream_return(parser, str);
   }
 
+  // A finished value that ends a batch must still parse when the next batch
+  // starts with ',', ':', ']' or '}'. That byte belongs to the next window.
+  bool complete_value_before_next_batch_punctuation() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string object = R"({"k":"abcdefghijklmno"})";
+    while (object.size() < 32) { object.push_back(' '); }
+    object += R"(,{"z":2})";
+    std::string number = "123";
+    while (number.size() < 32) { number.push_back(' '); }
+    number += "]";
+
+    {
+      const simdjson::padded_string json(object);
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(json, 32).get(stream));
+      auto doc = *stream.begin();
+      ASSERT_SUCCESS(doc.error());
+      std::string_view key;
+      ASSERT_SUCCESS(doc["k"].get_string().get(key));
+      ASSERT_EQUAL(key, "abcdefghijklmno");
+    }
+    {
+      const simdjson::padded_string json(number);
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(json, 32).get(stream));
+      auto doc = *stream.begin();
+      int64_t value = 0;
+      ASSERT_SUCCESS(doc.get_int64().get(value));
+      ASSERT_EQUAL(value, 123);
+    }
+    return true;
+  }
+
   bool stress_data_race() {
     std::cout << "Running " << __func__ << std::endl;
     // Correct JSON.
@@ -2411,6 +2446,7 @@ namespace document_stream_tests {
            adversarial_single_document_array() &&
            adversarial_single_document() &&
            unquoted_key() &&
+           complete_value_before_next_batch_punctuation() &&
            stress_data_race() &&
            stress_data_race_with_error() &&
            whitespace_only_middle_batch() &&
