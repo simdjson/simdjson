@@ -690,7 +690,7 @@ inline error_code string_builder::move_to(std::string &out) noexcept {
     // Most of the buffer is unused: copy the bytes out, so that a small
     // result does not keep the whole buffer allocated. The builder keeps its
     // buffer for what it writes next.
-#if SIMDJSON_EXCEPTIONS
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
     try {
       out.assign(buffer.data(), position);
     } catch (...) { // std::bad_alloc
