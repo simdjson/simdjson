@@ -184,6 +184,11 @@ public:
   simdjson_inline void append(simdjson::dom::key_value_pair value);
 
 private:
+  /**
+   * Append an element nested base_depth levels deep: the caller has already
+   * written the indentation (and key) before it.
+   **/
+  inline void append(simdjson::dom::element value, size_t base_depth);
   formatter format{};
 };
 

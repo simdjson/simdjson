@@ -393,6 +393,12 @@ simdjson_inline void pretty_formatter::print_space() { one_char(' '); }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::element value) {
+  append(value, 0);
+  format.print_newline();
+}
+
+template <class serializer>
+inline void string_builder<serializer>::append(simdjson::dom::element value, size_t base_depth) {
   // using tape_type = simdjson::internal::tape_type;
   size_t depth = 0;
   constexpr size_t MAX_DEPTH = 16;
@@ -408,7 +414,10 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       format.print_newline();
     }
 
-    format.print_indents(depth);
+    // At depth 0 the caller has already indented the value.
+    if (depth != 0) {
+      format.print_indents(base_depth + depth);
+    }
 
     // If we are in an object, print the next key and :, and skip to the next
     // value.
@@ -424,7 +433,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(simdjson::dom::array(iter));
+        append(simdjson::dom::element(iter), base_depth + depth - 1);
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
@@ -452,7 +461,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(simdjson::dom::object(iter));
+        append(simdjson::dom::element(iter), base_depth + depth - 1);
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;
@@ -524,7 +533,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
                           iter.tape_ref_type() == tape_type::END_OBJECT)) {
       format.print_newline();
       depth--;
-      format.print_indents(depth);
+      format.print_indents(base_depth + depth);
       if (iter.tape_ref_type() == tape_type::END_ARRAY) {
         format.end_array();
       } else {
@@ -535,38 +544,16 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
     // Stop when we're at depth 0
   } while (depth != 0);
-
-  format.print_newline();
 }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::object value) {
-  format.start_object();
-  auto pair = value.begin();
-  auto end = value.end();
-  if (pair != end) {
-    append(*pair);
-    for (++pair; pair != end; ++pair) {
-      format.comma();
-      append(*pair);
-    }
-  }
-  format.end_object();
+  append(simdjson::dom::element(value));
 }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::array value) {
-  format.start_array();
-  auto iter = value.begin();
-  auto end = value.end();
-  if (iter != end) {
-    append(*iter);
-    for (++iter; iter != end; ++iter) {
-      format.comma();
-      append(*iter);
-    }
-  }
-  format.end_array();
+  append(simdjson::dom::element(value));
 }
 
 template <class serializer>
