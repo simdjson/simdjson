@@ -226,16 +226,15 @@ inline void get_container_values(const dom::element &e, std::vector<dom::element
 // Walks a pre-parsed wildcard path from e, which is at depth `step` of the
 // path. Errors below the starting node are skipped, not reported.
 inline simdjson_result<std::vector<dom::element>> at_wildcard_json_path(const dom::element &e, const wildcard_json_path &path, size_t step) noexcept {
-  const dom::element_type t = e.type();
-  if (t != dom::element_type::ARRAY && t != dom::element_type::OBJECT) {
-    return std::vector<dom::element>{};
-  }
-  std::vector<dom::element> children;
+  // A finished path names this node, even when it is a scalar. Checking the
+  // container type first would drop keys such as "b*" and "foo*".
   if (step == path.steps.size()) {
     switch (path.tail) {
-      case wildcard_json_path::tail_type::all_values:
+      case wildcard_json_path::tail_type::all_values: {
+        std::vector<dom::element> children;
         get_container_values(e, children);
         return children;
+      }
       case wildcard_json_path::tail_type::pointer: {
         dom::element result;
         auto error = e.at_pointer(path.tail_pointer).get(result);
@@ -248,6 +247,11 @@ inline simdjson_result<std::vector<dom::element>> at_wildcard_json_path(const do
         return INVALID_JSON_POINTER;
     }
   }
+  const dom::element_type t = e.type();
+  if (t != dom::element_type::ARRAY && t != dom::element_type::OBJECT) {
+    return std::vector<dom::element>{};
+  }
+  std::vector<dom::element> children;
   const std::string &key_pointer = path.steps[step];
   if (key_pointer == "/*") {
     get_container_values(e, children);

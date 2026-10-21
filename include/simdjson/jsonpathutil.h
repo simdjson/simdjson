@@ -304,6 +304,15 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
     }
     result.steps.push_back(std::move(step));
     path = key_and_json_path.second;
+    // The segment above consumed the path. An empty remainder is the node
+    // that segment selected (at_pointer("")), not a parse error. The check
+    // at the top of the loop is for a non-empty remainder that does not
+    // continue with '.' or '['. A '*' inside the final segment ($.a.b*,
+    // $['b*']) belongs to that segment.
+    if (path.empty()) {
+      result.tail = wildcard_json_path::tail_type::pointer;
+      return result;
+    }
   }
 }
 } // namespace internal
