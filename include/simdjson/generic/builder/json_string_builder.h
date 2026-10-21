@@ -258,7 +258,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content.
    */
-  simdjson_warn_unused simdjson_inline error_code move_to(std::string &out) noexcept;
+  simdjson_warn_unused inline error_code move_to(std::string &out) noexcept;
 
   /**
    * Return true if the content is valid UTF-8.

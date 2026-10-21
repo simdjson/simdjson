@@ -4,6 +4,7 @@
 #include "simdjson.h"
 #include "test_builder.h"
 #include <cstdlib>
+#include <iostream>
 #include <new>
 #include <string>
 
@@ -57,8 +58,29 @@ void operator delete[](void *p, const std::nothrow_t &) noexcept { std::free(p);
 namespace builder_tests {
 
 #if SIMDJSON_EXCEPTIONS
+// Whether the replaced operator new also serves std::string. It does not
+// when the standard library allocates from its own DLL (MinGW).
+// The probe writes to a global so that the allocation cannot be elided.
+static std::string probe;
+static bool string_allocations_are_replaced() {
+  fail_next_allocation = true;
+  bool replaced = false;
+  try {
+    probe.assign(100, 'x');
+  } catch (const std::bad_alloc &) {
+    replaced = true;
+  }
+  fail_next_allocation = false;
+  std::string().swap(probe);
+  return replaced;
+}
+
 bool move_to_small_result_allocation_failure() {
   TEST_START();
+  if (!string_allocations_are_replaced()) {
+    std::cout << "  skipped: std::string does not use the replaced operator new" << std::endl;
+    TEST_SUCCEED();
+  }
   // A failed copy leaves out and the builder unchanged.
   simdjson::builder::string_builder sb;
   const std::string expected(100, 'x'); // too long for the small-string buffer

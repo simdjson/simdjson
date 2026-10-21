@@ -681,7 +681,8 @@ inline void string_builder::grow_buffer(size_t desired_capacity) {
   capacity = desired_capacity;
 }
 
-simdjson_inline error_code string_builder::move_to(std::string &out) noexcept {
+// Not simdjson_inline: MSVC cannot force-inline a function with a try block (C4714).
+inline error_code string_builder::move_to(std::string &out) noexcept {
   if (!is_valid) {
     return simdjson::OUT_OF_CAPACITY;
   }
