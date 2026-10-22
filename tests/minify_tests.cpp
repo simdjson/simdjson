@@ -91,7 +91,11 @@ bool integer_test() {
   for (int digits = 1; digits <= 19; digits++) {
     numbers.push_back(std::to_string(power));
     numbers.push_back(std::to_string(power - 1));
-    numbers.push_back("-" + std::to_string(power));
+    // "-" + std::to_string(...) inserts into a temporary and trips GCC bug
+    // 105329 (-Wrestrict) at -O3 on the Ubuntu 22.04 GCC 12 job.
+    std::string negative("-");
+    negative += std::to_string(power);
+    numbers.push_back(std::move(negative));
     power *= 10;
   }
   numbers.push_back(std::to_string(power));
