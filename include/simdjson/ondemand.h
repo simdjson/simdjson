@@ -26,9 +26,9 @@ namespace simdjson {
   inline std::string to_json_string(const T& obj) {
     builder::string_builder str_builder;
     append(str_builder, obj);
-    std::string_view view;
-    if (str_builder.view().get(view) == SUCCESS) {
-      return std::string(view);
+    std::string result;
+    if (str_builder.move_to(result) == SUCCESS) {
+      return result;
     }
     return "";
   }

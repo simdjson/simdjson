@@ -78,11 +78,14 @@ simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parse
 }
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
-inline void json_iterator::rewind() noexcept {
+simdjson_inline error_code json_iterator::rewind() noexcept {
+  // abandon() let go of the parser: the iterator cannot be walked again.
+  if (!is_alive()) { return error ? error : UNINITIALIZED; }
   token.set_position( root_position() );
   logger::log_headers(); // We start again
   _string_buf_loc = parser->string_buf.get();
   _depth = 1;
+  return SUCCESS;
 }
 
 inline bool json_iterator::balanced() const noexcept {

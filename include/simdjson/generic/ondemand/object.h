@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include "simdjson/jsonpathutil.h"
 #include "simdjson/generic/ondemand/key_selector.h"
 #include <vector>
 #if SIMDJSON_STATIC_REFLECTION && SIMDJSON_SUPPORTS_CONCEPTS
@@ -548,6 +549,13 @@ protected:
   simdjson_inline object(const value_iterator &iter) noexcept;
 
   simdjson_warn_unused simdjson_inline error_code find_field_raw(const std::string_view key) noexcept;
+
+  /**
+   * The recursive step of for_each_at_path_with_wildcard: matches
+   * path[index] at this level and what follows below it.
+   */
+  template <typename Func>
+  inline error_code for_each_at_path_segments(const std::vector<simdjson::internal::json_path_segment> &path, size_t index, Func &callback) noexcept;
 
   value_iterator iter{};
 #if SIMDJSON_DEVELOPMENT_CHECKS

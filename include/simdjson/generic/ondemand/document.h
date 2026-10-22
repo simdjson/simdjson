@@ -759,6 +759,9 @@ public:
    * Reset the iterator inside the document instance so we are pointing back at the
    * beginning of the document, as if it had just been created. It invalidates all
    * values, objects and arrays that you have created so far (including unescaped strings).
+   *
+   * A document that is no longer alive (see is_alive()) cannot be rewound: it is
+   * left as is.
    */
   inline void rewind() noexcept;
   /**
@@ -832,6 +835,8 @@ public:
    *         - INCORRECT_TYPE if a non-integer is used to access an array
    *         - INVALID_JSON_POINTER if the JSON pointer is invalid and cannot be parsed
    *         - SCALAR_DOCUMENT_AS_VALUE if the json_pointer is empty and the document is not a scalar (see is_scalar() function).
+   *         - the fatal error (e.g., TAPE_ERROR) that ended an earlier call, as the document can
+   *           no longer be rewound (see is_alive()).
    */
   simdjson_inline simdjson_result<value> at_pointer(std::string_view json_pointer) noexcept;
 
@@ -855,6 +860,8 @@ public:
    *         - NO_SUCH_FIELD if a field does not exist in an object
    *         - INDEX_OUT_OF_BOUNDS if an array index is larger than an array length
    *         - INCORRECT_TYPE if a non-integer is used to access an array
+   *         - the fatal error (e.g., TAPE_ERROR) that ended an earlier call, as the document can
+   *           no longer be rewound (see is_alive()).
    */
   simdjson_inline simdjson_result<value> at_path(std::string_view json_path) noexcept;
 
@@ -881,7 +888,9 @@ public:
   /**
    * Consumes the document and returns a string_view instance corresponding to the
    * document as represented in JSON. It points inside the original byte array containing
-   * the JSON document.
+   * the JSON document. It starts at the first byte of the document and ends at its last
+   * byte: it does not include the white space that follows the document, nor, in a
+   * document_stream, the separators or the documents that follow it.
    */
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
@@ -1208,8 +1217,6 @@ public:
 
   using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator*;
   using SIMDJSON_IMPLEMENTATION::implementation_simdjson_result_base<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator->;
-  template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
-  explicit simdjson_inline operator T() noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false);
   simdjson_inline operator SIMDJSON_IMPLEMENTATION::ondemand::object() & noexcept(false);
   explicit simdjson_inline operator uint64_t() noexcept(false);
@@ -1244,6 +1251,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  /** @copydoc simdjson_inline simdjson_result<std::string_view> document::raw_json() noexcept */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;
@@ -1370,6 +1379,8 @@ public:
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> get_number() noexcept;
   /** @copydoc simdjson_inline std::string_view document_reference::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
+  /** @copydoc simdjson_inline simdjson_result<std::string_view> document::raw_json() noexcept */
+  simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_pointer(std::string_view json_pointer) noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> at_path(std::string_view json_path) noexcept;

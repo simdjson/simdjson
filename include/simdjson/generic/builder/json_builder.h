@@ -1,7 +1,7 @@
 #ifndef SIMDJSON_GENERIC_BUILDER_H
 
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
-#define SIMDJSON_GENERIC_STRING_BUILDER_H
+#define SIMDJSON_GENERIC_BUILDER_H
 #include "simdjson/generic/builder/json_string_builder.h"
 #include "simdjson/concepts.h"
 #include "simdjson/annotations.h"
@@ -27,7 +27,7 @@ namespace builder {
 // included at the point this header is parsed; without these forwards,
 // name lookup falls back to the wrong outer namespace).
 namespace internal {
-simdjson_really_inline char *write_uint_jeaiii(char *p, uint64_t v) noexcept;
+using simdjson::internal::write_uint_jeaiii;
 simdjson_inline char *write_double(char *p, double v) noexcept;
 } // namespace internal
 simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out);
@@ -135,10 +135,6 @@ using unchecked_writer = basic_writer<false>;
 // 16-byte blocks).
 inline constexpr size_t unchecked_slack = 64;
 
-consteval size_t padded_key_length(size_t length) {
-  return (length + 15) / 16 * 16;
-}
-
 // === Helper: invoke a string_builder member that writes variable-length
 // content (escape_and_append_with_quotes etc), syncing the writer's local
 // state before the call and reloading after. Used for string fields where
@@ -162,6 +158,51 @@ namespace annotation_detail {
 consteval bool is_serialized_member(std::meta::info dm) {
   return !simdjson::detail::has_annotation(dm, ^^simdjson::detail::skip_tag)
       && !simdjson::detail::has_annotation(dm, ^^simdjson::detail::skip_serializing_tag);
+}
+
+template <class Target, class T, class... Visiting>
+consteval bool members_reach();
+
+// Whether a value of type T may hold a value of type Target, directly or
+// through optionals, smart pointers, containers and members. Visiting lists
+// the structures being searched, so that the search terminates.
+template <class Target, class T, class... Visiting>
+consteval bool reaches() {
+  if constexpr (std::is_same_v<T, Target>) {
+    return true;
+  } else if constexpr ((std::is_same_v<T, Visiting> || ...) || require_custom_serialization<T> ||
+                       std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>) {
+    return false;
+  } else if constexpr (concepts::optional_type<T> || concepts::smart_pointer<T>) {
+    return reaches<Target, std::remove_cvref_t<decltype(*std::declval<const T &>())>, Visiting...>();
+  } else if constexpr (concepts::string_view_keyed_map<T>) {
+    return reaches<Target, std::remove_cvref_t<typename T::mapped_type>, Visiting...>();
+  } else if constexpr (concepts::container_but_not_string<T> || concepts::appendable_containers<T>) {
+    return reaches<Target, std::remove_cvref_t<std::ranges::range_value_t<T>>, Visiting...>();
+  } else if constexpr (std::is_class_v<T>) {
+    return members_reach<Target, T, Visiting...>();
+  } else {
+    return false;
+  }
+}
+
+template <class Target, class T, class... Visiting>
+consteval bool members_reach() {
+  bool found = false;
+  template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
+    if constexpr (is_serialized_member(dm)) {
+      found = found || reaches<Target, std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>, T, Visiting...>();
+    }
+  };
+  return found;
+}
+
+// Whether the structure T may contain itself, as in
+// struct Rule { std::unique_ptr<Rule> subrule; }. Serializing such a type
+// recurses at runtime, which simdjson_really_inline functions cannot do.
+template <class T>
+consteval bool is_recursive() {
+  return members_reach<T, T>();
 }
 
 // False when the member has a skip_serializing_if<pred> annotation and
@@ -219,22 +260,25 @@ simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
         } else {
           // Copy the key as whole 16-byte blocks from a zero-padded copy (one
           // load and one store); ensure() reserves the padded length, and the
-          // unchecked writer has slack past its bound.
+          // unchecked writer has slack past its bound. Prior related work:
+          // jsonifier copies a power-of-two padded key and advances the cursor
+          // by the real length (serialize_impl.hpp, packed_blitter,
+          // https://github.com/nihilai-collective/Jsonifier).
           constexpr const char* key_name = simdjson::get_json_key_name<dm>();
           constexpr size_t first_key_len = constevalutil::consteval_to_quoted_escaped(key_name).size() + 1;
           constexpr size_t rest_key_len = first_key_len + 1;
           constexpr auto first_key = std::define_static_string(
               constevalutil::consteval_to_quoted_escaped(key_name) + ":" +
-              std::string(padded_key_length(first_key_len) - first_key_len, '\0'));
+              std::string(constevalutil::padded_key_length(first_key_len) - first_key_len, '\0'));
           constexpr auto rest_key = std::define_static_string(
               std::string(",") + constevalutil::consteval_to_quoted_escaped(key_name) + ":" +
-              std::string(padded_key_length(rest_key_len) - rest_key_len, '\0'));
-          if (!w.ensure(padded_key_length(rest_key_len))) { return; }
+              std::string(constevalutil::padded_key_length(rest_key_len) - rest_key_len, '\0'));
+          if (!w.ensure(constevalutil::padded_key_length(rest_key_len))) { return; }
           if (first) {
-            std::memcpy(w.ptr + w.pos, first_key, padded_key_length(first_key_len));
+            std::memcpy(w.ptr + w.pos, first_key, constevalutil::padded_key_length(first_key_len));
             w.pos += first_key_len;
           } else {
-            std::memcpy(w.ptr + w.pos, rest_key, padded_key_length(rest_key_len));
+            std::memcpy(w.ptr + w.pos, rest_key, constevalutil::padded_key_length(rest_key_len));
             w.pos += rest_key_len;
           }
           first = false;
@@ -382,6 +426,31 @@ simdjson_really_inline constexpr void atom(W &w, const number_type t) {
   }
 }
 
+namespace annotation_detail {
+
+template <class W, class T>
+simdjson_really_inline void atom_object(W &w, const T &t) {
+  if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
+    // A transparent structure is serialized as its single member.
+    constexpr auto dm = simdjson::detail::transparent_member(^^T);
+    atom_member<dm>(w, t.[:dm:]);
+  } else {
+    bool first = true;
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '{';
+    atom_fields(w, t, first);
+    if (!w.ensure(1)) { return; }
+    w.ptr[w.pos++] = '}';
+  }
+}
+
+template <class W, class T>
+void atom_object_outlined(W &w, const T &t) {
+  atom_object(w, t);
+}
+
+} // namespace annotation_detail
+
 template <class W, class T>
   requires(std::is_class_v<T> && !concepts::container_but_not_string<T> &&
            !concepts::string_view_keyed_map<T> &&
@@ -393,17 +462,11 @@ template <class W, class T>
            !std::is_same_v<T, const char*> &&
            !std::is_same_v<T, char> && !require_custom_serialization<T>)
 simdjson_really_inline constexpr void atom(W &w, const T &t) {
-  if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
-    // A transparent structure is serialized as its single member.
-    constexpr auto dm = simdjson::detail::transparent_member(^^T);
-    annotation_detail::atom_member<dm>(w, t.[:dm:]);
+  if constexpr (annotation_detail::is_recursive<T>()) {
+    // Break the cycle of simdjson_really_inline calls.
+    annotation_detail::atom_object_outlined(w, t);
   } else {
-    bool first = true;
-    if (!w.ensure(1)) { return; }
-    w.ptr[w.pos++] = '{';
-    annotation_detail::atom_fields(w, t, first);
-    if (!w.ensure(1)) { return; }
-    w.ptr[w.pos++] = '}';
+    annotation_detail::atom_object(w, t);
   }
 }
 
@@ -490,31 +553,43 @@ simdjson_really_inline constexpr void atom(W &w, const T &container) {
 // Computing it first lets append() reserve the capacity once and then run
 // the whole write chain through an unchecked_writer, without a capacity
 // check before every write. It mirrors the atom() overloads above.
+//
+// Prior related work: jsonifier sizes the document first, counting 6 bytes
+// per string byte, resizes once to that bound plus slack, and writes with
+// no capacity check on each store. to_json() does that resize through
+// std::string::resize_and_overwrite. See serializer.hpp and
+// serialize_impl.hpp in https://github.com/nihilai-collective/Jsonifier
+// and https://nihilai-collective.net/serialization.
 // =============================================================
 namespace bound_detail {
 
 // Whether size_bound covers everything that atom() writes for T: not when a
 // member is serialized by a with<Adapter> serializer, which writes an unknown
 // amount through the string_builder.
-template <class T>
+// Visiting lists the structures being checked, so that a recursive type
+// (struct Node { std::unique_ptr<Node> next; }) does not recurse forever: a
+// type already being visited adds nothing, its members get checked once.
+template <class T, class... Visiting>
 consteval bool is_bounded() {
-  if constexpr (require_custom_serialization<T>) {
+  if constexpr ((std::is_same_v<T, Visiting> || ...)) {
+    return true;
+  } else if constexpr (require_custom_serialization<T>) {
     return false;
   } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view> ||
                        std::is_same_v<T, const char *> || std::is_arithmetic_v<T> || std::is_enum_v<T>) {
     return true;
   } else if constexpr (concepts::optional_type<T> || concepts::smart_pointer<T>) {
-    return is_bounded<std::remove_cvref_t<decltype(*std::declval<const T &>())>>();
+    return is_bounded<std::remove_cvref_t<decltype(*std::declval<const T &>())>, Visiting...>();
   } else if constexpr (concepts::string_view_keyed_map<T>) {
-    return is_bounded<std::remove_cvref_t<typename T::mapped_type>>();
+    return is_bounded<std::remove_cvref_t<typename T::mapped_type>, Visiting...>();
   } else if constexpr (concepts::container_but_not_string<T> || concepts::appendable_containers<T>) {
-    return is_bounded<std::remove_cvref_t<std::ranges::range_value_t<T>>>();
+    return is_bounded<std::remove_cvref_t<std::ranges::range_value_t<T>>, Visiting...>();
   } else {
     bool bounded = true;
     template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
       if constexpr (annotation_detail::is_serialized_member(dm)) {
         bounded = bounded && simdjson::detail::annotation_of_template(dm, ^^simdjson::detail::with_t) == std::meta::info{} &&
-                  is_bounded<std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>>();
+                  is_bounded<std::remove_cvref_t<decltype(std::declval<const T &>().[:dm:])>, T, Visiting...>();
       }
     };
     return bounded;
@@ -550,6 +625,11 @@ simdjson_really_inline size_t fields_bound(const T &t) noexcept {
     }
   };
   return bound;
+}
+
+template <class T>
+size_t fields_bound_outlined(const T &t) noexcept {
+  return fields_bound(t);
 }
 
 template <class T>
@@ -596,6 +676,9 @@ simdjson_really_inline size_t size_bound([[maybe_unused]] const T &t) noexcept {
   } else if constexpr (simdjson::detail::has_annotation(^^T, ^^simdjson::detail::transparent_tag)) {
     constexpr auto dm = simdjson::detail::transparent_member(^^T);
     return size_bound(t.[:dm:]);
+  } else if constexpr (annotation_detail::is_recursive<T>()) {
+    // Break the cycle of simdjson_really_inline calls.
+    return 2 + fields_bound_outlined(t);
   } else {
     return 2 + fields_bound(t);
   }
@@ -711,6 +794,8 @@ template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   if constexpr (sizeof(size_t) >= 8 && bound_detail::is_bounded<Z>()) {
     // Write straight into s, sized by the bound: no intermediate buffer, no copy.
+    // Prior related work: jsonifier's serializeJson resizes once through
+    // resize_and_overwrite (serializer.hpp).
     (void)initial_capacity;
     const size_t bound = bound_detail::size_bound(z) + unchecked_slack;
     auto write = [&z](char *p) noexcept {
@@ -728,10 +813,7 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
   } else {
     string_builder b(initial_capacity);
     append(b, z);
-    std::string_view view;
-    if(auto e = b.view().get(view); e) { return e; }
-    s.assign(view);
-    return SUCCESS;
+    return b.move_to(s);
   }
 }
 
@@ -794,9 +876,9 @@ template<constevalutil::fixed_string... FieldNames, typename T>
 simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = string_builder::DEFAULT_INITIAL_CAPACITY) {
   string_builder b(initial_capacity);
   extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
+  std::string s;
+  if(auto e = b.move_to(s); e) { return e; }
+  return s;
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
@@ -818,13 +900,13 @@ template<constevalutil::fixed_string... FieldNames, typename T>
 simdjson_warn_unused simdjson_result<std::string> extract_from(const T &obj, size_t initial_capacity = SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   SIMDJSON_IMPLEMENTATION::builder::extract_from<FieldNames...>(b, obj);
-  std::string_view s;
-  if(auto e = b.view().get(s); e) { return e; }
-  return std::string(s);
+  std::string s;
+  if(auto e = b.move_to(s); e) { return e; }
+  return s;
 }
 
 } // namespace simdjson
 
 #endif // SIMDJSON_STATIC_REFLECTION
 
-#endif
+#endif // SIMDJSON_GENERIC_BUILDER_H

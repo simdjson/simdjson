@@ -380,6 +380,9 @@ inline bool is_pointer_well_formed(std::string_view json_pointer) noexcept {
 }
 
 simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_pointer) noexcept {
+  // The empty JSON Pointer refers to the whole value (RFC 6901), as in
+  // document::at_pointer.
+  if (json_pointer.empty()) { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t)
@@ -417,6 +420,19 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  // The path is split once: every value reached by a wildcard sees the same
+  // remaining path, so re-parsing it at each one would be quadratic.
+  const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  // A path that cannot be parsed matches nothing, whatever the document: say
+  // so rather than letting the walk skip it as a mismatch below a wildcard.
+  if (path.back().key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
+  return for_each_at_path_segments(path, 0, callback);
+}
+
+template <typename Func>
+inline error_code value::for_each_at_path_segments(const std::vector<internal::json_path_segment> &path, size_t index, Func &callback) noexcept {
   // Every recursive step of for_each_at_path_with_wildcard goes through this
   // function, and each one descends one level into the document. A path with
   // many segments applied to a deeply nested document would otherwise recurse
@@ -425,10 +441,16 @@ inline error_code value::for_each_at_path_with_wildcard(std::string_view json_pa
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
-  case json_type::array:
-      return (*this).get_array().for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
-  case json_type::object:
-      return (*this).get_object().for_each_at_path_with_wildcard(json_path, std::forward<Func>(callback));
+  case json_type::array: {
+      array a;
+      SIMDJSON_TRY(get_array().get(a));
+      return a.for_each_at_path_segments(path, index, callback);
+  }
+  case json_type::object: {
+      object o;
+      SIMDJSON_TRY(get_object().get(o));
+      return o.for_each_at_path_segments(path, index, callback);
+  }
   default:
       return INVALID_JSON_POINTER;
   }

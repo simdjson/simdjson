@@ -819,6 +819,77 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  // A root-level number long enough that its digits reach the end of the
+  // on-stack scratch buffer that get_root_double() and friends copy it into.
+  // The digit scan in numberparsing reads eight bytes at a time and counts on
+  // SIMDJSON_PADDING bytes past the last digit, which the document buffer has
+  // and the scratch buffer did not: the scan ran off the end of the buffer
+  // (an -fsanitize=address stack-buffer-overflow).
+  bool root_number_scratch_padding() {
+    TEST_START();
+    for (size_t len = 1070; len <= 1090; len++) {
+      std::string text = "-0.";
+      text.append(len - text.size(), '1');
+      ASSERT_EQUAL(text.size(), len);
+      simdjson::padded_string json(text);
+      simdjson::padded_string quoted("\"" + text + "\"");
+
+      // Each root-number accessor copies into its own such buffer. Too many
+      // digits to be representable, so the value is rejected either way; what
+      // matters is that deciding that stays inside the buffer.
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        double v;
+        auto error = doc.get_double().get(v);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+        if (error == SUCCESS) { ASSERT_TRUE(v < 0 && v > -1); }
+      }
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        float v;
+        auto error = doc.get_float().get(v);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+      }
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        simdjson::ondemand::number num;
+        auto error = doc.get_number().get(num);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+      }
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        simdjson::ondemand::number_type type;
+        auto error = doc.get_number_type().get(type);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+      }
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+        double v;
+        auto error = doc.get_double_in_string().get(v);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+      }
+      {
+        simdjson::ondemand::parser parser;
+        simdjson::ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+        float v;
+        auto error = doc.get_float_in_string().get(v);
+        if (error != SUCCESS && error != NUMBER_ERROR) { ASSERT_SUCCESS(error); }
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
@@ -843,7 +914,8 @@ namespace number_tests {
            issue2570() &&
            powers_of_two() &&
            powers_of_ten() &&
-           old_crashes();
+           old_crashes() &&
+           root_number_scratch_padding();
   }
 
 } // namespace number_tests

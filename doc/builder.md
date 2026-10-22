@@ -56,6 +56,7 @@ Once you are satisfied, you can recover the string as follows:
 - `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.)
 - `operator std::string_view()`: Converts the JSON buffer to an std::string_view.  (Might throw if an error occurred.)
 - `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>` (C++20).
+- `move_to(std::string &out)`: Moves the JSON buffer into `out`, and returns an `error_code`. When the result fills at most half of the buffer, it is copied instead, so that a small result does not keep the whole buffer allocated, and the `string_builder` keeps its buffer for reuse. The `string_builder` is left empty.
 
 The later method (`view()`) is recommended.  For performance reasons, we expect you to explicitly call `validate_unicode()` as needed (e.g., prior to calling `view()`).
 
@@ -129,6 +130,20 @@ The `string_builder` might throw an exception in case of error when you cast it 
 ```
 
 In all cases, the `std::string_view` instance depends the corresponding `string_builder` instance.
+
+If you need an `std::string` that outlives the `string_builder`, prefer `move_to()`: it hands
+the buffer over to your string instead of copying it, which saves time on large outputs. A
+small result, one that fills at most half of the buffer, is copied, so that it does not keep
+the whole buffer allocated.
+
+```cpp
+    std::string json;
+    if(sb.move_to(json)) {
+        return false; // there was an error
+    }
+    // sb is now empty: you can reuse it. It allocates a new buffer only if
+    // the result was moved rather than copied.
+```
 
 ### C++20
 

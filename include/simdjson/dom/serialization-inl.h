@@ -5,6 +5,7 @@
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/parser.h"
 #include "simdjson/dom/serialization.h"
+#include "simdjson/internal/jeaiii.h"
 #include "simdjson/internal/tape_type.h"
 
 #include "simdjson/dom/array-inl.h"
@@ -90,75 +91,6 @@ struct escape_sequence {
   const char
       string[7]; // technically, we only ever need 6 characters, we pad to 8
 };
-/**@private
- * This converts a signed integer into a character sequence.
- * The caller is responsible for providing enough memory (at least
- * 20 characters.)
- * Though various runtime libraries provide itoa functions,
- * it is not part of the C++ standard. The C++17 standard
- * adds the to_chars functions which would do as well, but
- * we want to support C++11.
- */
-static char *fast_itoa(char *output, int64_t value) noexcept {
-  // This is a standard implementation of itoa.
-  char buffer[20];
-  uint64_t value_positive;
-  // In general, negating a signed integer is unsafe.
-  if (value < 0) {
-    *output++ = '-';
-    // Doing value_positive = -value; while avoiding
-    // undefined behavior warnings.
-    // It assumes two complement's which is universal at this
-    // point in time.
-    std::memcpy(&value_positive, &value, sizeof(value));
-    value_positive = (~value_positive) + 1; // this is a negation
-  } else {
-    value_positive = value;
-  }
-  // We work solely with value_positive. It *might* be easier
-  // for an optimizing compiler to deal with an unsigned variable
-  // as far as performance goes.
-  const char *const end_buffer = buffer + 20;
-  char *write_pointer = buffer + 19;
-  // A faster approach is possible if we expect large integers:
-  // unroll the loop (work in 100s, 1000s) and use some kind of
-  // memoization.
-  while (value_positive >= 10) {
-    *write_pointer-- = char('0' + (value_positive % 10));
-    value_positive /= 10;
-  }
-  *write_pointer = char('0' + value_positive);
-  size_t len = end_buffer - write_pointer;
-  std::memcpy(output, write_pointer, len);
-  return output + len;
-}
-/**@private
- * This converts an unsigned integer into a character sequence.
- * The caller is responsible for providing enough memory (at least
- * 19 characters.)
- * Though various runtime libraries provide itoa functions,
- * it is not part of the C++ standard. The C++17 standard
- * adds the to_chars functions which would do as well, but
- * we want to support C++11.
- */
-static char *fast_itoa(char *output, uint64_t value) noexcept {
-  // This is a standard implementation of itoa.
-  char buffer[20];
-  const char *const end_buffer = buffer + 20;
-  char *write_pointer = buffer + 19;
-  // A faster approach is possible if we expect large integers:
-  // unroll the loop (work in 100s, 1000s) and use some kind of
-  // memoization.
-  while (value >= 10) {
-    *write_pointer-- = char('0' + (value % 10));
-    value /= 10;
-  };
-  *write_pointer = char('0' + value);
-  size_t len = end_buffer - write_pointer;
-  std::memcpy(output, write_pointer, len);
-  return output + len;
-}
-
 } // anonymous namespace
 namespace internal {
 
@@ -168,16 +100,18 @@ namespace internal {
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
+  // write_uint_jeaiii may store one byte before its output pointer.
   char number_buffer[24];
-  char *newp = fast_itoa(number_buffer, x);
-  chars(number_buffer, newp);
+  chars(number_buffer + 1, write_uint_jeaiii(number_buffer + 1, x));
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(int64_t x) {
   char number_buffer[24];
-  char *newp = fast_itoa(number_buffer, x);
-  chars(number_buffer, newp);
+  // 0 - uint64_t(x) is the magnitude, also for INT64_MIN.
+  char *end = write_uint_jeaiii(number_buffer + 1, x < 0 ? 0 - uint64_t(x) : uint64_t(x));
+  number_buffer[0] = '-';
+  chars(number_buffer + (x >= 0), end);
 }
 
 template <class formatter>
@@ -393,6 +327,12 @@ simdjson_inline void pretty_formatter::print_space() { one_char(' '); }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::element value) {
+  append(value, 0);
+  format.print_newline();
+}
+
+template <class serializer>
+inline void string_builder<serializer>::append(simdjson::dom::element value, size_t base_depth) {
   // using tape_type = simdjson::internal::tape_type;
   size_t depth = 0;
   constexpr size_t MAX_DEPTH = 16;
@@ -408,7 +348,10 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       format.print_newline();
     }
 
-    format.print_indents(depth);
+    // At depth 0 the caller has already indented the value.
+    if (depth != 0) {
+      format.print_indents(base_depth + depth);
+    }
 
     // If we are in an object, print the next key and :, and skip to the next
     // value.
@@ -424,7 +367,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(simdjson::dom::array(iter));
+        append(simdjson::dom::element(iter), base_depth + depth - 1);
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the ]
         depth--;
         break;
@@ -452,7 +395,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
       // If we're too deep, we need to recurse to go deeper.
       depth++;
       if (simdjson_unlikely(depth >= MAX_DEPTH)) {
-        append(simdjson::dom::object(iter));
+        append(simdjson::dom::element(iter), base_depth + depth - 1);
         iter.json_index = iter.matching_brace_index() - 1; // Jump to the }
         depth--;
         break;
@@ -524,7 +467,7 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
                           iter.tape_ref_type() == tape_type::END_OBJECT)) {
       format.print_newline();
       depth--;
-      format.print_indents(depth);
+      format.print_indents(base_depth + depth);
       if (iter.tape_ref_type() == tape_type::END_ARRAY) {
         format.end_array();
       } else {
@@ -535,38 +478,16 @@ inline void string_builder<serializer>::append(simdjson::dom::element value) {
 
     // Stop when we're at depth 0
   } while (depth != 0);
-
-  format.print_newline();
 }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::object value) {
-  format.start_object();
-  auto pair = value.begin();
-  auto end = value.end();
-  if (pair != end) {
-    append(*pair);
-    for (++pair; pair != end; ++pair) {
-      format.comma();
-      append(*pair);
-    }
-  }
-  format.end_object();
+  append(simdjson::dom::element(value));
 }
 
 template <class serializer>
 inline void string_builder<serializer>::append(simdjson::dom::array value) {
-  format.start_array();
-  auto iter = value.begin();
-  auto end = value.end();
-  if (iter != end) {
-    append(*iter);
-    for (++iter; iter != end; ++iter) {
-      format.comma();
-      append(*iter);
-    }
-  }
-  format.end_array();
+  append(simdjson::dom::element(value));
 }
 
 template <class serializer>

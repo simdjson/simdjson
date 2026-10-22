@@ -175,6 +175,11 @@ else()
   if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
     target_compile_options(simdjson-internal-flags INTERFACE -Wctad-maybe-unsupported)
   endif()
+  if(NOT SIMDJSON_EXCEPTIONS)
+    # Compile the tests without exceptions too, so that the headers are
+    # checked the way users with -fno-exceptions consume them.
+    target_compile_options(simdjson-internal-flags INTERFACE -fno-exceptions)
+  endif()
 
 endif()
 

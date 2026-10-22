@@ -213,8 +213,18 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 inline size_t structure_analyzer::estimate_string_length(std::string_view s) const {
   size_t len = 2; // quotes
   for (char c : s) {
-    if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 32) {
-      len += 2; // escape sequence (at least)
+    unsigned char uc = static_cast<unsigned char>(c);
+    if (c == '"' || c == '\\') {
+      len += 2; // \" and \\ are two-character escapes
+    } else if (uc < 0x20) {
+      switch (c) {
+        case '\b': case '\f': case '\n': case '\r': case '\t':
+          len += 2; // two-character escapes: \b \f \n \r \t
+          break;
+        default:
+          len += 6; // \u00XX -- six-character escape for other control chars
+          break;
+      }
     } else {
       len += 1;
     }
@@ -236,10 +246,14 @@ inline size_t structure_analyzer::estimate_number_length(double d) const {
     return 4; // "null" for invalid numbers
 #endif
   }
-  // Rough estimate: up to 17 significant digits + sign + decimal point + exponent
-  char buf[32];
-  int len = snprintf(buf, sizeof(buf), "%.17g", d);
-  return len > 0 ? static_cast<size_t>(len) : 20;
+  // Must match base_formatter::number(double), which serializes finite values
+  // with internal::to_chars (shortest round-trip). snprintf("%.17g") over-counts
+  // (e.g. 0.1 becomes "0.10000000000000001", 19 chars, vs the emitted "0.1"),
+  // which misaligns double columns in table formatting the same way escaped
+  // control characters did before #2929.
+  char buf[simdjson::internal::to_chars_buffer_size];
+  char *end = simdjson::internal::to_chars(buf, buf + sizeof(buf), d);
+  return static_cast<size_t>(end - buf);
 }
 
 inline size_t structure_analyzer::estimate_number_length(int64_t i) const {
@@ -305,7 +319,9 @@ inline void structure_analyzer::build_table_columns(
   table_column_type common = table_column_type::unknown;
   for (const auto& v : values) {
     table_column_type t = classify_table_value(v.first.type());
-    if (t == table_column_type::unknown) continue;
+    // Null cannot be projected into object or array columns. Keep these
+    // values intact by falling back to ordinary value formatting.
+    if (t == table_column_type::unknown) return;
     if (common == table_column_type::unknown) common = t;
     else if (t != common) { common = table_column_type::mixed; break; }
   }
@@ -495,7 +511,8 @@ inline void structure_analyzer::recompute_column_widths(std::vector<table_column
 inline layout_mode structure_analyzer::decide_layout(const element_metrics& metrics,
                                                       size_t depth,
                                                       const fractured_json_options& opts,
-                                                      bool has_trailing_comma) {
+                                                      bool has_trailing_comma,
+                                                      size_t key_width) {
   if (metrics.child_count == 0) {
     return layout_mode::single_line;
   }
@@ -505,7 +522,8 @@ inline layout_mode structure_analyzer::decide_layout(const element_metrics& metr
   bool depth_allows_table = signed_depth >= opts.always_expand_depth;
 
   // Check inline feasibility
-  size_t reserved_width = depth * opts.indent_spaces + (has_trailing_comma ? 1 : 0);
+  size_t reserved_width = depth * opts.indent_spaces + key_width +
+                          (has_trailing_comma ? 1 : 0);
   if (depth_allows_inline_or_compact && metrics.can_inline &&
       metrics.estimated_inline_len + reserved_width <= opts.max_total_line_length) {
     return layout_mode::single_line;
@@ -640,19 +658,20 @@ simdjson_inline std::string_view fractured_string_builder::str() const {
 inline void fractured_string_builder::format_element(const dom::element& elem,
                                                        const element_metrics& metrics,
                                                        size_t depth,
-                                                       bool has_trailing_comma) {
+                                                       bool has_trailing_comma,
+                                                       size_t key_width) {
   switch (elem.type()) {
     case dom::element_type::ARRAY: {
       dom::array arr;
       if (elem.get_array().get(arr) == SUCCESS) {
-        format_array(arr, metrics, depth, has_trailing_comma);
+        format_array(arr, metrics, depth, has_trailing_comma, key_width);
       }
       break;
     }
     case dom::element_type::OBJECT: {
       dom::object obj;
       if (elem.get_object().get(obj) == SUCCESS) {
-        format_object(obj, metrics, depth, has_trailing_comma);
+        format_object(obj, metrics, depth, has_trailing_comma, key_width);
       }
       break;
     }
@@ -665,8 +684,10 @@ inline void fractured_string_builder::format_element(const dom::element& elem,
 inline void fractured_string_builder::format_array(const dom::array& arr,
                                                     const element_metrics& metrics,
                                                     size_t depth,
-                                                    bool has_trailing_comma) {
-  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+                                                    bool has_trailing_comma,
+                                                    size_t key_width) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_,
+                                                         has_trailing_comma, key_width);
   switch (layout) {
     case layout_mode::single_line:
       format_array_inline(arr, metrics);
@@ -680,6 +701,33 @@ inline void fractured_string_builder::format_array(const dom::array& arr,
     case layout_mode::expanded:
     default:
       format_array_expanded(arr, metrics, depth);
+      break;
+  }
+}
+
+// The children of an inline value are written inline as well. Going through
+// format_element() would let decide_layout() pick another layout for them
+// (e.g. at a depth not past always_expand_depth), which a single line cannot
+// show: it would only add table padding and drop the comma padding.
+inline void fractured_string_builder::format_element_inline(const dom::element& elem,
+                                                              const element_metrics& metrics) {
+  switch (elem.type()) {
+    case dom::element_type::ARRAY: {
+      dom::array arr;
+      if (elem.get_array().get(arr) == SUCCESS) {
+        format_array_inline(arr, metrics);
+      }
+      break;
+    }
+    case dom::element_type::OBJECT: {
+      dom::object obj;
+      if (elem.get_object().get(obj) == SUCCESS) {
+        format_object_inline(obj, metrics);
+      }
+      break;
+    }
+    default:
+      format_scalar(elem);
       break;
   }
 }
@@ -705,7 +753,7 @@ inline void fractured_string_builder::format_array_inline(const dom::array& arr,
     }
     first = false;
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
-    format_element(elem, child_metrics, 0);
+    format_element_inline(elem, child_metrics);
     child_idx++;
   }
 
@@ -733,14 +781,19 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
 
   for (dom::element elem : arr) {
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
+    bool is_last = (child_idx + 1 == metrics.child_count);
 
     if (!first) {
       format_.comma();
       format_.track_line_length(1);
 
-      // Check if we should break to new line
+      // Check if we should break to new line. Staying on this line also
+      // takes the padding space before the item and the comma after it.
+      size_t upcoming_length = child_metrics.estimated_inline_len +
+                               (options_.comma_padding ? 1 : 0) +
+                               (is_last ? 0 : 1);
       if (prev_item_was_expanded ||
-          format_.should_break_line(child_metrics.estimated_inline_len)) {
+          format_.should_break_line(upcoming_length)) {
         format_.print_newline();
         format_.print_indents(depth + 1);
       } else if (options_.comma_padding) {
@@ -749,7 +802,6 @@ inline void fractured_string_builder::format_array_compact_multiline(const dom::
     }
     first = false;
 
-    bool is_last = (child_idx + 1 == metrics.child_count);
     layout_mode item_layout = structure_analyzer::decide_layout(child_metrics, depth + 1, options_, !is_last);
     bool item_fits = item_layout == layout_mode::single_line;
     if (item_fits) {
@@ -1116,8 +1168,10 @@ inline void fractured_string_builder::format_array_expanded(const dom::array& ar
 inline void fractured_string_builder::format_object(const dom::object& obj,
                                                      const element_metrics& metrics,
                                                      size_t depth,
-                                                     bool has_trailing_comma) {
-  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_, has_trailing_comma);
+                                                     bool has_trailing_comma,
+                                                     size_t key_width) {
+  layout_mode layout = structure_analyzer::decide_layout(metrics, depth, options_,
+                                                         has_trailing_comma, key_width);
   if (layout == layout_mode::single_line) {
     format_object_inline(obj, metrics);
   } else {
@@ -1152,7 +1206,7 @@ inline void fractured_string_builder::format_object_inline(const dom::object& ob
       format_.print_space();
     }
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
-    format_element(field.value, child_metrics, 0);
+    format_element_inline(field.value, child_metrics);
     child_idx++;
   }
 
@@ -1186,7 +1240,10 @@ inline void fractured_string_builder::format_object_expanded(const dom::object& 
     }
     const element_metrics& child_metrics = child_metrics_at(metrics.children, child_idx);
     bool is_last = (child_idx + 1 == metrics.child_count);
-    format_element(field.value, child_metrics, depth + 1, !is_last);
+    // An inline value shares its line with the key, the colon and its padding.
+    size_t key_width = analyzer_.estimate_string_length(field.key) + 1 +
+                       (options_.colon_padding ? 1 : 0);
+    format_element(field.value, child_metrics, depth + 1, !is_last, key_width);
     child_idx++;
   }
 

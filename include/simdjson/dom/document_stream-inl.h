@@ -357,7 +357,12 @@ inline void document_stream::load_from_stage1_thread() noexcept {
   // enough memory to swap to, as well.
   std::swap(*parser, stage1_thread_parser);
   error = stage1_thread_error;
-  if (error) { return; }
+  // An EMPTY batch (no complete document in it, e.g. a run of white space at
+  // least batch_size long) is not the end of the stream: next() moves on to
+  // the batch after it, so queue that batch now as we would after a success.
+  // Returning here would leave no job for the next call, which then swaps
+  // the stale previous batch back in and ends the stream early.
+  if (error && error != EMPTY) { return; }
 
   // If there's anything left, start the stage 1 thread!
   if (next_batch_start() < len) {

@@ -209,6 +209,72 @@ simdjson_inline dom::array::iterator simdjson_result<dom::element>::end() const 
 
 #endif // SIMDJSON_EXCEPTIONS
 
+namespace internal {
+// Appends the children of e, which must be an array or an object.
+inline void get_container_values(const dom::element &e, std::vector<dom::element> &out) noexcept {
+  dom::array a;
+  if (!e.get_array().get(a)) {
+    a.get_values(out);
+    return;
+  }
+  dom::object o;
+  if (!e.get_object().get(o)) {
+    o.get_values(out);
+  }
+}
+
+// Walks a pre-parsed wildcard path from e, which is at depth `step` of the
+// path. Errors below the starting node are skipped, not reported.
+inline simdjson_result<std::vector<dom::element>> at_wildcard_json_path(const dom::element &e, const wildcard_json_path &path, size_t step) noexcept {
+  // A finished path names this node, even when it is a scalar. Checking the
+  // container type first would drop keys such as "b*" and "foo*".
+  if (step == path.steps.size()) {
+    switch (path.tail) {
+      case wildcard_json_path::tail_type::all_values: {
+        std::vector<dom::element> children;
+        get_container_values(e, children);
+        return children;
+      }
+      case wildcard_json_path::tail_type::pointer: {
+        dom::element result;
+        auto error = e.at_pointer(path.tail_pointer).get(result);
+        if (error) {
+          return error;
+        }
+        return std::vector<dom::element>{std::move(result)};
+      }
+      default:
+        return INVALID_JSON_POINTER;
+    }
+  }
+  const dom::element_type t = e.type();
+  if (t != dom::element_type::ARRAY && t != dom::element_type::OBJECT) {
+    return std::vector<dom::element>{};
+  }
+  std::vector<dom::element> children;
+  const std::string &key_pointer = path.steps[step];
+  if (key_pointer == "/*") {
+    get_container_values(e, children);
+  } else {
+    dom::element child;
+    if (!e.at_pointer(key_pointer).get(child)) {
+      children.emplace_back(child);
+    }
+  }
+  std::vector<dom::element> result;
+  for (const dom::element &child : children) {
+    std::vector<dom::element> child_result;
+    if (at_wildcard_json_path(child, path, step + 1).get(child_result)) {
+      continue;
+    }
+    result.insert(result.end(),
+                  std::make_move_iterator(child_result.begin()),
+                  std::make_move_iterator(child_result.end()));
+  }
+  return result;
+}
+} // namespace internal
+
 namespace dom {
 
 //
@@ -465,11 +531,16 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
 inline simdjson_result<std::vector<element>> element::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
 
+  const internal::wildcard_json_path path = internal::parse_wildcard_json_path(json_path);
+  // A path that cannot be parsed matches nothing, whatever the document: say
+  // so rather than letting the walk skip it as a mismatch below a wildcard.
+  if (path.tail == internal::wildcard_json_path::tail_type::invalid) {
+    return INVALID_JSON_POINTER;
+  }
   switch (tape.tape_ref_type()) {
     case internal::tape_type::START_OBJECT:
-      return object(tape).at_path_with_wildcard(json_path);
     case internal::tape_type::START_ARRAY:
-      return array(tape).at_path_with_wildcard(json_path);
+      return internal::at_wildcard_json_path(*this, path, 0);
     default:
       return std::vector<element>{};
   }

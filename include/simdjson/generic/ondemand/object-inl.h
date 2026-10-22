@@ -264,7 +264,9 @@ simdjson_inline simdjson_result<std::string_view> object::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  const uint8_t * final_point{iter._json_iter->peek()};
+  // After 'consume()', the last token consumed is the closing brace: we end on it
+  // rather than on the next token, which may follow white space.
+  const uint8_t * final_point{iter._json_iter->token.peek(-1) + 1};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -301,7 +303,9 @@ simdjson_inline simdjson_result<object_iterator> object::end() noexcept {
 }
 
 inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
@@ -355,9 +359,21 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code object::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  auto result_pair = get_next_key_and_json_path(json_path);
-  std::string_view key = result_pair.first;
-  std::string_view remaining_path = result_pair.second;
+  // The path is split once: every field reached by a wildcard sees the same
+  // remaining path, so re-parsing it at each one would be quadratic.
+  const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  // A path that cannot be parsed matches nothing, whatever the document: say
+  // so rather than letting the walk skip it as a mismatch below a wildcard.
+  if (path.back().key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
+  return for_each_at_path_segments(path, 0, callback);
+}
+
+template <typename Func>
+inline error_code object::for_each_at_path_segments(const std::vector<internal::json_path_segment> &path, size_t index, Func &callback) noexcept {
+  std::string_view key = path[index].key;
+  const bool last = index + 1 == path.size();
   // Empty key means the path segment could not be parsed (including malformed
   // bracket-quoted keys). Match DOM at_path_with_wildcard and avoid treating
   // "no progress" as a recursive lookup of "".
@@ -370,22 +386,30 @@ inline error_code object::for_each_at_path_with_wildcard(std::string_view json_p
     for (auto field : *this) {
       value val;
       SIMDJSON_TRY(field.value().get(val));
-      if (remaining_path.empty()) {
+      if (last) {
         callback(val);
       } else {
-        SIMDJSON_TRY(val.for_each_at_path_with_wildcard(remaining_path, callback));
+        // A field that does not match the rest of the path is skipped.
+        error_code err = val.for_each_at_path_segments(path, index + 1, callback);
+        if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
     return SUCCESS;
   } else {
     value val;
-    SIMDJSON_TRY(find_field(key).get(val));
+    error_code error = find_field(key).get(val);
+    if (error) {
+      if (error == NO_SUCH_FIELD && path[index].wildcard_follows) {
+        return SUCCESS;
+      }
+      return error;
+    }
 
-    if (remaining_path.empty()) {
+    if (last) {
       callback(val);
       return SUCCESS;
     } else {
-      return val.for_each_at_path_with_wildcard(remaining_path, callback);
+      return val.for_each_at_path_segments(path, index + 1, callback);
     }
   }
 }

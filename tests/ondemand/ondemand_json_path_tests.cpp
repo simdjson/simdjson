@@ -497,8 +497,37 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 #endif
+
+    // A structural error abandons the document: is_alive() becomes false and
+    // the iterator lets go of the parser. at_path() and
+    // for_each_at_path_with_wildcard() rewind the document on each call and used
+    // to read the parser through the abandoned iterator. They must report the
+    // error instead.
+    bool at_path_after_fatal_error() {
+        TEST_START();
+        auto json = R"({"a":1 "b":2})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+        int64_t x;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.at_path("$.a").get_int64().get(x));
+        ASSERT_EQUAL(x, 1);
+        ASSERT_ERROR(doc.at_path("$.b").get(val), TAPE_ERROR);
+        ASSERT_FALSE(doc.is_alive());
+        ASSERT_ERROR(doc.at_path("$.a").get(val), TAPE_ERROR);
+        size_t calls{0};
+        ASSERT_ERROR(doc.for_each_at_path_with_wildcard("$.*", [&](ondemand::value) { calls++; }), TAPE_ERROR);
+        ASSERT_EQUAL(calls, 0);
+        auto doc_result = parser.iterate(json);
+        ASSERT_ERROR(doc_result.at_path("$.b").get(val), TAPE_ERROR);
+        ASSERT_ERROR(doc_result.at_path("$.a").get(val), TAPE_ERROR);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+                at_path_after_fatal_error() &&
 #if SIMDJSON_EXCEPTIONS
                 json_path_invalidation_exceptions() &&
 #endif

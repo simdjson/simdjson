@@ -2305,11 +2305,65 @@ namespace format_tests {
   }
 #endif // SIMDJSON_EXCEPTIONS
 
+  // An array or object prints like the element holding it.
+  bool prettify_array_and_object() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(R"([1,[2,3],{"k":{"l":[]}}])"_padded).get(doc) );
+    dom::array array;
+    ASSERT_SUCCESS( doc.get_array().get(array) );
+    ASSERT_EQUAL( prettify(array), prettify(doc) );
+    ASSERT_EQUAL( minify(array), minify(doc) );
+    dom::object object;
+    ASSERT_SUCCESS( doc.at(2).get_object().get(object) );
+    // doc.at(2) is a simdjson_result. prettify() accepts that only when
+    // exceptions are on; the noexcept builds take the element itself.
+    dom::element at_two;
+    ASSERT_SUCCESS( doc.at(2).get(at_two) );
+    ASSERT_EQUAL( prettify(object), prettify(at_two) );
+    ASSERT_EQUAL( minify(object), R"({"k":{"l":[]}})" );
+    return true;
+  }
+
+  // Past 16 levels, the printer recurses; the indentation must keep growing.
+  bool prettify_deep_nesting() {
+    std::cout << "Running " << __func__ << std::endl;
+    for (size_t levels : {5, 40}) {
+      // levels objects, each holding an array: {"a":[{"a":[...1...]}]}
+      std::string json;
+      std::string expected;
+      for (size_t i = 0; i < levels; i++) {
+        json += R"({"a":[)";
+        expected += std::string(8 * i, ' ') + "{\n";
+        expected += std::string(8 * i + 4, ' ') + "\"a\": [\n";
+      }
+      json += "1";
+      expected += std::string(8 * levels, ' ') + "1\n";
+      for (size_t i = levels; i-- > 0;) {
+        json += "]}";
+        expected += std::string(8 * i + 4, ' ') + "]\n";
+        expected += std::string(8 * i, ' ') + "}\n";
+      }
+      dom::parser parser;
+      dom::element doc;
+      ASSERT_SUCCESS( parser.parse(json).get(doc) );
+      std::string actual = prettify(doc);
+      if (actual != expected) {
+        cerr << "Wrong prettify output for " << levels << " levels:" << endl << actual << endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool run() {
     return print_parser_parse() && print_minify_parser_parse() &&
            print_element() && print_minify_element() &&
            print_array() && print_minify_array() &&
            print_object() && print_minify_object() &&
+           prettify_deep_nesting() &&
+           prettify_array_and_object() &&
 #if SIMDJSON_EXCEPTIONS
            print_parser_parse_exception() && print_minify_parser_parse_exception() &&
            print_element_result_exception() && print_minify_element_result_exception() &&

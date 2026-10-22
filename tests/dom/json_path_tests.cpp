@@ -469,24 +469,19 @@ bool unterminated_bracket_quote_wildcard() {
       R"($["*)",
       R"($['*)",
       R"($["a"*)", // quote closed but ']' missing before '*'
+      // A malformed later segment is reported too, not skipped as a mismatch.
+      R"($["a"]["b*)",
+      R"($["a"]['b*)",
   };
   for (const char *path : first_segment_malformed) {
-    std::cout << "  malformed first segment: " << path << std::endl;
+    std::cout << "  malformed path: " << path << std::endl;
     ASSERT_EQUAL(doc.at_path_with_wildcard(path).error(), INVALID_JSON_POINTER);
   }
 
-  // When the first segment is valid but a later bracket-quote is not, child
-  // processing swallows the error and returns an empty result (SUCCESS).
-  // The important property is no throw/abort.
-  const char *later_segment_malformed[] = {
-      R"($["a"]["b*)",
-      R"($["a"]['b*)",
-      R"($["ok"].*)", // ok is a scalar; wildcard suffix yields empty
-  };
-  for (const char *path : later_segment_malformed) {
-    std::cout << "  later-segment / empty result path: " << path << std::endl;
+  // ok is a scalar: the wildcard suffix yields an empty result.
+  {
     std::vector<dom::element> values;
-    ASSERT_SUCCESS(doc.at_path_with_wildcard(path).get(values));
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($["ok"].*)").get(values));
     ASSERT_EQUAL(values.size(), 0);
   }
 
@@ -512,6 +507,134 @@ bool unterminated_bracket_quote_wildcard() {
   ASSERT_SUCCESS(doc.at_path("$.ok").get(ok_val));
   ASSERT_EQUAL(ok_val, 1);
 
+  TEST_SUCCEED();
+}
+
+// Keys containing '/' or '~' must be escaped when the segments before a
+// wildcard become JSON Pointer steps, as at_path already does for the same
+// keys (see the RFC 6901 cases "$.a/b" and "$.m~n" below): an unescaped '/'
+// made $.a/b.* resolve through "a" then "b" instead of the key "a/b", and an
+// unescaped '~' made the step an invalid pointer, silently matching nothing.
+bool wildcard_key_with_slash_or_tilde() {
+  TEST_START();
+  auto json = R"({"a":{"b":{"nested":1}},"a/b":{"x":2},"m~n":{"y":3}})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  std::vector<dom::element> values;
+  int64_t value;
+
+  // Must match the key "a/b", not descend into {"a":{"b":...}}.
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a/b.*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(value));
+  ASSERT_EQUAL(value, 2);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard(R"($['a/b'].*)").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(value));
+  ASSERT_EQUAL(value, 2);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.m~n.*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(value));
+  ASSERT_EQUAL(value, 3);
+
+  TEST_SUCCEED();
+}
+
+// A '*' inside the final segment is part of the key, as in at_path and
+// On-Demand. It used to be reported as INVALID_JSON_POINTER because the
+// parser looped once more on the empty remainder.
+bool star_in_final_segment() {
+  std::cout << "Running star_in_final_segment test" << std::endl;
+  auto json = R"({"a":{"b*":{"c":7}},"foo*":9,"d":[{"b*":2},{"b*":3},{"x":4}]})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+
+  int64_t scalar = 0;
+  ASSERT_SUCCESS(doc.at_path("$.a.b*.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+  ASSERT_SUCCESS(doc.at_path("$.foo*").get(scalar));
+  ASSERT_EQUAL(scalar, 9);
+
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a.b*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].at_path("$.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a['b*']").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].at_path("$.c").get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a.b*.c").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 7);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.foo*").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 9);
+
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.d[*]['b*']").get(values));
+  ASSERT_EQUAL(values.size(), 2);
+  ASSERT_SUCCESS(values[0].get(scalar));
+  ASSERT_EQUAL(scalar, 2);
+  ASSERT_SUCCESS(values[1].get(scalar));
+  ASSERT_EQUAL(scalar, 3);
+
+  // A quoted '*' is the wildcard, matching On-Demand, so this is every child.
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$['*']").get(values));
+  ASSERT_EQUAL(values.size(), 3);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*").get(values));
+  ASSERT_EQUAL(values.size(), 3);
+
+  // A key that is not present is an empty match, not a parse error.
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.missing*").get(values));
+  ASSERT_EQUAL(values.size(), 0);
+
+  // A truncated bracket after a real key is still a parse error.
+  ASSERT_EQUAL(doc.at_path_with_wildcard("$.d[*]['b*'][").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path_with_wildcard(R"($.d[*]['b)").error(), INVALID_JSON_POINTER);
+
+  TEST_SUCCEED();
+}
+
+// A path that cannot be parsed after a wildcard is reported, whatever the
+// document, instead of silently matching nothing.
+bool malformed_path_after_wildcard() {
+  std::cout << "Running malformed_path_after_wildcard test" << std::endl;
+  const char *malformed[] = {
+      R"($.a[*]['b)",
+      R"($.a[*][1)",
+      R"($.a[*].b[)",
+      R"($.a[*]b)",
+      R"($.*.b[0)",
+      R"($.a[*][*)",
+      R"($[*]x)",
+  };
+  for (const char *source : {R"({"a":[{"b":[1]},{"b":[2]}]})", R"([[{"b":[1]}]])", "[]", "5"}) {
+    const padded_string json(std::string_view{source});
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    for (const char *path : malformed) {
+      std::cout << "  " << json << " " << path << std::endl;
+      ASSERT_EQUAL(doc.at_path_with_wildcard(path).error(), INVALID_JSON_POINTER);
+    }
+  }
+  // As in at_path, a bracketed segment after the last wildcard is read as a
+  // JSON Pointer token: [b] is the key "b".
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(R"({"a":[{"b":1},{"b":2}]})"_padded).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.a[*][b]").get(values));
+  ASSERT_EQUAL(values.size(), 2);
   TEST_SUCCEED();
 }
 
@@ -629,8 +752,44 @@ bool at_path_error_propagation() {
   TEST_SUCCEED();
 }
 
+// The path is parsed once, not again at every node the wildcards reach: a long
+// path after a couple of wildcards on a large document used to take
+// O(nodes * path length) time (OSS-Fuzz 6040346321289216).
+bool long_path_after_wildcards() {
+  TEST_START();
+  std::string json = "[";
+  for (size_t i = 0; i < 2000; i++) {
+    if (i > 0) { json += ","; }
+    json += R"([{"k":[7]},{"k":[8]},{"j":0},3,{"k":[]}])";
+  }
+  json += "]";
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  std::vector<dom::element> values;
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k[0]").get(values));
+  ASSERT_EQUAL(values.size(), 4000);
+  int64_t value;
+  ASSERT_SUCCESS(values[0].get_int64().get(value));
+  ASSERT_EQUAL(value, 7);
+  ASSERT_SUCCESS(values[1].get_int64().get(value));
+  ASSERT_EQUAL(value, 8);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k.*").get(values));
+  ASSERT_EQUAL(values.size(), 4000);
+  const std::string long_key(1000000, 'x');
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*." + long_key).get(values));
+  ASSERT_EQUAL(values.size(), 0);
+  ASSERT_SUCCESS(doc.at_path_with_wildcard("$.*.*.k." + long_key + ".*").get(values));
+  ASSERT_EQUAL(values.size(), 0);
+  TEST_SUCCEED();
+}
+
 int main() {
   if (true && json_path_with_wildcard() && unterminated_bracket_quote_wildcard() &&
+      star_in_final_segment() &&
+      malformed_path_after_wildcard() &&
+      wildcard_key_with_slash_or_tilde() &&
+      long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&

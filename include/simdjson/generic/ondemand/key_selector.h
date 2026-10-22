@@ -38,6 +38,20 @@
   #define SIMDJSON_KEY_SELECTOR_HAS_LSX 0
 #endif
 
+// Clang 15 and earlier reject a call to a consteval function from within a
+// consteval function template when an argument refers to one of the caller's
+// reference parameters ("function parameter 'keys' with unknown value cannot
+// be used in a constant expression"). With those compilers, the helpers below
+// are merely constexpr: the perfect-hash tables are still computed at compile
+// time because they initialize static constexpr data members.
+#ifndef SIMDJSON_KEY_SELECTOR_CONSTEVAL
+#if defined(__clang__) && ((defined(__apple_build_version__) && __apple_build_version__ < 15000000) || (!defined(__apple_build_version__) && __clang_major__ < 16))
+  #define SIMDJSON_KEY_SELECTOR_CONSTEVAL constexpr
+#else
+  #define SIMDJSON_KEY_SELECTOR_CONSTEVAL consteval
+#endif
+#endif
+
 #if SIMDJSON_SUPPORTS_CONCEPTS
 
 namespace simdjson {
@@ -45,6 +59,9 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 namespace key_selector_detail {
+
+// Since not constexpr, triggers compile-time error.
+inline void compile_time_error(const char* message) noexcept { (void)message; }
 
 // ============================================================================
 // Compile-time perfect-hash generator.
@@ -89,7 +106,7 @@ constexpr std::size_t char_at(std::string_view key, std::size_t pos) noexcept {
 // lengths differ modulo the table size are separated by the length term in the
 // hash, so they need no position coverage.
 template <std::size_t N>
-consteval std::size_t count_undistinguished_pairs(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL std::size_t count_undistinguished_pairs(
     const std::array<std::string_view, N>& keys,
     const std::size_t* positions,
     std::size_t num_positions,
@@ -112,7 +129,7 @@ consteval std::size_t count_undistinguished_pairs(
 }
 
 template <std::size_t N>
-consteval bool positions_distinguish(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool positions_distinguish(
     const std::array<std::string_view, N>& keys,
     const std::size_t* positions,
     std::size_t num_positions,
@@ -122,7 +139,7 @@ consteval bool positions_distinguish(
 
 // Number of distinct (length % modulus, char_at(key, pos)) pairs at a position.
 template <std::size_t N>
-consteval std::size_t discriminating_power(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL std::size_t discriminating_power(
     const std::array<std::string_view, N>& keys,
     std::size_t pos,
     std::size_t modulus) {
@@ -146,7 +163,7 @@ consteval std::size_t discriminating_power(
 }
 
 template <std::size_t N>
-consteval std::size_t max_key_length(const std::array<std::string_view, N>& keys) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL std::size_t max_key_length(const std::array<std::string_view, N>& keys) {
     std::size_t m = 0;
     for (std::size_t i = 0; i < N; ++i) {
         if (keys[i].size() > m) { m = keys[i].size(); }
@@ -156,7 +173,7 @@ consteval std::size_t max_key_length(const std::array<std::string_view, N>& keys
 
 // Bounded backtracking DFS for a minimal set of distinguishing positions.
 template <std::size_t N>
-consteval bool backtracking_search(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool backtracking_search(
     const std::array<std::string_view, N>& keys,
     const std::size_t* candidates,
     std::size_t num_candidates,
@@ -207,7 +224,7 @@ consteval bool backtracking_search(
 
 // Phase 1: select character positions that distinguish all colliding pairs.
 template <std::size_t N>
-consteval std::size_t select_positions(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL std::size_t select_positions(
     const std::array<std::string_view, N>& keys,
     std::array<std::size_t, MAX_POSITIONS>& positions,
     std::size_t modulus) {
@@ -265,7 +282,8 @@ consteval std::size_t select_positions(
         if (positions_distinguish<N>(keys, positions.data(), num_pos, modulus)) { return num_pos; }
     }
 
-    throw "Failed to find distinguishing positions for perfect hash";
+    compile_time_error("Failed to find distinguishing positions for perfect hash");
+    return 0;
 }
 
 // Result of PHF computation. A max-sized slot_to_key array lets the same struct
@@ -285,7 +303,7 @@ struct phf_result {
 // (position, character) symbol at a time; never revisits a value. Equivalence
 // classes (keys sharing the same undetermined symbols) keep the search cheap.
 template <std::size_t N, std::size_t M>
-consteval bool try_generate_gperf(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool try_generate_gperf(
     const std::array<std::string_view, N>& keys,
     std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
     std::size_t& num_positions,
@@ -433,7 +451,7 @@ consteval bool try_generate_gperf(
 }
 
 template <std::size_t N, std::size_t M>
-consteval bool try_compute_phf(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool try_compute_phf(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
     static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
     std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
     std::size_t npos{};
@@ -452,7 +470,7 @@ consteval bool try_compute_phf(const std::array<std::string_view, N>& keys, phf_
 }
 
 template <std::size_t N, std::size_t M, std::size_t MaxM>
-consteval bool try_gperf_po2(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool try_gperf_po2(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
     if (try_compute_phf<N, M>(keys, result)) { return true; }
     constexpr std::size_t NextM = M * 2;
     if constexpr (NextM <= MaxM) { return try_gperf_po2<N, NextM, MaxM>(keys, result); }
@@ -487,7 +505,7 @@ constexpr std::size_t hd_key_hash_4(std::string_view key) noexcept {
 }
 
 template <std::size_t N, std::size_t M>
-consteval bool try_hash_and_displace(
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool try_hash_and_displace(
     const std::array<std::string_view, N>& keys,
     std::array<std::array<std::size_t, 256>, MAX_POSITIONS>& asso_values,
     std::size_t& num_positions,
@@ -587,7 +605,7 @@ consteval bool try_hash_and_displace(
 }
 
 template <std::size_t N, std::size_t M>
-consteval bool try_compute_phf_hd(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL bool try_compute_phf_hd(const std::array<std::string_view, N>& keys, phf_result<N>& result) {
     static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
     std::array<std::array<std::size_t, 256>, MAX_POSITIONS> asso{};
     std::size_t npos{};
@@ -606,7 +624,7 @@ consteval bool try_compute_phf_hd(const std::array<std::string_view, N>& keys, p
 }
 
 template <std::size_t N, std::size_t M>
-consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>& keys) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>& keys) {
     static_assert(M <= phf_result<N>::MAX_TABLE_SIZE, "Table size M exceeds maximum");
     phf_result<N> result{};
     if (try_compute_phf_hd<N, M>(keys, result)) { return result; }
@@ -614,14 +632,15 @@ consteval phf_result<N> compute_phf_hd_po2(const std::array<std::string_view, N>
     if constexpr (NextM <= phf_result<N>::MAX_TABLE_SIZE) {
         return compute_phf_hd_po2<N, NextM>(keys);
     } else {
-        throw "Hash-and-Displace: failed to find valid table size";
+        compile_time_error("Hash-and-Displace: failed to find valid table size");
+        return result;
     }
 }
 
 // Compute a perfect hash for `keys`: try gperf at power-of-two sizes (capped so
 // the runtime tables stay within uint8 indices), then fall back to H&D.
 template <std::size_t N>
-consteval phf_result<N> compute_phf(const std::array<std::string_view, N>& keys) {
+SIMDJSON_KEY_SELECTOR_CONSTEVAL phf_result<N> compute_phf(const std::array<std::string_view, N>& keys) {
     constexpr std::size_t StartM = next_power_of_2(N);
     constexpr std::size_t GPERF_MAX_TABLE =
         phf_result<N>::MAX_TABLE_SIZE < 256 ? phf_result<N>::MAX_TABLE_SIZE : 256;
@@ -658,18 +677,18 @@ constexpr std::size_t compute_max_key_len(const std::array<std::string_view, N>&
 
 // Validate keys and build the runtime tables from the computed perfect hash.
 template <std::size_t N, std::size_t TableSize, std::size_t MaxKeyLen>
-consteval phf_data<N, TableSize, MaxKeyLen>
+SIMDJSON_KEY_SELECTOR_CONSTEVAL phf_data<N, TableSize, MaxKeyLen>
 build_phf_data(const std::array<std::string_view, N>& keys, const phf_result<N>& result) {
     for (std::size_t i = 0; i < N; ++i) {
-        if (keys[i].empty())            { throw "empty keys are not allowed in key_selector"; }
-        if (keys[i].size() > MaxKeyLen) { throw "key length exceeds MaxKeyLen"; }
+        if (keys[i].empty())            { compile_time_error("empty keys are not allowed in key_selector"); }
+        if (keys[i].size() > MaxKeyLen) { compile_time_error("key length exceeds MaxKeyLen"); }
         for (char c : keys[i]) {
-            if (c == '\\') { throw "backslash not allowed in key_selector keys"; }
-            if (c == '"')  { throw "quote not allowed in key_selector keys"; }
-            if (c == '\0') { throw "null byte not allowed in key_selector keys"; }
+            if (c == '\\') { compile_time_error("backslash not allowed in key_selector keys"); }
+            if (c == '"')  { compile_time_error("quote not allowed in key_selector keys"); }
+            if (c == '\0') { compile_time_error("null byte not allowed in key_selector keys"); }
         }
         for (std::size_t j = i + 1; j < N; ++j) {
-            if (keys[i] == keys[j]) { throw "duplicate keys in key_selector"; }
+            if (keys[i] == keys[j]) { compile_time_error("duplicate keys in key_selector"); }
         }
     }
 
@@ -967,7 +986,7 @@ constexpr unsigned window_value(const std::array<std::string_view, N>& keys,
 }
 
 template <std::size_t N, std::size_t MaxKeyLen>
-consteval window_data<N, MaxKeyLen>
+SIMDJSON_KEY_SELECTOR_CONSTEVAL window_data<N, MaxKeyLen>
 compute_window(const std::array<std::string_view, N>& keys) {
     window_data<N, MaxKeyLen> out{};
 
@@ -1052,7 +1071,7 @@ match_window_candidate(const char* p, std::uint8_t ki,
 // --- describe() string helpers (constexpr; no std::to_string, which is not) ---
 
 // Append the decimal form of v to s.
-SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
+inline SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
     if (v == 0) { s.push_back('0'); return; }
     char buf[20];
     std::size_t n = 0;
@@ -1062,7 +1081,7 @@ SIMDJSON_CONSTEXPR_STRING void append_uint(std::string& s, std::size_t v) {
 
 // Append a byte as its decimal value, plus the printable character in quotes
 // when it is in the printable ASCII range (e.g. "110 ('n')").
-SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
+inline SIMDJSON_CONSTEXPR_STRING void append_byte(std::string& s, unsigned b) {
     append_uint(s, b);
     if (b >= 0x20 && b < 0x7f) {
         s += " ('";

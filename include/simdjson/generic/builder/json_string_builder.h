@@ -51,6 +51,10 @@ namespace builder {
 class string_builder {
 public:
   simdjson_inline string_builder(size_t initial_capacity = DEFAULT_INITIAL_CAPACITY);
+  string_builder(const string_builder &) = delete;
+  string_builder &operator=(const string_builder &) = delete;
+  string_builder(string_builder &&) noexcept = default;
+  string_builder &operator=(string_builder &&) noexcept = default;
 
   static constexpr size_t DEFAULT_INITIAL_CAPACITY = 1024;
 
@@ -153,6 +157,13 @@ public:
   template<constevalutil::fixed_string key, typename value_type>
   simdjson_inline void append_key_value(value_type value) noexcept;
 
+  template<constevalutil::fixed_string key, constevalutil::fixed_string value>
+  simdjson_inline void append_key_value() noexcept;
+
+  template<constevalutil::fixed_string key, auto value>
+  requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
+  simdjson_inline void append_key_value() noexcept;
+
   // Support for optional types (std::optional, etc.)
   template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
@@ -194,6 +205,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    */
   template <size_t N>
   simdjson_inline void append_raw_n(const char *str) noexcept;
+
 #if SIMDJSON_EXCEPTIONS
   /**
    * Creates an std::string from the written JSON buffer.
@@ -235,6 +247,20 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
   simdjson_inline simdjson_result<const char *> c_str() noexcept;
 
   /**
+   * Moves the written JSON buffer into out, replacing its content, without
+   * copying it. When the content fills at most half of the buffer, it is
+   * copied instead, so that a small result does not keep the whole buffer
+   * allocated. The builder is left empty: it keeps its buffer when the
+   * content was copied, and gives up its memory when the buffer was moved.
+   * Returns an error, and leaves out and the builder unchanged, if memory
+   * allocation failed.
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content.
+   */
+  simdjson_warn_unused inline error_code move_to(std::string &out) noexcept;
+
+  /**
    * Return true if the content is valid UTF-8.
    */
   simdjson_inline bool validate_unicode() const noexcept;
@@ -253,7 +279,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
   // forces those reloads when accessed via members of *this). User
   // code should NOT call these directly.
   // ============================================================
-  simdjson_inline char *unsafe_data() noexcept { return buffer.get(); }
+  simdjson_inline char *unsafe_data() noexcept { return buffer_data(); }
   simdjson_inline size_t unsafe_position() const noexcept { return position; }
   simdjson_inline size_t unsafe_capacity() const noexcept { return capacity; }
   simdjson_inline void unsafe_set_position(size_t p) noexcept { position = p; }
@@ -273,6 +299,15 @@ private:
    */
   simdjson_inline bool capacity_check(size_t upcoming_bytes);
 
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_CONSTEVAL
+  /**
+   * Append constevalutil::static_string<Text>. The whole zero-padded array is
+   * copied in 16-byte blocks, but position only advances by the text length.
+   */
+  template <typename Text>
+  simdjson_inline void append_static_string() noexcept;
+#endif
+
   /**
    * Grow the buffer to at least desired_capacity bytes.
    * If the allocation fails, is_valid is set to false. We expect
@@ -285,7 +320,13 @@ private:
    */
   simdjson_inline void set_valid(bool valid) noexcept;
 
-  std::unique_ptr<char[]> buffer{};
+  simdjson_inline char *buffer_data() noexcept { return &buffer[0]; }
+  simdjson_inline const char *buffer_data() const noexcept { return buffer.data(); }
+
+  // We own capacity bytes: buffer.size() == capacity. Only the first position
+  // bytes hold JSON. A std::string lets move_to() hand the result over
+  // without a copy.
+  std::string buffer{};
   size_t position{0};
   size_t capacity{0};
   bool is_valid{true};
@@ -303,20 +344,16 @@ template <class Z>
 simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
-  std::string_view s;
-  auto e = b.view().get(s);
+  std::string s;
+  auto e = b.move_to(s);
   if(e) { return e; }
-  return std::string(s);
+  return s;
 }
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
   b.append(z);
-  std::string_view sv;
-  auto e = b.view().get(sv);
-  if(e) { return e; }
-  s.assign(sv.data(), sv.size());
-  return simdjson::SUCCESS;
+  return b.move_to(s);
 }
 #endif
 

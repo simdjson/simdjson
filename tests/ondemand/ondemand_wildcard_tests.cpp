@@ -507,6 +507,256 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  bool wildcard_skip_nonmatching_elements_issue_2906() {
+    TEST_START();
+
+    // 1. Missing field in array wildcard: elements without "id" are skipped;
+    // subsequent elements match.
+    {
+      auto json = R"({"items":[{"id":1},{"other":2},{"id":3},{"id":4}]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      std::vector<int64_t> ids;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.items[*].id", [&](ondemand::value v) {
+            int64_t val;
+            if (v.get_int64().get(val) == SUCCESS) {
+              ids.push_back(val);
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(ids.size(), 3);
+      ASSERT_EQUAL(ids[0], 1);
+      ASSERT_EQUAL(ids[1], 3);
+      ASSERT_EQUAL(ids[2], 4);
+    }
+
+    // 2. Missing field in object wildcard: fields without "id" are skipped.
+    {
+      auto json = R"({"k1":{"id":1},"k2":{"other":2},"k3":{"id":3}})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      std::vector<int64_t> ids;
+      auto error =
+          doc.for_each_at_path_with_wildcard("$.*.id", [&](ondemand::value v) {
+            int64_t val;
+            if (v.get_int64().get(val) == SUCCESS) {
+              ids.push_back(val);
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(ids.size(), 2);
+      ASSERT_EQUAL(ids[0], 1);
+      ASSERT_EQUAL(ids[1], 3);
+    }
+
+    // 3. Deeper missing field: $.items[*].a.b where one "a" is {} or scalar.
+    {
+      auto json =
+          R"({"items":[{"a":{"b":1}},{"a":{}},{"a":123},{"a":{"b":4}}]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      std::vector<int64_t> vals;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.items[*].a.b", [&](ondemand::value v) {
+            int64_t val;
+            if (v.get_int64().get(val) == SUCCESS) {
+              vals.push_back(val);
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(vals.size(), 2);
+      ASSERT_EQUAL(vals[0], 1);
+      ASSERT_EQUAL(vals[1], 4);
+    }
+
+    // 4. Scalar and array elements in array wildcard with field path.
+    {
+      auto json = R"({"items":[{"id":1},42,[1,2],{"id":3}]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      std::vector<int64_t> ids;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.items[*].id", [&](ondemand::value v) {
+            int64_t val;
+            if (v.get_int64().get(val) == SUCCESS) {
+              ids.push_back(val);
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(ids.size(), 2);
+      ASSERT_EQUAL(ids[0], 1);
+      ASSERT_EQUAL(ids[1], 3);
+    }
+
+    // 5. Array index after wildcard: $.items[*][0] skips empty arrays and
+    // non-arrays.
+    {
+      auto json = R"({"items":[[10,20],[],{"not":"array"},[30,40]]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      std::vector<int64_t> firsts;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.items[*][0]", [&](ondemand::value v) {
+            int64_t val;
+            if (v.get_int64().get(val) == SUCCESS) {
+              firsts.push_back(val);
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(firsts.size(), 2);
+      ASSERT_EQUAL(firsts[0], 10);
+      ASSERT_EQUAL(firsts[1], 30);
+    }
+
+    // 6. Missing field before wildcard: returns SUCCESS with 0 elements.
+    {
+      auto json = R"({"items":[{"id":1}]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      size_t count = 0;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.missing[*].id", [&](ondemand::value) { count++; });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(count, 0);
+    }
+
+    // 7. Plain index segments: $.matrix[0][1].
+    {
+      auto json = R"({"matrix":[[10,20],[30,40]]})"_padded;
+      ondemand::parser parser;
+      auto doc = parser.iterate(json);
+      int64_t val = 0;
+      size_t count = 0;
+      auto error = doc.for_each_at_path_with_wildcard(
+          "$.matrix[0][1]", [&](ondemand::value v) {
+            count++;
+            if (v.get_int64().get(val) != SUCCESS) {
+              val = -1;
+            }
+          });
+      ASSERT_SUCCESS(error);
+      ASSERT_EQUAL(count, 1);
+      ASSERT_EQUAL(val, 20);
+    }
+
+    TEST_SUCCEED();
+  }
+
+  // Bracketed index segments follow the same rules as DOM: no leading zeros,
+  // and an index that does not fit in size_t is out of bounds (it must not
+  // wrap around to a valid index).
+  bool wildcard_index_segment_validation() {
+    TEST_START();
+    auto json = R"({"a":[10,20,30],"items":[{"a":[1,2]},{"a":[3]}]})"_padded;
+    struct test_case { const char *path; simdjson::error_code expected; size_t count; };
+    const test_case cases[] = {
+      {"$.a[1]", SUCCESS, 1},
+      {"$.a[01]", INVALID_JSON_POINTER, 0},
+      {"$.a[007]", INVALID_JSON_POINTER, 0},
+      {"$.a[3]", INDEX_OUT_OF_BOUNDS, 0},
+      {"$.a[18446744073709551616]", INDEX_OUT_OF_BOUNDS, 0},
+      {"$.a[18446744073709551618]", INDEX_OUT_OF_BOUNDS, 0},
+      {"$.a.18446744073709551618", INDEX_OUT_OF_BOUNDS, 0},
+      {"$.items[*].a[1]", SUCCESS, 1},
+      {"$.items[*].a[01]", SUCCESS, 0},
+      {"$.items[*].a[18446744073709551617]", SUCCESS, 0},
+      {"$.a[9][*]", SUCCESS, 0},
+    };
+    for (const auto &c : cases) {
+      ondemand::parser parser;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      size_t count = 0;
+      auto error = doc.for_each_at_path_with_wildcard(c.path, [&](ondemand::value) { count++; });
+      std::cout << "  " << c.path << " -> " << error << " (" << count << ")" << std::endl;
+      ASSERT_ERROR(error, c.expected);
+      ASSERT_EQUAL(count, c.count);
+    }
+    TEST_SUCCEED();
+  }
+
+  // A path that cannot be parsed after a wildcard is reported, whatever the
+  // document, instead of silently matching nothing.
+  bool malformed_path_after_wildcard() {
+    TEST_START();
+    const char *malformed[] = {
+      R"($.a[*]['b)",
+      R"($.a[*][1)",
+      R"($.a[*][1x])",
+      R"($.a[*][b])",
+      R"($.a[*].b[)",
+      R"($.a[*]b)",
+      R"($.*.b[0)",
+      R"($.a[*][*)",
+      R"($[*]x)",
+      R"($.missing[*][1)",
+    };
+    for (const char *source : {R"({"a":[{"b":[1]},{"b":[2]}]})", R"([[{"b":[1]}]])", "[]", "5"}) {
+      const padded_string json(std::string_view{source});
+      for (const char *path : malformed) {
+        std::cout << "  " << json << " " << path << std::endl;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t count = 0;
+        ASSERT_ERROR(doc.for_each_at_path_with_wildcard(path, [&](ondemand::value) { count++; }), INVALID_JSON_POINTER);
+        ASSERT_EQUAL(count, 0);
+      }
+    }
+    // The array, object and value entry points check the path too.
+    auto json = R"({"o":{"a":[{"b":1}]},"v":[[{"b":1}]]})"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object o;
+    ASSERT_SUCCESS(doc["o"].get_object().get(o));
+    ASSERT_ERROR(o.for_each_at_path_with_wildcard("$.a[*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    ondemand::value v;
+    ASSERT_SUCCESS(doc["v"].get(v));
+    ASSERT_ERROR(v.for_each_at_path_with_wildcard("$[*][*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array a;
+    ASSERT_SUCCESS(doc["v"].get_array().get(a));
+    ASSERT_ERROR(a.for_each_at_path_with_wildcard("$[*][*]['b", [](ondemand::value) {}), INVALID_JSON_POINTER);
+    TEST_SUCCEED();
+  }
+
+  // The path is split once, not again at every value the wildcards reach: a
+  // long path after a couple of wildcards on a large document used to take
+  // O(values * path length) time (OSS-Fuzz 6599621728862208).
+  bool long_path_after_wildcards() {
+    TEST_START();
+    std::string json = "[";
+    for (size_t i = 0; i < 2000; i++) {
+      if (i > 0) { json += ","; }
+      json += R"([{"k":[7]},{"k":[8]},{"j":0},3,{"k":[]}])";
+    }
+    json += "]";
+    padded_string padded(json);
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::vector<int64_t> values;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k[0]", [&](ondemand::value v) {
+      int64_t value = 0;
+      if (v.get_int64().get(value) == SUCCESS) { values.push_back(value); }
+    }));
+    ASSERT_EQUAL(values.size(), 4000);
+    ASSERT_EQUAL(values[0], 7);
+    ASSERT_EQUAL(values[1], 8);
+    size_t count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k.*", [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 4000);
+    const std::string long_key(1000000, 'x');
+    count = 0;
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*." + long_key, [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 0);
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$.*.*.k." + long_key + ".*", [&](ondemand::value) { count++; }));
+    ASSERT_EQUAL(count, 0);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return array_wildcard_basic() &&
            array_wildcard_numbers() &&
@@ -523,7 +773,11 @@ namespace wildcard_tests {
            wildcard_raw_json_issue_2684() &&
            unterminated_bracket_quote() &&
            wildcard_malformed_deterministic_fuzz() &&
-           deeply_nested_wildcard();
+           deeply_nested_wildcard() &&
+           wildcard_skip_nonmatching_elements_issue_2906() &&
+           wildcard_index_segment_validation() &&
+           malformed_path_after_wildcard() &&
+           long_path_after_wildcards();
   }
 }
 

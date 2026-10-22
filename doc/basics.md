@@ -330,8 +330,8 @@ codepage, and they may call SetFileApisToOEM accordingly.
 
 Some users may want to browse code along with the compiled assembly:
 
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/5jaofeq48)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/K3M6Y4Knc)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/jMcYM43Ed)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/rWMTs68rv)
 
 **Summary of input types:**
 
@@ -2244,6 +2244,8 @@ x = obj.at_path("$.d.foo2.a.2"); // 30
 The `for_each_at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. It calls a user-provided callback for each matching element, avoiding the need to materialize all results into a vector. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.
 
 The `*` wildcard matches all elements at a specific level. For instance, `$.address.*` retrieves all key-value pairs in the `address` object, while `$.*.streetAddress` fetches all `streetAddress` fields across objects at the root level. You can combine wildcards with array indexing. For example, `$.phoneNumbers[*].numbers[1]` retrieves the second number from each `numbers` array in the `phoneNumbers` array. If no elements match the wildcard query, the callback is simply never called. For instance, querying `$.empty_object.*` or `$.empty_array.*` will yield no callbacks.
+
+As in the DOM function `at_path_with_wildcard` and in RFC 9535, an element that does not match the rest of the path is skipped: given `{"items":[{"id":1},{"other":2},{"id":3}]}`, the query `$.items[*].id` calls the callback for `1` and `3` and returns `SUCCESS`. A missing field or an out-of-bounds index before a wildcard (e.g., `$.missing[*].id`) also yields no callbacks and returns `SUCCESS`. Without a wildcard, a path that matches nothing returns an error (e.g., `NO_SUCH_FIELD` or `INDEX_OUT_OF_BOUNDS`). Document errors (e.g., `TAPE_ERROR` or `DEPTH_ERROR`) are always returned, and so is `INVALID_JSON_POINTER` for a path that cannot be parsed, even after a wildcard (e.g., `$.items[*]['id` or `$.items[*][1x]`). Array indexes can be written with brackets (`$.matrix[0][1]`) or with a dot (`$.matrix.0.1`); an index with a leading zero (`[01]`) is invalid.
 
 ### Example Usage
 
@@ -4375,7 +4377,7 @@ Performance tips
 - Read [our performance notes](performance.md) for advanced topics.
 - To better understand the operation of your On-Demand parser, and whether it is performing as well as you think it should be, there is a  logger feature built in to simdjson! To use it, define the pre-processor directive `SIMDJSON_VERBOSE_LOGGING` prior to including the `simdjson.h` header, which enables logging in simdjson. Run your code. It may generate a lot of logging output; adding printouts from your application that show each section may be helpful. The log's output will show step-by-step information on state, buffer pointer position, depth, and key retrieval status. Importantly, unless `SIMDJSON_VERBOSE_LOGGING` is defined, logging is entirely disabled and thus carries no overhead.
 - The On-Demand front-end works best when doing a single pass over the input: avoid calling `count_elements`, `rewind`, `reset` and similar methods.
-- If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. See [this example](https://godbolt.org/z/d8E57scTP).
+- If you are familiar with assembly language, you may use the online tool godbolt to explore the compiled code. See [this example](https://godbolt.org/z/cWxMrxnna).
 - Given a field `field` in an object, calling `field.key()` is often faster than `field.unescaped_key()` so if you do not need an unescaped `std::string_view` instance, prefer `field.key()`. Similarly, we expect `field.escaped_key()` to be faster than `field.unescaped_key()` even though both return a `std::string_view` instance.
 - For release builds, we recommend setting the `NDEBUG` pre-processor directive when compiling the `simdjson` library. Importantly, using the optimization flags `-O2` or `-O3` under GCC and LLVM clang does not set the `NDEBUG` directive, you must set it manually (e.g., `-DNDEBUG`).
 - For long streams of JSON documents, consider [`iterate_many`](iterate_many.md) and [`parse_many`](parse_many.md) for better performance.

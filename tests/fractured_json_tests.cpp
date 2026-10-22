@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "simdjson.h"
 #include "test_macros.h"
@@ -839,6 +840,89 @@ bool control_characters_test() {
   return true;
 }
 
+// Regression test: table column padding with a string containing a tab
+// (control character emitted as \t) inside an array of objects, which
+// triggers FracturedJson's table-formatting path.
+bool table_format_tab_control_char_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  // Original bug-report input, but force table mode with a tight line budget.
+  const char* json =
+      "[{\"a\":\"\\u0000\",\"b\":\"x\"},{\"a\":\"hello\",\"b\":\"y\"}]";
+
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  auto error = parser.parse(json, strlen(json)).get(doc);
+  if (error) {
+    std::cerr << "Parse error: " << error << std::endl;
+    return false;
+  }
+
+  // First, show default output (inline expected).
+  auto formatted_default = simdjson::fractured_json(doc);
+  std::cout << "DEFAULT: " << formatted_default << std::endl;
+
+  // Force table mode with a tight max_total_line_length.
+  simdjson::fractured_json_options opts;
+  opts.enable_table_format = true;
+  opts.max_total_line_length = 40;
+
+  auto formatted = simdjson::fractured_json(doc, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+
+  // The formatter must still emit valid JSON.
+  error = parser.parse(formatted).get(doc);
+  if (error) {
+    std::cerr << "Re-parse error: " << error << std::endl;
+    return false;
+  }
+
+  // Split formatted output into lines.
+  std::vector<std::string> lines;
+  {
+    std::istringstream iss(formatted);
+    std::string line;
+    while (std::getline(iss, line)) {
+      lines.push_back(line);
+    }
+  }
+
+  // Find the two object rows: lines containing "\"b\"" (the second column).
+  // There must be exactly two such lines -- one per row.
+  std::vector<std::string> rows;
+  for (const auto& line : lines) {
+    if (line.find("\"b\"") != std::string::npos &&
+        line.find("\"a\"") != std::string::npos) {
+      rows.push_back(line);
+    }
+  }
+  if (rows.size() != 2) {
+    std::cerr << "Expected 2 table rows, got " << rows.size() << std::endl;
+    for (const auto& l : lines) std::cerr << "  [" << l << "]\n";
+    return false;
+  }
+
+  // Column "b" must start at the same horizontal index in both rows.
+  size_t col_b_row1 = rows[0].find("\"b\"");
+  size_t col_b_row2 = rows[1].find("\"b\"");
+  std::cout << "Row 1: [" << rows[0] << "]  col b at " << col_b_row1 << std::endl;
+  std::cout << "Row 2: [" << rows[1] << "]  col b at " << col_b_row2 << std::endl;
+
+  if (col_b_row1 == std::string::npos || col_b_row2 == std::string::npos) {
+    std::cerr << "Column \"b\" not found in one of the rows" << std::endl;
+    return false;
+  }
+  if (col_b_row1 != col_b_row2) {
+    std::cerr << "Column misalignment: \"b\" at " << col_b_row1
+              << " vs " << col_b_row2
+              << " (delta " << (col_b_row1 - col_b_row2) << ")" << std::endl;
+    return false;
+  }
+
+  std::cout << "Table format tab control char test passed." << std::endl;
+  return true;
+}
+
 // Test single element containers
 bool single_element_test() {
   std::cout << "Running " << __func__ << std::endl;
@@ -1239,6 +1323,55 @@ bool nested_array_respects_max_total_line_length_test() {
   return true;
 }
 
+// An inline value in an expanded object shares its line with the key, so the
+// key, the colon and its padding count toward max_total_line_length.
+bool object_key_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"({"a_long_key":[1,2,3],"another_key":{"c":true}})";
+  simdjson::fractured_json_options opts;
+
+  // "    "a_long_key": [1, 2, 3]," is exactly 28 wide.
+  opts.max_total_line_length = 28;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\": [1, 2, 3],\n"
+      "    \"another_key\": {\n"
+      "        \"c\": true\n"
+      "    }\n"
+      "}");
+
+  opts.max_total_line_length = 27;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\": [\n"
+      "        1, 2, 3\n"
+      "    ],\n"
+      "    \"another_key\": {\n"
+      "        \"c\": true\n"
+      "    }\n"
+      "}");
+
+  // Without colon padding the key takes one character less.
+  opts.colon_padding = false;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"a_long_key\":[1, 2, 3],\n"
+      "    \"another_key\":{\n"
+      "        \"c\":true\n"
+      "    }\n"
+      "}");
+
+  std::cout << "Object key counted in length test passed." << std::endl;
+  return true;
+}
+
 bool compact_multiline_item_respects_max_total_line_length_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -1306,6 +1439,53 @@ bool trailing_comma_counted_in_length_test() {
   ASSERT_EQUAL(formatted, expected);
 
   std::cout << "Trailing comma counted in length test passed." << std::endl;
+  return true;
+}
+
+// A compact multiline row of mixed (non-uniform) items must count the space
+// before an item and the comma after it when deciding whether the item still
+// fits on the current line.
+bool compact_multiline_mixed_row_counts_separators_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"([true,"abc",12345,false,"de",null,678])";
+  simdjson::fractured_json_options opts;
+
+  // "    true, "abc", 12345," is 23 wide; " false," would make it 30.
+  opts.max_total_line_length = 29;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true, \"abc\", 12345,\n"
+      "    false, \"de\", null, 678\n"
+      "]");
+
+  // "    false, "de", null," is 22 wide; " 678" (the last item, so no comma)
+  // would make it 26.
+  opts.max_total_line_length = 25;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true, \"abc\", 12345,\n"
+      "    false, \"de\", null,\n"
+      "    678\n"
+      "]");
+
+  // Without comma padding only the trailing comma is added:
+  // "    true,"abc",12345," is 21 wide; "false," would make it 27.
+  opts.comma_padding = false;
+  opts.max_total_line_length = 26;
+  formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    true,\"abc\",12345,\n"
+      "    false,\"de\",null,678\n"
+      "]");
+
+  std::cout << "Compact multiline mixed row separators test passed." << std::endl;
   return true;
 }
 
@@ -1412,6 +1592,27 @@ bool always_expand_depth_test() {
   }
 
   std::cout << "Always expand depth test passed." << std::endl;
+  return true;
+}
+
+// always_expand_depth applies to the depth a value is rendered at, not to the
+// children of a value written inline: those must be written inline too, with
+// the usual comma padding and no table padding.
+bool always_expand_depth_inline_children_test() {
+  std::cout << "Running " << __func__ << std::endl;
+
+  std::string json = R"({"b":[[1,2],[4,555]],"c":{"d":{"e":1,"f":2}}})";
+  simdjson::fractured_json_options opts;
+  opts.always_expand_depth = 0;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  std::cout << "Formatted:\n" << formatted << std::endl;
+  ASSERT_EQUAL(formatted,
+      "{\n"
+      "    \"b\": [ [1, 2], [4, 555] ],\n"
+      "    \"c\": { \"d\": {\"e\": 1, \"f\": 2} }\n"
+      "}");
+
+  std::cout << "Always expand depth inline children test passed." << std::endl;
   return true;
 }
 
@@ -2196,6 +2397,60 @@ bool table_format_duplicate_key_test() {
   return true;
 }
 
+// Null is a value, not a missing row or cell. It must survive formatting
+// alongside objects or arrays, including recursively aligned columns.
+bool table_format_null_container_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  const std::string inputs[] = {
+      R"([{"a":{"x":1}},{"a":null}])",
+      R"([{"a":[1]},{"a":null}])",
+      R"([[[1]],[null]])",
+      R"([[{"x":1}],[null]])",
+      R"([null,{"a":1},{"a":22},null])",
+      R"([null,[1],[22],null])",
+      R"([{"a":{"x":1}},{"a":null},{"a":{"x":2}}])",
+      R"([[[{"x":1}],[null]]])",
+  };
+  simdjson::fractured_json_options options[3];
+  // Exercise defaults, table layout, and aligned compact multiline layout.
+  options[1].max_inline_complexity = 0;
+  options[1].enable_compact_multiline = false;
+  options[2].max_inline_complexity = 0;
+  options[2].enable_table_format = false;
+  options[2].min_compact_array_row_items = 1;
+  for (const auto& opts : options) {
+    for (const auto& json : inputs) {
+      auto formatted = simdjson::fractured_json_string(json, opts);
+      ASSERT_TRUE(same_content(json, formatted));
+    }
+  }
+  std::cout << "Table format null container test passed." << std::endl;
+  return true;
+}
+
+// Regression test: a double column in a table must align like any other.
+// estimate_number_length(double) used snprintf("%.17g"), which over-counts
+// against the shortest form base_formatter emits with to_chars (0.1 is
+// "0.10000000000000001", 19 chars, but serializes as "0.1"). The column width
+// came out 19, so one row padded to 19 and the other did not, and the next
+// column no longer lined up.
+bool table_format_double_column_alignment_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  std::string json = R"([{"x":0.5,"y":1},{"x":0.1,"y":2}])";
+  simdjson::fractured_json_options opts;
+  opts.enable_table_format = true;
+  opts.max_total_line_length = 40;
+  auto formatted = simdjson::fractured_json_string(json, opts);
+  ASSERT_EQUAL(formatted,
+      "[\n"
+      "    {\"x\": 0.5, \"y\": 1},\n"
+      "    {\"x\": 0.1, \"y\": 2}\n"
+      "]");
+  ASSERT_TRUE(same_content(json, formatted));
+  std::cout << "Table format double column alignment test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2225,6 +2480,7 @@ int main() {
   success = large_array_test() && success;
   success = reflection_workflow_test() && success;
   success = control_characters_test() && success;
+  success = table_format_tab_control_char_test() && success;
   success = single_element_test() && success;
 
   // Option tests
@@ -2240,10 +2496,13 @@ int main() {
   success = compact_multiline_breaks_after_expanded_item_test() && success;
   success = nested_object_respects_max_total_line_length_test() && success;
   success = nested_array_respects_max_total_line_length_test() && success;
+  success = object_key_counted_in_length_test() && success;
   success = compact_multiline_item_respects_max_total_line_length_test() && success;
   success = trailing_comma_counted_in_length_test() && success;
+  success = compact_multiline_mixed_row_counts_separators_test() && success;
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
+  success = always_expand_depth_inline_children_test() && success;
   success = table_format_union_columns_with_blank_padding_test() && success;
   success = table_format_respects_max_total_line_length_test() && success;
   success = table_nested_cell_padding_test() && success;
@@ -2260,9 +2519,11 @@ int main() {
   success = number_alignment_test() && success;
   success = table_format_empty_key_test() && success;
   success = table_format_duplicate_key_test() && success;
+  success = table_format_null_container_test() && success;
+  success = table_format_double_column_alignment_test() && success;
 
   if (success) {
-    std::cout << "\nAll fractured_json tests passed! (" << 54 << " tests)" << std::endl;
+    std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;
     return EXIT_SUCCESS;
   } else {
     std::cerr << "\nSome tests failed!" << std::endl;

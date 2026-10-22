@@ -289,8 +289,11 @@ public:
   /**
    * Updates this json iterator so that it is back at the beginning of the document,
    * as if it had just been created.
+   *
+   * An iterator that is no longer alive (e.g., abandoned after a fatal error) has no
+   * document to go back to: it is left as is and its error is returned.
    */
-  inline void rewind() noexcept;
+  simdjson_inline error_code rewind() noexcept;
   /**
    * This checks whether the {,},[,] are balanced so that the document
    * ends with proper zero depth. This requires scanning the whole document

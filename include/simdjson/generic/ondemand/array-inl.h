@@ -103,10 +103,9 @@ simdjson_inline simdjson_result<std::string_view> array::raw_json() noexcept {
   const uint8_t * starting_point{iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  // After 'consume()', we could be left pointing just beyond the document, but that
-  // is ok because we are not going to dereference the final pointer position, we just
-  // use it to compute the length in bytes.
-  const uint8_t * final_point{iter._json_iter->unsafe_pointer()};
+  // After 'consume()', the last token consumed is the closing bracket: we end on it
+  // rather than on the next token, which may follow white space.
+  const uint8_t * final_point{iter._json_iter->token.peek(-1) + 1};
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -152,7 +151,9 @@ simdjson_inline void array::set_locked(bool _locked) noexcept {
 #endif
 
 inline simdjson_result<value> array::at_pointer(std::string_view json_pointer) noexcept {
-  if (json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
+  // An empty pointer has no json_pointer[0]: with a default-constructed
+  // std::string_view, reading it dereferences a null pointer.
+  if (json_pointer.empty() || json_pointer[0] != '/') { return INVALID_JSON_POINTER; }
   json_pointer = json_pointer.substr(1);
   // - means "the append position" or "the element after the end of the array"
   // We don't support this, because we're returning a real element, not a position.
@@ -188,12 +189,23 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code array::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  auto result_pair = get_next_key_and_json_path(json_path);
-  std::string_view key = result_pair.first;
-  std::string_view remaining_path = result_pair.second;
+  // The path is split once: every element reached by a wildcard sees the same
+  // remaining path, so re-parsing it at each one would be quadratic.
+  const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);
+  // A path that cannot be parsed matches nothing, whatever the document: say
+  // so rather than letting the walk skip it as a mismatch below a wildcard.
+  if (path.back().key.empty()) {
+    return INVALID_JSON_POINTER;
+  }
+  return for_each_at_path_segments(path, 0, callback);
+}
+
+template <typename Func>
+inline error_code array::for_each_at_path_segments(const std::vector<internal::json_path_segment> &path, size_t index, Func &callback) noexcept {
+  std::string_view key = path[index].key;
+  const bool last = index + 1 == path.size();
   // Empty key means the path segment could not be parsed (including malformed
-  // bracket-quoted keys). Without this check, an empty key is treated as index
-  // 0 and remaining_path may be unchanged, causing infinite recursion.
+  // bracket-quoted keys).
   if (key.empty()) {
     return INVALID_JSON_POINTER;
   }
@@ -202,33 +214,39 @@ inline error_code array::for_each_at_path_with_wildcard(std::string_view json_pa
     for(auto element: *this) {
       value val;
         SIMDJSON_TRY(element.get(val));
-      if (remaining_path.empty()) {
+      if (last) {
         callback(val);
       } else {
-        error_code err = element.for_each_at_path_with_wildcard(remaining_path, callback);
-        if(err) { return err; }
+        // An element that does not match the rest of the path is skipped.
+        error_code err = val.for_each_at_path_segments(path, index + 1, callback);
+        if (err && !internal::is_matching_failure_error(err)) { return err; }
       }
     }
     return SUCCESS;
   } else {
     // Specific index case in which we access the element at the given index
-    size_t idx = 0;
-
     for (char c : key) {
       if(c < '0' || c > '9'){
         return INVALID_JSON_POINTER;
       }
-      idx = idx*10 + (c - '0');
     }
-
-    auto element = at(idx);
+    // Rejects leading zeros and indexes that overflow size_t, as DOM does.
+    size_t idx;
+    size_t idx_length;
+    error_code error = internal::parse_json_pointer_array_index(key, idx, idx_length);
     value val;
-    SIMDJSON_TRY(element.get(val));
-    if (remaining_path.empty()){
+    if (!error) { error = at(idx).get(val); }
+    if (error) {
+      if (error == INDEX_OUT_OF_BOUNDS && path[index].wildcard_follows) {
+        return SUCCESS;
+      }
+      return error;
+    }
+    if (last){
       callback(val);
       return SUCCESS;
     } else {
-      return element.for_each_at_path_with_wildcard(remaining_path, callback);
+      return val.for_each_at_path_segments(path, index + 1, callback);
     }
   }
 }

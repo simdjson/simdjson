@@ -352,6 +352,13 @@ simdjson_inline bool document_stream::skip_to_delimiter(uint8_t delimiter) noexc
 }
 
 inline void document_stream::next_document() noexcept {
+  // Iteration stops at the first document that met a fatal error. The error
+  // may have abandoned the document's iterator, which then no longer has a
+  // parser to walk the rest of the document with.
+  if (!doc.iter.is_alive() || doc.iter.error) {
+    error = doc.iter.error ? doc.iter.error : TAPE_ERROR;
+    return;
+  }
   // A delimiter that cannot occur inside a document tells us where the current
   // one ends, so we can jump there instead of walking every structural. Only
   // valid while the iterator is still inside the document: a consumed document
@@ -501,7 +508,10 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
     cur_struct_index++;
   }
 
-  while (cur_struct_index <= static_cast<int64_t>(stream->parser->implementation->n_structural_indexes)) {
+  // The structural index at n_structural_indexes is the end of the batch, not
+  // a token: it must not be read as a closing bracket.
+  const int64_t n_structural_indexes = static_cast<int64_t>(stream->parser->implementation->n_structural_indexes);
+  while (cur_struct_index < n_structural_indexes) {
     switch (stream->buf[stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index]]) {
       case '{': case '[':
         depth++;
@@ -512,6 +522,11 @@ simdjson_inline std::string_view document_stream::iterator::source() const noexc
     }
     if (depth == 0) { break; }
     cur_struct_index++;
+  }
+  // An invalid last document such as "[1 2" is never closed: it runs to the
+  // end of the batch, and not one byte past it.
+  if (cur_struct_index >= n_structural_indexes) {
+    return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->batch_start + stream->parser->implementation->structural_indexes[cur_struct_index] - current_index());
   }
 
   return std::string_view(reinterpret_cast<const char*>(stream->buf) + current_index(), stream->parser->implementation->structural_indexes[cur_struct_index] - current_index() + stream->batch_start + 1);;
@@ -529,7 +544,12 @@ inline void document_stream::load_from_stage1_thread() noexcept {
   // enough memory to swap to, as well.
   std::swap(stage1_thread_parser,*parser);
   error = stage1_thread_error;
-  if (error) { return; }
+  // An EMPTY batch (no complete document in it, e.g. a run of white space at
+  // least batch_size long) is not the end of the stream: next() moves on to
+  // the batch after it, so queue that batch now as we would after a success.
+  // Returning here would leave no job for the next call, which then swaps
+  // the stale previous batch back in and ends the stream early.
+  if (error && error != EMPTY) { return; }
 
   // If there's anything left, start the stage 1 thread!
   if (next_batch_start() < len) {

@@ -80,4 +80,44 @@ bool minify_test() {
   return true;
 }
 
-int main() { return minify_test() ? EXIT_SUCCESS : EXIT_FAILURE; }
+// Each integer at a digit-count boundary, and the extremes, must come back
+// unchanged from minify.
+bool integer_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  std::vector<std::string> numbers = {"0", "-1", "-9223372036854775808",
+                                      "9223372036854775807",
+                                      "18446744073709551615"};
+  uint64_t power = 1;
+  for (int digits = 1; digits <= 19; digits++) {
+    numbers.push_back(std::to_string(power));
+    numbers.push_back(std::to_string(power - 1));
+    // "-" + std::to_string(...) inserts into a temporary and trips GCC bug
+    // 105329 (-Wrestrict) at -O3 on the Ubuntu 22.04 GCC 12 job.
+    std::string negative("-");
+    negative += std::to_string(power);
+    numbers.push_back(std::move(negative));
+    power *= 10;
+  }
+  numbers.push_back(std::to_string(power));
+  numbers.push_back(std::to_string(power - 1));
+  simdjson::dom::parser parser;
+  for (const std::string &number : numbers) {
+    std::string json = "[" + number + "]";
+    simdjson::dom::element doc;
+    auto error = parser.parse(json).get(doc);
+    if (error) {
+      std::cerr << "could not parse " << json << ": " << error << std::endl;
+      return false;
+    }
+    std::string minified = simdjson::minify(doc);
+    if (minified != json) {
+      std::cerr << "minify(" << json << ") gave " << minified << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+int main() {
+  return minify_test() && integer_test() ? EXIT_SUCCESS : EXIT_FAILURE;
+}

@@ -130,9 +130,9 @@ Godbolt
 -------------
 
 Some users may want to browse code along with the compiled assembly. The following examples use simdjson 5.0.1:
-* [C++26 reflection example](https://godbolt.org/z/vc5j1vzje)
-* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/5jaofeq48)
-* [simdjson examples with errors without exceptions](https://godbolt.org/z/K3M6Y4Knc)
+* [C++26 reflection example](https://godbolt.org/z/zf6Mzn4Kx)
+* [simdjson examples with errors handled through exceptions](https://godbolt.org/z/jMcYM43Ed)
+* [simdjson examples with errors without exceptions](https://godbolt.org/z/rWMTs68rv)
 
 Performance results
 -------------------
@@ -186,6 +186,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
+- [SimdJson.Net](https://github.com/zcsizmadia/SimdJson.Net): .NET bindings for the On-Demand API, shipped as a NuGet package with prebuilt native libraries.
 - [simdjson_nodejs](https://github.com/luizperes/simdjson_nodejs): Node.js bindings for the simdjson project.
 - [simdjson_php](https://github.com/crazyxman/simdjson_php): PHP bindings for the simdjson project.
 - [simdjson_ruby](https://github.com/saka1/simdjson_ruby): Ruby bindings for the simdjson project.

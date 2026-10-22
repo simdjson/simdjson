@@ -33,7 +33,8 @@ simdjson_inline document document::start(json_iterator &&iter) noexcept {
 }
 
 inline void document::rewind() noexcept {
-  iter.rewind();
+  // A document that is no longer alive is left as it is (see is_alive()).
+  static_cast<void>(iter.rewind());
 }
 
 inline std::string document::to_debug_string() noexcept {
@@ -333,7 +334,13 @@ simdjson_warn_unused simdjson_inline error_code document::consume() noexcept {
   auto error = is_scalar().get(scalar);
   if(error) { return error; }
   if(scalar) {
-    iter.return_current_and_advance();
+    // Step over the scalar and leave depth 0, as skip_child() does: otherwise a
+    // document_stream takes the next document as the rest of this one. At depth
+    // 0 the scalar has already been consumed (e.g., by get_int64()).
+    if(iter.depth() > 0) {
+      iter.return_current_and_advance();
+      iter.ascend_to(0);
+    }
     return SUCCESS;
   }
   error = iter.skip_child(0);
@@ -346,10 +353,36 @@ simdjson_inline simdjson_result<std::string_view> document::raw_json() noexcept 
   const uint8_t * starting_point{_iter.peek_start()};
   auto error = consume();
   if(error) { return error; }
-  // After 'consume()', we could be left pointing just beyond the document, but that
-  // is ok because we are not going to dereference the final pointer position, we just
-  // use it to compute the length in bytes.
-  const uint8_t * final_point{iter.unsafe_pointer()};
+  // After 'consume()', the iterator points at the token after the document. In a
+  // document_stream, that is the next document, past white space and separators, or
+  // the end of the input when a truncated document follows. We end on the last byte
+  // of this document instead.
+  const uint8_t * final_point;
+  if(*starting_point == '{' || *starting_point == '[') {
+    // The last token consumed is the closing brace or bracket.
+    final_point = iter.token.peek(-1) + 1;
+  } else {
+    // A scalar is a single token: a string ends at its closing quote, anything else
+    // at the first white space, structural character, quote, RS (0x1E) or NUL.
+    const uint8_t * next_token{iter.unsafe_pointer()};
+    final_point = starting_point + 1;
+    if(*starting_point == '"') {
+      while(final_point < next_token) {
+        uint8_t c = *final_point++;
+        if(c == '\\') {
+          final_point++;
+        } else if(c == '"') {
+          break;
+        }
+      }
+      if(final_point > next_token) { final_point = next_token; }
+    } else {
+      while(final_point < next_token && !jsoncharutils::is_structural_or_whitespace(*final_point)
+            && *final_point != '"' && *final_point != 0x1E && *final_point != 0) {
+        final_point++;
+      }
+    }
+  }
   return std::string_view(reinterpret_cast<const char*>(starting_point), size_t(final_point - starting_point));
 }
 
@@ -396,7 +429,9 @@ simdjson_inline simdjson_result<std::string_view> document::raw_json_token() noe
 }
 
 simdjson_inline simdjson_result<value> document::at_pointer(std::string_view json_pointer) noexcept {
-  rewind(); // Rewind the document each time at_pointer is called
+  // Rewind the document each time at_pointer is called. After a fatal error,
+  // the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_pointer.empty()) {
     return this->get_value();
   }
@@ -414,7 +449,9 @@ simdjson_inline simdjson_result<value> document::at_pointer(std::string_view jso
 }
 
 simdjson_inline simdjson_result<value> document::at_path(std::string_view json_path) noexcept {
-  rewind(); // Rewind the document each time at_pointer is called
+  // Rewind the document each time at_path is called. After a fatal error,
+  // the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return this->get_value();
   }
@@ -437,7 +474,9 @@ template <typename Func>
 template <typename Func>
 #endif
 simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
-  rewind(); // Rewind the document each time for_each_at_path_with_wildcard is called
+  // Rewind the document each time for_each_at_path_with_wildcard is called. After
+  // a fatal error, the document cannot be walked again: we report the error instead.
+  SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return INVALID_JSON_POINTER;
   }
@@ -775,11 +814,6 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::number> simdj
 
 
 #if SIMDJSON_EXCEPTIONS
-template <class T, typename std::enable_if<std::is_same<T, SIMDJSON_IMPLEMENTATION::ondemand::document>::value == false>::type>
-simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator T() noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return first;
-}
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::operator SIMDJSON_IMPLEMENTATION::ondemand::array() & noexcept(false) {
   if (error()) { throw simdjson_error(error()); }
   return first;
@@ -838,6 +872,11 @@ simdjson_inline int32_t simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::docum
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::at_pointer(std::string_view json_pointer) noexcept {
@@ -1324,6 +1363,11 @@ simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENT
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::raw_json_token() noexcept {
   if (error()) { return error(); }
   return first.raw_json_token();
+}
+
+simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::raw_json() noexcept {
+  if (error()) { return error(); }
+  return first.raw_json();
 }
 
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::at_pointer(std::string_view json_pointer) noexcept {

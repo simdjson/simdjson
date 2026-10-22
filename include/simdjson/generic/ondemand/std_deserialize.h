@@ -173,6 +173,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     // capacity from call to call, then move them into out after reserving the
     // exact size: out is allocated once instead of being regrown. A nested
     // array of the same type finds the scratch busy and takes the paths below.
+    // Prior related work: jsonifier keeps a thread-local vector and sizes the
+    // caller's vector from that element count (parse_impl.hpp,
+    // https://github.com/nihilai-collective/Jsonifier).
     struct scratch_space {
       std::vector<value_type> elements{};
       bool busy{false};
@@ -326,6 +329,14 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   static_assert(
       std::is_default_constructible_v<element_type>,
       "The specified type inside the unique_ptr must default constructible.");
+
+  // A null pointer is serialized as null.
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
 
   // Own the allocation before get(): a user tag_invoke may throw.
   std::unique_ptr<element_type> ptr(new (std::nothrow) element_type());
@@ -970,6 +981,12 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept {
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &out) noexcept(false) {
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
   std::unique_ptr<T> ptr(new (std::nothrow) T());
   if (!ptr) {
     return MEMALLOC;
@@ -982,6 +999,12 @@ error_code tag_invoke(deserialize_tag, simdjson_value &val, std::unique_ptr<T> &
 template <typename simdjson_value, typename T>
   requires(user_defined_type<std::remove_cvref_t<T>>)
 error_code tag_invoke(deserialize_tag, simdjson_value &val, std::shared_ptr<T> &out) noexcept(false) {
+  bool is_null_value;
+  SIMDJSON_TRY( val.is_null().get(is_null_value) );
+  if (is_null_value) {
+    out.reset();
+    return SUCCESS;
+  }
   std::shared_ptr<T> ptr(new (std::nothrow) T());
   if (!ptr) {
     return MEMALLOC;

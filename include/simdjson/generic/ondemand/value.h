@@ -5,6 +5,7 @@
 #include "simdjson/generic/ondemand/base.h"
 #include "simdjson/generic/implementation_simdjson_result_base.h"
 #include "simdjson/generic/ondemand/value_iterator.h"
+#include "simdjson/jsonpathutil.h"
 #include "simdjson/generic/ondemand/deserialize.h"
 #include <vector>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
@@ -858,11 +859,19 @@ protected:
    */
   simdjson_inline simdjson_result<object> start_or_resume_object() noexcept;
 
+  /**
+   * The recursive step of for_each_at_path_with_wildcard: matches
+   * path[index] at this level and what follows below it.
+   */
+  template <typename Func>
+  inline error_code for_each_at_path_segments(const std::vector<simdjson::internal::json_path_segment> &path, size_t index, Func &callback) noexcept;
+
   // simdjson_inline void log_value(const char *type) const noexcept;
   // simdjson_inline void log_error(const char *message) const noexcept;
 
   value_iterator iter{};
 
+  friend class array;
   friend class document;
   friend class array_iterator;
   friend class field;

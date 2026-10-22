@@ -1,5 +1,6 @@
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <limits>
 #include <type_traits>
@@ -8,6 +9,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_INL_H
 #include "simdjson/generic/builder/json_string_builder.h"
+#include "simdjson/internal/jeaiii.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 /*
@@ -120,6 +122,12 @@ inline bool has_json_escapable_byte(uint64_t x) {
 
 **/
 
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
+#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
+#endif
+
+// With block escaping (SSE2/NEON), write_string_escaped scans the input itself.
+#if !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 // Scalar fallback for finding next quotable character
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character_scalar(const std::string_view view,
@@ -135,82 +143,7 @@ find_next_json_quotable_character_scalar(const std::string_view view,
 // SIMD-accelerated position finding that directly locates the first quotable
 // character, combining detection and position extraction in a single pass to
 // minimize redundant work.
-#if SIMDJSON_EXPERIMENTAL_HAS_NEON
-simdjson_inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-  const size_t len = view.size();
-  const uint8_t *ptr =
-      reinterpret_cast<const uint8_t *>(view.data()) + location;
-  size_t remaining = len - location;
-
-  // SIMD constants for characters requiring escape
-  uint8x16_t v34 = vdupq_n_u8(34);  // '"'
-  uint8x16_t v92 = vdupq_n_u8(92);  // '\\'
-  uint8x16_t v32 = vdupq_n_u8(32);  // control char threshold
-
-  while (remaining >= 16) {
-    uint8x16_t word = vld1q_u8(ptr);
-
-    // Check for quotable characters: '"', '\\', or control chars (< 32)
-    uint8x16_t needs_escape = vceqq_u8(word, v34);
-    needs_escape = vorrq_u8(needs_escape, vceqq_u8(word, v92));
-    needs_escape = vorrq_u8(needs_escape, vcltq_u8(word, v32));
-
-    const uint8x8_t res = vshrn_n_u16(vreinterpretq_u16_u8(needs_escape), 4);
-    const uint64_t mask = vget_lane_u64(vreinterpret_u64_u8(res), 0);
-    if(mask != 0) {
-      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-      auto trailing_zero = trailing_zeroes(mask);
-      return offset + (trailing_zero >> 2);
-    }
-    ptr += 16;
-    remaining -= 16;
-  }
-
-  // Scalar fallback for remaining bytes
-  size_t current = len - remaining;
-  return find_next_json_quotable_character_scalar(view, current);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
-simdjson_inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-  const size_t len = view.size();
-  const uint8_t *ptr =
-      reinterpret_cast<const uint8_t *>(view.data()) + location;
-  size_t remaining = len - location;
-
-  // SIMD constants
-  __m128i v34 = _mm_set1_epi8(34);  // '"'
-  __m128i v92 = _mm_set1_epi8(92);  // '\\'
-  __m128i v31 = _mm_set1_epi8(31);  // for control char detection
-
-  while (remaining >= 16) {
-    __m128i word = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr));
-
-    // Check for quotable characters
-    __m128i needs_escape = _mm_cmpeq_epi8(word, v34);
-    needs_escape = _mm_or_si128(needs_escape, _mm_cmpeq_epi8(word, v92));
-    needs_escape = _mm_or_si128(
-        needs_escape,
-        _mm_cmpeq_epi8(_mm_subs_epu8(word, v31), _mm_setzero_si128()));
-
-    int mask = _mm_movemask_epi8(needs_escape);
-    if (mask != 0) {
-      // Found quotable character - use trailing zero count to find position
-      size_t offset = ptr - reinterpret_cast<const uint8_t *>(view.data());
-      return offset + trailing_zeroes(mask);
-    }
-    ptr += 16;
-    remaining -= 16;
-  }
-
-  // Scalar fallback for remaining bytes
-  size_t current = len - remaining;
-  return find_next_json_quotable_character_scalar(view, current);
-}
-#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
+#if SIMDJSON_EXPERIMENTAL_HAS_LASX
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -383,6 +316,7 @@ find_next_json_quotable_character(const std::string_view view,
   return find_next_json_quotable_character_scalar(view, location);
 }
 #endif
+#endif // !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
 SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
     "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
@@ -409,10 +343,6 @@ SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&o
     out += v.size();
   }
 }
-
-#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
-#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
-#endif
 
 #if SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
@@ -694,10 +624,21 @@ inline size_t write_string_escaped(const std::string_view input, char *out) {
 #undef SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
 
-simdjson_inline string_builder::string_builder(size_t initial_capacity)
-    : buffer(new(std::nothrow) char[initial_capacity]), position(0),
-      capacity(buffer.get() != nullptr ? initial_capacity : 0),
-      is_valid(buffer.get() != nullptr) {}
+namespace internal {
+// Sets the size of s to n without initializing the new bytes when the
+// standard library allows it (C++23 resize_and_overwrite).
+simdjson_inline void resize_uninitialized(std::string &s, size_t n) {
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+  s.resize_and_overwrite(n, [](char *, size_t len) noexcept { return len; });
+#else
+  s.resize(n);
+#endif
+}
+} // namespace internal
+
+simdjson_inline string_builder::string_builder(size_t initial_capacity) {
+  grow_buffer(initial_capacity);
+}
 
 simdjson_inline bool string_builder::capacity_check(size_t upcoming_bytes) {
   // We use the convention that when is_valid is false, then the capacity and
@@ -720,14 +661,55 @@ inline void string_builder::grow_buffer(size_t desired_capacity) {
   if (!is_valid) {
     return;
   }
-  std::unique_ptr<char[]> new_buffer(new (std::nothrow) char[desired_capacity]);
-  if (new_buffer.get() == nullptr) {
+  std::string new_buffer;
+  if (desired_capacity > new_buffer.max_size()) {
     set_valid(false);
     return;
   }
-  std::memcpy(new_buffer.get(), buffer.get(), position);
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    internal::resize_uninitialized(new_buffer, desired_capacity);
+  } catch (...) { // std::bad_alloc
+    set_valid(false);
+    return;
+  }
+#else
+  // Without exceptions, a failed allocation terminates the program.
+  internal::resize_uninitialized(new_buffer, desired_capacity);
+#endif
+  std::memcpy(&new_buffer[0], buffer_data(), position);
   buffer.swap(new_buffer);
   capacity = desired_capacity;
+}
+
+// Not simdjson_inline: MSVC cannot force-inline a function with a try block (C4714).
+inline error_code string_builder::move_to(std::string &out) noexcept {
+  if (!is_valid) {
+    return simdjson::OUT_OF_CAPACITY;
+  }
+  if (position <= buffer.capacity() / 2) {
+    // Most of the buffer is unused: copy the bytes out, so that a small
+    // result does not keep the whole buffer allocated. The builder keeps its
+    // buffer for what it writes next.
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+    try {
+      out.assign(buffer.data(), position);
+    } catch (...) { // std::bad_alloc
+      return simdjson::MEMALLOC;
+    }
+#else
+    // Without exceptions, a failed allocation terminates the program.
+    out.assign(buffer.data(), position);
+#endif
+    position = 0;
+    return simdjson::SUCCESS;
+  }
+  buffer.resize(position); // shrinking never allocates
+  out = std::move(buffer);
+  std::string().swap(buffer);
+  position = 0;
+  capacity = 0;
+  return simdjson::SUCCESS;
 }
 
 simdjson_inline void string_builder::set_valid(bool valid) noexcept {
@@ -735,7 +717,7 @@ simdjson_inline void string_builder::set_valid(bool valid) noexcept {
     is_valid = false;
     capacity = 0;
     position = 0;
-    buffer.reset();
+    std::string().swap(buffer);
   } else {
     is_valid = true;
   }
@@ -747,7 +729,7 @@ simdjson_inline size_t string_builder::size() const noexcept {
 
 simdjson_inline void string_builder::append(char c) noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = c;
+    buffer_data()[position++] = c;
   }
 }
 
@@ -755,7 +737,7 @@ simdjson_inline void string_builder::append_null() noexcept {
   constexpr char null_literal[] = "null";
   constexpr size_t null_len = sizeof(null_literal) - 1;
   if (capacity_check(null_len)) {
-    std::memcpy(buffer.get() + position, null_literal, null_len);
+    std::memcpy(buffer_data() + position, null_literal, null_len);
     position += null_len;
   }
 }
@@ -765,124 +747,14 @@ simdjson_inline void string_builder::clear() noexcept {
   // if it was invalid, we should try to repair it
   if (!is_valid) {
     capacity = 0;
-    buffer.reset();
+    std::string().swap(buffer);
     is_valid = true;
   }
 }
 
 namespace internal {
 
-// Integer to decimal: James Edward Anhalt III's algorithm
-static const char jeaiii_dd[201] =
-    "00010203040506070809101112131415161718192021222324252627282930313233343536373839"
-    "40414243444546474849505152535455565758596061626364656667686970717273747576777879"
-    "8081828384858687888990919293949596979899";
-static const char jeaiii_fd[201] =
-    "0\0" "1\0" "2\0" "3\0" "4\0" "5\0" "6\0" "7\0" "8\0" "9\0"
-    "10111213141516171819202122232425262728293031323334353637383940414243444546474849"
-    "50515253545556575859606162636465666768697071727374757677787980818283848586878889"
-    "90919293949596979899";
-
-simdjson_really_inline void jeaiii_write_dd(char *p, uint64_t k) noexcept {
-  std::memcpy(p, &jeaiii_dd[2 * k], 2);
-}
-simdjson_really_inline void jeaiii_write_fd(char *p, uint64_t k) noexcept {
-  std::memcpy(p, &jeaiii_fd[2 * k], 2);
-}
-
-// Caller guarantees n < 10^8. Writes 1 to 8 digits.
-simdjson_really_inline char *jeaiii_lt1e8(char *b, uint32_t n) noexcept {
-  constexpr uint64_t mask24 = (uint64_t(1) << 24) - 1;
-  constexpr uint64_t mask32 = (uint64_t(1) << 32) - 1;
-  if (n < 100) {
-    jeaiii_write_fd(b, n);
-    return n < 10 ? b + 1 : b + 2;
-  }
-  if (n < 1000000) {
-    if (n < 10000) {
-      const uint32_t f0 = uint32_t(10 * (1 << 24) / 1e3 + 1) * n;
-      jeaiii_write_fd(b, f0 >> 24);
-      b -= n < 1000;
-      const uint32_t f2 = uint32_t(f0 & mask24) * 100;
-      jeaiii_write_dd(b + 2, f2 >> 24);
-      return b + 4;
-    }
-    const uint64_t f0 = uint64_t(10 * (1ull << 32) / 1e5 + 1) * n;
-    jeaiii_write_fd(b, f0 >> 32);
-    b -= n < 100000;
-    const uint64_t f2 = (f0 & mask32) * 100;
-    jeaiii_write_dd(b + 2, f2 >> 32);
-    const uint64_t f4 = (f2 & mask32) * 100;
-    jeaiii_write_dd(b + 4, f4 >> 32);
-    return b + 6;
-  }
-  const uint64_t f0 = uint64_t(10 * (1ull << 48) / 1e7 + 1) * n >> 16;
-  jeaiii_write_fd(b, f0 >> 32);
-  b -= n < 10000000;
-  const uint64_t f2 = (f0 & mask32) * 100;
-  jeaiii_write_dd(b + 2, f2 >> 32);
-  const uint64_t f4 = (f2 & mask32) * 100;
-  jeaiii_write_dd(b + 4, f4 >> 32);
-  const uint64_t f6 = (f4 & mask32) * 100;
-  jeaiii_write_dd(b + 6, f6 >> 32);
-  return b + 8;
-}
-
-// Caller guarantees z < 10^8. Always writes exactly 8 digits.
-simdjson_really_inline char *jeaiii_8_digits(char *b, uint32_t z) noexcept {
-  constexpr uint64_t mask32 = (uint64_t(1) << 32) - 1;
-  const uint64_t f0 = (uint64_t((1ull << 48) / 1e6 + 1) * z >> 16) + 1;
-  jeaiii_write_dd(b, f0 >> 32);
-  const uint64_t f2 = (f0 & mask32) * 100;
-  jeaiii_write_dd(b + 2, f2 >> 32);
-  const uint64_t f4 = (f2 & mask32) * 100;
-  jeaiii_write_dd(b + 4, f4 >> 32);
-  const uint64_t f6 = (f4 & mask32) * 100;
-  jeaiii_write_dd(b + 6, f6 >> 32);
-  return b + 8;
-}
-
-// Caller guarantees 10^8 <= n < 2^32. Writes 9 or 10 digits.
-simdjson_really_inline char *jeaiii_9_or_10(char *b, uint64_t n) noexcept {
-  constexpr uint64_t mask57 = (uint64_t(1) << 57) - 1;
-  const uint64_t f0 = uint64_t(10 * (1ull << 57) / 1e9 + 1) * n;
-  jeaiii_write_fd(b, f0 >> 57);
-  b -= n < 1000000000;
-  const uint64_t f2 = (f0 & mask57) * 100;
-  jeaiii_write_dd(b + 2, f2 >> 57);
-  const uint64_t f4 = (f2 & mask57) * 100;
-  jeaiii_write_dd(b + 4, f4 >> 57);
-  const uint64_t f6 = (f4 & mask57) * 100;
-  jeaiii_write_dd(b + 6, f6 >> 57);
-  const uint64_t f8 = (f6 & mask57) * 100;
-  jeaiii_write_dd(b + 8, f8 >> 57);
-  return b + 10;
-}
-
-simdjson_really_inline char *write_uint_jeaiii(char *b, uint64_t n) noexcept {
-  if (n < 100000000) {
-    return jeaiii_lt1e8(b, uint32_t(n));
-  }
-  if (n < (uint64_t(1) << 32)) {
-    return jeaiii_9_or_10(b, n);
-  }
-  // At least 10 digits: the low 8 digits, and 2 to 12 digits above them.
-  const uint32_t z = uint32_t(n % 100000000);
-  uint64_t u = n / 100000000;
-  if (u < 100000000) {
-    // u has 2 to 8 digits (if u < 10, n would be below 2^32).
-    b = jeaiii_lt1e8(b, uint32_t(u));
-  } else if (u < (uint64_t(1) << 32)) {
-    b = jeaiii_9_or_10(b, u);
-  } else {
-    // u has 11 or 12 digits: split off 8 more.
-    const uint32_t y = uint32_t(u % 100000000);
-    u /= 100000000;
-    b = jeaiii_lt1e8(b, uint32_t(u)); // 3 or 4 digits
-    b = jeaiii_8_digits(b, y);
-  }
-  return jeaiii_8_digits(b, z);
-}
+using simdjson::internal::write_uint_jeaiii;
 
 // Writes v at p, which must have to_chars_buffer_size bytes available, and
 // returns the end of what was written.
@@ -916,14 +788,14 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       constexpr char true_literal[] = "true";
       constexpr size_t true_len = sizeof(true_literal) - 1;
       if (capacity_check(true_len)) {
-        std::memcpy(buffer.get() + position, true_literal, true_len);
+        std::memcpy(buffer_data() + position, true_literal, true_len);
         position += true_len;
       }
     } else {
       constexpr char false_literal[] = "false";
       constexpr size_t false_len = sizeof(false_literal) - 1;
       if (capacity_check(false_len)) {
-        std::memcpy(buffer.get() + position, false_literal, false_len);
+        std::memcpy(buffer_data() + position, false_literal, false_len);
         position += false_len;
       }
     }
@@ -933,9 +805,9 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
       char* end = internal::write_uint_jeaiii(
-          buffer.get() + position,
+          buffer_data() + position,
           static_cast<uint64_t>(static_cast<unsigned_type>(v)));
-      position = end - buffer.get();
+      position = end - buffer_data();
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_integral<number_type>::value) {
@@ -949,11 +821,11 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
           ? unsigned_type(0) - static_cast<unsigned_type>(v)
           : static_cast<unsigned_type>(v);
       // Branchless: always write '-', advance only if negative.
-      buffer.get()[position] = '-';
+      buffer_data()[position] = '-';
       position += negative;
       char* end = internal::write_uint_jeaiii(
-          buffer.get() + position, static_cast<uint64_t>(pv));
-      position = end - buffer.get();
+          buffer_data() + position, static_cast<uint64_t>(pv));
+      position = end - buffer_data();
     }
   }
   else SIMDJSON_IF_CONSTEXPR(std::is_floating_point<number_type>::value) {
@@ -969,16 +841,16 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
           constexpr char nan_literal[] = "NaN";
           constexpr size_t nan_len = sizeof(nan_literal) - 1;
 
-          std::memcpy(buffer.get() + position, nan_literal, nan_len);
+          std::memcpy(buffer_data() + position, nan_literal, nan_len);
           position += nan_len;
         } else {
           constexpr char inf_literal[] = "Infinity";
           constexpr size_t inf_len = sizeof(inf_literal) - 1;
           if (v < 0) {
-            buffer.get()[position] = '-';
+            buffer_data()[position] = '-';
             ++position;
           }
-          std::memcpy(buffer.get() + position, inf_literal, inf_len);
+          std::memcpy(buffer_data() + position, inf_literal, inf_len);
           position += inf_len;
         }
         return;
@@ -986,9 +858,9 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
 #endif
 
       // We could specialize for float.
-      char *end = simdjson::internal::to_chars(buffer.get() + position, nullptr,
+      char *end = simdjson::internal::to_chars(buffer_data() + position, nullptr,
                                                double(v));
-      position = end - buffer.get();
+      position = end - buffer_data();
     }
   }
 }
@@ -1002,7 +874,7 @@ string_builder::escape_and_append(std::string_view input) noexcept {
     return;
   }
   if (capacity_check(6 * input.size())) {
-    position += write_string_escaped(input, buffer.get() + position);
+    position += write_string_escaped(input, buffer_data() + position);
   }
 }
 
@@ -1015,9 +887,9 @@ string_builder::escape_and_append_with_quotes(std::string_view input) noexcept {
     return;
   }
   if (capacity_check(2 + 6 * input.size())) {
-    buffer.get()[position++] = '"';
-    position += write_string_escaped(input, buffer.get() + position);
-    buffer.get()[position++] = '"';
+    buffer_data()[position++] = '"';
+    position += write_string_escaped(input, buffer_data() + position);
+    buffer_data()[position++] = '"';
   }
 }
 
@@ -1025,10 +897,10 @@ simdjson_inline void
 string_builder::escape_and_append_with_quotes(char input) noexcept {
   // escaping might turn a control character into \x00xx so 6 characters.
   if (capacity_check(2 + 6 * 1)) {
-    buffer.get()[position++] = '"';
+    buffer_data()[position++] = '"';
     std::string_view cinput(&input, 1);
-    position += write_string_escaped(cinput, buffer.get() + position);
-    buffer.get()[position++] = '"';
+    position += write_string_escaped(cinput, buffer_data() + position);
+    buffer_data()[position++] = '"';
   }
 }
 
@@ -1040,7 +912,11 @@ string_builder::escape_and_append_with_quotes(const char *input) noexcept {
 #if SIMDJSON_SUPPORTS_CONCEPTS
 template <constevalutil::fixed_string key>
 simdjson_inline void string_builder::escape_and_append_with_quotes() noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<constevalutil::quoted_escaped_text<key>>();
+#else
   escape_and_append_with_quotes(constevalutil::string_constant<key>::value);
+#endif
 }
 #endif
 
@@ -1054,7 +930,7 @@ simdjson_inline void string_builder::append_raw(const char *c) noexcept {
 simdjson_inline void
 string_builder::append_raw(std::string_view input) noexcept {
   if (capacity_check(input.size())) {
-    std::memcpy(buffer.get() + position, input.data(), input.size());
+    std::memcpy(buffer_data() + position, input.data(), input.size());
     position += input.size();
   }
 }
@@ -1062,7 +938,7 @@ string_builder::append_raw(std::string_view input) noexcept {
 simdjson_inline void string_builder::append_raw(const char *str,
                                                 size_t len) noexcept {
   if (capacity_check(len)) {
-    std::memcpy(buffer.get() + position, str, len);
+    std::memcpy(buffer_data() + position, str, len);
     position += len;
   }
 }
@@ -1070,10 +946,22 @@ simdjson_inline void string_builder::append_raw(const char *str,
 template <size_t N>
 simdjson_inline void string_builder::append_raw_n(const char *str) noexcept {
   if (capacity_check(N)) {
-    std::memcpy(buffer.get() + position, str, N);
+    std::memcpy(buffer_data() + position, str, N);
     position += N;
   }
 }
+
+#if SIMDJSON_SUPPORTS_CONCEPTS && SIMDJSON_CONSTEVAL
+template <typename Text>
+simdjson_inline void string_builder::append_static_string() noexcept {
+  constexpr auto& padded = constevalutil::static_string<Text>;
+  if (capacity_check(padded.size())) {
+    std::memcpy(buffer_data() + position, padded.data(), padded.size());
+    position += constevalutil::static_string_size<Text>();
+  }
+}
+#endif
+
 #if SIMDJSON_SUPPORTS_CONCEPTS
 // Support for optional types (std::optional, etc.)
 template <concepts::optional_type T>
@@ -1162,54 +1050,54 @@ string_builder::view() const noexcept {
   if (!is_valid) {
     return simdjson::OUT_OF_CAPACITY;
   }
-  return std::string_view(buffer.get(), position);
+  return std::string_view(buffer_data(), position);
 }
 
 simdjson_inline simdjson_result<const char *> string_builder::c_str() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position] = '\0';
-    return buffer.get();
+    buffer_data()[position] = '\0';
+    return buffer_data();
   }
   return simdjson::OUT_OF_CAPACITY;
 }
 
 simdjson_inline bool string_builder::validate_unicode() const noexcept {
-  return simdjson::validate_utf8(buffer.get(), position);
+  return simdjson::validate_utf8(buffer_data(), position);
 }
 
 simdjson_inline void string_builder::start_object() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = '{';
+    buffer_data()[position++] = '{';
   }
 }
 
 simdjson_inline void string_builder::end_object() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = '}';
+    buffer_data()[position++] = '}';
   }
 }
 
 simdjson_inline void string_builder::start_array() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = '[';
+    buffer_data()[position++] = '[';
   }
 }
 
 simdjson_inline void string_builder::end_array() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = ']';
+    buffer_data()[position++] = ']';
   }
 }
 
 simdjson_inline void string_builder::append_comma() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = ',';
+    buffer_data()[position++] = ',';
   }
 }
 
 simdjson_inline void string_builder::append_colon() noexcept {
   if (capacity_check(1)) {
-    buffer.get()[position++] = ':';
+    buffer_data()[position++] = ':';
   }
 }
 
@@ -1240,11 +1128,24 @@ string_builder::append_key_value(key_type key, value_type value) noexcept {
 }
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
+#if SIMDJSON_CONSTEVAL
+template <constevalutil::fixed_string key>
+struct quoted_key_text {
+  static consteval std::string text() {
+    return constevalutil::consteval_to_quoted_escaped(key.view()) + ":";
+  }
+};
+#endif
+
 template <constevalutil::fixed_string key, typename value_type>
 simdjson_inline void
 string_builder::append_key_value(value_type value) noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<quoted_key_text<key>>();
+#else
   escape_and_append_with_quotes<key>();
   append_colon();
+#endif
   SIMDJSON_IF_CONSTEXPR(std::is_same<value_type, std::nullptr_t>::value) {
     append_null();
   }
@@ -1260,6 +1161,56 @@ string_builder::append_key_value(value_type value) noexcept {
   }
   else {
     append(value);
+  }
+}
+
+#if SIMDJSON_CONSTEVAL
+template <typename T>
+concept compile_time_formattable =
+  constevalutil::is_fixed_string<std::remove_cvref_t<T>> ||
+  std::same_as<std::remove_cvref_t<T>, bool> ||
+  std::same_as<std::remove_cvref_t<T>, std::nullptr_t>;
+
+template <constevalutil::fixed_string key, auto value>
+requires compile_time_formattable<decltype(value)>
+struct key_value_text {
+  static consteval std::string text() {
+    using value_type = std::remove_cvref_t<decltype(value)>;
+    std::string out = constevalutil::consteval_to_quoted_escaped(key.view()) + ':';
+    SIMDJSON_IF_CONSTEXPR(constevalutil::is_fixed_string<value_type>)
+      out += constevalutil::consteval_to_quoted_escaped(value.view());
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, bool>)
+      out += value ? "true" : "false";
+    else SIMDJSON_IF_CONSTEXPR(std::same_as<value_type, std::nullptr_t>)
+      out += "null";
+    return out;
+  }
+};
+#endif
+
+template <constevalutil::fixed_string key, constevalutil::fixed_string value>
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+#if SIMDJSON_CONSTEVAL
+  append_static_string<key_value_text<key, value>>();
+#else
+  escape_and_append_with_quotes<key>();
+  append_colon();
+  escape_and_append_with_quotes<value>();
+#endif
+}
+
+template <constevalutil::fixed_string key, auto value>
+requires (!constevalutil::is_fixed_string<std::remove_cvref_t<decltype(value)>>)
+simdjson_inline void
+string_builder::append_key_value() noexcept {
+#if SIMDJSON_CONSTEVAL
+  SIMDJSON_IF_CONSTEXPR(compile_time_formattable<decltype(value)>) {
+    append_static_string<key_value_text<key, value>>();
+  } else
+#endif
+  {
+    append_key_value<key>(value);
   }
 }
 #endif
