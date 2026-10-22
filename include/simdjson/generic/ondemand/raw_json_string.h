@@ -133,6 +133,12 @@ public:
 
 private:
 
+  /**
+   * Returns true if target ends with an odd number of backslashes. The last one
+   * then escapes the quote that follows the matching bytes in the raw string, so
+   * that quote does not end the string.
+   */
+  static simdjson_inline bool ends_with_unpaired_backslash(std::string_view target) noexcept;
 
   /**
    * This will set the inner pointer to zero, effectively making
