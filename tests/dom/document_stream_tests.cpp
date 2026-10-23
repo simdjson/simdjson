@@ -1873,6 +1873,31 @@ namespace document_stream_tests {
     TEST_SUCCEED();
   }
 
+  // parse_many() on a std::string or padded_string_view without SIMDJSON_PADDING
+  // bytes of capacity must fail rather than read past the buffer.
+  bool parse_many_insufficient_padding() {
+    TEST_START();
+    std::string json = "[1,2,3] {\"key\": \"value\"} [4,5,6] {\"another\": \"string value\"}";
+    json.shrink_to_fit();
+    ASSERT_TRUE(json.capacity() - json.size() < simdjson::SIMDJSON_PADDING);
+    simdjson::dom::parser parser;
+    simdjson::dom::document_stream stream;
+    ASSERT_ERROR(parser.parse_many(json).get(stream), simdjson::INSUFFICIENT_PADDING);
+    ASSERT_ERROR(parser.parse_many(json, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::whitespace_delimited).get(stream), simdjson::INSUFFICIENT_PADDING);
+    simdjson::padded_string_view view(json.data(), json.size(), json.size());
+    ASSERT_ERROR(parser.parse_many(view).get(stream), simdjson::INSUFFICIENT_PADDING);
+    ASSERT_ERROR(parser.parse_many(view, simdjson::dom::DEFAULT_BATCH_SIZE, simdjson::stream_format::whitespace_delimited).get(stream), simdjson::INSUFFICIENT_PADDING);
+    json.reserve(json.size() + simdjson::SIMDJSON_PADDING);
+    ASSERT_SUCCESS(parser.parse_many(json).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.error());
+      count++;
+    }
+    ASSERT_EQUAL(count, 4);
+    TEST_SUCCEED();
+  }
+
   // Documents that are bare numbers, including one at the very end of the input.
   bool root_numbers_in_stream() {
     TEST_START();
@@ -2432,6 +2457,7 @@ namespace document_stream_tests {
     return json_sequence_tests() &&
            scalar_at_window_boundary() &&
            parse_many_number_as_string() &&
+           parse_many_insufficient_padding() &&
            root_numbers_in_stream() &&
            truncated_bytes_documented_cases() &&
            source_on_failed_document() &&
