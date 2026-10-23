@@ -20,6 +20,8 @@
  *   [[= simdjson::default_value]]              a missing key is not an error
  *   [[= simdjson::default_from<factory>]]      a missing key sets the member to factory()
  *   [[= simdjson::with<Adapter>]]              custom (de)serialization via Adapter
+ *   [[= simdjson::with<simdjson::adjacently_tagged<"t", "c">>]]
+ *                                              a std::variant as {"t":"name","c":value}
  *   [[= simdjson::flatten]]                    inline the members of a nested structure
  *
  * Structure (container) annotations:
@@ -40,6 +42,8 @@
 #include <meta>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace simdjson {
@@ -353,7 +357,106 @@ consteval std::meta::info transparent_member(std::meta::info type) {
   return members[0];
 }
 
+// The name of an alternative of a variant (see adjacently_tagged): the rename
+// of its type when there is one, otherwise the identifier of its type.
+consteval const char *variant_tag_name(std::meta::info type) {
+  if (std::meta::is_class_type(type) || std::meta::is_enum_type(type)) {
+    std::meta::info rename_type = annotation_of_template(type, ^^rename_t);
+    if (rename_type != std::meta::info{}) {
+      return std::define_static_string(std::string_view{
+          static_member_value<const char *>(rename_type, "key_data"),
+          static_member_value<size_t>(rename_type, "key_size")});
+    }
+  }
+  if (!std::meta::has_identifier(type)) {
+    throw std::meta::exception(u8"simdjson::adjacently_tagged requires each alternative to be a named type or to be annotated with simdjson::rename", type);
+  }
+  return std::define_static_string(std::meta::identifier_of(type));
+}
+
+// The names of the alternatives of a variant, which must be distinct: the name
+// read from the JSON object would otherwise not tell which alternative to build.
+consteval std::vector<const char *> variant_tag_names(std::vector<std::meta::info> types) {
+  std::vector<const char *> names;
+  for (std::meta::info type : types) {
+    const char *name = variant_tag_name(type);
+    for (const char *previous : names) {
+      if (std::string_view(previous) == std::string_view(name)) {
+        throw std::meta::exception(u8"simdjson::adjacently_tagged requires the alternatives of the variant to have distinct names (see simdjson::rename)", type);
+      }
+    }
+    names.push_back(name);
+  }
+  return names;
+}
+
+// The text written before the value of each alternative: {"tag":"name","content":
+consteval std::vector<const char *> variant_prefixes(std::string_view tag, std::string_view content,
+                                                     std::vector<const char *> names) {
+  std::vector<const char *> prefixes;
+  for (const char *name : names) {
+    prefixes.push_back(std::define_static_string(
+        "{" + constevalutil::consteval_to_quoted_escaped(tag) + ":" +
+        constevalutil::consteval_to_quoted_escaped(name) + "," +
+        constevalutil::consteval_to_quoted_escaped(content) + ":"));
+  }
+  return prefixes;
+}
+
 } // namespace detail
+
+// Usage: [[= simdjson::with<simdjson::adjacently_tagged<"kind", "value">>]] std::variant<A, B> v;
+// The variant is (de)serialized as an object holding the name of the current
+// alternative under the Tag key and its value under the Content key:
+// {"kind":"A","value":{...}}, like serde's #[serde(tag = "kind", content = "value")].
+// The name of an alternative is the identifier of its type, or the name given by
+// a rename annotation on the type (struct [[= simdjson::rename<"a">]] A {...};):
+// an alternative without a name (int, std::string, ...) is a compile-time error.
+// The names must be distinct, which is checked at compile time. When deserializing,
+// the keys may come in any order, other keys are ignored, and an unknown name is an
+// INCORRECT_TYPE error. A variant that is valueless by exception is written as null.
+template <fixed_string Tag = "type", fixed_string Content = "value">
+struct adjacently_tagged {
+  static_assert(Tag.view() != Content.view(), "simdjson::adjacently_tagged requires distinct tag and content keys");
+
+  template <typename Builder, typename... Ts>
+  static void serialize(Builder &b, const std::variant<Ts...> &v) {
+    static constexpr auto prefixes = std::define_static_array(detail::variant_prefixes(
+        Tag.view(), Content.view(), detail::variant_tag_names({^^Ts...})));
+    if (v.valueless_by_exception()) {
+      b.append_null();
+      return;
+    }
+    // append is found by argument-dependent lookup in the namespace of the builder.
+    [&]<size_t... I>(std::index_sequence<I...>) {
+      (void)((v.index() == I && (b.append_raw(std::string_view(prefixes[I])), append(b, std::get<I>(v)), true)) || ...);
+    }(std::index_sequence_for<Ts...>{});
+    b.append('}');
+  }
+
+  template <typename Value, typename... Ts>
+  static error_code deserialize(Value &val, std::variant<Ts...> &out) {
+    static constexpr auto names = std::define_static_array(detail::variant_tag_names({^^Ts...}));
+    auto object = val.get_object();
+    std::string_view name;
+    SIMDJSON_TRY(object[Tag.view()].get_string().get(name));
+    error_code error = INCORRECT_TYPE;
+    [&]<size_t... I>(std::index_sequence<I...>) {
+      (void)((name == std::string_view(names[I]) && (error = deserialize_alternative<I>(object, out), true)) || ...);
+    }(std::index_sequence_for<Ts...>{});
+    return error;
+  }
+
+private:
+  // A failure leaves out unchanged.
+  template <size_t I, typename Object, typename... Ts>
+  static error_code deserialize_alternative(Object &object, std::variant<Ts...> &out) {
+    std::variant_alternative_t<I, std::variant<Ts...>> value{};
+    SIMDJSON_TRY(object[Content.view()].get(value));
+    out.template emplace<I>(std::move(value));
+    return SUCCESS;
+  }
+};
 
 // Returns the JSON key for a reflected data member (or enumerator).
 template <auto dm>

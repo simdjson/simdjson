@@ -69,4 +69,11 @@ if (SIMDJSON_STATIC_REFLECTION_ENABLED)
   # A number that overflows binary64 has no representation to return and no way
   # to report an error from a constant expression, so it must fail to compile.
   add_dual_compile_test(compile_time_json_overflow)
+
+  # simdjson::adjacently_tagged requires the alternatives of a variant to have
+  # distinct names. As above, we check the message text.
+  add_cpp_test(adjacently_tagged_duplicate_names_should_compile SOURCES adjacently_tagged_duplicate_names.cpp COMPILE_ONLY LABELS acceptance no_mingw)
+  add_cpp_test(adjacently_tagged_duplicate_names_should_not_compile SOURCES adjacently_tagged_duplicate_names.cpp COMPILE_ONLY LABELS acceptance no_mingw)
+  target_compile_definitions(adjacently_tagged_duplicate_names_should_not_compile PRIVATE COMPILATION_TEST_USE_FAILING_CODE=1)
+  set_property(TEST adjacently_tagged_duplicate_names_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "requires the alternatives of the variant to have distinct names")
 endif()
