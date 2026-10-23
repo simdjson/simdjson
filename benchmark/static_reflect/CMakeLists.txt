@@ -16,6 +16,13 @@ add_library(glaze INTERFACE)
 target_include_directories(glaze SYSTEM INTERFACE "${glaze_SOURCE_DIR}/include")
 target_compile_definitions(glaze INTERFACE SIMDJSON_COMPETITION_GLAZE)
 
+CPMAddPackage(
+  NAME jsonifier
+  URL https://github.com/nihilai-collective/jsonifier/archive/da961479984beb63dcc934d8571fee69db6e0ec8.zip
+  EXCLUDE_FROM_ALL YES
+)
+target_compile_definitions(Jsonifier INTERFACE SIMDJSON_COMPETITION_JSONIFIER)
+
 option(SIMDJSON_USE_RUST "Build the static_reflect benchmark" OFF)
 
 if(SIMDJSON_USE_RUST)
