@@ -70,6 +70,42 @@ namespace key_string_tests {
     TEST_SUCCEED();
   }
 
+  // A target ending with an unpaired backslash must not match a key that
+  // continues with an escaped quote: that quote does not end the key.
+  bool key_ending_in_backslash() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({"\"admin":true,"\\":1})"_padded;
+    ondemand::document doc;
+    int64_t x;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.find_field("\\"), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.find_field_unordered("\\\\").get_int64().get(x));
+    ASSERT_EQUAL(x, 1);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc["\\"], NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.at_pointer("/\\"), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    for (auto field_result : object) {
+      ondemand::field field;
+      ASSERT_SUCCESS(std::move(field_result).get(field));
+      ondemand::raw_json_string key = field.key();
+      ASSERT_FALSE(key == std::string_view("\\"));
+      ASSERT_FALSE(key.is_equal(std::string_view("\\")));
+      ASSERT_FALSE(key.unsafe_is_equal("\\"));
+      ASSERT_FALSE(key.is_equal("\\"));
+      ASSERT_FALSE(key.unsafe_is_equal("\\\\\\"));
+      bool is_backslash_key = key.is_equal("\\\\");
+      ASSERT_EQUAL(is_backslash_key, key.unsafe_is_equal("\\\\"));
+      ASSERT_EQUAL(is_backslash_key, key == std::string_view("\\\\"));
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
 #if SIMDJSON_EXCEPTIONS
@@ -77,6 +113,7 @@ namespace key_string_tests {
       parser_escaped_key() &&
 #endif // SIMDJSON_EXCEPTIONS
       key_after_value_consumed() &&
+      key_ending_in_backslash() &&
       true;
   }
 

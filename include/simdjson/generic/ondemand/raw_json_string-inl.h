@@ -62,17 +62,26 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* t
   return true;
 }
 
+simdjson_inline bool raw_json_string::ends_with_unpaired_backslash(std::string_view target) noexcept {
+  size_t backslash_count{0};
+  while(backslash_count < target.size() && target[target.size() - 1 - backslash_count] == '\\') {
+    backslash_count++;
+  }
+  return backslash_count % 2 == 1;
+}
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
-  return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+  return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size())
+    && !ends_with_unpaired_backslash(target);
 }
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
   // Assumptions: does not contain unescaped quote characters("), and
   // the raw content is quote terminated within a valid JSON string.
   if(target.size() <= SIMDJSON_PADDING) {
-    return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size());
+    return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size())
+      && !ends_with_unpaired_backslash(target);
   }
   // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
   // comparison in bounds, so we must stop at the quote terminating the key.
@@ -98,7 +107,7 @@ simdjson_inline bool raw_json_string::is_equal(std::string_view target) const no
       escaping = false;
     }
   }
-  if(r[pos] != '"') { return false; }
+  if((r[pos] != '"') || escaping) { return false; }
   return true;
 }
 
@@ -111,7 +120,7 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(const char * target) const
   for(;target[pos];pos++) {
     if(r[pos] != target[pos]) { return false; }
   }
-  if(r[pos] != '"') { return false; }
+  if((r[pos] != '"') || ends_with_unpaired_backslash(std::string_view(target, pos))) { return false; }
   return true;
 }
 
@@ -136,7 +145,7 @@ simdjson_inline bool raw_json_string::is_equal(const char* target) const noexcep
       escaping = false;
     }
   }
-  if(r[pos] != '"') { return false; }
+  if((r[pos] != '"') || escaping) { return false; }
   return true;
 }
 
