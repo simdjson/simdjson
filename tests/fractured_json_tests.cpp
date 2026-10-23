@@ -2451,6 +2451,48 @@ bool table_format_double_column_alignment_test() {
   return true;
 }
 
+// With number_as_string(true), integers that do not fit in 64 bits are kept
+// as BIGINT elements. fractured_json used to write nothing for them, which
+// produced invalid JSON such as [1, , 2].
+bool bigint_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::dom::parser parser;
+  parser.number_as_string(true);
+  simdjson::dom::element doc;
+  {
+    std::string json = "[1,123456789012345678901234567890,-98765432109876543210]";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc),
+        "[1, 123456789012345678901234567890, -98765432109876543210]");
+  }
+  {
+    std::string json = R"({"id":123456789012345678901234567890,"n":1})";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc),
+        "{\"id\": 123456789012345678901234567890, \"n\": 1}");
+  }
+  {
+    std::string json = "123456789012345678901234567890";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc), json);
+  }
+  {
+    // A big integer is a number: it is measured and aligned like one.
+    std::string json = R"([{"a":1,"b":"x"},{"a":123456789012345678901234567890,"b":"y"}])";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 60;
+    opts.number_alignment = simdjson::number_list_alignment::right;
+    ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+        "[\n"
+        "    {\"a\":                              1, \"b\": \"x\"},\n"
+        "    {\"a\": 123456789012345678901234567890, \"b\": \"y\"}\n"
+        "]");
+  }
+  std::cout << "Bigint test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2521,6 +2563,7 @@ int main() {
   success = table_format_duplicate_key_test() && success;
   success = table_format_null_container_test() && success;
   success = table_format_double_column_alignment_test() && success;
+  success = bigint_test() && success;
 
   if (success) {
     std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;
