@@ -99,8 +99,10 @@ namespace key_string_tests {
       ASSERT_FALSE(key.unsafe_is_equal("\\"));
       ASSERT_FALSE(key.is_equal("\\"));
       ASSERT_FALSE(key.unsafe_is_equal("\\\\\\"));
+      ASSERT_FALSE(key.unsafe_is_equal(1, std::string_view("\\")));
       bool is_backslash_key = key.is_equal("\\\\");
       ASSERT_EQUAL(is_backslash_key, key.unsafe_is_equal("\\\\"));
+      ASSERT_EQUAL(is_backslash_key, key.unsafe_is_equal(2, std::string_view("\\\\")));
       ASSERT_EQUAL(is_backslash_key, key == std::string_view("\\\\"));
     }
     TEST_SUCCEED();
