@@ -543,6 +543,40 @@ bool wildcard_key_with_slash_or_tilde() {
   TEST_SUCCEED();
 }
 
+// A bracket-quoted key is the key without its quotes after the last wildcard
+// too, as before a wildcard and in On-Demand. The rest of the path used to be
+// converted as a whole, so $.d[*]['b'] looked for the key 'b' (quotes
+// included) and silently matched nothing.
+bool quoted_key_after_last_wildcard() {
+  TEST_START();
+  auto json = R"({"d":[{"b":1},{"b":2}],"a":{"b/c":{"e":3}}})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  std::vector<dom::element> values;
+  int64_t value;
+
+  for (const char *path : {"$.d[*]['b']", R"($.d[*]["b"])", "$[*][*]['b']"}) {
+    std::cout << "  " << path << std::endl;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(path).get(values));
+    ASSERT_EQUAL(values.size(), 2);
+    ASSERT_SUCCESS(values[0].get(value));
+    ASSERT_EQUAL(value, 1);
+    ASSERT_SUCCESS(values[1].get(value));
+    ASSERT_EQUAL(value, 2);
+  }
+  for (const char *path : {"$['a']['b/c'].e", "$.a['b/c']['e']", R"($["a"].b/c["e"])"}) {
+    std::cout << "  " << path << std::endl;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(path).get(values));
+    ASSERT_EQUAL(values.size(), 1);
+    ASSERT_SUCCESS(values[0].get(value));
+    ASSERT_EQUAL(value, 3);
+  }
+  // Without a wildcard, a missing key is still an error.
+  ASSERT_EQUAL(doc.at_path_with_wildcard("$['a']['x']").error(), NO_SUCH_FIELD);
+  TEST_SUCCEED();
+}
+
 // A '*' inside the final segment is part of the key, as in at_path and
 // On-Demand. It used to be reported as INVALID_JSON_POINTER because the
 // parser looped once more on the empty remainder.
@@ -789,6 +823,7 @@ int main() {
       star_in_final_segment() &&
       malformed_path_after_wildcard() &&
       wildcard_key_with_slash_or_tilde() &&
+      quoted_key_after_last_wildcard() &&
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&

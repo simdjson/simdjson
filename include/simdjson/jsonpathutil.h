@@ -255,6 +255,22 @@ struct wildcard_json_path {
  */
 inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
   wildcard_json_path result;
+  // Each key is consumed by at_pointer, which unescapes ~0/~1, so '~' and
+  // '/' in the key must be escaped as json_path_to_pointer_conversion does:
+  // a raw '/' splits the step into two pointer tokens and a raw '~'
+  // invalidates it, either way addressing the wrong element.
+  const auto append_key = [](std::string &pointer, std::string_view key) {
+    pointer += '/';
+    for (const char c : key) {
+      if (c == '~') {
+        pointer += "~0";
+      } else if (c == '/') {
+        pointer += "~1";
+      } else {
+        pointer += c;
+      }
+    }
+  };
   // The remaining path (always a suffix of json_path) contains a '*' if and
   // only if it starts at or before the last one.
   const size_t last_star = json_path.rfind('*');
@@ -270,7 +286,24 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
     }
     const size_t offset = json_path.size() - path.size();
     if (last_star == std::string_view::npos || last_star < offset) {
-      result.tail_pointer = json_path_to_pointer_conversion(path);
+      // Split the rest like the steps, so that a bracket-quoted key (['b'],
+      // ["b"]) is the key b, not 'b' with its quotes. What we do not split
+      // (e.g. [b], the key "b") is converted as at_path does.
+      std::string_view rest = path;
+      while (!rest.empty()) {
+        std::pair<std::string_view, std::string_view> key_and_json_path = get_next_key_and_json_path(rest);
+        if (key_and_json_path.first.empty()) {
+          const std::string pointer = json_path_to_pointer_conversion(rest);
+          if (pointer == "-1") {
+            result.tail_pointer = pointer;
+          } else {
+            result.tail_pointer += pointer;
+          }
+          break;
+        }
+        append_key(result.tail_pointer, key_and_json_path.first);
+        rest = key_and_json_path.second;
+      }
       result.tail = (result.tail_pointer == "-1")
                         ? wildcard_json_path::tail_type::invalid
                         : wildcard_json_path::tail_type::pointer;
@@ -288,20 +321,7 @@ inline wildcard_json_path parse_wildcard_json_path(std::string_view json_path) {
     }
     std::string step;
     step.reserve(key_and_json_path.first.size() + 1);
-    step += '/';
-    // The step is consumed by at_pointer, which unescapes ~0/~1, so '~' and
-    // '/' in the key must be escaped as json_path_to_pointer_conversion does:
-    // a raw '/' splits the step into two pointer tokens and a raw '~'
-    // invalidates it, either way addressing the wrong element.
-    for (const char c : key_and_json_path.first) {
-      if (c == '~') {
-        step += "~0";
-      } else if (c == '/') {
-        step += "~1";
-      } else {
-        step += c;
-      }
-    }
+    append_key(step, key_and_json_path.first);
     result.steps.push_back(std::move(step));
     path = key_and_json_path.second;
     // The segment above consumed the path. An empty remainder is the node
