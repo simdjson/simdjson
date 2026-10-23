@@ -209,12 +209,13 @@ inline simdjson_result<document_stream> parser::parse_many(const char *buf, size
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) noexcept {
-  return parse_many(s.data(), s.length(), batch_size);
+  return parse_many(padded_string_view(s), batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size) noexcept {
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
   return parse_many(v.data(), v.length(), batch_size);
 }
 
@@ -248,12 +249,13 @@ inline simdjson_result<document_stream> parser::parse_many(const char *buf, size
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size, stream_format format) noexcept {
-  return parse_many(s.data(), s.length(), batch_size, format);
+  return parse_many(padded_string_view(s), batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept {
   return parse_many(s.data(), s.length(), batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size, stream_format format) noexcept {
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
   return parse_many(v.data(), v.length(), batch_size, format);
 }
 

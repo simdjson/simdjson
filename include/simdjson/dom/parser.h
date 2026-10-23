@@ -542,7 +542,8 @@ public:
   inline simdjson_result<document_stream> parse_many(const uint8_t *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
   inline simdjson_result<document_stream> parse_many(const char *buf, size_t len, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
-  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
+  /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size)
+   * Returns INSUFFICIENT_PADDING if s lacks SIMDJSON_PADDING bytes of spare capacity (or trailing whitespace). */
   inline simdjson_result<document_stream> parse_many(const std::string &s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) noexcept;
   inline simdjson_result<document_stream> parse_many(const std::string &&s, size_t batch_size = dom::DEFAULT_BATCH_SIZE) = delete;// unsafe
   /** @overload parse_many(const uint8_t *buf, size_t len, size_t batch_size) */
