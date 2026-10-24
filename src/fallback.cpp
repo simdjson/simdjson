@@ -181,6 +181,19 @@ simdjson_inline bool char_is_ascii_stop(uint8_t c) {
   return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
 }
 
+// Validates the UTF-8 of the non-ASCII bytes in buf[start..end] (a primitive).
+simdjson_inline void validate_utf8_primitive(uint32_t start, uint32_t end) {
+  idx = start;
+  while (idx <= end) {
+    if (buf[idx] & 0x80) {
+      validate_utf8_character();
+    } else {
+      idx++;
+    }
+  }
+  idx = end;
+}
+
 // Returns true if the string is unclosed.
 simdjson_inline bool validate_string() {
   idx++; // skip first quote
@@ -194,7 +207,11 @@ simdjson_inline bool validate_string() {
       return false;
     }
     if (buf[idx] == '\\') {
-      idx += 2;
+      idx++;
+      // An escaped quote or backslash does not end the string or escape the
+      // next character. Any other escaped byte is checked like the rest of the
+      // string (UTF-8, control characters), as the other implementations do.
+      if (idx < len && (buf[idx] == '"' || buf[idx] == '\\')) { idx++; }
     } else if (simdjson_unlikely(buf[idx] & 0x80)) {
       validate_utf8_character();
     } else {
@@ -233,10 +250,18 @@ simdjson_warn_unused simdjson_inline error_code scan() {
       // so that an unclosed string still reaches validate_string(). Neither
       // can occur inside a valid primitive.
       add_structural();
+      const uint32_t start = idx;
+      uint8_t all_bytes = buf[idx];
       while (idx+1<len && !char_is_space_or_operator(buf[idx+1]) &&
              buf[idx+1] != 0x1e && buf[idx+1] != '"') {
         idx++;
+        all_bytes |= buf[idx];
       };
+      // The other implementations validate UTF-8 over the whole input, not
+      // only within strings. A primitive with non-ASCII bytes is invalid, but
+      // the On-Demand API may never parse it (e.g., raw_json() returns it as
+      // is), so we must check its UTF-8 here.
+      if (simdjson_unlikely(all_bytes & 0x80)) { validate_utf8_primitive(start, idx); }
     }
   }
   // We pad beyond.
