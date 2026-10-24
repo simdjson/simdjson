@@ -107,6 +107,37 @@ namespace error_tests {
     SUBTEST("closed nested object", check("{\"a\":{}}"_padded, SUCCESS));
     TEST_SUCCEED();
   }
+  // iterate() rejects invalid UTF-8 anywhere in the input, also outside strings
+  // and right after a backslash: On-Demand may never parse such a value, and
+  // raw_json() returns it as is. Stage 1 of the fallback implementation has its
+  // own copy of this logic: we check every implementation that the system supports.
+  bool invalid_utf8_outside_strings() {
+    TEST_START();
+    const implementation *active = get_active_implementation();
+    for (const implementation *impl : get_available_implementations()) {
+      if (!impl->supported_by_runtime_system()) { continue; }
+      get_active_implementation() = impl;
+      std::cout << "    " << impl->name() << std::endl;
+      ondemand::parser parser;
+      padded_string overlong(std::string("{\"a\":1,\"b\":[2\xc0\xaf]}"));
+      ASSERT_ERROR( parser.iterate(overlong), UTF8_ERROR );
+      padded_string not_utf8(std::string("{\"a\":1,\"b\":{\"k\":\xff\xfe}}"));
+      ASSERT_ERROR( parser.iterate(not_utf8), UTF8_ERROR );
+      padded_string escaped_not_utf8(std::string("{\"a\":1,\"b\":\"\\\xc0\"}"));
+      ASSERT_ERROR( parser.iterate(escaped_not_utf8), UTF8_ERROR );
+      padded_string escaped_control(std::string("{\"a\":1,\"b\":\"\\\x01\"}"));
+      ASSERT_ERROR( parser.iterate(escaped_control), UNESCAPED_CHARS );
+      // Valid UTF-8 outside a string is not a stage 1 error.
+      padded_string valid_utf8(std::string("{\"a\":1,\"b\":\xc3\xa9}"));
+      ondemand::document doc;
+      ASSERT_SUCCESS( parser.iterate(valid_utf8).get(doc) );
+      int64_t a;
+      ASSERT_SUCCESS( doc["a"].get_int64().get(a) );
+      ASSERT_EQUAL( a, 1 );
+    }
+    get_active_implementation() = active;
+    TEST_SUCCEED();
+  }
   bool empty_document_error() {
     TEST_START();
     ondemand::parser parser;
@@ -486,6 +517,7 @@ namespace error_tests {
            issue1834() &&
            issue1834_2() &&
            skip_child_incomplete_container() &&
+           invalid_utf8_outside_strings() &&
 #if SIMDJSON_EXCEPTIONS
            document_in_class() &&
            direct_document() &&
