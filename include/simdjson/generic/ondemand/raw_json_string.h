@@ -136,9 +136,25 @@ private:
   /**
    * Returns true if target ends with an odd number of backslashes. The last one
    * then escapes the quote that follows the matching bytes in the raw string, so
-   * that quote does not end the string.
+   * that quote does not end the string. Not inlined: callers check the last byte
+   * first, and keys ending in a backslash are rare.
    */
-  static simdjson_inline bool ends_with_unpaired_backslash(std::string_view target) noexcept;
+  static simdjson_never_inline bool ends_with_unpaired_backslash(std::string_view target) noexcept {
+    size_t backslash_count{0};
+    while(backslash_count < target.size() && target[target.size() - 1 - backslash_count] == '\\') {
+      backslash_count++;
+    }
+    return backslash_count % 2 == 1;
+  }
+
+  /**
+   * True when a byte-for-byte match must be rejected because target escapes the
+   * closing quote. The last-byte test keeps the counting loop off the common path.
+   */
+  static simdjson_inline bool escapes_trailing_quote(std::string_view target) noexcept {
+    return simdjson_unlikely(!target.empty() && target[target.size() - 1] == '\\')
+        && ends_with_unpaired_backslash(target);
+  }
 
   /**
    * This will set the inner pointer to zero, effectively making
