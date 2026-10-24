@@ -124,6 +124,31 @@ BENCHMARK(prettify_twitter)->ComputeStatistics("max", [](const std::vector<doubl
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
 
+static void prettify_deep_nesting(State& state) {
+  dom::parser parser;
+  std::string content = std::string(40, '[') + "1" + std::string(40, ']');
+  dom::element doc;
+  simdjson::error_code error;
+  if ((error = parser.parse(content.data(), content.size()).get(doc))) {
+    cerr << "could not parse deep nesting" << error << endl;
+    return;
+  }
+  size_t bytes = 0;
+  for (simdjson_unused auto _ : state) {
+    std::string serial = simdjson::prettify(doc);
+    bytes += serial.size();
+    benchmark::DoNotOptimize(serial);
+  }
+  // Gigabyte: https://en.wikipedia.org/wiki/Gigabyte
+  state.counters["Gigabytes"] = benchmark::Counter(
+	        double(bytes), benchmark::Counter::kIsRate,
+	        benchmark::Counter::OneK::kIs1000); // For GiB : kIs1024
+  state.counters["docs"] = Counter(double(state.iterations()), benchmark::Counter::kIsRate);
+}
+BENCHMARK(prettify_deep_nesting)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
+    return *(std::max_element(std::begin(v), std::end(v)));
+  })->DisplayAggregatesOnly(true);
+
 
 static void serialize_big_string_to_string(State& state) {
   dom::parser parser;
