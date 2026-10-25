@@ -70,6 +70,30 @@ namespace number_in_string_tests {
         TEST_SUCCEED();
     }
 
+    bool in_document_extreme_values() {
+        TEST_START();
+        ondemand::parser parser;
+        ondemand::document doc;
+        int64_t i;
+        uint64_t u;
+        auto json = R"("-9223372036854775808")"_padded;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.get_int64_in_string().get(i));
+        ASSERT_EQUAL(i, (std::numeric_limits<int64_t>::min)());
+        json = R"("-1000000000000000000")"_padded;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.get_int64_in_string().get(i));
+        ASSERT_EQUAL(i, -1000000000000000000);
+        json = R"("18446744073709551615")"_padded;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
+        ASSERT_EQUAL(u, (std::numeric_limits<uint64_t>::max)());
+        json = R"("184467440737095516150")"_padded;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_ERROR(doc.get_uint64_in_string().get(u), NUMBER_ERROR);
+        TEST_SUCCEED();
+    }
+
     bool stream_of_pure_int64() {
         TEST_START();
         auto json = R"( 1 2 3 )"_padded;
@@ -354,6 +378,7 @@ namespace number_in_string_tests {
                 in_document_int64() &&
                 in_document_uint64() &&
                 in_document_double() &&
+                in_document_extreme_values() &&
                 array_double() &&
                 array_int() &&
                 array_unsigned() &&
