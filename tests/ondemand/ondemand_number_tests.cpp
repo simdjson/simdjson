@@ -890,6 +890,52 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool root_number_trailing_whitespace() {
+    TEST_START();
+    // More whitespace after the number than the root accessors' scratch
+    // buffers can hold: it must not count toward the length of the number.
+    const std::string spaces(2000, ' ');
+    simdjson::padded_string json("-42" + spaces);
+    simdjson::padded_string quoted("\"42\"" + spaces);
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    int64_t i;
+    uint64_t u;
+    double d;
+    bool is_integer;
+    simdjson::ondemand::number_type type;
+    simdjson::ondemand::number num;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_int64().get(i));
+    ASSERT_EQUAL(i, -42);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_double().get(d));
+    ASSERT_EQUAL(d, -42.0);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.is_integer().get(is_integer));
+    ASSERT_TRUE(is_integer);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_number_type().get(type));
+    ASSERT_EQUAL(type, simdjson::ondemand::number_type::signed_integer);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_number().get(num));
+    ASSERT_EQUAL(num.get_int64(), -42);
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
+    ASSERT_EQUAL(u, 42);
+    // The whitespace between two documents of a stream counts the same way.
+    simdjson::padded_string stream_json("1" + spaces + "2");
+    simdjson::ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(stream_json).get(stream));
+    int64_t expected = 0;
+    for (auto d_ref : stream) {
+      ASSERT_SUCCESS(d_ref.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
@@ -915,7 +961,8 @@ namespace number_tests {
            powers_of_two() &&
            powers_of_ten() &&
            old_crashes() &&
-           root_number_scratch_padding();
+           root_number_scratch_padding() &&
+           root_number_trailing_whitespace();
   }
 
 } // namespace number_tests

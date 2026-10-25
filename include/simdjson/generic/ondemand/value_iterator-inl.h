@@ -778,10 +778,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("uint64");
-  uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
-  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
+  uint8_t tmpbuf[20+2+1]{}; // "<20 digits>" is the longest possible unsigned integer
+  tmpbuf[20+2] = '\0'; // make sure that buffer is always null terminated.
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+2)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 22 characters");
     return NUMBER_ERROR;
   }
   auto result = numberparsing::parse_unsigned_in_string(tmpbuf);
@@ -811,10 +811,10 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
-  tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
-  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
-    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
+  uint8_t tmpbuf[20+2+1]; // "-<19 digits>" is the longest possible integer
+  tmpbuf[20+2] = '\0'; // make sure that buffer is always null terminated.
+  if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+2)) {
+    logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 22 characters");
     return NUMBER_ERROR;
   }
 

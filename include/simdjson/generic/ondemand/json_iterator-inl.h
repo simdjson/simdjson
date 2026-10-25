@@ -449,6 +449,12 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::optional_error(er
 
 simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept {
   // This function is not expected to be called in performance-sensitive settings.
+  // A root scalar is followed by whitespace only, up to the next structural
+  // index or the end of the input: that whitespace is not part of it.
+  while ((N < max_len) && (json[max_len-1] == ' ' || json[max_len-1] == '\t' ||
+                           json[max_len-1] == '\n' || json[max_len-1] == '\r')) {
+    max_len--;
+  }
   // Let us guard against silly cases:
   if((N < max_len) || (N == 0)) { return false; }
   // Copy to the buffer.
