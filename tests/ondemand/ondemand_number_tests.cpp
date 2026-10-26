@@ -936,6 +936,95 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool root_number_stream_delimiters() {
+    TEST_START();
+    // Stage 1 drops the comma or RS from the structural index, but
+    // peek_root_length() still includes it. More separator-side padding than
+    // the scratch buffer holds must not be reported as NUMBER_ERROR, and an
+    // RS glued to the digits is not a valid number finisher.
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document_stream stream;
+    const std::string gap(30, ' ');
+    const std::string long_gap(2000, ' ');
+    int64_t i;
+    double d;
+    uint64_t u;
+
+    simdjson::padded_string comma_gap("1" + gap + ",2");
+    ASSERT_SUCCESS(parser.iterate_many(comma_gap, comma_gap.size(), stream_format::comma_delimited).get(stream));
+    int64_t expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_tight(std::string("1,2"));
+    ASSERT_SUCCESS(parser.iterate_many(comma_tight, comma_tight.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_double("-42" + long_gap + ",-1");
+    ASSERT_SUCCESS(parser.iterate_many(comma_double, comma_double.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    const double double_values[2] = {-42.0, -1.0};
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_double().get(d));
+      ASSERT_EQUAL(d, double_values[expected++]);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_quoted(std::string("\"18446744073709551615\",1"));
+    ASSERT_SUCCESS(parser.iterate_many(comma_quoted, comma_quoted.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      if (expected == 0) {
+        ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
+        ASSERT_EQUAL(u, (std::numeric_limits<uint64_t>::max)());
+      } else {
+        ASSERT_SUCCESS(doc.get_int64().get(i));
+        ASSERT_EQUAL(i, 1);
+      }
+      expected++;
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string seq_gap(std::string("\x1e") + "1" + gap + "\x1e" + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_gap, seq_gap.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    // The RS sits inside the integer scratch buffer once trailing spaces are
+    // trimmed down to its capacity.
+    simdjson::padded_string seq_rs_inside(std::string("\x1e") + "1\x1e" + gap + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_rs_inside, seq_rs_inside.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string seq_double(std::string("\x1e") + "-1.5\x1e" + gap + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_double, seq_double.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_double().get(d));
+      ASSERT_EQUAL(d, expected == 0 ? -1.5 : 2.0);
+      expected++;
+    }
+    ASSERT_EQUAL(expected, 2);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
@@ -962,7 +1051,8 @@ namespace number_tests {
            powers_of_ten() &&
            old_crashes() &&
            root_number_scratch_padding() &&
-           root_number_trailing_whitespace();
+           root_number_trailing_whitespace() &&
+           root_number_stream_delimiters();
   }
 
 } // namespace number_tests

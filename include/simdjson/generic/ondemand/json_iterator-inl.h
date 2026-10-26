@@ -449,10 +449,15 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::optional_error(er
 
 simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept {
   // This function is not expected to be called in performance-sensitive settings.
-  // A root scalar is followed by whitespace only, up to the next structural
-  // index or the end of the input: that whitespace is not part of it.
-  while ((N < max_len) && (json[max_len-1] == ' ' || json[max_len-1] == '\t' ||
-                           json[max_len-1] == '\n' || json[max_len-1] == '\r')) {
+  // peek_root_length() stops at the next structural index. Stage 1 omits the
+  // comma or RS (0x1E) that separates stream documents, so that byte and the
+  // whitespace around it remain in the span. RS is not a valid number finisher.
+  while (max_len > 0) {
+    const uint8_t last = json[max_len - 1];
+    if (last != ' ' && last != '\t' && last != '\n' && last != '\r' &&
+        last != ',' && last != 0x1E) {
+      break;
+    }
     max_len--;
   }
   // Let us guard against silly cases:
