@@ -1231,6 +1231,9 @@ error_code tag_invoke(deserialize_tag, auto &val, std::unique_ptr<int> &out) noe
   }
   int64_t temp;
   SIMDJSON_TRY(val.get_int64().get(temp));
+  if (temp > (std::numeric_limits<int>::max)() || temp < (std::numeric_limits<int>::min)()) {
+    return NUMBER_OUT_OF_RANGE;
+  }
   *out = static_cast<int>(temp);
   return SUCCESS;
 }

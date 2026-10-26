@@ -37,6 +37,29 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 namespace stl_types {
+#if SIMDJSON_SUPPORTS_CONCEPTS
+bool unique_ptr_int_out_of_range() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (auto json : {"4294967297", "2147483648", "-2147483649"}) {
+    simdjson::padded_string padded(std::string{json});
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::unique_ptr<int> out;
+    ASSERT_ERROR(doc.get<std::unique_ptr<int>>().get(out), simdjson::NUMBER_OUT_OF_RANGE);
+  }
+  for (auto json : {"2147483647", "-2147483648"}) {
+    simdjson::padded_string padded(std::string{json});
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::unique_ptr<int> out;
+    ASSERT_SUCCESS(doc.get<std::unique_ptr<int>>().get(out));
+    ASSERT_EQUAL(int64_t(*out), int64_t(std::strtoll(json, nullptr, 10)));
+  }
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 
 bool basic_general_madness() {
@@ -187,6 +210,9 @@ bool basic_general_madness_container() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
+#if SIMDJSON_SUPPORTS_CONCEPTS
+      unique_ptr_int_out_of_range() &&
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&
       basic_general_madness_vector() &&
