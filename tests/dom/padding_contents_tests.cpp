@@ -99,17 +99,26 @@ bool check(const std::string &json) {
   return true;
 }
 
+// "prefix" + std::string(...) inserts the literal into a temporary and trips
+// GCC bug 105329 (-Wrestrict) at -O3 on the Ubuntu 22.04 GCC 12 job.
+std::string make_json(const char *prefix, size_t count, char fill, const char *suffix = "") {
+  std::string json(prefix);
+  json.append(count, fill);
+  json += suffix;
+  return json;
+}
+
 // Valid documents of every length, ending in each kind of value.
 bool valid_documents() {
   TEST_START();
   for (size_t len = 1; len <= MAX_LEN; len++) {
     if (!check(std::string(len, '7'))) { return false; }
-    if (len >= 2 && !check("\"" + std::string(len - 2, 'a') + "\"")) { return false; }
-    if (len >= 2 && !check("[" + std::string(len - 2, ' ') + "]")) { return false; }
-    if (len >= 4 && !check("[\"" + std::string(len - 4, 'a') + "\"]")) { return false; }
-    if (len >= 8 && !check("{\"k\":\"" + std::string(len - 8, 'a') + "\"}")) { return false; }
-    if (len >= 6 && !check("[" + std::string(len - 6, ' ') + "true]")) { return false; }
-    if (len >= 4 && !check("null" + std::string(len - 4, ' '))) { return false; }
+    if (len >= 2 && !check(make_json("\"", len - 2, 'a', "\""))) { return false; }
+    if (len >= 2 && !check(make_json("[", len - 2, ' ', "]"))) { return false; }
+    if (len >= 4 && !check(make_json("[\"", len - 4, 'a', "\"]"))) { return false; }
+    if (len >= 8 && !check(make_json("{\"k\":\"", len - 8, 'a', "\"}"))) { return false; }
+    if (len >= 6 && !check(make_json("[", len - 6, ' ', "true]"))) { return false; }
+    if (len >= 4 && !check(make_json("null", len - 4, ' '))) { return false; }
   }
   TEST_SUCCEED();
 }
@@ -119,11 +128,11 @@ bool valid_documents() {
 bool invalid_documents() {
   TEST_START();
   for (size_t len = 1; len <= MAX_LEN; len++) {
-    if (!check("\"" + std::string(len - 1, 'a'))) { return false; }               // unclosed string
-    if (len >= 2 && !check("\"" + std::string(len - 2, 'a') + "\\")) { return false; }  // unfinished escape
-    if (len >= 2 && !check("[" + std::string(len - 2, ' ') + ",")) { return false; }   // unclosed array
-    if (len >= 3 && !check("\"" + std::string(len - 3, 'a') + "\xe2\x82")) { return false; } // truncated UTF-8
-    if (len >= 2 && !check("\"" + std::string(len - 2, 'a') + "\xc3")) { return false; }
+    if (!check(make_json("\"", len - 1, 'a'))) { return false; }                    // unclosed string
+    if (len >= 2 && !check(make_json("\"", len - 2, 'a', "\\"))) { return false; }  // unfinished escape
+    if (len >= 2 && !check(make_json("[", len - 2, ' ', ","))) { return false; }    // unclosed array
+    if (len >= 3 && !check(make_json("\"", len - 3, 'a', "\xe2\x82"))) { return false; } // truncated UTF-8
+    if (len >= 2 && !check(make_json("\"", len - 2, 'a', "\xc3"))) { return false; }
     if (!check(std::string(len, '{'))) { return false; }
   }
   TEST_SUCCEED();
