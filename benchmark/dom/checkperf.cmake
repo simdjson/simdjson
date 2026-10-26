@@ -45,7 +45,9 @@ if (SIMDJSON_ENABLE_DOM_CHECKPERF)
       OUTPUT ${SIMDJSON_CHECKPERF_DIR}/build/CMakeCache.txt
       COMMAND ${CMAKE_COMMAND} -E make_directory ${SIMDJSON_CHECKPERF_DIR}/build
       COMMAND ${CMAKE_COMMAND} -E copy ${SIMDJSON_USER_CMAKECACHE} ${SIMDJSON_CHECKPERF_DIR}/build/CMakeCache.txt
-      DEPENDS ${SIMDJSON_CHECKPERF_DIR}/.git/FETCH_HEAD ${SIMDJSON_USER_CMAKECACHE}
+      # Produced in the top-level directory. Makefiles build it through the
+      # target; Ninja also needs the file edge.
+      DEPENDS ${SIMDJSON_CHECKPERF_DIR}/.git/FETCH_HEAD ${SIMDJSON_USER_CMAKECACHE} simdjson-user-cmakecache
     )
     add_custom_command(
       OUTPUT ${SIMDJSON_CHECKPERF_DIR}/build/cmake_install.cmake
@@ -56,6 +58,9 @@ if (SIMDJSON_ENABLE_DOM_CHECKPERF)
       -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
       -DSIMDJSON_COMPETITION=OFF
       -DSIMDJSON_DEVELOPER_MODE=YES
+      # The copied cache turns checkperf on. This cmake_install.cmake is the
+      # stamp, and Ninja rejects a second rule that writes the same file.
+      -DSIMDJSON_ENABLE_DOM_CHECKPERF=OFF
       -G ${CMAKE_GENERATOR}
       ..
       WORKING_DIRECTORY ${SIMDJSON_CHECKPERF_DIR}/build
@@ -63,7 +68,8 @@ if (SIMDJSON_ENABLE_DOM_CHECKPERF)
     )
 
     if (CMAKE_CONFIGURATION_TYPES)
-      set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/$<CONFIGURATION>/parse)
+      # parse lives in benchmark/dom. Multi-config generators write it there.
+      set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/dom/$<CONFIG>/parse)
     else()
       set(CHECKPERF_PARSE ${SIMDJSON_CHECKPERF_DIR}/build/benchmark/dom/parse)
     endif()
