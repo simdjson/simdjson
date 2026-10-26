@@ -903,7 +903,9 @@ namespace number_tests {
     uint64_t u;
     double d;
     bool is_integer;
-    simdjson::ondemand::number_type type;
+    // GCC 11 -Werror=maybe-uninitialized cannot see that get() writes this
+    // before ASSERT_EQUAL streams it through operator<<.
+    simdjson::ondemand::number_type type{};
     simdjson::ondemand::number num;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ASSERT_SUCCESS(doc.get_int64().get(i));
