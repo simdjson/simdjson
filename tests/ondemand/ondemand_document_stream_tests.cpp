@@ -722,6 +722,42 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // In RFC 7464 form a string record starts right after its RS ("\x1e\"abc\"\n").
+    // A batch that ends inside such a string must stop before its RS.
+    bool json_sequence_string_record_at_batch_end() {
+        TEST_START();
+        struct case_t { std::string json; size_t batch_size; size_t docs; size_t truncated; };
+        const std::vector<case_t> cases = {
+            {"\x1e[1,2,3,4,5,6,7,8]\n\x1e\"abcdefghij\"\n", 24, 2, 0},
+            {"\x1e[1,2,3,4,5,6,7,8]\n\x1e\x1e\"abcdefghij\"\n", 24, 2, 0},
+            {"\x1e" "1\n\x1e" "2\n\x1e\"abc", 1000000, 2, 4},
+        };
+        for (const auto &c : cases) {
+            padded_string json(c.json);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(json, c.batch_size, stream_format::json_sequence).get(stream));
+            size_t counter{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS((*i).error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(stream.truncated_bytes(), c.truncated);
+            dom::parser dparser;
+            dom::document_stream dstream;
+            ASSERT_SUCCESS(dparser.parse_many(json, c.batch_size, stream_format::json_sequence).get(dstream));
+            counter = 0;
+            for (auto doc : dstream) {
+                ASSERT_SUCCESS(doc.error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(dstream.truncated_bytes(), c.truncated);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated_unclosed_string() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -3112,6 +3148,7 @@ bool run() {
 #endif
             json_sequence_tests() &&
             truncated_bytes_filtered_formats() &&
+            json_sequence_string_record_at_batch_end() &&
             comma_delimited_tests() &&
             stdstring_with_format() &&
             issue2181() &&
