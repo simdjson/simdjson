@@ -275,6 +275,9 @@ private:
   /** Pass the next batch through stage 1 with the given parser. */
   inline error_code run_stage1(dom::parser &p, size_t batch_start) noexcept;
 
+  /** Pick the stage 2 entry point for the batch that stage 1 just indexed. */
+  inline void load_stage2() noexcept;
+
   dom::parser *parser;
   const uint8_t *buf;
   size_t len;
@@ -285,6 +288,8 @@ private:
   error_code error;
   size_t batch_start{0};
   size_t doc_index{};
+  /** The stage 2 entry point for the documents of the current batch (see load_stage2). */
+  internal::dom_parser_implementation::stage2_next_function_t stage2_next_fn{nullptr};
 #ifdef SIMDJSON_THREADS_ENABLED
   /** Indicates whether we use threads. Note that this needs to be a constant during the execution of the parsing. */
   bool use_thread;

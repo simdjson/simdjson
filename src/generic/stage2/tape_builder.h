@@ -119,6 +119,30 @@ struct tape_builder {
       return iter.walk_document<STREAMING, false>(builder);
     }
   }
+
+  // The stage 2 entry points of dom::document_stream, which picks one per batch
+  // (see internal::dom_parser_implementation::stage2_next_function). Out of
+  // line, so that stage2_next() can share the code.
+  simdjson_warn_unused static simdjson_never_inline error_code parse_next_document(
+      internal::dom_parser_implementation &dom_parser, dom::document &doc) noexcept {
+    return parse_document<true>(static_cast<dom_parser_implementation &>(dom_parser), doc);
+  }
+
+  // A document of a stream batch that stage 2 must bound to its structural
+  // indexes (see internal::dom_parser_implementation::_bounded_batch).
+  simdjson_warn_unused static simdjson_never_inline error_code parse_next_bounded_document(
+      internal::dom_parser_implementation &_dom_parser, dom::document &doc) noexcept {
+    dom_parser_implementation &dom_parser = static_cast<dom_parser_implementation &>(_dom_parser);
+    dom_parser.doc = &doc;
+    json_iterator iter(dom_parser, dom_parser.next_structural_index);
+    if (dom_parser._unpadded) {
+      tape_builder_impl<true> builder(doc);
+      return iter.walk_document<true, true, true>(builder);
+    } else {
+      tape_builder_impl<false> builder(doc);
+      return iter.walk_document<true, false, true>(builder);
+    }
+  }
 };
 
 template <bool UNPADDED>

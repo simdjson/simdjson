@@ -202,6 +202,7 @@ inline void document_stream::start() noexcept {
     error = run_stage1(*parser, batch_start);
   }
   if (error) { return; }
+  load_stage2();
 #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread if needed
@@ -278,7 +279,7 @@ inline void document_stream::next() noexcept {
 
   // Load the next document from the batch
   doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
-  error = parser->implementation->stage2_next(parser->doc);
+  error = stage2_next_fn(*parser->implementation, parser->doc);
   // If that was the last document in the batch, load another batch (if available)
   while (error == EMPTY) {
     batch_start = next_batch_start();
@@ -294,9 +295,10 @@ inline void document_stream::next() noexcept {
     error = run_stage1(*parser, batch_start);
 #endif
     if (error) { continue; } // If the error was EMPTY, we may want to load another batch.
+    load_stage2();
     // Run stage 2 on the first document in the batch
     doc_index = batch_start + parser->implementation->structural_indexes[parser->implementation->next_structural_index];
-    error = parser->implementation->stage2_next(parser->doc);
+    error = stage2_next_fn(*parser->implementation, parser->doc);
   }
 }
 inline size_t document_stream::size_in_bytes() const noexcept {
@@ -315,9 +317,40 @@ inline size_t document_stream::next_batch_start() const noexcept {
   return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
 }
 
+// Stage 1 cuts the batch after the last document that looks complete, and
+// leaves a sentinel structural index past it: stage 2 validates the documents,
+// and stops an invalid one at the sentinel because the byte there cannot
+// continue a document. That byte is not part of the batch, though: it is the
+// start of the next document, padding (which the caller need not initialize)
+// or the `]` that comma_delimited_array strips. When it is ',', ':', ']' or
+// '}', or when the batch ends where a value is expected, an invalid document
+// such as `[2` (before a truncated `[["`) could be accepted and run past the
+// batch, into stale indexes such as the quote of an unclosed string, and so
+// past the buffer. Stage 2 then walks this batch with an explicit bound (see
+// load_stage2). Other batches keep the unchecked walk.
+//
+// set_bounded_batch() makes that decision for the batch stage 1 just indexed.
+// Out of line: it runs once per batch, and inlined it would weigh on next().
+simdjson_never_inline void set_bounded_batch(internal::dom_parser_implementation &impl, const uint8_t *batch) noexcept {
+  bool bounded = false;
+  const uint32_t n = impl.n_structural_indexes;
+  if (n > 0) {
+    const uint8_t next = batch[impl.structural_indexes[n]];
+    const uint8_t last = batch[impl.structural_indexes[n - 1]];
+    bounded = next == ',' || next == ':' || next == ']' || next == '}' ||
+              last == ',' || last == ':' || last == '[' || last == '{';
+  }
+  impl._bounded_batch = bounded;
+}
+
+inline void document_stream::load_stage2() noexcept {
+  stage2_next_fn = parser->implementation->stage2_next_function(parser->implementation->_bounded_batch);
+}
+
 inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_start) noexcept {
   size_t remaining = len - _batch_start;
   stage1_mode mode;
+  size_t batch_len;
   if (remaining <= batch_size) {
     // Final batch
     switch (format) {
@@ -331,7 +364,7 @@ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_star
         mode = stage1_mode::streaming_final;
         break;
     }
-    return p.implementation->stage1(&buf[_batch_start], remaining, mode);
+    batch_len = remaining;
   } else {
     // Partial batch
     switch (format) {
@@ -345,8 +378,11 @@ inline error_code document_stream::run_stage1(dom::parser &p, size_t _batch_star
         mode = stage1_mode::streaming_partial;
         break;
     }
-    return p.implementation->stage1(&buf[_batch_start], batch_size, mode);
+    batch_len = batch_size;
   }
+  error_code err = p.implementation->stage1(&buf[_batch_start], batch_len, mode);
+  if (!err) { set_bounded_batch(*p.implementation, &buf[_batch_start]); }
+  return err;
 }
 
 #ifdef SIMDJSON_THREADS_ENABLED
