@@ -61,8 +61,23 @@ public:
   /** The number of allocated bytes. */
   inline size_t capacity() const noexcept;
 
-  /** check that the view has sufficient padding */
+  /**
+   * Check that the view has sufficient padding: either SIMDJSON_PADDING bytes of
+   * capacity past the end of the document, or enough trailing white space in
+   * the document to stand in for the missing bytes.
+   */
   inline bool has_sufficient_padding() const noexcept;
+
+  /**
+   * The parser may read up to SIMDJSON_PADDING bytes past the end of the
+   * document. When the capacity falls short of that but the document ends
+   * with enough white space to make up for it (see has_sufficient_padding()),
+   * this moves that white space out of the document and into the padding, so
+   * that padding() >= SIMDJSON_PADDING. It does nothing otherwise.
+   *
+   * @return whether the document was shortened
+   */
+  inline bool use_trailing_whitespace_as_padding() noexcept;
 
   /**
    * Remove the UTF-8 Byte Order Mark (BOM) if it exists.
