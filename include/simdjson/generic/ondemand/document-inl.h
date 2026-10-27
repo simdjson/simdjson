@@ -181,6 +181,11 @@ simdjson_inline simdjson_result<std::float64_t> document::get_float64() noexcept
 simdjson_inline simdjson_result<std::string_view> document::get_string(bool allow_replacement) noexcept {
   return get_root_value_iterator().get_root_string(true, allow_replacement);
 }
+simdjson_inline simdjson_result<const char *> document::get_c_str(bool allow_replacement) noexcept {
+  std::string_view view;
+  SIMDJSON_TRY(get_string(allow_replacement).get(view));
+  return view.data();
+}
 #if SIMDJSON_SUPPORTS_CHAR8_T
 simdjson_inline simdjson_result<std::u8string_view> document::get_u8string(bool allow_replacement) noexcept {
   std::string_view content;
@@ -209,6 +214,7 @@ template<> simdjson_inline simdjson_result<array> document::get() & noexcept { r
 template<> simdjson_inline simdjson_result<object> document::get() & noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> document::get() & noexcept { return get_raw_json_string(); }
 template<> simdjson_inline simdjson_result<std::string_view> document::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<const char *> document::get() & noexcept { return get_c_str(false); }
 #if SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_inline simdjson_result<std::u8string_view> document::get() & noexcept { return get_u8string(false); }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
@@ -235,6 +241,7 @@ template<> simdjson_warn_unused simdjson_inline error_code document::get(array& 
 template<> simdjson_warn_unused simdjson_inline error_code document::get(object& out) & noexcept { return get_object().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(raw_json_string& out) & noexcept { return get_raw_json_string().get(out); }
 template<> simdjson_warn_unused simdjson_inline error_code document::get(std::string_view& out) & noexcept { return get_string(false).get(out); }
+template<> simdjson_warn_unused simdjson_inline error_code document::get(const char *& out) & noexcept { return get_c_str(false).get(out); }
 #if SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_warn_unused simdjson_inline error_code document::get(std::u8string_view& out) & noexcept { return get_u8string(false).get(out); }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
@@ -259,6 +266,7 @@ template<> simdjson_warn_unused simdjson_inline error_code document::get(value& 
 
 template<> simdjson_deprecated simdjson_inline simdjson_result<raw_json_string> document::get() && noexcept { return get_raw_json_string(); }
 template<> simdjson_deprecated simdjson_inline simdjson_result<std::string_view> document::get() && noexcept { return get_string(false); }
+template<> simdjson_deprecated simdjson_inline simdjson_result<const char *> document::get() && noexcept { return get_c_str(false); }
 #if SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_deprecated simdjson_inline simdjson_result<std::u8string_view> document::get() && noexcept { return get_u8string(false); }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
@@ -688,6 +696,10 @@ simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLE
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
 }
+simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_c_str(bool allow_replacement) noexcept {
+  if (error()) { return error(); }
+  return first.get_c_str(allow_replacement);
+}
 #if SIMDJSON_SUPPORTS_CHAR8_T
 simdjson_inline simdjson_result<std::u8string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::get_u8string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
@@ -964,6 +976,11 @@ simdjson_inline simdjson_result<std::float64_t> document_reference::get_float64(
 }
 #endif // SIMDJSON_SUPPORTS_FLOAT64_T
 simdjson_inline simdjson_result<std::string_view> document_reference::get_string(bool allow_replacement) noexcept { return doc->get_root_value_iterator().get_root_string(false, allow_replacement); }
+simdjson_inline simdjson_result<const char *> document_reference::get_c_str(bool allow_replacement) noexcept {
+  std::string_view view;
+  SIMDJSON_TRY(get_string(allow_replacement).get(view));
+  return view.data();
+}
 #if SIMDJSON_SUPPORTS_CHAR8_T
 simdjson_inline simdjson_result<std::u8string_view> document_reference::get_u8string(bool allow_replacement) noexcept {
   std::string_view content;
@@ -982,6 +999,7 @@ template<> simdjson_inline simdjson_result<array> document_reference::get() & no
 template<> simdjson_inline simdjson_result<object> document_reference::get() & noexcept { return get_object(); }
 template<> simdjson_inline simdjson_result<raw_json_string> document_reference::get() & noexcept { return get_raw_json_string(); }
 template<> simdjson_inline simdjson_result<std::string_view> document_reference::get() & noexcept { return get_string(false); }
+template<> simdjson_inline simdjson_result<const char *> document_reference::get() & noexcept { return get_c_str(false); }
 #if SIMDJSON_SUPPORTS_CHAR8_T
 template<> simdjson_inline simdjson_result<std::u8string_view> document_reference::get() & noexcept { return get_u8string(false); }
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
@@ -1193,6 +1211,10 @@ simdjson_inline simdjson_result<std::float64_t> simdjson_result<SIMDJSON_IMPLEME
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_string(bool allow_replacement) noexcept {
   if (error()) { return error(); }
   return first.get_string(allow_replacement);
+}
+simdjson_inline simdjson_result<const char *> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_c_str(bool allow_replacement) noexcept {
+  if (error()) { return error(); }
+  return first.get_c_str(allow_replacement);
 }
 #if SIMDJSON_SUPPORTS_CHAR8_T
 simdjson_inline simdjson_result<std::u8string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::get_u8string(bool allow_replacement) noexcept {
