@@ -190,7 +190,10 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) &
   return parse(s.data(), s.length(), false);
 }
 simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
-  return parse(v.data(), v.length(), false);
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse(json.data(), json.length(), false);
 }
 
 inline simdjson_result<element> parser::parse_unpadded(const uint8_t *buf, size_t len) & noexcept {
@@ -217,7 +220,9 @@ inline simdjson_result<document_stream> parser::parse_many(const padded_string &
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size) noexcept {
   if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
-  return parse_many(v.data(), v.length(), batch_size);
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse_many(json.data(), json.length(), batch_size);
 }
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept {
@@ -257,7 +262,9 @@ inline simdjson_result<document_stream> parser::parse_many(const padded_string &
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size, stream_format format) noexcept {
   if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
-  return parse_many(v.data(), v.length(), batch_size, format);
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse_many(json.data(), json.length(), batch_size, format);
 }
 
 simdjson_inline size_t parser::capacity() const noexcept {

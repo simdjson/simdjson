@@ -53,6 +53,7 @@ simdjson_inline simdjson_warn_unused bool parser::string_buffer_overflow(const u
 
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(padded_string_view json) & noexcept {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  json.use_trailing_whitespace_as_padding();
 
   json.remove_utf8_bom();
   _document_len = json.length();
@@ -70,6 +71,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & noexcept {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  json.use_trailing_whitespace_as_padding();
 
   json.remove_utf8_bom();
   _document_len = json.length();
@@ -125,6 +127,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(c
 
 simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iterate_raw(padded_string_view json) & noexcept {
   if (!json.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  json.use_trailing_whitespace_as_padding();
 
   json.remove_utf8_bom();
 
@@ -151,6 +154,7 @@ inline simdjson_result<document_stream> parser::iterate_many(const char *buf, si
 }
 inline simdjson_result<document_stream> parser::iterate_many(padded_string_view s, size_t batch_size) noexcept {
   if (!s.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  s.use_trailing_whitespace_as_padding();
   return iterate_many(s.data(), s.length(), batch_size);
 }
 inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size) noexcept {
@@ -186,6 +190,7 @@ inline simdjson_result<document_stream> parser::iterate_many(const char *buf, si
 }
 inline simdjson_result<document_stream> parser::iterate_many(padded_string_view s, size_t batch_size, bool allow_comma_separated) noexcept {
   if (!s.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  s.use_trailing_whitespace_as_padding();
   return iterate_many(s.data(), s.length(), batch_size, allow_comma_separated);
 }
 inline simdjson_result<document_stream> parser::iterate_many(const padded_string &s, size_t batch_size, bool allow_comma_separated) noexcept {
@@ -231,6 +236,7 @@ inline simdjson_result<document_stream> parser::iterate_many(const char *buf, si
 }
 inline simdjson_result<document_stream> parser::iterate_many(padded_string_view s, size_t batch_size, stream_format format) noexcept {
   if (!s.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  s.use_trailing_whitespace_as_padding();
   return iterate_many(s.data(), s.length(), batch_size, format);
 }
 inline simdjson_result<document_stream> parser::iterate_many(const std::string &s, size_t batch_size, stream_format format) noexcept {

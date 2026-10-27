@@ -138,9 +138,114 @@ bool invalid_documents() {
   TEST_SUCCEED();
 }
 
+// Parse json followed by SIMDJSON_PADDING bytes of white space in an exactly
+// sized buffer, with no capacity past the end: has_sufficient_padding() accepts
+// such a view, and pad() builds one when the string already ends with the white
+// space, so the parser must not read past it. Requires the same error code and
+// output as over a padded_string from every entry point that takes a
+// padded_string_view.
+bool check_trailing_whitespace(const std::string &json, char space) {
+  padded_string clean(json);
+  dom::parser dom_parser;
+  ondemand::parser ondemand_parser;
+  error_code dom_expected_error, ondemand_expected_error;
+  const std::string dom_expected = dom_text(dom_parser, clean.data(), clean.size(), dom_expected_error);
+  const std::string ondemand_expected = ondemand_text(ondemand_parser, clean.data(), clean.size(),
+                                                      clean.size() + SIMDJSON_PADDING, ondemand_expected_error);
+
+  std::vector<char> buf(json.begin(), json.end());
+  buf.resize(json.size() + SIMDJSON_PADDING, space);
+  const padded_string_view view(buf.data(), buf.size(), buf.size());
+  padded_string_view trimmed(view);
+  if (!view.has_sufficient_padding() || !trimmed.use_trailing_whitespace_as_padding() ||
+      trimmed.length() != json.size() || trimmed.padding() != SIMDJSON_PADDING) {
+    std::cerr << "trailing white space not taken as padding for <" << printable(json) << ">" << std::endl;
+    return false;
+  }
+
+  error_code error;
+  std::string result = ondemand_text(ondemand_parser, buf.data(), buf.size(), buf.size(), error);
+  if (error != ondemand_expected_error || result != ondemand_expected) {
+    std::cerr << "On-Demand iterate over trailing white space changed the result for <" << printable(json) << ">: "
+              << error << " <" << result << ">" << std::endl;
+    return false;
+  }
+  // pad() appends nothing when the white space is already there.
+  std::string str(buf.begin(), buf.end());
+  str.shrink_to_fit();
+  const padded_string_view padded = pad(str);
+  result = ondemand_text(ondemand_parser, padded.data(), padded.length(), padded.capacity(), error);
+  if (error != ondemand_expected_error || result != ondemand_expected) {
+    std::cerr << "On-Demand iterate over pad() changed the result for <" << printable(json) << ">: "
+              << error << " <" << result << ">" << std::endl;
+    return false;
+  }
+  dom::element elt;
+  std::ostringstream dom_result;
+  error = dom_parser.parse(view).get(elt);
+  if (!error) { dom_result << elt; }
+  if (error != dom_expected_error || dom_result.str() != dom_expected) {
+    std::cerr << "DOM parse over trailing white space changed the result for <" << printable(json) << ">: "
+              << error << " <" << dom_result.str() << ">" << std::endl;
+    return false;
+  }
+
+  // The streams hold a single document, which must give the same result.
+  size_t count = 0;
+  ondemand::document_stream ondemand_stream;
+  error = ondemand_parser.iterate_many(view).get(ondemand_stream);
+  if (!error) {
+    for (auto doc : ondemand_stream) {
+      std::string_view raw;
+      error = to_json_string(doc).get(raw);
+      result = error ? "" : std::string(raw);
+      count++;
+    }
+  }
+  if (count != 1 || error != ondemand_expected_error || result != ondemand_expected) {
+    std::cerr << "On-Demand iterate_many over trailing white space changed the result for <" << printable(json) << ">: "
+              << error << " <" << result << ">, " << count << " documents" << std::endl;
+    return false;
+  }
+  count = 0;
+  dom::document_stream dom_stream;
+  error = dom_parser.parse_many(view).get(dom_stream);
+  if (!error) {
+    for (auto doc : dom_stream) {
+      dom_result.str("");
+      error = doc.get(elt);
+      if (!error) { dom_result << elt; }
+      count++;
+    }
+  }
+  if (count != 1 || error != dom_expected_error || dom_result.str() != dom_expected) {
+    std::cerr << "DOM parse_many over trailing white space changed the result for <" << printable(json) << ">: "
+              << error << " <" << dom_result.str() << ">, " << count << " documents" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+// Valid documents of every length followed by white space standing in for the
+// padding. Under a sanitizer, a read past the white space is caught.
+bool trailing_whitespace_as_padding() {
+  TEST_START();
+  for (char space : {' ', '\n'}) {
+    for (size_t len = 1; len <= MAX_LEN; len++) {
+      if (!check_trailing_whitespace(std::string(len, '7'), space)) { return false; }
+      if (len >= 2 && !check_trailing_whitespace(make_json("\"", len - 2, 'a', "\""), space)) { return false; }
+      if (len >= 2 && !check_trailing_whitespace(make_json("[", len - 2, ' ', "]"), space)) { return false; }
+      if (len >= 8 && !check_trailing_whitespace(make_json("{\"k\":\"", len - 8, 'a', "\"}"), space)) { return false; }
+      if (len >= 4 && !check_trailing_whitespace(make_json("null", len - 4, ' '), space)) { return false; }
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool run() {
   return valid_documents() &&
-         invalid_documents();
+         invalid_documents() &&
+         trailing_whitespace_as_padding();
 }
 } // namespace padding_contents_tests
 
