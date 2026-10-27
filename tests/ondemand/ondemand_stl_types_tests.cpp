@@ -10,6 +10,8 @@
 #include <deque>
 #include <unordered_set>
 #include <optional>
+#include <memory>
+#include <limits>
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 class Array : public std::vector<float> {};
@@ -37,6 +39,86 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 namespace stl_types {
+#if SIMDJSON_SUPPORTS_CONCEPTS
+// Smart pointers to built-in types go through the generic smart-pointer
+// tag_invoke: same range checks as get<T>(), null resets the pointer, and a
+// failed parse leaves the pointer untouched.
+template <template <typename...> class Ptr, typename T>
+bool smart_pointer_case(std::string_view json, simdjson::error_code expected, T expected_value = T{}) {
+  simdjson::ondemand::parser parser;
+  // As a document.
+  {
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    Ptr<T> out;
+    ASSERT_EQUAL(doc.get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out != nullptr);
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_TRUE(out == nullptr);
+    }
+  }
+  // As an object field (ondemand::value).
+  {
+    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    Ptr<T> out;
+    ASSERT_EQUAL(doc["a"].get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out != nullptr);
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_TRUE(out == nullptr);
+    }
+  }
+  // null resets a non-null pointer.
+  {
+    simdjson::padded_string padded(std::string_view(R"({"a":null})"));
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    Ptr<T> out(new T{});
+    ASSERT_SUCCESS(doc["a"].get(out));
+    ASSERT_TRUE(out == nullptr);
+  }
+  return true;
+}
+
+template <template <typename...> class Ptr>
+bool smart_pointer_builtin_types() {
+  using simdjson::SUCCESS;
+  using simdjson::INCORRECT_TYPE;
+  using simdjson::NUMBER_OUT_OF_RANGE;
+  return smart_pointer_case<Ptr, bool>("true", SUCCESS, true) &&
+         smart_pointer_case<Ptr, bool>("1", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, int>("-2147483648", SUCCESS, (std::numeric_limits<int>::min)()) &&
+         smart_pointer_case<Ptr, int>("2147483647", SUCCESS, (std::numeric_limits<int>::max)()) &&
+         smart_pointer_case<Ptr, int>("2147483648", NUMBER_OUT_OF_RANGE) &&
+         smart_pointer_case<Ptr, int>("-2147483649", NUMBER_OUT_OF_RANGE) &&
+         smart_pointer_case<Ptr, int>("4294967297", NUMBER_OUT_OF_RANGE) &&
+         smart_pointer_case<Ptr, int>("\"1\"", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, int64_t>("-9223372036854775808", SUCCESS, (std::numeric_limits<int64_t>::min)()) &&
+         smart_pointer_case<Ptr, int64_t>("9223372036854775808", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, uint64_t>("18446744073709551615", SUCCESS, (std::numeric_limits<uint64_t>::max)()) &&
+         smart_pointer_case<Ptr, uint64_t>("-1", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, double>("1.5", SUCCESS, 1.5) &&
+         smart_pointer_case<Ptr, double>("true", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, std::string>("\"h\\u00e9llo\"", SUCCESS, std::string("h\xc3\xa9llo")) &&
+         smart_pointer_case<Ptr, std::string>("12", INCORRECT_TYPE) &&
+         smart_pointer_case<Ptr, std::string_view>("\"hello\"", SUCCESS, std::string_view("hello")) &&
+         smart_pointer_case<Ptr, std::string_view>("12", INCORRECT_TYPE);
+}
+
+bool smart_pointers_to_builtin_types() {
+  TEST_START();
+  ASSERT_TRUE(smart_pointer_builtin_types<std::unique_ptr>());
+  ASSERT_TRUE(smart_pointer_builtin_types<std::shared_ptr>());
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
 
 bool basic_general_madness() {
@@ -187,6 +269,9 @@ bool basic_general_madness_container() {
 #endif // SIMDJSON_EXCEPTIONS
 bool run() {
   return
+#if SIMDJSON_SUPPORTS_CONCEPTS
+      smart_pointers_to_builtin_types() &&
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&
       basic_general_madness_vector() &&
