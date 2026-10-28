@@ -29,8 +29,8 @@ string(
 # ---- Options, variables ----
 
 # These version numbers are modified by tools/release.py
-set(SIMDJSON_LIB_VERSION "34.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "34" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_VERSION "35.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "35" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
 if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
