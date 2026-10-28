@@ -206,8 +206,15 @@ inline void document_stream::start() noexcept {
 #ifdef SIMDJSON_THREADS_ENABLED
   if (use_thread && next_batch_start() < len) {
     // Kick off the first thread if needed
+    // load_from_stage1_thread() swaps *parser with stage1_thread_parser, which
+    // then parses every other batch: give it the same settings.
+    stage1_thread_parser.set_max_capacity(parser->max_capacity());
+    stage1_thread_parser.number_as_string(parser->number_as_string());
+    error = stage1_thread_parser.allocate(batch_size, parser->max_depth());
+    if (error) { return; }
     error = stage1_thread_parser.ensure_capacity(batch_size);
     if (error) { return; }
+    stage1_thread_parser.implementation->_number_as_string = parser->number_as_string();
     worker->start_thread();
     start_stage1_thread();
     if (error) { return; }

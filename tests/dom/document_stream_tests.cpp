@@ -1874,6 +1874,35 @@ namespace document_stream_tests {
     TEST_SUCCEED();
   }
 
+  // With threads, every other batch is parsed by the stream's own parser, which
+  // is then swapped with the caller's: it must use the caller's settings, and
+  // the caller's parser must keep them after the stream.
+  bool parse_many_threaded_parser_settings() {
+    TEST_START();
+    // Each document is nested deeper than DEFAULT_MAX_DEPTH and fills a batch.
+    std::string json;
+    for (size_t i = 0; i < 4; i++) {
+      json += "[123456789012345678901234," + std::string(1500, '[') + std::string(1500, ']') + "]\n";
+    }
+    auto input = simdjson::padded_string(json);
+    simdjson::dom::parser parser;
+    parser.number_as_string(true);
+    parser.set_max_capacity(1 << 20);
+    ASSERT_SUCCESS(parser.allocate(4096, 2048));
+    simdjson::dom::document_stream stream;
+    ASSERT_SUCCESS(parser.parse_many(input, 4096).get(stream));
+    size_t count = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.error());
+      count++;
+    }
+    ASSERT_EQUAL(count, 4);
+    ASSERT_TRUE(parser.number_as_string());
+    ASSERT_EQUAL(parser.max_depth(), 2048);
+    ASSERT_EQUAL(parser.max_capacity(), 1 << 20);
+    TEST_SUCCEED();
+  }
+
   // parse_many() on a std::string or padded_string_view without SIMDJSON_PADDING
   // bytes of capacity must fail rather than read past the buffer.
   bool parse_many_insufficient_padding() {
@@ -2521,6 +2550,7 @@ namespace document_stream_tests {
            json_sequence_tests() &&
            scalar_at_window_boundary() &&
            parse_many_number_as_string() &&
+           parse_many_threaded_parser_settings() &&
            parse_many_insufficient_padding() &&
            root_numbers_in_stream() &&
            truncated_bytes_documented_cases() &&
