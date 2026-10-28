@@ -2,6 +2,8 @@
 #include "test_builder.h"
 #include <string>
 #include <optional>
+#include <stdexcept>
+#include <variant>
 #include <vector>
 
 using namespace simdjson;
@@ -224,6 +226,39 @@ struct throwing_adapter {
 
 struct WithThrowingAdapter {
   [[= simdjson::with<throwing_adapter>]] int value = 0;
+};
+#endif // SIMDJSON_EXCEPTIONS
+
+struct Circle {
+  double radius = 0;
+};
+
+struct [[= simdjson::rename<"rect">]] Rectangle {
+  int width = 0;
+  int height = 0;
+};
+
+struct Label {
+  std::string text = "";
+};
+
+struct Drawing {
+  std::string name = "";
+  [[= simdjson::with<simdjson::adjacently_tagged<"kind", "shape">>]] std::variant<Circle, Rectangle> shape = Circle{};
+  [[= simdjson::with<simdjson::adjacently_tagged<>>]] std::variant<Label, Circle> label = Label{};
+};
+
+#if SIMDJSON_EXCEPTIONS
+// Copying it throws, which can leave a variant valueless by exception.
+struct ThrowsOnCopy {
+  int value = 0;
+  ThrowsOnCopy() = default;
+  ThrowsOnCopy(const ThrowsOnCopy &) { throw std::runtime_error("copy failure"); }
+  ThrowsOnCopy &operator=(const ThrowsOnCopy &) = default;
+};
+
+struct WithValuelessVariant {
+  [[= simdjson::with<simdjson::adjacently_tagged<>>]] std::variant<Circle, ThrowsOnCopy> v = Circle{};
 };
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -757,6 +792,92 @@ bool throwing_adapter_test() {
   TEST_SUCCEED();
 }
 
+bool adjacently_tagged_serialize_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(Drawing{"c", Circle{1.5}, Label{"dashed"}}).get(out));
+  ASSERT_EQUAL(out, R"({"name":"c","shape":{"kind":"Circle","shape":{"radius":1.5}},"label":{"type":"Label","value":{"text":"dashed"}}})");
+  // The rename annotation of the type gives the name of the alternative.
+  ASSERT_SUCCESS(simdjson::to_json(Drawing{"r", Rectangle{2, 3}, Circle{4}}).get(out));
+  ASSERT_EQUAL(out, R"({"name":"r","shape":{"kind":"rect","shape":{"width":2,"height":3}},"label":{"type":"Circle","value":{"radius":4.0}}})");
+#endif
+  TEST_SUCCEED();
+}
+
+bool adjacently_tagged_roundtrip_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  std::string json;
+  ASSERT_SUCCESS(simdjson::to_json(Drawing{"r", Rectangle{2, 3}, Label{"solid"}}).get(json));
+  Drawing d;
+  ASSERT_SUCCESS(parse_as(json, d));
+  ASSERT_EQUAL(d.name, "r");
+  ASSERT_TRUE(std::holds_alternative<Rectangle>(d.shape));
+  ASSERT_EQUAL(std::get<Rectangle>(d.shape).width, 2);
+  ASSERT_EQUAL(std::get<Rectangle>(d.shape).height, 3);
+  ASSERT_TRUE(std::holds_alternative<Label>(d.label));
+  ASSERT_EQUAL(std::get<Label>(d.label).text, "solid");
+  ASSERT_SUCCESS(simdjson::to_json(Drawing{"c", Circle{1.5}, Circle{4}}).get(json));
+  ASSERT_SUCCESS(parse_as(json, d));
+  ASSERT_TRUE(std::holds_alternative<Circle>(d.shape));
+  ASSERT_EQUAL(std::get<Circle>(d.shape).radius, 1.5);
+  ASSERT_TRUE(std::holds_alternative<Circle>(d.label));
+  ASSERT_EQUAL(std::get<Circle>(d.label).radius, 4);
+#endif
+  TEST_SUCCEED();
+}
+
+bool adjacently_tagged_deserialize_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION
+  Drawing d;
+  // The content may come before the tag, and other keys are ignored.
+  ASSERT_SUCCESS(parse_as(R"({"name":"x","shape":{"shape":{"radius":2},"extra":1,"kind":"Circle"},"label":{"value":{"text":"dashed"},"type":"Label"}})", d));
+  ASSERT_TRUE(std::holds_alternative<Circle>(d.shape));
+  ASSERT_EQUAL(std::get<Circle>(d.shape).radius, 2);
+  ASSERT_EQUAL(std::get<Label>(d.label).text, "dashed");
+  // The name of a renamed type is its new name only.
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":"Rectangle","shape":{"width":1,"height":1}},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":"Square","shape":{}},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":1,"shape":{"radius":2}},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"shape":{"radius":2}},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::NO_SUCH_FIELD);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":"Circle"},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::NO_SUCH_FIELD);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":"Circle","shape":3},"label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":"Circle","label":{"type":"Label","value":{"text":"solid"}}})", d), simdjson::INCORRECT_TYPE);
+  ASSERT_ERROR(parse_as(R"({"name":"x","shape":{"kind":"Circle","shape":{"radius":2}},"label":{"type":"Label","value":{"text":1}}})", d), simdjson::INCORRECT_TYPE);
+  // A failure leaves the variant unchanged.
+  std::variant<Circle, Rectangle> shape = Rectangle{5, 6};
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  simdjson::padded_string json(std::string_view(R"({"kind":"Circle","shape":{"radius":"wide"}})"));
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  simdjson::ondemand::value v;
+  ASSERT_SUCCESS(doc.get_value().get(v));
+  ASSERT_ERROR((simdjson::adjacently_tagged<"kind", "shape">::deserialize(v, shape)), simdjson::INCORRECT_TYPE);
+  ASSERT_TRUE(std::holds_alternative<Rectangle>(shape));
+  ASSERT_EQUAL(std::get<Rectangle>(shape).width, 5);
+#endif
+  TEST_SUCCEED();
+}
+
+bool adjacently_tagged_valueless_test() {
+  TEST_START();
+#if SIMDJSON_STATIC_REFLECTION && SIMDJSON_EXCEPTIONS
+  WithValuelessVariant w;
+  ThrowsOnCopy t;
+  try {
+    w.v.emplace<ThrowsOnCopy>(t);
+  } catch (const std::runtime_error &) {
+  }
+  ASSERT_TRUE(w.v.valueless_by_exception());
+  std::string out;
+  ASSERT_SUCCESS(simdjson::to_json(w).get(out));
+  ASSERT_EQUAL(out, R"({"v":null})");
+#endif
+  TEST_SUCCEED();
+}
+
 bool run_all() {
   return rename_serialize_test()
       && rename_deserialize_test()
@@ -785,7 +906,11 @@ bool run_all() {
       && escaped_keys_test()
       && deny_unknown_fields_roundtrip_test()
       && transparent_adapter_test()
-      && throwing_adapter_test();
+      && throwing_adapter_test()
+      && adjacently_tagged_serialize_test()
+      && adjacently_tagged_roundtrip_test()
+      && adjacently_tagged_deserialize_test()
+      && adjacently_tagged_valueless_test();
 }
 
 } // namespace annotation_tests

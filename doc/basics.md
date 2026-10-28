@@ -1942,6 +1942,38 @@ function taking an `ondemand::value &` fails with `SCALAR_DOCUMENT_AS_VALUE` whe
 document is a scalar (a lone string, number, Boolean or null); declare its parameter
 as `auto &` to also receive the document itself.
 
+##### Variants
+
+The adapter `simdjson::adjacently_tagged<"tag", "content">` (de)serializes a
+`std::variant` as an object holding the name of the current alternative under the
+`"tag"` key and its value under the `"content"` key, like serde's
+`#[serde(tag = "tag", content = "content")]`. The keys default to `"type"` and `"value"`.
+
+```cpp
+struct Circle {
+  double radius;
+};
+
+struct [[= simdjson::rename<"rect">]] Rectangle {
+  int width;
+  int height;
+};
+
+struct Drawing {
+  [[= simdjson::with<simdjson::adjacently_tagged<"kind", "shape">>]] std::variant<Circle, Rectangle> shape;
+};
+// Drawing{Circle{1.5}}: {"shape":{"kind":"Circle","shape":{"radius":1.5}}}
+// Drawing{Rectangle{2, 3}}: {"shape":{"kind":"rect","shape":{"width":2,"height":3}}}
+```
+
+The name of an alternative is the identifier of its type, or the name given by a
+`rename` annotation on the type. The alternatives must have distinct names, which is
+checked at compile time: give a `rename` to one of two types with the same identifier
+in different namespaces. An alternative without an identifier (`int`, `std::string`,
+...) is a compile-time error: wrap it in a structure. When deserializing, the two keys may come in any order and other
+keys are ignored. An unknown name is an `INCORRECT_TYPE` error, and a failure leaves
+the variant unchanged. A variant that is valueless by exception is serialized as `null`.
+
 ### The simdjson::from shortcut (experimental, C++20)
 
 
