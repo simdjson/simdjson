@@ -1289,8 +1289,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -1380,8 +1383,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -1529,8 +1535,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -1622,8 +1631,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
