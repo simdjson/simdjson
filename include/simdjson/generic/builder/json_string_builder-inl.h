@@ -782,6 +782,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {

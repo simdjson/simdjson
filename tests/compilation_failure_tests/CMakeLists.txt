@@ -52,6 +52,24 @@ if (SIMDJSON_EXCEPTIONS)
   endif()
 endif()
 
+# string_builder::append() must reject 128-bit integers rather than truncate
+# them. We match "deleted" in the compiler output so that the test cannot pass
+# because of some unrelated error.
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+#ifndef __SIZEOF_INT128__
+#error no 128-bit integers
+#endif
+int main() { return 0; }
+" SIMDJSON_HAS_INT128)
+if(SIMDJSON_HAS_INT128)
+  foreach(TEST_NAME string_builder_append_int128 string_builder_append_uint128)
+    add_dual_compile_test(${TEST_NAME})
+    set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY WILL_FAIL FALSE)
+    set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
+  endforeach()
+endif()
+
 # key_selector enforces a 63-character key-length limit at compile time. This
 # needs C++20 concepts, which in this project are enabled together with static
 # reflection, so we only register it there.
@@ -69,4 +87,12 @@ if (SIMDJSON_STATIC_REFLECTION_ENABLED)
   # A number that overflows binary64 has no representation to return and no way
   # to report an error from a constant expression, so it must fail to compile.
   add_dual_compile_test(compile_time_json_overflow)
+
+  # A struct with a 128-bit integer member must not be serialized with a
+  # truncated value.
+  if(SIMDJSON_HAS_INT128)
+    add_dual_compile_test(to_json_int128)
+    set_property(TEST to_json_int128_should_not_compile PROPERTY WILL_FAIL FALSE)
+    set_property(TEST to_json_int128_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "Integers wider than 64 bits are not supported")
+  endif()
 endif()

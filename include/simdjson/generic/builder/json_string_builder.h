@@ -68,6 +68,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
