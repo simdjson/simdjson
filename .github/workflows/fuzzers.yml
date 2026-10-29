@@ -136,7 +136,10 @@ jobs:
         name: corpus
         path: corpus.tar
 
+    # The corpus server is not always reachable from the runners: a failed
+    # upload should not fail the job, nor skip the valgrind step below.
     - name: Store the corpus externally
+      continue-on-error: true
       run: |
         gzip --keep corpus.tar
         curl -F"filedata=@corpus.tar.gz" https://simdjson:${{ secrets.fuzzdatapassword }}@www.pauldreik.se/fuzzdata/index.php
