@@ -1027,6 +1027,59 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  // Checks get_double(), get_float() and their _in_string variants, at the
+  // root and inside an array.
+  bool check_long_exponent(const std::string &number, double expected, error_code expected_error = SUCCESS) {
+    simdjson::padded_string root(number);
+    simdjson::padded_string array("[" + number + "]");
+    simdjson::padded_string quoted("\"" + number + "\"");
+    simdjson::padded_string quoted_array("[\"" + number + "\"]");
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    double d{};
+    float f{};
+    std::cout << "  " << number << std::endl;
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_ERROR(doc.get_double().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); ASSERT_EQUAL(std::signbit(d), std::signbit(expected)); }
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_ERROR(doc.get_float().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); ASSERT_EQUAL(std::signbit(f), std::signbit(expected)); }
+    ASSERT_SUCCESS(parser.iterate(array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_double().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_float().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_ERROR(doc.get_double_in_string().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_ERROR(doc.get_float_in_string().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    ASSERT_SUCCESS(parser.iterate(quoted_array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_double_in_string().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(quoted_array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_float_in_string().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    return true;
+  }
+
+  bool long_exponents() {
+    TEST_START();
+    // JSON does not limit the number of exponent digits, and the DOM parser
+    // and get_number() accept an exponent of more than 19 digits.
+    ASSERT_TRUE(check_long_exponent("1e000000000000000000001", 10));
+    ASSERT_TRUE(check_long_exponent("5E-0000000000000000000001", 0.5));
+    ASSERT_TRUE(check_long_exponent("0e9999999999999999999999999999", 0));
+    ASSERT_TRUE(check_long_exponent("-0e+99999999999999999999", -0.0));
+    ASSERT_TRUE(check_long_exponent("1.5e-99999999999999999999", 0));
+    // Still infinite, hence an error.
+    ASSERT_TRUE(check_long_exponent("1e99999999999999999999", 0, NUMBER_ERROR));
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
@@ -1054,7 +1107,8 @@ namespace number_tests {
            old_crashes() &&
            root_number_scratch_padding() &&
            root_number_trailing_whitespace() &&
-           root_number_stream_delimiters();
+           root_number_stream_delimiters() &&
+           long_exponents();
   }
 
 } // namespace number_tests
