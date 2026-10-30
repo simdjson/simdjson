@@ -179,9 +179,7 @@ inline bool has_json_escapable_byte(uint64_t x) {
 /*
  * Every variant of the escaper lives in its own namespace (escape_scalar,
  * escape_sse2, escape_avx2, ...), whose content does not depend on compiler
- * flags. Callers that sit in a namespace shared by all translation units
- * must pick a variant that depends only on the target architecture (see
- * escape_baseline); the builder picks one from its implementation.
+ * flags. Callers use escape_best, defined at the end of this file.
  */
 
 // Scalar fallback for finding next quotable character
@@ -740,16 +738,26 @@ simdjson_really_inline size_t write_string_escaped(const std::string_view input,
 } // namespace escape_avx2
 #endif
 
-// The best variant that every compiler for the target architecture can use,
-// whatever its flags: SSE2 is part of x64, NEON part of AArch64.
-#if SIMDJSON_EXPERIMENTAL_HAS_NEON
-namespace escape_baseline = escape_neon;
-#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2 &&                                         \
-    (defined(__x86_64__) || defined(__x86_64) || defined(_M_AMD64) ||          \
-     defined(_M_X64))
-namespace escape_baseline = escape_sse2;
+// The variant that the builder and the DOM serializer use: the best one that
+// the compiler flags allow. Translation units compiled with different flags
+// may select different variants for the same inline functions; see
+// "Mixing compiler flags" in doc/implementation-selection.md.
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 && defined(__AVX2__)
+namespace escape_best = escape_avx2;
+#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2
+namespace escape_best = escape_sse2;
+#elif SIMDJSON_EXPERIMENTAL_HAS_NEON
+namespace escape_best = escape_neon;
+#elif SIMDJSON_EXPERIMENTAL_HAS_LASX
+namespace escape_best = escape_lasx;
+#elif SIMDJSON_EXPERIMENTAL_HAS_LSX
+namespace escape_best = escape_lsx;
+#elif SIMDJSON_EXPERIMENTAL_HAS_RVV
+namespace escape_best = escape_rvv;
+#elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
+namespace escape_best = escape_ppc64;
 #else
-namespace escape_baseline = escape_scalar;
+namespace escape_best = escape_scalar;
 #endif
 
 } // namespace internal

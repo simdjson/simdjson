@@ -46,6 +46,19 @@ is no need to set architecture-specific flags yourself (e.g., `-mavx2`, `/AVX2` 
 older processors. _Note:_ for POWER9 processors make sure you compile it with `-mcpu=power9` and `-mtune=power9` to
 get maximum performance.
 
+### Mixing compiler flags
+
+Some code in the simdjson headers, such as the string escaping used by the builder and by the
+DOM serializer (`minify`, `to_string`, `prettify`), is selected at compile time from the
+instruction sets that your compiler flags enable (e.g., `-mavx2`, `/arch:AVX2`, `-march=native`,
+or the LoongArch, RISC-V vector and POWER8 equivalents). If you compile some files that include
+simdjson with such flags and others without them, the linker may keep the version compiled with
+the wider instruction set for the whole program. Your program must then only run on processors
+that support those instructions. Building your application with `-march=native` against a
+simdjson library built with default flags is fine, since the application already requires your
+processor. What is not supported is compiling only some files with, say, `-mavx2`, and choosing at
+runtime whether to call them so that the program still runs on older processors.
+
 Runtime CPU Detection
 ---------------------
 
