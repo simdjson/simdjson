@@ -105,8 +105,9 @@ protected:
 
     simdjson_inline void append_n(char c, size_t count) {
       const size_t new_size = size + count;
-      if (capacity < new_size)
+      if (capacity < new_size) {
         grow(new_size < capacity * 2 ? capacity * 2 : new_size);
+      }
       std::memset(buffer + size, c, count);
       size = new_size;
     }
@@ -176,9 +177,8 @@ template <class formatter = mini_formatter> class string_builder {
 public:
   /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
-  /** Construct a builder passing arguments to the formatter **/
-  template <typename... Args>
-  explicit string_builder(Args&&... args) : format(std::forward<Args>(args)...) {}
+  /** Construct a builder whose formatter uses the given indentation step **/
+  explicit string_builder(int indent_step) : format(indent_step) {}
 
   /** Append an element to the builder (to be printed) **/
   inline void append(simdjson::dom::element value);

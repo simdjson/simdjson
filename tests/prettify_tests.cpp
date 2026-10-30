@@ -141,7 +141,7 @@ bool prettify_deep_indent_test() {
   simdjson::padded_string raw;
   if (simdjson::padded_string::load(TWITTER_JSON).get(raw)) { return false; }
 
-  constexpr size_t wrapper_levels = 20; // > MAX_DEPTH (16)
+  constexpr size_t wrapper_levels = 20;
   std::string input = std::string(wrapper_levels, '[') +
                       std::string(raw.data(), raw.size()) +
                       std::string(wrapper_levels, ']');
