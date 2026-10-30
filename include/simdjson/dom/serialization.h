@@ -112,6 +112,17 @@ protected:
       size = new_size;
     }
 
+    /** Makes room for n more bytes and returns where they go. **/
+    simdjson_inline char *reserve(size_t n) {
+      if (capacity - size < n) {
+        grow(size + n < capacity * 2 ? capacity * 2 : size + n);
+      }
+      return buffer + size;
+    }
+
+    /** Ends the content at end, which reserve() returned plus at most n. **/
+    simdjson_inline void set_end(const char *end) { size = size_t(end - buffer); }
+
     std::string_view str() const { return std::string_view(buffer, size); }
 
   private:
