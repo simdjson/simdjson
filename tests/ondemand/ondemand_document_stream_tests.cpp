@@ -3115,6 +3115,44 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // With threads, every other batch is parsed by the stream's own parser,
+    // which is then swapped with the caller's: it must use the caller's
+    // settings, and the caller's parser must keep them after the stream.
+    bool iterate_many_threaded_parser_settings() {
+        TEST_START();
+        // Each document is nested deeper than DEFAULT_MAX_DEPTH and fills a batch.
+        std::string json;
+        for (size_t i = 0; i < 4; i++) {
+            json += std::string(1500, '[') + std::string(1500, ']') + "\n";
+        }
+        auto input = padded_string(json);
+        ondemand::parser parser;
+        parser.set_max_capacity(1 << 20);
+        ASSERT_SUCCESS(parser.allocate(4096, 2048));
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 4096).get(stream));
+        size_t count = 0;
+        for (auto doc : stream) {
+            ondemand::array arr;
+            ASSERT_SUCCESS(doc.get_array().get(arr));
+            for (size_t depth = 1; depth < 1500; depth++) {
+                ASSERT_SUCCESS(arr.at(0).get_array().get(arr));
+            }
+            count++;
+        }
+        ASSERT_EQUAL(count, 4);
+        ASSERT_EQUAL(parser.max_depth(), 2048);
+        ASSERT_EQUAL(parser.max_capacity(), 1 << 20);
+        // A max_depth below the default is kept as well.
+        auto small = R"([1] [2])"_padded;
+        ondemand::parser shallow_parser;
+        ASSERT_SUCCESS(shallow_parser.allocate(4096, 8));
+        ASSERT_SUCCESS(shallow_parser.iterate_many(small, 4096).get(stream));
+        for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
+        ASSERT_EQUAL(shallow_parser.max_depth(), 8);
+        TEST_SUCCEED();
+    }
+
     // structural_indexes[] is relative to batch_start while current_index() is
 // absolute, so source() used to underflow on every batch after the first.
 bool source_across_batches() {
@@ -3142,6 +3180,7 @@ bool source_across_batches() {
 bool run() {
         return
             shrinking_batch_size_reuses_buffers() &&
+            iterate_many_threaded_parser_settings() &&
             stream_stops_after_fatal_error() &&
 #if SIMDJSON_STATIC_REFLECTION
             reflection_stream_tests() &&

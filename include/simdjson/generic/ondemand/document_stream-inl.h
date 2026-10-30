@@ -209,7 +209,7 @@ simdjson_inline document_stream::iterator document_stream::end() noexcept {
 
 inline void document_stream::start() noexcept {
   if (error) { return; }
-  error = parser->allocate(batch_size);
+  error = parser->allocate(batch_size, parser->max_depth());
   if (error) { return; }
   // Always run the first stage 1 parse immediately
   batch_start = 0;
@@ -235,7 +235,10 @@ inline void document_stream::start() noexcept {
       worker.reset(new(std::nothrow) stage1_worker());
       if (worker.get() == nullptr) { error = MEMALLOC; return; }
     }
-    error = stage1_thread_parser.allocate(batch_size);
+    // load_from_stage1_thread() swaps *parser with stage1_thread_parser, which
+    // then parses every other batch: give it the same settings.
+    stage1_thread_parser.set_max_capacity(parser->max_capacity());
+    error = stage1_thread_parser.allocate(batch_size, parser->max_depth());
     if (error) { return; }
     worker->start_thread();
     start_stage1_thread();
