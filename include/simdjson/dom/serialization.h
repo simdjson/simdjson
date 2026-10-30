@@ -5,6 +5,8 @@
 #include "simdjson/dom/element.h"
 #include "simdjson/dom/object.h"
 
+#include <cstring>
+
 namespace simdjson {
 
 /**
@@ -101,6 +103,15 @@ protected:
       size = new_size;
     }
 
+    simdjson_inline void append_n(char c, size_t count) {
+      const size_t new_size = size + count;
+      if (capacity < new_size) {
+        grow(new_size < capacity * 2 ? capacity * 2 : new_size);
+      }
+      std::memset(buffer + size, c, count);
+      size = new_size;
+    }
+
     std::string_view str() const { return std::string_view(buffer, size); }
 
   private:
@@ -140,6 +151,8 @@ public:
 
 class pretty_formatter : public base_formatter<pretty_formatter> {
 public:
+  explicit pretty_formatter(int step = 4) : indent_step(step) {}
+
   simdjson_inline void print_newline();
 
   simdjson_inline void print_indents(size_t depth);
@@ -164,6 +177,9 @@ template <class formatter = mini_formatter> class string_builder {
 public:
   /** Construct an initially empty builder, would print the empty string **/
   string_builder() = default;
+  /** Construct a builder whose formatter uses the given indentation step **/
+  explicit string_builder(int indent_step) : format(indent_step) {}
+
   /** Append an element to the builder (to be printed) **/
   inline void append(simdjson::dom::element value);
   /** Append an array to the builder (to be printed) **/
@@ -305,19 +321,19 @@ template <class T> std::string minify(simdjson_result<T> x) {
  *   cout << prettify(doc) << endl;
  *
  */
-template <class T> std::string prettify(T x) {
-  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb;
+template <class T> std::string prettify(T x, int indent_step = 4) {
+  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb(indent_step);
   sb.append(x);
   std::string_view answer = sb.str();
   return std::string(answer.data(), answer.size());
 }
 
 #if SIMDJSON_EXCEPTIONS
-template <class T> std::string prettify(simdjson_result<T> x) {
+template <class T> std::string prettify(simdjson_result<T> x, int indent_step = 4) {
   if (x.error()) {
     throw simdjson_error(x.error());
   }
-  return prettify(x.value());
+  return prettify(x.value(), indent_step);
 }
 #endif
 
