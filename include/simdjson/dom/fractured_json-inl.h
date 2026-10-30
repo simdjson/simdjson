@@ -140,7 +140,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
 
   for (dom::element child : arr) {
     if (!first) {
-      metrics.estimated_inline_len += 2; // ", "
+      metrics.estimated_inline_len += current_opts_->comma_padding ? 2 : 1; // ", " or ","
     }
     first = false;
 
@@ -189,12 +189,13 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 
   for (dom::key_value_pair field : obj) {
     if (!first) {
-      metrics.estimated_inline_len += 2; // ", "
+      metrics.estimated_inline_len += current_opts_->comma_padding ? 2 : 1; // ", " or ","
     }
     first = false;
 
-    // Key length: quotes + key + colon + space
-    metrics.estimated_inline_len += estimate_string_length(field.key) + 2;
+    // Key length: quotes + key + colon (+ space)
+    metrics.estimated_inline_len += estimate_string_length(field.key) +
+                                    (current_opts_->colon_padding ? 2 : 1);
 
     element_metrics child_metrics = analyze_element(field.value, depth + 1);
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;

@@ -1057,6 +1057,63 @@ bool no_padding_test() {
   return true;
 }
 
+// Without comma or colon padding, an inline container takes one column less
+// per separator. The analyzer used to count ", " and ": " regardless, so a
+// container that fit on a line was expanded, and table cells holding inline
+// containers were padded to the wrong width.
+bool no_padding_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    // 17 columns wide.
+    std::string json = "[1,2,3,4,5,6,7,8]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 17;
+    opts.comma_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "[1,2,3,4,5,6,7,8]");
+  }
+  {
+    std::string json = R"({"a":1,"b":2,"c":3})";
+    simdjson::fractured_json_options opts;
+    // 21 columns wide.
+    opts.max_total_line_length = 21;
+    opts.colon_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "{\"a\":1, \"b\":2, \"c\":3}");
+    // 22 columns wide.
+    opts.max_total_line_length = 22;
+    opts.colon_padding = true;
+    opts.comma_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "{\"a\": 1,\"b\": 2,\"c\": 3}");
+  }
+  {
+    std::string json = R"([{"a":[1,2,3],"b":1},{"a":"xxxxxxx","b":2},{"a":null,"b":3}])";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    opts.comma_padding = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": [1,2,3],  \"b\": 1},\n"
+        "    {\"a\": \"xxxxxxx\",\"b\": 2},\n"
+        "    {\"a\": null,     \"b\": 3}\n"
+        "]");
+  }
+  {
+    std::string json = R"([{"a":{"x":1},"b":1},{"a":"xxxxxxx","b":2},{"a":null,"b":3}])";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    opts.colon_padding = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\":{\"x\":1},   \"b\":1},\n"
+        "    {\"a\":\"xxxxxxx\", \"b\":2},\n"
+        "    {\"a\":null,      \"b\":3}\n"
+        "]");
+  }
+  std::cout << "No padding counted in length test passed." << std::endl;
+  return true;
+}
+
 bool compact_multiline_oversized_item_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -2567,6 +2624,7 @@ int main() {
   success = disable_compact_test() && success;
   success = disable_table_test() && success;
   success = no_padding_test() && success;
+  success = no_padding_counted_in_length_test() && success;
 
   // Layout tests
   success = compact_multiline_oversized_item_test() && success;
