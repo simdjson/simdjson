@@ -18,6 +18,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [u8string_view and u8string (C++20)](#u8string_view-and-u8string-c20)
 - [Avoiding pitfalls: enable development checks](#avoiding-pitfalls-enable-development-checks)
 - [Using the parsed JSON](#using-the-parsed-json)
+  * [What is validated when you skip values](#what-is-validated-when-you-skip-values)
   * [Using the parsed JSON: additional examples](#using-the-parsed-json-additional-examples)
 - [Adding support for custom types](#adding-support-for-custom-types)
   * [1. Specialize `simdjson::ondemand::value::get` to get custom types (pre-C++20)](#1-specialize-simdjsonondemandvalueget-to-get-custom-types-pre-c20)
@@ -895,6 +896,56 @@ support for users who avoid exceptions. See [the simdjson error handling documen
     std::cout << std::endl;
   }
   ```
+
+### What is validated when you skip values
+
+On-Demand validates the values you consume and the structure leading to them. Values you skip are
+not fully parsed. The intended guarantee is that a skipped error cannot make you read the *wrong*
+value later: skipped strings cannot swallow later structure, and skipped arrays or objects cannot
+leave the iterator inside nested content.
+
+What follows is the current On-Demand contract. DOM parsing still fully validates the document.
+
+**Always, including for skipped content**
+
+- The document is not empty, and the input is valid UTF-8. Unclosed strings and unescaped control
+  characters in strings are reported when the document is indexed (`iterate`).
+- String *boundaries* are established: quotes are matched, taking `\"` into account. A skipped
+  string therefore cannot change how later tokens are recognized.
+- Arrays and objects that are skipped are still closed: skip walks `[` / `{` / `]` / `}` tokens until
+  it returns to the parent depth. An unclosed container is an `INCOMPLETE_ARRAY_OR_OBJECT` error.
+- For structure, any run of non-whitespace bytes that is not `{ } [ ] : ,` or a string is one
+  scalar token. `truee` or `-0ab` is therefore one value, whether you consume it or not.
+
+**Only when you consume the value**
+
+- String escapes (`\u`, `\n`, illegal `\p`, and so on) are checked when you unescape, for example
+  with `get_string()` or `unescaped_key()`.
+- Number, boolean, and null *content* is checked when you convert the value (`get_int64()`,
+  `get_bool()`, `is_null()`, ...).
+- Missing or extra `,` / `:`, and the requirement that object keys are strings, are checked when
+  you iterate or index the array or object.
+- Remaining commas and the matching of the opening `[` / `{` with the closing `]` / `}` of a
+  container you started iterating are checked if you iterate it to completion.
+
+**The document as a whole**
+
+- Trailing JSON after the value you parsed is not rejected automatically. After you finish, call
+  `doc.at_end()` if you need to know that nothing remains. See [Checking for trailing
+  content](#checking-for-trailing-content).
+
+Example: looking up `"b"` skips `"a"`. The skipped string is not unescaped, so an illegal escape
+inside `"a"` is not reported. The later value is still the `"b"` field:
+
+```cpp
+auto json = R"({ "a": "\p", "b": 1 })"_padded;
+ondemand::parser parser;
+ondemand::document doc = parser.iterate(json);
+int64_t b;
+auto error = doc["b"].get_int64().get(b); // SUCCESS, b == 1
+```
+
+If you instead consume `"a"` with `get_string()`, that illegal escape is a `STRING_ERROR`.
 
 ### Using the parsed JSON: additional examples
 
