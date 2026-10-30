@@ -1673,6 +1673,39 @@ bool always_expand_depth_inline_children_test() {
   return true;
 }
 
+// A table cell is written on the row's line, so a container in a cell must be
+// written inline, like the children of an inline value. It used to go
+// through decide_layout(), which picks another layout for a container more
+// complex than max_inline_complexity: on a single line, that added the
+// padding of a compact multiline array or dropped the comma padding, so the
+// cell no longer had its measured width and the columns after it were
+// misaligned.
+bool table_cell_containers_inline_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::fractured_json_options opts;
+  opts.max_inline_complexity = 0;
+  {
+    std::string json = R"([{"a":[1,22,333],"b":1},{"a":"x","b":2}])";
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": [1, 22, 333], \"b\": 1},\n"
+        "    {\"a\": \"x\",          \"b\": 2}\n"
+        "]");
+  }
+  {
+    std::string json = R"([{"a":{"x":1,"y":2},"b":1},{"a":"x","b":2}])";
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": {\"x\": 1, \"y\": 2}, \"b\": 1},\n"
+        "    {\"a\": \"x\",              \"b\": 2}\n"
+        "]");
+  }
+  std::cout << "Table cell containers inline test passed." << std::endl;
+  return true;
+}
+
 
 bool table_format_union_columns_with_blank_padding_test() {
   std::cout << "Running " << __func__ << std::endl;
@@ -2641,6 +2674,7 @@ int main() {
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
   success = always_expand_depth_inline_children_test() && success;
+  success = table_cell_containers_inline_test() && success;
   success = table_format_union_columns_with_blank_padding_test() && success;
   success = table_format_respects_max_total_line_length_test() && success;
   success = table_nested_cell_padding_test() && success;
