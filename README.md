@@ -69,6 +69,7 @@ Real-world usage
 - [Timeplus Proton](https://github.com/timeplus-io/proton)
 - [TiFlash](https://github.com/pingcap/tiflash)
 - [ata-validator](https://ata-validator.com)
+- [Apache Arrow](https://github.com/apache/arrow)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
