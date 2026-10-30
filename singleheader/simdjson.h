@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-28 17:54:01 -0400. version 5.0.8 Do not edit! */
+/* auto-generated on 2026-10-29 18:49:29 -0400. version 5.1.0 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H
@@ -2715,7 +2715,7 @@ namespace std {
 #define SIMDJSON_SIMDJSON_VERSION_H
 
 /** The version of simdjson being used (major.minor.revision) */
-#define SIMDJSON_VERSION "5.0.8"
+#define SIMDJSON_VERSION "5.1.0"
 
 namespace simdjson {
 enum {
@@ -2726,11 +2726,11 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdjson being used.
    */
-  SIMDJSON_VERSION_MINOR = 0,
+  SIMDJSON_VERSION_MINOR = 1,
   /**
    * The revision (major.minor.REVISION) of simdjson being used.
    */
-  SIMDJSON_VERSION_REVISION = 8
+  SIMDJSON_VERSION_REVISION = 0
 };
 } // namespace simdjson
 
@@ -18442,8 +18442,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -18533,8 +18536,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -18682,8 +18688,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -18775,8 +18784,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -21069,8 +21081,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -21160,8 +21175,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -21309,8 +21327,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -21402,8 +21423,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -24166,8 +24190,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -24257,8 +24284,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -24406,8 +24436,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -24499,8 +24532,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -27259,8 +27295,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -27350,8 +27389,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -27499,8 +27541,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -27592,8 +27637,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -30470,8 +30518,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -30561,8 +30612,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -30710,8 +30764,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -30803,8 +30860,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -33989,8 +34049,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -34080,8 +34143,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -34229,8 +34295,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -34322,8 +34391,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -37024,8 +37096,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -37115,8 +37190,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -37264,8 +37342,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -37357,8 +37438,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -40037,8 +40121,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -40128,8 +40215,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -40277,8 +40367,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -40370,8 +40463,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -43073,8 +43169,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -43164,8 +43263,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -43313,8 +43415,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -43406,8 +43511,11 @@ simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(con
     uint64_t exp = 0;
     const uint8_t *start_exp_digits = p;
     while (parse_digit(*p, exp)) { p++; }
-    // no exp digits, or 20+ exp digits
-    if (p-start_exp_digits == 0 || p-start_exp_digits > 19) { return NUMBER_ERROR; }
+    // no exp digits
+    if (p-start_exp_digits == 0) { return NUMBER_ERROR; }
+    // 20+ exp digits (e.g., 0e9999999999999999999999) are valid, but exp may
+    // have wrapped around: leave such numbers to the fallback parser.
+    overflow = overflow || p-start_exp_digits > 19;
 
     exponent += exp_neg ? 0-exp : exp;
   }
@@ -44921,6 +45029,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -45609,6 +45729,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -47042,6 +47164,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -47800,6 +47924,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -48488,6 +48624,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -49921,6 +50059,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -51149,6 +51289,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -51837,6 +51989,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -53270,6 +53424,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -54494,6 +54650,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -55182,6 +55350,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -56615,6 +56785,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -57957,6 +58129,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -58645,6 +58829,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -60078,6 +60264,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -61728,6 +61916,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -62416,6 +62616,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -63849,6 +64051,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -64989,6 +65193,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -65677,6 +65893,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -67110,6 +67328,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -68273,6 +68493,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -68961,6 +69193,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -70394,6 +70628,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
@@ -71567,6 +71803,18 @@ public:
     typename = typename std::enable_if<std::is_arithmetic<number_type>::value>::type>
   simdjson_inline void append(number_type v) noexcept;
 
+#ifdef __SIZEOF_INT128__
+  /**
+   * Integers wider than 64 bits are not supported. Without these overloads, a
+   * 128-bit integer would either be truncated to 64 bits by append(number_type)
+   * (when the standard library counts it as arithmetic, as libc++ does) or be
+   * converted to char by append(char) (when it does not, as libstdc++ does in
+   * strict ISO mode).
+   */
+  void append(__int128_t v) noexcept = delete;
+  void append(__uint128_t v) noexcept = delete;
+#endif
+
   /**
    * Append character c.
    */
@@ -72255,6 +72503,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.
@@ -73688,6 +73938,8 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
                     std::is_integral<number_type>::value ||
                     std::is_floating_point<number_type>::value,
                 "Unsupported number type");
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // If C++17 is available, we can 'if constexpr' here.
   SIMDJSON_IF_CONSTEXPR(std::is_same<number_type, bool>::value) {
     if (v) {
