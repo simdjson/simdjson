@@ -26,8 +26,13 @@ public:
    * Create a new invalid value.
    *
    * Exists so you can declare a variable and later assign to it before use.
+   *
+   * It is user-provided (not = default) on purpose: value-initialization (std::pair, T{})
+   * then skips zeroing the whole object, which led GCC 15 and 16 to keep
+   * simdjson_result<field> on the stack when iterating over objects, causing
+   * store-forwarding stalls (up to 2x slower).
    */
-  simdjson_inline value() noexcept = default;
+  simdjson_inline value() noexcept {}
 
   /**
    * Get this value as the given type.
