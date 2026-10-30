@@ -296,7 +296,16 @@ inline bool object::iterator::key_equals_case_insensitive(std::string_view o) co
       // See For case-insensitive string comparisons, avoid char-by-char functions
       // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
       // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+      //
+      // strncasecmp stops at a null character, and a JSON key may contain some:
+      // when it does, we resume the comparison right after the null character.
+      const char *key = key_c_str();
+      size_t i = 0;
+      while (simdjson_strncasecmp(o.data() + i, key + i, len - i) == 0) {
+        const void *null_char = std::memchr(key + i, '\0', len - i);
+        if (null_char == nullptr) { return true; }
+        i = size_t(static_cast<const char *>(null_char) - key) + 1;
+      }
   }
   return false;
 }
