@@ -1964,7 +1964,7 @@ bool compact_multiline_scalar_list_alignment_test() {
         "[\n"
         "    1    , 10   , 4    , 10   , 10   ,\n"
         "    10   , 10   , 10   , 10   , 1.111,\n"
-        "    null \n"
+        "    null\n"
         "]");
   }
   {
@@ -2493,6 +2493,44 @@ bool bigint_test() {
   return true;
 }
 
+// The padding that aligns a value in a column must not be left at the end of
+// a line. The last value of a uniform scalar array used to be padded to the
+// column width, which left trailing white space before the closing bracket.
+bool no_trailing_whitespace_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    // Table of scalars.
+    std::string json = "[1,22222222222222,3,4444]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 20;
+    opts.enable_compact_multiline = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    1             ,\n"
+        "    22222222222222,\n"
+        "    3             ,\n"
+        "    4444\n"
+        "]");
+  }
+  {
+    // Aligned compact multiline array of scalars.
+    std::string json = "[1,2222222,3,444444,5]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 24;
+    opts.min_compact_array_row_items = 2;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    1      , 2222222,\n"
+        "    3      , 444444 ,\n"
+        "    5\n"
+        "]");
+  }
+  std::cout << "No trailing whitespace test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2564,6 +2602,7 @@ int main() {
   success = table_format_null_container_test() && success;
   success = table_format_double_column_alignment_test() && success;
   success = bigint_test() && success;
+  success = no_trailing_whitespace_test() && success;
 
   if (success) {
     std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;
