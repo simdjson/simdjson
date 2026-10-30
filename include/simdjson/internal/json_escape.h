@@ -108,8 +108,12 @@ simdjson_inline int trailing_zeroes(uint64_t input_num) noexcept {
 #endif
 }
 
-static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256>
-    json_quotable_character = {
+// The tables are static members of a class template rather than namespace-scope
+// statics: a static object would be a different object in every translation
+// unit, and inline functions that index it would break the one-definition rule.
+template <typename T = void> struct escape_tables {
+  // 1 for the bytes that must be escaped: '"', '\\' and control characters.
+  static constexpr uint8_t quotable[256] = {
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -121,6 +125,39 @@ static SIMDJSON_CONSTEXPR_LAMBDA std::array<uint8_t, 256>
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  // The escape sequence of each control character.
+  static constexpr char control[32][7] = {
+      "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
+      "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
+      "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
+      "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
+      "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
+};
+
+#if !SIMDJSON_CPLUSPLUS17
+template <typename T> constexpr uint8_t escape_tables<T>::quotable[256];
+template <typename T> constexpr char escape_tables<T>::control[32][7];
+#endif
+
+// All Unicode characters may be placed within the quotation marks, except for
+// the characters that MUST be escaped: quotation mark, reverse solidus, and the
+// control characters (U+0000 through U+001F). There are two-character sequence
+// escape representations of some popular characters:
+// \", \\, \b, \f, \n, \r, \t.
+simdjson_inline void escape_json_char(char c, char *&out) {
+  if (c == '"') {
+    memcpy(out, "\\\"", 2);
+    out += 2;
+  } else if (c == '\\') {
+    memcpy(out, "\\\\", 2);
+    out += 2;
+  } else {
+    const char *v = escape_tables<>::control[uint8_t(c)];
+    const size_t n = v[1] == 'u' ? 6 : 2;
+    memcpy(out, v, n);
+    out += n;
+  }
+}
 
 /**
 
@@ -139,28 +176,78 @@ inline bool has_json_escapable_byte(uint64_t x) {
 
 **/
 
-#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
-#define SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE 1
-#endif
+/*
+ * Every variant of the escaper lives in its own namespace (escape_scalar,
+ * escape_sse2, escape_avx2, ...), whose content does not depend on compiler
+ * flags. Callers that sit in a namespace shared by all translation units
+ * must pick a variant that depends only on the target architecture (see
+ * escape_baseline); the builder picks one from its implementation.
+ */
 
-// With block escaping (SSE2/NEON), write_string_escaped scans the input itself.
-#if !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 // Scalar fallback for finding next quotable character
 SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
 find_next_json_quotable_character_scalar(const std::string_view view,
                                          size_t location) noexcept {
   for (auto pos = view.begin() + location; pos != view.end(); ++pos) {
-    if (json_quotable_character[static_cast<uint8_t>(*pos)]) {
+    if (escape_tables<>::quotable[static_cast<uint8_t>(*pos)]) {
       return pos - view.begin();
     }
   }
   return size_t(view.size());
 }
 
+// Writes the escaped version of input to out, returning the number of bytes
+// written. Finder::find(input, location) returns the position of the next
+// quotable character at or after location, or input.size().
+template <typename Finder>
+inline size_t write_string_escaped_with(const std::string_view input, char *out) {
+  size_t mysize = input.size();
+
+  // Use SIMD position finder directly - it returns mysize if no escape needed
+  size_t location = Finder::find(input, 0);
+  if (location == mysize) {
+    // Fast path: no escaping needed
+    memcpy(out, input.data(), input.size());
+    return input.size();
+  }
+
+  const char *const initout = out;
+  memcpy(out, input.data(), location);
+  out += location;
+  escape_json_char(input[location], out);
+  location += 1;
+  while (location < mysize) {
+    size_t newlocation = Finder::find(input, location);
+    memcpy(out, input.data() + location, newlocation - location);
+    out += newlocation - location;
+    location = newlocation;
+    if (location == mysize) {
+      break;
+    }
+    escape_json_char(input[location], out);
+    location += 1;
+  }
+  return size_t(out - initout);
+}
+
+namespace escape_scalar {
+struct finder {
+  static simdjson_inline size_t find(const std::string_view view,
+                                     size_t location) noexcept {
+    return find_next_json_quotable_character_scalar(view, location);
+  }
+};
+
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  return write_string_escaped_with<finder>(input, out);
+}
+} // namespace escape_scalar
+
 // SIMD-accelerated position finding that directly locates the first quotable
 // character, combining detection and position extraction in a single pass to
 // minimize redundant work.
 #if SIMDJSON_EXPERIMENTAL_HAS_LASX
+namespace escape_lasx {
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -205,7 +292,21 @@ find_next_json_quotable_character(const std::string_view view,
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
 }
-#elif SIMDJSON_EXPERIMENTAL_HAS_LSX
+struct finder {
+  static simdjson_inline size_t find(const std::string_view view,
+                                     size_t location) noexcept {
+    return find_next_json_quotable_character(view, location);
+  }
+};
+
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  return write_string_escaped_with<finder>(input, out);
+}
+} // namespace escape_lasx
+#endif
+
+#if SIMDJSON_EXPERIMENTAL_HAS_LSX
+namespace escape_lsx {
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -245,7 +346,21 @@ find_next_json_quotable_character(const std::string_view view,
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
 }
-#elif SIMDJSON_EXPERIMENTAL_HAS_RVV
+struct finder {
+  static simdjson_inline size_t find(const std::string_view view,
+                                     size_t location) noexcept {
+    return find_next_json_quotable_character(view, location);
+  }
+};
+
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  return write_string_escaped_with<finder>(input, out);
+}
+} // namespace escape_lsx
+#endif
+
+#if SIMDJSON_EXPERIMENTAL_HAS_RVV
+namespace escape_rvv {
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -276,7 +391,21 @@ find_next_json_quotable_character(const std::string_view view,
 
   return len;
 }
-#elif SIMDJSON_EXPERIMENTAL_HAS_PPC64
+struct finder {
+  static simdjson_inline size_t find(const std::string_view view,
+                                     size_t location) noexcept {
+    return find_next_json_quotable_character(view, location);
+  }
+};
+
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  return write_string_escaped_with<finder>(input, out);
+}
+} // namespace escape_rvv
+#endif
+
+#if SIMDJSON_EXPERIMENTAL_HAS_PPC64
+namespace escape_ppc64 {
 simdjson_inline size_t
 find_next_json_quotable_character(const std::string_view view,
                                   size_t location) noexcept {
@@ -326,42 +455,27 @@ find_next_json_quotable_character(const std::string_view view,
   size_t current = len - remaining;
   return find_next_json_quotable_character_scalar(view, current);
 }
-#else
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline size_t
-find_next_json_quotable_character(const std::string_view view,
-                                  size_t location) noexcept {
-  return find_next_json_quotable_character_scalar(view, location);
-}
-#endif
-#endif // !SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
-
-SIMDJSON_CONSTEXPR_LAMBDA static std::string_view control_chars[] = {
-    "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
-    "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
-    "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
-    "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
-    "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
-
-// All Unicode characters may be placed within the quotation marks, except for
-// the characters that MUST be escaped: quotation mark, reverse solidus, and the
-// control characters (U+0000 through U+001F). There are two-character sequence
-// escape representations of some popular characters:
-// \", \\, \b, \f, \n, \r, \t.
-SIMDJSON_CONSTEXPR_LAMBDA simdjson_inline void escape_json_char(char c, char *&out) {
-  if (c == '"') {
-    memcpy(out, "\\\"", 2);
-    out += 2;
-  } else if (c == '\\') {
-    memcpy(out, "\\\\", 2);
-    out += 2;
-  } else {
-    std::string_view v = control_chars[uint8_t(c)];
-    memcpy(out, v.data(), v.size());
-    out += v.size();
+struct finder {
+  static simdjson_inline size_t find(const std::string_view view,
+                                     size_t location) noexcept {
+    return find_next_json_quotable_character(view, location);
   }
-}
+};
 
-#if SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+inline size_t write_string_escaped(const std::string_view input, char *out) {
+  return write_string_escaped_with<finder>(input, out);
+}
+} // namespace escape_ppc64
+#endif
+
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
+// Block escaping: write_string_escaped scans the input itself, 16 bytes at a
+// time. The two instruction sets are never available together.
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2
+namespace escape_sse2 {
+#else
+namespace escape_neon {
+#endif
 
 #if SIMDJSON_EXPERIMENTAL_HAS_SSE2
 
@@ -466,7 +580,6 @@ simdjson_inline uint64_t escape_bitmask(escape_vector flags) noexcept {
 }
 
 #endif // instruction set selection
-
 // The escape bitmask of a 16-byte block.
 simdjson_inline uint64_t escape_mask(escape_vector v) noexcept {
   return escape_bitmask(escape_flags(v));
@@ -514,40 +627,10 @@ simdjson_never_inline char *escape_block(const uint8_t *src, char *out,
   return out + (blockend - pos);
 }
 
-// Writes the escaped version of input to out, returning the number of bytes
-// written.
-simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out) {
-  const size_t len = input.size();
-  const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
-  const char *const initout = out;
-
-  size_t i = 0;
-#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 && defined(__AVX2__)
-  while (i + 32 <= len) {
-    const __m256i word = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src + i));
-    const __m256i flags = _mm256_or_si256(
-        _mm256_or_si256(_mm256_cmpeq_epi8(word, _mm256_set1_epi8(34)),   // '"'
-                        _mm256_cmpeq_epi8(word, _mm256_set1_epi8(92))),  // '\\'
-        _mm256_cmpeq_epi8(_mm256_subs_epu8(word, _mm256_set1_epi8(31)),
-                          _mm256_setzero_si256()));                      // control
-    const uint32_t mask = uint32_t(_mm256_movemask_epi8(flags));
-    if (simdjson_likely(mask == 0)) {
-      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), word);
-      out += 32;
-    } else {
-      for (size_t half = 0; half < 32; half += 16) {
-        const uint64_t m = (mask >> half) & 0xFFFF;
-        if (m == 0) {
-          escape_store16(out, escape_load16(src + i + half));
-          out += 16;
-        } else {
-          out = escape_block(src, out, i + half, i + half + 16, m);
-        }
-      }
-    }
-    i += 32;
-  }
-#endif
+// Escapes src[i, len) to out, returning the updated output pointer. The input
+// must be the whole string: when len >= 16, the tail reloads its last 16 bytes.
+simdjson_really_inline char *escape_from(const uint8_t *src, size_t len,
+                                         size_t i, char *out) noexcept {
   while (i + 16 <= len) {
     escape_vector word = escape_load16(src + i);
     escape_vector flags = escape_flags(word);
@@ -585,13 +668,13 @@ simdjson_really_inline size_t write_string_escaped(const std::string_view input,
       // Fewer than 4 bytes: at most three table lookups, no need for SIMD.
       for (size_t k = 0; k < len; k++) {
         uint8_t c = src[k];
-        if (json_quotable_character[c]) {
+        if (escape_tables<>::quotable[c]) {
           escape_json_char(char(c), out);
         } else {
           *out++ = char(c);
         }
       }
-      return size_t(out - initout);
+      return out;
     }
     if (m == 0) {
       copy_lt16(out, src + i, rem);
@@ -600,45 +683,74 @@ simdjson_really_inline size_t write_string_escaped(const std::string_view input,
       out = escape_block(src, out, i, len, m);
     }
   }
-  return size_t(out - initout);
+  return out;
 }
-
-#else // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
 
 // Writes the escaped version of input to out, returning the number of bytes
-// written. Uses SIMD position finding to locate quotable characters efficiently.
-inline size_t write_string_escaped(const std::string_view input, char *out) {
-  size_t mysize = input.size();
-
-  // Use SIMD position finder directly - it returns mysize if no escape needed
-  size_t location = find_next_json_quotable_character(input, 0);
-  if (location == mysize) {
-    // Fast path: no escaping needed
-    memcpy(out, input.data(), input.size());
-    return input.size();
-  }
-
-  const char *const initout = out;
-  memcpy(out, input.data(), location);
-  out += location;
-  escape_json_char(input[location], out);
-  location += 1;
-  while (location < mysize) {
-    size_t newlocation = find_next_json_quotable_character(input, location);
-    memcpy(out, input.data() + location, newlocation - location);
-    out += newlocation - location;
-    location = newlocation;
-    if (location == mysize) {
-      break;
-    }
-    escape_json_char(input[location], out);
-    location += 1;
-  }
-  return size_t(out - initout);
+// written.
+simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out) {
+  const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
+  return size_t(escape_from(src, input.size(), 0, out) - out);
 }
 
-#endif // SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
-#undef SIMDJSON_BUILDER_HAS_BLOCK_ESCAPE
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2
+} // namespace escape_sse2
+#else
+} // namespace escape_neon
+#endif
+#endif // SIMDJSON_EXPERIMENTAL_HAS_SSE2 || SIMDJSON_EXPERIMENTAL_HAS_NEON
+
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2 && defined(__AVX2__)
+// SSE2 with a 32-byte main loop. It has its own namespace because it is
+// compiled only when __AVX2__ is defined.
+namespace escape_avx2 {
+simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out) {
+  using namespace escape_sse2;
+  const size_t len = input.size();
+  const uint8_t *src = reinterpret_cast<const uint8_t *>(input.data());
+  const char *const initout = out;
+
+  size_t i = 0;
+  while (i + 32 <= len) {
+    const __m256i word = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(src + i));
+    const __m256i flags = _mm256_or_si256(
+        _mm256_or_si256(_mm256_cmpeq_epi8(word, _mm256_set1_epi8(34)),   // '"'
+                        _mm256_cmpeq_epi8(word, _mm256_set1_epi8(92))),  // '\\'
+        _mm256_cmpeq_epi8(_mm256_subs_epu8(word, _mm256_set1_epi8(31)),
+                          _mm256_setzero_si256()));                      // control
+    const uint32_t mask = uint32_t(_mm256_movemask_epi8(flags));
+    if (simdjson_likely(mask == 0)) {
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(out), word);
+      out += 32;
+    } else {
+      for (size_t half = 0; half < 32; half += 16) {
+        const uint64_t m = (mask >> half) & 0xFFFF;
+        if (m == 0) {
+          escape_store16(out, escape_load16(src + i + half));
+          out += 16;
+        } else {
+          out = escape_block(src, out, i + half, i + half + 16, m);
+        }
+      }
+    }
+    i += 32;
+  }
+  return size_t(escape_from(src, len, i, out) - initout);
+}
+} // namespace escape_avx2
+#endif
+
+// The best variant that every compiler for the target architecture can use,
+// whatever its flags: SSE2 is part of x64, NEON part of AArch64.
+#if SIMDJSON_EXPERIMENTAL_HAS_NEON
+namespace escape_baseline = escape_neon;
+#elif SIMDJSON_EXPERIMENTAL_HAS_SSE2 &&                                         \
+    (defined(__x86_64__) || defined(__x86_64) || defined(_M_AMD64) ||          \
+     defined(_M_X64))
+namespace escape_baseline = escape_sse2;
+#else
+namespace escape_baseline = escape_scalar;
+#endif
 
 } // namespace internal
 } // namespace simdjson

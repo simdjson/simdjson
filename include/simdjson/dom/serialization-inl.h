@@ -195,12 +195,14 @@ simdjson_inline void
 base_formatter<formatter>::string(std::string_view unescaped) {
   one_char('\"');
   // Each input byte becomes at most 6 output bytes. Escaping the string in
-  // pieces bounds the room reserved ahead of a long string.
+  // pieces bounds the room reserved ahead of a long string. The formatter is
+  // shared by all translation units, whatever their compiler flags, so it uses
+  // the escaper that depends only on the architecture.
   constexpr size_t piece = 4096;
   for (size_t i = 0; i < unescaped.size(); i += piece) {
     const std::string_view part = unescaped.substr(i, piece);
     char *out = buffer.reserve(6 * part.size());
-    buffer.set_end(out + simdjson::internal::write_string_escaped(part, out));
+    buffer.set_end(out + escape_baseline::write_string_escaped(part, out));
   }
   one_char('\"');
 }

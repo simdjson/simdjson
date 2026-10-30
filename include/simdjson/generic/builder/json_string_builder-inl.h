@@ -17,7 +17,6 @@ namespace simdjson {
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
 
-using simdjson::internal::write_string_escaped;
 
 namespace internal {
 // Sets the size of s to n without initializing the new bytes when the

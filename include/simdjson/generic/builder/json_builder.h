@@ -31,7 +31,6 @@ namespace internal {
 using simdjson::internal::write_uint_jeaiii;
 simdjson_inline char *write_double(char *p, double v) noexcept;
 } // namespace internal
-using simdjson::internal::write_string_escaped;
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_GCC_WARNING(-Warray-bounds)

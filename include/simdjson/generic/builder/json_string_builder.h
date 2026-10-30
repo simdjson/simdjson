@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/internal/json_escape.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -39,6 +40,25 @@ struct has_custom_serialization : std::false_type {};
 
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
+
+// The escaper variant depends only on the implementation, never on other
+// compiler flags, so that every translation unit that sees this namespace
+// uses the same one.
+#if (SIMDJSON_IMPLEMENTATION_IS(icelake) || SIMDJSON_IMPLEMENTATION_IS(haswell)) && \
+    defined(__AVX2__)
+using simdjson::internal::escape_avx2::write_string_escaped;
+#elif SIMDJSON_IMPLEMENTATION_IS(lasx) && SIMDJSON_EXPERIMENTAL_HAS_LASX
+using simdjson::internal::escape_lasx::write_string_escaped;
+#elif SIMDJSON_IMPLEMENTATION_IS(lsx) && SIMDJSON_EXPERIMENTAL_HAS_LSX
+using simdjson::internal::escape_lsx::write_string_escaped;
+#elif SIMDJSON_IMPLEMENTATION_IS(ppc64) && SIMDJSON_EXPERIMENTAL_HAS_PPC64
+using simdjson::internal::escape_ppc64::write_string_escaped;
+#elif SIMDJSON_IMPLEMENTATION_IS(rvv_vls) && SIMDJSON_EXPERIMENTAL_HAS_RVV
+using simdjson::internal::escape_rvv::write_string_escaped;
+#else
+using simdjson::internal::escape_baseline::write_string_escaped;
+#endif
+
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
