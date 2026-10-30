@@ -3144,10 +3144,10 @@ namespace document_stream_tests {
         ASSERT_EQUAL(parser.max_depth(), 2048);
         ASSERT_EQUAL(parser.max_capacity(), 1 << 20);
         // A max_depth below the default is kept as well.
-        auto small = R"([1] [2])"_padded;
+        auto two_docs = R"([1] [2])"_padded;
         ondemand::parser shallow_parser;
         ASSERT_SUCCESS(shallow_parser.allocate(4096, 8));
-        ASSERT_SUCCESS(shallow_parser.iterate_many(small, 4096).get(stream));
+        ASSERT_SUCCESS(shallow_parser.iterate_many(two_docs, 4096).get(stream));
         for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
         ASSERT_EQUAL(shallow_parser.max_depth(), 8);
         TEST_SUCCEED();
