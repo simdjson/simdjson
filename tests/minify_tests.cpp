@@ -196,7 +196,10 @@ bool string_escape_test() {
   for (size_t len = 0; len <= 40; len++) {
     std::string s;
     for (size_t i = 0; i < len; i++) { s += (i % 7 == 3) ? '\n' : (i % 11 == 5) ? '"' : 'x'; }
-    const std::string json = "[" + escape_reference(s) + "]";
+    // Not "[" + escape_reference(s): GCC bug 105329 (-Wrestrict), as above.
+    std::string json = "[";
+    json += escape_reference(s);
+    json += ']';
     simdjson::dom::element doc;
     auto error = parser.parse(json).get(doc);
     if (error) {

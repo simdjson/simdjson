@@ -125,19 +125,21 @@ template <typename T = void> struct escape_tables {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  // The escape sequence of each control character.
-  static constexpr char control[32][7] = {
-      "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
-      "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
-      "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
-      "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
-      "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
+  // The escape sequence of each control character. It is const rather than
+  // constexpr: MSVC rejects a constexpr char[32][7] member of a class template
+  // initialized from string literals (C2131).
+  static const char control[32][7];
 };
 
 #if !SIMDJSON_CPLUSPLUS17
 template <typename T> constexpr uint8_t escape_tables<T>::quotable[256];
-template <typename T> constexpr char escape_tables<T>::control[32][7];
 #endif
+template <typename T> const char escape_tables<T>::control[32][7] = {
+    "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006",
+    "\\u0007", "\\b",     "\\t",     "\\n",     "\\u000b", "\\f",     "\\r",
+    "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014",
+    "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a", "\\u001b",
+    "\\u001c", "\\u001d", "\\u001e", "\\u001f"};
 
 // All Unicode characters may be placed within the quotation marks, except for
 // the characters that MUST be escaped: quotation mark, reverse solidus, and the
