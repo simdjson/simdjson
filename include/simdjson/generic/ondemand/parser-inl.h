@@ -269,16 +269,20 @@ simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape(raw_json_string in, uint8_t *&dst, bool allow_replacement) const noexcept {
   uint8_t *end = implementation->parse_string(in.buf, dst, allow_replacement);
   if (!end) { return STRING_ERROR; }
+  // Null-terminate so get_c_str() can return a C string. JSON strings may still
+  // contain embedded nulls; use the string_view length when that matters.
+  *end = 0;
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
-  dst = end;
+  dst = end + 1;
   return result;
 }
 
 simdjson_inline simdjson_warn_unused simdjson_result<std::string_view> parser::unescape_wobbly(raw_json_string in, uint8_t *&dst) const noexcept {
   uint8_t *end = implementation->parse_wobbly_string(in.buf, dst);
   if (!end) { return STRING_ERROR; }
+  *end = 0;
   std::string_view result(reinterpret_cast<const char *>(dst), end-dst);
-  dst = end;
+  dst = end + 1;
   return result;
 }
 
