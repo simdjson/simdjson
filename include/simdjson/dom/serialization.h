@@ -94,6 +94,12 @@ protected:
       buffer[size++] = c;
     }
 
+    /** Drops the space characters at the end of the buffer, if any. **/
+    simdjson_inline void trim_trailing_spaces() {
+      while (size > 0 && buffer[size - 1] == ' ')
+        size--;
+    }
+
     simdjson_inline void append(const char *begin, const char *end) {
       const size_t new_size = size + (end - begin);
       if (capacity < new_size)

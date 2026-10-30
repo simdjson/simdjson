@@ -588,6 +588,10 @@ simdjson_inline void fractured_formatter::print_newline() {
   if (current_layout_ == layout_mode::single_line) {
     return; // No newlines in inline mode
   }
+  // Like the reference FracturedJson implementation, do not end a line with
+  // white space: the padding that aligns a value in a column is only needed
+  // when something follows it on the same line.
+  buffer.trim_trailing_spaces();
   one_char('\n');
   current_line_length_ = 0;
 }
