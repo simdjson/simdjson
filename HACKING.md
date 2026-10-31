@@ -112,35 +112,29 @@ workflows used by simdjson.
 
 ### Offline builds
 
-The developer build fetches its dependencies at configure time: the
+The developer build downloads its dependencies at configure time: the
 [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) package manager itself, the
-[simdjson-data](https://github.com/simdjson/simdjson-data) test files (required)
-and the [counters](https://github.com/lemire/counters) library (used by most
+[simdjson-data](https://github.com/simdjson/simdjson-data) test files, the
+[counters](https://github.com/lemire/counters) library (used by most
 benchmarks), plus optional ones such as Google Benchmark and the competing
 JSON libraries. To build and run the tests without network access (e.g., when
-packaging simdjson for a distribution), fetch the required files beforehand.
-The versions to use are in `cmake/CPM.cmake` and `dependencies/CMakeLists.txt`.
+packaging simdjson for a distribution), pass `-D SIMDJSON_ALLOW_DOWNLOADS=OFF`:
+nothing is downloaded, and
+
+- the simdjson-data test files are taken from `CPM_simdjson-data_SOURCE` if set,
+  else from `dependencies/.cache/simdjson-data` if present (an extracted copy at
+  the commit given in `dependencies/CMakeLists.txt`). Without them, the tests that
+  need them are skipped (`NEEDS_DATA` in `add_cpp_test`) and the others still run;
+- an installed counters is used if found (e.g., through `CMAKE_PREFIX_PATH`);
+  otherwise, the benchmarks that need it are skipped;
+- the Google Benchmark and competition benchmarks are disabled.
 
 ```
-cmake -B build -D SIMDJSON_DEVELOPER_MODE=ON \
-  -D SIMDJSON_ALLOW_DOWNLOADS=OFF \
-  -D FETCHCONTENT_FULLY_DISCONNECTED=ON \
-  -D CPM_SOURCE_CACHE=/path/to/cache \
-  -D CPM_simdjson-data_SOURCE=/path/to/simdjson-data \
-  -D CPM_counters_SOURCE=/path/to/counters
+cmake -B build -D SIMDJSON_DEVELOPER_MODE=ON -D SIMDJSON_ALLOW_DOWNLOADS=OFF
 ```
-
-- `CPM_SOURCE_CACHE` is a directory holding `cpm/CPM_<version>.cmake`.
-- `CPM_simdjson-data_SOURCE` is an extracted copy of simdjson-data, at the commit given in `dependencies/CMakeLists.txt`.
-- `CPM_counters_SOURCE` is an extracted copy of counters. It is optional: an installed counters is found
-  through `CMAKE_PREFIX_PATH`, and without counters the benchmarks that need it are skipped.
-
-With `SIMDJSON_ALLOW_DOWNLOADS=OFF`, the Google Benchmark benchmarks and the
-competition benchmarks are disabled. When a required dependency is missing,
-configuration stops with a message saying what to fetch.
 
 The `Ubuntu 24.04 CI Offline` workflow (`.github/workflows/ubuntu24-offline.yml`)
-checks this setup.
+checks these setups, including the one of the FreeBSD port.
 
 Directory Structure and Source
 ------------------------------

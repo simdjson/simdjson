@@ -8,7 +8,7 @@ endif()
 add_cpp_test(basictests                 LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_fuzz_tests LABELS dom acceptance per_implementation)
-add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
+add_cpp_test(document_tests             NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(unpadded_tests             LABELS dom acceptance per_implementation)
 add_cpp_test(padding_contents_tests     LABELS dom acceptance per_implementation)
 add_cpp_test(errortests                 LABELS dom acceptance per_implementation)
@@ -17,14 +17,14 @@ add_cpp_test(integer_tests              LABELS dom acceptance per_implementation
 add_cpp_test(big_integer_tests          LABELS dom acceptance per_implementation)
 add_cpp_test(nan_inf_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(locale_independence_tests  LABELS dom acceptance per_implementation)
-add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
+add_cpp_test(jsoncheck                  NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(json_path_tests            LABELS dom acceptance per_implementation)
 add_cpp_test(array_reverse_tests        LABELS dom acceptance per_implementation)
-add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)
-add_cpp_test(numberparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
+add_cpp_test(minefieldcheck             NEEDS_DATA LABELS dom acceptance per_implementation)
+add_cpp_test(numberparsingcheck         NEEDS_DATA LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(parse_many_test            NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(stringparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(stringparsingcheck         NEEDS_DATA LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(trivially_copyable_test    LABELS dom acceptance per_implementation)
 
 
