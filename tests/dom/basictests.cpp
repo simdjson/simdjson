@@ -1234,6 +1234,33 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool object_key_case_insensitive() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Keys may contain null characters: they do not end the comparison.
+    string json(R"({ "Alpha": 1, "a\u0000b": 2, "a\u0000c": 3, "\u0000": 4, "x\u0000": 5, "\u0000\u0000y": 6 })");
+    dom::parser parser;
+    dom::object obj;
+    ASSERT_SUCCESS( parser.parse(json).get(obj) );
+    uint64_t value{};
+    ASSERT_SUCCESS( obj.at_key_case_insensitive("aLPHA").get(value) );
+    ASSERT_EQUAL( value, 1 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("a\0B", 3)).get(value) );
+    ASSERT_EQUAL( value, 2 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("A\0c", 3)).get(value) );
+    ASSERT_EQUAL( value, 3 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("\0", 1)).get(value) );
+    ASSERT_EQUAL( value, 4 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("X\0", 2)).get(value) );
+    ASSERT_EQUAL( value, 5 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("\0\0Y", 3)).get(value) );
+    ASSERT_EQUAL( value, 6 );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("a\0d", 3)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("\0\0z", 3)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("Alph\0", 5)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive("a"), NO_SUCH_FIELD );
+    return true;
+  }
+
   bool twitter_count() {
     std::cout << "Running " << __func__ << std::endl;
     // Prints the number of results in twitter.json
@@ -1487,6 +1514,7 @@ namespace dom_api_tests {
            null_value() &&
            document_object_index() &&
            object_index() &&
+           object_key_case_insensitive() &&
            twitter_count() &&
            twitter_default_profile() &&
            twitter_image_sizes() &&
