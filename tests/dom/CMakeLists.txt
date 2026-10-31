@@ -75,6 +75,19 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   add_dependencies(per_implementation_tests json2json)
 
   #
+  # jsonpointer tool test: check that jsonpointer resolves a JSON Pointer in
+  # twitter.json, and that it fails cleanly on a file it cannot load
+  #
+  add_test(NAME jsonpointer COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON} /statuses/0/id)
+  set_tests_properties(jsonpointer PROPERTIES PASS_REGULAR_EXPRESSION "\"value\":505874924095815681")
+  set_property(TEST jsonpointer APPEND PROPERTY LABELS acceptance per_implementation)
+  add_test(NAME jsonpointer_missing_file COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON}.missing /statuses/0/id)
+  set_tests_properties(jsonpointer_missing_file PROPERTIES WILL_FAIL TRUE)
+  set_property(TEST jsonpointer_missing_file APPEND PROPERTY LABELS acceptance per_implementation)
+  add_dependencies(acceptance_tests jsonpointer)
+  add_dependencies(per_implementation_tests jsonpointer)
+
+  #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
   #
   if (SIMDJSON_IMPLEMENTATION MATCHES "fallback")
