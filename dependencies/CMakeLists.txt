@@ -20,13 +20,23 @@ if(SIMDJSON_GOOGLE_BENCHMARKS)
   )
 endif()
 
-CPMAddPackage(
+find_package(counters QUIET)
+if(NOT TARGET counters AND TARGET Counters::counters)
+  add_library(counters ALIAS Counters::counters)
+endif()
+
+cmake_dependent_option(SIMDJSON_COUNTERS "Download counters (necessary for event counter benchmarks)" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
+
+if(SIMDJSON_COUNTERS AND NOT TARGET counters)
+  CPMAddPackage(
         NAME counters
         URL https://github.com/lemire/counters/archive/refs/tags/v3.1.0.zip
         OPTIONS
         "COUNTERS_BUILD_TESTS OFF"
         "COUNTERS_INSTALL OFF"
-)
+  )
+endif()
 
 CPMAddPackage(
         NAME simdjson-data
