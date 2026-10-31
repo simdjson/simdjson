@@ -25,7 +25,8 @@ cmake_dependent_option(SIMDJSON_COUNTERS
         "Download the counters library (used by most benchmarks)" ON
         SIMDJSON_ALLOW_DOWNLOADS OFF)
 
-if(SIMDJSON_COUNTERS)
+# CPM_counters_SOURCE points CPM at a local copy: no download is needed.
+if(SIMDJSON_COUNTERS OR CPM_counters_SOURCE)
   CPMAddPackage(
         NAME counters
         URL https://github.com/lemire/counters/archive/refs/tags/v3.1.0.zip
@@ -44,10 +45,24 @@ else()
   endif()
 endif()
 
+set(SIMDJSON_DATA_URL
+        https://github.com/simdjson/simdjson-data/archive/351949906abde446f0314bf79606fb5d884f5be7.zip)
 CPMAddPackage(
         NAME simdjson-data
-        URL https://github.com/simdjson/simdjson-data/archive/351949906abde446f0314bf79606fb5d884f5be7.zip
+        URL ${SIMDJSON_DATA_URL}
 )
+# The tests and benchmarks need the data. When it is missing (e.g., an offline
+# build with FETCHCONTENT_FULLY_DISCONNECTED=ON, where FetchContent only warns),
+# stop here rather than fail later with obscure '-ltest-data' link errors.
+if(NOT TARGET test-data)
+  message(FATAL_ERROR
+    "The simdjson-data test files are missing, and the developer build "
+    "(SIMDJSON_DEVELOPER_MODE) needs them for its tests and benchmarks. "
+    "Without network access, extract\n"
+    "  ${SIMDJSON_DATA_URL}\n"
+    "and pass -DCPM_simdjson-data_SOURCE=<extracted directory>. "
+    "See 'Offline builds' in HACKING.md.")
+endif()
 
 option(SIMDJSON_USE_BOOST_JSON "Try to include BOOST_JSON, this may break your binaries under some systems." OFF)
 # This prevents variables declared with set() from unnecessarily escaping and

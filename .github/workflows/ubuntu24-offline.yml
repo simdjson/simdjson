@@ -1,0 +1,116 @@
+name: Ubuntu 24.04 CI Offline
+
+# Distribution packagers (e.g., FreeBSD ports, see issue #3004) build the tests
+# without network access: SIMDJSON_ALLOW_DOWNLOADS=OFF and
+# FETCHCONTENT_FULLY_DISCONNECTED=ON, with the dependencies supplied locally
+# (see 'Offline builds' in HACKING.md). An optional dependency that is missing
+# must not break the build; a required one must stop the configuration with a
+# clear message.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # installed: an installed counters is found through CMAKE_PREFIX_PATH.
+        # source: an extracted counters is passed as CPM_counters_SOURCE.
+        # absent: no counters, the benchmarks that need it are skipped.
+        counters: [installed, source, absent]
+    env:
+      # Any download attempt fails: there is nothing listening there.
+      OFFLINE_ENV: >-
+        http_proxy=http://127.0.0.1:9 https_proxy=http://127.0.0.1:9
+        HTTP_PROXY=http://127.0.0.1:9 HTTPS_PROXY=http://127.0.0.1:9
+        no_proxy= NO_PROXY=
+      OFFLINE_FLAGS: >-
+        -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON
+        -DBUILD_SHARED_LIBS=ON -DSIMDJSON_ALLOW_DOWNLOADS=OFF
+        -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF
+        -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+    steps:
+      - uses: actions/checkout@v6
+      - name: Fetch the dependencies beforehand, as a packager would
+        run: |
+          set -eu
+          deps="$RUNNER_TEMP/deps"
+          mkdir -p "$deps/prefix"
+          # CPM itself: cmake/CPM.cmake reuses a file with the expected hash.
+          cpm_version=$(sed -n 's/^set(CPM_DOWNLOAD_VERSION \(.*\))$/\1/p' cmake/CPM.cmake)
+          mkdir -p "$deps/cpm-cache/cpm"
+          curl -fsSL -o "$deps/cpm-cache/cpm/CPM_${cpm_version}.cmake" \
+            "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${cpm_version}/CPM.cmake"
+          # The test data, at the commit pinned in dependencies/CMakeLists.txt.
+          data_url=$(grep -o 'https://github.com/simdjson/simdjson-data/archive/[0-9a-f]*\.zip' dependencies/CMakeLists.txt)
+          curl -fsSL -o "$deps/data.zip" "$data_url"
+          unzip -q "$deps/data.zip" -d "$deps/data"
+          # The counters library, at the version pinned in dependencies/CMakeLists.txt.
+          counters_flag=
+          if [ "${{ matrix.counters }}" != absent ]; then
+            counters_url=$(grep -o 'https://github.com/lemire/counters/archive/[^ ]*\.zip' dependencies/CMakeLists.txt)
+            curl -fsSL -o "$deps/counters.zip" "$counters_url"
+            unzip -q "$deps/counters.zip" -d "$deps/counters"
+            counters_src=$(ls -d "$deps"/counters/counters-*)
+            if [ "${{ matrix.counters }}" = installed ]; then
+              cmake -S "$counters_src" -B "$deps/counters-build" -DCMAKE_INSTALL_PREFIX="$deps/prefix"
+              cmake --install "$deps/counters-build"
+            else
+              counters_flag="-DCPM_counters_SOURCE=$counters_src"
+            fi
+          fi
+          {
+            echo "CPM_CACHE=$deps/cpm-cache"
+            echo "DATA_DIR=$(ls -d "$deps"/data/simdjson-data-*)"
+            echo "PREFIX=$deps/prefix"
+            echo "COUNTERS_FLAG=$counters_flag"
+          } >> "$GITHUB_ENV"
+      - name: Configure, build and test without network access
+        run: |
+          set -eu
+          env $OFFLINE_ENV cmake -B build $OFFLINE_FLAGS \
+            -DCPM_SOURCE_CACHE="$CPM_CACHE" \
+            -DCPM_simdjson-data_SOURCE="$DATA_DIR" \
+            -DCMAKE_PREFIX_PATH="$PREFIX" $COUNTERS_FLAG
+          env $OFFLINE_ENV cmake --build build -j "$(nproc)"
+          env $OFFLINE_ENV ctest --test-dir build --output-on-failure -LE explicitonly -j "$(nproc)"
+      - name: Check that the counters benchmarks follow the counters library
+        run: |
+          set -eu
+          if [ "${{ matrix.counters }}" = absent ]; then
+            test ! -e build/benchmark/benchfeatures
+            test ! -e build/benchmark/dom/parse
+          else
+            test -x build/benchmark/benchfeatures
+            test -x build/benchmark/dom/parse
+          fi
+          test -x build/benchmark/get_corpus_benchmark
+      - name: Check that a missing required dependency stops the configuration clearly
+        if: matrix.counters == 'absent'
+        run: |
+          set -u
+          # No CPM.cmake.
+          if env $OFFLINE_ENV cmake -B build-nocpm $OFFLINE_FLAGS > nocpm.log 2>&1; then
+            echo "configuration without CPM.cmake should fail"; exit 1
+          fi
+          grep -q 'Could not download CPM.cmake' nocpm.log || { cat nocpm.log; exit 1; }
+          # No simdjson-data.
+          if env $OFFLINE_ENV cmake -B build-nodata $OFFLINE_FLAGS -DCPM_SOURCE_CACHE="$CPM_CACHE" > nodata.log 2>&1; then
+            echo "configuration without simdjson-data should fail"; exit 1
+          fi
+          grep -q 'The simdjson-data test files are missing' nodata.log || { cat nodata.log; exit 1; }
