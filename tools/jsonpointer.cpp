@@ -9,8 +9,8 @@ int main(int argc, char *argv[]) {
                  "https://tools.ietf.org/html/rfc6901"
               << std::endl;
     std::cerr << " Example: " << argv[0]
-              << " jsonexamples/small/demo.json /Image/Width /Image/Height "
-                 "/Image/IDs/2 "
+              << " jsonexamples/twitter.json /search_metadata/count "
+                 "/statuses/0/id "
               << std::endl;
     std::cerr << "Multiple <jsonpath> can be issued in the same command, but "
                  "at least one is needed."
@@ -22,14 +22,17 @@ int main(int argc, char *argv[]) {
   simdjson::dom::parser parser;
   simdjson::dom::element doc;
   auto error = parser.load(filename).get(doc);
-  if (error) { std::cerr << "Error parsing " << filename << ": " << error << std::endl; }
+  if (error) {
+    std::cerr << "Error parsing " << filename << ": " << error << std::endl;
+    return EXIT_FAILURE;
+  }
 
   std::cout << "[" << std::endl;
   for (int idx = 2; idx < argc; idx++) {
     const char *json_pointer = argv[idx];
     simdjson::dom::element value;
     std::cout << "{\"jsonpath\": \"" << json_pointer << "\"";
-    if ((error = doc[json_pointer].get(value))) {
+    if ((error = doc.at_pointer(json_pointer).get(value))) {
       std::cout << ",\"error\":\"" << error << "\"";
     } else {
       std::cout << ",\"value\":" << value;
