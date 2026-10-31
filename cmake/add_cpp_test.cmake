@@ -1,9 +1,14 @@
 # Helper so we don't have to repeat ourselves so much
-# Usage: add_cpp_test(testname [COMPILE_ONLY] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
+# Usage: add_cpp_test(testname [COMPILE_ONLY] [NEEDS_DATA] [SOURCES a.cpp b.cpp ...] [LABELS acceptance per_implementation ...])
 # SOURCES defaults to testname.cpp if not specified.
+# NEEDS_DATA: the test reads simdjson-data files; it is skipped without them
+# (SIMDJSON_HAS_TEST_DATA, see dependencies/CMakeLists.txt).
 function(add_cpp_test TEST_NAME)
   # Parse arguments
-  cmake_parse_arguments(PARSE_ARGV 1 ARGS "COMPILE_ONLY;LIBRARY;WILL_FAIL" "" "SOURCES;LABELS;DEPENDENCY_OF")
+  cmake_parse_arguments(PARSE_ARGV 1 ARGS "COMPILE_ONLY;LIBRARY;WILL_FAIL;NEEDS_DATA" "" "SOURCES;LABELS;DEPENDENCY_OF")
+  if (ARGS_NEEDS_DATA AND NOT SIMDJSON_HAS_TEST_DATA)
+    return()
+  endif()
   if (NOT ARGS_SOURCES)
     list(APPEND ARGS_SOURCES ${TEST_NAME}.cpp)
   endif()

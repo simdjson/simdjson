@@ -4,16 +4,26 @@ add_subdirectory(dom)
 include_directories( . )
 link_libraries(simdjson-windows-headers test-data)
 link_libraries(simdjson)
-link_libraries(counters)
+# Most benchmarks include <counters/event_counter.h>. The counters library is
+# downloaded, so it is missing when SIMDJSON_ALLOW_DOWNLOADS=OFF (or
+# SIMDJSON_COUNTERS=OFF) unless an installed copy is found: skip those
+# benchmarks rather than fail the build.
+if(TARGET counters)
+  link_libraries(counters)
+else()
+  message(STATUS "The counters library is unavailable: most benchmarks are disabled.")
+endif()
 if(SIMDJSON_STATIC_REFLECTION_ENABLED)
   add_compile_definitions(SIMDJSON_STATIC_REFLECTION=1)
 endif(SIMDJSON_STATIC_REFLECTION_ENABLED)
 
-add_executable(benchfeatures benchfeatures.cpp)
 add_executable(get_corpus_benchmark get_corpus_benchmark.cpp)
-# Uses counters + from/benchmark_helpers.h, not Google Benchmark, so it
-# does not belong behind the benchmark::benchmark guard below.
-add_executable(bench_object_revert_position bench_object_revert_position.cpp)
+if(TARGET counters)
+  add_executable(benchfeatures benchfeatures.cpp)
+  # Uses counters + from/benchmark_helpers.h, not Google Benchmark, so it
+  # does not belong behind the benchmark::benchmark guard below.
+  add_executable(bench_object_revert_position bench_object_revert_position.cpp)
+endif()
 
 if (TARGET benchmark::benchmark)
   link_libraries(benchmark::benchmark)
@@ -62,15 +72,21 @@ if (TARGET benchmark::benchmark)
 endif()
 
 
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++20" SIMDJSON_COMPILER_SUPPORTS_CXX20)
-if(SIMDJSON_STATIC_REFLECTION_ENABLED)
-  add_subdirectory(static_reflect)
-else()
-  if(SIMDJSON_EXCEPTIONS AND SIMDJSON_COMPILER_SUPPORTS_CXX20)
-    add_subdirectory(from)
-    add_subdirectory(car_builder)
-  endif()
-endif(SIMDJSON_STATIC_REFLECTION_ENABLED)
+# Every benchmark in these subdirectories uses counters.
+if(TARGET counters)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-std=c++20" SIMDJSON_COMPILER_SUPPORTS_CXX20)
+  if(SIMDJSON_STATIC_REFLECTION_ENABLED)
+    # static_reflect downloads its competitors: not in an offline build.
+    if(COMMAND CPMAddPackage)
+      add_subdirectory(static_reflect)
+    endif()
+  else()
+    if(SIMDJSON_EXCEPTIONS AND SIMDJSON_COMPILER_SUPPORTS_CXX20)
+      add_subdirectory(from)
+      add_subdirectory(car_builder)
+    endif()
+  endif(SIMDJSON_STATIC_REFLECTION_ENABLED)
+endif()
 
 
