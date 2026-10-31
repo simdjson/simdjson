@@ -66,12 +66,10 @@ jobs:
       - name: Configure, build and test without network access
         env:
           # Any download attempt fails: there is nothing listening there.
+          # (GitHub env keys are case-insensitive: curl reads the lowercase ones.)
           http_proxy: http://127.0.0.1:9
           https_proxy: http://127.0.0.1:9
-          HTTP_PROXY: http://127.0.0.1:9
-          HTTPS_PROXY: http://127.0.0.1:9
           no_proxy: ''
-          NO_PROXY: ''
         run: |
           set -eu
           # The flags of the FreeBSD port (devel/simdjson, USES=cmake:testing).
