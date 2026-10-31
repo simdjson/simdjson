@@ -20,13 +20,29 @@ if(SIMDJSON_GOOGLE_BENCHMARKS)
   )
 endif()
 
-CPMAddPackage(
+# The counters library (header-only) is used by most benchmarks.
+cmake_dependent_option(SIMDJSON_COUNTERS
+        "Download the counters library (used by most benchmarks)" ON
+        SIMDJSON_ALLOW_DOWNLOADS OFF)
+
+if(SIMDJSON_COUNTERS)
+  CPMAddPackage(
         NAME counters
         URL https://github.com/lemire/counters/archive/refs/tags/v3.1.0.zip
         OPTIONS
         "COUNTERS_BUILD_TESTS OFF"
         "COUNTERS_INSTALL OFF"
-)
+  )
+else()
+  # Offline builds (e.g., distribution packaging) can use an installed copy.
+  # The imported target is only visible in this directory, so wrap it in a
+  # regular (global) target that the benchmark directories can see.
+  find_package(Counters CONFIG QUIET)
+  if(TARGET Counters::counters)
+    add_library(counters INTERFACE)
+    target_link_libraries(counters INTERFACE Counters::counters)
+  endif()
+endif()
 
 CPMAddPackage(
         NAME simdjson-data
