@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
@@ -118,6 +119,102 @@ bool integer_test() {
   return true;
 }
 
+// The escaping that a JSON string needs, one byte at a time.
+std::string escape_reference(const std::string &s) {
+  static const char hex[] = "0123456789abcdef";
+  std::string out = "\"";
+  for (unsigned char c : s) {
+    switch (c) {
+    case '"': out += "\\\""; break;
+    case '\\': out += "\\\\"; break;
+    case '\b': out += "\\b"; break;
+    case '\t': out += "\\t"; break;
+    case '\n': out += "\\n"; break;
+    case '\f': out += "\\f"; break;
+    case '\r': out += "\\r"; break;
+    default:
+      if (c < 0x20) {
+        out += "\\u00";
+        out += hex[c >> 4];
+        out += hex[c & 0xf];
+      } else {
+        out += char(c);
+      }
+    }
+  }
+  return out + "\"";
+}
+
+// Escapes s from a buffer of exactly s.size() bytes, so that under the address
+// sanitizer a read past the end of the string fails the test.
+bool check_escape(const std::string &s) {
+  std::unique_ptr<char[]> exact(new char[s.size()]);
+  std::memcpy(exact.get(), s.data(), s.size());
+  simdjson::internal::mini_formatter formatter;
+  formatter.string(std::string_view(exact.get(), s.size()));
+  const std::string expected = escape_reference(s);
+  if (formatter.str() != expected) {
+    std::cerr << "escaping a string of " << s.size() << " bytes gave "
+              << formatter.str() << ", expected " << expected << std::endl;
+    return false;
+  }
+  return true;
+}
+
+// Strings of every length up to 48 bytes, with a character that needs
+// escaping (or one that does not) at every position, alone and next to a
+// second one at the end; then strings made only of such characters, including
+// one where every byte becomes \u0001.
+bool string_escape_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  const std::string specials("\"\\\n\x00\x01\x1f\x20\x7f\x80\xff", 10);
+  for (size_t len = 0; len <= 48; len++) {
+    if (!check_escape(std::string(len, 'a'))) { return false; }
+    for (char c : specials) {
+      for (size_t pos = 0; pos < len; pos++) {
+        std::string s(len, 'a');
+        s[pos] = c;
+        if (!check_escape(s)) { return false; }
+        s[len - 1] = '"';
+        if (!check_escape(s)) { return false; }
+      }
+    }
+    std::string dense;
+    for (size_t i = 0; i < len; i++) { dense += specials[i % 3]; }
+    if (!check_escape(dense)) { return false; }
+    // Every byte becomes six: the most output per input byte.
+    if (!check_escape(std::string(len, '\x01'))) { return false; }
+  }
+  // A run of bytes that become six each, starting at every distance from the
+  // end of the output buffer, so that writing more than was reserved would
+  // overflow it (and fail under the address sanitizer).
+  for (size_t prefix = 0; prefix <= 300; prefix++) {
+    if (!check_escape(std::string(prefix, 'a') + std::string(40, '\x01'))) { return false; }
+  }
+  // The same bytes through a parse and minify.
+  simdjson::dom::parser parser;
+  for (size_t len = 0; len <= 40; len++) {
+    std::string s;
+    for (size_t i = 0; i < len; i++) { s += (i % 7 == 3) ? '\n' : (i % 11 == 5) ? '"' : 'x'; }
+    // Not "[" + escape_reference(s): GCC bug 105329 (-Wrestrict), as above.
+    std::string json = "[";
+    json += escape_reference(s);
+    json += ']';
+    simdjson::dom::element doc;
+    auto error = parser.parse(json).get(doc);
+    if (error) {
+      std::cerr << "could not parse " << json << ": " << error << std::endl;
+      return false;
+    }
+    const std::string minified = simdjson::minify(doc);
+    if (minified != json) {
+      std::cerr << "minify(" << json << ") gave " << minified << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
 int main() {
-  return minify_test() && integer_test() ? EXIT_SUCCESS : EXIT_FAILURE;
+  return minify_test() && integer_test() && string_escape_test() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

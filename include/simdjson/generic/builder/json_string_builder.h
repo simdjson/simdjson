@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_H
 #include "simdjson/generic/implementation_simdjson_result_base.h"
+#include "simdjson/internal/json_escape.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -39,6 +40,9 @@ struct has_custom_serialization : std::false_type {};
 
 namespace SIMDJSON_IMPLEMENTATION {
 namespace builder {
+
+using simdjson::internal::escape_best::write_string_escaped;
+
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
