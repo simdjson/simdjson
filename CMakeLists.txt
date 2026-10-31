@@ -12,7 +12,7 @@ endif()
 project(
     simdjson
     # The version number is modified by tools/release.py
-    VERSION 5.0.5
+    VERSION 5.1.0
     DESCRIPTION "Parsing gigabytes of JSON per second"
     HOMEPAGE_URL "https://simdjson.org/"
     LANGUAGES CXX C
@@ -29,8 +29,8 @@ string(
 # ---- Options, variables ----
 
 # These version numbers are modified by tools/release.py
-set(SIMDJSON_LIB_VERSION "34.0.0" CACHE STRING "simdjson library version")
-set(SIMDJSON_LIB_SOVERSION "34" CACHE STRING "simdjson library soversion")
+set(SIMDJSON_LIB_VERSION "36.0.0" CACHE STRING "simdjson library version")
+set(SIMDJSON_LIB_SOVERSION "36" CACHE STRING "simdjson library soversion")
 
 option(SIMDJSON_BUILD_STATIC_LIB "Build simdjson_static library along with simdjson (only makes sense if BUILD_SHARED_LIBS=ON)" OFF)
 if(SIMDJSON_BUILD_STATIC_LIB AND NOT BUILD_SHARED_LIBS)
@@ -230,7 +230,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
     <vector>
   )
 
-  if(SIMDJSON_HAS_BIT_HEADER)
+  if(SIMDJSON_HAS_BIT_HEADER AND CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
     list(APPEND SIMDJSON_PRECOMPILE_HEADERS <bit>)
   endif()
 
@@ -509,13 +509,18 @@ set(
     SIMDJSON_USER_CMAKECACHE
     "${CMAKE_BINARY_DIR}/.simdjson-user-CMakeCache.txt"
 )
-add_custom_target(
-    simdjson-user-cmakecache
+add_custom_command(
+    OUTPUT "${SIMDJSON_USER_CMAKECACHE}"
     COMMAND "${CMAKE_COMMAND}"
     -D "BINARY_DIR=${CMAKE_BINARY_DIR}"
     -D "USER_CMAKECACHE=${SIMDJSON_USER_CMAKECACHE}"
     -P "${PROJECT_SOURCE_DIR}/cmake/simdjson-user-cmakecache.cmake"
+    DEPENDS "${CMAKE_BINARY_DIR}/CMakeCache.txt" "${PROJECT_SOURCE_DIR}/cmake/simdjson-user-cmakecache.cmake"
     VERBATIM
+)
+add_custom_target(
+    simdjson-user-cmakecache
+    DEPENDS "${SIMDJSON_USER_CMAKECACHE}"
 )
 
 # Setup tests

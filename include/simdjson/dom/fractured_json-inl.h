@@ -104,6 +104,13 @@ inline element_metrics structure_analyzer::analyze_scalar(const dom::element& el
       }
       break;
     }
+    case dom::element_type::BIGINT: {
+      std::string_view digits;
+      if (elem.get_bigint().get(digits) == SUCCESS) {
+        metrics.estimated_inline_len = digits.size();
+      }
+      break;
+    }
     case dom::element_type::BOOL: {
       bool val;
       if (elem.get_bool().get(val) == SUCCESS) {
@@ -133,7 +140,7 @@ inline element_metrics structure_analyzer::analyze_array(const dom::array& arr,
 
   for (dom::element child : arr) {
     if (!first) {
-      metrics.estimated_inline_len += 2; // ", "
+      metrics.estimated_inline_len += current_opts_->comma_padding ? 2 : 1; // ", " or ","
     }
     first = false;
 
@@ -182,12 +189,13 @@ inline element_metrics structure_analyzer::analyze_object(const dom::object& obj
 
   for (dom::key_value_pair field : obj) {
     if (!first) {
-      metrics.estimated_inline_len += 2; // ", "
+      metrics.estimated_inline_len += current_opts_->comma_padding ? 2 : 1; // ", " or ","
     }
     first = false;
 
-    // Key length: quotes + key + colon + space
-    metrics.estimated_inline_len += estimate_string_length(field.key) + 2;
+    // Key length: quotes + key + colon (+ space)
+    metrics.estimated_inline_len += estimate_string_length(field.key) +
+                                    (current_opts_->colon_padding ? 2 : 1);
 
     element_metrics child_metrics = analyze_element(field.value, depth + 1);
     metrics.estimated_inline_len += child_metrics.estimated_inline_len;
@@ -285,7 +293,8 @@ inline table_column_type structure_analyzer::classify_table_value(dom::element_t
     case dom::element_type::ARRAY: return table_column_type::array;
     case dom::element_type::INT64:
     case dom::element_type::UINT64:
-    case dom::element_type::DOUBLE: return table_column_type::number;
+    case dom::element_type::DOUBLE:
+    case dom::element_type::BIGINT: return table_column_type::number;
     case dom::element_type::NULL_VALUE: return table_column_type::unknown;
     default: return table_column_type::simple; // string, bool
   }
@@ -580,6 +589,10 @@ simdjson_inline void fractured_formatter::print_newline() {
   if (current_layout_ == layout_mode::single_line) {
     return; // No newlines in inline mode
   }
+  // Like the reference FracturedJson implementation, do not end a line with
+  // white space: the padding that aligns a value in a column is only needed
+  // when something follows it on the same line.
+  buffer.trim_trailing_spaces();
   one_char('\n');
   current_line_length_ = 0;
 }
@@ -857,7 +870,7 @@ inline void fractured_string_builder::format_array_compact_multiline_aligned(
 
     const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
     if (columns.empty()) {
-      format_table_scalar_row(elem, row_metrics, metrics.table_row_width_full, depth + 1,
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width_full,
                               metrics.scalar_column_type);
     } else {
       format_table_row(elem, row_metrics, columns, depth + 1);
@@ -930,7 +943,7 @@ inline void fractured_string_builder::format_table_row_columns(
       } else {
         const element_metrics& vm = child_metrics_at(value_metrics[col_idx]);
         format_table_leaf_value(values[col_idx], vm, column.width, column.type, needs_comma,
-                                 /*add_comma_space=*/true, depth);
+                                 /*add_comma_space=*/true);
       }
 
       if (!is_last_col && !needs_comma) {
@@ -1048,7 +1061,7 @@ inline bool fractured_string_builder::comma_goes_before_padding(table_column_typ
 
 inline void fractured_string_builder::format_table_leaf_value(
     const dom::element& elem, const element_metrics& vm, size_t width,
-    table_column_type column_type, bool needs_comma, bool add_comma_space, size_t depth) {
+    table_column_type column_type, bool needs_comma, bool add_comma_space) {
   bool comma_before_pad = needs_comma && comma_goes_before_padding(column_type);
   bool comma_after_pad = needs_comma && !comma_before_pad;
 
@@ -1070,10 +1083,8 @@ inline void fractured_string_builder::format_table_leaf_value(
     format_.one_char(' ');
   }
 
-  {
-    scoped_single_line_mode single_line(format_);
-    format_element(elem, vm, depth);
-  }
+  // The cell shares its line with the rest of the row.
+  format_element_inline(elem, vm);
 
   if (comma_before_pad) {
     format_.comma();
@@ -1090,10 +1101,10 @@ inline void fractured_string_builder::format_table_leaf_value(
 }
 
 inline void fractured_string_builder::format_table_scalar_row(
-    const dom::element& elem, const element_metrics& row_metrics, size_t width, size_t depth,
+    const dom::element& elem, const element_metrics& row_metrics, size_t width,
     table_column_type column_type) {
   format_table_leaf_value(elem, row_metrics, width, column_type,
-                          /*needs_comma=*/false, /*add_comma_space=*/false, depth);
+                          /*needs_comma=*/false, /*add_comma_space=*/false);
 }
 
 inline void fractured_string_builder::format_array_as_table(const dom::array& arr,
@@ -1121,7 +1132,7 @@ inline void fractured_string_builder::format_array_as_table(const dom::array& ar
 
     const element_metrics& row_metrics = child_metrics_at(metrics.children, child_idx);
     if (columns.empty()) {
-      format_table_scalar_row(elem, row_metrics, metrics.table_row_width, depth + 1,
+      format_table_scalar_row(elem, row_metrics, metrics.table_row_width,
                               metrics.scalar_column_type);
     } else {
       format_table_row(elem, row_metrics, columns, depth + 1);
@@ -1281,6 +1292,14 @@ inline void fractured_string_builder::format_scalar(const dom::element& elem) {
       double val;
       if (elem.get_double().get(val) == SUCCESS) {
         format_.number(val);
+      }
+      break;
+    }
+    case dom::element_type::BIGINT: {
+      // Big integer stored as string: output the raw digits (no quotes)
+      std::string_view digits;
+      if (elem.get_bigint().get(digits) == SUCCESS) {
+        format_.chars(digits.data(), digits.data() + digits.size());
       }
       break;
     }

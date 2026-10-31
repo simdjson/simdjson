@@ -890,6 +890,196 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool root_number_trailing_whitespace() {
+    TEST_START();
+    // More whitespace after the number than the root accessors' scratch
+    // buffers can hold: it must not count toward the length of the number.
+    const std::string spaces(2000, ' ');
+    simdjson::padded_string json("-42" + spaces);
+    simdjson::padded_string quoted("\"42\"" + spaces);
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    int64_t i;
+    uint64_t u;
+    double d;
+    bool is_integer;
+    // GCC 11 -Werror=maybe-uninitialized cannot see that get() writes this
+    // before ASSERT_EQUAL streams it through operator<<.
+    simdjson::ondemand::number_type type{};
+    simdjson::ondemand::number num;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_int64().get(i));
+    ASSERT_EQUAL(i, -42);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_double().get(d));
+    ASSERT_EQUAL(d, -42.0);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.is_integer().get(is_integer));
+    ASSERT_TRUE(is_integer);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_number_type().get(type));
+    ASSERT_EQUAL(type, simdjson::ondemand::number_type::signed_integer);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.get_number().get(num));
+    ASSERT_EQUAL(num.get_int64(), -42);
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
+    ASSERT_EQUAL(u, 42);
+    // The whitespace between two documents of a stream counts the same way.
+    simdjson::padded_string stream_json("1" + spaces + "2");
+    simdjson::ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(stream_json).get(stream));
+    int64_t expected = 0;
+    for (auto d_ref : stream) {
+      ASSERT_SUCCESS(d_ref.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+    TEST_SUCCEED();
+  }
+
+  bool root_number_stream_delimiters() {
+    TEST_START();
+    // Stage 1 drops the comma or RS from the structural index, but
+    // peek_root_length() still includes it. More separator-side padding than
+    // the scratch buffer holds must not be reported as NUMBER_ERROR, and an
+    // RS glued to the digits is not a valid number finisher.
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document_stream stream;
+    const std::string gap(30, ' ');
+    const std::string long_gap(2000, ' ');
+    int64_t i;
+    double d;
+    uint64_t u;
+
+    simdjson::padded_string comma_gap("1" + gap + ",2");
+    ASSERT_SUCCESS(parser.iterate_many(comma_gap, comma_gap.size(), stream_format::comma_delimited).get(stream));
+    int64_t expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_tight(std::string("1,2"));
+    ASSERT_SUCCESS(parser.iterate_many(comma_tight, comma_tight.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_double("-42" + long_gap + ",-1");
+    ASSERT_SUCCESS(parser.iterate_many(comma_double, comma_double.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    const double double_values[2] = {-42.0, -1.0};
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_double().get(d));
+      ASSERT_EQUAL(d, double_values[expected++]);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string comma_quoted(std::string("\"18446744073709551615\",1"));
+    ASSERT_SUCCESS(parser.iterate_many(comma_quoted, comma_quoted.size(), stream_format::comma_delimited).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      if (expected == 0) {
+        ASSERT_SUCCESS(doc.get_uint64_in_string().get(u));
+        ASSERT_EQUAL(u, (std::numeric_limits<uint64_t>::max)());
+      } else {
+        ASSERT_SUCCESS(doc.get_int64().get(i));
+        ASSERT_EQUAL(i, 1);
+      }
+      expected++;
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string seq_gap(std::string("\x1e") + "1" + gap + "\x1e" + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_gap, seq_gap.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    // The RS sits inside the integer scratch buffer once trailing spaces are
+    // trimmed down to its capacity.
+    simdjson::padded_string seq_rs_inside(std::string("\x1e") + "1\x1e" + gap + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_rs_inside, seq_rs_inside.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_int64().get(i));
+      ASSERT_EQUAL(i, ++expected);
+    }
+    ASSERT_EQUAL(expected, 2);
+
+    simdjson::padded_string seq_double(std::string("\x1e") + "-1.5\x1e" + gap + "2");
+    ASSERT_SUCCESS(parser.iterate_many(seq_double, seq_double.size(), stream_format::json_sequence).get(stream));
+    expected = 0;
+    for (auto doc : stream) {
+      ASSERT_SUCCESS(doc.get_double().get(d));
+      ASSERT_EQUAL(d, expected == 0 ? -1.5 : 2.0);
+      expected++;
+    }
+    ASSERT_EQUAL(expected, 2);
+    TEST_SUCCEED();
+  }
+
+  // Checks get_double(), get_float() and their _in_string variants, at the
+  // root and inside an array.
+  bool check_long_exponent(const std::string &number, double expected, error_code expected_error = SUCCESS) {
+    simdjson::padded_string root(number);
+    simdjson::padded_string array("[" + number + "]");
+    simdjson::padded_string quoted("\"" + number + "\"");
+    simdjson::padded_string quoted_array("[\"" + number + "\"]");
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    double d{};
+    float f{};
+    std::cout << "  " << number << std::endl;
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_ERROR(doc.get_double().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); ASSERT_EQUAL(std::signbit(d), std::signbit(expected)); }
+    ASSERT_SUCCESS(parser.iterate(root).get(doc));
+    ASSERT_ERROR(doc.get_float().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); ASSERT_EQUAL(std::signbit(f), std::signbit(expected)); }
+    ASSERT_SUCCESS(parser.iterate(array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_double().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_float().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_ERROR(doc.get_double_in_string().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(quoted).get(doc));
+    ASSERT_ERROR(doc.get_float_in_string().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    ASSERT_SUCCESS(parser.iterate(quoted_array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_double_in_string().get(d), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(d, expected); }
+    ASSERT_SUCCESS(parser.iterate(quoted_array).get(doc));
+    ASSERT_ERROR(doc.get_array().at(0).get_float_in_string().get(f), expected_error);
+    if (!expected_error) { ASSERT_EQUAL(f, float(expected)); }
+    return true;
+  }
+
+  bool long_exponents() {
+    TEST_START();
+    // JSON does not limit the number of exponent digits, and the DOM parser
+    // and get_number() accept an exponent of more than 19 digits.
+    ASSERT_TRUE(check_long_exponent("1e000000000000000000001", 10));
+    ASSERT_TRUE(check_long_exponent("5E-0000000000000000000001", 0.5));
+    ASSERT_TRUE(check_long_exponent("0e9999999999999999999999999999", 0));
+    ASSERT_TRUE(check_long_exponent("-0e+99999999999999999999", -0.0));
+    ASSERT_TRUE(check_long_exponent("1.5e-99999999999999999999", 0));
+    // Still infinite, hence an error.
+    ASSERT_TRUE(check_long_exponent("1e99999999999999999999", 0, NUMBER_ERROR));
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return get_int32_values() &&
            get_uint32_values() &&
@@ -915,7 +1105,10 @@ namespace number_tests {
            powers_of_two() &&
            powers_of_ten() &&
            old_crashes() &&
-           root_number_scratch_padding();
+           root_number_scratch_padding() &&
+           root_number_trailing_whitespace() &&
+           root_number_stream_delimiters() &&
+           long_exponents();
   }
 
 } // namespace number_tests

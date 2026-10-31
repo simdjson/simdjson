@@ -20,8 +20,6 @@ to parse JSON 4x  faster than RapidJSON and 25x faster than JSON for Modern C++.
 * **Reliable:** From memory allocation to error handling, simdjson's design avoids surprises.
 * **Peer Reviewed:** Our research appears in venues like VLDB Journal, Software: Practice and Experience.
 
-This library is part of the [Awesome Modern C++](https://awesomecpp.com) list.
-
 Table of Contents
 -----------------
 
@@ -71,6 +69,7 @@ Real-world usage
 - [Timeplus Proton](https://github.com/timeplus-io/proton)
 - [TiFlash](https://github.com/pingcap/tiflash)
 - [ata-validator](https://ata-validator.com)
+- [Apache Arrow](https://github.com/apache/arrow)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 

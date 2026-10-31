@@ -60,6 +60,14 @@ inline bool padded_string_view::has_sufficient_padding() const noexcept {
   return true;
 }
 
+inline bool padded_string_view::use_trailing_whitespace_as_padding() noexcept {
+  if (padding() >= SIMDJSON_PADDING || !has_sufficient_padding()) {
+    return false;
+  }
+  remove_suffix(SIMDJSON_PADDING - padding());
+  return true;
+}
+
 inline size_t padded_string_view::capacity() const noexcept { return _capacity; }
 
 inline size_t padded_string_view::padding() const noexcept { return capacity() - length(); }

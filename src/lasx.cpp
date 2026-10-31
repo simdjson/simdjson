@@ -107,7 +107,11 @@ simdjson_warn_unused error_code dom_parser_implementation::stage2(dom::document 
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::stage2_next(dom::document &_doc) noexcept {
-  return stage2::tape_builder::parse_document<true>(*this, _doc);
+  return stage2::tape_builder::parse_next_document(*this, _doc);
+}
+
+internal::dom_parser_implementation::stage2_next_function_t dom_parser_implementation::stage2_next_function(bool bounded) const noexcept {
+  return bounded ? stage2::tape_builder::parse_next_bounded_document : stage2::tape_builder::parse_next_document;
 }
 
 SIMDJSON_NO_SANITIZE_MEMORY

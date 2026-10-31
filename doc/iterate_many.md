@@ -158,6 +158,33 @@ A slice is empty when its block falls entirely inside one document, which happen
 only if that document is longer than `block_size`; skip it and continue. Iterate
 while `i * block_size < view.size()` rather than stopping at the first empty slice.
 
+Choosing the block size. Smaller blocks balance the load better: with records of
+a few kilobytes, 64 KiB blocks work well. But every block that starts inside a
+document longer than `block_size` searches forward to that document's end, so
+the same bytes are scanned again and again. Pick the smallest block size such that
+only a small fraction of the input (say 1%) lies in documents longer than the
+block. The 1 MiB in the example is a safe choice when you do not know your data.
+
+A thread touches the shared counter only once per block. Alternatively, you can
+give each thread a fixed, contiguous range of blocks (thread `t` of `n` takes
+blocks `t * count / n` up to `(t + 1) * count / n`). The shared counter is the
+more robust default: threads do not all start at the same time, since they are
+created one after another, and with a fixed range the call lasts until the last
+thread to start has finished its whole share. With the counter, the threads that
+start early simply take more blocks. On a two-socket server with 96 threads,
+the last thread started about 4 ms into a 5 ms parse, and the counter was up to
+1.19x faster. Contiguous ranges help when many blocks fall inside long
+documents, since the repeated scans of one document then stay on one thread;
+otherwise the two were within a few percent of each other in our tests.
+
+Choosing the thread count. `std::thread::hardware_concurrency()` counts every
+hardware thread, including both threads of a core with simultaneous
+multithreading (SMT). Throughput often peaks at or below the number of physical
+cores, and on machines with several sockets, running on one socket can be faster
+than running on all of them. Creating a thread is not free: if you parse many
+inputs, or use many threads on a short input, keep a pool of threads alive
+rather than creating them for each input. Measure on your own hardware.
+
 The delimiter must not occur inside a document: a line feed for NDJSON, or a
 record separator (`0x1E`) for RFC 7464.
 

@@ -212,7 +212,8 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
   uint8_t block[STEP_SIZE];
-  if (simdjson_unlikely(reader.get_remainder(block) == 0)) { return UNEXPECTED_ERROR; }
+  const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
+  if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
 }
@@ -244,6 +245,20 @@ simdjson_inline void json_structural_indexer::next(const simd::simd8x64<uint8_t>
   indexer.write(uint32_t(idx-64), prev_structurals); // Output *last* iteration's structurals to the parser
   prev_structurals = block.structural_start();
   unescaped_chars_error |= block.non_quote_inside_string(unescaped);
+}
+
+// Drops the unclosed string that ends a json_sequence batch and leaves its
+// start in structural_indexes[n_structural_indexes]. The last index is its
+// opening quote, unless the quote directly follows an RS: the scanner reads
+// RS as a scalar byte, so it indexes the RS and not the quote. Keep the RS.
+simdjson_inline void drop_json_sequence_unclosed_string(dom_parser_implementation &parser, size_t len) noexcept {
+  uint32_t quote = parser.structural_indexes[parser.n_structural_indexes - 1];
+  if (parser.buf[quote] == '"') {
+    parser.n_structural_indexes--;
+    return;
+  }
+  while (quote < len && parser.buf[quote] != '"') { quote++; }
+  parser.structural_indexes[parser.n_structural_indexes] = quote;
 }
 
 simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementation &parser, size_t idx, size_t len, stage1_mode partial) {
@@ -352,7 +367,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // A discarded unclosed string also caps how far the filter may scan.
     size_t scan_len = len;
     if(have_unclosed_string) {
-      parser.n_structural_indexes--;
+      drop_json_sequence_unclosed_string(parser, len);
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
       scan_len = parser.structural_indexes[parser.n_structural_indexes];
     }
@@ -381,7 +396,7 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // As above: a discarded unclosed string caps how far the filter may scan.
     size_t scan_len = len;
     if(have_unclosed_string) {
-      parser.n_structural_indexes--;
+      drop_json_sequence_unclosed_string(parser, len);
       scan_len = parser.structural_indexes[parser.n_structural_indexes];
     }
     uint32_t next_batch_start = uint32_t(len);

@@ -143,10 +143,11 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
 
 inline simdjson_result<element> parser::parse_into_document_unpadded(document& provided_doc, const uint8_t *buf, size_t len) & noexcept {
   // Like parse_into_document with realloc_if_needed=false (no copy, parse in
-  // place), but we tell the implementation the buffer is not padded so stage 2
-  // avoids reading past buf+len: string unescaping is bounded, near-the-end
+  // place), but we tell the implementation the buffer is not padded so neither
+  // stage reads past buf+len: stage 1 copies the last block instead of loading
+  // it in place, and in stage 2 string unescaping is bounded, near-the-end
   // numbers are parsed from a padded copy, and atoms use length-aware
-  // validators (see tape_builder). Stage 1 is already safe for unpadded input.
+  // validators (see tape_builder).
   error_code _error = ensure_capacity(provided_doc, len);
   if (_error) { return _error; }
 
@@ -189,7 +190,10 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) &
   return parse(s.data(), s.length(), false);
 }
 simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
-  return parse(v.data(), v.length(), false);
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse(json.data(), json.length(), false);
 }
 
 inline simdjson_result<element> parser::parse_unpadded(const uint8_t *buf, size_t len) & noexcept {
@@ -209,13 +213,16 @@ inline simdjson_result<document_stream> parser::parse_many(const char *buf, size
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size) noexcept {
-  return parse_many(s.data(), s.length(), batch_size);
+  return parse_many(padded_string_view(s), batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size) noexcept {
   return parse_many(s.data(), s.length(), batch_size);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size) noexcept {
-  return parse_many(v.data(), v.length(), batch_size);
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse_many(json.data(), json.length(), batch_size);
 }
 
 inline simdjson_result<document_stream> parser::parse_many(const uint8_t *buf, size_t len, size_t batch_size, stream_format format) noexcept {
@@ -248,13 +255,16 @@ inline simdjson_result<document_stream> parser::parse_many(const char *buf, size
   return parse_many(reinterpret_cast<const uint8_t *>(buf), len, batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const std::string &s, size_t batch_size, stream_format format) noexcept {
-  return parse_many(s.data(), s.length(), batch_size, format);
+  return parse_many(padded_string_view(s), batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string &s, size_t batch_size, stream_format format) noexcept {
   return parse_many(s.data(), s.length(), batch_size, format);
 }
 inline simdjson_result<document_stream> parser::parse_many(const padded_string_view &v, size_t batch_size, stream_format format) noexcept {
-  return parse_many(v.data(), v.length(), batch_size, format);
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse_many(json.data(), json.length(), batch_size, format);
 }
 
 simdjson_inline size_t parser::capacity() const noexcept {

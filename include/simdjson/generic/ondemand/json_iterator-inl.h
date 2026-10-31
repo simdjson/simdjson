@@ -109,6 +109,18 @@ inline bool json_iterator::balanced() const noexcept {
 }
 
 
+// Depth change of each structural character when skipping: +1 for [ and {, -1 for ] and }.
+static constexpr int8_t skip_depth_delta[256] = {
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).
@@ -164,7 +176,30 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
       break;
   }
 
-  // Now that we've considered the first value, we only increment/decrement for arrays/objects
+  // Now that we've considered the first value, we only increment/decrement for arrays/objects.
+  //
+  // Without logging, look up the depth change of each token in a table instead of branching
+  // on it: the next byte is hard to predict, so a switch mispredicts often. The loop also keeps
+  // the position and depth in locals, because the byte loads are char loads that may alias
+  // token._position and _depth, which would force a store of both on every token.
+  if (!logger::LOG_ENABLED) {
+    token_position pos = token.position();
+    const token_position end = end_position();
+    const uint8_t *const json = token.buf;
+    depth_t depth = _depth;
+    while (pos < end) {
+      depth += skip_depth_delta[json[*pos++]];
+      if (depth <= parent_depth) {
+        token.set_position(pos);
+        _depth = depth;
+        return SUCCESS;
+      }
+    }
+    token.set_position(pos);
+    _depth = depth;
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
+  }
+
   while (position() < end_position()) {
     switch (*return_current_and_advance()) {
       case '[': case '{':
@@ -449,6 +484,17 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::optional_error(er
 
 simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const uint8_t *json, uint32_t max_len, uint8_t *tmpbuf, size_t N) noexcept {
   // This function is not expected to be called in performance-sensitive settings.
+  // peek_root_length() stops at the next structural index. Stage 1 omits the
+  // comma or RS (0x1E) that separates stream documents, so that byte and the
+  // whitespace around it remain in the span. RS is not a valid number finisher.
+  while (max_len > 0) {
+    const uint8_t last = json[max_len - 1];
+    if (last != ' ' && last != '\t' && last != '\n' && last != '\r' &&
+        last != ',' && last != 0x1E) {
+      break;
+    }
+    max_len--;
+  }
   // Let us guard against silly cases:
   if((N < max_len) || (N == 0)) { return false; }
   // Copy to the buffer.

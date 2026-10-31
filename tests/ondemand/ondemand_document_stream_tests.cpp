@@ -722,6 +722,42 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // In RFC 7464 form a string record starts right after its RS ("\x1e\"abc\"\n").
+    // A batch that ends inside such a string must stop before its RS.
+    bool json_sequence_string_record_at_batch_end() {
+        TEST_START();
+        struct case_t { std::string json; size_t batch_size; size_t docs; size_t truncated; };
+        const std::vector<case_t> cases = {
+            {"\x1e[1,2,3,4,5,6,7,8]\n\x1e\"abcdefghij\"\n", 24, 2, 0},
+            {"\x1e[1,2,3,4,5,6,7,8]\n\x1e\x1e\"abcdefghij\"\n", 24, 2, 0},
+            {"\x1e" "1\n\x1e" "2\n\x1e\"abc", 1000000, 2, 4},
+        };
+        for (const auto &c : cases) {
+            padded_string json(c.json);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(json, c.batch_size, stream_format::json_sequence).get(stream));
+            size_t counter{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_SUCCESS((*i).error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(stream.truncated_bytes(), c.truncated);
+            dom::parser dparser;
+            dom::document_stream dstream;
+            ASSERT_SUCCESS(dparser.parse_many(json, c.batch_size, stream_format::json_sequence).get(dstream));
+            counter = 0;
+            for (auto doc : dstream) {
+                ASSERT_SUCCESS(doc.error());
+                counter++;
+            }
+            ASSERT_EQUAL(counter, c.docs);
+            ASSERT_EQUAL(dstream.truncated_bytes(), c.truncated);
+        }
+        TEST_SUCCEED();
+    }
+
     bool truncated_unclosed_string() {
         TEST_START();
         // The last JSON document is intentionally truncated.
@@ -3079,6 +3115,44 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // With threads, every other batch is parsed by the stream's own parser,
+    // which is then swapped with the caller's: it must use the caller's
+    // settings, and the caller's parser must keep them after the stream.
+    bool iterate_many_threaded_parser_settings() {
+        TEST_START();
+        // Each document is nested deeper than DEFAULT_MAX_DEPTH and fills a batch.
+        std::string json;
+        for (size_t i = 0; i < 4; i++) {
+            json += std::string(1500, '[') + std::string(1500, ']') + "\n";
+        }
+        auto input = padded_string(json);
+        ondemand::parser parser;
+        parser.set_max_capacity(1 << 20);
+        ASSERT_SUCCESS(parser.allocate(4096, 2048));
+        ondemand::document_stream stream;
+        ASSERT_SUCCESS(parser.iterate_many(input, 4096).get(stream));
+        size_t count = 0;
+        for (auto doc : stream) {
+            ondemand::array arr;
+            ASSERT_SUCCESS(doc.get_array().get(arr));
+            for (size_t depth = 1; depth < 1500; depth++) {
+                ASSERT_SUCCESS(arr.at(0).get_array().get(arr));
+            }
+            count++;
+        }
+        ASSERT_EQUAL(count, 4);
+        ASSERT_EQUAL(parser.max_depth(), 2048);
+        ASSERT_EQUAL(parser.max_capacity(), 1 << 20);
+        // A max_depth below the default is kept as well.
+        auto two_docs = R"([1] [2])"_padded;
+        ondemand::parser shallow_parser;
+        ASSERT_SUCCESS(shallow_parser.allocate(4096, 8));
+        ASSERT_SUCCESS(shallow_parser.iterate_many(two_docs, 4096).get(stream));
+        for (auto doc : stream) { ASSERT_SUCCESS(doc.error()); }
+        ASSERT_EQUAL(shallow_parser.max_depth(), 8);
+        TEST_SUCCEED();
+    }
+
     // structural_indexes[] is relative to batch_start while current_index() is
 // absolute, so source() used to underflow on every batch after the first.
 bool source_across_batches() {
@@ -3106,12 +3180,14 @@ bool source_across_batches() {
 bool run() {
         return
             shrinking_batch_size_reuses_buffers() &&
+            iterate_many_threaded_parser_settings() &&
             stream_stops_after_fatal_error() &&
 #if SIMDJSON_STATIC_REFLECTION
             reflection_stream_tests() &&
 #endif
             json_sequence_tests() &&
             truncated_bytes_filtered_formats() &&
+            json_sequence_string_record_at_batch_end() &&
             comma_delimited_tests() &&
             stdstring_with_format() &&
             issue2181() &&

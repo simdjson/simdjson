@@ -5,6 +5,7 @@
 #include "simdjson/generic/builder/json_string_builder.h"
 #include "simdjson/concepts.h"
 #include "simdjson/annotations.h"
+#include "simdjson/internal/json_escape.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 #if SIMDJSON_STATIC_REFLECTION
 
@@ -30,7 +31,6 @@ namespace internal {
 using simdjson::internal::write_uint_jeaiii;
 simdjson_inline char *write_double(char *p, double v) noexcept;
 } // namespace internal
-simdjson_really_inline size_t write_string_escaped(const std::string_view input, char *out);
 
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_GCC_WARNING(-Warray-bounds)
@@ -388,6 +388,8 @@ simdjson_really_inline constexpr void atom(W &w, const T &m) {
 template<class W, typename number_type,
          typename = typename std::enable_if<std::is_arithmetic<number_type>::value && !std::is_same_v<number_type, char>>::type>
 simdjson_really_inline constexpr void atom(W &w, const number_type t) {
+  static_assert(sizeof(number_type) <= sizeof(uint64_t),
+                "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
   // via jeaiii using local pos.

@@ -1057,6 +1057,63 @@ bool no_padding_test() {
   return true;
 }
 
+// Without comma or colon padding, an inline container takes one column less
+// per separator. The analyzer used to count ", " and ": " regardless, so a
+// container that fit on a line was expanded, and table cells holding inline
+// containers were padded to the wrong width.
+bool no_padding_counted_in_length_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    // 17 columns wide.
+    std::string json = "[1,2,3,4,5,6,7,8]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 17;
+    opts.comma_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "[1,2,3,4,5,6,7,8]");
+  }
+  {
+    std::string json = R"({"a":1,"b":2,"c":3})";
+    simdjson::fractured_json_options opts;
+    // 21 columns wide.
+    opts.max_total_line_length = 21;
+    opts.colon_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "{\"a\":1, \"b\":2, \"c\":3}");
+    // 22 columns wide.
+    opts.max_total_line_length = 22;
+    opts.colon_padding = true;
+    opts.comma_padding = false;
+    ASSERT_EQUAL(simdjson::fractured_json_string(json, opts), "{\"a\": 1,\"b\": 2,\"c\": 3}");
+  }
+  {
+    std::string json = R"([{"a":[1,2,3],"b":1},{"a":"xxxxxxx","b":2},{"a":null,"b":3}])";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    opts.comma_padding = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": [1,2,3],  \"b\": 1},\n"
+        "    {\"a\": \"xxxxxxx\",\"b\": 2},\n"
+        "    {\"a\": null,     \"b\": 3}\n"
+        "]");
+  }
+  {
+    std::string json = R"([{"a":{"x":1},"b":1},{"a":"xxxxxxx","b":2},{"a":null,"b":3}])";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 30;
+    opts.colon_padding = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\":{\"x\":1},   \"b\":1},\n"
+        "    {\"a\":\"xxxxxxx\", \"b\":2},\n"
+        "    {\"a\":null,      \"b\":3}\n"
+        "]");
+  }
+  std::cout << "No padding counted in length test passed." << std::endl;
+  return true;
+}
+
 bool compact_multiline_oversized_item_test() {
   std::cout << "Running " << __func__ << std::endl;
 
@@ -1616,6 +1673,39 @@ bool always_expand_depth_inline_children_test() {
   return true;
 }
 
+// A table cell is written on the row's line, so a container in a cell must be
+// written inline, like the children of an inline value. It used to go
+// through decide_layout(), which picks another layout for a container more
+// complex than max_inline_complexity: on a single line, that added the
+// padding of a compact multiline array or dropped the comma padding, so the
+// cell no longer had its measured width and the columns after it were
+// misaligned.
+bool table_cell_containers_inline_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::fractured_json_options opts;
+  opts.max_inline_complexity = 0;
+  {
+    std::string json = R"([{"a":[1,22,333],"b":1},{"a":"x","b":2}])";
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": [1, 22, 333], \"b\": 1},\n"
+        "    {\"a\": \"x\",          \"b\": 2}\n"
+        "]");
+  }
+  {
+    std::string json = R"([{"a":{"x":1,"y":2},"b":1},{"a":"x","b":2}])";
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    {\"a\": {\"x\": 1, \"y\": 2}, \"b\": 1},\n"
+        "    {\"a\": \"x\",              \"b\": 2}\n"
+        "]");
+  }
+  std::cout << "Table cell containers inline test passed." << std::endl;
+  return true;
+}
+
 
 bool table_format_union_columns_with_blank_padding_test() {
   std::cout << "Running " << __func__ << std::endl;
@@ -1964,7 +2054,7 @@ bool compact_multiline_scalar_list_alignment_test() {
         "[\n"
         "    1    , 10   , 4    , 10   , 10   ,\n"
         "    10   , 10   , 10   , 10   , 1.111,\n"
-        "    null \n"
+        "    null\n"
         "]");
   }
   {
@@ -2451,6 +2541,86 @@ bool table_format_double_column_alignment_test() {
   return true;
 }
 
+// With number_as_string(true), integers that do not fit in 64 bits are kept
+// as BIGINT elements. fractured_json used to write nothing for them, which
+// produced invalid JSON such as [1, , 2].
+bool bigint_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  simdjson::dom::parser parser;
+  parser.number_as_string(true);
+  simdjson::dom::element doc;
+  {
+    std::string json = "[1,123456789012345678901234567890,-98765432109876543210]";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc),
+        "[1, 123456789012345678901234567890, -98765432109876543210]");
+  }
+  {
+    std::string json = R"({"id":123456789012345678901234567890,"n":1})";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc),
+        "{\"id\": 123456789012345678901234567890, \"n\": 1}");
+  }
+  {
+    std::string json = "123456789012345678901234567890";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    ASSERT_EQUAL(simdjson::fractured_json(doc), json);
+  }
+  {
+    // A big integer is a number: it is measured and aligned like one.
+    std::string json = R"([{"a":1,"b":"x"},{"a":123456789012345678901234567890,"b":"y"}])";
+    ASSERT_SUCCESS(parser.parse(json).get(doc));
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 60;
+    opts.number_alignment = simdjson::number_list_alignment::right;
+    ASSERT_EQUAL(simdjson::fractured_json(doc, opts),
+        "[\n"
+        "    {\"a\":                              1, \"b\": \"x\"},\n"
+        "    {\"a\": 123456789012345678901234567890, \"b\": \"y\"}\n"
+        "]");
+  }
+  std::cout << "Bigint test passed." << std::endl;
+  return true;
+}
+
+// The padding that aligns a value in a column must not be left at the end of
+// a line. The last value of a uniform scalar array used to be padded to the
+// column width, which left trailing white space before the closing bracket.
+bool no_trailing_whitespace_test() {
+  std::cout << "Running " << __func__ << std::endl;
+  {
+    // Table of scalars.
+    std::string json = "[1,22222222222222,3,4444]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 20;
+    opts.enable_compact_multiline = false;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    1             ,\n"
+        "    22222222222222,\n"
+        "    3             ,\n"
+        "    4444\n"
+        "]");
+  }
+  {
+    // Aligned compact multiline array of scalars.
+    std::string json = "[1,2222222,3,444444,5]";
+    simdjson::fractured_json_options opts;
+    opts.max_total_line_length = 24;
+    opts.min_compact_array_row_items = 2;
+    auto formatted = simdjson::fractured_json_string(json, opts);
+    ASSERT_EQUAL(formatted,
+        "[\n"
+        "    1      , 2222222,\n"
+        "    3      , 444444 ,\n"
+        "    5\n"
+        "]");
+  }
+  std::cout << "No trailing whitespace test passed." << std::endl;
+  return true;
+}
+
 int main() {
   bool success = true;
 
@@ -2487,6 +2657,7 @@ int main() {
   success = disable_compact_test() && success;
   success = disable_table_test() && success;
   success = no_padding_test() && success;
+  success = no_padding_counted_in_length_test() && success;
 
   // Layout tests
   success = compact_multiline_oversized_item_test() && success;
@@ -2503,6 +2674,7 @@ int main() {
   success = nested_bracket_padding_test() && success;
   success = always_expand_depth_test() && success;
   success = always_expand_depth_inline_children_test() && success;
+  success = table_cell_containers_inline_test() && success;
   success = table_format_union_columns_with_blank_padding_test() && success;
   success = table_format_respects_max_total_line_length_test() && success;
   success = table_nested_cell_padding_test() && success;
@@ -2521,6 +2693,8 @@ int main() {
   success = table_format_duplicate_key_test() && success;
   success = table_format_null_container_test() && success;
   success = table_format_double_column_alignment_test() && success;
+  success = bigint_test() && success;
+  success = no_trailing_whitespace_test() && success;
 
   if (success) {
     std::cout << "\nAll fractured_json tests passed! (" << 55 << " tests)" << std::endl;
