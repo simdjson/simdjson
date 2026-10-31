@@ -498,9 +498,8 @@ bool unterminated_bracket_quote_wildcard() {
   ASSERT_SUCCESS(values[0].get(city));
   ASSERT_EQUAL(city, "Nara");
 
-  // Non-wildcard at_path uses json_path_to_pointer_conversion (already guarded
-  // for a missing ']'; quotes are not stripped there, so unterminated
-  // forms are still INVALID_JSON_POINTER).
+  // Non-wildcard at_path uses json_path_to_pointer_conversion, which also
+  // reports an unterminated bracket-quoted key as INVALID_JSON_POINTER.
   ASSERT_EQUAL(doc.at_path(R"($["a")").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(doc.at_path(R"($['a')").error(), INVALID_JSON_POINTER);
   int64_t ok_val = 0;
@@ -786,6 +785,37 @@ bool at_path_error_propagation() {
   TEST_SUCCEED();
 }
 
+// A bracket-quoted key (['key'] or ["key"]) is the key without its quotes in
+// at_path() too, as in at_path_with_wildcard() and in On-Demand
+// for_each_at_path_with_wildcard(). at_path() used to look for the key with
+// its quotes, so $['a'] matched nothing even when $.a did.
+bool at_path_quoted_key() {
+  TEST_START();
+  auto json = R"({"a":{"b c":1,"d.e":2,"f]g":3,"h/i":4,"j'k":5},"x":[10,20]})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  const std::pair<const char *, int64_t> cases[] = {
+      {"$['a']['b c']", 1}, {R"($["a"]["d.e"])", 2}, {"$.a['f]g']", 3},
+      {"$['a']['h/i']", 4}, {R"($.a["j'k"])", 5},     {"$['x'][1]", 20}};
+  for (const auto &c : cases) {
+    std::cout << "  " << c.first << std::endl;
+    int64_t value;
+    ASSERT_SUCCESS(doc.at_path(c.first).get(value));
+    ASSERT_EQUAL(value, c.second);
+    std::vector<dom::element> values;
+    ASSERT_SUCCESS(doc.at_path_with_wildcard(c.first).get(values));
+    ASSERT_EQUAL(values.size(), 1);
+    ASSERT_SUCCESS(values[0].get(value));
+    ASSERT_EQUAL(value, c.second);
+  }
+  // The key ends at the matching quote, which must be followed by ']'.
+  ASSERT_ERROR(doc.at_path(R"($['a"])").error(), INVALID_JSON_POINTER);
+  ASSERT_ERROR(doc.at_path("$['a'b]").error(), INVALID_JSON_POINTER);
+  ASSERT_ERROR(doc.at_path("$['a']['x']").error(), NO_SUCH_FIELD);
+  TEST_SUCCEED();
+}
+
 // The path is parsed once, not again at every node the wildcards reach: a long
 // path after a couple of wildcards on a large document used to take
 // O(nodes * path length) time (OSS-Fuzz 6040346321289216).
@@ -826,7 +856,7 @@ int main() {
       quoted_key_after_last_wildcard() &&
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
-      at_path_error_propagation() &&
+      at_path_error_propagation() && at_path_quoted_key() &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&

@@ -498,6 +498,40 @@ namespace json_path_tests {
     }
 #endif
 
+    // A bracket-quoted key (['key'] or ["key"]) is the key without its quotes
+    // in at_path() too, as in for_each_at_path_with_wildcard(). at_path() used
+    // to look for the key with its quotes, so $['a'] matched nothing.
+    bool at_path_quoted_key() {
+        TEST_START();
+        auto json = R"({"a":{"b c":1,"d.e":2,"f]g":3,"h/i":4,"j'k":5},"x":[10,20]})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        const std::pair<const char *, int64_t> cases[] = {
+            {"$['a']['b c']", 1}, {R"($["a"]["d.e"])", 2}, {"$.a['f]g']", 3},
+            {"$['a']['h/i']", 4}, {R"($.a["j'k"])", 5},     {"$['x'][1]", 20}};
+        for (const auto &c : cases) {
+            std::cout << "  " << c.first << std::endl;
+            int64_t value;
+            ASSERT_SUCCESS(parser.iterate(json).get(doc));
+            ASSERT_SUCCESS(doc.at_path(c.first).get_int64().get(value));
+            ASSERT_EQUAL(value, c.second);
+            std::vector<int64_t> values;
+            ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard(c.first, [&](ondemand::value v) {
+                int64_t x;
+                if (v.get_int64().get(x) == SUCCESS) { values.push_back(x); }
+            }));
+            ASSERT_EQUAL(values.size(), 1);
+            ASSERT_EQUAL(values[0], c.second);
+        }
+        // The key ends at the matching quote, which must be followed by ']'.
+        ondemand::value val;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_ERROR(doc.at_path(R"($['a"])").get(val), INVALID_JSON_POINTER);
+        ASSERT_ERROR(doc.at_path("$['a'b]").get(val), INVALID_JSON_POINTER);
+        ASSERT_ERROR(doc.at_path("$['a']['x']").get(val), NO_SUCH_FIELD);
+        TEST_SUCCEED();
+    }
+
     // A structural error abandons the document: is_alive() becomes false and
     // the iterator lets go of the parser. at_path() and
     // for_each_at_path_with_wildcard() rewind the document on each call and used
@@ -528,6 +562,7 @@ namespace json_path_tests {
     bool run() {
         return
                 at_path_after_fatal_error() &&
+                at_path_quoted_key() &&
 #if SIMDJSON_EXCEPTIONS
                 json_path_invalidation_exceptions() &&
 #endif

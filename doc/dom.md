@@ -426,7 +426,7 @@ JSONPath
 ------------
 
 
-The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index. A field can also be written in brackets with single or double quotes (`$['key']` or `$["key"]`), e.g., when its name contains a `.`.
 
 Consider the following example:
 

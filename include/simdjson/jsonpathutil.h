@@ -91,7 +91,16 @@ inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
     } else if (json_path[i] == '[') {
       result += '/';
       ++i; // Move past the '['
-      while (i < json_path.length() && json_path[i] != ']') {
+      // A bracket-quoted key (['key'] or ["key"]) is the key without its
+      // quotes, as in get_next_key_and_json_path(): it runs up to the
+      // matching quote, which must be followed by ']'.
+      char quote = '\0';
+      if (i < json_path.length() && (json_path[i] == '\'' || json_path[i] == '"')) {
+        quote = json_path[i];
+        ++i; // Move past the opening quote
+      }
+      const char end = quote ? quote : ']';
+      while (i < json_path.length() && json_path[i] != end) {
           if (json_path[i] == '~') {
             result += "~0";
           } else if (json_path[i] == '/') {
@@ -101,7 +110,10 @@ inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
           }
           ++i;
       }
-      if (i == json_path.length() || json_path[i] != ']') {
+      if (quote) {
+        ++i; // Move past the closing quote
+      }
+      if (i >= json_path.length() || json_path[i] != ']') {
           return "-1"; // Using sentinel value that will be handled as an error by the caller.
       }
     } else {

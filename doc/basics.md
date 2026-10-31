@@ -2182,7 +2182,7 @@ be represented as `value` instances. You can check that a document is a scalar w
 JSONPath
 ------------
 
-The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index. A field can also be written in brackets with single or double quotes (`$['key']` or `$["key"]`), e.g., when its name contains a `.`.
 
 This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of
 [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects
