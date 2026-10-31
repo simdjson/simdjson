@@ -1,0 +1,98 @@
+name: Ubuntu 24.04 CI Offline
+
+# Distribution packagers (e.g., FreeBSD ports, see issue #3004) build and run
+# the tests without network access, with SIMDJSON_ALLOW_DOWNLOADS=OFF (see
+# 'Offline builds' in HACKING.md). The build and the tests must pass whatever
+# local dependencies are available.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-build:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # freebsd-port: the FreeBSD port's setup, simdjson-data extracted into
+        #   dependencies/.cache/simdjson-data, no counters.
+        # no-data: nothing available, the tests needing simdjson-data are skipped.
+        # installed-counters: an installed counters (CMAKE_PREFIX_PATH) and
+        #   simdjson-data passed as CPM_simdjson-data_SOURCE.
+        setup: [freebsd-port, no-data, installed-counters]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Fetch the local dependencies beforehand, as a packager would
+        run: |
+          set -eu
+          deps="$RUNNER_TEMP/deps"
+          mkdir -p "$deps/prefix"
+          extra_flags="-DCMAKE_PREFIX_PATH=$deps/prefix"
+          if [ "${{ matrix.setup }}" != no-data ]; then
+            # The test data, at the commit pinned in dependencies/CMakeLists.txt.
+            data_url=$(grep -o 'https://github.com/simdjson/simdjson-data/archive/[0-9a-f]*\.zip' dependencies/CMakeLists.txt)
+            curl -fsSL -o "$deps/data.zip" "$data_url"
+            unzip -q "$deps/data.zip" -d "$deps/data"
+            data_dir=$(ls -d "$deps"/data/simdjson-data-*)
+            if [ "${{ matrix.setup }}" = freebsd-port ]; then
+              mkdir -p dependencies/.cache
+              mv "$data_dir" dependencies/.cache/simdjson-data
+            else
+              extra_flags="$extra_flags -DCPM_simdjson-data_SOURCE=$data_dir"
+            fi
+          fi
+          if [ "${{ matrix.setup }}" = installed-counters ]; then
+            counters_url=$(grep -o 'https://github.com/lemire/counters/archive/[^ ]*\.zip' dependencies/CMakeLists.txt)
+            curl -fsSL -o "$deps/counters.zip" "$counters_url"
+            unzip -q "$deps/counters.zip" -d "$deps/counters"
+            cmake -S "$(ls -d "$deps"/counters/counters-*)" -B "$deps/counters-build" \
+              -DCMAKE_INSTALL_PREFIX="$deps/prefix"
+            cmake --install "$deps/counters-build"
+          fi
+          echo "EXTRA_FLAGS=$extra_flags" >> "$GITHUB_ENV"
+      - name: Configure, build and test without network access
+        env:
+          # Any download attempt fails: there is nothing listening there.
+          http_proxy: http://127.0.0.1:9
+          https_proxy: http://127.0.0.1:9
+          HTTP_PROXY: http://127.0.0.1:9
+          HTTPS_PROXY: http://127.0.0.1:9
+          no_proxy: ''
+          NO_PROXY: ''
+        run: |
+          set -eu
+          # The flags of the FreeBSD port (devel/simdjson, USES=cmake:testing).
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \
+            -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_ALLOW_DOWNLOADS=OFF \
+            -DSIMDJSON_COMPETITION=OFF -DSIMDJSON_GOOGLE_BENCHMARKS=OFF \
+            -DFETCHCONTENT_FULLY_DISCONNECTED=ON $EXTRA_FLAGS 2>&1 | tee configure.log
+          cmake --build build -j "$(nproc)"
+          ctest --test-dir build --output-on-failure -LE explicitonly -j "$(nproc)"
+      - name: Check what was built and tested
+        run: |
+          set -eu
+          if [ "${{ matrix.setup }}" = no-data ]; then
+            grep -q 'The simdjson-data test files are unavailable' configure.log
+            test ! -e build/tests/dom/jsoncheck
+          else
+            test -x build/tests/dom/jsoncheck
+          fi
+          if [ "${{ matrix.setup }}" = installed-counters ]; then
+            test -x build/benchmark/benchfeatures
+          else
+            test ! -e build/benchmark/benchfeatures
+          fi
+          test -x build/tests/dom/basictests

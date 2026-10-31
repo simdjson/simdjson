@@ -9,7 +9,8 @@ cmake_dependent_option(SIMDJSON_COMPETITION "Compile competitive benchmarks" ON
 cmake_dependent_option(SIMDJSON_GOOGLE_BENCHMARKS "compile the Google Benchmark benchmarks" ON
         "SIMDJSON_ALLOW_DOWNLOADS OR MINGW" OFF)
 
-if(SIMDJSON_GOOGLE_BENCHMARKS)
+# Without CPM (an offline build: see cmake/CPM.cmake), nothing is downloaded.
+if(SIMDJSON_GOOGLE_BENCHMARKS AND COMMAND CPMAddPackage)
   CPMAddPackage(
         NAME google_benchmarks
         URL https://github.com/google/benchmark/archive/refs/tags/v1.9.5.zip
@@ -44,10 +45,40 @@ else()
   endif()
 endif()
 
-CPMAddPackage(
+# The simdjson-data test files. A local copy is used when there is one:
+# CPM_simdjson-data_SOURCE, or dependencies/.cache/simdjson-data (where
+# distribution packages such as the FreeBSD port put it). Otherwise, they are
+# downloaded, unless SIMDJSON_ALLOW_DOWNLOADS is OFF.
+set(SIMDJSON_DATA_SOURCE "")
+if(CPM_simdjson-data_SOURCE)
+  set(SIMDJSON_DATA_SOURCE "${CPM_simdjson-data_SOURCE}")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.cache/simdjson-data/CMakeLists.txt")
+  set(SIMDJSON_DATA_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/.cache/simdjson-data")
+endif()
+if(SIMDJSON_DATA_SOURCE)
+  message(STATUS "Using the simdjson-data test files in ${SIMDJSON_DATA_SOURCE}")
+  add_subdirectory("${SIMDJSON_DATA_SOURCE}" "${CMAKE_CURRENT_BINARY_DIR}/simdjson-data")
+elseif(SIMDJSON_ALLOW_DOWNLOADS)
+  CPMAddPackage(
         NAME simdjson-data
         URL https://github.com/simdjson/simdjson-data/archive/351949906abde446f0314bf79606fb5d884f5be7.zip
-)
+  )
+endif()
+# Without simdjson-data (e.g., offline, or FETCHCONTENT_FULLY_DISCONNECTED=ON
+# without a populated copy), the tests that need it are not built: see
+# SIMDJSON_HAS_TEST_DATA in the tests. The others use the few files in
+# jsonexamples/ of this repository.
+if(TARGET test-data)
+  set(SIMDJSON_HAS_TEST_DATA ON PARENT_SCOPE)
+else()
+  message(WARNING "The simdjson-data test files are unavailable: the tests "
+                  "that need them are skipped. See 'Offline builds' in "
+                  "HACKING.md.")
+  set(SIMDJSON_HAS_TEST_DATA OFF PARENT_SCOPE)
+  add_library(test-data INTERFACE)
+  target_compile_definitions(test-data INTERFACE
+    SIMDJSON_BENCHMARK_DATA_DIR="${PROJECT_SOURCE_DIR}/jsonexamples/")
+endif()
 
 option(SIMDJSON_USE_BOOST_JSON "Try to include BOOST_JSON, this may break your binaries under some systems." OFF)
 # This prevents variables declared with set() from unnecessarily escaping and

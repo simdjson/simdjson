@@ -7,7 +7,7 @@ add_cpp_test(ondemand_tag_invoke_exception_tests     LABELS ondemand acceptance 
 add_cpp_test(ondemand_car_deserialization            LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_log_tests                      LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_log_error_tests                LABELS ondemand acceptance per_implementation)
-add_cpp_test(ondemand_tostring_tests                 LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_tostring_tests                 NEEDS_DATA LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_active_tests                   LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_tests                    LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_array_error_tests              LABELS ondemand acceptance per_implementation)
