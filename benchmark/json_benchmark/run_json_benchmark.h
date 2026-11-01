@@ -13,7 +13,10 @@ void maybe_display_implementation() {
     displayed_implementation = true;
     std::cout << "simdjson::dom implementation:      " << simdjson::get_active_implementation()->name() << std::endl;
     std::cout << "simdjson::ondemand implementation (stage 1): " << simdjson::get_active_implementation()->name() << std::endl;
-    std::cout << "simdjson::ondemand implementation (stage 2): " << simdjson::builtin_implementation()->name() << std::endl;
+    std::cout << "simdjson::ondemand implementation (stage 2): " << SIMDJSON_STRINGIFY(SIMDJSON_BUILTIN_IMPLEMENTATION) << std::endl;
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+    std::cout << "jsonifier backend: " << ::jsonifier::cpuArchName << std::endl;
+#endif
   }
 }
 
