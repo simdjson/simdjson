@@ -29,6 +29,7 @@ Table of Contents
 * [Godbolt](#godbolt)
 * [Performance results](#performance-results)
 * [Packages](#packages)
+* [Companion libraries](#companion-libraries)
 * [Bindings and Ports of simdjson](#bindings-and-ports-of-simdjson)
 * [About simdjson](#about-simdjson)
 * [Funding](#funding)
@@ -172,6 +173,15 @@ Packages
 [![Packaging status](https://repology.org/badge/vertical-allrepos/simdjson.svg)](https://repology.org/project/simdjson/versions)
 
 
+Companion libraries
+-------------------
+
+The simdjson organization maintains libraries built on simdjson:
+
+- [fastsimdjson](https://github.com/simdjson/fastpysimdjson): our official Python bindings (`pip install fastsimdjson`). A drop-in replacement for the `json` module's `loads`, `load`, `dumps` and `dump`, over 3 times faster than the standard library. It also offers lazy parsing, multithreaded NDJSON with free-threaded Python, and conversion to Apache Arrow and MessagePack.
+- [simdjson_arrow](https://github.com/simdjson/simdjson_arrow): reads newline-delimited JSON into [Apache Arrow](https://arrow.apache.org/) record batches, and writes Arrow record batches as JSON, on one thread or many. Several times faster than Arrow C++'s own JSON reader.
+- [simdjson_msgpack](https://github.com/simdjson/simdjson_msgpack): converts JSON to [MessagePack](https://msgpack.org/) and back, one document or many, on many threads.
+
 Bindings and Ports of simdjson
 ------------------------------
 
@@ -181,7 +191,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [libpy_simdjson](https://github.com/gerrymanoim/libpy_simdjson/): high-speed Python bindings for simdjson using [libpy](https://github.com/quantopian/libpy).
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [cysimdjson](https://github.com/TeskaLabs/cysimdjson): high-speed Python bindings for the simdjson project.
-- [fastpysimdjson](https://github.com/simdjson/fastpysimdjson): fast JSON parsing in Python using simdjson.
+- [fastsimdjson](https://github.com/simdjson/fastpysimdjson): our official Python bindings (see [Companion libraries](#companion-libraries)).
 - [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
