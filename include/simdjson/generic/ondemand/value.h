@@ -328,6 +328,24 @@ public:
    */
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
 
+  /**
+   * Cast this JSON value to a null-terminated C string.
+   *
+   * The string is guaranteed to be valid UTF-8. It is stored in the parser and
+   * will be invalidated the next time the parser parses a document or when the
+   * parser is destroyed.
+   *
+   * Because JSON strings may contain null characters, strlen may not give the
+   * string length. Use get_string() when you need the length.
+   *
+   * Important: a value should be consumed once. Calling get_c_str() twice on
+   * the same value is an error.
+   *
+   * @returns A pointer to a null-terminated UTF-8 string.
+   * @returns INCORRECT_TYPE if the JSON value is not a string.
+   */
+  simdjson_inline simdjson_result<const char *> get_c_str(bool allow_replacement = false) noexcept;
+
 #if SIMDJSON_SUPPORTS_CHAR8_T
   /**
    * Cast this JSON value to a C++20 UTF-8 string.
@@ -923,6 +941,7 @@ public:
   simdjson_inline simdjson_result<std::float64_t> get_float64() noexcept;
 #endif // SIMDJSON_SUPPORTS_FLOAT64_T
   simdjson_inline simdjson_result<std::string_view> get_string(bool allow_replacement = false) noexcept;
+  simdjson_inline simdjson_result<const char *> get_c_str(bool allow_replacement = false) noexcept;
 #if SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<std::u8string_view> get_u8string(bool allow_replacement = false) noexcept;
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
