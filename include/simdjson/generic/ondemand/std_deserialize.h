@@ -143,6 +143,16 @@ struct pop_back_guard {
     if (armed) { container.pop_back(); }
   }
 };
+
+// Empties the optional on destruction while armed.
+template <typename T>
+struct reset_guard {
+  T &optional;
+  bool armed{true};
+  ~reset_guard() {
+    if (armed) { optional.reset(); }
+  }
+};
 } // namespace details
 
 /**
@@ -160,7 +170,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       "The specified type inside the container must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<value_type>,
-      "The specified type inside the container must default constructible.");
+      "The specified type inside the container must be default constructible.");
   SIMDJSON_IMPLEMENTATION::ondemand::array arr;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::array>) {
     arr = val;
@@ -248,7 +258,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       "The specified value type inside the container must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<value_type>,
-      "The specified value type inside the container must default constructible.");
+      "The specified value type inside the container must be default constructible.");
 
   SIMDJSON_IMPLEMENTATION::ondemand::object obj;
   if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
@@ -294,7 +304,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
       "The specified type inside the unique_ptr must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<element_type>,
-      "The specified type inside the unique_ptr must default constructible.");
+      "The specified type inside the unique_ptr must be default constructible.");
 
   // A null pointer is serialized as null.
   bool is_null_value;
@@ -327,7 +337,7 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(
       "The specified type inside the optional must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<value_type>,
-      "The specified type inside the optional must default constructible.");
+      "The specified type inside the optional must be default constructible.");
 
   // Check if the value is null
   bool is_null_value;
@@ -337,9 +347,22 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(
     return SUCCESS;
   }
 
-  value_type temp;
-  SIMDJSON_TRY(val.template get<value_type>(temp));
-  out.emplace(std::move(temp));
+  // On an error or an exception (a user tag_invoke may throw), out is left as
+  // it was: empty, or holding its previous value.
+  if (!out) {
+    // Deserialize in place (no temporary to move, which matters for large
+    // types), and empty out again if that fails.
+    out.emplace();
+    details::reset_guard<std::remove_cvref_t<T>> guard{out};
+    SIMDJSON_TRY(val.template get<value_type>(*out));
+    guard.armed = false;
+  } else {
+    // out holds a value: deserialize into a fresh value and replace it on
+    // success. (A container is thus replaced rather than appended to.)
+    value_type temp;
+    SIMDJSON_TRY(val.template get<value_type>(temp));
+    out.emplace(std::move(temp));
+  }
   return SUCCESS;
 }
 
