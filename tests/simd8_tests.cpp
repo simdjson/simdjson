@@ -38,13 +38,55 @@ static bool test_simd8_bool_any() {
   }
   TEST_SUCCEED();
 }
+
+static bool test_simd8_uint8_order() {
+  TEST_START();
+  const simd8<uint8_t> low(10);
+  const simd8<uint8_t> high(20);
+  ASSERT_TRUE((low < high).any());
+  ASSERT_FALSE((high < low).any());
+  ASSERT_TRUE((high > low).any());
+  ASSERT_FALSE((low > high).any());
+  ASSERT_TRUE((low <= high).any());
+  ASSERT_FALSE((high <= low).any());
+  ASSERT_TRUE((high >= low).any());
+  ASSERT_FALSE((low >= high).any());
+  ASSERT_TRUE((low <= low).any());
+  ASSERT_TRUE((low >= low).any());
+  ASSERT_FALSE((low < low).any());
+  ASSERT_FALSE((low > low).any());
+
+  const simd8<uint8_t> index(byte_index);
+  for (size_t i = 0; i < width; i++) {
+    const simd8<uint8_t> threshold = simd8<uint8_t>(uint8_t(i));
+    const simd8<bool> lt = index < threshold;
+    const simd8<bool> gt = index > threshold;
+    const simd8<bool> le = index <= threshold;
+    const simd8<bool> ge = index >= threshold;
+
+    if (i == 0) {
+      ASSERT_FALSE(lt.any());
+      ASSERT_TRUE(ge.any());
+    } else {
+      ASSERT_TRUE(lt.any());
+    }
+
+    if (i == width - 1) {
+      ASSERT_FALSE(gt.any());
+      ASSERT_TRUE(le.any());
+    } else {
+      ASSERT_TRUE(gt.any());
+    }
+  }
+  TEST_SUCCEED();
+}
 #endif // TEST_SIMD8
 
 int main() {
 #if TEST_SIMD8
   std::cout << "Testing the " << simdjson::builtin_implementation()->name()
             << " SIMD layer" << std::endl;
-  if (!test_simd8_bool_any()) {
+  if (!test_simd8_bool_any() || !test_simd8_uint8_order()) {
     return EXIT_FAILURE;
   }
 #else
