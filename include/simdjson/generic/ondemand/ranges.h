@@ -35,7 +35,7 @@ public:
   using reference = simdjson_result<value>;
   using difference_type = std::ptrdiff_t;
 
-  simdjson_inline array_range_iterator() noexcept = default;
+  simdjson_inline array_range_iterator() noexcept {}
   simdjson_inline explicit array_range_iterator(array_iterator iter) noexcept;
 
   /**
@@ -79,7 +79,7 @@ private:
  */
 class array_range {
 public:
-  simdjson_inline array_range() noexcept = default;
+  simdjson_inline array_range() noexcept {}
   simdjson_inline explicit array_range(array& arr) noexcept;
 
   simdjson_inline array_range_iterator begin() noexcept;
@@ -107,7 +107,7 @@ public:
   using reference = simdjson_result<field>;
   using difference_type = std::ptrdiff_t;
 
-  simdjson_inline object_range_iterator() noexcept = default;
+  simdjson_inline object_range_iterator() noexcept {}
   simdjson_inline explicit object_range_iterator(object_iterator iter) noexcept;
 
   simdjson_inline simdjson_result<field> operator*() const noexcept;
@@ -135,7 +135,7 @@ private:
  */
 class object_range {
 public:
-  simdjson_inline object_range() noexcept = default;
+  simdjson_inline object_range() noexcept {}
   simdjson_inline explicit object_range(object& obj) noexcept;
 
   simdjson_inline object_range_iterator begin() noexcept;

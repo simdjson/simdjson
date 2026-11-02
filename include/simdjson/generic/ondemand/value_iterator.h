@@ -30,7 +30,7 @@ protected:
   token_position _start_position{};
 
 public:
-  simdjson_inline value_iterator() noexcept = default;
+  simdjson_inline value_iterator() noexcept {}
 
   /**
    * Skips a non-iterated or partially-iterated JSON value, whether it is a scalar, array or object.

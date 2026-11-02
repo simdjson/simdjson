@@ -113,7 +113,7 @@ struct object_position {
    * Default-constructed so a variable can be declared and assigned later,
    * matching e.g. document()/object(). Not a valid position to revert to.
    */
-  simdjson_inline object_position() noexcept = default;
+  simdjson_inline object_position() noexcept {}
 
 private:
   token_position position{};
@@ -135,7 +135,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline object() noexcept = default;
+  simdjson_inline object() noexcept {}
 
   /**
    * Get an iterator to the start of the object. We recommend using a range-based for loop.

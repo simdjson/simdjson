@@ -18,7 +18,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline object_iterator() noexcept = default;
+  simdjson_inline object_iterator() noexcept {}
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
    simdjson_inline ~object_iterator() noexcept;

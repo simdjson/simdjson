@@ -28,7 +28,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline document() noexcept = default;
+  simdjson_inline document() noexcept {}
   simdjson_inline document(const document &other) noexcept = delete; // pass your documents by reference, not by copy
   simdjson_inline document(document &&other) noexcept = default;
   simdjson_inline document &operator=(const document &other) noexcept = delete;
