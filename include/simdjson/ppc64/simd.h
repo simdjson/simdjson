@@ -353,7 +353,7 @@ template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
   }
   simdjson_inline simd8<bool>
   operator<(const simd8<uint8_t> other) const {
-    return this->gt_bits(other).any_bits_set();
+    return this->lt_bits(other).any_bits_set();
   }
 
   // Bit-specific operations
