@@ -60,6 +60,12 @@ protected:
    * value of this attribute.
    */
   bool _streaming{false};
+  /**
+   * In a stream, what root_closes_in_batch() found out about the batch: 0 if
+   * not known yet, 1 if no document can run past it, 2 if each document must
+   * be checked. document_stream gives each batch a new json_iterator.
+   */
+  uint8_t _batch_check{0};
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   bool _allow_incomplete_json{false};
 #endif
@@ -302,7 +308,25 @@ public:
    * It does not attempt to match { with } and [ with ].
    */
   inline bool balanced() const noexcept;
+  /**
+   * In a stream, checks that the array or object at the root cannot run past the
+   * batch, when the byte past the batch could continue it. That byte is not part
+   * of the batch: it is the next document, padding, or the ] that
+   * comma_delimited_array strips. If it is ',', ':', ']' or '}', or if the batch
+   * ends where a value is expected, an invalid document such as `[2` (before a
+   * truncated `[["`) could end there, or go on into stale structural indexes,
+   * such as the quote of a dropped unclosed string, and past the buffer.
+   */
+  simdjson_inline bool root_closes_in_batch() noexcept;
 protected:
+  /** root_closes_in_batch(), unless the batch is already known to be safe. */
+  simdjson_never_inline bool check_root_closes_in_batch() noexcept;
+  /**
+   * Checks the structure of the array or object at pos, as DOM stage 2 does, and
+   * returns the position of its closing bracket, or nullptr if it is not well
+   * formed or does not close before end.
+   */
+  inline token_position well_formed_container_end(token_position pos, token_position end) const noexcept;
   simdjson_inline json_iterator(const uint8_t *buf, ondemand::parser *parser) noexcept;
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   simdjson_inline json_iterator(const uint8_t *buf, ondemand::parser *parser, bool streaming) noexcept;

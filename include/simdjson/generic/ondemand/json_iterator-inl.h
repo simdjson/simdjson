@@ -23,7 +23,8 @@ simdjson_inline json_iterator::json_iterator(json_iterator &&other) noexcept
     error{other.error},
     _depth{other._depth},
     _root{other._root},
-    _streaming{other._streaming}
+    _streaming{other._streaming},
+    _batch_check{other._batch_check}
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
     , _allow_incomplete_json{other._allow_incomplete_json}
 #endif
@@ -38,6 +39,7 @@ simdjson_inline json_iterator &json_iterator::operator=(json_iterator &&other) n
   _depth = other._depth;
   _root = other._root;
   _streaming = other._streaming;
+  _batch_check = other._batch_check;
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   _allow_incomplete_json = other._allow_incomplete_json;
 #endif
@@ -106,6 +108,119 @@ inline bool json_iterator::balanced() const noexcept {
     }
   }
   return count == 0;
+}
+
+simdjson_inline bool json_iterator::root_closes_in_batch() noexcept {
+  return simdjson_likely(_batch_check == 1) || check_root_closes_in_batch();
+}
+
+// simdjson_never_inline is on the declaration: GCC rejects it on both.
+bool json_iterator::check_root_closes_in_batch() noexcept {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  // iterate_allow_incomplete_json() indexes a single document, which may be incomplete.
+  if (_allow_incomplete_json) { return true; }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  const token_position end = end_position();
+  if (_batch_check == 0) {
+    // Once per batch.
+    _batch_check = 1;
+    const uint8_t *const json = token.buf;
+    const uint8_t next = json[*end];
+    const uint8_t last = json[*(end - 1)];
+    if (next == ',' || next == ':' || next == ']' || next == '}' ||
+        last == ',' || last == ':' || last == '[' || last == '{') {
+      // Go back to where the last document starts: a value that does not follow
+      // '[', '{', ',' or ':'. If the documents from there on are well formed and
+      // close in the batch, no document can run past the batch: one that starts
+      // earlier and reaches that value fails there, or skips to the end of the
+      // batch and fails. Otherwise, we check each document.
+      const token_position first = &parser->implementation->structural_indexes[0];
+      token_position pos = end - 1;
+      while (pos > first) {
+        const uint8_t c = json[*pos];
+        const uint8_t previous = json[*(pos - 1)];
+        if (c != ',' && c != ':' && c != ']' && c != '}' &&
+            previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+          break;
+        }
+        pos--;
+      }
+      while (pos < end) {
+        const uint8_t c = json[*pos];
+        if (c == '[' || c == '{') {
+          pos = well_formed_container_end(pos, end);
+          if (pos == nullptr) { _batch_check = 2; break; }
+        } else if (c == ',' || c == ':' || c == ']' || c == '}') {
+          _batch_check = 2;
+          break;
+        }
+        pos++;
+      }
+    }
+  }
+  return _batch_check == 1 || well_formed_container_end(root_position(), end) != nullptr;
+}
+
+inline token_position json_iterator::well_formed_container_end(token_position pos, token_position end) const noexcept {
+  // Balanced brackets are not enough: On-Demand may skip an invalid value, such
+  // as the ] in `[1,]` or the "a" in `[1,"a":2]`, without closing anything.
+  // One bit per open container, set for an object, on the heap past 1024 levels.
+  const uint8_t *const json = token.buf;
+  uint64_t local_is_object[16]{};
+  std::unique_ptr<uint64_t[]> heap_is_object;
+  uint64_t *is_object = local_is_object;
+  size_t depth = 0;
+  enum : uint8_t { expect_value, expect_first_value, expect_key, expect_first_key, expect_colon, expect_comma_or_end };
+  uint8_t expected = expect_value;
+  for (; pos < end; pos++) {
+    const uint8_t c = json[*pos];
+    switch (expected) {
+      case expect_value: case expect_first_value:
+        if (c == '[' || c == '{') {
+          if (depth == 1024 && !heap_is_object) {
+            heap_is_object.reset(new (std::nothrow) uint64_t[(1024 + size_t(end - pos) + 63) / 64]);
+            if (!heap_is_object) { return nullptr; }
+            std::memcpy(heap_is_object.get(), local_is_object, sizeof(local_is_object));
+            is_object = heap_is_object.get();
+          }
+          const uint64_t bit = uint64_t(1) << (depth % 64);
+          if (c == '{') {
+            is_object[depth / 64] |= bit;
+            expected = expect_first_key;
+          } else {
+            is_object[depth / 64] &= ~bit;
+            expected = expect_first_value;
+          }
+          depth++;
+          continue;
+        }
+        if (c == ']' && expected == expect_first_value) { break; }
+        if (c == ',' || c == ':' || c == ']' || c == '}') { return nullptr; }
+        expected = expect_comma_or_end;
+        continue;
+      case expect_key: case expect_first_key:
+        if (c == '"') { expected = expect_colon; continue; }
+        if (c == '}' && expected == expect_first_key) { break; }
+        return nullptr;
+      case expect_colon:
+        if (c != ':') { return nullptr; }
+        expected = expect_value;
+        continue;
+      default: { // expect_comma_or_end
+        const bool in_object = ((is_object[(depth - 1) / 64] >> ((depth - 1) % 64)) & 1) != 0;
+        if (c == ',') {
+          expected = in_object ? expect_key : expect_value;
+          continue;
+        }
+        if (c != (in_object ? '}' : ']')) { return nullptr; }
+        break;
+      }
+    }
+    // The array or object at this depth ends.
+    if (--depth == 0) { return pos; }
+    expected = expect_comma_or_end;
+  }
+  return nullptr;
 }
 
 

@@ -100,6 +100,9 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_objec
       // The exact error would require more work. It will typically be an unclosed object.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
     }
+  } else if (!_json_iter->root_closes_in_batch()) {
+    _json_iter->abandon();
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document does not end in the batch");
   }
   return SUCCESS;
 }
@@ -515,6 +518,9 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_array
       // The exact error would require more work. It will typically be an unclosed array.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
     }
+  } else if (!_json_iter->root_closes_in_batch()) {
+    _json_iter->abandon();
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document does not end in the batch");
   }
   return SUCCESS;
 }

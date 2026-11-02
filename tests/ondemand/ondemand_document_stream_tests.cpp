@@ -1,3 +1,5 @@
+#include <cstring>
+#include <memory>
 #include <string>
 using namespace std::string_literals;
 
@@ -974,6 +976,141 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // Appends the arrays, strings and integers of v to out, carrying on after
+    // errors as an application dumping a document would, and returns the first
+    // error. An element that cannot be read is then skipped.
+    error_code append_values(ondemand::value v, std::string &out) {
+        ondemand::json_type t;
+        error_code error = v.type().get(t);
+        if (error) { return error; }
+        if (t == ondemand::json_type::array) {
+            ondemand::array a;
+            if ((error = v.get_array().get(a))) { return error; }
+            out += '[';
+            bool first = true;
+            for (auto element : a) {
+                ondemand::value child;
+                error_code element_error = element.get(child);
+                if (!first) { out += ','; }
+                first = false;
+                if (!element_error) { element_error = append_values(child, out); }
+                if (element_error && !error) { error = element_error; }
+            }
+            out += ']';
+            return error;
+        }
+        if (t == ondemand::json_type::string) {
+            std::string_view s;
+            if (!(error = v.get_string().get(s))) { out.append(s.data(), s.size()); }
+            return error;
+        }
+        int64_t x;
+        if (!(error = v.get_int64().get(x))) { out += std::to_string(x); }
+        return error;
+    }
+
+    // A buffer holding input, then SIMDJSON_PADDING bytes of padding that start
+    // with next_byte and are otherwise zero, then secret.
+    std::unique_ptr<char[]> input_padding_and_secret(const std::string &input, char next_byte, const std::string &secret) {
+        std::unique_ptr<char[]> buffer(new char[input.size() + SIMDJSON_PADDING + secret.size()]);
+        std::memcpy(buffer.get(), input.data(), input.size());
+        std::memset(buffer.get() + input.size(), 0, SIMDJSON_PADDING);
+        buffer[input.size()] = next_byte;
+        std::memcpy(buffer.get() + input.size() + SIMDJSON_PADDING, secret.data(), secret.size());
+        return buffer;
+    }
+
+    // The On-Demand counterpart of stream_does_not_read_past_batch in
+    // tests/dom/document_stream_tests.cpp. Stage 1 may keep an invalid document
+    // such as `[2` (before a truncated `[["`) at the end of a batch. The byte past
+    // the batch is not part of the input: it is the `]` that comma_delimited_array
+    // strips, or padding, which the caller need not initialize. If it was `]`,
+    // get_array() returned `[2]`. If it was `,`, the walk went on into stale
+    // indexes, up to the quote of the unclosed string, and get_string() read past
+    // the padding: here, into a secret that we put right after it. A document
+    // whose brackets balance does the same once an invalid element is skipped:
+    // On-Demand skips the `]` of `[1,]`, or `"x":2]` in `[1,"x":2]`, as that
+    // element.
+    bool stream_does_not_read_past_batch() {
+        TEST_START();
+        const std::string secret = "SECRET-api-key-0123456789\"";
+        struct test_case {
+            const char *name;
+            std::string input; // stream content, without the byte that follows it
+            char next_byte;    // the byte at input.size()
+            stream_format format;
+        };
+        std::string ws_prefix, comma_prefix, rs_prefix;
+        for (int i = 0; i < 100; i++) { ws_prefix += "[0] "; comma_prefix += "[0],"; rs_prefix += "\x1e[0]\n"; }
+        const test_case cases[] = {
+            {"comma_delimited_array", R"([[2[["])", '\0', stream_format::comma_delimited_array},
+            {"comma_delimited_array, long", "[" + comma_prefix + R"([2[["])", '\0', stream_format::comma_delimited_array},
+            {"whitespace_delimited, ] padding", R"([2[[")", ']', stream_format::whitespace_delimited},
+            {"whitespace_delimited, ] padding, long", ws_prefix + R"([2[[")", ']', stream_format::whitespace_delimited},
+            {"whitespace_delimited, , padding", R"([2[[")", ',', stream_format::whitespace_delimited},
+            {"whitespace_delimited, , padding, long", ws_prefix + R"([2[[")", ',', stream_format::whitespace_delimited},
+            {"json_sequence, ] padding", "\x1e" R"([2[[")", ']', stream_format::json_sequence},
+            {"json_sequence, ] padding, long", rs_prefix + "\x1e" R"([2[[")", ']', stream_format::json_sequence},
+            {"comma_delimited, ] padding", R"([2[[")", ']', stream_format::comma_delimited},
+            {"comma_delimited, ] padding, long", comma_prefix + R"([2[[")", ']', stream_format::comma_delimited},
+            {"comma_delimited, , padding", R"([2[[")", ',', stream_format::comma_delimited},
+            {"comma_delimited, , padding, long", comma_prefix + R"([2[[")", ',', stream_format::comma_delimited},
+            {"whitespace_delimited, , padding, trailing comma", R"([1,] "a)", ',', stream_format::whitespace_delimited},
+        };
+        for (const auto &c : cases) {
+            for (size_t batch_size : {size_t(1000000), size_t(64)}) {
+                std::unique_ptr<char[]> buffer = input_padding_and_secret(c.input, c.next_byte, secret);
+                padded_string_view view(buffer.get(), c.input.size(), c.input.size() + SIMDJSON_PADDING);
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(view, batch_size, c.format).get(stream) );
+                bool got_error = false;
+                for (auto doc : stream) {
+                    ondemand::value value;
+                    std::string text;
+                    auto error = doc.get_value().get(value);
+                    if (!error) { error = append_values(value, text); }
+                    if (text.find("SECRET") != std::string::npos) {
+                        std::cerr << c.name << " (batch size " << batch_size << "): read past the padding" << std::endl;
+                        return false;
+                    }
+                    if (error) { got_error = true; continue; }
+                    if (text != "[0]") {
+                        std::cerr << c.name << " (batch size " << batch_size << "): unexpected document " << text << std::endl;
+                        return false;
+                    }
+                }
+                if (!got_error) {
+                    std::cerr << c.name << " (batch size " << batch_size << "): expected an error" << std::endl;
+                    return false;
+                }
+            }
+        }
+        // at() skips the elements before the one it returns, here "x" with :2].
+        const std::string input = R"([1,"x":2] "a)";
+        for (size_t batch_size : {size_t(1000000), size_t(64)}) {
+            std::unique_ptr<char[]> buffer = input_padding_and_secret(input, ',', secret);
+            padded_string_view view(buffer.get(), input.size(), input.size() + SIMDJSON_PADDING);
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(view, batch_size).get(stream) );
+            bool got_error = false;
+            for (auto doc : stream) {
+                ondemand::array array;
+                std::string_view s;
+                auto error = doc.get_array().get(array);
+                if (!error) { error = array.at(2).get_string().get(s); }
+                if (s.find("SECRET") != std::string_view::npos) {
+                    std::cerr << "at(2) (batch size " << batch_size << "): read past the padding" << std::endl;
+                    return false;
+                }
+                if (error) { got_error = true; }
+            }
+            ASSERT_TRUE( got_error );
+        }
+        TEST_SUCCEED();
+    }
+
     bool small_window() {
         TEST_START();
         std::vector<char> input;
@@ -1487,12 +1624,17 @@ namespace document_stream_tests {
             ondemand::document_stream stream;
             ASSERT_SUCCESS( parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE, c.first).get(stream) );
             bool value_at_end = false;
+            // get_object() may instead reject the incomplete last document (see
+            // stream_does_not_read_past_batch).
+            bool rejected = false;
             for (auto i = stream.begin(); i != stream.end(); ++i) {
                 ondemand::document_reference ref;
                 if ((*i).get(ref)) { break; }
                 ondemand::document &doc = ref;
                 ondemand::object obj;
-                if (!doc.get_object().get(obj)) {
+                auto object_error = doc.get_object().get(obj);
+                if (object_error == INCOMPLETE_ARRAY_OR_OBJECT) { rejected = true; }
+                if (!object_error) {
                     for (auto field : obj) {
                         ondemand::value v;
                         if (field.value().get(v)) { break; }
@@ -1516,7 +1658,7 @@ namespace document_stream_tests {
                 (void)whole_error;
                 if (!doc.is_alive()) { break; }
             }
-            ASSERT_TRUE( value_at_end );
+            ASSERT_TRUE( value_at_end || rejected );
         }
         TEST_SUCCEED();
     }
@@ -3230,6 +3372,7 @@ bool run() {
             complete_document_before_next_batch_punctuation() &&
             json_sequence_unfinished_document_at_batch_end() &&
             unbalanced_document_at_batch_end() &&
+            stream_does_not_read_past_batch() &&
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
