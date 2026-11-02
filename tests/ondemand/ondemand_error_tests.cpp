@@ -212,6 +212,38 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  // An input that ends inside a string gets UNCLOSED_STRING, but that error
+  // must not hide invalid UTF-8 or a control character before it:
+  // iterate_allow_incomplete_json() goes on after UNCLOSED_STRING. A character
+  // cut by the end of the input is part of the unclosed string, not an error.
+  bool unclosed_string_keeps_earlier_errors() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    // Vary the length so that the end falls on each side of a 64-byte block.
+    for (size_t pad = 0; pad < 130; pad++) {
+      const std::string tail = "\",\"b\":\"" + std::string(pad, 'x');
+      const padded_string bad_utf8("{\"a\":\"\xff\xfe" + tail);
+      const padded_string overlong("{\"a\":\"\xc0\xaf" + tail);
+      const padded_string control("{\"a\":\"x\ny" + tail);
+      const padded_string cut("{\"a\":\"\xc3\xa9" + tail + "\xe6\x9d");
+      ASSERT_ERROR( parser.iterate(bad_utf8).get(doc), UTF8_ERROR );
+      ASSERT_ERROR( parser.iterate(overlong).get(doc), UTF8_ERROR );
+      ASSERT_ERROR( parser.iterate(control).get(doc), UNESCAPED_CHARS );
+      ASSERT_ERROR( parser.iterate(cut).get(doc), UNCLOSED_STRING );
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      ASSERT_ERROR( parser.iterate_allow_incomplete_json(bad_utf8).get(doc), UTF8_ERROR );
+      ASSERT_ERROR( parser.iterate_allow_incomplete_json(overlong).get(doc), UTF8_ERROR );
+      ASSERT_ERROR( parser.iterate_allow_incomplete_json(control).get(doc), UNESCAPED_CHARS );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(cut).get(doc) );
+      std::string_view a;
+      ASSERT_SUCCESS( doc["a"].get_string().get(a) );
+      ASSERT_EQUAL( a, "\xc3\xa9" );
+#endif
+    }
+    TEST_SUCCEED();
+  }
+
 #if SIMDJSON_EXCEPTIONS
   bool simple_error_example_except() {
     TEST_START();
@@ -499,6 +531,7 @@ namespace error_tests {
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
            simple_error_example() &&
+           unclosed_string_keeps_earlier_errors() &&
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&
            simple_error_example_except() &&

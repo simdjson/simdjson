@@ -60,6 +60,17 @@ simdjson_inline bool is_continuation(uint8_t c) {
   return (c & 0xc0) == 0x80;
 }
 
+// The input ends inside the n-byte character at idx: the bytes after it, as
+// far as they go, are continuation bytes. Such a character belongs to a string
+// that does not close: it is not an error, as with streaming.
+simdjson_inline bool is_cut_by_end(size_t n) {
+  for (size_t i = size_t(idx) + 1; i < size_t(idx) + n; i++) {
+    if (i >= len) { return true; }
+    if (!is_continuation(buf[i])) { return false; }
+  }
+  return false;
+}
+
 simdjson_inline void validate_utf8_character() {
   // Continuation
   if (simdjson_unlikely((buf[idx] & 0x40) == 0)) {
@@ -73,7 +84,7 @@ simdjson_inline void validate_utf8_character() {
   if ((buf[idx] & 0x20) == 0) {
     // missing continuation
     if (simdjson_unlikely(idx+1 >= len || !is_continuation(buf[idx+1]))) {
-      if (idx+1 >= len && is_streaming(partial)) { idx = len; return; }
+      if (idx+1 >= len && (is_streaming(partial) || is_cut_by_end(2))) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -88,7 +99,7 @@ simdjson_inline void validate_utf8_character() {
   if ((buf[idx] & 0x10) == 0) {
     // missing continuation
     if (simdjson_unlikely(idx+2 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]))) {
-      if (idx+2 >= len && is_streaming(partial)) { idx = len; return; }
+      if (idx+2 >= len && (is_streaming(partial) || is_cut_by_end(3))) { idx = len; return; }
       error = UTF8_ERROR;
       idx++;
       return;
@@ -104,7 +115,7 @@ simdjson_inline void validate_utf8_character() {
   // 4-byte
   // missing continuation
   if (simdjson_unlikely(idx+3 >= len || !is_continuation(buf[idx+1]) || !is_continuation(buf[idx+2]) || !is_continuation(buf[idx+3]))) {
-    if (idx+3 >= len && is_streaming(partial)) { idx = len; return; }
+    if (idx+3 >= len && (is_streaming(partial) || is_cut_by_end(4))) { idx = len; return; }
     error = UTF8_ERROR;
     idx++;
     return;
@@ -367,7 +378,11 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     parser.structural_indexes[parser.n_structural_indexes + 1] = parser.structural_indexes[parser.n_structural_indexes];
     parser.structural_indexes[parser.n_structural_indexes] = uint32_t(len);
     if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return EMPTY; }
-  } else if(unclosed_string) { error = UNCLOSED_STRING; }
+  } else if(unclosed_string && error == SUCCESS) {
+    // Keep an earlier UTF8_ERROR or UNESCAPED_CHARS: iterate_allow_incomplete_json()
+    // accepts UNCLOSED_STRING.
+    error = UNCLOSED_STRING;
+  }
   return error;
 }
 
