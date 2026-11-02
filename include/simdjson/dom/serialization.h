@@ -74,7 +74,7 @@ protected:
   // implementation details (subject to change)
   /** Backing buffer **/
   struct vector_with_small_buffer {
-    vector_with_small_buffer() = default;
+    vector_with_small_buffer() {}
     ~vector_with_small_buffer() { free_buffer(); }
 
     vector_with_small_buffer(const vector_with_small_buffer &) = delete;
@@ -159,6 +159,8 @@ protected:
  */
 class mini_formatter : public base_formatter<mini_formatter> {
 public:
+  /** User-provided so that value-initialization does not zero the buffer. **/
+  mini_formatter() {}
   simdjson_inline void print_newline();
 
   simdjson_inline void print_indents(size_t depth);
