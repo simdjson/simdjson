@@ -14,6 +14,7 @@
 #include <optional>
 #include <memory>
 #include <limits>
+#include <stdexcept>
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 class Array : public std::vector<float> {};
@@ -35,6 +36,17 @@ auto tag_invoke(deserialize_tag, simdjson_value &val, Array& out) {
     }
     return error_code::SUCCESS;
 }
+
+#if SIMDJSON_EXCEPTIONS
+// Deserializes an integer, but throws (after writing to out) if it is negative.
+struct throwing_int { int64_t value{0}; };
+template <typename simdjson_value>
+simdjson::error_code tag_invoke(deserialize_tag, simdjson_value &val, throwing_int& out) {
+  SIMDJSON_TRY(val.get_int64().get(out.value));
+  if (out.value < 0) { throw std::runtime_error("negative"); }
+  return error_code::SUCCESS;
+}
+#endif // SIMDJSON_EXCEPTIONS
 } // namespace simdjson
 
 // require_custom_serialization
@@ -119,6 +131,165 @@ bool smart_pointers_to_builtin_types() {
   ASSERT_TRUE(smart_pointer_builtin_types<std::shared_ptr>());
   TEST_SUCCEED();
 }
+
+// Optionals of built-in types go through the generic optional tag_invoke:
+// same range checks as get<T>(), null resets the optional, and a failed parse
+// leaves the optional untouched.
+template <typename T>
+bool optional_case(std::string_view json, simdjson::error_code expected, T expected_value = T{}) {
+  simdjson::ondemand::parser parser;
+  // As a document.
+  {
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out;
+    ASSERT_EQUAL(doc.get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out.has_value());
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_FALSE(out.has_value());
+    }
+  }
+  // As an object field (ondemand::value).
+  {
+    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out;
+    ASSERT_EQUAL(doc["a"].get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out.has_value());
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_FALSE(out.has_value());
+    }
+  }
+  // null resets a non-null optional.
+  {
+    simdjson::padded_string padded(std::string_view(R"({"a":null})"));
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out(expected_value);
+    ASSERT_SUCCESS(doc["a"].get(out));
+    ASSERT_FALSE(out.has_value());
+  }
+  // An error leaves an existing value untouched.
+  if (expected != simdjson::SUCCESS) {
+    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out(expected_value);
+    ASSERT_EQUAL(doc["a"].get(out), expected);
+    ASSERT_TRUE(out.has_value());
+    ASSERT_TRUE(*out == expected_value);
+  }
+  return true;
+}
+
+bool optionals_to_builtin_types() {
+  TEST_START();
+  using simdjson::SUCCESS;
+  using simdjson::INCORRECT_TYPE;
+  using simdjson::NUMBER_OUT_OF_RANGE;
+  ASSERT_TRUE(optional_case<bool>("true", SUCCESS, true));
+  ASSERT_TRUE(optional_case<bool>("1", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<int>("-2147483648", SUCCESS, (std::numeric_limits<int>::min)()));
+  ASSERT_TRUE(optional_case<int>("2147483647", SUCCESS, (std::numeric_limits<int>::max)()));
+  ASSERT_TRUE(optional_case<int>("2147483648", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("-2147483649", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("4294967297", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("\"1\"", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<int64_t>("-9223372036854775808", SUCCESS, (std::numeric_limits<int64_t>::min)()));
+  ASSERT_TRUE(optional_case<int64_t>("9223372036854775808", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<uint64_t>("18446744073709551615", SUCCESS, (std::numeric_limits<uint64_t>::max)()));
+  ASSERT_TRUE(optional_case<uint64_t>("-1", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<double>("1.5", SUCCESS, 1.5));
+  ASSERT_TRUE(optional_case<double>("true", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<std::string>("\"h\\u00e9llo\"", SUCCESS, std::string("h\xc3\xa9llo")));
+  ASSERT_TRUE(optional_case<std::string>("12", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<std::string_view>("\"hello\"", SUCCESS, std::string_view("hello")));
+  ASSERT_TRUE(optional_case<std::string_view>("12", INCORRECT_TYPE));
+  TEST_SUCCEED();
+}
+
+// An optional holding a container: a successful parse replaces the container
+// (a plain container is appended to), a failed parse leaves it untouched.
+bool optional_containers() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  {
+    auto json = R"([3])"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<std::vector<int>> out(std::vector<int>{1, 2});
+    ASSERT_SUCCESS(doc.get(out));
+    ASSERT_TRUE(out.has_value());
+    ASSERT_TRUE(*out == std::vector<int>{3});
+  }
+  {
+    auto json = R"([1,2,"x"])"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<std::vector<int>> out;
+    ASSERT_EQUAL(doc.get(out), simdjson::INCORRECT_TYPE);
+    ASSERT_FALSE(out.has_value());
+  }
+  {
+    auto json = R"([1,2,"x"])"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<std::vector<int>> out(std::vector<int>{7});
+    ASSERT_EQUAL(doc.get(out), simdjson::INCORRECT_TYPE);
+    ASSERT_TRUE(out.has_value());
+    ASSERT_TRUE(*out == std::vector<int>{7});
+  }
+  {
+    auto json = R"({"a":[4,5]})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<std::vector<int>> out;
+    ASSERT_SUCCESS(doc["a"].get(out));
+    ASSERT_TRUE(out.has_value());
+    ASSERT_TRUE((*out == std::vector<int>{4, 5}));
+  }
+  TEST_SUCCEED();
+}
+
+#if SIMDJSON_EXCEPTIONS
+// An exception thrown by a user tag_invoke also leaves the optional untouched.
+bool optional_exception_untouched() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (bool engaged : {false, true}) {
+    auto json = R"({"a":-1})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<simdjson::throwing_int> out;
+    if (engaged) { out.emplace(simdjson::throwing_int{42}); }
+    bool thrown = false;
+    try {
+      (void)doc["a"].get(out);
+    } catch (const std::runtime_error &) {
+      thrown = true;
+    }
+    ASSERT_TRUE(thrown);
+    ASSERT_EQUAL(out.has_value(), engaged);
+    if (engaged) { ASSERT_EQUAL(out->value, 42); }
+  }
+  {
+    auto json = R"({"a":5})"_padded;
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    std::optional<simdjson::throwing_int> out;
+    ASSERT_SUCCESS(doc["a"].get(out));
+    ASSERT_TRUE(out.has_value());
+    ASSERT_EQUAL(out->value, 5);
+  }
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_EXCEPTIONS
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
@@ -363,6 +534,11 @@ bool run() {
 #if SIMDJSON_SUPPORTS_CONCEPTS
       smart_pointers_to_builtin_types() &&
       map_deserialization() &&
+      optionals_to_builtin_types() &&
+      optional_containers() &&
+#if SIMDJSON_EXCEPTIONS
+      optional_exception_untouched() &&
+#endif // SIMDJSON_EXCEPTIONS
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&
