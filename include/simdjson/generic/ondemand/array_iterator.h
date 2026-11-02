@@ -30,7 +30,7 @@ public:
   using reference = value_type;
 
   /** Create a new, invalid array iterator. */
-  simdjson_inline array_iterator() noexcept = default;
+  simdjson_inline array_iterator() noexcept {}
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
   simdjson_inline ~array_iterator() noexcept;

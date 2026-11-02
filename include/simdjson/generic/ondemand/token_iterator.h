@@ -24,7 +24,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline token_iterator() noexcept = default;
+  simdjson_inline token_iterator() noexcept {}
   simdjson_inline token_iterator(token_iterator &&other) noexcept = default;
   simdjson_inline token_iterator &operator=(token_iterator &&other) noexcept = default;
   simdjson_inline token_iterator(const token_iterator &other) noexcept = default;

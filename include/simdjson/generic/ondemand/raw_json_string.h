@@ -40,7 +40,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline raw_json_string() noexcept = default;
+  simdjson_inline raw_json_string() noexcept {}
 
   /**
    * Create a new invalid raw_json_string pointed at the given location in the JSON.

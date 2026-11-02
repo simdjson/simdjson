@@ -23,7 +23,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline array() noexcept = default;
+  simdjson_inline array() noexcept {}
 
   /**
    * Begin array iteration.

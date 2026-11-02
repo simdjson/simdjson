@@ -65,7 +65,7 @@ protected:
 #endif
 
 public:
-  simdjson_inline json_iterator() noexcept = default;
+  simdjson_inline json_iterator() noexcept {}
   simdjson_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_inline json_iterator &operator=(json_iterator &&other) noexcept;
   simdjson_inline explicit json_iterator(const json_iterator &other) noexcept = default;
