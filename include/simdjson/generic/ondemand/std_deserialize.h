@@ -317,9 +317,17 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
 /**
  * This CPO (Customization Point Object) will help deserialize into optional types.
  */
-template <concepts::optional_type T>
-error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, decltype(val)>) {
+template <concepts::optional_type T, typename ValT>
+error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(
+    nothrow_deserializable<typename std::remove_cvref_t<T>::value_type, std::remove_cvref_t<ValT>>) {
   using value_type = typename std::remove_cvref_t<T>::value_type;
+
+  static_assert(
+      deserializable<value_type, ValT>,
+      "The specified type inside the optional must itself be deserializable");
+  static_assert(
+      std::is_default_constructible_v<value_type>,
+      "The specified type inside the optional must default constructible.");
 
   // Check if the value is null
   bool is_null_value;
@@ -329,10 +337,9 @@ error_code tag_invoke(deserialize_tag, auto &val, T &out) noexcept(nothrow_deser
     return SUCCESS;
   }
 
-  if (!out) {
-    out.emplace();
-  }
-  SIMDJSON_TRY(val.template get<value_type>(out.value()));
+  value_type temp;
+  SIMDJSON_TRY(val.template get<value_type>(temp));
+  out.emplace(std::move(temp));
   return SUCCESS;
 }
 
