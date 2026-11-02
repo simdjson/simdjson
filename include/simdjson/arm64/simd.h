@@ -117,6 +117,9 @@ namespace {
     simdjson_inline simd8() : simd8(vdupq_n_u8(0)) {}
     // Splat constructor
     simdjson_inline simd8(bool _value) : simd8(splat(_value)) {}
+    // base_u8's operator~ xors with 0xFFu, which simd8<bool> only accepts by
+    // narrowing it to bool (MSVC C4305). Every other kernel overrides it too.
+    simdjson_inline simd8<bool> operator~() const { return *this ^ true; }
 
     // We return uint32_t instead of uint16_t because that seems to be more efficient for most
     // purposes (cutting it down to uint16_t costs performance in some compilers).
