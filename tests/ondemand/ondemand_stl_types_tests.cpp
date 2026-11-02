@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <map>
+#include <unordered_map>
 #include <stack>
 #include <queue>
 #include <deque>
@@ -265,12 +267,102 @@ bool basic_general_madness_container() {
   TEST_SUCCEED();
 }
 
-
 #endif // SIMDJSON_EXCEPTIONS
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+bool map_deserialization() {
+  TEST_START();
+
+  simdjson::padded_string json = R"({
+    "settings": {
+      "timeout": 30,
+      "retries": 3,
+      "escaped\nkey": 42
+    },
+    "nested": {
+      "inner": {
+        "alpha": 100,
+        "beta": 200
+      }
+    }
+  })"_padded;
+
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc = parser.iterate(json);
+
+  // 1. Deserializing from ondemand::value into std::map
+  std::map<std::string, int> settings_map;
+  ASSERT_SUCCESS(doc["settings"].get(settings_map));
+  ASSERT_EQUAL(settings_map.size(), 3);
+  ASSERT_EQUAL(settings_map["timeout"], 30);
+  ASSERT_EQUAL(settings_map["retries"], 3);
+  ASSERT_EQUAL(settings_map["escaped\nkey"], 42);
+
+  // 2. Deserializing into std::unordered_map from ondemand::value
+  std::unordered_map<std::string, int> un_map;
+  simdjson::ondemand::document doc2 = parser.iterate(json);
+  ASSERT_SUCCESS(doc2["settings"].get(un_map));
+  ASSERT_EQUAL(un_map.size(), 3);
+  ASSERT_EQUAL(un_map["timeout"], 30);
+  ASSERT_EQUAL(un_map["retries"], 3);
+  ASSERT_EQUAL(un_map["escaped\nkey"], 42);
+
+  // 3. Deserializing from document root into std::map (overwrites pre-existing content via clear)
+  simdjson::padded_string root_map_json = R"({"a": 1, "b": 2, "c": 3})"_padded;
+  simdjson::ondemand::document doc3 = parser.iterate(root_map_json);
+  std::map<std::string, int> root_map;
+  root_map["existing"] = 999;
+  ASSERT_SUCCESS(doc3.get(root_map));
+  ASSERT_EQUAL(root_map.size(), 3);
+  ASSERT_TRUE(root_map.find("existing") == root_map.end());
+  ASSERT_EQUAL(root_map["a"], 1);
+  ASSERT_EQUAL(root_map["b"], 2);
+  ASSERT_EQUAL(root_map["c"], 3);
+
+  // 4. Deserializing from ondemand::object directly
+  simdjson::ondemand::document doc4 = parser.iterate(root_map_json);
+  simdjson::ondemand::object root_obj;
+  ASSERT_SUCCESS(doc4.get_object().get(root_obj));
+  std::map<std::string, int> obj_map;
+  ASSERT_SUCCESS(simdjson::deserialize(root_obj, obj_map));
+  ASSERT_EQUAL(obj_map.size(), 3);
+  ASSERT_EQUAL(obj_map["a"], 1);
+
+  // 5. Deserializing into map when value is not an object returns INCORRECT_TYPE
+  simdjson::padded_string not_object_json = R"([1, 2, 3])"_padded;
+  simdjson::ondemand::document doc5 = parser.iterate(not_object_json);
+  std::map<std::string, int> preserved_map;
+  preserved_map["kept"] = 123;
+  ASSERT_ERROR(doc5.get(preserved_map), simdjson::INCORRECT_TYPE);
+  ASSERT_EQUAL(preserved_map.size(), 1);
+  ASSERT_EQUAL(preserved_map["kept"], 123);
+
+  // 6. Deserializing when a field value fails type conversion
+  simdjson::padded_string bad_field_json = R"({"a": 1, "b": "not_an_int"})"_padded;
+  simdjson::ondemand::document doc6 = parser.iterate(bad_field_json);
+  std::map<std::string, int> err_map;
+  ASSERT_ERROR(doc6.get(err_map), simdjson::INCORRECT_TYPE);
+
+  // 7. Non-trivial mapped type (nested container: std::map<std::string, std::vector<int>>)
+  simdjson::padded_string nested_json = R"({"odds": [1, 3, 5], "evens": [2, 4, 6]})"_padded;
+  simdjson::ondemand::document doc7 = parser.iterate(nested_json);
+  std::map<std::string, std::vector<int>> vec_map;
+  ASSERT_SUCCESS(doc7.get(vec_map));
+  ASSERT_EQUAL(vec_map.size(), 2);
+  ASSERT_EQUAL(vec_map["odds"].size(), 3);
+  ASSERT_EQUAL(vec_map["odds"][0], 1);
+  ASSERT_EQUAL(vec_map["evens"].size(), 3);
+  ASSERT_EQUAL(vec_map["evens"][2], 6);
+
+  TEST_SUCCEED();
+}
+#endif // SIMDJSON_SUPPORTS_CONCEPTS
+
 bool run() {
   return
 #if SIMDJSON_SUPPORTS_CONCEPTS
       smart_pointers_to_builtin_types() &&
+      map_deserialization() &&
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&

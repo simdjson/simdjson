@@ -240,35 +240,22 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
  * We want to support std::map and std::unordered_map but only for
  * string-keyed types.
  */
- template <concepts::string_view_keyed_map T, typename ValT>
+template <concepts::string_view_keyed_map T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   using value_type = typename std::remove_cvref_t<T>::mapped_type;
   static_assert(
-     deserializable<value_type, ValT>,
-     "The specified value type inside the container must itself be deserializable");
+      deserializable<value_type, SIMDJSON_IMPLEMENTATION::ondemand::value>,
+      "The specified value type inside the container must itself be deserializable");
   static_assert(
       std::is_default_constructible_v<value_type>,
       "The specified value type inside the container must default constructible.");
- SIMDJSON_IMPLEMENTATION::ondemand::object obj;
- SIMDJSON_TRY(val.get_object().get(obj));
- for (auto field : obj) {
-    std::string_view key;
-    SIMDJSON_TRY(field.unescaped_key().get(key));
-    value_type this_value;
-    SIMDJSON_TRY(field.value().get<value_type>().get(this_value));
-    [[maybe_unused]] std::pair<typename T::iterator, bool> result = out.emplace(key, this_value);
-    // unclear what to do if the key already exists
-    // if (result.second == false) {
-    //   // key already exists
-    // }
- }
- (void)out;
- return SUCCESS;
-}
 
-template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object &obj, T &out) noexcept(false) {
-  using value_type = typename std::remove_cvref_t<T>::mapped_type;
+  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
+  if constexpr (std::is_same_v<std::remove_cvref_t<ValT>, SIMDJSON_IMPLEMENTATION::ondemand::object>) {
+    obj = val;
+  } else {
+    SIMDJSON_TRY(val.get_object().get(obj));
+  }
 
   out.clear();
   for (auto field : obj) {
@@ -283,27 +270,6 @@ error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::object
     out.emplace(typename T::key_type(key), std::move(this_value));
   }
   return SUCCESS;
-}
-
-template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::value &val, T &out) noexcept(false) {
-  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
-  SIMDJSON_TRY(val.get_object().get(obj));
-  return simdjson::deserialize(obj, out);
-}
-
-template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document &doc, T &out) noexcept(false) {
-  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
-  SIMDJSON_TRY(doc.get_object().get(obj));
-  return simdjson::deserialize(obj, out);
-}
-
-template <concepts::string_view_keyed_map T>
-error_code tag_invoke(deserialize_tag, SIMDJSON_IMPLEMENTATION::ondemand::document_reference &doc, T &out) noexcept(false) {
-  SIMDJSON_IMPLEMENTATION::ondemand::object obj;
-  SIMDJSON_TRY(doc.get_object().get(obj));
-  return simdjson::deserialize(obj, out);
 }
 
 
@@ -388,6 +354,8 @@ constexpr bool user_defined_type = (std::is_class_v<T>
 !concepts::appendable_containers<T>
 // Smart pointers are handled by the generic smart-pointer tag_invoke.
 && !concepts::smart_pointer<T>
+// String-keyed maps are handled by the generic string_view_keyed_map tag_invoke.
+&& !concepts::string_view_keyed_map<T>
 // simdjson's own types (array, object, value, raw_json_string, number,
 // document, document_reference) have dedicated get<T>() specializations and
 // must never go through reflection.
