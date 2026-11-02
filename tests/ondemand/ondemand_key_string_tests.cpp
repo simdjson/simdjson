@@ -108,6 +108,58 @@ namespace key_string_tests {
     TEST_SUCCEED();
   }
 
+  // A target holding an unescaped quote cannot be a raw key, yet its bytes can
+  // equal a key followed by its closing quote and the JSON after it.
+  bool key_with_unescaped_quote() {
+    TEST_START();
+    ondemand::parser parser;
+    const padded_string json = R"({"a":1,"token":"s3cr3t"})"_padded;
+    // Ends right before the quote that opens the value of "token".
+    const char *target = "token\":";
+    ondemand::document doc;
+    std::string_view s;
+    int64_t x;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.find_field(target), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.find_field_unordered(target), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc[target], NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.at_pointer("/token\":"), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc.at_path("$.token\":"), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_ERROR(doc["a\":1,\"token"], NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc["token"].get_string().get(s));
+    ASSERT_EQUAL(s, "s3cr3t");
+    // The same with the quote first, against an empty key.
+    const padded_string empty_key = R"({"":"x"})"_padded;
+    ASSERT_SUCCESS(parser.iterate(empty_key).get(doc));
+    ASSERT_ERROR(doc["\":"], NO_SUCH_FIELD);
+    // A key holding an escaped quote still matches its raw form.
+    const padded_string escaped = R"({"a\"b":3})"_padded;
+    ASSERT_SUCCESS(parser.iterate(escaped).get(doc));
+    ASSERT_SUCCESS(doc["a\\\"b"].get_int64().get(x));
+    ASSERT_EQUAL(x, 3);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::object object;
+    ASSERT_SUCCESS(doc.get_object().get(object));
+    for (auto field_result : object) {
+      ondemand::field field;
+      ASSERT_SUCCESS(std::move(field_result).get(field));
+      ondemand::raw_json_string key = field.key();
+      ASSERT_FALSE(key == std::string_view(target));
+      ASSERT_FALSE(key.unsafe_is_equal(target));
+      ASSERT_FALSE(key.unsafe_is_equal(std::string_view(target)));
+      ASSERT_FALSE(key.unsafe_is_equal(7, std::string_view(target)));
+      ASSERT_FALSE(key.is_equal(target));
+      ASSERT_FALSE(key.is_equal(std::string_view(target)));
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
 #if SIMDJSON_EXCEPTIONS
@@ -116,6 +168,7 @@ namespace key_string_tests {
 #endif // SIMDJSON_EXCEPTIONS
       key_after_value_consumed() &&
       key_ending_in_backslash() &&
+      key_with_unescaped_quote() &&
       true;
   }
 

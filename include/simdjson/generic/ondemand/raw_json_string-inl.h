@@ -28,7 +28,7 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_v
   while(pos < target.size()) {
     pos = target.find('"', pos);
     if(pos == std::string_view::npos) { return true; }
-    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos == 0 || target[pos-1] != '\\') { return false; }
     if(pos > 1 && target[pos-2] == '\\') {
       size_t backslash_count{2};
       for(size_t i = 3; i <= pos; i++) {
@@ -48,7 +48,7 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* t
     const char * result = strchr(target+pos, '"');
     if(result == nullptr) { return true; }
     pos = result - target;
-    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos == 0 || target[pos-1] != '\\') { return false; }
     if(pos > 1 && target[pos-2] == '\\') {
       size_t backslash_count{2};
       for(size_t i = 3; i <= pos; i++) {
@@ -65,15 +65,14 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* t
 simdjson_inline bool raw_json_string::unsafe_is_equal(size_t length, std::string_view target) const noexcept {
   // If we are going to call memcmp, then we must know something about the length of the raw_json_string.
   return (length >= target.size()) && (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size())
-    && !escapes_trailing_quote(target);
+    && !escapes_trailing_quote(target) && !has_unescaped_quote(target);
 }
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) const noexcept {
-  // Assumptions: does not contain unescaped quote characters("), and
-  // the raw content is quote terminated within a valid JSON string.
+  // Assumption: the raw content is quote terminated within a valid JSON string.
   if(target.size() <= SIMDJSON_PADDING) {
     return (raw()[target.size()] == '"') && !memcmp(raw(), target.data(), target.size())
-      && !escapes_trailing_quote(target);
+      && !escapes_trailing_quote(target) && !has_unescaped_quote(target);
   }
   // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
   // comparison in bounds, so we must stop at the quote terminating the key.
@@ -105,14 +104,15 @@ simdjson_inline bool raw_json_string::is_equal(std::string_view target) const no
 
 
 simdjson_inline bool raw_json_string::unsafe_is_equal(const char * target) const noexcept {
-  // Assumptions: 'target' does not contain unescaped quote characters, is null terminated and
-  // the raw content is quote terminated within a valid JSON string.
+  // Assumptions: 'target' is null terminated and the raw content is quote
+  // terminated within a valid JSON string.
   const char * r{raw()};
   size_t pos{0};
   for(;target[pos];pos++) {
     if(r[pos] != target[pos]) { return false; }
   }
-  if((r[pos] != '"') || escapes_trailing_quote(std::string_view(target, pos))) { return false; }
+  if((r[pos] != '"') || escapes_trailing_quote(std::string_view(target, pos))
+      || has_unescaped_quote(std::string_view(target, pos))) { return false; }
   return true;
 }
 
