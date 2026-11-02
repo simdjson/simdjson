@@ -117,6 +117,88 @@ bool smart_pointers_to_builtin_types() {
   ASSERT_TRUE(smart_pointer_builtin_types<std::shared_ptr>());
   TEST_SUCCEED();
 }
+
+// Optionals of built-in types go through the generic optional tag_invoke:
+// same range checks as get<T>(), null resets the optional, and a failed parse
+// leaves the optional untouched.
+template <typename T>
+bool optional_case(std::string_view json, simdjson::error_code expected, T expected_value = T{}) {
+  simdjson::ondemand::parser parser;
+  // As a document.
+  {
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out;
+    ASSERT_EQUAL(doc.get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out.has_value());
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_FALSE(out.has_value());
+    }
+  }
+  // As an object field (ondemand::value).
+  {
+    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out;
+    ASSERT_EQUAL(doc["a"].get(out), expected);
+    if (expected == simdjson::SUCCESS) {
+      ASSERT_TRUE(out.has_value());
+      ASSERT_TRUE(*out == expected_value);
+    } else {
+      ASSERT_FALSE(out.has_value());
+    }
+  }
+  // null resets a non-null optional.
+  {
+    simdjson::padded_string padded(std::string_view(R"({"a":null})"));
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out(expected_value);
+    ASSERT_SUCCESS(doc["a"].get(out));
+    ASSERT_FALSE(out.has_value());
+  }
+  // An error leaves an existing value untouched.
+  if (expected != simdjson::SUCCESS) {
+    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    std::optional<T> out(expected_value);
+    ASSERT_EQUAL(doc["a"].get(out), expected);
+    ASSERT_TRUE(out.has_value());
+    ASSERT_TRUE(*out == expected_value);
+  }
+  return true;
+}
+
+bool optionals_to_builtin_types() {
+  TEST_START();
+  using simdjson::SUCCESS;
+  using simdjson::INCORRECT_TYPE;
+  using simdjson::NUMBER_OUT_OF_RANGE;
+  ASSERT_TRUE(optional_case<bool>("true", SUCCESS, true));
+  ASSERT_TRUE(optional_case<bool>("1", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<int>("-2147483648", SUCCESS, (std::numeric_limits<int>::min)()));
+  ASSERT_TRUE(optional_case<int>("2147483647", SUCCESS, (std::numeric_limits<int>::max)()));
+  ASSERT_TRUE(optional_case<int>("2147483648", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("-2147483649", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("4294967297", NUMBER_OUT_OF_RANGE));
+  ASSERT_TRUE(optional_case<int>("\"1\"", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<int64_t>("-9223372036854775808", SUCCESS, (std::numeric_limits<int64_t>::min)()));
+  ASSERT_TRUE(optional_case<int64_t>("9223372036854775808", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<uint64_t>("18446744073709551615", SUCCESS, (std::numeric_limits<uint64_t>::max)()));
+  ASSERT_TRUE(optional_case<uint64_t>("-1", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<double>("1.5", SUCCESS, 1.5));
+  ASSERT_TRUE(optional_case<double>("true", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<std::string>("\"h\\u00e9llo\"", SUCCESS, std::string("h\xc3\xa9llo")));
+  ASSERT_TRUE(optional_case<std::string>("12", INCORRECT_TYPE));
+  ASSERT_TRUE(optional_case<std::string_view>("\"hello\"", SUCCESS, std::string_view("hello")));
+  ASSERT_TRUE(optional_case<std::string_view>("12", INCORRECT_TYPE));
+  TEST_SUCCEED();
+}
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
@@ -271,6 +353,7 @@ bool run() {
   return
 #if SIMDJSON_SUPPORTS_CONCEPTS
       smart_pointers_to_builtin_types() &&
+      optionals_to_builtin_types() &&
 #endif // SIMDJSON_SUPPORTS_CONCEPTS
 #if SIMDJSON_EXCEPTIONS && SIMDJSON_SUPPORTS_CONCEPTS
       basic_general_madness() &&
