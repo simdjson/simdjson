@@ -290,6 +290,40 @@ namespace number_in_string_tests {
         TEST_SUCCEED();
     }
 
+    // The *_in_string getters used to skip the first character without
+    // checking that it is a quote: an unquoted number, or an array that
+    // starts with digits, could be parsed or reported as NUMBER_ERROR.
+    bool not_a_string_incorrect_type() {
+        TEST_START();
+        auto json = R"( [512, -512, 5.12, [12,3], [-12,3], {"1":2}, true, null] )"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        size_t counter{0};
+        uint64_t u;
+        int64_t i;
+        double d;
+        float f;
+        for (auto value : doc) {
+            ASSERT_ERROR(value.get_uint64_in_string().get(u), INCORRECT_TYPE);
+            ASSERT_ERROR(value.get_int64_in_string().get(i), INCORRECT_TYPE);
+            ASSERT_ERROR(value.get_double_in_string().get(d), INCORRECT_TYPE);
+            ASSERT_ERROR(value.get_float_in_string().get(f), INCORRECT_TYPE);
+            counter++;
+        }
+        ASSERT_EQUAL(counter,8);
+        for (std::string_view text : {"512", "-512", "5.12"}) {
+            padded_string scalar(text);
+            ASSERT_SUCCESS(parser.iterate(scalar).get(doc));
+            ASSERT_ERROR(doc.get_uint64_in_string().get(u), INCORRECT_TYPE);
+            ASSERT_SUCCESS(parser.iterate(scalar).get(doc));
+            ASSERT_ERROR(doc.get_int64_in_string().get(i), INCORRECT_TYPE);
+            ASSERT_SUCCESS(parser.iterate(scalar).get(doc));
+            ASSERT_ERROR(doc.get_double_in_string().get(d), INCORRECT_TYPE);
+        }
+        TEST_SUCCEED();
+    }
+
     bool json_pointer_test() {
         TEST_START();
         auto json = R"( ["12.34", { "a":["3","5.6"], "b":{"c":"1.23e1"} }, ["1", "3.5"] ])"_padded;
@@ -386,6 +420,7 @@ namespace number_in_string_tests {
                 docs() &&
                 number_parsing_error() &&
                 incorrect_type_error() &&
+                not_a_string_incorrect_type() &&
                 json_pointer_test() &&
                 crypto_timestamp() &&
                 crypto_market() &&

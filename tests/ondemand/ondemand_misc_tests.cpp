@@ -182,6 +182,70 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  // A root array or object obtained with document::get_value() is a value at
+  // depth 1. Calling a scalar getter on it used to trip the debug assertion
+  // in value_iterator::assert_at_non_root_start() (undefined behavior in
+  // release builds). It must return an error (INCORRECT_TYPE, or NUMBER_ERROR
+  // for the generic number getters, as for nested values) and leave the value
+  // usable.
+  template <typename F>
+  bool scalar_getter_on_root_container(F getter) {
+    for (std::string_view text : {R"([1,"a",true,null])", R"({"a":1,"b":"c"})"}) {
+      padded_string json(text);
+      ondemand::parser parser;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ondemand::value val;
+      ASSERT_SUCCESS(doc.get_value().get(val));
+      if (!getter(val)) { return false; }
+      // The value has not been consumed: we can still iterate over it.
+      ondemand::json_type type;
+      ASSERT_SUCCESS(val.type().get(type));
+      size_t count{};
+      if (type == ondemand::json_type::array) {
+        ASSERT_SUCCESS(val.count_elements().get(count));
+        ASSERT_EQUAL(count, 4);
+      } else {
+        ASSERT_SUCCESS(val.count_fields().get(count));
+        ASSERT_EQUAL(count, 2);
+      }
+    }
+    return true;
+  }
+
+  bool scalar_getters_on_root_container_value() {
+    TEST_START();
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      uint64_t x; ASSERT_ERROR(v.get_uint64().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      uint64_t x; ASSERT_ERROR(v.get_uint64_in_string().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      int64_t x; ASSERT_ERROR(v.get_int64().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      int64_t x; ASSERT_ERROR(v.get_int64_in_string().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      double x; ASSERT_ERROR(v.get_double().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      double x; ASSERT_ERROR(v.get_double_in_string().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      float x; ASSERT_ERROR(v.get_float().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      bool x; ASSERT_ERROR(v.get_bool().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      bool x; ASSERT_SUCCESS(v.is_null().get(x)); ASSERT_FALSE(x); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      std::string_view x; ASSERT_ERROR(v.get_string().get(x), INCORRECT_TYPE); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      ondemand::number x; ASSERT_ERROR(v.get_number().get(x), NUMBER_ERROR); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      bool x; ASSERT_ERROR(v.is_integer().get(x), NUMBER_ERROR); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      ondemand::number_type x; ASSERT_ERROR(v.get_number_type().get(x), NUMBER_ERROR); return true; }));
+    ASSERT_TRUE(scalar_getter_on_root_container([](ondemand::value &v) {
+      ASSERT_FALSE(v.is_negative()); return true; }));
+    TEST_SUCCEED();
+  }
+
   bool issue1661a() {
     TEST_START();
     ondemand::parser parser;
@@ -743,6 +807,7 @@ namespace misc_tests {
            issue2199() &&
 #endif
            skipbom() &&
+           scalar_getters_on_root_container_value() &&
            issue1981_success() &&
            issue1981_failure() &&
            root_bool_rejects_invalid_fifth_char() &&

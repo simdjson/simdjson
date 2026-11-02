@@ -1094,6 +1094,9 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
 }
 // Parse any number from 0 to 18,446,744,073,709,551,615
 simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const src) noexcept {
+  // The number must be inside a string: anything else (a bare number, an
+  // array, an object...) is not the requested type.
+  if (*src != '"') { return INCORRECT_TYPE; }
   const uint8_t *p = src + 1;
   //
   // Parse the integer part.
@@ -1186,6 +1189,9 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
 
 // Parse any number from  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
 simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t *src) noexcept {
+  // The number must be inside a string: anything else (a bare number, an
+  // array, an object...) is not the requested type.
+  if (*src != '"') { return INCORRECT_TYPE; }
   //
   // Check for minus sign
   //
@@ -1468,6 +1474,9 @@ simdjson_unused simdjson_inline simdjson_result<number_type> get_number_type(con
 }
 
 simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(const uint8_t * src) noexcept {
+  // The number must be inside a string: anything else (a bare number, an
+  // array, an object...) is not the requested type.
+  if (*src != '"') { return INCORRECT_TYPE; }
   //
   // Check for minus sign
   //
@@ -1564,6 +1573,9 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double_in_string(c
 // Parse a JSON number held inside a JSON string into a binary32 (float) value.
 // See parse_float for why we do not simply round parse_double_in_string.
 simdjson_unused simdjson_inline simdjson_result<float> parse_float_in_string(const uint8_t * src) noexcept {
+  // The number must be inside a string: anything else (a bare number, an
+  // array, an object...) is not the requested type.
+  if (*src != '"') { return INCORRECT_TYPE; }
   //
   // Check for minus sign
   //

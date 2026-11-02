@@ -1178,7 +1178,12 @@ inline void value_iterator::assert_at_root() const noexcept {
 
 inline void value_iterator::assert_at_non_root_start() const noexcept {
   assert_at_start();
-  SIMDJSON_ASSUME( _depth > 1 );
+  // The value is usually inside an array or object (depth > 1), but a root
+  // array or object obtained with document::get_value() is a value at depth 1.
+  // Scalar getters may be called on it: they see the leading '[' or '{' and
+  // fail (INCORRECT_TYPE, or NUMBER_ERROR for get_number() and friends)
+  // without advancing the iterator.
+  SIMDJSON_ASSUME( _depth > 0 );
 }
 
 inline void value_iterator::assert_is_valid() const noexcept {
