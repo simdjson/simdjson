@@ -37,7 +37,9 @@ namespace misc_tests {
     TEST_START();
     std::vector<std::pair<std::string, bool>> examples = {{R"("hello")", false},
                                           {R"(\"hello)", true},
-                                          {R"("hello\")", true},
+                                          {R"("hello\")", false},
+                                          {R"(")", false},
+                                          {R"(":1,)", false},
                                           {R"("hel\"lo")", false},
                                           {R"("hel\\lo")", false},
                                           {R"(\"hel\\\"lo\")", true},
