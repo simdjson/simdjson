@@ -301,7 +301,8 @@ bool basic_general_madness() {
             { "codes": [1,3,4,111,1111] } ])"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
   std::vector<uint16_t> codes;
   for (auto val : doc) {
     simdjson::ondemand::object obj;
@@ -326,7 +327,8 @@ bool basic_general_madness_vector() {
             { "codes": [2.2, 4.4, 6.6, 8.8, 10.0] } ])"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
   std::vector<float> codes;
   for (auto val : doc) {
     simdjson::ondemand::object obj;
@@ -351,7 +353,8 @@ bool basic_general_madness_list() {
             { "codes": [2.2, 4.4, 6.6, 8.8, 10.0] } ])"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
   std::list<float> codes;
   for (auto val : doc) {
     simdjson::ondemand::object obj;
@@ -378,7 +381,8 @@ bool basic_general_madness_Array() {
             { "codes": [2.2, 4.4, 6.6, 8.8, 10.0] } ])"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
   Array codes;
   for (auto val : doc) {
     simdjson::ondemand::object obj;
@@ -399,7 +403,8 @@ bool basic_general_madness_container() {
             { "codes": [2.2, 4.4, 6.6, 8.8, 10.0] } ])"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
   Container<ValT> codes;
   for (auto val : doc) {
     simdjson::ondemand::object obj;
@@ -459,7 +464,8 @@ bool map_deserialization() {
   })"_padded;
 
   simdjson::ondemand::parser parser;
-  simdjson::ondemand::document doc = parser.iterate(json);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
 
   // 1. Deserializing from ondemand::value into std::map
   std::map<std::string, int> settings_map;
@@ -471,7 +477,8 @@ bool map_deserialization() {
 
   // 2. Deserializing into std::unordered_map from ondemand::value
   std::unordered_map<std::string, int> un_map;
-  simdjson::ondemand::document doc2 = parser.iterate(json);
+  simdjson::ondemand::document doc2;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc2));
   ASSERT_SUCCESS(doc2["settings"].get(un_map));
   ASSERT_EQUAL(un_map.size(), 3);
   ASSERT_EQUAL(un_map["timeout"], 30);
@@ -480,7 +487,8 @@ bool map_deserialization() {
 
   // 3. Deserializing from document root into std::map (overwrites pre-existing content via clear)
   simdjson::padded_string root_map_json = R"({"a": 1, "b": 2, "c": 3})"_padded;
-  simdjson::ondemand::document doc3 = parser.iterate(root_map_json);
+  simdjson::ondemand::document doc3;
+  ASSERT_SUCCESS(parser.iterate(root_map_json).get(doc3));
   std::map<std::string, int> root_map;
   root_map["existing"] = 999;
   ASSERT_SUCCESS(doc3.get(root_map));
@@ -491,7 +499,8 @@ bool map_deserialization() {
   ASSERT_EQUAL(root_map["c"], 3);
 
   // 4. Deserializing from ondemand::object directly
-  simdjson::ondemand::document doc4 = parser.iterate(root_map_json);
+  simdjson::ondemand::document doc4;
+  ASSERT_SUCCESS(parser.iterate(root_map_json).get(doc4));
   simdjson::ondemand::object root_obj;
   ASSERT_SUCCESS(doc4.get_object().get(root_obj));
   std::map<std::string, int> obj_map;
@@ -501,7 +510,8 @@ bool map_deserialization() {
 
   // 5. Deserializing into map when value is not an object returns INCORRECT_TYPE
   simdjson::padded_string not_object_json = R"([1, 2, 3])"_padded;
-  simdjson::ondemand::document doc5 = parser.iterate(not_object_json);
+  simdjson::ondemand::document doc5;
+  ASSERT_SUCCESS(parser.iterate(not_object_json).get(doc5));
   std::map<std::string, int> preserved_map;
   preserved_map["kept"] = 123;
   ASSERT_ERROR(doc5.get(preserved_map), simdjson::INCORRECT_TYPE);
@@ -510,13 +520,15 @@ bool map_deserialization() {
 
   // 6. Deserializing when a field value fails type conversion
   simdjson::padded_string bad_field_json = R"({"a": 1, "b": "not_an_int"})"_padded;
-  simdjson::ondemand::document doc6 = parser.iterate(bad_field_json);
+  simdjson::ondemand::document doc6;
+  ASSERT_SUCCESS(parser.iterate(bad_field_json).get(doc6));
   std::map<std::string, int> err_map;
   ASSERT_ERROR(doc6.get(err_map), simdjson::INCORRECT_TYPE);
 
   // 7. Non-trivial mapped type (nested container: std::map<std::string, std::vector<int>>)
   simdjson::padded_string nested_json = R"({"odds": [1, 3, 5], "evens": [2, 4, 6]})"_padded;
-  simdjson::ondemand::document doc7 = parser.iterate(nested_json);
+  simdjson::ondemand::document doc7;
+  ASSERT_SUCCESS(parser.iterate(nested_json).get(doc7));
   std::map<std::string, std::vector<int>> vec_map;
   ASSERT_SUCCESS(doc7.get(vec_map));
   ASSERT_EQUAL(vec_map.size(), 2);
