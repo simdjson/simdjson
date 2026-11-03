@@ -4,10 +4,9 @@
 #include <cstdint>
 #include <cstdlib>
 
-// Tests for the SIMD layer of the builtin implementation. The fallback and
-// rvv-vls kernels have no simd8<bool>::any(), so there is nothing to test.
-#if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(fallback) ||                            \
-    SIMDJSON_BUILTIN_IMPLEMENTATION_IS(rvv_vls)
+// Tests for the SIMD layer of the builtin implementation. The fallback kernel
+// has no SIMD layer, so there is nothing to test.
+#if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(fallback)
 #define TEST_SIMD8 0
 #else
 #define TEST_SIMD8 1
@@ -80,13 +79,40 @@ static bool test_simd8_uint8_order() {
   }
   TEST_SUCCEED();
 }
+
+static bool test_simd8_bit_andnot() {
+  TEST_START();
+  const simd8<uint8_t> all_zeros(uint8_t(0));
+  const simd8<uint8_t> all_ones(uint8_t(0xFF));
+  const simd8<uint8_t> mask_f0(uint8_t(0xF0));
+  const simd8<uint8_t> mask_0f(uint8_t(0x0F));
+
+  ASSERT_FALSE((~(all_ones.bit_andnot(all_zeros) == all_ones)).any());
+  ASSERT_FALSE((~(all_zeros.bit_andnot(all_ones) == all_zeros)).any());
+  ASSERT_FALSE((~(all_ones.bit_andnot(all_ones) == all_zeros)).any());
+  ASSERT_FALSE((~(all_zeros.bit_andnot(all_zeros) == all_zeros)).any());
+
+  ASSERT_FALSE((~(mask_f0.bit_andnot(mask_0f) == mask_f0)).any());
+  ASSERT_FALSE((~(mask_0f.bit_andnot(mask_f0) == mask_0f)).any());
+  ASSERT_FALSE((~(mask_f0.bit_andnot(all_ones) == all_zeros)).any());
+  ASSERT_FALSE((~(mask_f0.bit_andnot(all_zeros) == mask_f0)).any());
+
+  const simd8<bool> t(true);
+  const simd8<bool> f(false);
+  ASSERT_FALSE((t.bit_andnot(f) ^ t).any());
+  ASSERT_FALSE((f.bit_andnot(t) ^ f).any());
+  ASSERT_FALSE((t.bit_andnot(t) ^ f).any());
+  ASSERT_FALSE((f.bit_andnot(f) ^ f).any());
+
+  TEST_SUCCEED();
+}
 #endif // TEST_SIMD8
 
 int main() {
 #if TEST_SIMD8
   std::cout << "Testing the " << simdjson::builtin_implementation()->name()
             << " SIMD layer" << std::endl;
-  if (!test_simd8_bool_any() || !test_simd8_uint8_order()) {
+  if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_bit_andnot()) {
     return EXIT_FAILURE;
   }
 #else
