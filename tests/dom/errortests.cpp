@@ -206,6 +206,34 @@ namespace adversarial {
     ASSERT_SUCCESS( parser.parse(json).get(doc) );
     TEST_SUCCEED();
   }
+  // A failed allocate() on a fresh parser must not leave a half-built
+  // implementation behind: parse() used to run stage 2 without its stacks.
+  bool failed_allocate_then_parse() {
+    TEST_START();
+    auto json = "[1,2,3]"_padded;
+    auto scalar = "1"_padded;
+    const size_t bad_depths[] = { 0, SIMDJSON_MAX_DEPTH + 1 };
+    for (size_t bad_depth : bad_depths) {
+      dom::parser parser;
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 0 );
+      ASSERT_EQUAL( parser.max_depth(), DEFAULT_MAX_DEPTH );
+      dom::element doc;
+      ASSERT_SUCCESS( parser.parse(json).get(doc) );
+      ASSERT_SUCCESS( parser.parse(scalar).get(doc) );
+    }
+    // A parser that was already allocated keeps its settings.
+    for (size_t bad_depth : bad_depths) {
+      dom::parser parser;
+      ASSERT_SUCCESS( parser.allocate(1024, 16) );
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 1024 );
+      ASSERT_EQUAL( parser.max_depth(), 16 );
+      dom::element doc;
+      ASSERT_SUCCESS( parser.parse(json).get(doc) );
+    }
+    TEST_SUCCEED();
+  }
   bool run() {
     constexpr size_t filler_size = 65;
     static_assert(filler_size > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = std::strlen(PADDING_FILLED_WITH_NUMBERS)
@@ -213,6 +241,7 @@ namespace adversarial {
       && number_overrun_at_root()
       && number_overrun_in_array()
       && number_overrun_in_object()
+      && failed_allocate_then_parse()
       && allocation_limits()
     ;
   }
