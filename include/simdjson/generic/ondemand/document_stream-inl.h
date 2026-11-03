@@ -401,9 +401,8 @@ inline size_t document_stream::next_batch_start() const noexcept {
   return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
 }
 
-// Whether the documents in [pos, end) are well formed, as DOM stage 2 checks
-// them. Balanced brackets are not enough: On-Demand may skip an invalid value,
-// such as the ] in `[1,]` or the "x" in `[1,"x":2]`, without closing anything.
+// Whether the documents in [pos, end) are well formed. Balanced brackets are not
+// enough: On-Demand may skip the ] in `[1,]` as a value.
 inline bool stream_documents_are_well_formed(const uint8_t *batch, const uint32_t *pos, const uint32_t *end) noexcept {
   uint64_t is_object[16]{}; // one bit per open container, up to depth 1024
   size_t depth = 0;
@@ -444,20 +443,8 @@ inline bool stream_documents_are_well_formed(const uint8_t *batch, const uint32_
   return depth == 0 && expected == comma_or_close;
 }
 
-// Stage 1 cuts a batch after the last document that looks complete and leaves
-// a sentinel structural index past it, whose byte stops an invalid document.
-// But that byte is not part of the batch: it is the next document, padding
-// (which the caller need not initialize) or the `]` that comma_delimited_array
-// strips. When it is ',', ':', ']' or '}', or when the batch ends where a value
-// is expected, an invalid last document such as `[2` (before a truncated `[["`)
-// could be read as `[2]`, or run past the batch into stale indexes and past the
-// buffer.
-//
-// In such a batch, we go back to where the last document starts: a value that
-// does not follow '[', '{', ',' or ':'. If the documents from there on are not
-// well formed, the batch ends there instead, at a value that stops any earlier
-// document that reaches it, and the next batch starts with them: they are then
-// the whole tail, and we report TAPE_ERROR. Once per batch, out of line.
+// If the byte past the batch could continue its last document, end the batch
+// before an invalid tail, so that On-Demand cannot read past it. Once per batch.
 simdjson_never_inline error_code end_batch_before_invalid_tail(internal::dom_parser_implementation &impl, const uint8_t *batch) noexcept {
   const uint32_t n = impl.n_structural_indexes;
   if (n == 0) { return SUCCESS; }
