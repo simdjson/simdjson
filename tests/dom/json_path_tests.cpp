@@ -577,6 +577,44 @@ bool quoted_key_after_last_wildcard() {
   TEST_SUCCEED();
 }
 
+// at_path() converts the path with json_path_to_pointer_conversion(), which
+// copied the quotes of a bracket-quoted key into the pointer: $['a']['b']
+// looked up the keys 'a' and 'b' with their quotes, so it matched a key
+// spelled that way in the document and missed the key a. at_path_with_wildcard()
+// and On-Demand read $['a'] as the key a.
+bool quoted_key_in_at_path() {
+  TEST_START();
+  auto json = R"({"a":{"b":1,"c/d":2,"e~f":3},"'a'":{"'b'":9}})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  int64_t value;
+
+  for (const char *path : {"$['a']['b']", R"($["a"]["b"])", "$.a['b']", "$['a'].b", R"($["a"].b)"}) {
+    std::cout << "  " << path << std::endl;
+    ASSERT_SUCCESS(doc.at_path(path).get(value));
+    ASSERT_EQUAL(value, 1);
+  }
+  ASSERT_SUCCESS(doc.at_path("$['a']['c/d']").get(value));
+  ASSERT_EQUAL(value, 2);
+  ASSERT_SUCCESS(doc.at_path("$['a']['e~f']").get(value));
+  ASSERT_EQUAL(value, 3);
+  ASSERT_TRUE(doc.at_path("$['a']").is_object());
+  // The quotes are not part of the key: a key holding quotes is reached by
+  // quoting it.
+  ASSERT_SUCCESS(doc.at_path(R"($["'a'"]["'b'"])").get(value));
+  ASSERT_EQUAL(value, 9);
+  ASSERT_EQUAL(doc.at_path("$['a']['x']").error(), NO_SUCH_FIELD);
+  // A quoted key needs its closing quote and the ] right after it.
+  ASSERT_EQUAL(doc.at_path("$['a']['b").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path("$['a'").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path("$['a'x]").error(), INVALID_JSON_POINTER);
+  // An unquoted bracket key is still the key as written.
+  ASSERT_SUCCESS(doc.at_path("$[a][b]").get(value));
+  ASSERT_EQUAL(value, 1);
+  TEST_SUCCEED();
+}
+
 // A '*' inside the final segment is part of the key, as in at_path and
 // On-Demand. It used to be reported as INVALID_JSON_POINTER because the
 // parser looped once more on the empty remainder.
@@ -824,6 +862,7 @@ int main() {
       malformed_path_after_wildcard() &&
       wildcard_key_with_slash_or_tilde() &&
       quoted_key_after_last_wildcard() &&
+      quoted_key_in_at_path() &&
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&
