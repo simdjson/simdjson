@@ -72,6 +72,19 @@ Real-world usage
 - [ata-validator](https://ata-validator.com)
 - [Apache Arrow](https://github.com/apache/arrow)
 - [Groonga](https://github.com/groonga/groonga)
+- [Elasticsearch](https://github.com/elastic/elasticsearch)
+- [Wazuh](https://github.com/wazuh/wazuh)
+- [YTsaurus](https://github.com/ytsaurus/ytsaurus)
+- [Alibaba LoongCollector](https://github.com/alibaba/loongcollector)
+- [ByteDance Bolt](https://github.com/bytedance/bolt)
+- [OpenMLDB](https://github.com/4paradigm/OpenMLDB)
+- [CLP](https://github.com/y-scope/clp)
+- [Estuary Flow](https://github.com/estuary/flow)
+- [Axmol Engine](https://github.com/axmolengine/axmol)
+- [OpenModelica](https://github.com/OpenModelica/OpenModelica)
+- [NVIDIA Vulkan Video Samples](https://github.com/nvpro-samples/vk_video_samples)
+- [Adapty iOS SDK](https://github.com/adaptyteam/AdaptySDK-iOS)
+- [SlimeVR OpenVR Driver](https://github.com/SlimeVR/SlimeVR-OpenVR-Driver)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
