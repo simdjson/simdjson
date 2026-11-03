@@ -70,8 +70,13 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   }
   size_t max_structures = rounded_capacity + 9;
   if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
-  if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
+  // Allocate before releasing the current buffer so that, on failure, the
+  // implementation keeps its previous buffer and capacity. Otherwise a parser
+  // that still believes it has room skips reallocation and stage 1 rejects
+  // every document with CAPACITY.
+  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
+  if (!new_structural_indexes) { return MEMALLOC; }
+  structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
 

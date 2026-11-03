@@ -201,8 +201,8 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
-  // A failed allocate() on a fresh parser must not leave a half-built
-  // implementation behind: subsequent iterate() should start over cleanly.
+  // An allocate() rejected for its depth leaves the parser as it was: a fresh
+  // parser stays empty and an allocated one keeps its capacity and depth.
   bool failed_allocate_then_iterate() {
     TEST_START();
     auto json = "[1,2,3]"_padded;

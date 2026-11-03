@@ -22,7 +22,9 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 }
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
-  if (new_max_depth == 0) { return CAPACITY; }
+  // Reject an invalid depth before touching anything, as the implementation
+  // would: a failed allocate() leaves the parser as it was.
+  if (new_max_depth == 0 || new_max_depth > SIMDJSON_MAX_DEPTH) { return CAPACITY; }
   if (new_capacity > max_capacity()) { return CAPACITY; }
   if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
