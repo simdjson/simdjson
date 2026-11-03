@@ -231,7 +231,7 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     // String
     if (buf[idx] == '"') {
       add_structural();
-      unclosed_string |= validate_string();
+      if (validate_string()) { unclosed_string = true; break; }
     // Operator
     } else if (char_is_operator(buf[idx])) {
       add_structural();
