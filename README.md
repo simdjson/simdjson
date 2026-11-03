@@ -71,6 +71,7 @@ Real-world usage
 - [TiFlash](https://github.com/pingcap/tiflash)
 - [ata-validator](https://ata-validator.com)
 - [Apache Arrow](https://github.com/apache/arrow)
+- [Groonga](https://github.com/groonga/groonga)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
