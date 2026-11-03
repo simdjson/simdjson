@@ -201,6 +201,35 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+  // An allocate() rejected for its depth leaves the parser as it was: a fresh
+  // parser stays empty and an allocated one keeps its capacity and depth.
+  bool failed_allocate_then_iterate() {
+    TEST_START();
+    auto json = "[1,2,3]"_padded;
+    auto scalar = "1"_padded;
+    const size_t bad_depths[] = { 0, SIMDJSON_MAX_DEPTH + 1 };
+    for (size_t bad_depth : bad_depths) {
+      ondemand::parser parser;
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 0 );
+      ASSERT_EQUAL( parser.max_depth(), DEFAULT_MAX_DEPTH );
+      ondemand::document doc;
+      ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+      ASSERT_SUCCESS( parser.iterate(scalar).get(doc) );
+    }
+    // A parser that was already allocated keeps its settings.
+    for (size_t bad_depth : bad_depths) {
+      ondemand::parser parser;
+      ASSERT_SUCCESS( parser.allocate(1024, 16) );
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 1024 );
+      ASSERT_EQUAL( parser.max_depth(), 16 );
+      ondemand::document doc;
+      ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    }
+    TEST_SUCCEED();
+  }
+
   bool simple_error_example() {
     TEST_START();
     ondemand::parser parser;
@@ -528,6 +557,7 @@ namespace error_tests {
            empty_document_error() &&
            parser_max_capacity() &&
            parser_set_max_capacity() &&
+           failed_allocate_then_iterate() &&
            get_fail_then_succeed_bool() &&
            get_fail_then_succeed_null() &&
            simple_error_example() &&
