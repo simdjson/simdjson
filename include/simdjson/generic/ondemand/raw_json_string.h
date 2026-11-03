@@ -83,8 +83,8 @@ public:
   /**
    * This compares the current instance to the std::string_view target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * A target holding an unescaped quote character never matches, since a raw JSON
-   * string cannot contain one: this is checked only once the bytes are found equal.
+   * The std::string_view instance should not contain unescaped quote characters:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
    *
    * Performance: the comparison is done byte-by-byte which might be inefficient for
    * long strings.
@@ -100,8 +100,8 @@ public:
   /**
    * This compares the current instance to the C string target: returns true if
    * they are byte-by-byte equal (no escaping is done).
-   * A target holding an unescaped quote character never matches, since a raw JSON
-   * string cannot contain one: this is checked only once the bytes are found equal.
+   * The provided C string should not contain an unescaped quote character:
+   * the caller is responsible for this check. See is_free_from_unescaped_quote.
    *
    * If target is a compile-time constant, and your compiler likes you,
    * you should be able to do the following without performance penalty...
@@ -157,16 +157,18 @@ private:
   }
 
   /**
-   * True when a byte-for-byte match must be rejected because target holds an
-   * unescaped quote: its bytes then equal the raw string together with its
-   * closing quote and the JSON that follows, not the raw string alone. The
-   * quote search keeps the escape count off the common path, and folds away
-   * when target is a compile-time constant.
+   * True when target is a compile-time constant that holds no quote character.
+   * Always false with compilers lacking __builtin_constant_p.
    */
-  static simdjson_inline bool has_unescaped_quote(std::string_view target) noexcept {
-    return simdjson_unlikely(target.find('"') != std::string_view::npos)
-        && !is_free_from_unescaped_quote(target);
-  }
+  static simdjson_inline bool is_known_free_from_quote(std::string_view target) noexcept;
+
+  /**
+   * Compares the current instance, a key, to the std::string_view target: returns
+   * true if they are byte-by-byte equal (no escaping is done). Unlike
+   * unsafe_is_equal, target may hold unescaped quote characters: it then never
+   * matches. The key must be followed by the colon at `colon`.
+   */
+  simdjson_inline bool unsafe_is_equal_key(std::string_view target, const uint8_t *colon) const noexcept;
 
   /**
    * This will set the inner pointer to zero, effectively making
@@ -207,14 +209,15 @@ private:
   friend class object;
   friend class field;
   friend class parser;
+  friend class value_iterator;
   friend struct simdjson_result<raw_json_string>;
 };
 
 simdjson_unused simdjson_inline std::ostream &operator<<(std::ostream &, const raw_json_string &) noexcept;
 
 /**
- * Comparisons between raw_json_string and std::string_view instances do no unescaping. A std::string_view
- * holding an unescaped quote never compares equal: unescaped quotes cannot be present in valid JSON strings.
+ * Comparisons between raw_json_string and std::string_view instances are potentially unsafe: the user is responsible
+ * for providing a string with no unescaped quote. Note that unescaped quotes cannot be present in valid JSON strings.
  */
 simdjson_unused simdjson_inline bool operator==(const raw_json_string &a, std::string_view c) noexcept;
 simdjson_unused simdjson_inline bool operator==(std::string_view c, const raw_json_string &a) noexcept;

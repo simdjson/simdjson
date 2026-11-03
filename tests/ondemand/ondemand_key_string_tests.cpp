@@ -150,13 +150,72 @@ namespace key_string_tests {
       ondemand::field field;
       ASSERT_SUCCESS(std::move(field_result).get(field));
       ondemand::raw_json_string key = field.key();
-      ASSERT_FALSE(key == std::string_view(target));
-      ASSERT_FALSE(key.unsafe_is_equal(target));
-      ASSERT_FALSE(key.unsafe_is_equal(std::string_view(target)));
-      ASSERT_FALSE(key.unsafe_is_equal(7, std::string_view(target)));
+      // unsafe_is_equal and operator== still require a target free from
+      // unescaped quotes: only is_equal checks.
       ASSERT_FALSE(key.is_equal(target));
       ASSERT_FALSE(key.is_equal(std::string_view(target)));
     }
+    TEST_SUCCEED();
+  }
+
+  // Whitespace may separate a key from its colon: the lookup must still match
+  // the key, and still reject a target running past the key.
+  bool key_with_unescaped_quote_and_whitespace() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    int64_t x;
+    std::string_view s;
+    const padded_string json = "{\"a\" :1, \"token\" \t\n: \"s3cr3t\", \"b\\\"\" : 2 }"_padded;
+    std::vector<std::string> bad = {"token\" \t\n: ", "token\" \t\n:", "token\"", "a\" :1, ",
+                                    "b\\\"\" : ", "b\\"};
+    for (const std::string &target : bad) {
+      std::cout << "  target: " << target << std::endl;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.find_field(target), NO_SUCH_FIELD);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.find_field_unordered(target), NO_SUCH_FIELD);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc[target], NO_SUCH_FIELD);
+    }
+    std::string a = "a", token = "token", b = "b\\\"";
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.find_field(a).get_int64().get(x));
+    ASSERT_EQUAL(x, 1);
+    ASSERT_SUCCESS(doc.find_field(token).get_string().get(s));
+    ASSERT_EQUAL(s, "s3cr3t");
+    ASSERT_SUCCESS(doc.find_field(b).get_int64().get(x));
+    ASSERT_EQUAL(x, 2);
+    // Out of order: find_field_unordered wraps around to the first fields.
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.find_field_unordered(b).get_int64().get(x));
+    ASSERT_EQUAL(x, 2);
+    ASSERT_ERROR(doc.find_field_unordered("token\" \t\n: "), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(doc.find_field_unordered(token).get_string().get(s));
+    ASSERT_EQUAL(s, "s3cr3t");
+    ASSERT_ERROR(doc.find_field_unordered("a\" :1, "), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(doc.find_field_unordered(a).get_int64().get(x));
+    ASSERT_EQUAL(x, 1);
+    TEST_SUCCEED();
+  }
+
+  // Keys longer than SIMDJSON_PADDING go through is_equal.
+  bool long_key_with_unescaped_quote() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    std::string_view s;
+    const std::string long_key(100, 'k');
+    const padded_string json = padded_string("{\"" + long_key + "\":\"v\",\"" + long_key + "x\" : \"w\"}");
+    for (const std::string &target : {long_key + "\":", long_key + "x\" : ", long_key + "\""}) {
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.find_field_unordered(target), NO_SUCH_FIELD);
+    }
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.find_field_unordered(long_key + "x").get_string().get(s));
+    ASSERT_EQUAL(s, "w");
+    ASSERT_SUCCESS(doc.find_field_unordered(long_key).get_string().get(s));
+    ASSERT_EQUAL(s, "v");
     TEST_SUCCEED();
   }
 
@@ -169,6 +228,8 @@ namespace key_string_tests {
       key_after_value_consumed() &&
       key_ending_in_backslash() &&
       key_with_unescaped_quote() &&
+      key_with_unescaped_quote_and_whitespace() &&
+      long_key_with_unescaped_quote() &&
       true;
   }
 
