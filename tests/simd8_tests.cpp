@@ -166,13 +166,59 @@ static bool test_simd8_bit_andnot() {
 
   TEST_SUCCEED();
 }
+
+static bool test_simd8_is_ascii() {
+  TEST_START();
+  const simd8<uint8_t> index(byte_index);
+  ASSERT_TRUE(index.is_ascii());
+  ASSERT_TRUE(simd8<uint8_t>::zero().is_ascii());
+  ASSERT_TRUE(simd8<uint8_t>(uint8_t(127)).is_ascii());
+  ASSERT_FALSE(simd8<uint8_t>(uint8_t(128)).is_ascii());
+  ASSERT_FALSE(simd8<uint8_t>(uint8_t(255)).is_ascii());
+
+  uint8_t non_ascii[64];
+  for (size_t i = 0; i < 64; i++) {
+    non_ascii[i] = byte_index[i];
+  }
+  for (size_t i = 0; i < width; i++) {
+    non_ascii[i] |= 0x80;
+    const simd8<uint8_t> with_high_bit(non_ascii);
+    ASSERT_FALSE(with_high_bit.is_ascii());
+    non_ascii[i] &= ~0x80;
+  }
+  TEST_SUCCEED();
+}
+
+static bool test_simd8_bits_anywhere() {
+  TEST_START();
+  const simd8<uint8_t> zero = simd8<uint8_t>::zero();
+  ASSERT_TRUE(zero.bits_not_set_anywhere());
+  ASSERT_FALSE(zero.any_bits_set_anywhere());
+
+  const simd8<uint8_t> mask_f0(uint8_t(0xF0));
+  const simd8<uint8_t> mask_0f(uint8_t(0x0F));
+  ASSERT_TRUE(mask_f0.bits_not_set_anywhere(mask_0f));
+  ASSERT_FALSE(mask_f0.any_bits_set_anywhere(mask_0f));
+  ASSERT_FALSE(mask_f0.bits_not_set_anywhere(mask_f0));
+  ASSERT_TRUE(mask_f0.any_bits_set_anywhere(mask_f0));
+
+  for (size_t i = 0; i < width; i++) {
+    uint8_t single_byte[64] = {0};
+    single_byte[i] = 1;
+    const simd8<uint8_t> single(single_byte);
+    ASSERT_FALSE(single.bits_not_set_anywhere());
+    ASSERT_TRUE(single.any_bits_set_anywhere());
+  }
+  TEST_SUCCEED();
+}
 #endif // TEST_SIMD8
 
 int main() {
 #if TEST_SIMD8
   std::cout << "Testing the " << simdjson::builtin_implementation()->name()
             << " SIMD layer" << std::endl;
-  if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_int8_order() || !test_simd8_bit_andnot()) {
+  if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_int8_order() ||
+      !test_simd8_bit_andnot() || !test_simd8_is_ascii() || !test_simd8_bits_anywhere()) {
     return EXIT_FAILURE;
   }
 #else

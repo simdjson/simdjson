@@ -382,6 +382,9 @@ template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
   simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const {
     return !bits_not_set_anywhere(bits);
   }
+  simdjson_inline bool is_ascii() const {
+    return this->bits_not_set_anywhere(uint8_t(0x80));
+  }
   template <int N> simdjson_inline simd8<uint8_t> shr() const {
     return simd8<uint8_t>(
         (__m128i)vec_sr(this->value, (__m128i)vec_splat_u8(N)));

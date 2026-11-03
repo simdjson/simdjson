@@ -220,8 +220,11 @@ namespace {
 
     // Bit-specific operations
     simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
+    simdjson_inline bool bits_not_set_anywhere() const { return !any_bits_set_anywhere(); }
     simdjson_inline bool any_bits_set_anywhere() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
+    simdjson_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return !any_bits_set_anywhere(bits); }
     simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    simdjson_inline bool is_ascii() const { return bits_not_set_anywhere(uint8_t(0x80)); }
     template<int N>
     simdjson_inline simd8<uint8_t> shr() const { return vshrq_n_u8(*this, N); }
     template<int N>
