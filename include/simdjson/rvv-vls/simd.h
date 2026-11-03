@@ -76,7 +76,8 @@ namespace simd {
     simdjson_inline simd8<bool> operator|(const simd8<bool> other) const {  return __riscv_vmor(*this, other, VL8); }
     simdjson_inline simd8<bool> operator&(const simd8<bool> other) const {  return __riscv_vmand(*this, other, VL8); }
     simdjson_inline simd8<bool> operator^(const simd8<bool> other) const {  return __riscv_vmxor(*this, other, VL8); }
-    simdjson_inline simd8<bool> bit_andnot(const simd8<bool> other) const { return __riscv_vmandn(other, *this, VL8); }
+    simdjson_inline simd8<bool> bit_andnot(const simd8<bool> other) const { return __riscv_vmandn(*this, other, VL8); }
+    simdjson_inline bool any() const { return __riscv_vfirst(value, VL8) >= 0; }
     simdjson_inline simd8<bool> operator~() const { return __riscv_vmnot(*this, VL8); }
     simdjson_inline simd8<bool>& operator|=(const simd8<bool> other) { auto this_cast = static_cast<simd8<bool>*>(this); *this_cast = *this_cast | other; return *this_cast; }
     simdjson_inline simd8<bool>& operator&=(const simd8<bool> other) { auto this_cast = static_cast<simd8<bool>*>(this); *this_cast = *this_cast & other; return *this_cast; }
@@ -128,9 +129,9 @@ namespace simd {
     simdjson_inline simd8<uint8_t> operator^(const simd8<uint8_t> other) const { return  __riscv_vxor_vv_u8m1( value, other, VL8); }
     simdjson_inline simd8<uint8_t> operator~() const { return __riscv_vnot_v_u8m1(value, VL8); }
 #if __riscv_zvbb
-    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return __riscv_vandn_vv_u8m1(other, value, VL8); }
+    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return __riscv_vandn_vv_u8m1(value, other, VL8); }
 #else
-    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return other & ~*this; }
+    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return *this & ~other; }
 #endif
     simdjson_inline simd8<uint8_t>& operator|=(const simd8<uint8_t> other) { value = *this | other; return *this; }
     simdjson_inline simd8<uint8_t>& operator&=(const simd8<uint8_t> other) { value = *this & other; return *this; }
