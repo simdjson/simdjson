@@ -1028,6 +1028,27 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool default_constructors() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::array::iterator array_it{};
+    dom::array::iterator array_it2;
+    ASSERT_TRUE(array_it == array_it2);
+
+    dom::array::reverse_iterator array_rit{};
+    dom::array::reverse_iterator array_rit2;
+    ASSERT_TRUE(array_rit == array_rit2);
+
+    dom::object::iterator object_it{};
+    dom::object::iterator object_it2;
+    ASSERT_TRUE(object_it == object_it2);
+
+    dom::document doc{};
+    dom::document doc2;
+    (void)doc;
+    (void)doc2;
+    return true;
+  }
+
   bool object_iterator_advance() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
@@ -1504,6 +1525,7 @@ namespace dom_api_tests {
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
+           default_constructors() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
            convert_object_to_element() &&

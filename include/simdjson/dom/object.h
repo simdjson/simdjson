@@ -85,7 +85,7 @@ public:
      */
     inline element value() const noexcept;
 
-    iterator() noexcept = default;
+    simdjson_inline iterator() noexcept {}
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
