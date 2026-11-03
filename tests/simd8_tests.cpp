@@ -25,6 +25,13 @@ static const uint8_t byte_index[64] = {
     48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
 static_assert(width <= sizeof(byte_index), "a register is at most 64 bytes");
 
+static const int8_t signed_byte_index[64] = {
+    -32, -31, -30, -29, -28, -27, -26, -25, -24, -23, -22, -21, -20, -19, -18, -17,
+    -16, -15, -14, -13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,
+      0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+     16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31};
+static_assert(width <= sizeof(signed_byte_index), "a register is at most 64 bytes");
+
 static bool test_simd8_bool_any() {
   TEST_START();
   ASSERT_FALSE(simd8<bool>(false).any());
@@ -55,6 +62,13 @@ static bool test_simd8_uint8_order() {
   ASSERT_FALSE((low < low).any());
   ASSERT_FALSE((low > low).any());
 
+  ASSERT_FALSE((~(low.min_val(high) == low)).any());
+  ASSERT_FALSE((~(high.min_val(low) == low)).any());
+  ASSERT_FALSE((~(low.max_val(high) == high)).any());
+  ASSERT_FALSE((~(high.max_val(low) == high)).any());
+  ASSERT_FALSE((~(low.min_val(low) == low)).any());
+  ASSERT_FALSE((~(low.max_val(low) == low)).any());
+
   const simd8<uint8_t> index(byte_index);
   for (size_t i = 0; i < width; i++) {
     const simd8<uint8_t> threshold = simd8<uint8_t>(uint8_t(i));
@@ -73,6 +87,47 @@ static bool test_simd8_uint8_order() {
     if (i == width - 1) {
       ASSERT_FALSE(gt.any());
       ASSERT_TRUE(le.any());
+    } else {
+      ASSERT_TRUE(gt.any());
+    }
+  }
+  TEST_SUCCEED();
+}
+
+static bool test_simd8_int8_order() {
+  TEST_START();
+  const simd8<int8_t> low(-20);
+  const simd8<int8_t> high(10);
+  ASSERT_TRUE((low < high).any());
+  ASSERT_FALSE((high < low).any());
+  ASSERT_TRUE((high > low).any());
+  ASSERT_FALSE((low > high).any());
+  ASSERT_FALSE((low < low).any());
+  ASSERT_FALSE((low > low).any());
+
+  ASSERT_FALSE((~(low.min_val(high) == low)).any());
+  ASSERT_FALSE((~(high.min_val(low) == low)).any());
+  ASSERT_FALSE((~(low.max_val(high) == high)).any());
+  ASSERT_FALSE((~(high.max_val(low) == high)).any());
+  ASSERT_FALSE((~(low.min_val(low) == low)).any());
+  ASSERT_FALSE((~(low.max_val(low) == low)).any());
+
+  const simd8<int8_t> index(signed_byte_index);
+  for (size_t i = 0; i < width; i++) {
+    const simd8<int8_t> threshold = simd8<int8_t>(signed_byte_index[i]);
+    const simd8<bool> lt = index < threshold;
+    const simd8<bool> gt = index > threshold;
+    const simd8<bool> eq = index == threshold;
+
+    ASSERT_TRUE(eq.any());
+    if (i == 0) {
+      ASSERT_FALSE(lt.any());
+    } else {
+      ASSERT_TRUE(lt.any());
+    }
+
+    if (i == width - 1) {
+      ASSERT_FALSE(gt.any());
     } else {
       ASSERT_TRUE(gt.any());
     }
@@ -112,7 +167,7 @@ int main() {
 #if TEST_SIMD8
   std::cout << "Testing the " << simdjson::builtin_implementation()->name()
             << " SIMD layer" << std::endl;
-  if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_bit_andnot()) {
+  if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_int8_order() || !test_simd8_bit_andnot()) {
     return EXIT_FAILURE;
   }
 #else
