@@ -9,5 +9,5 @@
 // All other declarations
 #include <generic/stage1/find_next_document_index.h>
 #include <generic/stage1/json_minifier.h>
-#include <generic/stage1/json_structural_indexer.h>
 #include <generic/stage1/utf8_validator.h>
+#include <generic/stage1/json_structural_indexer.h>

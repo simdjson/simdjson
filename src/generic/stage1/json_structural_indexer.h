@@ -9,6 +9,7 @@
 #include <generic/stage1/json_scanner.h>
 #include <generic/stage1/json_minifier.h>
 #include <generic/stage1/find_next_document_index.h>
+#include <generic/stage1/utf8_validator.h>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 // This file contains the common code every implementation uses in stage1
@@ -298,7 +299,17 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
 
   // Bail out only once the count and sentinels above are set:
   // document_stream::truncated_bytes() reads them even on error.
-  if (simdjson_unlikely(should_we_exit)) { return error; }
+  if (simdjson_unlikely(should_we_exit)) {
+    // The error is UNCLOSED_STRING, which iterate_allow_incomplete_json()
+    // accepts: it must not hide an invalid input. A character cut by the end
+    // of the input belongs to the unclosed string, as when streaming.
+    if (unescaped_chars_error) { return UNESCAPED_CHARS; }
+    if (checker.errors() != SUCCESS &&
+        !generic_validate_utf8<utf8_checker>(parser.buf, trim_partial_utf8(parser.buf, len))) {
+      return UTF8_ERROR;
+    }
+    return error;
+  }
   if (unescaped_chars_error) { return UNESCAPED_CHARS; }
 
   // a valid JSON file cannot have zero structural indexes - we should have found something
