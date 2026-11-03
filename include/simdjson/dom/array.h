@@ -54,7 +54,7 @@ public:
     inline bool operator>=(const iterator& other) const noexcept;
     inline bool operator>(const iterator& other) const noexcept;
 
-    iterator() noexcept = default;
+    simdjson_inline iterator() noexcept {}
     iterator(const iterator&) noexcept = default;
     iterator& operator=(const iterator&) noexcept = default;
   private:
@@ -82,7 +82,7 @@ public:
     inline bool operator==(const reverse_iterator& other) const noexcept;
     inline bool operator!=(const reverse_iterator& other) const noexcept;
 
-    reverse_iterator() noexcept = default;
+    simdjson_inline reverse_iterator() noexcept {}
     reverse_iterator(const reverse_iterator&) noexcept = default;
     reverse_iterator& operator=(const reverse_iterator&) noexcept = default;
   private:
