@@ -28,7 +28,7 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(std::string_v
   while(pos < target.size()) {
     pos = target.find('"', pos);
     if(pos == std::string_view::npos) { return true; }
-    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos == 0 || target[pos-1] != '\\') { return false; }
     if(pos > 1 && target[pos-2] == '\\') {
       size_t backslash_count{2};
       for(size_t i = 3; i <= pos; i++) {
@@ -48,7 +48,7 @@ simdjson_inline bool raw_json_string::is_free_from_unescaped_quote(const char* t
     const char * result = strchr(target+pos, '"');
     if(result == nullptr) { return true; }
     pos = result - target;
-    if(pos != 0 && target[pos-1] != '\\') { return false; }
+    if(pos == 0 || target[pos-1] != '\\') { return false; }
     if(pos > 1 && target[pos-2] == '\\') {
       size_t backslash_count{2};
       for(size_t i = 3; i <= pos; i++) {
@@ -78,6 +78,40 @@ simdjson_inline bool raw_json_string::unsafe_is_equal(std::string_view target) c
   // Past SIMDJSON_PADDING we can no longer rely on the padding to keep the
   // comparison in bounds, so we must stop at the quote terminating the key.
   return is_equal(target);
+}
+
+simdjson_inline bool raw_json_string::is_known_free_from_quote(std::string_view target) noexcept {
+#if defined(__GNUC__) || defined(__clang__)
+  // Copy the size first: GCC folds __builtin_constant_p of an expression
+  // holding a function call to false before inlining. When target is a
+  // compile-time constant, the size is a constant and the scan below folds
+  // away. Otherwise we return false, and the scan is never emitted.
+  const size_t size{target.size()};
+  if(!__builtin_constant_p(size)) { return false; }
+  bool has_quote{false};
+  for(char c : target) { has_quote |= (c == '"'); }
+  return !has_quote;
+#else
+  (void)target;
+  return false;
+#endif
+}
+
+simdjson_inline bool raw_json_string::unsafe_is_equal_key(std::string_view target, const uint8_t *colon) const noexcept {
+  // Past SIMDJSON_PADDING, is_equal stops at the quote terminating the key.
+  if(target.size() > SIMDJSON_PADDING) { return is_equal(target); }
+  const char * quote{raw() + target.size()};
+  if((*quote != '"') || memcmp(raw(), target.data(), target.size())) { return false; }
+  // The bytes of target are followed by a quote. Only whitespace separates the
+  // quote closing the key from the colon: a quote right before the colon
+  // therefore closes the key, and target is the key.
+  const char * c{reinterpret_cast<const char *>(colon)};
+  if(simdjson_likely(quote + 1 == c)) { return true; }
+  // Otherwise there is whitespace before the colon, or the quote is escaped
+  // (target ends with an unpaired backslash), or target holds an unescaped
+  // quote: its bytes then run past the quote closing the key, and so past
+  // the colon, which can only be followed by whitespace before a quote.
+  return (quote < c) && !escapes_trailing_quote(target);
 }
 
 simdjson_inline bool raw_json_string::is_equal(std::string_view target) const noexcept {

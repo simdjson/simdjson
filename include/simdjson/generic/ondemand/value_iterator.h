@@ -356,6 +356,12 @@ public:
   /** @} */
 protected:
   /**
+   * Whether actual_key, the key we just read along with its colon, equals key.
+   * Unlike raw_json_string::unsafe_is_equal, key may hold unescaped quotes.
+   */
+  simdjson_inline bool key_matches(raw_json_string actual_key, std::string_view key) const noexcept;
+
+  /**
    * Restarts an array iteration.
    * @returns Whether the array has any elements (returns false for empty).
    */

@@ -135,6 +135,15 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
   }
 }
 
+simdjson_inline bool value_iterator::key_matches(raw_json_string actual_key, std::string_view key) const noexcept {
+  // A key known at compile time to hold no quote cannot run past actual_key:
+  // the usual comparison is then exact, and the cheapest.
+  if (raw_json_string::is_known_free_from_quote(key)) { return actual_key.unsafe_is_equal(key); }
+  // Otherwise, the colon we just checked bounds actual_key, so that a key
+  // holding an unescaped quote cannot match the JSON after it.
+  return actual_key.unsafe_is_equal_key(key, _json_iter->peek(-1));
+}
+
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_field_raw(const std::string_view key) noexcept {
   error_code error;
   bool has_value;
@@ -193,8 +202,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
   while (has_value) {
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -202,14 +209,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     // key and the value. It will also increment the depth by one.
     if ((error = field_value() )) { abandon(); return error; }
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    //if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (key_matches(actual_key, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -326,8 +326,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     if ((error = field_key().get(actual_key) )) { abandon(); return error; };
@@ -336,14 +334,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     if ((error = field_value() )) { abandon(); return error; }
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (key_matches(actual_key, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
@@ -376,8 +367,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // Get the key and colon, stopping at the value.
     raw_json_string actual_key;
-    // size_t max_key_length = _json_iter->peek_length() - 2; // -2 for the two quotes
-    // Note: _json_iter->peek_length() - 2 might overflow if _json_iter->peek_length() < 2.
     // field_key() advances the pointer and checks that '"' is found (corresponding to a key).
     // The depth is left unchanged by field_key().
     error = field_key().get(actual_key); SIMDJSON_ASSUME(!error);
@@ -386,14 +375,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     error = field_value(); SIMDJSON_ASSUME(!error);
 
     // If it matches, stop and return
-    // We could do it this way if we wanted to allow arbitrary
-    // key content (including escaped quotes).
-    // if (actual_key.unsafe_is_equal(max_key_length, key)) {
-    // Instead we do the following which may trigger buffer overruns if the
-    // user provides an adversarial key (containing a well placed unescaped quote
-    // character and being longer than the number of bytes remaining in the JSON
-    // input).
-    if (actual_key.unsafe_is_equal(key)) {
+    if (key_matches(actual_key, key)) {
       logger::log_event(*this, "match", key, -2);
       // If we return here, then we return while pointing at the ':' that we just checked.
       return true;
