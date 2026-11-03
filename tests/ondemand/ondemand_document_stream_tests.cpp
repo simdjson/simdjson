@@ -974,6 +974,100 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // Appends the arrays, strings and integers of v to out, carrying on after
+    // errors as an application dumping a document would; returns the first error.
+    error_code append_values(ondemand::value v, std::string &out) {
+        ondemand::json_type t;
+        error_code error = v.type().get(t);
+        if (error) { return error; }
+        if (t == ondemand::json_type::array) {
+            ondemand::array a;
+            if ((error = v.get_array().get(a))) { return error; }
+            out += '[';
+            for (auto element : a) {
+                if (out.back() != '[') { out += ','; }
+                ondemand::value child;
+                error_code e = element.get(child);
+                if (!e) { e = append_values(child, out); }
+                if (e && !error) { error = e; }
+            }
+            out += ']';
+            return error;
+        }
+        std::string_view s;
+        if (t == ondemand::json_type::string) {
+            if (!(error = v.get_string().get(s))) { out.append(s.data(), s.size()); }
+            return error;
+        }
+        int64_t x;
+        if (!(error = v.get_int64().get(x))) { out += std::to_string(x); }
+        return error;
+    }
+
+    // The On-Demand counterpart of stream_does_not_read_past_batch in
+    // tests/dom/document_stream_tests.cpp. Stage 1 may keep an invalid document
+    // such as `[2` (before a truncated `[["`) at the end of a batch, followed by
+    // a byte that is not part of the input: the `]` that comma_delimited_array
+    // strips, or padding. With `]`, it was read as `[2]`; with `,`, the walk went
+    // on into stale indexes and read a string past the padding, into a secret
+    // we put right after it. `[1,]` and `[1,"x":2]` do the same once On-Demand
+    // skips their invalid element.
+    bool stream_does_not_read_past_batch() {
+        TEST_START();
+        const std::string secret = "SECRET-api-key-0123456789\"";
+        std::string ws_prefix, comma_prefix, rs_prefix;
+        for (int i = 0; i < 100; i++) { ws_prefix += "[0] "; comma_prefix += "[0],"; rs_prefix += "\x1e[0]\n"; }
+        struct test_case { std::string input; char next_byte; stream_format format; };
+        const test_case cases[] = {
+            {R"([[2[["])", '\0', stream_format::comma_delimited_array},
+            {"[" + comma_prefix + R"([2[["])", '\0', stream_format::comma_delimited_array},
+            {R"([2[[")", ']', stream_format::whitespace_delimited},
+            {ws_prefix + R"([2[[")", ']', stream_format::whitespace_delimited},
+            {R"([2[[")", ',', stream_format::whitespace_delimited},
+            {ws_prefix + R"([2[[")", ',', stream_format::whitespace_delimited},
+            {"\x1e" R"([2[[")", ']', stream_format::json_sequence},
+            {rs_prefix + "\x1e" R"([2[[")", ']', stream_format::json_sequence},
+            {R"([2[[")", ']', stream_format::comma_delimited},
+            {comma_prefix + R"([2[[")", ']', stream_format::comma_delimited},
+            {R"([2[[")", ',', stream_format::comma_delimited},
+            {comma_prefix + R"([2[[")", ',', stream_format::comma_delimited},
+            {R"([1,] "a)", ',', stream_format::whitespace_delimited},
+            {R"([1,"x":2] "a)", ',', stream_format::whitespace_delimited}, // read with at(2)
+        };
+        for (const auto &c : cases) {
+            const bool use_at = c.input[3] == '"';
+            for (size_t batch_size : {size_t(1000000), size_t(64)}) {
+                // The input, then padding that starts with next_byte, then the secret.
+                std::string buffer = c.input + c.next_byte + std::string(SIMDJSON_PADDING - 1, '\0') + secret;
+                padded_string_view view(buffer.data(), c.input.size(), c.input.size() + SIMDJSON_PADDING);
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS( parser.iterate_many(view, batch_size, c.format).get(stream) );
+                bool got_error = false;
+                for (auto doc : stream) {
+                    std::string text;
+                    ondemand::value value;
+                    ondemand::array array;
+                    std::string_view s;
+                    auto error = use_at ? doc.get_array().get(array) : doc.get_value().get(value);
+                    if (!error) { error = use_at ? array.at(2).get_string().get(s) : append_values(value, text); }
+                    text.append(s.data(), s.size());
+                    if (text.find("SECRET") != std::string::npos) {
+                        std::cerr << c.input << " (batch size " << batch_size << "): read past the padding" << std::endl;
+                        return false;
+                    }
+                    if (error) { got_error = true; continue; }
+                    if (text != "[0]") {
+                        std::cerr << c.input << " (batch size " << batch_size << "): unexpected document " << text << std::endl;
+                        return false;
+                    }
+                }
+                ASSERT_TRUE( got_error );
+            }
+        }
+        TEST_SUCCEED();
+    }
+
     bool small_window() {
         TEST_START();
         std::vector<char> input;
@@ -1486,7 +1580,6 @@ namespace document_stream_tests {
             ondemand::parser parser;
             ondemand::document_stream stream;
             ASSERT_SUCCESS( parser.iterate_many(json, ondemand::DEFAULT_BATCH_SIZE, c.first).get(stream) );
-            bool value_at_end = false;
             for (auto i = stream.begin(); i != stream.end(); ++i) {
                 ondemand::document_reference ref;
                 if ((*i).get(ref)) { break; }
@@ -1499,7 +1592,6 @@ namespace document_stream_tests {
                         std::string_view token = v.raw_json_token();
                         ASSERT_TRUE( token.data() <= end );
                         ASSERT_TRUE( token.size() <= size_t(end - token.data()) );
-                        if (token.data() == end) { value_at_end = true; }
                         std::string_view json_string;
                         if (!to_json_string(v).get(json_string)) {
                             ASSERT_TRUE( json_string.size() <= size_t(end - json_string.data()) );
@@ -1516,7 +1608,6 @@ namespace document_stream_tests {
                 (void)whole_error;
                 if (!doc.is_alive()) { break; }
             }
-            ASSERT_TRUE( value_at_end );
         }
         TEST_SUCCEED();
     }
@@ -3230,6 +3321,7 @@ bool run() {
             complete_document_before_next_batch_punctuation() &&
             json_sequence_unfinished_document_at_batch_end() &&
             unbalanced_document_at_batch_end() &&
+            stream_does_not_read_past_batch() &&
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
