@@ -171,7 +171,7 @@ static bool test_simd8_is_ascii() {
   TEST_START();
   const simd8<uint8_t> index(byte_index);
   ASSERT_TRUE(index.is_ascii());
-  ASSERT_TRUE(simd8<uint8_t>::zero().is_ascii());
+  ASSERT_TRUE(simd8<uint8_t>(simd8<uint8_t>::zero()).is_ascii());
   ASSERT_TRUE(simd8<uint8_t>(uint8_t(127)).is_ascii());
   ASSERT_FALSE(simd8<uint8_t>(uint8_t(128)).is_ascii());
   ASSERT_FALSE(simd8<uint8_t>(uint8_t(255)).is_ascii());
