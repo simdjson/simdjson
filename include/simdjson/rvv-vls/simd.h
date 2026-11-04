@@ -77,6 +77,7 @@ namespace simd {
     simdjson_inline simd8<bool> operator&(const simd8<bool> other) const {  return __riscv_vmand(*this, other, VL8); }
     simdjson_inline simd8<bool> operator^(const simd8<bool> other) const {  return __riscv_vmxor(*this, other, VL8); }
     simdjson_inline simd8<bool> bit_andnot(const simd8<bool> other) const { return __riscv_vmandn(*this, other, VL8); }
+    simdjson_inline simd8<bool> operator==(const simd8<bool> other) const { return __riscv_vmxnor(*this, other, VL8); }
     simdjson_inline bool any() const { return __riscv_vfirst(value, VL8) >= 0; }
     simdjson_inline simd8<bool> operator~() const { return __riscv_vmnot(*this, VL8); }
     simdjson_inline simd8<bool>& operator|=(const simd8<bool> other) { auto this_cast = static_cast<simd8<bool>*>(this); *this_cast = *this_cast | other; return *this_cast; }

@@ -154,10 +154,15 @@ static bool test_simd8_bit_andnot() {
 
   const simd8<bool> t(true);
   const simd8<bool> f(false);
-  ASSERT_FALSE((t.bit_andnot(f) ^ t).any());
-  ASSERT_FALSE((f.bit_andnot(t) ^ f).any());
-  ASSERT_FALSE((t.bit_andnot(t) ^ f).any());
-  ASSERT_FALSE((f.bit_andnot(f) ^ f).any());
+  ASSERT_FALSE((~(t == t)).any());
+  ASSERT_FALSE((t == f).any());
+  ASSERT_FALSE((f == t).any());
+  ASSERT_FALSE((~(f == f)).any());
+
+  ASSERT_FALSE((~(t.bit_andnot(f) == t)).any());
+  ASSERT_FALSE((~(f.bit_andnot(t) == f)).any());
+  ASSERT_FALSE((~(t.bit_andnot(t) == f)).any());
+  ASSERT_FALSE((~(f.bit_andnot(f) == f)).any());
 
   TEST_SUCCEED();
 }
