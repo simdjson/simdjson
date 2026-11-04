@@ -159,6 +159,8 @@ namespace simd {
     simdjson_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { value = *this - other; return *this; }
 
     // Order-specific operations
+    simdjson_inline simd8<uint8_t> max_val(const simd8<uint8_t> other) const { return __riscv_vmaxu(value, other, VL8); }
+    simdjson_inline simd8<uint8_t> min_val(const simd8<uint8_t> other) const { return __riscv_vminu(value, other, VL8); }
     simdjson_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return __riscv_vmsleu(value, other, VL8); }
     simdjson_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return __riscv_vmsgeu(value, other, VL8); }
     simdjson_inline simd8<bool> operator<(const simd8<uint8_t> other) const  { return __riscv_vmsltu(value, other, VL8); }
