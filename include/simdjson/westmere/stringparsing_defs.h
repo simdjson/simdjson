@@ -1,8 +1,11 @@
 #ifndef SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 #define SIMDJSON_WESTMERE_STRINGPARSING_DEFS_H
 
-#include "simdjson/westmere/bitmanipulation.h"
+#ifndef SIMDJSON_CONDITIONAL_INCLUDE
+#include "simdjson/westmere/base.h"
 #include "simdjson/westmere/simd.h"
+#include "simdjson/westmere/bitmanipulation.h"
+#endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
 namespace westmere {
@@ -16,11 +19,8 @@ public:
   static constexpr uint32_t BYTES_PROCESSED = 32;
   simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
-  simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
-  simdjson_inline bool has_backslash() { return bs_bits != 0; }
-  simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
-  simdjson_inline int backslash_index() { return trailing_zeroes(bs_bits); }
-
+  // Position logic is shared: see the free accessor templates in
+  // src/generic/stage2/stringparsing.h.
   uint32_t bs_bits;
   uint32_t quote_bits;
 }; // struct backslash_and_quote
