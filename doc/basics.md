@@ -586,6 +586,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   - `field.unescaped_key()` will get you the unescaped key string as a `std::string_view` instance. E.g., the JSON string `"\u00e1"` becomes the Unicode string `á`. Optionally,  you pass `true` as a parameter to the `unescaped_key` method if you want invalid escape sequences to be replaced by a default replacement character (e.g., `\ud800\ud801\ud811`): otherwise bad escape sequences lead to an immediate error.
   - `field.escaped_key()` will get you the key string as  as a `std::string_view` instance, but unlike `unescaped_key()`, the key is not processed, so no unescaping is done. E.g., the JSON string `"\u00e1"` becomes the Unicode string `\u00e1`. We expect that `escaped_key()` is faster than `field.unescaped_key()`.
   - `field.value()` will get you the value, which you can then use all these other methods on.
+  - When the field value is itself an object, you can look up nested keys directly: `field["x"]` is equivalent to `field.value()["x"]`. The same applies to `find_field()` and `find_field_unordered()`.
 
 
   To iterate through an object, you should be at the beginning
@@ -1002,11 +1003,10 @@ for (ondemand::object points : parser.iterate(points_json)) {
   for (auto point : points) {
     // Get the key corresponding the the field 'point'.
     cout << "id: " << std::string_view(point.unescaped_key()) << ": (";
-    // Get the value corresponding the the field 'point'.
-    ondemand::object xyz = point.value();
-    cout << xyz["x"].get_double() << ", ";
-    cout << xyz["y"].get_double() << ", ";
-    cout << xyz["z"].get_int64() << endl;
+    // When the field value is an object, look up nested keys on the field itself.
+    cout << point["x"].get_double() << ", ";
+    cout << point["y"].get_double() << ", ";
+    cout << point["z"].get_int64() << endl;
   }
 }
 ```
