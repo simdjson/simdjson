@@ -341,7 +341,7 @@ public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson

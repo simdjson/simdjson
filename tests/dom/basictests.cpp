@@ -8,6 +8,7 @@
 #include <cmath>
 #include <set>
 #include <sstream>
+#include <type_traits>
 #include <utility>
 #include <unistd.h>
 using namespace std::string_literals;
@@ -1044,8 +1045,20 @@ namespace dom_api_tests {
 
     dom::document doc{};
     dom::document doc2;
-    (void)doc;
-    (void)doc2;
+    ASSERT_EQUAL(doc.capacity(), 0);
+    ASSERT_EQUAL(doc2.capacity(), 0);
+
+    static_assert(std::is_nothrow_default_constructible<dom::array::iterator>::value, "array::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::array::reverse_iterator>::value, "array::reverse_iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::object::iterator>::value, "object::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::document>::value, "document");
+
+    // User-provided default constructors must keep the default member
+    // initializers: an empty result is still UNINITIALIZED.
+    simdjson_result<ondemand::value> result{};
+    simdjson_result<ondemand::value> result2;
+    ASSERT_EQUAL(result.error(), UNINITIALIZED);
+    ASSERT_EQUAL(result2.error(), UNINITIALIZED);
     return true;
   }
 

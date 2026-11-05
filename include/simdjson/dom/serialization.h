@@ -195,7 +195,7 @@ protected:
 template <class formatter = mini_formatter> class string_builder {
 public:
   /** Construct an initially empty builder, would print the empty string **/
-  string_builder() = default;
+  string_builder() {}
   /** Construct a builder whose formatter uses the given indentation step **/
   explicit string_builder(int indent_step) : format(indent_step) {}
 

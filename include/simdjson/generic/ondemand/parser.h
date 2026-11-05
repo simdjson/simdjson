@@ -473,7 +473,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> : public SIMDJ
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson
