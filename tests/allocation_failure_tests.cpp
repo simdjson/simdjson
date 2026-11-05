@@ -89,7 +89,11 @@ bool sum_dom(dom::parser &parser, int64_t &sum) {
   dom::array array;
   ASSERT_SUCCESS( parser.parse(json).get_array().get(array) );
   sum = 0;
-  for (int64_t x : array) { sum += x; }
+  for (dom::element val : array) {
+    int64_t x;
+    ASSERT_SUCCESS( val.get_int64().get(x) );
+    sum += x;
+  }
   return true;
 }
 
