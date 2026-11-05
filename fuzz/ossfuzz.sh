@@ -50,3 +50,7 @@ done
 # dedicated seeds win the $OUT name.
 python3 ../fuzz/gen_fractured_json_corpus.py "$OUT/fuzz_fractured_json"
 
+# dedicated structured seed corpus + dictionary for the builder fuzzer;
+# runs after the shared-corpus loop above so the dedicated seeds win the
+# $OUT name.
+python3 ../fuzz/gen_builder_corpus.py "$OUT/fuzz_builder"
