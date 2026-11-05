@@ -45,3 +45,8 @@ for f in $(ls $OUT/fuzz* |grep -v '.zip$') ; do
    cp ../corpus.zip $OUT/$(basename $f).zip
 done
 
+# dedicated structured seed corpus + dictionary for the fractured-json
+# formatter fuzzer; runs after the shared-corpus loop above so the
+# dedicated seeds win the $OUT name.
+python3 ../fuzz/gen_fractured_json_corpus.py "$OUT/fuzz_fractured_json"
+
