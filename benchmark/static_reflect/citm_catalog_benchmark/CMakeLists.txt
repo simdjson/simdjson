@@ -22,6 +22,10 @@ if(TARGET glaze)
     target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE SIMDJSON_COMPETITION_GLAZE)
 endif()
 
+if(TARGET Jsonifier)
+    target_link_libraries(benchmark_serialization_citm_catalog PRIVATE Jsonifier)
+endif()
+
 target_compile_definitions(benchmark_serialization_citm_catalog PRIVATE JSON_FILE="${BENCH_CITM_JSON}")
 
 # Configuration for parsing benchmark
@@ -45,6 +49,10 @@ endif()
 if(TARGET glaze)
     target_link_libraries(benchmark_parsing_citm PRIVATE glaze)
     target_compile_definitions(benchmark_parsing_citm PRIVATE SIMDJSON_COMPETITION_GLAZE)
+endif()
+
+if(TARGET Jsonifier)
+    target_link_libraries(benchmark_parsing_citm PRIVATE Jsonifier)
 endif()
 
 target_compile_definitions(benchmark_parsing_citm PRIVATE JSON_FILE="${BENCH_CITM_JSON}")

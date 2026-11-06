@@ -1,3 +1,5 @@
+#include "../benchmark_utils/benchmark_helper.h"
+#include "recipe_book_data.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -6,10 +8,11 @@
 #include <simdjson.h>
 #include <sstream>
 #include <string>
-#include "recipe_book_data.h"
-#include "../benchmark_utils/benchmark_helper.h"
 #ifdef SIMDJSON_COMPETITION_GLAZE
 #include <glaze/glaze.hpp>
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+#include "jsonifier_recipe_book_data.h"
 #endif
 
 void bench_simdjson_static_reflection_parsing(const std::string &json_str) {
@@ -67,6 +70,25 @@ void bench_glaze_parsing(const std::string &json_str) {
 }
 #endif
 
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+void bench_jsonifier_parsing(const std::string &json_str) {
+  size_t input_volume = json_str.size();
+  printf("# input volume: %zu bytes\n", input_volume);
+  jsonifier::jsonifier_core<> parser;
+  volatile bool result = true;
+  pretty_print(
+      1, input_volume, "bench_jsonifier_parsing",
+      bench([&json_str, &result, &parser]() {
+        RecipeBook data;
+        if (!parser.parseJson<jsonifier::parse_options{.knownOrder = true}>(
+                data, json_str)) {
+          result = false;
+          printf("parse error\n");
+        }
+      }));
+}
+#endif
+
 static std::string read_file(const std::string &filename) {
   printf("# Reading file %s\n", filename.c_str());
   std::ifstream stream(filename, std::ios::binary);
@@ -81,13 +103,16 @@ static std::string read_file(const std::string &filename) {
 
 // Checks whether the benchmark name matches any of the comma-separated filters
 static bool matches_filter(const std::string &name, const std::string &filter) {
-  if (filter.empty()) return true;
+  if (filter.empty())
+    return true;
   size_t start = 0;
   while (true) {
     size_t end = filter.find(',', start);
     std::string token = filter.substr(start, end - start);
-    if (name.find(token) != std::string::npos) return true;
-    if (end == std::string::npos) return false;
+    if (name.find(token) != std::string::npos)
+      return true;
+    if (end == std::string::npos)
+      return false;
     start = end + 1;
   }
 }
@@ -95,7 +120,8 @@ static bool matches_filter(const std::string &name, const std::string &filter) {
 int main(int argc, char *argv[]) {
   std::string filter;
   for (int i = 1; i < argc; ++i) {
-    if ((!strcmp(argv[i], "-f") || !strcmp(argv[i], "--filter")) && i + 1 < argc) {
+    if ((!strcmp(argv[i], "-f") || !strcmp(argv[i], "--filter")) &&
+        i + 1 < argc) {
       filter = argv[++i];
     } else {
       std::cerr << "usage: " << argv[0] << " [-f <filter>]\n";
@@ -120,6 +146,11 @@ int main(int argc, char *argv[]) {
 #ifdef SIMDJSON_COMPETITION_GLAZE
   if (matches_filter("glaze", filter)) {
     bench_glaze_parsing(json_str);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+  if (matches_filter("jsonifier", filter)) {
+    bench_jsonifier_parsing(json_str);
   }
 #endif
   if (matches_filter("simdjson_static_reflection", filter)) {
