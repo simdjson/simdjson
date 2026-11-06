@@ -597,6 +597,32 @@ bool raw_with_length() {
   TEST_SUCCEED();
 }
 
+// An empty std::string_view may have a null data() pointer.
+bool empty_inputs() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append_raw(std::string_view{});
+  sb.append_raw(nullptr, 0);
+  sb.escape_and_append(std::string_view{});
+  sb.escape_and_append_with_quotes(std::string_view{});
+  sb.append_raw("x");
+  sb.append_raw(std::string_view{});
+  sb.escape_and_append(std::string_view{});
+  std::string_view p;
+  auto result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "\"\"x");
+  char out[4] = {'a', 'b', 'c', 'd'};
+  ASSERT_EQUAL(simdjson::internal::escape_scalar::write_string_escaped(
+                   std::string_view{}, out),
+               0);
+  ASSERT_EQUAL(simdjson::internal::escape_best::write_string_escaped(
+                   std::string_view{}, out),
+               0);
+  ASSERT_EQUAL(std::string_view(out, 4), "abcd");
+  TEST_SUCCEED();
+}
+
 bool string_convertion() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -1065,7 +1091,7 @@ bool run() {
          move_to_small_result_does_not_keep_buffer() &&
          move_to_large_result_is_not_copied() &&
          move_to_small_result_keeps_builder_buffer() && append_raw() &&
-         raw_with_length() && string_convertion() && buffer_growth() &&
+         raw_with_length() && empty_inputs() && string_convertion() && buffer_growth() &&
          unicode_validation() && true;
 }
 

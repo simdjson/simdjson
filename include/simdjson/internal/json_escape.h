@@ -202,6 +202,12 @@ find_next_json_quotable_character_scalar(const std::string_view view,
 template <typename Finder>
 inline size_t write_string_escaped_with(const std::string_view input, char *out) {
   size_t mysize = input.size();
+  // An empty input may have a null data() (e.g., std::string_view{}), and
+  // passing a null pointer to memcpy is undefined behavior even when the
+  // length is zero.
+  if (mysize == 0) {
+    return 0;
+  }
 
   // Use SIMD position finder directly - it returns mysize if no escape needed
   size_t location = Finder::find(input, 0);
