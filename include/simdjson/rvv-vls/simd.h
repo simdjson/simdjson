@@ -173,10 +173,13 @@ namespace simd {
     simdjson_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
 
     // Bit-specific operations
+    simdjson_inline bool bits_not_set_anywhere() const { return !any_bits_set_anywhere(); }
     simdjson_inline bool any_bits_set_anywhere() const {
       return __riscv_vfirst(__riscv_vmsne(value, 0, VL8), VL8) >= 0;
     }
+    simdjson_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return !any_bits_set_anywhere(bits); }
     simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    simdjson_inline bool is_ascii() const { return bits_not_set_anywhere(uint8_t(0x80)); }
     template<int N>
     simdjson_inline simd8<uint8_t> shr() const { return __riscv_vsrl(value, N, VL8); }
     template<int N>
