@@ -86,11 +86,15 @@ simdjson::fractured_json_options make_options(FuzzData &fd) {
 void format_and_check(const simdjson::dom::element &elem,
                       const simdjson::fractured_json_options &opts) {
   std::string formatted;
+#if SIMDJSON_EXCEPTIONS
   try {
     formatted = simdjson::fractured_json(elem, opts);
   } catch (...) {
     return;
   }
+#else
+  formatted = simdjson::fractured_json(elem, opts);
+#endif
   simdjson::dom::parser reparser;
   simdjson::dom::element reparsed;
   if (reparser.parse(formatted).get(reparsed)) {
@@ -112,11 +116,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     // Same engine through the string entry point; parse errors from
     // arbitrary bytes are accepted behaviour, so swallow everything.
+#if SIMDJSON_EXCEPTIONS
     try {
       (void)simdjson::fractured_json_string(
           std::string_view(as_chars(Data), Size));
     } catch (...) {
     }
+#else
+    (void)simdjson::fractured_json_string(
+        std::string_view(as_chars(Data), Size));
+#endif
   }
 
   // Lane B: fuzzed (bounded) options, then the document.
