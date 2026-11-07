@@ -65,13 +65,20 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   if (size_t(_depth) >= _json_iter->parser->max_depth()) { return report_error(DEPTH_ERROR, "Exceeded max depth!"); }
   _json_iter->set_start_position(_depth, start_position());
 #endif
-  if (*_json_iter->peek() == '}') {
+  // An object that is not empty starts with a key and a colon. skip_child()
+  // relies on it when it skips a started object: it would take another first
+  // token (the 4 of {4,"b":1}) for a whole value and stop inside the object,
+  // and a lookup in the parent would then return the fields of this object.
+  const uint8_t *first = _json_iter->peek();
+  if (simdjson_likely(*first == '"' && *_json_iter->peek(1) == ':')) { return true; }
+  if (*first == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->return_current_and_advance();
     SIMDJSON_TRY(end_container());
     return false;
   }
-  return true;
+  abandon();
+  return report_error(TAPE_ERROR, "Object does not start with a key");
 }
 
 simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_object() noexcept {

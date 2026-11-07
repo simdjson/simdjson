@@ -1350,9 +1350,9 @@ namespace document_stream_tests {
     // stream must stop at the broken document, reporting its error.
     bool stream_stops_after_fatal_error() {
         TEST_START();
-        std::string lines = "{\"a\" 1}\n";
-        std::string seq = "\x1E{\"a\" 1}\n";
-        std::string commas = "{\"a\" 1},";
+        std::string lines = "{\"a\":1,\"b\" 1}\n";
+        std::string seq = "\x1E{\"a\":1,\"b\" 1}\n";
+        std::string commas = "{\"a\":1,\"b\" 1},";
         for (int i = 0; i < 20; i++) {
             lines += "{\"b\":2}\n";
             seq += "\x1E{\"b\":2}\n";
@@ -1377,10 +1377,12 @@ namespace document_stream_tests {
                     auto error = doc.get_object().get(obj);
                     if (count == 0) {
                         ASSERT_SUCCESS( error );
+                        error_code key_error = SUCCESS;
                         for (auto field : obj) {
                             std::string_view key;
-                            ASSERT_ERROR( field.unescaped_key().get(key), TAPE_ERROR );
+                            key_error = field.unescaped_key().get(key);
                         }
+                        ASSERT_ERROR( key_error, TAPE_ERROR );
                     } else {
                         ASSERT_ERROR( error, TAPE_ERROR );
                     }
