@@ -505,7 +505,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value_iterator> : publ
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::value_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson

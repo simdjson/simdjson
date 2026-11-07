@@ -8,6 +8,7 @@
 #include <cmath>
 #include <set>
 #include <sstream>
+#include <type_traits>
 #include <utility>
 #include <unistd.h>
 using namespace std::string_literals;
@@ -1028,6 +1029,39 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool default_constructors() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::array::iterator array_it{};
+    dom::array::iterator array_it2;
+    ASSERT_TRUE(array_it == array_it2);
+
+    dom::array::reverse_iterator array_rit{};
+    dom::array::reverse_iterator array_rit2;
+    ASSERT_TRUE(array_rit == array_rit2);
+
+    dom::object::iterator object_it{};
+    dom::object::iterator object_it2;
+    ASSERT_TRUE(object_it == object_it2);
+
+    dom::document doc{};
+    dom::document doc2;
+    ASSERT_EQUAL(doc.capacity(), 0);
+    ASSERT_EQUAL(doc2.capacity(), 0);
+
+    static_assert(std::is_nothrow_default_constructible<dom::array::iterator>::value, "array::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::array::reverse_iterator>::value, "array::reverse_iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::object::iterator>::value, "object::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::document>::value, "document");
+
+    // User-provided default constructors must keep the default member
+    // initializers: an empty result is still UNINITIALIZED.
+    simdjson_result<ondemand::value> result{};
+    simdjson_result<ondemand::value> result2;
+    ASSERT_EQUAL(result.error(), UNINITIALIZED);
+    ASSERT_EQUAL(result2.error(), UNINITIALIZED);
+    return true;
+  }
+
   bool object_iterator_advance() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
@@ -1504,6 +1538,7 @@ namespace dom_api_tests {
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
+           default_constructors() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
            convert_object_to_element() &&

@@ -21,7 +21,7 @@ namespace ondemand {
 #ifdef SIMDJSON_THREADS_ENABLED
 /** @private Custom worker class **/
 struct stage1_worker {
-  stage1_worker() noexcept = default;
+  stage1_worker() noexcept {}
   stage1_worker(const stage1_worker&) = delete;
   stage1_worker(stage1_worker&&) = delete;
   stage1_worker operator=(const stage1_worker&) = delete;
@@ -371,7 +371,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_stream> : pub
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document_stream &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson
