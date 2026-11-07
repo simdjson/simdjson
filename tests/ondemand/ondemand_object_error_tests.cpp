@@ -135,6 +135,30 @@ namespace object_error_tests {
     })());
     TEST_SUCCEED();
   }
+  // Entering an object whose first token is not a key used to succeed, and the
+  // parent then skipped the object up to that token only: a lookup in the parent
+  // resumed inside the object and returned "inner".
+  bool object_not_starting_with_key_error() {
+    TEST_START();
+    for (const char *first : { "4", "true", "null", "\"x\"", "[1]", "{}" }) {
+      padded_string json(std::string(R"({"a":{)") + first + R"(,"b":"inner"},"b":"outer"})");
+      SUBTEST(std::string_view(json), test_ondemand_doc(json, [&](auto doc) {
+        ondemand::object a;
+        ASSERT_ERROR( doc["a"].get_object().get(a), TAPE_ERROR );
+        std::string_view b;
+        ASSERT_ERROR( doc["b"].get_string().get(b), TAPE_ERROR );
+        return true;
+      }));
+      SUBTEST(std::string_view(json), test_ondemand_doc(json, [&](auto doc) {
+        std::string_view a;
+        ASSERT_ERROR( doc["a"].raw_json().get(a), TAPE_ERROR );
+        std::string_view b;
+        ASSERT_ERROR( doc["b"].get_string().get(b), TAPE_ERROR );
+        return true;
+      }));
+    }
+    TEST_SUCCEED();
+  }
 
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
   bool issue2084() {
@@ -661,6 +685,7 @@ namespace object_error_tests {
            object_lookup_miss_unclosed_error() &&
            object_lookup_miss_wrong_key_type_error() &&
            object_lookup_miss_next_error() &&
+           object_not_starting_with_key_error() &&
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
            issue2084() &&
            out_of_order_object_iteration_error() &&
