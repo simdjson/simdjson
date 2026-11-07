@@ -511,6 +511,46 @@ simdjson_inline simdjson_result<std::string_view> json_iterator::unescape(raw_js
 #endif
 }
 
+template <typename string_type>
+simdjson_warn_unused simdjson_inline error_code json_iterator::unescape(raw_json_string in, string_type& receiver, bool allow_replacement) noexcept {
+// The inline capacity of std::string must be known at compile time, hence constexpr std::string.
+#if SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE && SIMDJSON_SUPPORTS_CONSTEXPR_STRING
+  if constexpr (std::is_same_v<string_type, std::string>) {
+    // Short strings without escapes go into the string's inline (SSO) buffer with two overlapping
+    // copies of fixed size. A memcpy of the exact length is much slower here, because its branches
+    // on the length mispredict. Like parse_string, this reads past the closing quote into the padding.
+    constexpr size_t sso_capacity = std::string().capacity(); // 22 with libc++, 15 with libstdc++ and MSVC
+    constexpr size_t chunk = sso_capacity >= 16 ? 16 : 8;
+    if constexpr (sso_capacity >= chunk && sso_capacity <= 2 * chunk) {
+      const uint8_t *const start = reinterpret_cast<const uint8_t *>(in.raw());
+      uint8_t scratch[backslash_and_quote::BYTES_PROCESSED];
+      for (size_t offset = 0; offset <= sso_capacity; offset += backslash_and_quote::BYTES_PROCESSED) {
+        auto bs_quote = backslash_and_quote{}.copy_and_find(start + offset, scratch);
+        if (bs_quote.has_quote_first()) {
+          const size_t length = offset + size_t(bs_quote.quote_index());
+          if (length > sso_capacity) { break; }
+          receiver.resize_and_overwrite(sso_capacity, [&](char *dst, size_t) noexcept {
+            std::memcpy(dst, start, chunk);
+            std::memcpy(dst + sso_capacity - chunk, start + sso_capacity - chunk, chunk);
+            return length;
+          });
+          return SUCCESS;
+        }
+        if (bs_quote.has_backslash()) { break; }
+      }
+    }
+  }
+#endif // SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE && SIMDJSON_SUPPORTS_CONSTEXPR_STRING
+
+  // Anything else: unescape into the string buffer, copy it out, then give the buffer space back.
+  auto saved_string_buf_loc = _string_buf_loc;
+  std::string_view content;
+  SIMDJSON_TRY( unescape(in, allow_replacement).get(content) );
+  internal::assign_utf8(receiver, content);
+  _string_buf_loc = saved_string_buf_loc;
+  return SUCCESS;
+}
+
 simdjson_inline simdjson_result<std::string_view> json_iterator::unescape_wobbly(raw_json_string in) noexcept {
 #if SIMDJSON_DEVELOPMENT_CHECKS
   auto result = parser->unescape_wobbly(in, _string_buf_loc);
