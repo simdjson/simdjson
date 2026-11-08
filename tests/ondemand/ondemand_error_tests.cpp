@@ -273,6 +273,42 @@ namespace error_tests {
     TEST_SUCCEED();
   }
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  // An incomplete document may end with a key, possibly cut before its closing
+  // quote. The byte past the input must not be taken for the colon: the key
+  // would become a field whose key runs past the input.
+  bool incomplete_json_ending_with_key() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    ondemand::object obj;
+    std::string_view key;
+    auto cut_key = R"({"a":1,"bc)"_padded;
+    cut_key.data()[cut_key.size()] = ':';
+    ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(cut_key).get(doc) );
+    ASSERT_SUCCESS( doc.get_object().get(obj) );
+    size_t count = 0;
+    for (auto field : obj) {
+      if (count++ == 0) {
+        ASSERT_SUCCESS( field.unescaped_key().get(key) );
+        ASSERT_EQUAL( key, "a" );
+        continue;
+      }
+      ASSERT_ERROR( field.error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      break;
+    }
+    ASSERT_EQUAL( count, 2 );
+    ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(cut_key).get(doc) );
+    ASSERT_ERROR( doc["zz"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+
+    auto whole_key = R"({"a":1,"bc")"_padded;
+    whole_key.data()[whole_key.size()] = ':';
+    ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(whole_key).get(doc) );
+    ASSERT_ERROR( doc["bc"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+    TEST_SUCCEED();
+  }
+#endif
+
 #if SIMDJSON_EXCEPTIONS
   bool simple_error_example_except() {
     TEST_START();
@@ -562,6 +598,9 @@ namespace error_tests {
            get_fail_then_succeed_null() &&
            simple_error_example() &&
            unclosed_string_keeps_earlier_errors() &&
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+           incomplete_json_ending_with_key() &&
+#endif
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&
            simple_error_example_except() &&

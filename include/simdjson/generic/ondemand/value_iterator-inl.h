@@ -430,6 +430,14 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::field_key_with_l
 simdjson_warn_unused simdjson_inline error_code value_iterator::field_value() noexcept {
   assert_at_next();
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  // An incomplete document may end with a key, possibly cut before its closing
+  // quote. The next token is then the end-of-input sentinel, which points at the
+  // byte past the input: it must not be taken for the colon.
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing colon at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   if (*_json_iter->return_current_and_advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
   _json_iter->descend_to(depth()+1);
   return SUCCESS;
