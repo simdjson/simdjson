@@ -59,6 +59,7 @@ private:
    * is first used, and never changes afterwards.
    */
   value_iterator iter{};
+  token_position value_start{};
 
   simdjson_inline object_iterator(const value_iterator &iter) noexcept;
   friend struct simdjson_result<object_iterator>;

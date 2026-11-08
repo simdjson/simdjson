@@ -135,16 +135,29 @@ namespace object_error_tests {
     })());
     TEST_SUCCEED();
   }
-  // Entering an object whose first token is not a key used to succeed, and the
-  // parent then skipped the object up to that token only: a lookup in the parent
-  // resumed inside the object and returned "inner".
   bool object_not_starting_with_key_error() {
     TEST_START();
     for (const char *first : { "4", "true", "null", "\"x\"", "[1]", "{}" }) {
+      const bool is_string = first[0] == '"';
       padded_string json(std::string(R"({"a":{)") + first + R"(,"b":"inner"},"b":"outer"})");
       SUBTEST(std::string_view(json), test_ondemand_doc(json, [&](auto doc) {
         ondemand::object a;
-        ASSERT_ERROR( doc["a"].get_object().get(a), TAPE_ERROR );
+        if (is_string) {
+          // A string is taken for the first key; its missing colon is found on the next access.
+          ASSERT_SUCCESS( doc["a"].get_object().get(a) );
+          ASSERT_ERROR( a["b"], TAPE_ERROR );
+        } else {
+          ASSERT_ERROR( doc["a"].get_object().get(a), TAPE_ERROR );
+        }
+        std::string_view b;
+        ASSERT_ERROR( doc["b"].get_string().get(b), TAPE_ERROR );
+        return true;
+      }));
+      padded_string nested(std::string(R"({"p":{"a":{)") + first + R"(,"b":"inner"},"b":"middle"},"b":"outer"})");
+      SUBTEST(std::string_view(nested), test_ondemand_doc(nested, [&](auto doc) {
+        ondemand::object a;
+        auto error = doc["p"]["a"].get_object().get(a);
+        if (!is_string) { ASSERT_ERROR( error, TAPE_ERROR ); }
         std::string_view b;
         ASSERT_ERROR( doc["b"].get_string().get(b), TAPE_ERROR );
         return true;
@@ -156,6 +169,140 @@ namespace object_error_tests {
         ASSERT_ERROR( doc["b"].get_string().get(b), TAPE_ERROR );
         return true;
       }));
+    }
+    TEST_SUCCEED();
+  }
+  bool skip_value_followed_by_colon_error() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *key : { "b", "zz" }) {
+      std::string_view value;
+      {
+        auto json = R"({"p":{"k":"v":1},"b":"WRONG"})"_padded;
+        ondemand::document doc;
+        ondemand::object p;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        ASSERT_SUCCESS( p["k"] );
+        ASSERT_TRUE( p[key].get_string().get(value) != SUCCESS );
+      }
+      {
+        auto json = R"({"p":{"a":{"x":"v":1}},"b":"WRONG"})"_padded;
+        ondemand::document doc;
+        ondemand::object p, a;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        ASSERT_SUCCESS( p["a"].get_object().get(a) );
+        ASSERT_SUCCESS( a["x"] );
+        ASSERT_TRUE( p[key].get_string().get(value) != SUCCESS );
+      }
+      {
+        auto json = R"({"p":{"a":["v":1]},"b":"WRONG"})"_padded;
+        ondemand::document doc;
+        ondemand::object p;
+        ondemand::array a;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        ASSERT_SUCCESS( p["a"].get_array().get(a) );
+        ASSERT_TRUE( p[key].get_string().get(value) != SUCCESS );
+      }
+      {
+        auto json = R"({"p":{"a":[1,"v":1]},"b":"WRONG"})"_padded;
+        ondemand::document doc;
+        ondemand::object p;
+        ondemand::array a;
+        int64_t one;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        ASSERT_SUCCESS( p["a"].get_array().get(a) );
+        auto it = a.begin();
+        ASSERT_SUCCESS( (*it).get_int64().get(one) );
+        ++it;
+        ASSERT_SUCCESS( *it );
+        ASSERT_TRUE( p[key].get_string().get(value) != SUCCESS );
+      }
+    }
+    TEST_SUCCEED();
+  }
+  bool skip_missing_value_error() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *json_text : { R"({"p":{"a":,"x":1},"b":"WRONG"})", R"({"p":{"a"::{"x":1}},"b":"WRONG"})",
+                                   R"({"p":{"a":},"b":"WRONG"})", R"({"p":{"a":[1,,2]},"b":"WRONG"})" }) {
+      for (const char *key : { "b", "zz" }) {
+        padded_string json{std::string(json_text)};
+        ondemand::document doc;
+        ondemand::object p;
+        std::string_view value;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        auto a = p["a"];
+        ondemand::array arr;
+        if (!a.get_array().get(arr)) {
+          auto it = arr.begin();
+          int64_t one;
+          ASSERT_SUCCESS( (*it).get_int64().get(one) );
+          ++it;
+        }
+        ASSERT_TRUE( p[key].get_string().get(value) != SUCCESS );
+      }
+    }
+    TEST_SUCCEED();
+  }
+  bool lookup_after_missing_value_error() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"o":{"p":{"c":,"x":1}},"b":"WRONG"})"_padded;
+    ondemand::document doc;
+    ondemand::object o, p;
+    std::string_view value;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ASSERT_SUCCESS( doc["o"].get_object().get(o) );
+    ASSERT_SUCCESS( o["p"].get_object().get(p) );
+    ASSERT_ERROR( p["zz"].get_string().get(value), TAPE_ERROR );
+    ASSERT_TRUE( o["b"].get_string().get(value) != SUCCESS );
+    ASSERT_TRUE( doc["b"].get_string().get(value) != SUCCESS );
+    TEST_SUCCEED();
+  }
+  bool skip_after_missing_comma_error() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *json_text : { R"({"p":{"a":"x" 1,"c":"WRONG"},"c":"right"})", R"({"p":{"a":"x" "y","c":"WRONG"},"c":"right"})",
+                                   R"({"p":{"a":"x" {"q":1},"c":"WRONG"},"c":"right"})", R"({"p":{"a":"x" [1],"c":"WRONG"},"c":"right"})",
+                                   R"({"p":{"a":"x" true},"c":"right"})" }) {
+      for (const char *key : { "c", "zz" }) {
+        padded_string json{std::string(json_text)};
+        ondemand::document doc;
+        ondemand::object p;
+        std::string_view value;
+        ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+        ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+        ASSERT_SUCCESS( p["a"].get_string().get(value) );
+        ASSERT_ERROR( doc[key].get_string().get(value), TAPE_ERROR );
+      }
+    }
+    TEST_SUCCEED();
+  }
+  bool skip_object_after_comma() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({"p":{"a":{"x":1,"y":[2],"z":"s"},"b":"right"},"b":"WRONG"})"_padded;
+    for (int stop = 1; stop <= 3; stop++) {
+      ondemand::document doc;
+      ondemand::object p, a;
+      std::string_view value;
+      ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+      ASSERT_SUCCESS( doc["p"].get_object().get(p) );
+      ASSERT_SUCCESS( p["a"].get_object().get(a) );
+      auto it = a.begin();
+      for (int i = 0; i < stop; i++) {
+        ondemand::field field;
+        ASSERT_SUCCESS( (*it).get(field) );
+        ASSERT_SUCCESS( field.value().raw_json().error() );
+        ++it;
+      }
+      ASSERT_SUCCESS( p["b"].get_string().get(value) );
+      ASSERT_EQUAL( value, "right" );
     }
     TEST_SUCCEED();
   }
@@ -686,6 +833,11 @@ namespace object_error_tests {
            object_lookup_miss_wrong_key_type_error() &&
            object_lookup_miss_next_error() &&
            object_not_starting_with_key_error() &&
+           skip_value_followed_by_colon_error() &&
+           skip_missing_value_error() &&
+           lookup_after_missing_value_error() &&
+           skip_after_missing_comma_error() &&
+           skip_object_after_comma() &&
 #ifdef SIMDJSON_DEVELOPMENT_CHECKS
            issue2084() &&
            out_of_order_object_iteration_error() &&

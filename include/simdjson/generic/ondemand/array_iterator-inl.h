@@ -13,12 +13,12 @@ namespace SIMDJSON_IMPLEMENTATION {
 namespace ondemand {
 
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter) noexcept
-  : iter{_iter}
+  : iter{_iter}, element_start{_iter.json_iter().position()}
 {}
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
 simdjson_inline array_iterator::array_iterator(const value_iterator &_iter, array* _parent) noexcept
-  : parent{_parent}, iter{_iter}
+  : parent{_parent}, iter{_iter}, element_start{_iter.json_iter().position()}
 {
   if (parent) parent->set_locked(true);
 }
@@ -31,7 +31,8 @@ simdjson_inline array_iterator::~array_iterator() noexcept
 simdjson_inline array_iterator::array_iterator(array_iterator&& other) noexcept
   : has_been_referenced{other.has_been_referenced},
     parent{other.parent},
-    iter{std::move(other.iter)}
+    iter{std::move(other.iter)},
+    element_start{other.element_start}
 {
   other.parent = nullptr;
 }
@@ -44,6 +45,7 @@ simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other
     has_been_referenced = other.has_been_referenced;
     parent = other.parent;
     iter = std::move(other.iter);
+    element_start = other.element_start;
 
     other.parent = nullptr;
   }
@@ -53,7 +55,8 @@ simdjson_inline array_iterator& array_iterator::operator=(array_iterator&& other
 simdjson_inline array_iterator::array_iterator(const array_iterator& other) noexcept
   : has_been_referenced{other.has_been_referenced},
     parent{nullptr},
-    iter{other.iter}
+    iter{other.iter},
+    element_start{other.element_start}
 {}
 
 simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& other) noexcept {
@@ -64,6 +67,7 @@ simdjson_inline array_iterator& array_iterator::operator=(const array_iterator& 
     has_been_referenced = other.has_been_referenced;
     parent = nullptr;
     iter = other.iter;
+    element_start = other.element_start;
   }
   return *this;
 }
@@ -91,8 +95,9 @@ simdjson_inline array_iterator &array_iterator::operator++() noexcept {
   // PERF NOTE this is a safety rail ... users should exit loops as soon as they receive an error, so we'll never get here.
   // However, it does not seem to make a perf difference, so we add it out of an abundance of caution.
   if (( error = iter.error() )) { return *this; }
-  if (( error = iter.skip_child() )) { return *this; }
+  if (( error = iter.skip_child(element_start) )) { return *this; }
   if (( error = iter.has_next_element().error() )) { return *this; }
+  element_start = iter.json_iter().position();
   return *this;
 }
 

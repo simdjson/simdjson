@@ -152,7 +152,7 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
     if (!it.is_open()) { break; }
     // Skip the value (a no-op if the callback consumed it) and step to the next
     // field; has_next_field() ends the container on '}', which closes the loop.
-    if ((error = it.skip_child())) { it.abandon(); return {error, matched}; }
+    if ((error = it.skip_field_child())) { it.abandon(); return {error, matched}; }
     if ((error = it.has_next_field().error())) { return {error, matched}; }
   }
   return {SUCCESS, matched};

@@ -65,18 +65,20 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   if (size_t(_depth) >= _json_iter->parser->max_depth()) { return report_error(DEPTH_ERROR, "Exceeded max depth!"); }
   _json_iter->set_start_position(_depth, start_position());
 #endif
-  // An object that is not empty starts with a key and a colon. skip_child()
-  // relies on it when it skips a started object: it would take another first
-  // token (the 4 of {4,"b":1}) for a whole value and stop inside the object,
-  // and a lookup in the parent would then return the fields of this object.
+  // skip_child() relies on a started object beginning with a key.
   const uint8_t *first = _json_iter->peek();
-  if (simdjson_likely(*first == '"' && *_json_iter->peek(1) == ':')) { return true; }
+  if (simdjson_likely(*first == '"')) { return true; }
   if (*first == '}') {
     logger::log_value(*_json_iter, "empty object");
     _json_iter->return_current_and_advance();
     SIMDJSON_TRY(end_container());
     return false;
   }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->end_position() - _json_iter->position() <= 1) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut before its first key");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   abandon();
   return report_error(TAPE_ERROR, "Object does not start with a key");
 }
@@ -200,7 +202,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
   //    ```
   //
   } else {
-    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = skip_field_child() )) { abandon(); return error; }
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
     if (_json_iter->start_position(_depth) != start_position()) { return OUT_OF_ORDER_ITERATION; }
@@ -224,9 +226,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
-    // The call to skip_child is meant to skip over the value corresponding to the key.
-    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
-    SIMDJSON_TRY( skip_child() ); // Skip the value entirely
+    // The call to skip_field_value is meant to skip over the value corresponding to the key.
+    // After skip_field_value(), we are right before the next comma (',') or the final brace ('}').
+    if ((error = skip_field_value() )) { _json_iter->_depth = 0; return error; }
     // The has_next_field() advances the pointer and check that either ',' or '}' is found.
     // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
     // then we are in error and we abort.
@@ -306,7 +308,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
     // If someone queried a key but they not did access the value, then we are left pointing
     // at the ':' and we need to move forward through the value... If the value was
     // processed then skip_child() does not move the iterator (but may adjust the depth).
-    if ((error = skip_child() )) { abandon(); return error; }
+    if ((error = skip_field_child() )) { abandon(); return error; }
     search_start = _json_iter->position();
     if ((error = has_next_field().get(has_value) )) { abandon(); return error; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
@@ -349,9 +351,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
-    // The call to skip_child is meant to skip over the value corresponding to the key.
-    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
-    SIMDJSON_TRY( skip_child() );
+    // The call to skip_field_value is meant to skip over the value corresponding to the key.
+    // After skip_field_value(), we are right before the next comma (',') or the final brace ('}').
+    if ((error = skip_field_value() )) { _json_iter->_depth = 0; return error; }
     // The has_next_field() advances the pointer and check that either ',' or '}' is found.
     // It returns true if ',' is found, false otherwise. If anything other than ',' or '}' is found,
     // then we are in error and we abort.
@@ -390,9 +392,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::find_
 
     // No match: skip the value and see if , or } is next
     logger::log_event(*this, "no match", key, -2);
-    // The call to skip_child is meant to skip over the value corresponding to the key.
-    // After skip_child(), we are right before the next comma (',') or the final brace ('}').
-    SIMDJSON_TRY( skip_child() );
+    // The call to skip_field_value is meant to skip over the value corresponding to the key.
+    // After skip_field_value(), we are right before the next comma (',') or the final brace ('}').
+    if ((error = skip_field_value() )) { _json_iter->_depth = 0; return error; }
     // If we reached the end of the key-value pair we started from, then we know
     // that the key is not there so we return false. We are either right before
     // the next comma or the final brace.
@@ -935,6 +937,23 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_tr
     return incorrect_type_error("Not a null but starts with n");
   }
   return result;
+}
+
+simdjson_warn_unused simdjson_inline error_code value_iterator::skip_child(token_position child_start) noexcept {
+  if (_json_iter->depth() <= depth()) { return SUCCESS; }
+  if (_json_iter->position() == child_start) { return _json_iter->skip_value(depth()); }
+  return _json_iter->skip_partial(depth());
+}
+
+simdjson_warn_unused simdjson_inline error_code value_iterator::skip_field_child() noexcept {
+  if (_json_iter->depth() <= depth()) { return SUCCESS; }
+  if (_json_iter->depth() == depth() + 1 && *_json_iter->peek(-1) == ':') { return _json_iter->skip_value(depth()); }
+  return _json_iter->skip_partial(depth());
+}
+
+simdjson_warn_unused simdjson_inline error_code value_iterator::skip_field_value() noexcept {
+  SIMDJSON_ASSUME( _json_iter->_depth == _depth + 1 );
+  return _json_iter->skip_value(depth());
 }
 
 simdjson_warn_unused simdjson_inline error_code value_iterator::skip_child() noexcept {

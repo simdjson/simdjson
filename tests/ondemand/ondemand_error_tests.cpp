@@ -307,6 +307,26 @@ namespace error_tests {
     ASSERT_ERROR( doc["bc"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
     TEST_SUCCEED();
   }
+  bool incomplete_json_object_cut_before_first_key() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *cut : { R"({"a":1,"b":{)", R"({"a":1,"b":{"c)", R"({"a":1,"b":{"c")" }) {
+      padded_string json(std::string{cut});
+      ondemand::document doc;
+      ondemand::object b;
+      int64_t a;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+      ASSERT_SUCCESS( doc["a"].get_int64().get(a) );
+      ASSERT_EQUAL( a, 1 );
+      if (std::string_view(cut).back() == '{') {
+        ASSERT_ERROR( doc["b"].get_object().get(b), INCOMPLETE_ARRAY_OR_OBJECT );
+      } else {
+        ASSERT_SUCCESS( doc["b"].get_object().get(b) );
+        ASSERT_ERROR( b["c"], INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+    }
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS
@@ -600,6 +620,7 @@ namespace error_tests {
            unclosed_string_keeps_earlier_errors() &&
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
            incomplete_json_ending_with_key() &&
+           incomplete_json_object_cut_before_first_key() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&
