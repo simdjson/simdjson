@@ -238,7 +238,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * Throws if memory allocation failed.
    *
    * Only used for copy-initialization from an rvalue, e.g.
-   * `std::string s = std::move(builder);` or `return std::move(builder);`.
+   * `std::string s = std::move(builder);` or `return builder;` (implicit move).
    * Note that `std::string(std::move(builder))` still copies: it selects
    * std::string's string_view constructor through operator std::string_view().
    *
