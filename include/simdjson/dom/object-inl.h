@@ -97,10 +97,10 @@ inline size_t object::size() const noexcept {
   return tape.scope_count();
 }
 
-inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> object::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](const char *key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
@@ -178,7 +178,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   return element(*this).at_path_with_wildcard(json_path);
 }
 
-inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (field.key_equals(key)) {
@@ -277,7 +277,7 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
-inline bool object::iterator::key_equals(std::string_view o) const noexcept {
+simdjson_inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
   // without access to the string buffer.
   const uint32_t len = key_length();
