@@ -612,7 +612,7 @@ bool empty_inputs() {
   auto result = sb.view().get(p);
   ASSERT_SUCCESS(result);
   ASSERT_EQUAL(p, "\"\"x");
-  char out[4] = {'a', 'b', 'c', 'd'};
+  char out[16] = {'a', 'b', 'c', 'd'};
   ASSERT_EQUAL(simdjson::internal::escape_scalar::write_string_escaped(
                    std::string_view{}, out),
                0);
