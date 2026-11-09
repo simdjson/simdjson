@@ -21,7 +21,7 @@ jobs:
     if: >-
       ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
       ! contains(toJSON(github.event.commits.*.message), '[skip github]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       # fuzzers that change behaviour with SIMDJSON_FORCE_IMPLEMENTATION
       defaultimplfuzzers: atpointer dump dump_raw_tape element minify parser print_json
