@@ -53,9 +53,9 @@ constexpr int kMaxOps = 64;
 constexpr size_t kMaxDepth = 12;
 
 struct Driver {
-  simdjson::builder::string_builder sb;
-  std::vector<char> stack;    // '{' or '['
-  std::vector<size_t> counts; // emitted elements per open container
+  simdjson::builder::string_builder sb{};
+  std::vector<char> stack{};    // '{' or '['
+  std::vector<size_t> counts{}; // emitted elements per open container
   bool root_used = false;
 
   bool in_object() const { return !stack.empty() && stack.back() == '{'; }
@@ -311,9 +311,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
   // Property: well-formed builder output that the builder itself reports as
   // valid UTF-8 must parse as JSON with both APIs.
-  auto maybe_view = d.sb.view();
-  if (!maybe_view.error()) {
-    std::string_view out = maybe_view.value();
+  std::string_view out;
+  if (!d.sb.view().get(out)) {
     if (!out.empty() && d.sb.validate_unicode()) {
       simdjson::padded_string padded(out);
       simdjson::dom::parser dom_parser;
@@ -337,9 +336,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   // Builder B: machinery exercised under the sanitizers, no property.
   (void)raw_sb.size();
   (void)raw_sb.validate_unicode();
-  auto raw_view = raw_sb.view();
-  if (!raw_view.error()) {
-    (void)raw_view.value();
+  std::string_view raw_out;
+  if (!raw_sb.view().get(raw_out)) {
+    (void)raw_out.size();
   }
   return 0;
 }
