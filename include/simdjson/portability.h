@@ -77,8 +77,11 @@ using std::size_t;
   // Loongson users should update to GCC 15 or better.
   #define SIMDJSON_IMPLEMENTATION_LASX 0
 #endif
+#elif defined(__clang__)
+  // LLVM supports runtime dispatch for LASX through the target attribute.
+  // See simdjson/lasx/intrinsics.h.
 #else
-  // We are not using GCC, so we assume that we can support runtime dispatch for LASX.
+  // We are not using GCC or LLVM, so we do not support runtime dispatch for LASX.
   // https://godbolt.org/z/jcMnrjYhs
   #define SIMDJSON_IMPLEMENTATION_LASX 0
 #endif
