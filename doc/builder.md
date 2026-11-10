@@ -53,7 +53,7 @@ malformed UTF-8. Note that we do not automatically call `validate_unicode()`.
 
 Once you are satisfied, you can recover the string as follows:
 
-- `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.)
+- `operator std::string()`: Converts the JSON buffer to an std::string. (Might throw if an error occurred.) Converting an rvalue, as in `std::string s = std::move(sb);` or `return sb;` from a function returning `std::string`, moves the buffer like `move_to()`.
 - `operator std::string_view()`: Converts the JSON buffer to an std::string_view.  (Might throw if an error occurred.)
 - `view()`: Returns a view of the written JSON buffer as a `simdjson_result<std::string_view>` (C++20).
 - `move_to(std::string &out)`: Moves the JSON buffer into `out`, and returns an `error_code`. When the result fills at most half of the buffer, it is copied instead, so that a small result does not keep the whole buffer allocated, and the `string_builder` keeps its buffer for reuse. The `string_builder` is left empty.

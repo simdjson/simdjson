@@ -237,10 +237,11 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * see move_to(). The builder is left empty and can be reused.
    * Throws if memory allocation failed.
    *
-   * Only used for copy-initialization from an rvalue, e.g.
-   * `std::string s = std::move(builder);` or `return builder;` (implicit move).
-   * Note that `std::string(std::move(builder))` still copies: it selects
-   * std::string's string_view constructor through operator std::string_view().
+   * Used for copy-initialization from an rvalue, e.g.
+   * `std::string s = std::move(builder);`, and for `return builder;` from a
+   * function returning std::string (implicit move, C++20 or as an extension).
+   * Direct-initialization, `std::string s(std::move(builder));`, may copy
+   * through operator std::string_view() instead, depending on the compiler.
    *
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content if needed.
