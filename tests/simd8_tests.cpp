@@ -211,6 +211,45 @@ static bool test_simd8_bits_anywhere() {
   }
   TEST_SUCCEED();
 }
+
+static bool test_simd8_bits_elementwise() {
+  TEST_START();
+  const simd8<uint8_t> zero = simd8<uint8_t>::zero();
+  ASSERT_FALSE((~zero.bits_not_set()).any());
+  ASSERT_FALSE(zero.any_bits_set().any());
+
+  const simd8<uint8_t> all_ones = simd8<uint8_t>(uint8_t(0xFF));
+  ASSERT_FALSE(all_ones.bits_not_set().any());
+  ASSERT_FALSE((~all_ones.any_bits_set()).any());
+
+  const simd8<uint8_t> mask_f0(uint8_t(0xF0));
+  const simd8<uint8_t> mask_0f(uint8_t(0x0F));
+  ASSERT_FALSE((~mask_f0.bits_not_set(mask_0f)).any());
+  ASSERT_FALSE(mask_f0.any_bits_set(mask_0f).any());
+  ASSERT_FALSE(mask_f0.bits_not_set(mask_f0).any());
+  ASSERT_FALSE((~mask_f0.any_bits_set(mask_f0)).any());
+
+  const simd8<uint8_t> index(byte_index);
+  for (size_t i = 0; i < width; i++) {
+    uint8_t single_byte[64] = {0};
+    single_byte[i] = 1;
+    const simd8<uint8_t> single(single_byte);
+    const simd8<bool> not_set = single.bits_not_set();
+    const simd8<bool> any_set = single.any_bits_set();
+
+    ASSERT_TRUE(any_set.any());
+    ASSERT_TRUE(not_set.any());
+
+    const simd8<bool> is_i = index == simd8<uint8_t>(uint8_t(i));
+    ASSERT_FALSE((~(any_set == is_i)).any());
+    ASSERT_FALSE((~(not_set == ~is_i)).any());
+    ASSERT_FALSE((~(single.any_bits_set(simd8<uint8_t>(1)) == is_i)).any());
+    ASSERT_FALSE((~(single.bits_not_set(simd8<uint8_t>(1)) == ~is_i)).any());
+    ASSERT_FALSE(single.any_bits_set(simd8<uint8_t>(2)).any());
+    ASSERT_FALSE((~single.bits_not_set(simd8<uint8_t>(2))).any());
+  }
+  TEST_SUCCEED();
+}
 #endif // TEST_SIMD8
 
 int main() {
@@ -218,7 +257,8 @@ int main() {
   std::cout << "Testing the " << simdjson::builtin_implementation()->name()
             << " SIMD layer" << std::endl;
   if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_int8_order() ||
-      !test_simd8_bit_andnot() || !test_simd8_is_ascii() || !test_simd8_bits_anywhere()) {
+      !test_simd8_bit_andnot() || !test_simd8_is_ascii() || !test_simd8_bits_anywhere() ||
+      !test_simd8_bits_elementwise()) {
     return EXIT_FAILURE;
   }
 #else

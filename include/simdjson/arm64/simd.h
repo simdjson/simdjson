@@ -219,6 +219,9 @@ namespace {
     simdjson_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
 
     // Bit-specific operations
+    simdjson_inline simd8<bool> bits_not_set() const { return *this == uint8_t(0); }
+    simdjson_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return ~any_bits_set(bits); }
+    simdjson_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
     simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return vtstq_u8(*this, bits); }
     simdjson_inline bool bits_not_set_anywhere() const { return !any_bits_set_anywhere(); }
     simdjson_inline bool any_bits_set_anywhere() const { return vmaxvq_u32(vreinterpretq_u32_u8(*this)) != 0; }
