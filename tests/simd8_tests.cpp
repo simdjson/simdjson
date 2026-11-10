@@ -32,13 +32,25 @@ static const int8_t signed_byte_index[64] = {
      16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31};
 static_assert(width <= sizeof(signed_byte_index), "a register is at most 64 bytes");
 
+// The icelake kernel returns ==, <= and >= as a 64-bit mask, not a simd8<bool>.
+#if SIMDJSON_BUILTIN_IMPLEMENTATION_IS(icelake)
+static simd8<bool> as_mask(const uint64_t mask) { return _mm512_movm_epi8(mask); }
+#else
+static simd8<bool> as_mask(const simd8<bool> mask) { return mask; }
+#endif
+
+template <typename T>
+static simd8<bool> eq(const simd8<T> lhs, const simd8<T> rhs) {
+  return as_mask(lhs == rhs);
+}
+
 static bool test_simd8_bool_any() {
   TEST_START();
   ASSERT_FALSE(simd8<bool>(false).any());
   ASSERT_TRUE(simd8<bool>(true).any());
   const simd8<uint8_t> index(byte_index);
   for (size_t i = 0; i < width; i++) {
-    const simd8<bool> only_i = index == simd8<uint8_t>(uint8_t(i));
+    const simd8<bool> only_i = eq(index, simd8<uint8_t>(uint8_t(i)));
     ASSERT_TRUE(only_i.any());
     ASSERT_TRUE((~only_i).any());
   }
@@ -53,29 +65,29 @@ static bool test_simd8_uint8_order() {
   ASSERT_FALSE((high < low).any());
   ASSERT_TRUE((high > low).any());
   ASSERT_FALSE((low > high).any());
-  ASSERT_TRUE((low <= high).any());
-  ASSERT_FALSE((high <= low).any());
-  ASSERT_TRUE((high >= low).any());
-  ASSERT_FALSE((low >= high).any());
-  ASSERT_TRUE((low <= low).any());
-  ASSERT_TRUE((low >= low).any());
+  ASSERT_TRUE(as_mask(low <= high).any());
+  ASSERT_FALSE(as_mask(high <= low).any());
+  ASSERT_TRUE(as_mask(high >= low).any());
+  ASSERT_FALSE(as_mask(low >= high).any());
+  ASSERT_TRUE(as_mask(low <= low).any());
+  ASSERT_TRUE(as_mask(low >= low).any());
   ASSERT_FALSE((low < low).any());
   ASSERT_FALSE((low > low).any());
 
-  ASSERT_FALSE((~(low.min_val(high) == low)).any());
-  ASSERT_FALSE((~(high.min_val(low) == low)).any());
-  ASSERT_FALSE((~(low.max_val(high) == high)).any());
-  ASSERT_FALSE((~(high.max_val(low) == high)).any());
-  ASSERT_FALSE((~(low.min_val(low) == low)).any());
-  ASSERT_FALSE((~(low.max_val(low) == low)).any());
+  ASSERT_FALSE((~eq(low.min_val(high), low)).any());
+  ASSERT_FALSE((~eq(high.min_val(low), low)).any());
+  ASSERT_FALSE((~eq(low.max_val(high), high)).any());
+  ASSERT_FALSE((~eq(high.max_val(low), high)).any());
+  ASSERT_FALSE((~eq(low.min_val(low), low)).any());
+  ASSERT_FALSE((~eq(low.max_val(low), low)).any());
 
   const simd8<uint8_t> index(byte_index);
   for (size_t i = 0; i < width; i++) {
     const simd8<uint8_t> threshold = simd8<uint8_t>(uint8_t(i));
     const simd8<bool> lt = index < threshold;
     const simd8<bool> gt = index > threshold;
-    const simd8<bool> le = index <= threshold;
-    const simd8<bool> ge = index >= threshold;
+    const simd8<bool> le = as_mask(index <= threshold);
+    const simd8<bool> ge = as_mask(index >= threshold);
 
     if (i == 0) {
       ASSERT_FALSE(lt.any());
@@ -105,21 +117,21 @@ static bool test_simd8_int8_order() {
   ASSERT_FALSE((low < low).any());
   ASSERT_FALSE((low > low).any());
 
-  ASSERT_FALSE((~(low.min_val(high) == low)).any());
-  ASSERT_FALSE((~(high.min_val(low) == low)).any());
-  ASSERT_FALSE((~(low.max_val(high) == high)).any());
-  ASSERT_FALSE((~(high.max_val(low) == high)).any());
-  ASSERT_FALSE((~(low.min_val(low) == low)).any());
-  ASSERT_FALSE((~(low.max_val(low) == low)).any());
+  ASSERT_FALSE((~eq(low.min_val(high), low)).any());
+  ASSERT_FALSE((~eq(high.min_val(low), low)).any());
+  ASSERT_FALSE((~eq(low.max_val(high), high)).any());
+  ASSERT_FALSE((~eq(high.max_val(low), high)).any());
+  ASSERT_FALSE((~eq(low.min_val(low), low)).any());
+  ASSERT_FALSE((~eq(low.max_val(low), low)).any());
 
   const simd8<int8_t> index(signed_byte_index);
   for (size_t i = 0; i < width; i++) {
     const simd8<int8_t> threshold = simd8<int8_t>(signed_byte_index[i]);
     const simd8<bool> lt = index < threshold;
     const simd8<bool> gt = index > threshold;
-    const simd8<bool> eq = index == threshold;
+    const simd8<bool> equal = eq(index, threshold);
 
-    ASSERT_TRUE(eq.any());
+    ASSERT_TRUE(equal.any());
     if (i == 0) {
       ASSERT_FALSE(lt.any());
     } else {
@@ -142,27 +154,27 @@ static bool test_simd8_bit_andnot() {
   const simd8<uint8_t> mask_f0(uint8_t(0xF0));
   const simd8<uint8_t> mask_0f(uint8_t(0x0F));
 
-  ASSERT_FALSE((~(all_ones.bit_andnot(all_zeros) == all_ones)).any());
-  ASSERT_FALSE((~(all_zeros.bit_andnot(all_ones) == all_zeros)).any());
-  ASSERT_FALSE((~(all_ones.bit_andnot(all_ones) == all_zeros)).any());
-  ASSERT_FALSE((~(all_zeros.bit_andnot(all_zeros) == all_zeros)).any());
+  ASSERT_FALSE((~eq(all_ones.bit_andnot(all_zeros), all_ones)).any());
+  ASSERT_FALSE((~eq(all_zeros.bit_andnot(all_ones), all_zeros)).any());
+  ASSERT_FALSE((~eq(all_ones.bit_andnot(all_ones), all_zeros)).any());
+  ASSERT_FALSE((~eq(all_zeros.bit_andnot(all_zeros), all_zeros)).any());
 
-  ASSERT_FALSE((~(mask_f0.bit_andnot(mask_0f) == mask_f0)).any());
-  ASSERT_FALSE((~(mask_0f.bit_andnot(mask_f0) == mask_0f)).any());
-  ASSERT_FALSE((~(mask_f0.bit_andnot(all_ones) == all_zeros)).any());
-  ASSERT_FALSE((~(mask_f0.bit_andnot(all_zeros) == mask_f0)).any());
+  ASSERT_FALSE((~eq(mask_f0.bit_andnot(mask_0f), mask_f0)).any());
+  ASSERT_FALSE((~eq(mask_0f.bit_andnot(mask_f0), mask_0f)).any());
+  ASSERT_FALSE((~eq(mask_f0.bit_andnot(all_ones), all_zeros)).any());
+  ASSERT_FALSE((~eq(mask_f0.bit_andnot(all_zeros), mask_f0)).any());
 
   const simd8<bool> t(true);
   const simd8<bool> f(false);
-  ASSERT_FALSE((~(t == t)).any());
-  ASSERT_FALSE((t == f).any());
-  ASSERT_FALSE((f == t).any());
-  ASSERT_FALSE((~(f == f)).any());
+  ASSERT_FALSE((~eq(t, t)).any());
+  ASSERT_FALSE(eq(t, f).any());
+  ASSERT_FALSE(eq(f, t).any());
+  ASSERT_FALSE((~eq(f, f)).any());
 
-  ASSERT_FALSE((~(t.bit_andnot(f) == t)).any());
-  ASSERT_FALSE((~(f.bit_andnot(t) == f)).any());
-  ASSERT_FALSE((~(t.bit_andnot(t) == f)).any());
-  ASSERT_FALSE((~(f.bit_andnot(f) == f)).any());
+  ASSERT_FALSE((~eq(t.bit_andnot(f), t)).any());
+  ASSERT_FALSE((~eq(f.bit_andnot(t), f)).any());
+  ASSERT_FALSE((~eq(t.bit_andnot(t), f)).any());
+  ASSERT_FALSE((~eq(f.bit_andnot(f), f)).any());
 
   TEST_SUCCEED();
 }
@@ -240,11 +252,11 @@ static bool test_simd8_bits_elementwise() {
     ASSERT_TRUE(any_set.any());
     ASSERT_TRUE(not_set.any());
 
-    const simd8<bool> is_i = index == simd8<uint8_t>(uint8_t(i));
-    ASSERT_FALSE((~(any_set == is_i)).any());
-    ASSERT_FALSE((~(not_set == ~is_i)).any());
-    ASSERT_FALSE((~(single.any_bits_set(simd8<uint8_t>(1)) == is_i)).any());
-    ASSERT_FALSE((~(single.bits_not_set(simd8<uint8_t>(1)) == ~is_i)).any());
+    const simd8<bool> is_i = eq(index, simd8<uint8_t>(uint8_t(i)));
+    ASSERT_FALSE((~eq(any_set, is_i)).any());
+    ASSERT_FALSE((~eq(not_set, ~is_i)).any());
+    ASSERT_FALSE((~eq(single.any_bits_set(simd8<uint8_t>(1)), is_i)).any());
+    ASSERT_FALSE((~eq(single.bits_not_set(simd8<uint8_t>(1)), ~is_i)).any());
     ASSERT_FALSE(single.any_bits_set(simd8<uint8_t>(2)).any());
     ASSERT_FALSE((~single.bits_not_set(simd8<uint8_t>(2))).any());
   }
