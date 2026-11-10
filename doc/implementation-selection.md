@@ -33,9 +33,6 @@ compiles *all* the implementations into the executable. On Intel, it will includ
 (icelake, haswell, westmere and fallback), on 64-bit ARM it will include just one since running dispatching is  unnecessary, and on PPC
 it will include 2 (ppc64 and fallback).
 
-On Loongson processors, LASX runtime dispatching is only enabled on GCC 15+ and LLVM, not on older versions of GCC.
-Thus unless you compile specifically for LASX or use GCC 15+ or LLVM, you will not benefit from LASX support.
-
 If you know more about where you're going to run and want to save the space, you can disable any of
 these implementations at compile time with `-DSIMDJSON_IMPLEMENTATION_X=0` (where X is ICELAKE, HASWELL,
 WESTMERE, ARM64, PPC64, LSX, LASX and FALLBACK).
@@ -45,6 +42,22 @@ is no need to set architecture-specific flags yourself (e.g., `-mavx2`, `/AVX2` 
 `-march=haswell`), and it may even break runtime dispatch and your binaries will fail to run on
 older processors. _Note:_ for POWER9 processors make sure you compile it with `-mcpu=power9` and `-mtune=power9` to
 get maximum performance.
+
+### LoongArch: LSX and LASX
+
+On Loongson processors, simdjson uses the LSX kernel (128-bit) by default, even when the processor
+supports LASX (256-bit): LASX runtime dispatching is deliberately disabled. On a Loongson 3A6000,
+our LASX kernel is slower than our LSX kernel, by about 5% overall and 14% in stage 1, with both
+GCC 15 and LLVM. Wider registers do not help because the parser is limited by moving bitmasks from
+vector registers to general-purpose registers. With LASX, each bitmask needs a cross-lane
+permutation and a slower vector-to-general-purpose-register move.
+
+If you want to try the LASX kernel, for example on a different Loongson processor, you can enable
+LASX runtime dispatching by defining `SIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH` to `0` (e.g.,
+`-DSIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH=0`) when building simdjson. It requires GCC 15 or better,
+or LLVM. You can then compare the two kernels at runtime with the `SIMDJSON_FORCE_IMPLEMENTATION`
+environment variable (`lsx` or `lasx`). If you compile with `-mlasx` (or `-march=la464` or similar),
+simdjson only builds the LASX kernel and uses it, regardless of this macro.
 
 ### Mixing compiler flags
 

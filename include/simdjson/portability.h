@@ -68,7 +68,25 @@ using std::size_t;
   #define SIMDJSON_IS_LSX 1
 
 // Adjust for runtime dispatching support.
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)
+//
+// LASX runtime dispatching is deliberately disabled by default, so that the
+// LSX kernel is used even when the processor supports LASX. On a Loongson
+// 3A6000, our LASX kernel parses about 5% slower overall than our LSX
+// kernel (stage 1 about 14% slower), with both GCC 15 and LLVM. The 256-bit
+// registers do not help: stage 1 is limited by moving bitmasks from vector
+// registers to general-purpose registers, and with LASX each bitmask needs
+// a cross-lane permutation (3 cycles) and a slower vector-to-GPR move
+// (xvpickve2gr is 2 cycles slower than vpickve2gr).
+//
+// Define SIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH to 0 to enable LASX runtime
+// dispatching (GCC 15+ or LLVM). Compiling with -mlasx selects the LASX
+// kernel regardless of this macro. See doc/implementation-selection.md.
+#ifndef SIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH
+  #define SIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH 1
+#endif
+#if SIMDJSON_DISABLE_LASX_RUNTIME_DISPATCH
+  #define SIMDJSON_IMPLEMENTATION_LASX 0
+#elif defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)
 #if __GNUC__ > 15 || (__GNUC__ == 15 && __GNUC_MINOR__ >= 0)
   // We are ok, we will support runtime dispatch for LASX.
 #else
@@ -85,8 +103,6 @@ using std::size_t;
   // https://godbolt.org/z/jcMnrjYhs
   #define SIMDJSON_IMPLEMENTATION_LASX 0
 #endif
-
-
 
 #endif
 #elif defined(__PPC64__) || defined(_M_PPC64)
