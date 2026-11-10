@@ -255,10 +255,7 @@ namespace misc_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::value global_groups;
-    ASSERT_SUCCESS(doc["global-groups"].get(global_groups));
-    ondemand::json_type global_type;
-    ASSERT_SUCCESS(global_groups.type().get(global_type));
-    ASSERT_EQUAL(global_type, ondemand::json_type::array);
+    ASSERT_ERROR(doc["global-groups"].get(global_groups), TAPE_ERROR);
     TEST_SUCCEED();
   }
 
@@ -654,7 +651,7 @@ namespace misc_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(docdata).get(doc));
     ondemand::object global_groups;
-    ASSERT_ERROR(doc["global-groups"].get(global_groups), INCORRECT_TYPE);
+    ASSERT_ERROR(doc["global-groups"].get(global_groups), TAPE_ERROR);
     ondemand::object globals;
     auto error = doc["globals"].get(globals);
     if(error == SUCCESS) { return false; }

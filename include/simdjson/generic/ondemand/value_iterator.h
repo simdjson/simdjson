@@ -38,6 +38,15 @@ public:
    * Optimized for scalars.
    */
   simdjson_warn_unused simdjson_inline error_code skip_child() noexcept;
+  /**
+   * Skips the current child, knowing where it starts: if the iterator is still there, the child
+   * was not read.
+   */
+  simdjson_warn_unused simdjson_inline error_code skip_child(token_position child_start) noexcept;
+  /** Skips the value of the current field, if it was not read. */
+  simdjson_warn_unused simdjson_inline error_code skip_field_child() noexcept;
+  /** Skips the value of a field whose colon was just read. */
+  simdjson_warn_unused simdjson_inline error_code skip_field_value() noexcept;
 
   /**
    * Tell whether the iterator is at the EOF mark

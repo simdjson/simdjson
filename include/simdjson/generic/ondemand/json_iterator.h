@@ -74,6 +74,22 @@ public:
    * Skips a JSON value, whether it is a scalar, array or object.
    */
   simdjson_warn_unused simdjson_inline error_code skip_child(depth_t parent_depth) noexcept;
+  /**
+   * Skips the value of a field whose colon was just read.
+   */
+  simdjson_warn_unused simdjson_inline error_code skip_value(depth_t parent_depth) noexcept;
+  /**
+   * Skips what is left of a child that was entered or read in part: the iterator is past the
+   * start of the child.
+   */
+  simdjson_warn_unused simdjson_inline error_code skip_partial(depth_t parent_depth) noexcept;
+  /** Skips the tokens of a container that was entered until the depth returns to parent_depth. */
+  simdjson_warn_unused simdjson_inline error_code skip_rest(depth_t parent_depth) noexcept;
+  /** Tells whether the token just consumed cannot follow the token before it. */
+  simdjson_inline bool out_of_place(uint8_t current) const noexcept;
+  simdjson_inline error_code out_of_place_error() noexcept;
+  /** Tells whether the string before pos, followed by a colon, is a key. */
+  static bool string_is_key(const uint8_t *json, token_position pos, token_position root, token_position end) noexcept;
 
   /**
    * Tell whether the iterator is still at the start

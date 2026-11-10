@@ -88,6 +88,7 @@ private:
    simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
+  token_position element_start{};
 
   simdjson_inline array_iterator(const value_iterator &iter) noexcept;
 

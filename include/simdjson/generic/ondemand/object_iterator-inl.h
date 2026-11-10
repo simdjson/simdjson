@@ -37,7 +37,8 @@ simdjson_inline object_iterator::~object_iterator() noexcept
 simdjson_inline object_iterator::object_iterator(object_iterator&& other) noexcept
   : has_been_referenced{other.has_been_referenced},
     parent{other.parent},
-    iter{std::move(other.iter)}
+    iter{std::move(other.iter)},
+    value_start{other.value_start}
 {
   other.parent = nullptr;
 }
@@ -50,6 +51,7 @@ simdjson_inline object_iterator& object_iterator::operator=(object_iterator&& ot
     has_been_referenced = other.has_been_referenced;
     parent = other.parent;
     iter = std::move(other.iter);
+    value_start = other.value_start;
 
     other.parent = nullptr;
   }
@@ -59,7 +61,8 @@ simdjson_inline object_iterator& object_iterator::operator=(object_iterator&& ot
 simdjson_inline object_iterator::object_iterator(const object_iterator& other) noexcept
   : has_been_referenced{other.has_been_referenced},
     parent{nullptr},
-    iter{other.iter}
+    iter{other.iter},
+    value_start{other.value_start}
 {}
 
 simdjson_inline object_iterator& object_iterator::operator=(const object_iterator& other) noexcept {
@@ -70,6 +73,7 @@ simdjson_inline object_iterator& object_iterator::operator=(const object_iterato
     has_been_referenced = other.has_been_referenced;
     parent = nullptr;
     iter = other.iter;
+    value_start = other.value_start;
   }
   return *this;
 }
@@ -84,6 +88,7 @@ simdjson_inline simdjson_result<field> object_iterator::operator*() noexcept {
   error_code error = iter.error();
   if (error) { iter.abandon(); return error; }
   auto result = field::start(iter);
+  value_start = iter.json_iter().position();
   // TODO this is a safety rail ... users should exit loops as soon as they receive an error.
   // Nonetheless, let's see if performance is OK with this if statement--the compiler may give it to us for free.
   if (result.error()) { iter.abandon(); }
@@ -109,7 +114,7 @@ simdjson_inline object_iterator &object_iterator::operator++() noexcept {
   if (!iter.is_open()) { return *this; } // Iterator will be released if there is an error
 
   simdjson_unused error_code error;
-  if ((error = iter.skip_child() )) { return *this; }
+  if ((error = iter.skip_child(value_start) )) { return *this; }
 
   simdjson_unused bool has_value;
   if ((error = iter.has_next_field().get(has_value) )) { return *this; };

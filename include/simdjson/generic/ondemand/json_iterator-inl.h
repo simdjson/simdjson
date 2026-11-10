@@ -121,61 +121,54 @@ static constexpr int8_t skip_depth_delta[256] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
+// Class of the first token of a value: 0 for a scalar, 1 for an array or an object, 2 for a
+// token that cannot start a value.
+static constexpr uint8_t value_start_class[256] = {
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,2,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,2,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+};
+
+simdjson_inline bool json_iterator::out_of_place(uint8_t current) const noexcept {
+  // A value or a key follows a colon, a comma or an opening bracket; nothing else does.
+  if (_depth <= 1) { return false; }
+  const uint8_t before = *peek(-2) | 0x20;
+  const bool after_start = before == ':' || before == ',' || before == '{';
+  current |= 0x20;
+  const bool ends = current == ':' || current == ',' || current == '}';
+  return after_start == ends;
+}
+
+simdjson_inline error_code json_iterator::out_of_place_error() noexcept {
+  return report_error(TAPE_ERROR, "Missing comma, colon or value");
+}
+
+simdjson_never_inline bool json_iterator::string_is_key(const uint8_t *json, token_position pos, token_position root, token_position end) noexcept {
+  // The string before pos is followed by a colon. After a colon or a bracket, it is a value;
+  // after a comma, it is a key if its container is an object.
+  const uint8_t before = pos - 2 >= root ? json[pos[-2]] : ':';
+  if (before == '{') { return true; }
+  if (before == ':' || before == '[') { return false; }
+  int32_t depth = 0;
+  while (pos < end) {
+    const uint8_t c = json[*pos++];
+    depth += skip_depth_delta[c];
+    if (depth < 0) { return c == '}'; }
+  }
+  return true;
+}
+
 // GCC 7 warns when the first line of this function is inlined away into oblivion due to the caller
 // relating depth and parent_depth, which is a desired effect. The warning does not show up if the
 // skip_child() function is not marked inline).
 SIMDJSON_PUSH_DISABLE_WARNINGS
 SIMDJSON_DISABLE_STRICT_OVERFLOW_WARNING
-simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
-  if (depth() <= parent_depth) { return SUCCESS; }
-  switch (*return_current_and_advance()) {
-    // TODO consider whether matching braces is a requirement: if non-matching braces indicates
-    // *missing* braces, then future lookups are not in the object/arrays they think they are,
-    // violating the rule "validate enough structure that the user can be confident they are
-    // looking at the right values."
-    // PERF TODO we can eliminate the switch here with a lookup of how much to add to depth
-
-    // For the first open array/object in a value, we've already incremented depth, so keep it the same
-    // We never stop at colon, but if we did, it wouldn't affect depth
-    case '[': case '{': case ':':
-      logger::log_start_value(*this, "skip");
-      break;
-    // If there is a comma, we have just finished a value in an array/object, and need to get back in
-    case ',':
-      logger::log_value(*this, "skip");
-      break;
-    // ] or } means we just finished a value and need to jump out of the array/object
-    case ']': case '}':
-      logger::log_end_value(*this, "skip");
-      _depth--;
-      if (depth() <= parent_depth) { return SUCCESS; }
-#if SIMDJSON_CHECK_EOF
-      // If there are no more tokens, the parent is incomplete.
-      if (at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing [ or { at start"); }
-#endif // SIMDJSON_CHECK_EOF
-      break;
-    case '"':
-      // At the end, peek() would read the sentinel, which points into the padding.
-      if(!at_end() && *peek() == ':') {
-        // We are at a key!!!
-        // This might happen if you just started an object and you skip it immediately.
-        // Performance note: it would be nice to get rid of this check as it is somewhat
-        // expensive.
-        // https://github.com/simdjson/simdjson/issues/1742
-        logger::log_value(*this, "key");
-        return_current_and_advance(); // eat up the ':'
-        break; // important!!!
-      }
-      simdjson_fallthrough;
-    // Anything else must be a scalar value
-    default:
-      // For the first scalar, we will have incremented depth already, so we decrement it here.
-      logger::log_value(*this, "skip");
-      _depth--;
-      if (depth() <= parent_depth) { return SUCCESS; }
-      break;
-  }
-
+simdjson_warn_unused simdjson_inline error_code json_iterator::skip_rest(depth_t parent_depth) noexcept {
   // Now that we've considered the first value, we only increment/decrement for arrays/objects.
   //
   // Without logging, look up the depth change of each token in a table instead of branching
@@ -223,6 +216,99 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
   }
 
   return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "not enough close braces");
+}
+
+simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
+  if (depth() <= parent_depth) { return SUCCESS; }
+  const uint8_t current = *return_current_and_advance();
+  if (simdjson_unlikely(out_of_place(current))) { return out_of_place_error(); }
+  switch (current) {
+    // TODO consider whether matching braces is a requirement: if non-matching braces indicates
+    // *missing* braces, then future lookups are not in the object/arrays they think they are,
+    // violating the rule "validate enough structure that the user can be confident they are
+    // looking at the right values."
+    // PERF TODO we can eliminate the switch here with a lookup of how much to add to depth
+
+    // For the first open array/object in a value, we've already incremented depth, so keep it the same
+    // We never stop at colon, but if we did, it wouldn't affect depth
+    case '[': case '{': case ':':
+      logger::log_start_value(*this, "skip");
+      break;
+    // If there is a comma, we have just finished a value in an array/object, and need to get back in
+    case ',':
+      logger::log_value(*this, "skip");
+      break;
+    // ] or } means we just finished a value and need to jump out of the array/object
+    case ']': case '}':
+      logger::log_end_value(*this, "skip");
+      _depth--;
+      if (depth() <= parent_depth) { return SUCCESS; }
+#if SIMDJSON_CHECK_EOF
+      // If there are no more tokens, the parent is incomplete.
+      if (at_end()) { return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing [ or { at start"); }
+#endif // SIMDJSON_CHECK_EOF
+      break;
+    case '"':
+      // At the end, peek() would read the sentinel, which points into the padding.
+      if(!at_end() && *peek() == ':' && string_is_key(token.buf, token.position(), _root, end_position())) {
+        // We are at a key!!!
+        // This might happen if you just started an object and you skip it immediately.
+        // Performance note: it would be nice to get rid of this check as it is somewhat
+        // expensive.
+        // https://github.com/simdjson/simdjson/issues/1742
+        logger::log_value(*this, "key");
+        return_current_and_advance(); // eat up the ':'
+        break; // important!!!
+      }
+      if (_depth > 1 && *peek(-2) == '{') { return out_of_place_error(); }
+      simdjson_fallthrough;
+    // Anything else must be a scalar value
+    default:
+      // For the first scalar, we will have incremented depth already, so we decrement it here.
+      logger::log_value(*this, "skip");
+      _depth--;
+      if (depth() <= parent_depth) { return SUCCESS; }
+      break;
+  }
+
+  return skip_rest(parent_depth);
+}
+
+simdjson_warn_unused simdjson_inline error_code json_iterator::skip_value(depth_t parent_depth) noexcept {
+  const uint8_t value_class = value_start_class[*return_current_and_advance()];
+  if (value_class == 0) {
+    logger::log_value(*this, "skip");
+    _depth--;
+    return SUCCESS;
+  }
+  if (value_class == 2) { return out_of_place_error(); }
+  logger::log_start_value(*this, "skip");
+  return skip_rest(parent_depth);
+}
+
+simdjson_warn_unused simdjson_inline error_code json_iterator::skip_partial(depth_t parent_depth) noexcept {
+  if (depth() <= parent_depth) { return SUCCESS; }
+  if (depth() != parent_depth + 1) { return skip_child(parent_depth); }
+  // We are in the child container, past its start: at a key, a colon, a comma or the closing
+  // bracket. Another value can only follow a missing comma.
+  switch (*return_current_and_advance()) {
+    case ',': case ':':
+      logger::log_value(*this, "skip");
+      return skip_rest(parent_depth);
+    case ']': case '}':
+      logger::log_end_value(*this, "skip");
+      _depth--;
+      return SUCCESS;
+    case '"':
+      if (!at_end() && *peek() == ':') {
+        logger::log_value(*this, "key");
+        return_current_and_advance();
+        return skip_rest(parent_depth);
+      }
+      simdjson_fallthrough;
+    default:
+      return out_of_place_error();
+  }
 }
 
 SIMDJSON_POP_DISABLE_WARNINGS
