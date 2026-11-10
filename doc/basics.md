@@ -822,7 +822,7 @@ support for users who avoid exceptions. See [the simdjson error handling documen
    You may also access [the raw JSON string](#general-direct-access-to-the-raw-json-string).
   For example, the following is a quick and dirty recursive function that verbosely prints the JSON document as JSON. This example also illustrates lifecycle requirements: the `document` instance holds the iterator. The document must remain in scope while you are accessing instances of `value`, `object` and `array`.
   ```cpp
-  void recursive_print_json(ondemand::value element) {
+  void recursive_print_json(ondemand::value &element) {
     bool add_comma;
     switch (element.type()) {
     case ondemand::json_type::array:
@@ -834,7 +834,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         }
         // We need the call to value() to get
         // an ondemand::value type.
-        recursive_print_json(child.value());
+        ondemand::value val = child.value();
+        recursive_print_json(val);
         add_comma = true;
       }
       cout << "]";
@@ -853,7 +854,8 @@ support for users who avoid exceptions. See [the simdjson error handling documen
         // a std::string_view instance, but we do not need
         // escaping.
         cout << "\"" << field.key() << "\": ";
-        recursive_print_json(field.value());
+        ondemand::value val = field.value();
+        recursive_print_json(val);
         add_comma = true;
       }
       cout << "}\n";
@@ -4022,7 +4024,7 @@ and on its values, it is inexpensive, and it reports how deep the iterator curre
 sits:
 
 ```cpp
-void recursive_print_json(ondemand::value element) {
+void recursive_print_json(ondemand::value &element) {
   if (element.current_depth() > 30) { throw std::runtime_error("too deep"); }
   // ...
 }

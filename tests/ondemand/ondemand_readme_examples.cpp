@@ -688,7 +688,7 @@ bool number_tests() {
   TEST_SUCCEED();
 }
 
-bool recursive_print_json(ondemand::value element) {
+bool recursive_print_json(ondemand::value &element) {
   TEST_START();
   bool add_comma;
   switch (element.type()) {
@@ -701,7 +701,8 @@ bool recursive_print_json(ondemand::value element) {
       }
       // We need the call to value() to get
       // an ondemand::value type.
-      recursive_print_json(child.value());
+      ondemand::value val = child.value();
+      recursive_print_json(val);
       add_comma = true;
     }
     cout << "]";
@@ -717,7 +718,8 @@ bool recursive_print_json(ondemand::value element) {
       // JSON document, if we want the unescaped key,
       // we should do field.unescaped_key().
       cout << "\"" << field.key() << "\": ";
-      recursive_print_json(field.value());
+      ondemand::value val = field.value();
+      recursive_print_json(val);
       add_comma = true;
     }
     cout << "}\n";
@@ -765,7 +767,7 @@ bool basics_treewalk() {
   TEST_SUCCEED();
 }
 
-bool print_depth_space(ondemand::value element) {
+bool print_depth_space(ondemand::value &element) {
   TEST_START();
   for(auto i = 0; i < element.current_depth(); i++) {
     cout << " ";
@@ -773,7 +775,7 @@ bool print_depth_space(ondemand::value element) {
   TEST_SUCCEED();
 }
 
-bool recursive_print_json_breakline(ondemand::value element) {
+bool recursive_print_json_breakline(ondemand::value &element) {
   TEST_START();
   bool add_comma;
   switch (element.type()) {
@@ -789,7 +791,8 @@ bool recursive_print_json_breakline(ondemand::value element) {
       }
       // We need the call to value() to get
       // an ondemand::value type.
-      recursive_print_json_breakline(child.value());
+      ondemand::value val = child.value();
+      recursive_print_json_breakline(val);
       add_comma = true;
     }
     cout << "]";
@@ -808,7 +811,8 @@ bool recursive_print_json_breakline(ondemand::value element) {
       // JSON document, if we want the unescaped key,
       // we should do field.unescaped_key().
       cout << "\"" << field.key() << "\": ";
-      recursive_print_json_breakline(field.value());
+      ondemand::value val = field.value();
+      recursive_print_json_breakline(val);
       add_comma = true;
     }
     cout << "}\n";
