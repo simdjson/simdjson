@@ -140,6 +140,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
     case ',':
       return true;
     default:
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (_json_iter->allow_incomplete_json() && _json_iter->position() > _json_iter->end_position()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Container cut at the end of an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       return report_error(TAPE_ERROR, "Missing comma between object fields");
   }
 }
@@ -537,6 +542,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
       _json_iter->descend_to(depth()+1);
       return true;
     default:
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (_json_iter->allow_incomplete_json() && _json_iter->position() > _json_iter->end_position()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Container cut at the end of an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       return report_error(TAPE_ERROR, "Missing comma between array elements");
   }
 }
@@ -579,8 +589,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   if (_json_iter->allow_incomplete_json()) {
     const size_t remaining_input_length = _json_iter->remaining_input_length(json);
-    const uint32_t max_len = remaining_input_length < peek_start_length() ? uint32_t(remaining_input_length) : peek_start_length();
-    if (!raw_json_string_is_quote_terminated(json, max_len)) {
+    if (!raw_json_string_is_quote_terminated(json, uint32_t(remaining_input_length))) {
       return STRING_ERROR;
     }
   }
