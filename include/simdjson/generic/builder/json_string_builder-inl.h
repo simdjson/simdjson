@@ -435,7 +435,7 @@ simdjson_inline string_builder::operator std::string() const & noexcept(false) {
   return std::string(operator std::string_view());
 }
 
-simdjson_inline string_builder::operator std::string() && noexcept(false) {
+inline string_builder::operator std::string() && noexcept(false) {
   std::string out;
   error_code error = move_to(out);
   if (error) { throw simdjson_error(error); }

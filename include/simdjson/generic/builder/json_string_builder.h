@@ -246,7 +246,7 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content if needed.
    */
-  simdjson_inline operator std::string() && noexcept(false);
+  inline operator std::string() && noexcept(false);
 
   /**
    * Creates an std::string_view from the written JSON buffer.
