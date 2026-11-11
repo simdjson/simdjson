@@ -31,6 +31,14 @@ protected:
 
 public:
   simdjson_inline value_iterator() noexcept {}
+  simdjson_inline value_iterator(const value_iterator &other) noexcept
+    : _json_iter{other._json_iter}, _depth{other._depth}, _start_position{other._start_position} {}
+  simdjson_inline value_iterator &operator=(const value_iterator &other) noexcept {
+    _json_iter = other._json_iter;
+    _depth = other._depth;
+    _start_position = other._start_position;
+    return *this;
+  }
 
   /**
    * Skips a non-iterated or partially-iterated JSON value, whether it is a scalar, array or object.
