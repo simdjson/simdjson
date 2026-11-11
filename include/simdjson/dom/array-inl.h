@@ -127,14 +127,12 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
   SIMDJSON_TRY(internal::parse_json_pointer_array_index(json_pointer, array_index, i));
 
   // Get the child
-  auto child = array(tape).at(array_index);
+  element child;
   // If there is an error, it ends here
-  if(child.error()) {
-    return child;
-  }
+  SIMDJSON_TRY(array(tape).at(array_index).get(child));
   // If there is a /, we're not done yet, call recursively.
   if (i < json_pointer.length()) {
-    child = child.at_pointer(json_pointer.substr(i));
+    return child.at_pointer(json_pointer.substr(i));
   }
   return child;
 }
