@@ -388,7 +388,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<element> operator[](std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -403,7 +403,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const char *key) const noexcept;
+  simdjson_inline simdjson_result<element> operator[](const char *key) const noexcept;
   simdjson_result<element> operator[](int) const noexcept = delete;
 
 
@@ -493,7 +493,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline simdjson_result<element> at_key(std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<element> at_key(std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key in a case-insensitive manner.
