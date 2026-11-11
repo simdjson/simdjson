@@ -69,6 +69,7 @@ simdjson_inline bool is_matching_failure_error(error_code error) noexcept {
  * @return A string containing the equivalent JSON Pointer.
  */
 inline std::string json_path_to_pointer_conversion(std::string_view json_path) {
+  if (json_path == "$") { return {}; }
   size_t i = 0;
   // if JSONPath starts with $, skip it
    // json_path.starts_with('$') requires C++20.
