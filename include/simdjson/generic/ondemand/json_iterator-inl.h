@@ -220,6 +220,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_rest(depth_t
 
 simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_t parent_depth) noexcept {
   if (depth() <= parent_depth) { return SUCCESS; }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (allow_incomplete_json() && at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Incomplete child at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   const uint8_t current = *return_current_and_advance();
   if (simdjson_unlikely(out_of_place(current))) { return out_of_place_error(); }
   switch (current) {
@@ -260,7 +265,14 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
         return_current_and_advance(); // eat up the ':'
         break; // important!!!
       }
-      if (_depth > 1 && *peek(-2) == '{') { return out_of_place_error(); }
+      if (_depth > 1 && *peek(-2) == '{') {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+        if (allow_incomplete_json() && at_end()) {
+          return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object key cut before colon in an incomplete document");
+        }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+        return out_of_place_error();
+      }
       simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
@@ -275,6 +287,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
 }
 
 simdjson_warn_unused simdjson_inline error_code json_iterator::skip_value(depth_t parent_depth) noexcept {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (allow_incomplete_json() && at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Incomplete value at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   const uint8_t value_class = value_start_class[*return_current_and_advance()];
   if (value_class == 0) {
     logger::log_value(*this, "skip");
@@ -289,6 +306,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_value(depth_
 simdjson_warn_unused simdjson_inline error_code json_iterator::skip_partial(depth_t parent_depth) noexcept {
   if (depth() <= parent_depth) { return SUCCESS; }
   if (depth() != parent_depth + 1) { return skip_child(parent_depth); }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (allow_incomplete_json() && at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Incomplete container at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   // We are in the child container, past its start: at a key, a colon, a comma or the closing
   // bracket. Another value can only follow a missing comma.
   switch (*return_current_and_advance()) {
@@ -305,6 +327,11 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_partial(dept
         return_current_and_advance();
         return skip_rest(parent_depth);
       }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (allow_incomplete_json() && at_end()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object key cut before colon in an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       simdjson_fallthrough;
     default:
       return out_of_place_error();

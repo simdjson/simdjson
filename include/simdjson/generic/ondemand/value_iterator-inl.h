@@ -65,6 +65,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   if (size_t(_depth) >= _json_iter->parser->max_depth()) { return report_error(DEPTH_ERROR, "Exceeded max depth!"); }
   _json_iter->set_start_position(_depth, start_position());
 #endif
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut before its first key");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   // skip_child() relies on a started object beginning with a key.
   const uint8_t *first = _json_iter->peek();
   if (simdjson_likely(*first == '"')) { return true; }
@@ -74,11 +79,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
     SIMDJSON_TRY(end_container());
     return false;
   }
-#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
-  if (_json_iter->allow_incomplete_json() && _json_iter->end_position() - _json_iter->position() <= 1) {
-    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut before its first key");
-  }
-#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   abandon();
   return report_error(TAPE_ERROR, "Object does not start with a key");
 }
@@ -130,6 +130,11 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::end_container() 
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_next_field() noexcept {
   assert_at_next();
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object unclosed at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   // It's illegal to call this unless there are more tokens: anything that ends in } or ] is
   // obligated to verify there are more tokens if they are not the top level.
   switch (*_json_iter->return_current_and_advance()) {
@@ -138,6 +143,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut after comma at the end of an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       return true;
     default:
       return report_error(TAPE_ERROR, "Missing comma between object fields");
@@ -415,6 +425,11 @@ SIMDJSON_POP_DISABLE_WARNINGS
 simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iterator::field_key() noexcept {
   assert_at_next();
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut before key at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   const uint8_t *key = _json_iter->return_current_and_advance();
   if (*(key++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
   return raw_json_string(key);
@@ -423,8 +438,20 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
 simdjson_warn_unused simdjson_inline error_code value_iterator::field_key_with_length(raw_json_string &key, std::size_t &len) noexcept {
   assert_at_next();
 
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object cut before key at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   const uint8_t *k = _json_iter->return_current_and_advance();
   if (*(k++) != '"') { return report_error(TAPE_ERROR, "Object key is not a string"); }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  // An incomplete document may end inside or right after a key, leaving no ':'
+  // token before the end-of-input sentinel.
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing colon at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   // After return_current_and_advance(), the current token is the ':' that follows
   // the key. The closing quote sits just before it (only JSON whitespace may
   // intervene), so step back from the ':' to the closing quote to get the length.
@@ -448,6 +475,11 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::field_value() no
   }
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   if (*_json_iter->return_current_and_advance() != ':') { return report_error(TAPE_ERROR, "Missing colon in object field"); }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Missing value after colon at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   _json_iter->descend_to(depth()+1);
   return SUCCESS;
 }
@@ -475,6 +507,11 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::start
   // See started_object().
   if (size_t(_depth) >= _json_iter->parser->max_depth()) { return report_error(DEPTH_ERROR, "Exceeded max depth!"); }
 #endif
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Array cut before its first element");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   if (*_json_iter->peek() == ']') {
     logger::log_value(*_json_iter, "empty array");
     _json_iter->return_current_and_advance();
@@ -528,12 +565,22 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
   assert_at_next();
 
   logger::log_event(*this, "has_next_element");
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+    return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Array unclosed at the end of an incomplete document");
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   switch (*_json_iter->return_current_and_advance()) {
     case ']':
       logger::log_end_value(*_json_iter, "array");
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (_json_iter->allow_incomplete_json() && _json_iter->at_end()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Array cut after comma at the end of an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       _json_iter->descend_to(depth()+1);
       return true;
     default:
@@ -1117,7 +1164,11 @@ simdjson_inline bool value_iterator::is_at_key() const noexcept {
   //
   // As long as we are at the object's depth, in a valid document,
   // we will only ever be at { , : or the actual string key: ".
-  return _depth == _json_iter->_depth && *_json_iter->peek() == '"';
+  return _depth == _json_iter->_depth
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      && (!_json_iter->allow_incomplete_json() || !_json_iter->at_end())
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      && *_json_iter->peek() == '"';
 }
 
 simdjson_inline bool value_iterator::is_at_iterator_start() const noexcept {
