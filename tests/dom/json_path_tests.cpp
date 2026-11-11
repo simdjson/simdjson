@@ -866,6 +866,11 @@ int main() {
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&
+      run_success_test(R"({"answer":42})"_padded, "$", R"({"answer":42})") &&
+      run_success_test("[1,2]"_padded, "$", "[1,2]") &&
+      run_success_test("42"_padded, "$", "42") &&
+      run_success_test("true"_padded, "$", "true") &&
+      run_success_test("null"_padded, "$", "null") &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&
