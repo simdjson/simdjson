@@ -23,11 +23,11 @@ simdjson_inline simdjson_result<dom::object>::simdjson_result(dom::object value)
 simdjson_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -47,7 +47,7 @@ inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::
   }
   return first.at_path_with_wildcard(json_path);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
