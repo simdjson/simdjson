@@ -1024,6 +1024,13 @@ simdjson_inline const uint8_t *value_iterator::peek_start() const noexcept {
   return _json_iter->peek(start_position());
 }
 simdjson_inline uint32_t value_iterator::peek_start_length() const noexcept {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json()) {
+    const uint32_t length = _json_iter->peek_length(start_position());
+    const size_t remaining_input_length = _json_iter->remaining_input_length(peek_start());
+    return remaining_input_length < length ? uint32_t(remaining_input_length) : length;
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   return _json_iter->peek_length(start_position());
 }
 simdjson_inline uint32_t value_iterator::peek_root_length() const noexcept {

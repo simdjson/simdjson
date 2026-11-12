@@ -129,12 +129,7 @@ simdjson_warn_unused simdjson_inline error_code parser::end_incomplete_json(padd
   if (simdjson_likely(can_end_incomplete_json(buf[len]))) { return SUCCESS; }
   size_t end = len + 1;
   while (end < len + SIMDJSON_PADDING && !can_end_incomplete_json(buf[end])) { end++; }
-  if (end == len + SIMDJSON_PADDING) {
-    end = len;
-    while (end > 0 && !can_end_incomplete_json(buf[end - 1])) { end--; }
-    if (end == 0) { return INSUFFICIENT_PADDING; }
-    end--;
-  }
+  if (end == len + SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
   indexes[n] = uint32_t(end);
   indexes[n + 1] = uint32_t(end);
   return SUCCESS;

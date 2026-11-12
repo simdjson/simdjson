@@ -532,6 +532,36 @@ namespace error_tests {
     }
     TEST_SUCCEED();
   }
+
+  bool incomplete_json_padding_of_sentinels() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *text : { R"({"a":12)", R"({"a":"hi")", R"({"a":12})" }) {
+      std::string buf(text);
+      const size_t len = buf.size();
+      buf.append(SIMDJSON_PADDING, '}');
+      padded_string_view json(buf.data(), len, buf.size());
+      ondemand::document doc;
+      ASSERT_ERROR( parser.iterate_allow_incomplete_json(json).get(doc), INSUFFICIENT_PADDING );
+      buf[buf.size() - 1] = ' ';
+      ondemand::value a;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+      ASSERT_SUCCESS( doc["a"].get(a) );
+      ASSERT_EQUAL( a.raw_json_token(), std::string_view(text).substr(5, text[5] == '"' ? 4 : 2) );
+    }
+    {
+      std::string buf(" {");
+      buf.append(SIMDJSON_PADDING, '}');
+      buf[buf.size() - 1] = ' ';
+      padded_string_view json(buf.data(), 2, buf.size());
+      ondemand::document doc;
+      std::string_view token;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+      ASSERT_SUCCESS( doc.raw_json_token().get(token) );
+      ASSERT_EQUAL( token, "{" );
+    }
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS
@@ -827,6 +857,7 @@ namespace error_tests {
            incomplete_json_ending_with_key() &&
            incomplete_json_object_cut_before_first_key() &&
            incomplete_json_cut_containers_at_sentinel() &&
+           incomplete_json_padding_of_sentinels() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&
