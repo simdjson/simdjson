@@ -69,7 +69,7 @@ public:
      * Returns true if the key in this key/value pair is equal
      * to the provided string_view.
      */
-    inline bool key_equals(std::string_view o) const noexcept;
+    simdjson_inline bool key_equals(std::string_view o) const noexcept;
     /**
      * Returns true if the key in this key/value pair is equal
      * to the provided string_view in a case-insensitive manner.
@@ -129,7 +129,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<element> operator[](std::string_view key) const noexcept;
 
   /**
    * Get the value associated with the given key.
@@ -146,7 +146,7 @@ public:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    *         - INCORRECT_TYPE if this is not an object
    */
-  inline simdjson_result<element> operator[](const char *key) const noexcept;
+  simdjson_inline simdjson_result<element> operator[](const char *key) const noexcept;
   simdjson_result<element> operator[](int) const noexcept = delete;
 
   /**
@@ -213,7 +213,7 @@ public:
    * @return The value associated with this field, or:
    *         - NO_SUCH_FIELD if the field does not exist in the object
    */
-  inline simdjson_result<element> at_key(std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<element> at_key(std::string_view key) const noexcept;
 
   /**
    * Gets the values associated with keys of an object
@@ -277,13 +277,13 @@ public:
   simdjson_inline simdjson_result(dom::object value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
-  inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
+  simdjson_inline simdjson_result<dom::element> operator[](std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<dom::element> operator[](const char *key) const noexcept;
   simdjson_result<dom::element> operator[](int) const noexcept = delete;
   inline simdjson_result<dom::element> at_pointer(std::string_view json_pointer) const noexcept;
   inline simdjson_result<std::vector<dom::element>> at_path_with_wildcard(std::string_view json_path_new) const noexcept;
   inline simdjson_result<dom::element> at_path(std::string_view json_path) const noexcept;
-  inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
+  simdjson_inline simdjson_result<dom::element> at_key(std::string_view key) const noexcept;
   inline std::vector<dom::element>& get_values(std::vector<dom::element>& out) const noexcept;
   inline simdjson_result<dom::element> at_key_case_insensitive(std::string_view key) const noexcept;
 

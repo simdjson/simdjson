@@ -91,7 +91,8 @@ inline array::iterator array::begin() const noexcept {
 }
 inline array::iterator array::end() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  return internal::tape_ref(tape.doc, tape.after_element() - 1);
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.tape_ref_type() == internal::tape_type::START_ARRAY);
+  return internal::tape_ref(tape.doc, tape.matching_brace_index() - 1);
 }
 inline size_t array::size() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914

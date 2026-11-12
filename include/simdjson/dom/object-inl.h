@@ -23,11 +23,11 @@ simdjson_inline simdjson_result<dom::object>::simdjson_result(dom::object value)
 simdjson_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -47,7 +47,7 @@ inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::
   }
   return first.at_path_with_wildcard(json_path);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
@@ -90,17 +90,18 @@ inline object::iterator object::begin() const noexcept {
 }
 inline object::iterator object::end() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  return internal::tape_ref(tape.doc, tape.after_element() - 1);
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.tape_ref_type() == internal::tape_type::START_OBJECT);
+  return internal::tape_ref(tape.doc, tape.matching_brace_index() - 1);
 }
 inline size_t object::size() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return tape.scope_count();
 }
 
-inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> object::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](const char *key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
@@ -179,7 +180,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   return element(*this).at_path_with_wildcard(json_path);
 }
 
-inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (field.key_equals(key)) {
@@ -278,7 +279,7 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
-inline bool object::iterator::key_equals(std::string_view o) const noexcept {
+simdjson_inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
   // without access to the string buffer.
   const uint32_t len = key_length();
