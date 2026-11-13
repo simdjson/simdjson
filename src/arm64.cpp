@@ -72,10 +72,45 @@ namespace {
 
 using namespace simd;
 
+#ifdef SIMDJSON_ARM64_SVE2_MATCH
+// SVE2 MATCH tests each byte of the input against every byte of a 16-byte set
+// in one instruction. Only the low 16 lanes are active (SV_VL16), so this is
+// correct for any SVE vector length; the NEON-SVE bridge makes the register
+// moves free. The set is padded with duplicates and with 0xff, which cannot
+// occur in valid UTF-8 (a zero would match the zero padding of the input).
+simdjson_inline svbool_t match_operators_sve2(uint8x16_t input) {
+  const uint8x16_t operators = {
+    0xff, ',', ':', '[', ']', '{', '}', 0xff,
+    ',', ':', '[', ']', '{', '}', ',', ':'
+  };
+  const svbool_t pg = svptrue_pat_b8(SV_VL16);
+  const svuint8_t data = svset_neonq_u8(svundef_u8(), input);
+  const svuint8_t table = svset_neonq_u8(svundef_u8(), operators);
+  return svmatch_u8(pg, data, table);
+}
+
+// Turn four 16-lane predicates into 0x00/weight bytes with a single predicated
+// select each, then fold them with the same pairwise-add tree the NEON path
+// uses. Only the low 128 bits of each SVE register are read, so this is
+// correct for any SVE vector length.
+simdjson_inline uint8x16_t operator_predicates_to_bytes(
+    svbool_t p0, svbool_t p1, svbool_t p2, svbool_t p3, uint8x16_t bit_mask) {
+  const svuint8_t weights = svset_neonq_u8(svundef_u8(), bit_mask);
+  const svuint8_t zero = svdup_n_u8(0);
+  const uint8x16_t b0 = svget_neonq_u8(svsel_u8(p0, weights, zero));
+  const uint8x16_t b1 = svget_neonq_u8(svsel_u8(p1, weights, zero));
+  const uint8x16_t b2 = svget_neonq_u8(svsel_u8(p2, weights, zero));
+  const uint8x16_t b3 = svget_neonq_u8(svsel_u8(p3, weights, zero));
+  return vpaddq_u8(vpaddq_u8(b0, b1), vpaddq_u8(b2, b3));
+}
+#endif // SIMDJSON_ARM64_SVE2_MATCH
+
 simdjson_inline json_character_block json_character_block::classify(const simd::simd8x64<uint8_t>& in) {
+#ifndef SIMDJSON_ARM64_SVE2_MATCH
   const uint8x16_t op_table = simd8<uint8_t>(
     0xff, 0, ',', ':', 0, '[', ']', '{', '}', 0, 0, 0, 0, 0, 0, 0
   );
+#endif
   const uint8x16_t ws_table = simd8<uint8_t>(
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0, 0
   );
@@ -85,10 +120,17 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
   const uint8x16_t d0_2 = in.chunks[2];
   const uint8x16_t d0_3 = in.chunks[3];
 
+#ifdef SIMDJSON_ARM64_SVE2_MATCH
+  const svbool_t match_op_0 = match_operators_sve2(d0_0);
+  const svbool_t match_op_1 = match_operators_sve2(d0_1);
+  const svbool_t match_op_2 = match_operators_sve2(d0_2);
+  const svbool_t match_op_3 = match_operators_sve2(d0_3);
+#else
   const uint8x16_t match_op_0 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_0, vdupq_n_u8(3)), 4)), d0_0);
   const uint8x16_t match_op_1 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_1, vdupq_n_u8(3)), 4)), d0_1);
   const uint8x16_t match_op_2 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_2, vdupq_n_u8(3)), 4)), d0_2);
   const uint8x16_t match_op_3 = vceqq_u8(vqtbl1q_u8(op_table, vshrq_n_u8(vaddq_u8(d0_3, vdupq_n_u8(3)), 4)), d0_3);
+#endif
 
   const uint8x16_t match_ws_0 = vqtbx1q_u8(vceqq_u8(d0_0, vdupq_n_u8(' ')), ws_table, d0_0);
   const uint8x16_t match_ws_1 = vqtbx1q_u8(vceqq_u8(d0_1, vdupq_n_u8(' ')), ws_table, d0_1);
@@ -100,16 +142,20 @@ simdjson_inline json_character_block json_character_block::classify(const simd::
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
   );
 
+#ifdef SIMDJSON_ARM64_SVE2_MATCH
+  const uint8x16_t op_sum = operator_predicates_to_bytes(match_op_0, match_op_1, match_op_2, match_op_3, bit_mask);
+#else
   uint8x16_t op_sum0 = vpaddq_u8(vandq_u8(match_op_0, bit_mask), vandq_u8(match_op_1, bit_mask));
-  uint8x16_t ws_sum0 = vpaddq_u8(vandq_u8(match_ws_0, bit_mask), vandq_u8(match_ws_1, bit_mask));
   uint8x16_t op_sum1 = vpaddq_u8(vandq_u8(match_op_2, bit_mask), vandq_u8(match_op_3, bit_mask));
+  const uint8x16_t op_sum = vpaddq_u8(op_sum0, op_sum1);
+#endif
+  uint8x16_t ws_sum0 = vpaddq_u8(vandq_u8(match_ws_0, bit_mask), vandq_u8(match_ws_1, bit_mask));
   uint8x16_t ws_sum1 = vpaddq_u8(vandq_u8(match_ws_2, bit_mask), vandq_u8(match_ws_3, bit_mask));
-  op_sum0 = vpaddq_u8(op_sum0, op_sum1);
-  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum1);
-  op_sum0 = vpaddq_u8(op_sum0, op_sum0);
-  ws_sum0 = vpaddq_u8(ws_sum0, ws_sum0);
-  const uint64_t op = vgetq_lane_u64(vreinterpretq_u64_u8(op_sum0), 0);
-  const uint64_t whitespace = vgetq_lane_u64(vreinterpretq_u64_u8(ws_sum0), 0);
+  const uint8x16_t ws_sum = vpaddq_u8(ws_sum0, ws_sum1);
+  // One last pairwise add folds both: operators land in lane 0, whitespace in lane 1.
+  const uint8x16_t both = vpaddq_u8(op_sum, ws_sum);
+  const uint64_t op = vgetq_lane_u64(vreinterpretq_u64_u8(both), 0);
+  const uint64_t whitespace = vgetq_lane_u64(vreinterpretq_u64_u8(both), 1);
 
   return { whitespace, op };
 }
