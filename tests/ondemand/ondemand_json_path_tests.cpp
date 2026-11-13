@@ -573,6 +573,9 @@ namespace json_path_tests {
                 json_path_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
+                run_success_test(R"({"answer":42})"_padded, "$", R"({"answer":42})") &&
+                run_success_test("[1,2]"_padded, "$", "[1,2]") &&
+                run_failure_test("42"_padded, "$", SCALAR_DOCUMENT_AS_VALUE) &&
                 run_success_test(TEST_RFC_JSON,".foo",R"(["bar", "baz"])") &&
                 run_success_test(TEST_RFC_JSON,".foo[0]",R"("bar")") &&
                 run_success_test(TEST_RFC_JSON,".",R"(0)") &&
