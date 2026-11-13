@@ -159,11 +159,14 @@ only if that document is longer than `block_size`; skip it and continue. Iterate
 while `i * block_size < view.size()` rather than stopping at the first empty slice.
 
 Choosing the block size. Smaller blocks balance the load better: with records of
-a few kilobytes, 64 KiB blocks work well. But every block that starts inside a
-document longer than `block_size` searches forward to that document's end, so
-the same bytes are scanned again and again. Pick the smallest block size such that
-only a small fraction of the input (say 1%) lies in documents longer than the
-block. The 1 MiB in the example is a safe choice when you do not know your data.
+a few kilobytes, 64 KiB blocks work well. A document longer than `block_size` is
+never split: the slice where it starts takes all of it, and the blocks it covers
+yield empty slices, which cost only a search of their own block. Cutting the
+input therefore scans each byte about twice whatever the document sizes, but a
+long document still sets the size of the slice that holds it, and so the
+granularity of the load balancing. Pick a block size larger than most
+documents. The 1 MiB in the example is a safe choice when you do not know your
+data.
 
 A thread touches the shared counter only once per block. Alternatively, you can
 give each thread a fixed, contiguous range of blocks (thread `t` of `n` takes
@@ -173,9 +176,9 @@ created one after another, and with a fixed range the call lasts until the last
 thread to start has finished its whole share. With the counter, the threads that
 start early simply take more blocks. On a two-socket server with 96 threads,
 the last thread started about 4 ms into a 5 ms parse, and the counter was up to
-1.19x faster. Contiguous ranges help when many blocks fall inside long
-documents, since the repeated scans of one document then stay on one thread;
-otherwise the two were within a few percent of each other in our tests.
+1.19x faster. Otherwise the two were within a few percent of each other in our
+tests, except on inputs whose documents are longer than the block, where
+contiguous ranges were sometimes faster; measure on your data.
 
 Choosing the thread count. `std::thread::hardware_concurrency()` counts every
 hardware thread, including both threads of a core with simultaneous

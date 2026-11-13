@@ -183,6 +183,50 @@ bool testSliceAt() {
     ASSERT_EQUAL(sum, 6);
   }
 
+  // A delimiter on the last byte of a block starts the next document, so the
+  // slice for that block is not empty.
+  {
+    simdjson::padded_string lines = "ab\ncd\nef\n"_padded;
+    auto v = simdjson::padded_string_view(lines);
+    auto piece = simdjson::slice_at(v, '\n', 3, 1); // block [3,6), '\n' at 5
+    ASSERT_EQUAL(std::string(piece.data(), piece.size()), std::string("ef\n"));
+  }
+
+  // Against the definition: begin and end each snap forward to just past the
+  // next delimiter (or to the end of the input), and the slice is empty when
+  // they meet. Covers long documents spanning many blocks.
+  {
+    uint64_t state = 1234567;
+    auto next = [&]() {
+      state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+      return uint32_t(state >> 33);
+    };
+    for (int trial = 0; trial < 2000; trial++) {
+      const size_t length = 1 + next() % 200;
+      const uint32_t density = 1 + next() % 40; // one delimiter in `density`
+      std::string text(length, 'x');
+      for (char &c : text) { if (next() % density == 0) { c = '\n'; } }
+      simdjson::padded_string input(text);
+      auto v = simdjson::padded_string_view(input);
+      auto snap = [&](size_t want) {
+        size_t pos = text.find('\n', want);
+        return pos == std::string::npos ? length : pos + 1;
+      };
+      const size_t block = 1 + next() % 32;
+      for (size_t i = 0; i * block < length; i++) {
+        size_t begin = (i == 0) ? 0 : snap(i * block);
+        size_t end = (i * block + block >= length) ? length : snap(i * block + block);
+        auto piece = simdjson::slice_at(v, '\n', block, i);
+        if (begin >= end) {
+          ASSERT_TRUE(piece.empty());
+        } else {
+          ASSERT_EQUAL(size_t(piece.data() - v.data()), begin);
+          ASSERT_EQUAL(piece.size(), end - begin);
+        }
+      }
+    }
+  }
+
   // Degenerate inputs.
   ASSERT_TRUE(simdjson::slice_at(view, '\n', 0, 0).empty());
   ASSERT_TRUE(simdjson::slice_at(view, '\n', 8, 1000).empty());
