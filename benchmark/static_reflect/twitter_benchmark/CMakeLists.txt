@@ -35,5 +35,10 @@ if(TARGET glaze)
     target_compile_definitions(benchmark_parsing_twitter PRIVATE SIMDJSON_COMPETITION_GLAZE)
 endif()
 
+if(TARGET Jsonifier)
+    target_link_libraries(benchmark_serialization_twitter PRIVATE Jsonifier)
+    target_link_libraries(benchmark_parsing_twitter PRIVATE Jsonifier)
+endif()
+
 target_compile_definitions(benchmark_serialization_twitter PRIVATE JSON_FILE="${EXAMPLE_JSON}")
 target_compile_definitions(benchmark_parsing_twitter PRIVATE JSON_FILE="${EXAMPLE_JSON}")
