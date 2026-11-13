@@ -183,18 +183,30 @@ bool testSliceAt() {
     ASSERT_EQUAL(sum, 6);
   }
 
-  // A delimiter on the last byte of a block starts the next document, so the
-  // slice for that block is not empty.
+  // Degenerate inputs.
+  ASSERT_TRUE(simdjson::slice_at(view, '\n', 0, 0).empty());
+  ASSERT_TRUE(simdjson::slice_at(view, '\n', 8, 1000).empty());
+  TEST_SUCCEED();
+}
+
+// A delimiter on the last byte of a block starts the next document, so the
+// slice for that block is not empty.
+bool testSliceAtBlockEnd() {
+  TEST_START();
   {
     simdjson::padded_string lines = "ab\ncd\nef\n"_padded;
     auto v = simdjson::padded_string_view(lines);
     auto piece = simdjson::slice_at(v, '\n', 3, 1); // block [3,6), '\n' at 5
     ASSERT_EQUAL(std::string(piece.data(), piece.size()), std::string("ef\n"));
   }
+  TEST_SUCCEED();
+}
 
-  // Against the definition: begin and end each snap forward to just past the
-  // next delimiter (or to the end of the input), and the slice is empty when
-  // they meet. Covers long documents spanning many blocks.
+// Against the definition: begin and end each snap forward to just past the
+// next delimiter (or to the end of the input), and the slice is empty when
+// they meet. Covers long documents spanning many blocks.
+bool testSliceAtDefinition() {
+  TEST_START();
   {
     uint64_t state = 1234567;
     auto next = [&]() {
@@ -226,10 +238,6 @@ bool testSliceAt() {
       }
     }
   }
-
-  // Degenerate inputs.
-  ASSERT_TRUE(simdjson::slice_at(view, '\n', 0, 0).empty());
-  ASSERT_TRUE(simdjson::slice_at(view, '\n', 8, 1000).empty());
   TEST_SUCCEED();
 }
 
@@ -241,6 +249,12 @@ int main() {
     return EXIT_FAILURE;
   }
   if (!testSliceAt()) {
+    return EXIT_FAILURE;
+  }
+  if (!testSliceAtBlockEnd()) {
+    return EXIT_FAILURE;
+  }
+  if (!testSliceAtDefinition()) {
     return EXIT_FAILURE;
   }
   std::cout << "All tests passed!" << std::endl;

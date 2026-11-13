@@ -168,10 +168,11 @@ granularity of the load balancing. Pick a block size larger than most
 documents. The 1 MiB in the example is a safe choice when you do not know your
 data.
 
-A thread touches the shared counter only once per block. Alternatively, you can
-give each thread a fixed, contiguous range of blocks (thread `t` of `n` takes
-blocks `t * count / n` up to `(t + 1) * count / n`). The shared counter is the
-more robust default: threads do not all start at the same time, since they are
+Assigning blocks to threads. The example claims blocks from one shared counter;
+a thread touches it only once per block. Alternatively, you can give each thread
+a fixed, contiguous range of blocks (thread `t` of `n` takes blocks
+`t * count / n` up to `(t + 1) * count / n`). The shared counter is the more
+robust default: threads do not all start at the same time, since they are
 created one after another, and with a fixed range the call lasts until the last
 thread to start has finished its whole share. With the counter, the threads that
 start early simply take more blocks. On a two-socket server with 96 threads,
@@ -180,13 +181,56 @@ the last thread started about 4 ms into a 5 ms parse, and the counter was up to
 tests, except on inputs whose documents are longer than the block, where
 contiguous ranges were sometimes faster; measure on your data.
 
+You can also combine the two. Give each thread its own contiguous range with its
+own counter, let it claim the blocks of that range in order, and when the range
+is exhausted, let it claim the blocks left in the other ranges:
+
+```C++
+struct alignas(64) range { std::atomic<size_t> next; size_t end; };
+const size_t count = (view.size() + block_size - 1) / block_size;
+const size_t n = std::thread::hardware_concurrency();
+std::vector<range> ranges(n);
+for (size_t r = 0; r < n; r++) {
+  ranges[r].next = count * r / n;
+  ranges[r].end = count * (r + 1) / n;
+}
+// In thread t:
+for (size_t k = 0; k < n; k++) {
+  range &r = ranges[(t + k) % n];
+  for (size_t i; (i = r.next.fetch_add(1)) < r.end;) {
+    auto piece = simdjson::slice_at(view, '\n', block_size, i);
+    if (piece.empty()) { continue; }
+    // ... parse piece as above
+  }
+}
+```
+
+Each thread mostly reads one region of the input, and the counters are rarely
+contended, as with fixed ranges; a thread that starts late or gets slow blocks
+has its remaining blocks taken by the others, as with the shared counter. Use
+`alignas(64)` so that two counters do not share a cache line.
+
 Choosing the thread count. `std::thread::hardware_concurrency()` counts every
 hardware thread, including both threads of a core with simultaneous
 multithreading (SMT). Throughput often peaks at or below the number of physical
 cores, and on machines with several sockets, running on one socket can be faster
-than running on all of them. Creating a thread is not free: if you parse many
-inputs, or use many threads on a short input, keep a pool of threads alive
-rather than creating them for each input. Measure on your own hardware.
+than running on all of them. Measure on your own hardware.
+
+Reusing threads. Creating a thread is not free: in our tests, the threads of one
+call started about 40 microseconds apart, so with many threads on a short input
+the last threads start after the others have finished, and adding threads makes
+the call slower. If you parse many inputs, or the same input many times, keep a
+pool of threads alive and hand each input to it instead of creating threads per
+call. A pool also helps memory locality on machines with several sockets: if
+the same thread takes the same range of the input at every call, as in the
+combined scheme above (number the threads of the pool once and use that number
+as `t`), the operating system can move the pages of that range near the core
+that reads them (on Linux, through automatic NUMA balancing). With fresh
+threads at every call, or with blocks taken from one shared counter, each
+region is read by a different core at each call and the pages stay where they
+are. In one test on a two-socket server, with 64 pooled threads parsing the
+same 7.6 GB input repeatedly, the combined scheme went from 43 GB/s on the first
+call to 57 GB/s on later calls, while one shared counter stayed near 40 GB/s.
 
 The delimiter must not occur inside a document: a line feed for NDJSON, or a
 record separator (`0x1E`) for RFC 7464.
