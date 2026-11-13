@@ -327,6 +327,241 @@ namespace error_tests {
     }
     TEST_SUCCEED();
   }
+  bool incomplete_json_cut_containers_at_sentinel() {
+    TEST_START();
+    ondemand::parser parser;
+    const char sentinels[] = { '}', ']', ',', ':', '"', '{', '[', '1', '\0' };
+
+    for (char sentinel : sentinels) {
+      auto make_cut = [sentinel](const char *text) {
+        padded_string json(std::string{text});
+        json.data()[json.size()] = sentinel;
+        return json;
+      };
+
+      // Root object cut before its first key: {
+      {
+        auto json = make_cut(R"({)");
+        ondemand::document doc;
+        ondemand::object obj;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc.get_object().get(obj), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+
+      // Root array cut before its first element: [
+      {
+        auto json = make_cut(R"([)");
+        ondemand::document doc;
+        ondemand::array arr;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc.get_array().get(arr), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+
+      // Nested array cut before its first element: {"a":[
+      {
+        auto json = make_cut(R"({"a":[)");
+        ondemand::document doc;
+        ondemand::array arr;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc["a"].get_array().get(arr), INCOMPLETE_ARRAY_OR_OBJECT );
+        ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+
+      // Nested object cut before its first key: {"a":{
+      {
+        auto json = make_cut(R"({"a":{)");
+        ondemand::document doc;
+        ondemand::object obj;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc["a"].get_object().get(obj), INCOMPLETE_ARRAY_OR_OBJECT );
+        ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+
+      // Nested object cut inside its first key then skipped by parent lookup: {"a":{"c
+      {
+        auto json = make_cut(R"({"a":{"c)");
+        ondemand::document doc;
+        ondemand::object a;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_SUCCESS( doc["a"].get_object().get(a) );
+        ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+
+      // Object field cut immediately after colon: {"a":
+      {
+        auto json = make_cut(R"({"a":)");
+        ondemand::document doc;
+        int64_t val = 0;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc["a"].get_int64().get(val), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+      {
+        auto json = make_cut(R"({"a":)");
+        ondemand::document doc;
+        ondemand::json_type t;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_ERROR( doc["a"].type().get(t), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+#if SIMDJSON_SUPPORTS_CONCEPTS
+      {
+        auto json = make_cut(R"({"a":)");
+        ondemand::document doc;
+        ondemand::object obj;
+        bool called = false;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_SUCCESS( doc.get_object().get(obj) );
+        auto res = obj.for_each<"a">([&](ondemand::value) { called = true; });
+        ASSERT_ERROR( res.error, INCOMPLETE_ARRAY_OR_OBJECT );
+        ASSERT_FALSE( called );
+      }
+      {
+        auto json = make_cut(R"({"a":{"key_exceeding_window_for_length_path_0123456789)");
+        ondemand::document doc;
+        ondemand::object a;
+        bool called = false;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_SUCCESS( doc["a"].get_object().get(a) );
+        auto res = a.for_each<"key_exceeding_window_for_length_path_0123456789">(
+            [&](ondemand::value) { called = true; });
+        ASSERT_ERROR( res.error, INCOMPLETE_ARRAY_OR_OBJECT );
+        ASSERT_FALSE( called );
+      }
+#endif
+
+      // Object cut after a value or after a trailing comma: {"a":1  and {"a":1,
+      for (const char *cut : { R"({"a":1 )", R"({"a":1,)" }) {
+        {
+          auto json = make_cut(cut);
+          ondemand::document doc;
+          int64_t val = 0;
+          ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+          ASSERT_SUCCESS( doc["a"].get_int64().get(val) );
+          ASSERT_EQUAL( val, 1 );
+          ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+        }
+        {
+          auto json = make_cut(cut);
+          ondemand::document doc;
+          ondemand::object obj;
+          size_t count = 0;
+          ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+          ASSERT_SUCCESS( doc.get_object().get(obj) );
+          ASSERT_ERROR( obj.count_fields().get(count), INCOMPLETE_ARRAY_OR_OBJECT );
+        }
+        {
+          auto json = make_cut(cut);
+          ondemand::document doc;
+          ondemand::object obj;
+          int seen = 0;
+          simdjson::error_code err = SUCCESS;
+          ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+          ASSERT_SUCCESS( doc.get_object().get(obj) );
+          for (auto field : obj) {
+            if (field.error()) {
+              err = field.error();
+              break;
+            }
+            int64_t val = 0;
+            ASSERT_SUCCESS( field.value().get_int64().get(val) );
+            ASSERT_EQUAL( val, 1 );
+            seen++;
+          }
+          ASSERT_EQUAL( seen, 1 );
+          ASSERT_ERROR( err, INCOMPLETE_ARRAY_OR_OBJECT );
+        }
+      }
+
+      // Array cut after an element or after a trailing comma: [1  and [1,
+      for (const char *cut : { R"([1 )", R"([1,)" }) {
+        {
+          auto json = make_cut(cut);
+          ondemand::document doc;
+          ondemand::array arr;
+          int seen = 0;
+          simdjson::error_code err = SUCCESS;
+          ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+          ASSERT_SUCCESS( doc.get_array().get(arr) );
+          for (auto elem : arr) {
+            if (elem.error()) {
+              err = elem.error();
+              break;
+            }
+            int64_t val = 0;
+            ASSERT_SUCCESS( elem.get_int64().get(val) );
+            ASSERT_EQUAL( val, 1 );
+            seen++;
+          }
+          ASSERT_EQUAL( seen, 1 );
+          ASSERT_ERROR( err, INCOMPLETE_ARRAY_OR_OBJECT );
+        }
+        {
+          auto json = make_cut(cut);
+          ondemand::document doc;
+          ondemand::array arr;
+          size_t count = 0;
+          ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+          ASSERT_SUCCESS( doc.get_array().get(arr) );
+          ASSERT_ERROR( arr.count_elements().get(count), INCOMPLETE_ARRAY_OR_OBJECT );
+        }
+      }
+
+      // Skipping an incomplete nested container before checking a later field
+      {
+        auto json = make_cut(R"({"a":{"x":1 )");
+        ondemand::document doc;
+        ondemand::object a;
+        int64_t x = 0;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_SUCCESS( doc["a"].get_object().get(a) );
+        ASSERT_SUCCESS( a["x"].get_int64().get(x) );
+        ASSERT_EQUAL( x, 1 );
+        ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+      {
+        auto json = make_cut(R"({"a":[1 )");
+        ondemand::document doc;
+        ondemand::array a;
+        int64_t x = 0;
+        ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+        ASSERT_SUCCESS( doc["a"].get_array().get(a) );
+        auto it = a.begin();
+        ASSERT_SUCCESS( (*it).get_int64().get(x) );
+        ASSERT_EQUAL( x, 1 );
+        ASSERT_ERROR( doc["b"].error(), INCOMPLETE_ARRAY_OR_OBJECT );
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+  bool incomplete_json_padding_of_sentinels() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *text : { R"({"a":12)", R"({"a":"hi")", R"({"a":12})" }) {
+      std::string buf(text);
+      const size_t len = buf.size();
+      buf.append(SIMDJSON_PADDING, '}');
+      padded_string_view json(buf.data(), len, buf.size());
+      ondemand::document doc;
+      ASSERT_ERROR( parser.iterate_allow_incomplete_json(json).get(doc), INSUFFICIENT_PADDING );
+      buf[buf.size() - 1] = ' ';
+      ondemand::value a;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+      ASSERT_SUCCESS( doc["a"].get(a) );
+      ASSERT_EQUAL( a.raw_json_token(), std::string_view(text).substr(5, text[5] == '"' ? 4 : 2) );
+    }
+    {
+      std::string buf(" {");
+      buf.append(SIMDJSON_PADDING, '}');
+      buf[buf.size() - 1] = ' ';
+      padded_string_view json(buf.data(), 2, buf.size());
+      ondemand::document doc;
+      std::string_view token;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json).get(doc) );
+      ASSERT_SUCCESS( doc.raw_json_token().get(token) );
+      ASSERT_EQUAL( token, "{" );
+    }
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS
@@ -621,6 +856,8 @@ namespace error_tests {
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
            incomplete_json_ending_with_key() &&
            incomplete_json_object_cut_before_first_key() &&
+           incomplete_json_cut_containers_at_sentinel() &&
+           incomplete_json_padding_of_sentinels() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&

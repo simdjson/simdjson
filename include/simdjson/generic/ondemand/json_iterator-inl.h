@@ -260,7 +260,14 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_child(depth_
         return_current_and_advance(); // eat up the ':'
         break; // important!!!
       }
-      if (_depth > 1 && *peek(-2) == '{') { return out_of_place_error(); }
+      if (_depth > 1 && *peek(-2) == '{') {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+        if (allow_incomplete_json() && at_end()) {
+          return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object key cut before its colon");
+        }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+        return out_of_place_error();
+      }
       simdjson_fallthrough;
     // Anything else must be a scalar value
     default:
@@ -305,8 +312,18 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_partial(dept
         return_current_and_advance();
         return skip_rest(parent_depth);
       }
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (allow_incomplete_json() && at_end()) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Object key cut before its colon");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       simdjson_fallthrough;
     default:
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+      if (simdjson_unlikely(allow_incomplete_json() && position() > end_position())) {
+        return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "Value cut at the end of an incomplete document");
+      }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
       return out_of_place_error();
   }
 }
@@ -354,6 +371,12 @@ simdjson_inline void json_iterator::assert_at_root() const noexcept {
 }
 
 simdjson_inline void json_iterator::assert_more_tokens(uint32_t required_tokens) const noexcept {
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (allow_incomplete_json()) {
+    SIMDJSON_ASSUME( token._position + required_tokens - 1 <= end_position() );
+    return;
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   assert_valid_position(token._position + required_tokens - 1);
 }
 

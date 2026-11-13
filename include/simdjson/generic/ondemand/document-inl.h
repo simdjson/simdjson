@@ -425,6 +425,14 @@ simdjson_inline simdjson_result<number> document::get_number() noexcept {
 
 simdjson_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
   auto _iter = get_root_value_iterator();
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (iter.allow_incomplete_json()) {
+    const uint32_t length = _iter.peek_root_length();
+    const size_t remaining_input_length = iter.remaining_input_length(_iter.peek_start());
+    return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()),
+        remaining_input_length < length ? uint32_t(remaining_input_length) : length);
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_root_length());
 }
 

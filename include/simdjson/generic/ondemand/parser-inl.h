@@ -99,7 +99,40 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_a
     if (err != UNCLOSED_STRING)
       return err;
   }
-  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this, true });
+  SIMDJSON_TRY( end_incomplete_json(json) );
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(json.data());
+  const uint8_t first = buf[implementation->structural_indexes[0]];
+  const bool lone_container = implementation->n_structural_indexes == 1 && (first == '{' || first == '[');
+  return document::start({ buf, this, !lone_container });
+}
+
+simdjson_inline bool parser::can_end_incomplete_json(uint8_t c) noexcept {
+  return c != '"' && c != ',' && c != ']' && c != '}';
+}
+
+simdjson_warn_unused simdjson_inline error_code parser::end_incomplete_json(padded_string_view json) noexcept {
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(json.data());
+  const size_t len = json.length();
+  uint32_t *indexes = implementation->structural_indexes.get();
+  uint32_t n = implementation->n_structural_indexes;
+  while (n > 1) {
+    const uint8_t last = buf[indexes[n - 1]];
+    if (last != ',' && last != ':' && last != '[' && last != '{') { break; }
+    n--;
+  }
+  implementation->n_structural_indexes = n;
+  indexes[n] = uint32_t(len);
+  indexes[n + 1] = uint32_t(len);
+  indexes[n + 2] = 0;
+  const uint8_t first = buf[indexes[0]];
+  if (n == 1 && first != '{' && first != '[') { return SUCCESS; }
+  if (simdjson_likely(can_end_incomplete_json(buf[len]))) { return SUCCESS; }
+  size_t end = len + 1;
+  while (end < len + SIMDJSON_PADDING && !can_end_incomplete_json(buf[end])) { end++; }
+  if (end == len + SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
+  indexes[n] = uint32_t(end);
+  indexes[n + 1] = uint32_t(end);
+  return SUCCESS;
 }
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
