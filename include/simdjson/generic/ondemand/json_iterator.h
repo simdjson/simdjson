@@ -285,6 +285,12 @@ public:
    * overflow.
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
+  /**
+   * Unescape the raw_json_string into receiver. Unlike unescape(), this doesn't leave the string in
+   * the parser's string buffer.
+   */
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code unescape(raw_json_string in, string_type& receiver, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;

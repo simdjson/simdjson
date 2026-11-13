@@ -570,15 +570,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
 }
 template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_string(string_type& receiver, bool allow_replacement) noexcept {
-  std::string_view content;
-  // Save the string buffer location so that we can restore it after get_string
-  auto saved_string_buf_loc = _json_iter->string_buf_loc();
-  auto err = get_string(allow_replacement).get(content);
-  if (err) { return err; }
-  internal::assign_utf8(receiver, content);
-  // Restore the string buffer location, effectively discarding any temporary string storage
-  _json_iter->string_buf_loc() = saved_string_buf_loc;
-  return SUCCESS;
+  raw_json_string raw;
+  SIMDJSON_TRY( get_raw_json_string().get(raw) );
+  return _json_iter->unescape(raw, receiver, allow_replacement);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_wobbly_string() noexcept {
   return get_raw_json_string().unescape_wobbly(json_iter());
@@ -738,15 +732,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_ite
 }
 template <typename string_type>
 simdjson_warn_unused simdjson_inline error_code value_iterator::get_root_string(string_type& receiver, bool check_trailing, bool allow_replacement) noexcept {
-  std::string_view content;
-  // Save the string buffer location so that we can restore it after get_string
-  auto saved_string_buf_loc = _json_iter->string_buf_loc();
-  auto err = get_root_string(check_trailing, allow_replacement).get(content);
-  if (err) { return err; }
-  internal::assign_utf8(receiver, content);
-  // Restore the string buffer location, effectively discarding any temporary string storage
-  _json_iter->string_buf_loc() = saved_string_buf_loc;
-  return SUCCESS;
+  raw_json_string raw;
+  SIMDJSON_TRY( get_root_raw_json_string(check_trailing).get(raw) );
+  return _json_iter->unescape(raw, receiver, allow_replacement);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<std::string_view> value_iterator::get_root_wobbly_string(bool check_trailing) noexcept {
   return get_root_raw_json_string(check_trailing).unescape_wobbly(json_iter());

@@ -90,6 +90,10 @@ error_code tag_invoke(deserialize_tag, auto &val, char &out) noexcept {
 // any string-like type (can be constructed from std::string_view)
 template <concepts::constructible_from_string_view T, typename ValT>
 error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(std::is_nothrow_constructible_v<T, std::string_view>) {
+  if constexpr (std::is_same_v<T, std::string>) {
+    // get_string(std::string&) has a faster path for short strings.
+    return val.get_string(out);
+  }
   std::string_view str;
   SIMDJSON_TRY(val.get_string().get(str));
   if constexpr (requires { out.assign(str.data(), str.size()); }) {
