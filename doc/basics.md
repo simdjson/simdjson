@@ -2239,6 +2239,13 @@ int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 ```
 
+The path `$` on its own selects the value it is applied to: `doc.at_path("$")` returns the root
+of the document (a scalar document gives `SCALAR_DOCUMENT_AS_VALUE`, as with `at_path("")`), and
+`value.at_path("$")` returns the value itself. As with `at_pointer("")`, an On-Demand `object` or
+`array` cannot return itself as a value, so `at_path("$")` on them returns `INVALID_JSON_POINTER`.
+The DOM accepts `$` everywhere, and `at_path_with_wildcard("$")` (DOM) and
+`for_each_at_path_with_wildcard("$")` (On-Demand) yield the root as their single match.
+
 ## Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)
 
 The `for_each_at_path_with_wildcard` function in simdjson extends the JSONPath querying capabilities by supporting wildcard expressions (`*`) in JSON paths. It calls a user-provided callback for each matching element, avoiding the need to materialize all results into a vector. For example, you can use `$.address.*` to fetch all fields within the `address` object or `$.phoneNumbers[*].numbers[*]` to retrieve all phone numbers across multiple objects in an array.

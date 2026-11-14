@@ -555,8 +555,31 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 
+    bool root_selector_on_value() {
+        TEST_START();
+        auto json = R"({"a":{"b":[1,2]},"n":7})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+        std::string_view actual;
+        int64_t x;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.at_path("$.a").get(val));
+        ASSERT_SUCCESS(val.at_path("$").get(val));
+        ASSERT_SUCCESS(simdjson::to_json_string(val).get(actual));
+        ASSERT_EQUAL(actual, R"({"b":[1,2]})");
+        ASSERT_SUCCESS(doc.at_path("$.a").at_path("$").at_path("$.b[1]").get(x));
+        ASSERT_EQUAL(x, 2);
+        ASSERT_SUCCESS(doc.at_path("$.n").at_path("$").get(x));
+        ASSERT_EQUAL(x, 7);
+        ASSERT_SUCCESS(doc.at_path("$.n").get(val));
+        ASSERT_ERROR(val.at_path("$.x").get(val), INVALID_JSON_POINTER);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+                root_selector_on_value() &&
                 quoted_key_in_at_path() &&
                 at_path_after_fatal_error() &&
 #if SIMDJSON_EXCEPTIONS

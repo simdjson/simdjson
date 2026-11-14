@@ -488,6 +488,12 @@ simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_
   if (json_path.empty()) {
       return INVALID_JSON_POINTER;
   }
+  if (json_path == "$") {
+    value root;
+    SIMDJSON_TRY(get_value().get(root));
+    callback(root);
+    return SUCCESS;
+  }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {

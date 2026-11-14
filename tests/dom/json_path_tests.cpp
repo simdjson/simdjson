@@ -344,7 +344,17 @@ bool json_path_with_wildcard() {
   std::string_view string_value;
   std::uint64_t num_value;
   dom::object obj;
-  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$").error(), INVALID_JSON_POINTER);
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_TRUE(values[0].is_object());
+  {
+    dom::parser scalar_parser;
+    std::vector<dom::element> scalar_values;
+    ASSERT_SUCCESS(scalar_parser.parse("42"_padded).at_path_with_wildcard("$").get(scalar_values));
+    ASSERT_EQUAL(scalar_values.size(), 1);
+    ASSERT_SUCCESS(scalar_values[0].get(num_value));
+    ASSERT_EQUAL(num_value, 42);
+  }
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("1").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("2").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("a").error(), INVALID_JSON_POINTER);
