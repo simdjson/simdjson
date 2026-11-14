@@ -230,7 +230,23 @@ requires (!std::is_convertible<R, std::string_view>::value && !concepts::optiona
    * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
    * Use validate_unicode() to check the content if needed.
    */
-  simdjson_inline operator std::string() const noexcept(false);
+  simdjson_inline operator std::string() const & noexcept(false);
+
+  /**
+   * Moves the written JSON buffer out of the builder into an std::string,
+   * see move_to(). The builder is left empty and can be reused.
+   * Throws if memory allocation failed.
+   *
+   * Used for copy-initialization from an rvalue, e.g.
+   * `std::string s = std::move(builder);`, and for `return builder;` from a
+   * function returning std::string (implicit move, C++20 or as an extension).
+   * Direct-initialization, `std::string s(std::move(builder));`, may copy
+   * through operator std::string_view() instead, depending on the compiler.
+   *
+   * The result may not be valid UTF-8 if some of your content was not valid UTF-8.
+   * Use validate_unicode() to check the content if needed.
+   */
+  inline operator std::string() && noexcept(false);
 
   /**
    * Creates an std::string_view from the written JSON buffer.

@@ -1049,6 +1049,75 @@ bool car_test_simple_complete_exceptions() {
 #endif // SIMDJSONS_SUPPORT_RANGES
 
 #if SIMDJSON_EXCEPTIONS
+bool rvalue_conversion_moves_large_result() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  const std::string expected(
+      simdjson::builder::string_builder::DEFAULT_INITIAL_CAPACITY * 3 / 4, 'x');
+  sb.append_raw(expected);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  const char *data = p.data();
+  std::string out = std::move(sb);
+  ASSERT_EQUAL(out, expected);
+  ASSERT_TRUE(out.data() == data);
+  ASSERT_EQUAL(sb.size(), 0);
+  sb.append_raw("[3]");
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[3]");
+  TEST_SUCCEED();
+}
+
+bool rvalue_conversion_copies_small_result() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append_raw("[1,2]");
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  const char *data = p.data();
+  std::string out = std::move(sb);
+  ASSERT_EQUAL(out, "[1,2]");
+  ASSERT_EQUAL(sb.size(), 0);
+  sb.append_raw("[3]");
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[3]");
+  ASSERT_TRUE(p.data() == data);
+  TEST_SUCCEED();
+}
+
+bool lvalue_conversion_copies() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.append_raw("[1,2]");
+  std::string out = sb;
+  ASSERT_EQUAL(out, "[1,2]");
+  ASSERT_EQUAL(sb.size(), 5);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[1,2]");
+  TEST_SUCCEED();
+}
+
+std::string build_and_return(size_t count) {
+  simdjson::builder::string_builder sb;
+  for (size_t i = 0; i < count; i++) {
+    sb.append(uint64_t(i));
+    sb.append_comma();
+  }
+  return sb;
+}
+
+bool return_builder_as_string() {
+  TEST_START();
+  std::string expected;
+  for (size_t i = 0; i < 1000; i++) {
+    expected += std::to_string(i) + ",";
+  }
+  ASSERT_EQUAL(build_and_return(1000), expected);
+  ASSERT_EQUAL(build_and_return(0), "");
+  TEST_SUCCEED();
+}
+
 bool car_test_exception() {
   TEST_START();
   simdjson::builder::string_builder sb;
@@ -1065,6 +1134,9 @@ bool run() {
          various_unsigned_integers() && car_test_long() && car_test() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_exception() && string_convertion_except() &&
+         rvalue_conversion_moves_large_result() &&
+         rvalue_conversion_copies_small_result() && lvalue_conversion_copies() &&
+         return_builder_as_string() &&
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
          map_test() && ranges_test() && double_double_test() &&
