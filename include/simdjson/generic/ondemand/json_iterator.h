@@ -106,6 +106,12 @@ public:
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   simdjson_inline bool allow_incomplete_json() const noexcept;
   simdjson_inline size_t remaining_input_length(const uint8_t *json) const noexcept;
+  /**
+   * The last scalar of an incomplete document may be cut by the end of the input, and the number
+   * and atom parsers would read on into the bytes past it. Returns a copy of such a scalar padded
+   * with spaces, and json itself for any other scalar.
+   */
+  simdjson_inline const uint8_t *scalar_within_input(const uint8_t *json) noexcept;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
   /**

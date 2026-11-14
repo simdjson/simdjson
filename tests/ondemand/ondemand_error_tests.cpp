@@ -562,6 +562,43 @@ namespace error_tests {
     }
     TEST_SUCCEED();
   }
+
+  // The last scalar of an incomplete document may be cut by the end of the
+  // input. The bytes past the input must not become part of it.
+  bool incomplete_json_scalar_cut_by_end() {
+    TEST_START();
+    ondemand::parser parser;
+    for (char pad : { '\0', ' ', '3', 'e', 'u', '"' }) {
+      auto json_of = [&](const char *text, std::string &buf) {
+        buf = text;
+        const size_t len = buf.size();
+        buf.append(SIMDJSON_PADDING, pad);
+        buf[buf.size() - 1] = ' ';
+        return padded_string_view(buf.data(), len, buf.size());
+      };
+      std::string buf;
+      ondemand::document doc;
+      int64_t i;
+      double d;
+      bool b;
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"({"a":12)", buf)).get(doc) );
+      ASSERT_SUCCESS( doc["a"].get_int64().get(i) );
+      ASSERT_EQUAL( i, 12 );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"([1,1.5)", buf)).get(doc) );
+      ASSERT_SUCCESS( doc.at(1).get_double().get(d) );
+      ASSERT_EQUAL( d, 1.5 );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"([1,true)", buf)).get(doc) );
+      ASSERT_SUCCESS( doc.at(1).get_bool().get(b) );
+      ASSERT_TRUE( b );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"([1,tr)", buf)).get(doc) );
+      ASSERT_ERROR( doc.at(1).get_bool().get(b), INCORRECT_TYPE );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"([1,n)", buf)).get(doc) );
+      ASSERT_ERROR( doc.at(1).is_null().get(b), INCORRECT_TYPE );
+      ASSERT_SUCCESS( parser.iterate_allow_incomplete_json(json_of(R"({"a":"12)", buf)).get(doc) );
+      ASSERT_ERROR( doc["a"].get_int64_in_string().get(i), NUMBER_ERROR );
+    }
+    TEST_SUCCEED();
+  }
 #endif
 
 #if SIMDJSON_EXCEPTIONS
@@ -858,6 +895,7 @@ namespace error_tests {
            incomplete_json_object_cut_before_first_key() &&
            incomplete_json_cut_containers_at_sentinel() &&
            incomplete_json_padding_of_sentinels() &&
+           incomplete_json_scalar_cut_by_end() &&
 #endif
 #if SIMDJSON_EXCEPTIONS
            invalid_type() &&

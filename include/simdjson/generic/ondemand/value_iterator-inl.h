@@ -1082,6 +1082,12 @@ simdjson_inline const uint8_t *value_iterator::peek_root_scalar(const char *type
 }
 simdjson_inline const uint8_t *value_iterator::peek_non_root_scalar(const char *type) noexcept {
   logger::log_value(*_json_iter, start_position(), depth(), type);
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (_json_iter->allow_incomplete_json()) {
+    if (is_at_start()) { assert_at_non_root_start(); }
+    return _json_iter->scalar_within_input(peek_start());
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   if (!is_at_start()) { return peek_start(); }
 
   assert_at_non_root_start();

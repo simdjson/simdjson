@@ -351,6 +351,20 @@ simdjson_inline size_t json_iterator::remaining_input_length(const uint8_t *json
   const uint8_t *end = token.buf + parser->_document_len;
   return json < end ? size_t(end - json) : 0;
 }
+
+simdjson_inline const uint8_t *json_iterator::scalar_within_input(const uint8_t *json) noexcept {
+  // Only the last token can run to the end of the input.
+  const uint32_t n = parser->implementation->n_structural_indexes;
+  if (simdjson_likely(json != token.buf + parser->implementation->structural_indexes[n - 1])) { return json; }
+  uint8_t *tmpbuf = parser->incomplete_scalar_buf;
+  constexpr size_t capacity = sizeof(parser->incomplete_scalar_buf) - SIMDJSON_PADDING;
+  const size_t length = remaining_input_length(json);
+  // A scalar too long for the buffer is left out entirely, so that it does not parse.
+  const size_t copied = length <= capacity ? length : 0;
+  std::memcpy(tmpbuf, json, copied);
+  std::memset(tmpbuf + copied, ' ', sizeof(parser->incomplete_scalar_buf) - copied);
+  return tmpbuf;
+}
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 simdjson_inline token_position json_iterator::root_position() const noexcept {

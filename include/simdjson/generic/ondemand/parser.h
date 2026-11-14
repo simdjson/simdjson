@@ -457,6 +457,10 @@ private:
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
   std::unique_ptr<uint8_t[]> string_buf{};
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  /** Copy of a scalar cut by the end of an incomplete document, see json_iterator::scalar_within_input(). */
+  uint8_t incomplete_scalar_buf[1074+8+1+SIMDJSON_PADDING]{};
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
