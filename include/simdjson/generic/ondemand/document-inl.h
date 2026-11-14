@@ -460,7 +460,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
   // Rewind the document each time at_path is called. After a fatal error,
   // the document cannot be walked again: we report the error instead.
   SIMDJSON_TRY(iter.rewind());
-  if (json_path.empty()) {
+  if (json_path.empty() || json_path == "$") {
       return this->get_value();
   }
   json_type t;
@@ -487,6 +487,12 @@ simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_
   SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return INVALID_JSON_POINTER;
+  }
+  if (json_path == "$") {
+    value root;
+    SIMDJSON_TRY(get_value().get(root));
+    callback(root);
+    return SUCCESS;
   }
   json_type t;
   SIMDJSON_TRY(type().get(t));

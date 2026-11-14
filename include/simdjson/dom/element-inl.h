@@ -530,6 +530,7 @@ inline simdjson_result<element> element::at_pointer(std::string_view json_pointe
 
 inline simdjson_result<std::vector<element>> element::at_path_with_wildcard(std::string_view json_path) const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
+  if (json_path == "$") { return std::vector<element>{*this}; }
 
   const internal::wildcard_json_path path = internal::parse_wildcard_json_path(json_path);
   // A path that cannot be parsed matches nothing, whatever the document: say
