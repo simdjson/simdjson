@@ -438,12 +438,13 @@ simdjson_inline padded_memory_map::~padded_memory_map() noexcept {
 // zero bytes after the file content, with no data copies.
 //
 // Strategy:
-//   1. If rounding the file size up to the allocation granularity already
-//      exceeds file_size + SIMDJSON_PADDING, the OS page zero-fill provides
-//      the padding and we use a simple MapViewOfFile3 call.
+//   1. If rounding the file size up to the page size already reaches
+//      file_size + SIMDJSON_PADDING, the OS page zero-fill provides the
+//      padding and we use a simple MapViewOfFile3 call. A view only maps the
+//      pages that hold the file, not its whole allocation granularity.
 //   2. Otherwise we reserve a contiguous placeholder region via VirtualAlloc2,
-//      split it at the granularity-aligned file boundary, map the file into
-//      the first part, and commit zero pages for the second part (padding).
+//      split it at the page-aligned file boundary, map the file into the
+//      first part, and commit zero pages for the second part (padding).
 simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexcept {
   HANDLE file_handle = ::CreateFileA(
       filename, GENERIC_READ,
@@ -480,8 +481,8 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
 
   SYSTEM_INFO si;
   ::GetSystemInfo(&si);
-  const size_t granularity = static_cast<size_t>(si.dwAllocationGranularity);
-  const size_t file_region = (size + granularity - 1) & ~(granularity - 1);
+  const size_t page_size = static_cast<size_t>(si.dwPageSize);
+  const size_t file_region = (size + page_size - 1) & ~(page_size - 1);
   const size_t total_needed = size + simdjson::SIMDJSON_PADDING;
 
   if (file_region >= total_needed) {
@@ -500,7 +501,7 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
   // to get a contiguous virtual address range spanning both the file mapping
   // and the zero-filled padding.
   const size_t padding_region =
-      ((total_needed - file_region) + granularity - 1) & ~(granularity - 1);
+      ((total_needed - file_region) + page_size - 1) & ~(page_size - 1);
   const size_t reserve_size = file_region + padding_region;
 
   // Reserve a contiguous placeholder.
@@ -520,9 +521,10 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
     return;
   }
 
-  // Map the file into the first placeholder.
+  // Map the file into the first placeholder. The view may not extend past the
+  // end of the file; the rest of its last page reads as zero.
   PVOID file_view = ::MapViewOfFile3(
-      section, ::GetCurrentProcess(), placeholder, 0, file_region,
+      section, ::GetCurrentProcess(), placeholder, 0, size,
       MEM_REPLACE_PLACEHOLDER, PAGE_READONLY, NULL, 0);
   ::CloseHandle(section);
   if (file_view == NULL) {
@@ -536,7 +538,7 @@ simdjson_inline padded_memory_map::padded_memory_map(const char *filename) noexc
   void *pad = static_cast<char *>(placeholder) + file_region;
   PVOID padding_ptr = ::VirtualAlloc2(
       ::GetCurrentProcess(), pad, padding_region,
-      MEM_REPLACE_PLACEHOLDER | MEM_COMMIT, PAGE_READONLY, NULL, 0);
+      MEM_RESERVE | MEM_COMMIT | MEM_REPLACE_PLACEHOLDER, PAGE_READONLY, NULL, 0);
   if (padding_ptr == NULL) {
     ::UnmapViewOfFile(file_view);
     ::VirtualFree(pad, 0, MEM_RELEASE);

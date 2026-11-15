@@ -13,6 +13,10 @@
 #include <windows.h>
 #endif
 
+#include <cstdio>
+#include <fstream>
+#include <string>
+
 #include "simdjson.h"
 #include "test_macros.h"
 
@@ -119,6 +123,58 @@ bool test_memory_map_missing_file() {
     TEST_SUCCEED();
 }
 
+// Maps files that end at or just before a page boundary, including the
+// allocation granularity on Windows (16 pages), so that the padding past the
+// file often does not fit in the file's last page. Every padding byte must
+// read as zero, and the document must parse.
+bool test_memory_map_padding_near_page_boundary() {
+    TEST_START();
+    const char *const tmpfilename = "memory_map_page_boundary.json";
+    const size_t page_size = simdjson::get_page_size();
+    for (size_t pages : {size_t(1), size_t(2), size_t(16), size_t(17)}) {
+        for (size_t delta : {size_t(simdjson::SIMDJSON_PADDING), size_t(10), size_t(1), size_t(0)}) {
+            const size_t size = pages * page_size - delta;
+            // A single string that fills the file and ends 2 bytes before its end.
+            std::string json("[\"");
+            json.append(size - 4, 'a');
+            json += "\"]";
+            {
+                std::ofstream out(tmpfilename, std::ios::binary);
+                if (!out) {
+                    std::cout << "Warning: I could not create temporary file " << tmpfilename << std::endl;
+                    TEST_SUCCEED();
+                }
+                out.write(json.data(), std::streamsize(json.size()));
+                ASSERT_TRUE(bool(out));
+            }
+            bool ok = true;
+            {
+                simdjson::padded_memory_map map(tmpfilename);
+                if (!map.is_valid()) {
+                    std::cerr << "Failed to memory-map a file of " << size << " bytes" << std::endl;
+                    ok = false;
+                } else {
+                    simdjson::padded_string_view view = map.view();
+                    ok = ok && view.size() == size;
+                    for (size_t i = 0; i < simdjson::SIMDJSON_PADDING; i++) {
+                        ok = ok && view.data()[size + i] == '\0';
+                    }
+                    simdjson::ondemand::parser parser;
+                    simdjson::ondemand::document doc;
+                    std::string_view str;
+                    ok = ok && parser.iterate(view).get(doc) == simdjson::SUCCESS;
+                    ok = ok && doc.at(0).get_string().get(str) == simdjson::SUCCESS;
+                    ok = ok && str.size() == size - 4;
+                    if (!ok) { std::cerr << "Bad padded view for a file of " << size << " bytes" << std::endl; }
+                }
+            }
+            remove(tmpfilename);
+            if (!ok) { return false; }
+        }
+    }
+    TEST_SUCCEED();
+}
+
 #endif // SIMDJSON_HAS_PADDED_MEMORY_MAP
 
 int main() {
@@ -131,6 +187,7 @@ int main() {
     ok = ok && test_memory_map_iterate_many();
     ok = ok && test_memory_map_parse_many();
     ok = ok && test_memory_map_missing_file();
+    ok = ok && test_memory_map_padding_near_page_boundary();
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 #else
     std::cout << "padded_memory_map is disabled in this configuration; "
