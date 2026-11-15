@@ -819,6 +819,8 @@ bool at_path_error_propagation() {
   int64_t value;
   ASSERT_SUCCESS(doc.at_path("$.object.key").get_int64().get(value));
   ASSERT_EQUAL(value, 2);
+  ASSERT_SUCCESS(doc["object"].at_path("$.key").get_int64().get(value));
+  ASSERT_EQUAL(value, 2);
   ASSERT_SUCCESS(doc["array"].get_array().at_path("$[0]").get_int64().get(value));
   ASSERT_EQUAL(value, 1);
   ASSERT_SUCCESS(doc["object"].get_object().at_path("$.key").get_int64().get(value));
