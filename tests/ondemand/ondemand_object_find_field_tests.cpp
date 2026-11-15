@@ -1096,8 +1096,80 @@ namespace object_tests {
   }
 #endif
 
+  bool object_default_if_missing() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({ "x": 1.5, "name": "point", "y": "not a number" })"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    ondemand::object object;
+    ASSERT_SUCCESS( doc.get_object().get(object) );
+
+    // A present key returns its value, not the default.
+    double x;
+    ASSERT_SUCCESS( object["x"].get_double().default_if_missing(0.0).get(x) );
+    ASSERT_EQUAL( x, 1.5 );
+    // A missing key returns the default.
+    double z;
+    ASSERT_SUCCESS( object["z"].get_double().default_if_missing(-1.0).get(z) );
+    ASSERT_EQUAL( z, -1.0 );
+    // Other errors are not replaced by the default.
+    double y;
+    ASSERT_ERROR( object["y"].get_double().default_if_missing(0.0).get(y), INCORRECT_TYPE );
+    // Strings work as well.
+    std::string_view name;
+    ASSERT_SUCCESS( object["name"].get_string().default_if_missing("none").get(name) );
+    ASSERT_EQUAL( name, "point" );
+    std::string_view color;
+    ASSERT_SUCCESS( object["color"].get_string().default_if_missing("none").get(color) );
+    ASSERT_EQUAL( color, "none" );
+    // Lookups still work after a missing key.
+    ASSERT_SUCCESS( object["x"].get_double().default_if_missing(0.0).get(x) );
+    ASSERT_EQUAL( x, 1.5 );
+    TEST_SUCCEED();
+  }
+
+  bool default_if_missing_keeps_document_errors() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({ "x": tru })"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS( parser.iterate(json).get(doc) );
+    // A malformed value is reported, not replaced by the default.
+    bool x;
+    ASSERT_ERROR( doc["x"].get_bool().default_if_missing(false).get(x), INCORRECT_TYPE );
+    // Looking up a key on an array is not a missing key either.
+    auto array_json = R"([1, 2])"_padded;
+    ASSERT_SUCCESS( parser.iterate(array_json).get(doc) );
+    int64_t v;
+    ASSERT_ERROR( doc["x"].get_int64().default_if_missing(0).get(v), INCORRECT_TYPE );
+    TEST_SUCCEED();
+  }
+
+#if SIMDJSON_EXCEPTIONS
+  bool object_default_if_missing_exceptions() {
+    TEST_START();
+    ondemand::parser parser;
+    auto json = R"({ "x": 1, "y": 2 })"_padded;
+    ondemand::document doc = parser.iterate(json);
+    ondemand::object object = doc.get_object();
+    int64_t x = object["x"].get_int64().default_if_missing(0);
+    int64_t z = object["z"].get_int64().default_if_missing(3);
+    int64_t y = object["y"].get_int64().default_if_missing(0);
+    ASSERT_EQUAL( x, 1 );
+    ASSERT_EQUAL( y, 2 );
+    ASSERT_EQUAL( z, 3 );
+    TEST_SUCCEED();
+  }
+#endif
+
   bool run() {
     return
+           object_default_if_missing() &&
+           default_if_missing_keeps_document_errors() &&
+#if SIMDJSON_EXCEPTIONS
+           object_default_if_missing_exceptions() &&
+#endif
            object_find_field_unordered() &&
            document_object_find_field_unordered() &&
            value_object_find_field_unordered() &&

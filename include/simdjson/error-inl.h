@@ -165,6 +165,13 @@ simdjson_result<T>::get(T &value) && noexcept {
 }
 
 template<typename T>
+simdjson_warn_unused simdjson_inline simdjson_result<T>
+simdjson_result<T>::default_if_missing(T default_value) && noexcept {
+  if (error() == NO_SUCH_FIELD) { return simdjson_result<T>(std::move(default_value)); }
+  return std::move(*this);
+}
+
+template<typename T>
 simdjson_inline error_code simdjson_result<T>::error() const noexcept {
   return internal::simdjson_result_base<T>::error();
 }
