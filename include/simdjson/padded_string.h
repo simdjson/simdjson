@@ -346,7 +346,7 @@ private:
   const char *data{nullptr};
   size_t size{0};
 #ifdef _WIN32
-  // When the file ends near an allocation-granularity boundary, we use the
+  // When the file ends near a page boundary, we use the
   // placeholder API to append zero-filled padding pages. This pointer tracks
   // that region so the destructor can release it with VirtualFree.
   void *padding_view_{nullptr};
