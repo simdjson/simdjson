@@ -98,13 +98,15 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_objec
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing } at end");
     }
-    // If the last character is } *and* the first gibberish character is also '}'
-    // then on-demand could accidentally go over. So we need additional checks.
+    // If the last character is } *and* the first gibberish character is '}', ']' or ','
+    // then on-demand could accidentally go over: an unclosed inner container reads it
+    // as its end or as a separator. So we need additional checks.
     // https://github.com/simdjson/simdjson/issues/1834
     // Checking that the document is balanced requires a full scan which is potentially
     // expensive, but it only happens in edge cases where the first padding character is
-    // a closing bracket.
-    if ((*_json_iter->peek(_json_iter->end_position()) == '}') && (!_json_iter->balanced())) {
+    // a closing bracket or a comma.
+    const uint8_t after_end = *_json_iter->peek(_json_iter->end_position());
+    if ((after_end == '}' || after_end == ']' || after_end == ',') && (!_json_iter->balanced())) {
       _json_iter->abandon();
       // The exact error would require more work. It will typically be an unclosed object.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");
@@ -508,13 +510,15 @@ simdjson_warn_unused simdjson_inline error_code value_iterator::check_root_array
       _json_iter->abandon();
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "missing ] at end");
     }
-    // If the last character is ] *and* the first gibberish character is also ']'
-    // then on-demand could accidentally go over. So we need additional checks.
+    // If the last character is ] *and* the first gibberish character is ']', '}' or ','
+    // then on-demand could accidentally go over: an unclosed inner container reads it
+    // as its end or as a separator. So we need additional checks.
     // https://github.com/simdjson/simdjson/issues/1834
     // Checking that the document is balanced requires a full scan which is potentially
     // expensive, but it only happens in edge cases where the first padding character is
-    // a closing bracket.
-    if ((*_json_iter->peek(_json_iter->end_position()) == ']') && (!_json_iter->balanced())) {
+    // a closing bracket or a comma.
+    const uint8_t after_end = *_json_iter->peek(_json_iter->end_position());
+    if ((after_end == '}' || after_end == ']' || after_end == ',') && (!_json_iter->balanced())) {
       _json_iter->abandon();
       // The exact error would require more work. It will typically be an unclosed array.
       return report_error(INCOMPLETE_ARRAY_OR_OBJECT, "the document is unbalanced");

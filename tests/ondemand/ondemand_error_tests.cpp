@@ -88,6 +88,43 @@ namespace error_tests {
     auto error = doc.count_fields().get(cnt);
     return error != simdjson::SUCCESS;
   }
+  // Like issue1834, with a ',' or the other closing bracket as the first byte
+  // after the document: an unclosed inner container must not read it.
+  bool unbalanced_root_followed_by_comma() {
+    TEST_START();
+    auto check = [](std::string_view json, char after, const char *pointer) {
+      std::string buffer(json);
+      buffer.push_back(after);
+      buffer.append(SIMDJSON_PADDING, ' ');
+      padded_string_view view(buffer.data(), json.size(), buffer.size());
+      ondemand::parser parser;
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(view).get(doc));
+      ondemand::json_type t;
+      auto error = doc.at_pointer(pointer).type().get(t);
+      if (error == SUCCESS) {
+        std::cerr << json << " followed by '" << after << "': at_pointer(" << pointer << ") succeeded" << std::endl;
+        return false;
+      }
+      return true;
+    };
+    for (char after : {',', ']', '}'}) {
+      ASSERT_TRUE(check("[[]", after, "/1"));
+      ASSERT_TRUE(check("[[[]]", after, "/1"));
+      ASSERT_TRUE(check(R"({"a":[{})", after, "/a/1"));
+    }
+    // A balanced document followed by a comma is still accepted.
+    std::string buffer = "[1,2],";
+    buffer.append(SIMDJSON_PADDING, ' ');
+    padded_string_view view(buffer.data(), 5, buffer.size());
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(view).get(doc));
+    int64_t x;
+    ASSERT_SUCCESS(doc.at_pointer("/1").get_int64().get(x));
+    ASSERT_EQUAL(x, 2);
+    TEST_SUCCEED();
+  }
   bool skip_child_incomplete_container() {
     TEST_START();
     auto check = [](const padded_string &json, simdjson::error_code expected) {
@@ -874,6 +911,7 @@ namespace error_tests {
            badbadjson2() &&
            issue1834() &&
            issue1834_2() &&
+           unbalanced_root_followed_by_comma() &&
            skip_child_incomplete_container() &&
 #if SIMDJSON_EXCEPTIONS
            document_in_class() &&
