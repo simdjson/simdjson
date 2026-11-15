@@ -264,8 +264,27 @@ namespace result_forwarding {
     ASSERT_EQUAL( not_an_object.get_values(out).size(), 0 );
     TEST_SUCCEED();
   }
+  // default_if_missing replaces NO_SUCH_FIELD, and only NO_SUCH_FIELD.
+  bool default_if_missing() {
+    TEST_START();
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(R"({"a":1,"b":"text"})"_padded).get(doc) );
+    int64_t a;
+    ASSERT_SUCCESS( doc["a"].get_int64().default_if_missing(7).get(a) );
+    ASSERT_EQUAL( a, 1 );
+    int64_t c;
+    ASSERT_SUCCESS( doc["c"].get_int64().default_if_missing(7).get(c) );
+    ASSERT_EQUAL( c, 7 );
+    int64_t b;
+    ASSERT_ERROR( doc["b"].get_int64().default_if_missing(7).get(b), INCORRECT_TYPE );
+    int64_t nested;
+    ASSERT_ERROR( doc["a"]["x"].get_int64().default_if_missing(7).get(nested), INCORRECT_TYPE );
+    TEST_SUCCEED();
+  }
   bool run() {
-    return get_values_on_error();
+    return get_values_on_error()
+      && default_if_missing();
   }
 }
 

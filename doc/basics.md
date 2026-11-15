@@ -694,6 +694,21 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > A captured position is only valid for the object it came from, and only until that object is
   > `reset()` or the parser `iterate()`s a new document: applying it to a different object, or after
   > either of those, is undefined behavior that `revert_position()` cannot detect.
+  >
+  > For an optional field with a fallback value, convert the field and then call
+  > `default_if_missing(value)`: if the key is missing (`NO_SUCH_FIELD`), you get `value` instead
+  > of an error. Any other error (e.g., `INCORRECT_TYPE` or malformed JSON) is still reported.
+  >
+  > ```cpp
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > double x = doc["x"].get_double().default_if_missing(0.0); // 1
+  > double z = doc["z"].get_double().default_if_missing(0.0); // 0, "z" is missing
+  > // Without exceptions:
+  > double y;
+  > auto error = doc["y"].get_double().default_if_missing(0.0).get(y);
+  > ```
 * **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the internal pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```cpp
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
