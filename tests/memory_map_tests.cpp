@@ -135,7 +135,9 @@ bool test_memory_map_padding_near_page_boundary() {
         for (size_t delta : {size_t(simdjson::SIMDJSON_PADDING), size_t(10), size_t(1), size_t(0)}) {
             const size_t size = pages * page_size - delta;
             // A single string that fills the file and ends 2 bytes before its end.
-            const std::string json = "[\"" + std::string(size - 4, 'a') + "\"]";
+            std::string json("[\"");
+            json.append(size - 4, 'a');
+            json += "\"]";
             {
                 std::ofstream out(tmpfilename, std::ios::binary);
                 if (!out) {
