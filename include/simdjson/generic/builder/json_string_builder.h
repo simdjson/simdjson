@@ -364,6 +364,18 @@ private:
   bool is_valid{true};
 };
 
+namespace internal {
+// Appends value as a JSON value. A char is a one-character string, as in
+// append_key_value(): string_builder::append(char) appends a raw character.
+template <typename T>
+simdjson_inline void append_value(string_builder &b, const T &value) {
+  b.append(value);
+}
+simdjson_inline void append_value(string_builder &b, char value) {
+  b.escape_and_append_with_quotes(value);
+}
+} // namespace internal
+
 
 
 }
@@ -375,7 +387,7 @@ private:
 template <class Z>
 simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  b.append(z);
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::append_value(b, z);
   std::string s;
   auto e = b.move_to(s);
   if(e) { return e; }
@@ -384,7 +396,7 @@ simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t ini
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
   simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  b.append(z);
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::append_value(b, z);
   return b.move_to(s);
 }
 #endif

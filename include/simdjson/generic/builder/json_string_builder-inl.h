@@ -364,7 +364,7 @@ template <concepts::optional_type T>
   requires(!require_custom_serialization<T>)
 simdjson_inline void string_builder::append(const T &opt) {
   if (opt) {
-    append(*opt);
+    internal::append_value(*this, *opt);
   } else {
     append_null();
   }
@@ -416,13 +416,13 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
     }
 
     // Append first item without leading comma
-    append(*it);
+    internal::append_value(*this, *it);
     ++it;
 
     // Append remaining items with preceding commas
     for (; it != end; ++it) {
       append_comma();
-      append(*it);
+      internal::append_value(*this, *it);
     }
     end_array();
   }
