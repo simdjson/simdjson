@@ -99,6 +99,85 @@ simdjson_inline bool is_ascii(const simd8x64<uint8_t>& input) {
   return input.reduce_or().is_ascii();
 }
 
+constexpr size_t UTF8_BATCH_MIN_LENGTH = 64 * 1024;
+
+simdjson_never_inline bool validate_utf8_batched(const char *buf, size_t len) {
+  stage1::buf_block_reader<64> reader(reinterpret_cast<const uint8_t *>(buf), len);
+  utf8_validation::utf8_checker checker{};
+  size_t full_blocks = (len - 1) / 64;
+  while (full_blocks >= 8) {
+    const simd8<uint8_t> block0(reader.full_block());
+    const simd8<uint8_t> block1(reader.full_block() + 64);
+    const simd8<uint8_t> block2(reader.full_block() + 128);
+    const simd8<uint8_t> block3(reader.full_block() + 192);
+    const simd8<uint8_t> block4(reader.full_block() + 256);
+    const simd8<uint8_t> block5(reader.full_block() + 320);
+    const simd8<uint8_t> block6(reader.full_block() + 384);
+    const simd8<uint8_t> block7(reader.full_block() + 448);
+    const simd8<uint8_t> combined = block0 | block1 | block2 | block3 | block4 | block5 | block6 | block7;
+    // Repeating the ASCII check only ORs the same pending-continuation error.
+    if (combined.is_ascii()) {
+      checker.check_next_input(simd8x64<uint8_t>(combined));
+    } else if (!(block0 & block1 & block2 & block3 & block4 & block5 & block6 & block7).is_ascii()) {
+      // A common high-bit lane proves that every block needs vector validation.
+      simd8<uint8_t> previous = checker.prev_input_block;
+      for (size_t i = 0; i < 8; ++i) {
+        const simd8<uint8_t> block(reader.full_block() + i * 64);
+        checker.check_utf8_bytes(block, previous);
+        previous = block;
+      }
+      checker.prev_input_block = previous;
+      checker.prev_incomplete = utf8_validation::is_incomplete(previous);
+    } else {
+      // Locate the first non-ASCII block with a binary search. OR the other
+      // seven blocks together to prove that it is the only one needing work.
+      const simd8<uint8_t> low = block0 | block1 | block2 | block3;
+      const simd8<uint8_t> high = block4 | block5 | block6 | block7;
+      size_t index = low.is_ascii() ? 4 : 0;
+      simd8<uint8_t> others = index ? low : high;
+      const uint8_t *p = reader.full_block() + index * 64;
+      const simd8<uint8_t> pair = simd8<uint8_t>(p) | simd8<uint8_t>(p + 64);
+      if (pair.is_ascii()) {
+        index += 2;
+        others |= pair;
+      } else {
+        others |= simd8<uint8_t>(p + 128) | simd8<uint8_t>(p + 192);
+      }
+      p = reader.full_block() + index * 64;
+      const simd8<uint8_t> first(p);
+      if (first.is_ascii()) {
+        ++index;
+        others |= first;
+      } else {
+        others |= simd8<uint8_t>(p + 64);
+      }
+      // Multiple non-ASCII blocks without a common high-bit lane use the
+      // original reader for the rest of this request, keeping its checker state.
+      if (!others.is_ascii()) { break; }
+      // ASCII before or after the selected block cannot complete a pending
+      // sequence. Like check_next_input, leave the last non-ASCII block intact.
+      if (index != 0) { checker.error |= checker.prev_incomplete; }
+      const simd8<uint8_t> block(reader.full_block() + index * 64);
+      checker.check_utf8_bytes(block, checker.prev_input_block);
+      checker.prev_input_block = block;
+      checker.prev_incomplete = utf8_validation::is_incomplete(block);
+      if (index != 7) { checker.error |= checker.prev_incomplete; }
+    }
+    for (size_t i = 0; i < 8; ++i) { reader.advance(); }
+    full_blocks -= 8;
+  }
+  while (reader.has_full_block()) {
+    checker.check_next_input(simd8x64<uint8_t>(reader.full_block()));
+    reader.advance();
+  }
+  // Preserve the ordinary unpadded remainder and EOF checks.
+  uint8_t remainder[64]{};
+  reader.get_remainder(remainder);
+  checker.check_next_input(simd8x64<uint8_t>(remainder));
+  checker.check_eof();
+  return checker.errors() == SUCCESS;
+}
+
 simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> prev2, const simd8<uint8_t> prev3) {
   simd8<uint8_t> is_third_byte  = prev2.saturating_sub(0xe0u-0x80); // Only 111_____ will be >= 0x80
   simd8<uint8_t> is_fourth_byte = prev3.saturating_sub(0xf0u-0x80); // Only 1111____ will be >= 0x80
@@ -174,6 +253,10 @@ simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t 
 }
 
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
+  // Keep short requests on the stateful path; the batch setup amortizes after 64 KiB.
+  if (len >= UTF8_BATCH_MIN_LENGTH) {
+    return validate_utf8_batched(buf, len);
+  }
   return icelake::stage1::generic_validate_utf8(buf,len);
 }
 
