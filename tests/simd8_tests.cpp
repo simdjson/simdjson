@@ -282,10 +282,10 @@ static bool test_simd8_saturating() {
   ASSERT_FALSE((~eq(zero.saturating_sub(val100), zero)).any());
 
   const simd8<uint8_t> index(byte_index);
-  const simd8<uint8_t> sat_add = index.saturating_add(simd8<uint8_t>(uint8_t(240)));
+  const simd8<uint8_t> sat_add = index.saturating_add(simd8<uint8_t>(uint8_t(250)));
   const simd8<uint8_t> sat_sub = index.saturating_sub(simd8<uint8_t>(uint8_t(10)));
   for (size_t i = 0; i < width; i++) {
-    const uint8_t expected_add = (i + 240 > 255) ? 255 : uint8_t(i + 240);
+    const uint8_t expected_add = (i + 250 > 255) ? 255 : uint8_t(i + 250);
     const uint8_t expected_sub = (i < 10) ? 0 : uint8_t(i - 10);
     const simd8<bool> is_i = eq(index, simd8<uint8_t>(uint8_t(i)));
     ASSERT_TRUE((eq(sat_add, simd8<uint8_t>(expected_add)) & is_i).any());
@@ -345,6 +345,16 @@ static bool test_simd8_prev() {
     expected2[i] = curr_chunk_bytes[i - 2];
   }
   ASSERT_FALSE((~eq(prev2, simd8<uint8_t>(expected2))).any());
+
+  const simd8<uint8_t> prev3 = curr_chunk.prev<3>(prev_chunk);
+  uint8_t expected3[64];
+  expected3[0] = prev_chunk_bytes[width - 3];
+  expected3[1] = prev_chunk_bytes[width - 2];
+  expected3[2] = prev_chunk_bytes[width - 1];
+  for (size_t i = 3; i < width; i++) {
+    expected3[i] = curr_chunk_bytes[i - 3];
+  }
+  ASSERT_FALSE((~eq(prev3, simd8<uint8_t>(expected3))).any());
 
   TEST_SUCCEED();
 }
