@@ -1120,6 +1120,39 @@ namespace document_stream_tests {
         ASSERT_EQUAL(stream.truncated_bytes(), 0);
         TEST_SUCCEED();
     }
+    // With batch_size 32, the second batch starts with white space and cuts a
+    // 26-byte string. The string fits in a batch that starts at its quote, as
+    // an array would: this is not a CAPACITY error. The fallback has its own
+    // stage 1, so we check every implementation that the system supports.
+    bool white_space_before_string_cut_by_batch() {
+        TEST_START();
+        const std::string json = "\"a\"" + std::string(40, ' ') + "\"" + std::string(24, 'x') + "\" \"b\"";
+        const padded_string input(json);
+        const size_t expected_index[] = {0, 43, 70};
+        const std::string expected_value[] = {"a", std::string(24, 'x'), "b"};
+        const implementation *active = get_active_implementation();
+        for (const implementation *impl : get_available_implementations()) {
+            if (!impl->supported_by_runtime_system()) { continue; }
+            get_active_implementation() = impl;
+            std::cout << "    " << impl->name() << std::endl;
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS(parser.iterate_many(input, 32).get(stream));
+            size_t count{0};
+            for (auto i = stream.begin(); i != stream.end(); ++i) {
+                ASSERT_TRUE(count < 3);
+                std::string_view value;
+                ASSERT_SUCCESS((*i).get_string().get(value));
+                ASSERT_EQUAL(value, expected_value[count]);
+                ASSERT_EQUAL(i.current_index(), expected_index[count]);
+                count++;
+            }
+            ASSERT_EQUAL(count, 3);
+            ASSERT_EQUAL(stream.truncated_bytes(), 0);
+        }
+        get_active_implementation() = active;
+        TEST_SUCCEED();
+    }
     bool test_leading_spaces() {
         TEST_START();
         auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
@@ -3327,6 +3360,7 @@ bool run() {
             small_window() &&
             large_window() &&
             whitespace_only_middle_batch() &&
+            white_space_before_string_cut_by_batch() &&
             test_leading_spaces() &&
             test_crazy_leading_spaces() &&
             adversarial_single_document() &&

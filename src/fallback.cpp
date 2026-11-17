@@ -262,7 +262,10 @@ simdjson_warn_unused simdjson_inline error_code scan() {
   if (partial == stage1_mode::streaming_partial) {
     if(unclosed_string) {
       parser.n_structural_indexes--;
-      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+      // See json_structural_indexer.h: white space before a cut string.
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     // We truncate the input to the end of the last complete document (or zero).
     // See json_structural_indexer.h for ends_with_unfinished_document().
