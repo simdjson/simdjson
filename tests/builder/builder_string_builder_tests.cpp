@@ -296,6 +296,32 @@ bool nan_inf_roundtrip() {
   ASSERT_EQUAL(index, expected.size());
   TEST_SUCCEED();
 }
+#else
+// Without SIMDJSON_ENABLE_NAN_INF, NaN and Infinity are written as null.
+bool nan_inf_as_null() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_array();
+  sb.append(1.5);
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(std::numeric_limits<float>::quiet_NaN());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<float>::infinity());
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[1.5,null,null,null,null,null]");
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  ASSERT_SUCCESS(parser.parse(p).get(doc));
+  TEST_SUCCEED();
+}
 #endif // SIMDJSON_ENABLE_NAN_INF
 
 bool append_null() {
@@ -1157,6 +1183,8 @@ bool run() {
          append_nan() && append_positive_infinity() &&
          append_negative_infinity() && append_float_nan_inf() &&
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
+#else
+         nan_inf_as_null() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
          escape_write_string_escaped_exhaustive() && move_to_string() &&
