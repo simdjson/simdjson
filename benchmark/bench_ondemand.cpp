@@ -25,6 +25,10 @@ SIMDJSON_PUSH_DISABLE_ALL_WARNINGS
 #include <boost/json.hpp>
 #endif
 
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+#include <jsonifier>
+#endif
+
 // This has to be last, for reasons I don't yet understand
 #include <benchmark/benchmark.h>
 
@@ -38,6 +42,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #endif // SIMDJSON_COMPETITION_ONDEMAND_SAJSON
 #include "json2msgpack/nlohmann_json.h"
 #include "json2msgpack/boostjson.h"
+#include "json2msgpack/jsonifier_generic.h"
 
 #include "partial_tweets/simdjson_ondemand.h"
 #include "partial_tweets/simdjson_ondemand_key_selector.h"
@@ -55,6 +60,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "partial_tweets/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "partial_tweets/boostjson.h"
+#include "partial_tweets/jsonifier_generic.h"
 
 
 #include "distinct_user_id/simdjson_ondemand.h"
@@ -74,6 +80,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "distinct_user_id/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "distinct_user_id/boostjson.h"
+#include "distinct_user_id/jsonifier_generic.h"
 
 #include "find_tweet/simdjson_ondemand.h"
 #include "find_tweet/simdjson_dom.h"
@@ -90,6 +97,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "find_tweet/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "find_tweet/boostjson.h"
+#include "find_tweet/jsonifier_generic.h"
 
 #include "top_tweet/simdjson_ondemand.h"
 #include "top_tweet/simdjson_dom.h"
@@ -106,6 +114,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "top_tweet/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "top_tweet/boostjson.h"
+#include "top_tweet/jsonifier_generic.h"
 
 
 #include "kostya/simdjson_ondemand.h"
@@ -123,6 +132,7 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "kostya/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "kostya/boostjson.h"
+#include "kostya/jsonifier_generic.h"
 
 #include "large_random/simdjson_ondemand.h"
 #include "large_random/simdjson_ondemand_ranges.h"
@@ -143,12 +153,15 @@ SIMDJSON_POP_DISABLE_WARNINGS
 #include "large_random/nlohmann_json_sax.h"
 #endif // SIMDJSON_COMPETITION_SAX
 #include "large_random/boostjson.h"
+#include "large_random/jsonifier_generic.h"
 
 #include "amazon_cellphones/simdjson_dom.h"
 #include "amazon_cellphones/simdjson_ondemand.h"
+#include "amazon_cellphones/jsonifier_generic.h"
 
 #include "large_amazon_cellphones/simdjson_dom.h"
 #include "large_amazon_cellphones/simdjson_ondemand.h"
+#include "large_amazon_cellphones/jsonifier_generic.h"
 
 #include "accessor_performance/runtime_accessors.h"
 #if SIMDJSON_STATIC_REFLECTION
