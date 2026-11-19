@@ -657,15 +657,45 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
       return MEMALLOC;
     }
     const size_t bound = n * per + 2;
-    auto write = [&z, n](char *p) noexcept -> size_t {
-      char *begin = p;
-      *p++ = '[';
-      const Int *data = std::ranges::data(z);
-      for (size_t i = 0; i < n; i++) {
-        if (i) {
-          *p++ = ',';
-        }
-        Int v = data[i];
+    // Allocate first, write second. A try/catch around the digit loop
+    // (the old resize_and_overwrite callback) blocks inlining and adds
+    // exception edges on every element. The callback only claims `bound`
+    // bytes; the real bytes are written below, then the size shrinks.
+    // int64 needs 20 bytes (sign + 19 digits); 22 also covers the comma.
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+    try {
+      s.resize_and_overwrite(bound, [](char *, size_t len) noexcept { return len; });
+    } catch (...) {
+      return MEMALLOC;
+    }
+#else
+    try {
+      s.resize(bound);
+    } catch (...) {
+      return MEMALLOC;
+    }
+#endif
+    char *p = &s[0];
+    char *begin = p;
+    *p++ = '[';
+    const Int *data = std::ranges::data(z);
+    // First element has no leading comma, matching the common minified
+    // array shape and keeping the per-element loop branch-free on comma.
+    if (n) {
+      Int v = data[0];
+      if constexpr (std::is_unsigned_v<Int>) {
+        p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
+      } else {
+        using U = std::make_unsigned_t<Int>;
+        const bool negative = v < 0;
+        U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
+        *p = '-';
+        p += negative;
+        p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
+      }
+      for (size_t i = 1; i < n; i++) {
+        *p++ = ',';
+        v = data[i];
         if constexpr (std::is_unsigned_v<Int>) {
           p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
         } else {
@@ -677,23 +707,9 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
           p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
         }
       }
-      *p++ = ']';
-      return size_t(p - begin);
-    };
-#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
-    try {
-      s.resize_and_overwrite(bound, [&write](char *p, size_t) noexcept { return write(p); });
-    } catch (...) {
-      return MEMALLOC;
     }
-#else
-    try {
-      s.resize(bound);
-    } catch (...) {
-      return MEMALLOC;
-    }
-    s.resize(write(&s[0]));
-#endif
+    *p++ = ']';
+    s.resize(size_t(p - begin));
     (void)initial_capacity;
     return SUCCESS;
   }
