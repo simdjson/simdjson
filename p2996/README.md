@@ -4,7 +4,7 @@ The simdjson has experimental support for static reflection, when the compiler s
 We focus on the [latest p2996 paper](https://isocpp.org/files/papers/P2996R10.html) that is targeting C++26.
 
 ## Current status
-There are 2 versions of compiler that aim to support the C++26 reflection paper ([p2996](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p2996r10.html)).
+There are 2 versions of compiler that aim to support the C++26 reflection paper ([p2996](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p2996r13.html)).
 
 1. [Clang-p2996 llvm branch](https://github.com/bloomberg/clang-p2996/tree/p2996) that open-source and available in the [Compiler Explorer](https://godbolt.org/z/eoEej3E6j).
 2. EDG reflection branch that is only publicly available in the [Compiler Explorer](https://godbolt.org).
