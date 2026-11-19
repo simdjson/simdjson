@@ -86,7 +86,7 @@ simdjson_really_inline char *itoa_lt1e8(char *b, uint32_t n) noexcept {
 // 10/11/12-digit kernels. `lo` is the low 8 digits. The 11-digit
 // form writes the 3-digit head as a 4-byte store (third digit's
 // neighbour is a zero) and the following 4-digit block overwrites
-// that zero — one store instead of three byte extracts. Little-endian
+// that zero: one store instead of three byte extracts. Little-endian
 // only for that overlap; big-endian uses itoa_wr3.
 simdjson_really_inline char *itoa_d10(char *b, uint32_t hi, uint32_t lo) noexcept {
   // hi is 10..99
