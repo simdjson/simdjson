@@ -10,6 +10,7 @@
 
 #include "simdjson/base.h"
 #include "simdjson/error.h"
+#include "simdjson/internal/json_escape.h"
 
 #include <cstdint>
 #include <cstring>
@@ -152,24 +153,87 @@ simdjson_inline error_code parse_document<bool>(const uint8_t *buf, size_t len, 
   return finish_ws_only(p, end);
 }
 
-// JSON string with no escapes, no controls, pure ASCII. Anything else
-// (including non-ASCII, which needs the UTF-8 validator) falls back.
+// The first byte at or after p that is '"', '\\', a control character or
+// non-ASCII (which needs the UTF-8 validator), or end.
+simdjson_inline const uint8_t *find_string_stop(const uint8_t *p, const uint8_t *end) noexcept {
+#if !SIMDJSON_IS_BIG_ENDIAN
+  // Eight bytes at a time. A byte's high bit is set in hits when it stops the
+  // scan. A borrow can only set bits above a real hit, so the lowest set bit
+  // is exact.
+  constexpr uint64_t ones = 0x0101010101010101ull;
+  constexpr uint64_t highs = 0x8080808080808080ull;
+  while (end - p >= 8) {
+    uint64_t w;
+    std::memcpy(&w, p, 8);
+    const uint64_t quote = w ^ (ones * '"');
+    const uint64_t backslash = w ^ (ones * '\\');
+    const uint64_t hits = (((quote - ones) & ~quote) | ((backslash - ones) & ~backslash) |
+                           ((w - ones * 0x20) & ~w) | w) & highs;
+    if (hits != 0) { return p + (trailing_zeroes(hits) >> 3); }
+    p += 8;
+  }
+#endif
+  while (p < end && *p != '"' && *p != '\\' && *p >= 0x20 && *p < 0x80) { p++; }
+  return p;
+}
+
+constexpr size_t not_plain = size_t(-1);
+
+// Length of the string body at s up to its closing quote, or not_plain if an
+// escape, a control character or a non-ASCII byte comes first, or the input
+// ends.
+simdjson_inline size_t scan_plain_string(const uint8_t *s, const uint8_t *end) noexcept {
+  const uint8_t *stop = find_string_stop(s, end);
+  return (stop < end && *stop == '"') ? size_t(stop - s) : not_plain;
+}
+
+// Short strings are copied with fixed-size moves: a memcpy of the exact length
+// is an out-of-line call whose length branches mispredict.
+simdjson_inline void copy_short(char *dst, const uint8_t *src, size_t n) noexcept {
+  if (n >= 16) {
+    if (n <= 32) {
+      std::memcpy(dst, src, 16);
+      std::memcpy(dst + n - 16, src + n - 16, 16);
+    } else if (n <= 64) {
+      std::memcpy(dst, src, 32);
+      std::memcpy(dst + n - 32, src + n - 32, 32);
+    } else {
+      std::memcpy(dst, src, n);
+    }
+  } else if (n >= 8) {
+    std::memcpy(dst, src, 8);
+    std::memcpy(dst + n - 8, src + n - 8, 8);
+  } else if (n >= 4) {
+    std::memcpy(dst, src, 4);
+    std::memcpy(dst + n - 4, src + n - 4, 4);
+  } else if (n > 0) {
+    dst[0] = char(src[0]);
+    dst[n >> 1] = char(src[n >> 1]);
+    dst[n - 1] = char(src[n - 1]);
+  }
+}
+
+simdjson_inline void assign_plain_string(std::string &out, const uint8_t *src, size_t n) noexcept {
+#if SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE
+  out.resize_and_overwrite(n, [src, n](char *dst, size_t) noexcept {
+    copy_short(dst, src, n);
+    return n;
+  });
+#else
+  out.assign(reinterpret_cast<const char *>(src), n);
+#endif
+}
+
+// JSON string with no escapes, no controls, pure ASCII. Anything else falls
+// back to the full parser.
 simdjson_inline error_code parse_plain_string_token(const uint8_t *&p, const uint8_t *end, std::string &out) noexcept {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
-  p++;
-  const uint8_t *start = p;
-  while (p < end) {
-    uint8_t c = *p;
-    if (c == '"') {
-      out.assign(reinterpret_cast<const char *>(start), size_t(p - start));
-      p++;
-      return SUCCESS;
-    }
-    // Escape, control, or non-ASCII: full parser.
-    if (c == '\\' || c < 0x20 || c >= 0x80) { return UNINITIALIZED; }
-    p++;
-  }
-  return UNINITIALIZED;
+  const uint8_t *start = p + 1;
+  const size_t n = scan_plain_string(start, end);
+  if (n == not_plain) { return UNINITIALIZED; }
+  assign_plain_string(out, start, n);
+  p = start + n + 1;
+  return SUCCESS;
 }
 
 template <>
@@ -252,32 +316,27 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
     p++;
     return finish_ws_only(p, end);
   }
-  bool reserved = false;
-  for (;;) {
+  {
+    // Size the buffer from the first element; later strings are built in place.
     const uint8_t *tok = p;
-    std::string v;
-    if (parse_plain_string_token(p, end, v) != SUCCESS) { out.clear(); return UNINITIALIZED; }
-    if (!reserved) {
-      const size_t elem = size_t(p - tok) + 1; // string plus comma
-      const size_t rest = size_t(end - tok);
-      out.reserve(elem ? rest / elem + 2 : 8);
-      reserved = true;
-    }
-    out.push_back(std::move(v));
-    if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-    if (p >= end) { out.clear(); return UNINITIALIZED; }
-    if (*p == ',') {
-      p++;
-      if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-      continue;
-    }
+    std::string first;
+    if (parse_plain_string_token(p, end, first) != SUCCESS) { return UNINITIALIZED; }
+    const size_t elem = size_t(p - tok) + 1; // string plus comma
+    out.reserve(size_t(end - tok) / elem + 2);
+    out.push_back(std::move(first));
+  }
+  for (;;) {
+    if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
     if (*p == ']') {
       p++;
       if (finish_ws_only(p, end) != SUCCESS) { out.clear(); return UNINITIALIZED; }
       return SUCCESS;
     }
-    out.clear();
-    return UNINITIALIZED;
+    if (*p != ',') { out.clear(); return UNINITIALIZED; }
+    p++;
+    if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
+    out.emplace_back();
+    if (parse_plain_string_token(p, end, out.back()) != SUCCESS) { out.clear(); return UNINITIALIZED; }
   }
 }
 
