@@ -75,7 +75,61 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
     SIMDJSON_TRY( allocate(json.length(), max_depth()) );
   }
 
-  // Run stage 1.
+  // Run stage 1. A lone atom (number/true/false/null) does not need the
+  // vectorized indexer or a virtual call into it: the tape is one entry.
+  // That is the per-value overhead Jsonifier's fused scalar parse avoids.
+  if (json.length() <= 64) {
+    error_code atom = simdjson::internal::try_stage1_lone_atom(
+        *implementation, reinterpret_cast<const uint8_t *>(json.data()), json.length());
+    if (atom == SUCCESS) {
+      // The atom scan already delimited the token. Parse its value once here
+      // so the matching getter is a load. Overflow / float forms stay kind 4
+      // and take the ordinary getter.
+      const uint8_t *p = reinterpret_cast<const uint8_t *>(json.data()) + implementation->structural_indexes[0];
+      const uint8_t *end = reinterpret_cast<const uint8_t *>(json.data()) + json.length();
+      _root_atom_kind = 4;
+      if (*p == 't' || *p == 'f') {
+        _root_atom_kind = 2;
+        _root_atom_bool = (*p == 't');
+      } else if (*p == 'n') {
+        _root_atom_kind = 3;
+      } else {
+        // Bounded int64 parse: never reads past `end`.
+        bool negative = (*p == '-');
+        const uint8_t *d = p + uint8_t(negative);
+        if (d < end && *d >= '0' && *d <= '9') {
+          uint64_t i = 0;
+          const uint8_t *digits = d;
+          if (*d == '0') {
+            d++;
+          } else {
+            while (d < end && *d >= '0' && *d <= '9') {
+              // Reject overflow past 19 digits by saturating into kind 4.
+              if (d - digits >= 19) { i = UINT64_MAX; d++; continue; }
+              i = i * 10 + uint64_t(*d - '0');
+              d++;
+            }
+          }
+          const size_t digit_count = size_t(d - digits);
+          const bool int_form = (d == end || *d < '0' || (*d > '9' && *d != '.' && *d != 'e' && *d != 'E'));
+          // int_form: finisher is whitespace (or end). '.'/'e' means a float.
+          // Leading-zero numbers with more digits are not int64-valid.
+          if (int_form && digit_count >= 1 && digit_count <= 19 &&
+              !(*digits == '0' && digit_count > 1) &&
+              i <= uint64_t(INT64_MAX) + uint64_t(negative)) {
+            _root_atom_kind = 1;
+            _root_atom_i64 = negative ? int64_t(~i + 1) : int64_t(i);
+          }
+        }
+      }
+      return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+    }
+    if (atom != UNINITIALIZED) {
+      _root_atom_kind = 0;
+      return atom;
+    }
+  }
+  _root_atom_kind = 0;
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }

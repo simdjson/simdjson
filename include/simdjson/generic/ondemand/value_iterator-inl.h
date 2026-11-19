@@ -760,6 +760,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<raw_json_string> value_iter
   return raw_json_string(json+1);
 }
 simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::get_root_uint64(bool check_trailing) noexcept {
+  if (_json_iter->parser->_root_atom_kind == 1 && depth() == 1 && is_at_start() &&
+      _json_iter->parser->_root_atom_i64 >= 0) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    uint64_t v = uint64_t(_json_iter->parser->_root_atom_i64);
+    advance_root_scalar("uint64");
+    return v;
+  }
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("uint64");
   uint8_t tmpbuf[20+1+1]{}; // <20 digits> is the longest possible unsigned integer
@@ -792,6 +799,13 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
   return result;
 }
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
+  // Lone-atom cache filled by parser::iterate. depth is 1 at the root value.
+  if (_json_iter->parser->_root_atom_kind == 1 && depth() == 1 && is_at_start()) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    int64_t v = _json_iter->parser->_root_atom_i64;
+    advance_root_scalar("int64");
+    return v;
+  }
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
   uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
@@ -911,6 +925,12 @@ simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_
 }
 
 simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_root_bool(bool check_trailing) noexcept {
+  if (_json_iter->parser->_root_atom_kind == 2 && depth() == 1 && is_at_start()) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    bool v = _json_iter->parser->_root_atom_bool;
+    advance_root_scalar("bool");
+    return v;
+  }
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("bool");
   // We have a boolean if we have either "true" or "false" and the next character is either
@@ -927,6 +947,17 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::get_r
 }
 
 simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_trailing) noexcept {
+  if (_json_iter->parser->_root_atom_kind == 3 && depth() == 1 && is_at_start()) {
+    if (check_trailing && !_json_iter->is_single_token()) { return TRAILING_CONTENT; }
+    advance_root_scalar("null");
+    return true;
+  }
+  // A cached non-null atom that is asked is_null must return false (and not
+  // consume the value — the ordinary path below only advances on a real null).
+  if (_json_iter->parser->_root_atom_kind != 0 && _json_iter->parser->_root_atom_kind != 3 &&
+      depth() == 1 && is_at_start()) {
+    return false;
+  }
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("null");
   bool result = (max_len >= 4 && !atomparsing::str4ncmp(json, "null") &&
