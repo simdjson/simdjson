@@ -473,6 +473,66 @@ bool test_to_adaptor_with_single_value() {
   TEST_SUCCEED();
 }
 
+bool test_direct_from_atoms() {
+  TEST_START();
+  // Single-pass from<> for atoms, int64 arrays, plain strings, and flat
+  // int64 objects. Invalid input must surface the same error as On Demand.
+  {
+    simdjson::padded_string j(std::string("-12345"));
+    int64_t v = simdjson::from(j);
+    ASSERT_EQUAL(v, int64_t(-12345));
+  }
+  {
+    simdjson::padded_string j(std::string("true"));
+    bool v = simdjson::from(j);
+    ASSERT_TRUE(v);
+  }
+  {
+    simdjson::padded_string j(std::string("\"plain\""));
+    std::string v = simdjson::from(j);
+    ASSERT_EQUAL(v, std::string("plain"));
+  }
+  {
+    simdjson::padded_string j(std::string("\"a\\\"b\""));
+    std::string v = simdjson::from(j);
+    ASSERT_EQUAL(v, std::string("a\"b"));
+  }
+  {
+    simdjson::padded_string j(std::string(R"(["a","bb",""])"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], std::string("a"));
+    ASSERT_EQUAL(v[1], std::string("bb"));
+    ASSERT_EQUAL(v[2], std::string(""));
+  }
+  {
+    simdjson::padded_string j(std::string(R"(["a","b\"c"])"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[1], std::string("b\"c"));
+  }
+  {
+    simdjson::padded_string j(std::string("[1,-2,3]"));
+    std::vector<int64_t> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], int64_t(1));
+    ASSERT_EQUAL(v[1], int64_t(-2));
+    ASSERT_EQUAL(v[2], int64_t(3));
+  }
+  {
+    simdjson::padded_string j(std::string(R"({"a":1,"b":2,"a":3})"));
+    std::map<std::string, int64_t> m = simdjson::from(j);
+    ASSERT_EQUAL(m.size(), 2);
+    ASSERT_EQUAL(m["a"], int64_t(1)); // first key wins
+    ASSERT_EQUAL(m["b"], int64_t(2));
+  }
+  {
+    simdjson::padded_string j(std::string("01"));
+    ASSERT_ERROR(simdjson::from(j).result<int64_t>().error(), simdjson::NUMBER_ERROR);
+  }
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -507,6 +567,7 @@ bool run() {
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
+      test_direct_from_atoms() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()

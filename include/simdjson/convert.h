@@ -24,6 +24,15 @@ private:
 	parser_type m_parser;
 	ondemand::document m_doc;
 	error_code m_error{SUCCESS};
+	// Original buffer, when this auto_parser was built from a string. Used to
+	// direct-parse atoms and arrays of atoms without a structural index.
+	// Lifetime is the caller's buffer, same rule as ondemand::iterate.
+	const uint8_t *m_direct_buf{nullptr};
+	size_t m_direct_len{0};
+	size_t m_direct_cap{0};
+	// True when m_doc was produced by iterate (or supplied by the caller).
+	// String constructors leave this false so result() can direct-parse first.
+	bool m_doc_ready{false};
 
 	template <typename T>
 	static constexpr bool is_nothrow_gettable = requires(ondemand::document doc) {
