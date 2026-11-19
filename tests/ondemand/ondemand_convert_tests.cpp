@@ -3,6 +3,7 @@
 #include "test_ondemand.h"
 
 #include <chrono>
+#include <cstring>
 #include <map>
 #include <ranges>
 #include <string>
@@ -589,6 +590,97 @@ bool test_direct_from_string_scan() {
   TEST_SUCCEED();
 }
 
+bool test_direct_from_double_array() {
+  TEST_START();
+  // from<vector<double>> parses the array directly. It must return the same
+  // values (bit for bit) and the same errors as On Demand.
+  auto check = [](const simdjson::padded_string_view view) {
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    std::vector<double> expected;
+    auto expected_error = parser.iterate(view).get(doc);
+    if (!expected_error) { expected_error = doc.get<std::vector<double>>().get(expected); }
+    std::vector<double> got;
+    auto got_error = simdjson::from(view).get(got);
+    if (got_error != expected_error) {
+      std::cerr << "error mismatch on " << std::string(view.data(), view.size()) << ": " << got_error << " vs " << expected_error << std::endl;
+      return false;
+    }
+    if (!expected_error && (got.size() != expected.size() ||
+        (!got.empty() && std::memcmp(got.data(), expected.data(), got.size() * sizeof(double)) != 0))) {
+      std::cerr << "value mismatch on " << std::string(view.data(), view.size()) << std::endl;
+      return false;
+    }
+    return true;
+  };
+  std::vector<std::string> numbers = {
+      "0", "-0", "0.0", "-0.0", "1", "-1", "1.5", "1e2", "1E2", "1e+2", "1e-2", "1.25e-3",
+      "9007199254740993", "-9223372036854775809", "123456789012345678901234567890",
+      "0.000000000000000000000000000001234567890123456789", "1.7976931348623157e308",
+      "1.7976931348623159e308", "1e309", "-1e309", "4.9e-324", "2.2250738585072014e-308",
+      "1e-400", "1e00000000000000000000001", "0.1e-99999999999999999999",
+      "01", "1.", ".5", "-", "1e", "1e+", "+1", "0x10", "--1", "NaN", "Infinity", "1.5.5",
+      "true", "\"1\"", "[1]", "{}", "null"};
+  uint32_t seed = 2024;
+  auto next = [&seed](uint32_t n) { seed = seed * 1103515245 + 12345; return (seed >> 8) % n; };
+  for (int r = 0; r < 3000; r++) {
+    std::string s;
+    if (next(3) == 0) { s += '-'; }
+    size_t int_digits = next(5) == 0 ? 1 + next(25) : 1 + next(4);
+    if (next(6) == 0) {
+      s += '0';
+    } else {
+      s += char('1' + next(9));
+      for (size_t i = 1; i < int_digits; i++) { s += char('0' + next(10)); }
+    }
+    if (next(4) != 0) {
+      s += '.';
+      size_t zeros = next(4) == 0 ? next(12) : 0;
+      s += std::string(zeros, '0');
+      size_t frac = 1 + next(next(4) == 0 ? 30 : 18);
+      for (size_t i = 0; i < frac; i++) { s += char('0' + next(10)); }
+    }
+    if (next(3) == 0) {
+      s += next(2) ? 'e' : 'E';
+      if (next(2)) { s += next(2) ? '-' : '+'; }
+      size_t exp_digits = 1 + next(3);
+      for (size_t i = 0; i < exp_digits; i++) { s += char('0' + next(10)); }
+    }
+    numbers.push_back(s);
+  }
+  for (const std::string &n : numbers) {
+    const std::string docs[] = {"[" + n + "]", " [ 1.5 , " + n + " ,2 ] ", "[" + n + ",-0.5e1]"};
+    for (const std::string &json : docs) {
+      simdjson::padded_string padded(json);
+      ASSERT_TRUE(check(padded));
+    }
+  }
+  std::string all = "[";
+  for (size_t i = 0; i < numbers.size(); i++) {
+    if (numbers[i].find_first_not_of("0123456789.eE+-") != std::string::npos) { continue; }
+    std::string candidate = "[" + numbers[i] + "]";
+    simdjson::padded_string probe(candidate);
+    std::vector<double> ok;
+    if (simdjson::from(probe).get(ok)) { continue; }
+    if (all.size() > 1) { all += next(2) ? "," : " ,\n"; }
+    all += numbers[i];
+  }
+  all += "]";
+  simdjson::padded_string big(all);
+  ASSERT_TRUE(check(big));
+  for (const char *json : {"", "  \n", "[]", " [ ] ", "[", "]", "[1,]", "[,1]", "[1 2]", "[1]x", "[1] ]", "[[1]]"}) {
+    simdjson::padded_string padded{std::string(json)};
+    ASSERT_TRUE(check(padded));
+  }
+  // Too little padding: the direct parser is skipped, On Demand reports it.
+  std::string tight = "[1.5,2.5]";
+  ASSERT_TRUE(check(simdjson::padded_string_view(tight.data(), tight.size(), tight.size())));
+  // A cut document whose padding is all digits must not be read past.
+  std::string cut = "[1.5" + std::string(simdjson::SIMDJSON_PADDING, '9');
+  ASSERT_TRUE(check(simdjson::padded_string_view(cut.data(), 4, cut.size())));
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -623,7 +715,7 @@ bool run() {
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
-      test_direct_from_atoms() && test_direct_from_string_scan() &&
+      test_direct_from_atoms() && test_direct_from_string_scan() && test_direct_from_double_array() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
