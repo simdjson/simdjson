@@ -918,12 +918,14 @@ struct digits16 {
 
 simdjson_really_inline digits16 to_digits16(std::uint64_t value) noexcept {
   const std::uint64_t hi = value / 100000000;
-  const std::uint64_t hi_bcd = to_bcd8(hi);
-  const std::uint64_t lo_bcd = to_bcd8(value - hi * 100000000);
+  const std::uint64_t lo = value - hi * 100000000;
   constexpr std::uint64_t zeros = 0x3030303030303030ull;
-  return {hi_bcd + zeros, lo_bcd + zeros,
-          lo_bcd != 0 ? 8 + count_trailing_nonzeros(lo_bcd)
-                      : count_trailing_nonzeros(hi_bcd)};
+  const std::uint64_t hi_bcd = to_bcd8(hi);
+  if (lo == 0) {
+    return {hi_bcd + zeros, zeros, count_trailing_nonzeros(hi_bcd)};
+  }
+  const std::uint64_t lo_bcd = to_bcd8(lo);
+  return {hi_bcd + zeros, lo_bcd + zeros, 8 + count_trailing_nonzeros(lo_bcd)};
 }
 
 simdjson_really_inline void store16(char *p, const digits16 &d) noexcept {
