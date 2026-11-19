@@ -533,6 +533,62 @@ bool test_direct_from_atoms() {
   TEST_SUCCEED();
 }
 
+bool test_direct_from_string_scan() {
+  TEST_START();
+  // The direct string scan reads eight bytes at a time. Every length, every
+  // position of a byte that needs the full parser, and bytes next to the
+  // scan's thresholds must give the On Demand result.
+  auto ondemand_string = [](const std::string &json, std::string &out) {
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(padded).get(doc);
+    if (error) { return error; }
+    return doc.get_string(out);
+  };
+  const char edge[] = {' ', '!', '#', '[', ']', '\x7f', 'a', 'Z'};
+  uint32_t seed = 12345;
+  for (size_t n = 0; n <= 80; n++) {
+    std::string body;
+    for (size_t i = 0; i < n; i++) {
+      seed = seed * 1103515245 + 12345;
+      body += edge[(seed >> 16) % sizeof(edge)];
+    }
+    simdjson::padded_string single("\"" + body + "\"");
+    std::string s = simdjson::from(single);
+    ASSERT_EQUAL(s, body);
+    simdjson::padded_string pair("[\"" + body + "\", \"" + body + "x\"]");
+    std::vector<std::string> v = simdjson::from(pair);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[0], body);
+    ASSERT_EQUAL(v[1], body + "x");
+  }
+  const char *specials[] = {"\\n", "\\\"", "\\u00e9", "\xc3\xa9", "\x01", "\x1f", "\xff"};
+  for (size_t n = 1; n <= 40; n++) {
+    for (size_t k = 0; k < n; k++) {
+      for (const char *special : specials) {
+        const std::string json = "\"" + std::string(k, 'a') + special + std::string(n - k - 1, 'b') + "\"";
+        std::string expected;
+        auto expected_error = ondemand_string(json, expected);
+        simdjson::padded_string padded(json);
+        std::string got;
+        auto got_error = simdjson::from(padded).get(got);
+        ASSERT_EQUAL(got_error, expected_error);
+        if (!expected_error) { ASSERT_EQUAL(got, expected); }
+        simdjson::padded_string array("[\"x\"," + json + "]");
+        std::vector<std::string> got_vec;
+        auto vec_error = simdjson::from(array).get(got_vec);
+        ASSERT_EQUAL(vec_error, expected_error);
+        if (!expected_error) {
+          ASSERT_EQUAL(got_vec.size(), 2);
+          ASSERT_EQUAL(got_vec[1], expected);
+        }
+      }
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -567,7 +623,7 @@ bool run() {
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
-      test_direct_from_atoms() &&
+      test_direct_from_atoms() && test_direct_from_string_scan() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
