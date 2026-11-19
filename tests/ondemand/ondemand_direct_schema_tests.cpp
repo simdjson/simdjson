@@ -164,7 +164,8 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         R"({"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[40.1,39.9,40.0,39.8],"active":true})"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.make, std::string("Toyota"));
     ASSERT_EQUAL(c.model, std::string("Camry"));
     ASSERT_EQUAL(c.year, int64_t(2018));
@@ -176,7 +177,8 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         R"( { "active" : false , "note" : "x" , "model" : "Camry" , "year" : 2018 , "tire_pressure" : [ 40.1 , 39.9 , 40.0 , 39.8 ] , "make" : "Toyota" } )"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.make, std::string("Toyota"));
     ASSERT_EQUAL(c.year, int64_t(2018));
     ASSERT_TRUE(!c.active);
@@ -185,13 +187,15 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         R"({"make":"To\"yota","model":"Camry","year":2018,"tire_pressure":[1.0],"active":false})"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.make, std::string("To\"yota"));
   }
   {
     simdjson::padded_string j(std::string(
         R"({"make":"X","make":"Toyota","model":"Camry","year":2018,"tire_pressure":[],"active":false})"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.make, std::string("Toyota"));
   }
   {
@@ -202,7 +206,8 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         R"([{"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[40.1],"active":true},{"make":"Honda","model":"Fit","year":2020,"tire_pressure":[32.0,32.0],"active":false}])"));
-    std::vector<SchemaCar> v = simdjson::from(j);
+    std::vector<SchemaCar> v;
+    ASSERT_SUCCESS(simdjson::from(j).get(v));
     ASSERT_EQUAL(v.size(), 2);
     ASSERT_EQUAL(v[0].make, std::string("Toyota"));
     ASSERT_EQUAL(v[1].model, std::string("Fit"));
@@ -212,7 +217,8 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         R"({"car":{"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[40.1],"active":true},"bays":3})"));
-    SchemaGarage g = simdjson::from(j);
+    SchemaGarage g;
+    ASSERT_SUCCESS(simdjson::from(j).get(g));
     ASSERT_EQUAL(g.bays, int64_t(3));
     ASSERT_EQUAL(g.car.make, std::string("Toyota"));
     ASSERT_EQUAL(g.car.tire_pressure.size(), 1);
@@ -220,7 +226,8 @@ bool test_direct_schema() {
   {
     simdjson::padded_string j(std::string(
         "{\"make\":\"T\xc5\x8dyota\",\"model\":\"Camry\",\"year\":2018,\"tire_pressure\":[1.0],\"active\":true}"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.make, std::string("T\xc5\x8dyota"));
     ASSERT_EQUAL(c.year, int64_t(2018));
   }
@@ -228,7 +235,8 @@ bool test_direct_schema() {
     // Missing key keeps the default.
     simdjson::padded_string j(std::string(
         R"({"make":"Toyota","model":"Camry","tire_pressure":[1.0],"active":true})"));
-    SchemaCar c = simdjson::from(j);
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
     ASSERT_EQUAL(c.year, int64_t(0));
     ASSERT_EQUAL(c.make, std::string("Toyota"));
   }
