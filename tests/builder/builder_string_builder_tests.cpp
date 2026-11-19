@@ -11,6 +11,7 @@
 
 #if SIMDJSON_SUPPORTS_RANGES
 #include <ranges>
+#include <span>
 #endif
 
 using namespace simdjson;
@@ -998,6 +999,114 @@ bool ranges_test() {
   ASSERT_EQUAL(s, "[2.0,4.0,6.0,8.0]");
   TEST_SUCCEED();
 }
+template <typename R>
+std::string append_to_json(const R &range) {
+  simdjson::builder::string_builder sb;
+  sb.append(range);
+  std::string_view p;
+  if (sb.view().get(p)) {
+    return "error";
+  }
+  return std::string(p);
+}
+
+// The same values through the generic range path, which takes a range that is
+// not contiguous.
+template <typename T>
+std::string generic_to_json(const std::vector<T> &v) {
+  return append_to_json(v | std::views::transform([](T x) { return x; }));
+}
+
+bool integer_array_test() {
+  TEST_START();
+  ASSERT_EQUAL(append_to_json(std::vector<int>{}), "[]");
+  ASSERT_EQUAL(append_to_json(std::vector<int>{7}), "[7]");
+  ASSERT_EQUAL(append_to_json(std::vector<int64_t>{0, -1, 9, 10, -99, 100}),
+               "[0,-1,9,10,-99,100]");
+  std::vector<int64_t> i64{(std::numeric_limits<int64_t>::min)(),
+                           (std::numeric_limits<int64_t>::max)()};
+  ASSERT_EQUAL(append_to_json(i64),
+               "[-9223372036854775808,9223372036854775807]");
+  ASSERT_EQUAL(append_to_json(std::vector<uint64_t>{
+                   0, (std::numeric_limits<uint64_t>::max)()}),
+               "[0,18446744073709551615]");
+  ASSERT_EQUAL(append_to_json(std::vector<int16_t>{-32768, 32767}),
+               "[-32768,32767]");
+  ASSERT_EQUAL(append_to_json(std::vector<uint16_t>{0, 65535}), "[0,65535]");
+  ASSERT_EQUAL(append_to_json(std::vector<int32_t>{
+                   (std::numeric_limits<int32_t>::min)(),
+                   (std::numeric_limits<int32_t>::max)()}),
+               "[-2147483648,2147483647]");
+  ASSERT_EQUAL(append_to_json(std::array<unsigned, 3>{1, 22, 333}),
+               "[1,22,333]");
+  ASSERT_EQUAL(append_to_json(std::span<const int64_t>(i64).subspan(1)),
+               "[9223372036854775807]");
+  // A contiguous range without a size takes the generic path.
+  std::vector<int> head{1, 2, 3, 9, 1};
+  ASSERT_EQUAL(append_to_json(head | std::views::take_while(
+                                         [](int x) { return x < 5; })),
+               "[1,2,3]");
+  TEST_SUCCEED();
+}
+
+bool integer_array_matches_generic_path() {
+  TEST_START();
+  uint64_t state = 12345;
+  auto next = [&state]() {
+    state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+    return state;
+  };
+  // The large sizes span several reserved blocks.
+  for (size_t n : {size_t(1), size_t(2), size_t(1000), size_t(120000),
+                   size_t(300000)}) {
+    std::vector<int64_t> i64(n);
+    for (auto &x : i64) {
+      uint64_t r = next();
+      x = int64_t(r) >> (r % 64);
+    }
+    ASSERT_EQUAL(append_to_json(i64), generic_to_json(i64));
+    std::vector<uint32_t> u32(n);
+    for (auto &x : u32) {
+      uint64_t r = next();
+      x = uint32_t(r >> (r % 64));
+    }
+    ASSERT_EQUAL(append_to_json(u32), generic_to_json(u32));
+    std::vector<int16_t> i16(n);
+    for (auto &x : i16) {
+      x = int16_t(next());
+    }
+    ASSERT_EQUAL(append_to_json(i16), generic_to_json(i16));
+  }
+  TEST_SUCCEED();
+}
+
+bool integer_array_after_other_content() {
+  TEST_START();
+  simdjson::builder::string_builder sb(1);
+  sb.start_array();
+  sb.append(std::vector<int>{1, -2});
+  sb.append_comma();
+  sb.append(std::vector<uint64_t>{});
+  sb.append_comma();
+  sb.append(std::vector<short>{3});
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[[1,-2],[],[3]]");
+  TEST_SUCCEED();
+}
+
+bool integer_array_bounded_reservation() {
+  TEST_START();
+  // Two bytes per element are written, while the bound is 21 bytes per element.
+  std::vector<int64_t> zeros(1000000, 0);
+  simdjson::builder::string_builder sb;
+  sb.append(zeros);
+  ASSERT_EQUAL(sb.size(), 2 * zeros.size() + 1);
+  ASSERT_TRUE(sb.unsafe_capacity() <= 2 * (sb.size() + (size_t(1) << 20)));
+  TEST_SUCCEED();
+}
+
 bool double_double_test() {
   TEST_START();
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
@@ -1139,7 +1248,10 @@ bool run() {
          return_builder_as_string() &&
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-         map_test() && ranges_test() && double_double_test() &&
+         map_test() && ranges_test() && integer_array_test() &&
+         integer_array_matches_generic_path() &&
+         integer_array_after_other_content() &&
+         integer_array_bounded_reservation() && double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
          car_test_simple_complete() &&
 #if SIMDJSON_EXCEPTIONS

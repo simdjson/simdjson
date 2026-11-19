@@ -43,6 +43,23 @@ namespace builder {
 
 using simdjson::internal::escape_best::write_string_escaped;
 
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+/**
+ * A contiguous, sized range of integers that string_builder serializes as a
+ * JSON array of numbers in one pass. Booleans and character types are excluded,
+ * and so are integers wider than 64 bits.
+ */
+template <typename R>
+concept integer_array =
+    std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
+    std::is_integral_v<std::ranges::range_value_t<R>> &&
+    sizeof(std::ranges::range_value_t<R>) <= sizeof(uint64_t) &&
+    !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>;
+#endif
+
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -196,25 +213,14 @@ public:
   simdjson_inline void append(const T &value);
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-  // Contiguous integer arrays: one capacity check, then a pointer-chasing
-  // write of brackets, commas and digits. Much less per-element overhead
-  // than the generic range append (which capacity-checks every atom).
-  template <std::ranges::contiguous_range R>
-  requires (std::is_integral_v<std::ranges::range_value_t<R>> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
-            !require_custom_serialization<R>)
+  // Contiguous arrays of integers, written without a capacity check per element.
+  template <integer_array R>
+  requires(!require_custom_serialization<R>)
   simdjson_inline void append(const R &range) noexcept;
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R> &&
-          !(std::ranges::contiguous_range<R> && std::is_integral_v<std::ranges::range_value_t<R>> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
-            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>))
+  requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
+           !require_custom_serialization<R> && !integer_array<R>)
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
@@ -354,6 +360,14 @@ private:
    */
   template <typename Text>
   simdjson_inline void append_static_string() noexcept;
+#endif
+
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  /**
+   * Append an array of integers too long to reserve its worst case at once.
+   */
+  template <typename int_type>
+  void append_long_integer_array(const int_type *data, size_t n) noexcept;
 #endif
 
   /**
