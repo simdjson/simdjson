@@ -540,51 +540,43 @@ simdjson_really_inline error_code parse_double_token(const uint8_t *&p, const ui
 simdjson_inline error_code skip_json_string(const uint8_t *&p, const uint8_t *end) noexcept {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
   p++;
-  while (p < end) {
+  for (;;) {
+    p = find_string_stop(p, end);
+    if (p >= end) { return UNINITIALIZED; }
     uint8_t c = *p++;
     if (c == '"') { return SUCCESS; }
-    if (c < 0x20 || c >= 0x80) { return UNINITIALIZED; }
-    if (c == '\\') {
-      if (p >= end) { return UNINITIALIZED; }
-      uint8_t e = *p++;
-      switch (e) {
-      case '"': case '\\': case '/': case 'b': case 'f': case 'n': case 'r': case 't':
-        break;
-      case 'u': {
-        if (size_t(end - p) < 4) { return UNINITIALIZED; }
-        for (int i = 0; i < 4; i++) {
-          uint8_t h = p[i];
-          bool hex = (h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F');
-          if (!hex) { return UNINITIALIZED; }
-        }
-        p += 4;
-        break;
+    // Control or non-ASCII byte.
+    if (c != '\\') { return UNINITIALIZED; }
+    if (p >= end) { return UNINITIALIZED; }
+    uint8_t e = *p++;
+    switch (e) {
+    case '"': case '\\': case '/': case 'b': case 'f': case 'n': case 'r': case 't':
+      break;
+    case 'u': {
+      if (size_t(end - p) < 4) { return UNINITIALIZED; }
+      for (int i = 0; i < 4; i++) {
+        uint8_t h = p[i];
+        bool hex = (h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F');
+        if (!hex) { return UNINITIALIZED; }
       }
-      default:
-        return UNINITIALIZED;
-      }
+      p += 4;
+      break;
+    }
+    default:
+      return UNINITIALIZED;
     }
   }
-  return UNINITIALIZED;
 }
 
 // Plain key: no escapes, no controls. key points into the buffer.
 simdjson_inline error_code read_plain_key(const uint8_t *&p, const uint8_t *end,
                                           const uint8_t *&key, size_t &key_len) noexcept {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
-  p++;
-  key = p;
-  while (p < end) {
-    uint8_t c = *p;
-    if (c == '"') {
-      key_len = size_t(p - key);
-      p++;
-      return SUCCESS;
-    }
-    if (c == '\\' || c < 0x20 || c >= 0x80) { return UNINITIALIZED; }
-    p++;
-  }
-  return UNINITIALIZED;
+  key = p + 1;
+  key_len = scan_plain_string(key, end);
+  if (key_len == not_plain) { return UNINITIALIZED; }
+  p = key + key_len + 1;
+  return SUCCESS;
 }
 
 simdjson_inline error_code skip_value(const uint8_t *&p, const uint8_t *end, int depth) noexcept;

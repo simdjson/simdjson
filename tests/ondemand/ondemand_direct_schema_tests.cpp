@@ -157,10 +157,49 @@ bool test_direct_schema() {
   TEST_SUCCEED();
 }
 
+bool test_direct_schema_string_scan() {
+  TEST_START();
+  // Keys out of order go through the general key reader and unknown values
+  // are skipped. An escape, a control character or a non-ASCII byte at any
+  // position, in a key or a skipped string, must give the On Demand result.
+  const char *specials[] = {"\\n", "\\\"", "\\\\", "\\u00e9", "\\x", "\x01", "\xc3\xa9", "\xff"};
+  for (size_t n = 1; n <= 24; n++) {
+    for (size_t k = 0; k < n; k++) {
+      for (const char *special : specials) {
+        const std::string text = std::string(k, 'a') + special + std::string(n - k - 1, 'b');
+        const std::string docs[] = {
+            "{\"model\":\"Camry\",\"note\":\"" + text + "\",\"make\":\"Toyota\",\"year\":2018}",
+            "{\"model\":\"Camry\",\"" + text + "\":1,\"make\":\"Toyota\",\"year\":2018}"};
+        for (const std::string &json : docs) {
+          simdjson::padded_string padded(json);
+          simdjson::ondemand::parser parser;
+          simdjson::ondemand::document doc;
+          SchemaCar expected;
+          auto expected_error = parser.iterate(padded).get(doc);
+          if (!expected_error) { expected_error = doc.get<SchemaCar>().get(expected); }
+          SchemaCar got;
+          auto got_error = simdjson::from(padded).get(got);
+          ASSERT_EQUAL(got_error, expected_error);
+          if (!expected_error) {
+            ASSERT_EQUAL(got.make, expected.make);
+            ASSERT_EQUAL(got.model, expected.model);
+            ASSERT_EQUAL(got.year, expected.year);
+          }
+        }
+      }
+    }
+  }
+  TEST_SUCCEED();
+}
+
+bool run() {
+  return test_direct_schema() && test_direct_schema_string_scan();
+}
+
 } // namespace schema_tests
 
 int main(int argc, char *argv[]) {
-  return test_main(argc, argv, schema_tests::test_direct_schema);
+  return test_main(argc, argv, schema_tests::run);
 }
 
 #endif
