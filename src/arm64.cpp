@@ -146,7 +146,21 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 simdjson_flatten simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
-  return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
+  // 128-byte steps scan two 64-byte blocks per iteration so the next block's
+  // classification overlaps the previous block's index drain, matching the
+  // pipeline the generic indexer is written for (see its PERF NOTES). A
+  // 64-byte step leaves that overlap on the table. Jsonifier's NEON stage 1
+  // batches four blocks; 128 is the widest step the shared remainder path
+  // supports (keep_mask / get_remainder_padded are capped at 128).
+  //
+  // Below one 128-byte step there is no second block to overlap with, and
+  // index<128> would still classify a full 128-byte padded remainder. Keep
+  // the 64-byte step for those inputs so small documents (package.json,
+  // single scalars) do not pay for a block they do not have.
+  if (_len < 128) {
+    return arm64::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
+  }
+  return arm64::stage1::json_structural_indexer::index<128>(buf, len, *this, streaming);
 }
 
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
