@@ -35,6 +35,7 @@ add_cpp_test(ondemand_parse_api_tests                LABELS ondemand acceptance 
 add_cpp_test(ondemand_readme_examples                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_scalar_tests                   LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_to_string                      LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_string_receiver_tests          LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_twitter_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_u8string_tests                 LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wrong_type_error_tests         LABELS ondemand acceptance per_implementation)

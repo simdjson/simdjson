@@ -152,7 +152,7 @@ simdjson_flatten simdjson_inline for_each_result object::for_each(Func&& on_matc
     if (!it.is_open()) { break; }
     // Skip the value (a no-op if the callback consumed it) and step to the next
     // field; has_next_field() ends the container on '}', which closes the loop.
-    if ((error = it.skip_child())) { it.abandon(); return {error, matched}; }
+    if ((error = it.skip_field_child())) { it.abandon(); return {error, matched}; }
     if ((error = it.has_next_field().error())) { return {error, matched}; }
   }
   return {SUCCESS, matched};
@@ -310,7 +310,8 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
   // Grab the child with the given key
-  simdjson_result<value> child;
+  value child;
+  error_code error;
 
   // If there is an escape character in the key, unescape it and then get the child.
   size_t escape = key.find('~');
@@ -330,16 +331,16 @@ inline simdjson_result<value> object::at_pointer(std::string_view json_pointer) 
       }
       escape = unescaped.find('~', escape+1);
     } while (escape != std::string::npos);
-    child = find_field(unescaped);  // Take note find_field does not unescape keys when matching
+    error = find_field(unescaped).get(child);  // Take note find_field does not unescape keys when matching
   } else {
-    child = find_field(key);
+    error = find_field(key).get(child);
   }
-  if(child.error()) {
-    return child; // we do not continue if there was an error
+  if(error) {
+    return error; // we do not continue if there was an error
   }
   // If there is a /, we have to recurse and look up more of the path
   if (slash != std::string_view::npos) {
-    child = child.at_pointer(json_pointer.substr(slash));
+    return child.at_pointer(json_pointer.substr(slash));
   }
   return child;
 }

@@ -206,6 +206,34 @@ namespace adversarial {
     ASSERT_SUCCESS( parser.parse(json).get(doc) );
     TEST_SUCCEED();
   }
+  // A failed allocate() on a fresh parser must not leave a half-built
+  // implementation behind: parse() used to run stage 2 without its stacks.
+  bool failed_allocate_then_parse() {
+    TEST_START();
+    auto json = "[1,2,3]"_padded;
+    auto scalar = "1"_padded;
+    const size_t bad_depths[] = { 0, SIMDJSON_MAX_DEPTH + 1 };
+    for (size_t bad_depth : bad_depths) {
+      dom::parser parser;
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 0 );
+      ASSERT_EQUAL( parser.max_depth(), DEFAULT_MAX_DEPTH );
+      dom::element doc;
+      ASSERT_SUCCESS( parser.parse(json).get(doc) );
+      ASSERT_SUCCESS( parser.parse(scalar).get(doc) );
+    }
+    // A parser that was already allocated keeps its settings.
+    for (size_t bad_depth : bad_depths) {
+      dom::parser parser;
+      ASSERT_SUCCESS( parser.allocate(1024, 16) );
+      ASSERT_ERROR( parser.allocate(1024, bad_depth), CAPACITY );
+      ASSERT_EQUAL( parser.capacity(), 1024 );
+      ASSERT_EQUAL( parser.max_depth(), 16 );
+      dom::element doc;
+      ASSERT_SUCCESS( parser.parse(json).get(doc) );
+    }
+    TEST_SUCCEED();
+  }
   bool run() {
     constexpr size_t filler_size = 65;
     static_assert(filler_size > SIMDJSON_PADDING, "corruption test doesn't have enough padding"); // 33 = std::strlen(PADDING_FILLED_WITH_NUMBERS)
@@ -213,6 +241,7 @@ namespace adversarial {
       && number_overrun_at_root()
       && number_overrun_in_array()
       && number_overrun_in_object()
+      && failed_allocate_then_parse()
       && allocation_limits()
     ;
   }
@@ -235,8 +264,27 @@ namespace result_forwarding {
     ASSERT_EQUAL( not_an_object.get_values(out).size(), 0 );
     TEST_SUCCEED();
   }
+  // default_if_missing replaces NO_SUCH_FIELD, and only NO_SUCH_FIELD.
+  bool default_if_missing() {
+    TEST_START();
+    dom::parser parser;
+    dom::element doc;
+    ASSERT_SUCCESS( parser.parse(R"({"a":1,"b":"text"})"_padded).get(doc) );
+    int64_t a;
+    ASSERT_SUCCESS( doc["a"].get_int64().default_if_missing(7).get(a) );
+    ASSERT_EQUAL( a, 1 );
+    int64_t c;
+    ASSERT_SUCCESS( doc["c"].get_int64().default_if_missing(7).get(c) );
+    ASSERT_EQUAL( c, 7 );
+    int64_t b;
+    ASSERT_ERROR( doc["b"].get_int64().default_if_missing(7).get(b), INCORRECT_TYPE );
+    int64_t nested;
+    ASSERT_ERROR( doc["a"]["x"].get_int64().default_if_missing(7).get(nested), INCORRECT_TYPE );
+    TEST_SUCCEED();
+  }
   bool run() {
-    return get_values_on_error();
+    return get_values_on_error()
+      && default_if_missing();
   }
 }
 

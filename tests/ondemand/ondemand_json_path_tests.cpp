@@ -525,8 +525,62 @@ namespace json_path_tests {
         TEST_SUCCEED();
     }
 
+    // at_path() converts the path with json_path_to_pointer_conversion(), which
+    // copied the quotes of a bracket-quoted key into the pointer: $['a']['b']
+    // looked up the keys 'a' and 'b' with their quotes, so it matched a key
+    // spelled that way in the document and missed the key a.
+    // for_each_at_path_with_wildcard() and DOM read $['a'] as the key a.
+    bool quoted_key_in_at_path() {
+        TEST_START();
+        auto json = R"({"a":{"b":1,"c/d":2},"'a'":{"'b'":9}})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        int64_t value;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        for (const char *path : {"$['a']['b']", R"($["a"]["b"])", "$.a['b']", "$['a'].b"}) {
+            std::cout << "  " << path << std::endl;
+            ASSERT_SUCCESS(doc.at_path(path).get(value));
+            ASSERT_EQUAL(value, 1);
+        }
+        ASSERT_SUCCESS(doc.at_path("$['a']['c/d']").get(value));
+        ASSERT_EQUAL(value, 2);
+        // The quotes are not part of the key: a key holding quotes is reached
+        // by quoting it.
+        ASSERT_SUCCESS(doc.at_path(R"($["'a'"]["'b'"])").get(value));
+        ASSERT_EQUAL(value, 9);
+        ASSERT_ERROR(doc.at_path("$['a']['x']").get(value), NO_SUCH_FIELD);
+        // A quoted key needs its closing quote and the ] right after it.
+        ASSERT_ERROR(doc.at_path("$['a']['b").get(value), INVALID_JSON_POINTER);
+        ASSERT_ERROR(doc.at_path("$['a'x]").get(value), INVALID_JSON_POINTER);
+        TEST_SUCCEED();
+    }
+
+    bool root_selector_on_value() {
+        TEST_START();
+        auto json = R"({"a":{"b":[1,2]},"n":7})"_padded;
+        ondemand::parser parser;
+        ondemand::document doc;
+        ondemand::value val;
+        std::string_view actual;
+        int64_t x;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ASSERT_SUCCESS(doc.at_path("$.a").get(val));
+        ASSERT_SUCCESS(val.at_path("$").get(val));
+        ASSERT_SUCCESS(simdjson::to_json_string(val).get(actual));
+        ASSERT_EQUAL(actual, R"({"b":[1,2]})");
+        ASSERT_SUCCESS(doc.at_path("$.a").at_path("$").at_path("$.b[1]").get(x));
+        ASSERT_EQUAL(x, 2);
+        ASSERT_SUCCESS(doc.at_path("$.n").at_path("$").get(x));
+        ASSERT_EQUAL(x, 7);
+        ASSERT_SUCCESS(doc.at_path("$.n").get(val));
+        ASSERT_ERROR(val.at_path("$.x").get(val), INVALID_JSON_POINTER);
+        TEST_SUCCEED();
+    }
+
     bool run() {
         return
+                root_selector_on_value() &&
+                quoted_key_in_at_path() &&
                 at_path_after_fatal_error() &&
 #if SIMDJSON_EXCEPTIONS
                 json_path_invalidation_exceptions() &&
@@ -542,6 +596,9 @@ namespace json_path_tests {
                 json_path_invalidation() &&
                 demo_test() &&
                 demo_relative_path() &&
+                run_success_test(R"({"answer":42})"_padded, "$", R"({"answer":42})") &&
+                run_success_test("[1,2]"_padded, "$", "[1,2]") &&
+                run_failure_test("42"_padded, "$", SCALAR_DOCUMENT_AS_VALUE) &&
                 run_success_test(TEST_RFC_JSON,".foo",R"(["bar", "baz"])") &&
                 run_success_test(TEST_RFC_JSON,".foo[0]",R"("bar")") &&
                 run_success_test(TEST_RFC_JSON,".",R"(0)") &&

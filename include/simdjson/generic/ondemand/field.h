@@ -117,7 +117,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field> : public SIMDJS
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::field &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 
   simdjson_inline simdjson_result<std::string_view> unescaped_key(bool allow_replacement = false) noexcept;
 #if SIMDJSON_SUPPORTS_CHAR8_T

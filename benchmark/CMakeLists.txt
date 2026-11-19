@@ -61,7 +61,7 @@ if (TARGET benchmark::benchmark)
     if(SIMDJSON_COMPETITION AND "cxx_std_23" IN_LIST CMAKE_CXX_COMPILE_FEATURES AND NOT CMAKE_VERSION VERSION_LESS 3.28)
       CPMAddPackage(
         NAME jsonifier
-        URL https://github.com/nihilai-collective/jsonifier/archive/60aa533.zip
+        URL https://github.com/nihilai-collective/jsonifier/archive/6bb332810900885dd25e952062a2990b7c50e679.zip
         EXCLUDE_FROM_ALL YES
       )
       target_compile_definitions(Jsonifier INTERFACE SIMDJSON_COMPETITION_JSONIFIER)

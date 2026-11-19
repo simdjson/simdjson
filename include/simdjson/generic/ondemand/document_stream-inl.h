@@ -401,6 +401,77 @@ inline size_t document_stream::next_batch_start() const noexcept {
   return batch_start + parser->implementation->structural_indexes[parser->implementation->n_structural_indexes];
 }
 
+// Whether the documents in [pos, end) are well formed. Balanced brackets are not
+// enough: On-Demand may skip the ] in `[1,]` as a value.
+inline bool stream_documents_are_well_formed(const uint8_t *batch, const uint32_t *pos, const uint32_t *end) noexcept {
+  uint64_t is_object[16]{}; // one bit per open container, up to depth 1024
+  size_t depth = 0;
+  enum { value, first_value, key, first_key, colon, comma_or_close } expected = value;
+  for (; pos < end; pos++) {
+    const uint8_t c = batch[*pos];
+    if (expected == comma_or_close && depth == 0) { expected = value; } // next document
+    const bool in_object = depth > 0 && ((is_object[(depth - 1) / 64] >> ((depth - 1) % 64)) & 1);
+    switch (expected) {
+      case value: case first_value:
+        if (c == ']' && expected == first_value) { depth--; expected = comma_or_close; break; }
+        if (c == ',' || c == ':' || c == ']' || c == '}') { return false; }
+        expected = comma_or_close;
+        if (c == '[' || c == '{') {
+          if (depth == 1024) { return false; }
+          const uint64_t bit = uint64_t(1) << (depth % 64);
+          is_object[depth / 64] = (c == '{') ? (is_object[depth / 64] | bit) : (is_object[depth / 64] & ~bit);
+          depth++;
+          expected = (c == '{') ? first_key : first_value;
+        }
+        break;
+      case key: case first_key:
+        if (c == '}' && expected == first_key) { depth--; expected = comma_or_close; break; }
+        if (c != '"') { return false; }
+        expected = colon;
+        break;
+      case colon:
+        if (c != ':') { return false; }
+        expected = value;
+        break;
+      case comma_or_close:
+        if (c == ',') { expected = in_object ? key : value; break; }
+        if (c != (in_object ? '}' : ']')) { return false; }
+        depth--;
+        break;
+    }
+  }
+  return depth == 0 && expected == comma_or_close;
+}
+
+// If the byte past the batch could continue its last document, end the batch
+// before an invalid tail, so that On-Demand cannot read past it. Once per batch.
+simdjson_never_inline error_code end_batch_before_invalid_tail(internal::dom_parser_implementation &impl, const uint8_t *batch) noexcept {
+  const uint32_t n = impl.n_structural_indexes;
+  if (n == 0) { return SUCCESS; }
+  const uint32_t *const first = impl.structural_indexes.get();
+  const uint32_t *const end = first + n;
+  const uint8_t next = batch[*end];
+  const uint8_t last = batch[*(end - 1)];
+  if (!(next == ',' || next == ':' || next == ']' || next == '}' ||
+        last == ',' || last == ':' || last == '[' || last == '{')) {
+    return SUCCESS;
+  }
+  const uint32_t *start = end - 1;
+  for (; start > first; start--) {
+    const uint8_t c = batch[*start];
+    const uint8_t previous = batch[*(start - 1)];
+    if (c != ',' && c != ':' && c != ']' && c != '}' &&
+        previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+      break;
+    }
+  }
+  if (stream_documents_are_well_formed(batch, start, end)) { return SUCCESS; }
+  if (start == first) { return TAPE_ERROR; }
+  impl.n_structural_indexes = uint32_t(start - first);
+  impl.structural_indexes[impl.n_structural_indexes + 1] = *start; // for truncated_bytes()
+  return SUCCESS;
+}
+
 inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch_start) noexcept {
   // This code only updates the structural index in the parser, it does not update any json_iterator
   // instance.
@@ -419,7 +490,8 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         mode = stage1_mode::streaming_final;
         break;
     }
-    return p.implementation->stage1(&buf[_batch_start], remaining, mode);
+    error_code err = p.implementation->stage1(&buf[_batch_start], remaining, mode);
+    return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   } else {
     // Partial batch
     switch (format) {
@@ -433,7 +505,8 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         mode = stage1_mode::streaming_partial;
         break;
     }
-    return p.implementation->stage1(&buf[_batch_start], batch_size, mode);
+    error_code err = p.implementation->stage1(&buf[_batch_start], batch_size, mode);
+    return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   }
 }
 

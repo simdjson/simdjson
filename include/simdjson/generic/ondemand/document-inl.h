@@ -425,6 +425,14 @@ simdjson_inline simdjson_result<number> document::get_number() noexcept {
 
 simdjson_inline simdjson_result<std::string_view> document::raw_json_token() noexcept {
   auto _iter = get_root_value_iterator();
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  if (iter.allow_incomplete_json()) {
+    const uint32_t length = _iter.peek_root_length();
+    const size_t remaining_input_length = iter.remaining_input_length(_iter.peek_start());
+    return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()),
+        remaining_input_length < length ? uint32_t(remaining_input_length) : length);
+  }
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   return std::string_view(reinterpret_cast<const char*>(_iter.peek_start()), _iter.peek_root_length());
 }
 
@@ -452,7 +460,7 @@ simdjson_inline simdjson_result<value> document::at_path(std::string_view json_p
   // Rewind the document each time at_path is called. After a fatal error,
   // the document cannot be walked again: we report the error instead.
   SIMDJSON_TRY(iter.rewind());
-  if (json_path.empty()) {
+  if (json_path.empty() || json_path == "$") {
       return this->get_value();
   }
   json_type t;
@@ -479,6 +487,12 @@ simdjson_inline error_code document::for_each_at_path_with_wildcard(std::string_
   SIMDJSON_TRY(iter.rewind());
   if (json_path.empty()) {
       return INVALID_JSON_POINTER;
+  }
+  if (json_path == "$") {
+    value root;
+    SIMDJSON_TRY(get_value().get(root));
+    callback(root);
+    return SUCCESS;
   }
   json_type t;
   SIMDJSON_TRY(type().get(t));

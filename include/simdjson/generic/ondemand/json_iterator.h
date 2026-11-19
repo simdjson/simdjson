@@ -65,7 +65,7 @@ protected:
 #endif
 
 public:
-  simdjson_inline json_iterator() noexcept = default;
+  simdjson_inline json_iterator() noexcept {}
   simdjson_inline json_iterator(json_iterator &&other) noexcept;
   simdjson_inline json_iterator &operator=(json_iterator &&other) noexcept;
   simdjson_inline explicit json_iterator(const json_iterator &other) noexcept = default;
@@ -74,6 +74,22 @@ public:
    * Skips a JSON value, whether it is a scalar, array or object.
    */
   simdjson_warn_unused simdjson_inline error_code skip_child(depth_t parent_depth) noexcept;
+  /**
+   * Skips the value of a field whose colon was just read.
+   */
+  simdjson_warn_unused simdjson_inline error_code skip_value(depth_t parent_depth) noexcept;
+  /**
+   * Skips what is left of a child that was entered or read in part: the iterator is past the
+   * start of the child.
+   */
+  simdjson_warn_unused simdjson_inline error_code skip_partial(depth_t parent_depth) noexcept;
+  /** Skips the tokens of a container that was entered until the depth returns to parent_depth. */
+  simdjson_warn_unused simdjson_inline error_code skip_rest(depth_t parent_depth) noexcept;
+  /** Tells whether the token just consumed cannot follow the token before it. */
+  simdjson_inline bool out_of_place(uint8_t current) const noexcept;
+  simdjson_inline error_code out_of_place_error() noexcept;
+  /** Tells whether the string before pos, followed by a colon, is a key. */
+  static bool string_is_key(const uint8_t *json, token_position pos, token_position root, token_position end) noexcept;
 
   /**
    * Tell whether the iterator is still at the start
@@ -90,6 +106,12 @@ public:
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   simdjson_inline bool allow_incomplete_json() const noexcept;
   simdjson_inline size_t remaining_input_length(const uint8_t *json) const noexcept;
+  /**
+   * The last scalar of an incomplete document may be cut by the end of the input, and the number
+   * and atom parsers would read on into the bytes past it. Returns a copy of such a scalar padded
+   * with spaces, and json itself for any other scalar.
+   */
+  simdjson_inline const uint8_t *scalar_within_input(const uint8_t *json) noexcept;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
   /**
@@ -269,6 +291,12 @@ public:
    * overflow.
    */
   simdjson_inline simdjson_result<std::string_view> unescape(raw_json_string in, bool allow_replacement) noexcept;
+  /**
+   * Unescape the raw_json_string into receiver. Unlike unescape(), this doesn't leave the string in
+   * the parser's string buffer.
+   */
+  template <typename string_type>
+  simdjson_warn_unused simdjson_inline error_code unescape(raw_json_string in, string_type& receiver, bool allow_replacement) noexcept;
   simdjson_inline simdjson_result<std::string_view> unescape_wobbly(raw_json_string in) noexcept;
 
   simdjson_inline void reenter_child(token_position position, depth_t child_depth) noexcept;
@@ -341,7 +369,7 @@ public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::json_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
 
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson

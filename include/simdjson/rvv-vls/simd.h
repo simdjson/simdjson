@@ -76,7 +76,9 @@ namespace simd {
     simdjson_inline simd8<bool> operator|(const simd8<bool> other) const {  return __riscv_vmor(*this, other, VL8); }
     simdjson_inline simd8<bool> operator&(const simd8<bool> other) const {  return __riscv_vmand(*this, other, VL8); }
     simdjson_inline simd8<bool> operator^(const simd8<bool> other) const {  return __riscv_vmxor(*this, other, VL8); }
-    simdjson_inline simd8<bool> bit_andnot(const simd8<bool> other) const { return __riscv_vmandn(other, *this, VL8); }
+    simdjson_inline simd8<bool> bit_andnot(const simd8<bool> other) const { return __riscv_vmandn(*this, other, VL8); }
+    simdjson_inline simd8<bool> operator==(const simd8<bool> other) const { return __riscv_vmxnor(*this, other, VL8); }
+    simdjson_inline bool any() const { return __riscv_vfirst(value, VL8) >= 0; }
     simdjson_inline simd8<bool> operator~() const { return __riscv_vmnot(*this, VL8); }
     simdjson_inline simd8<bool>& operator|=(const simd8<bool> other) { auto this_cast = static_cast<simd8<bool>*>(this); *this_cast = *this_cast | other; return *this_cast; }
     simdjson_inline simd8<bool>& operator&=(const simd8<bool> other) { auto this_cast = static_cast<simd8<bool>*>(this); *this_cast = *this_cast & other; return *this_cast; }
@@ -128,9 +130,9 @@ namespace simd {
     simdjson_inline simd8<uint8_t> operator^(const simd8<uint8_t> other) const { return  __riscv_vxor_vv_u8m1( value, other, VL8); }
     simdjson_inline simd8<uint8_t> operator~() const { return __riscv_vnot_v_u8m1(value, VL8); }
 #if __riscv_zvbb
-    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return __riscv_vandn_vv_u8m1(other, value, VL8); }
+    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return __riscv_vandn_vv_u8m1(value, other, VL8); }
 #else
-    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return other & ~*this; }
+    simdjson_inline simd8<uint8_t> bit_andnot(const simd8<uint8_t> other) const { return *this & ~other; }
 #endif
     simdjson_inline simd8<uint8_t>& operator|=(const simd8<uint8_t> other) { value = *this | other; return *this; }
     simdjson_inline simd8<uint8_t>& operator&=(const simd8<uint8_t> other) { value = *this & other; return *this; }
@@ -158,6 +160,8 @@ namespace simd {
     simdjson_inline simd8<uint8_t>& operator-=(const simd8<uint8_t> other) { value = *this - other; return *this; }
 
     // Order-specific operations
+    simdjson_inline simd8<uint8_t> max_val(const simd8<uint8_t> other) const { return __riscv_vmaxu(value, other, VL8); }
+    simdjson_inline simd8<uint8_t> min_val(const simd8<uint8_t> other) const { return __riscv_vminu(value, other, VL8); }
     simdjson_inline simd8<bool> operator<=(const simd8<uint8_t> other) const { return __riscv_vmsleu(value, other, VL8); }
     simdjson_inline simd8<bool> operator>=(const simd8<uint8_t> other) const { return __riscv_vmsgeu(value, other, VL8); }
     simdjson_inline simd8<bool> operator<(const simd8<uint8_t> other) const  { return __riscv_vmsltu(value, other, VL8); }
@@ -169,10 +173,17 @@ namespace simd {
     simdjson_inline simd8<uint8_t> lt_bits(const simd8<uint8_t> other) const { return simd8<uint8_t>(*this < other); }
 
     // Bit-specific operations
+    simdjson_inline simd8<bool> bits_not_set() const { return *this == uint8_t(0); }
+    simdjson_inline simd8<bool> bits_not_set(simd8<uint8_t> bits) const { return (*this & bits).bits_not_set(); }
+    simdjson_inline simd8<bool> any_bits_set() const { return ~this->bits_not_set(); }
+    simdjson_inline simd8<bool> any_bits_set(simd8<uint8_t> bits) const { return ~this->bits_not_set(bits); }
+    simdjson_inline bool bits_not_set_anywhere() const { return !any_bits_set_anywhere(); }
     simdjson_inline bool any_bits_set_anywhere() const {
       return __riscv_vfirst(__riscv_vmsne(value, 0, VL8), VL8) >= 0;
     }
+    simdjson_inline bool bits_not_set_anywhere(simd8<uint8_t> bits) const { return !any_bits_set_anywhere(bits); }
     simdjson_inline bool any_bits_set_anywhere(simd8<uint8_t> bits) const { return (*this & bits).any_bits_set_anywhere(); }
+    simdjson_inline bool is_ascii() const { return bits_not_set_anywhere(uint8_t(0x80)); }
     template<int N>
     simdjson_inline simd8<uint8_t> shr() const { return __riscv_vsrl(value, N, VL8); }
     template<int N>

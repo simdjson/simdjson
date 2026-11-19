@@ -22,25 +22,37 @@ simdjson_inline parser::parser(size_t max_capacity) noexcept
 }
 
 simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capacity, size_t new_max_depth) noexcept {
+  // Reject an invalid depth before touching anything, as the implementation
+  // would: a failed allocate() leaves the parser as it was.
+  if (new_max_depth == 0 || new_max_depth > SIMDJSON_MAX_DEPTH) { return CAPACITY; }
   if (new_capacity > max_capacity()) { return CAPACITY; }
   if (string_buf && new_capacity <= capacity() && new_max_depth <= max_depth()) { return SUCCESS; }
 
   // string_capacity copied from document::allocate
-  _capacity = 0;
-  if(5 * (new_capacity / 3) + SIMDJSON_PADDING < SIMDJSON_PADDING) {
+  if (5 * (new_capacity / 3) + SIMDJSON_PADDING < SIMDJSON_PADDING) {
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (new_capacity / 3) + SIMDJSON_PADDING, 64);
-  string_buf.reset(new (std::nothrow) uint8_t[string_capacity]);
+  std::unique_ptr<uint8_t[]> new_string_buf(new (std::nothrow) uint8_t[string_capacity]);
+  if (!new_string_buf) { return MEMALLOC; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
-  start_positions.reset(new (std::nothrow) token_position[new_max_depth]);
+  std::unique_ptr<token_position[]> new_start_positions(new (std::nothrow) token_position[new_max_depth]);
+  if (!new_start_positions) { return MEMALLOC; }
 #endif
   if (implementation) {
-    SIMDJSON_TRY( implementation->set_capacity(new_capacity) );
-    SIMDJSON_TRY( implementation->set_max_depth(new_max_depth) );
+    error_code err = implementation->allocate(new_capacity, new_max_depth);
+    if (err) { return err; }
   } else {
-    SIMDJSON_TRY( simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation) );
+    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation);
+    if (err) {
+      implementation.reset();
+      return err;
+    }
   }
+  string_buf = std::move(new_string_buf);
+#if SIMDJSON_DEVELOPMENT_CHECKS
+  start_positions = std::move(new_start_positions);
+#endif
   _capacity = new_capacity;
   _max_depth = new_max_depth;
   return SUCCESS;
@@ -87,7 +99,40 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_a
     if (err != UNCLOSED_STRING)
       return err;
   }
-  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this, true });
+  SIMDJSON_TRY( end_incomplete_json(json) );
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(json.data());
+  const uint8_t first = buf[implementation->structural_indexes[0]];
+  const bool lone_container = implementation->n_structural_indexes == 1 && (first == '{' || first == '[');
+  return document::start({ buf, this, !lone_container });
+}
+
+simdjson_inline bool parser::can_end_incomplete_json(uint8_t c) noexcept {
+  return c != '"' && c != ',' && c != ']' && c != '}';
+}
+
+simdjson_warn_unused simdjson_inline error_code parser::end_incomplete_json(padded_string_view json) noexcept {
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(json.data());
+  const size_t len = json.length();
+  uint32_t *indexes = implementation->structural_indexes.get();
+  uint32_t n = implementation->n_structural_indexes;
+  while (n > 1) {
+    const uint8_t last = buf[indexes[n - 1]];
+    if (last != ',' && last != ':' && last != '[' && last != '{') { break; }
+    n--;
+  }
+  implementation->n_structural_indexes = n;
+  indexes[n] = uint32_t(len);
+  indexes[n + 1] = uint32_t(len);
+  indexes[n + 2] = 0;
+  const uint8_t first = buf[indexes[0]];
+  if (n == 1 && first != '{' && first != '[') { return SUCCESS; }
+  if (simdjson_likely(can_end_incomplete_json(buf[len]))) { return SUCCESS; }
+  size_t end = len + 1;
+  while (end < len + SIMDJSON_PADDING && !can_end_incomplete_json(buf[end])) { end++; }
+  if (end == len + SIMDJSON_PADDING) { return INSUFFICIENT_PADDING; }
+  indexes[n] = uint32_t(end);
+  indexes[n + 1] = uint32_t(end);
+  return SUCCESS;
 }
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 

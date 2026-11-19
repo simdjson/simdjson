@@ -694,6 +694,21 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   > A captured position is only valid for the object it came from, and only until that object is
   > `reset()` or the parser `iterate()`s a new document: applying it to a different object, or after
   > either of those, is undefined behavior that `revert_position()` cannot detect.
+  >
+  > For an optional field with a fallback value, convert the field and then call
+  > `default_if_missing(value)`: if the key is missing (`NO_SUCH_FIELD`), you get `value` instead
+  > of an error. Any other error (e.g., `INCORRECT_TYPE` or malformed JSON) is still reported.
+  >
+  > ```cpp
+  > ondemand::parser parser;
+  > auto json = R"(  { "x": 1, "y": 2 }  )"_padded;
+  > auto doc = parser.iterate(json);
+  > double x = doc["x"].get_double().default_if_missing(0.0); // 1
+  > double z = doc["z"].get_double().default_if_missing(0.0); // 0, "z" is missing
+  > // Without exceptions:
+  > double y;
+  > auto error = doc["y"].get_double().default_if_missing(0.0).get(y);
+  > ```
 * **Output to strings:** Given a document, a value, an array or an object in a JSON document, you can output a JSON string version suitable to be parsed again as JSON content: `simdjson::to_json_string(element)`. A call to `to_json_string` consumes fully the element: if you apply it on a document, the internal pointer is advanced to the end of the document. The `simdjson::to_json_string` does not allocate memory. The `to_json_string` function should not be confused with retrieving the value of a string instance which are escaped and represented using a lightweight `std::string_view` instance pointing at an internal string buffer inside the parser instance. To illustrate, the first of the following two code segments will print the unescaped string `"test"` complete with the quote whereas the second one will print the escaped content of the string (without the quotes).
   > ```cpp
   > // serialize a JSON to an escaped std::string instance so that it can be parsed again as JSON
@@ -2182,7 +2197,7 @@ be represented as `value` instances. You can check that a document is a scalar w
 JSONPath
 ------------
 
-The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` to access a field and `[]` to access a specific index.
+The simdjson library supports a subset of [JSONPath](https://www.rfc-editor.org/rfc/rfc9535) (RFC 9535) through the `at_path()` method, allowing you to reach further into the document in a single call. The subset of JSONPath that is implemented is the subset that is trivially convertible into the JSON Pointer format, using `.` or `['key']` to access a field and `[]` to access a specific index.
 
 This implementation relies on `at_path()` converting its argument to JSON Pointer and then calling `at_pointer`, which makes use of
 [`rewind`](#rewind) to reset the parser at the beginning of the document. Hence, it invalidates all previously parsed values, objects
@@ -2238,6 +2253,13 @@ ondemand::object obj = doc.get_object();
 int64_t x = obj.at_path("$.c.foo.a[1]"); // 20
 x = obj.at_path("$.d.foo2.a.2"); // 30
 ```
+
+The path `$` on its own selects the value it is applied to: `doc.at_path("$")` returns the root
+of the document (a scalar document gives `SCALAR_DOCUMENT_AS_VALUE`, as with `at_path("")`), and
+`value.at_path("$")` returns the value itself. As with `at_pointer("")`, an On-Demand `object` or
+`array` cannot return itself as a value, so `at_path("$")` on them returns `INVALID_JSON_POINTER`.
+The DOM accepts `$` everywhere, and `at_path_with_wildcard("$")` (DOM) and
+`for_each_at_path_with_wildcard("$")` (On-Demand) yield the root as their single match.
 
 ## Using `for_each_at_path_with_wildcard` for JSONPath Queries (On-Demand)
 

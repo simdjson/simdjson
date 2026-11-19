@@ -56,9 +56,7 @@ inline simdjson_result<dom::element> simdjson_result<dom::array>::at_pointer(std
 
  inline simdjson_result<dom::element> simdjson_result<dom::array>::at_path(std::string_view json_path) const noexcept {
   if (error()) { return error(); }
-  auto json_pointer = json_path_to_pointer_conversion(json_path);
-  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
-  return at_pointer(json_pointer);
+  return first.at_path(json_path);
  }
 
 inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::array>::at_path_with_wildcard(std::string_view json_path) const noexcept {
@@ -91,7 +89,8 @@ inline array::iterator array::begin() const noexcept {
 }
 inline array::iterator array::end() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  return internal::tape_ref(tape.doc, tape.after_element() - 1);
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.tape_ref_type() == internal::tape_type::START_ARRAY);
+  return internal::tape_ref(tape.doc, tape.matching_brace_index() - 1);
 }
 inline size_t array::size() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
@@ -127,14 +126,12 @@ inline simdjson_result<element> array::at_pointer(std::string_view json_pointer)
   SIMDJSON_TRY(internal::parse_json_pointer_array_index(json_pointer, array_index, i));
 
   // Get the child
-  auto child = array(tape).at(array_index);
+  element child;
   // If there is an error, it ends here
-  if(child.error()) {
-    return child;
-  }
+  SIMDJSON_TRY(array(tape).at(array_index).get(child));
   // If there is a /, we're not done yet, call recursively.
   if (i < json_pointer.length()) {
-    child = child.at_pointer(json_pointer.substr(i));
+    return child.at_pointer(json_pointer.substr(i));
   }
   return child;
 }

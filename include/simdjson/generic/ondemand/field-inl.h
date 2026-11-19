@@ -48,10 +48,10 @@ simdjson_inline simdjson_warn_unused simdjson_result<std::u8string_view> field::
 
 template <typename string_type>
 simdjson_inline simdjson_warn_unused error_code field::unescaped_key(string_type& receiver, bool allow_replacement) noexcept {
-  std::string_view key;
-  SIMDJSON_TRY( unescaped_key(allow_replacement).get(key) );
-  internal::assign_utf8(receiver, key);
-  return SUCCESS;
+  SIMDJSON_ASSUME(first.buf != nullptr); // We would like to call .alive() but Visual Studio won't let us.
+  error_code key_error = second.iter.json_iter().unescape(first, receiver, allow_replacement);
+  first.consume();
+  return key_error;
 }
 
 simdjson_inline raw_json_string field::key() const noexcept {

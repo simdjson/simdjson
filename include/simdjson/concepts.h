@@ -40,10 +40,25 @@ template <typename T>
 concept string_view_like = std::is_convertible_v<T, std::string_view> &&
                            !std::is_convertible_v<T, const char*>;
 
+template <typename T>
+concept optional_type = requires(std::remove_cvref_t<T> obj) {
+  typename std::remove_cvref_t<T>::value_type;
+  { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
+  requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
+    obj.emplace(std::move(val));
+    {
+      obj.value_or(val)
+    } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
+  };
+  { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
+  { obj.reset() } noexcept -> std::same_as<void>;
+};
+
 template<typename T>
 concept constructible_from_string_view = std::is_constructible_v<T, std::string_view>
                                         && !std::is_same_v<T, std::string_view>
-                                        && std::is_default_constructible_v<T>;
+                                        && std::is_default_constructible_v<T>
+                                        && !optional_type<T>;
 
 #if SIMDJSON_SUPPORTS_CHAR8_T
 /**
@@ -55,7 +70,8 @@ template<typename T>
 concept constructible_from_u8string_view = std::is_constructible_v<T, std::u8string_view>
                                         && !std::is_same_v<T, std::u8string_view>
                                         && !std::is_constructible_v<T, std::string_view>
-                                        && std::is_default_constructible_v<T>;
+                                        && std::is_default_constructible_v<T>
+                                        && !optional_type<T>;
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
 
 template<typename M>
@@ -124,22 +140,6 @@ concept smart_pointer = requires(std::remove_cvref_t<T> ptr) {
   // Check if T can be dereferenced
   { *ptr } -> std::same_as<typename std::remove_cvref_t<T>::element_type &>;
 };
-
-template <typename T>
-concept optional_type = requires(std::remove_cvref_t<T> obj) {
-  typename std::remove_cvref_t<T>::value_type;
-  { obj.value() } -> std::same_as<typename std::remove_cvref_t<T>::value_type&>;
-  requires requires(typename std::remove_cvref_t<T>::value_type &&val) {
-    obj.emplace(std::move(val));
-    {
-      obj.value_or(val)
-    } -> std::convertible_to<typename std::remove_cvref_t<T>::value_type>;
-  };
-  { static_cast<bool>(obj) } -> std::same_as<bool>; // convertible to bool
-  { obj.reset() } noexcept -> std::same_as<void>;
-};
-
-
 
 // Types we serialize as JSON strings (not as containers)
 template <typename T>

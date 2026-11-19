@@ -37,7 +37,7 @@ struct implementation_simdjson_result_base {
   /**
    * Create a new empty result with error = UNINITIALIZED.
    */
-  simdjson_inline implementation_simdjson_result_base() noexcept = default;
+  simdjson_inline implementation_simdjson_result_base() noexcept {}
 
   /**
    * Create a new error result.

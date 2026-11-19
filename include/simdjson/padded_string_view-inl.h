@@ -196,14 +196,30 @@ inline padded_string_view slice_at(padded_string_view data, char delimiter,
   const size_t raw_begin = index * block_size;
   if (raw_begin >= data.size()) { return {}; }
 
-  auto snap = [&](size_t want) -> size_t {
-    if (want >= data.size()) { return data.size(); }
-    const void *p = std::memchr(data.data() + want, delimiter, data.size() - want);
-    return p ? size_t(static_cast<const char *>(p) - data.data()) + 1 : data.size();
+  auto find = [&](size_t from, size_t to) -> const char * {
+    return static_cast<const char *>(
+        std::memchr(data.data() + from, delimiter, to - from));
   };
 
-  const size_t begin = (raw_begin == 0) ? 0 : snap(raw_begin);
-  const size_t end = snap(raw_begin + block_size);
+  // The slice begins just past the first delimiter in its own block. If the
+  // block holds no delimiter, it lies inside a document that an earlier slice
+  // owns, and the slice is empty. Searching past the block would give the same
+  // answer, but would make every block inside a long document scan to that
+  // document's end: quadratic time in the document's length.
+  size_t begin = 0;
+  if (raw_begin != 0) {
+    const size_t block_end = (data.size() - raw_begin > block_size)
+                                 ? raw_begin + block_size : data.size();
+    const char *p = find(raw_begin, block_end);
+    if (p == nullptr) { return {}; }
+    begin = size_t(p - data.data()) + 1;
+  }
+  // Only the slice that owns a document scans to its end.
+  size_t end = data.size();
+  if (data.size() - raw_begin > block_size) {
+    const char *p = find(raw_begin + block_size, data.size());
+    if (p != nullptr) { end = size_t(p - data.data()) + 1; }
+  }
   if (begin >= end) { return {}; }
   return padded_string_view(data.data() + begin, end - begin,
                             data.capacity() - begin);

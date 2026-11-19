@@ -344,7 +344,17 @@ bool json_path_with_wildcard() {
   std::string_view string_value;
   std::uint64_t num_value;
   dom::object obj;
-  ASSERT_EQUAL(parsed_json.at_path_with_wildcard("$").error(), INVALID_JSON_POINTER);
+  ASSERT_SUCCESS(parsed_json.at_path_with_wildcard("$").get(values));
+  ASSERT_EQUAL(values.size(), 1);
+  ASSERT_TRUE(values[0].is_object());
+  {
+    dom::parser scalar_parser;
+    std::vector<dom::element> scalar_values;
+    ASSERT_SUCCESS(scalar_parser.parse("42"_padded).at_path_with_wildcard("$").get(scalar_values));
+    ASSERT_EQUAL(scalar_values.size(), 1);
+    ASSERT_SUCCESS(scalar_values[0].get(num_value));
+    ASSERT_EQUAL(num_value, 42);
+  }
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("1").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("2").error(), INVALID_JSON_POINTER);
   ASSERT_EQUAL(parsed_json.at_path_with_wildcard("a").error(), INVALID_JSON_POINTER);
@@ -577,6 +587,44 @@ bool quoted_key_after_last_wildcard() {
   TEST_SUCCEED();
 }
 
+// at_path() converts the path with json_path_to_pointer_conversion(), which
+// copied the quotes of a bracket-quoted key into the pointer: $['a']['b']
+// looked up the keys 'a' and 'b' with their quotes, so it matched a key
+// spelled that way in the document and missed the key a. at_path_with_wildcard()
+// and On-Demand read $['a'] as the key a.
+bool quoted_key_in_at_path() {
+  TEST_START();
+  auto json = R"({"a":{"b":1,"c/d":2,"e~f":3},"'a'":{"'b'":9}})"_padded;
+  dom::parser parser;
+  dom::element doc;
+  ASSERT_SUCCESS(parser.parse(json).get(doc));
+  int64_t value;
+
+  for (const char *path : {"$['a']['b']", R"($["a"]["b"])", "$.a['b']", "$['a'].b", R"($["a"].b)"}) {
+    std::cout << "  " << path << std::endl;
+    ASSERT_SUCCESS(doc.at_path(path).get(value));
+    ASSERT_EQUAL(value, 1);
+  }
+  ASSERT_SUCCESS(doc.at_path("$['a']['c/d']").get(value));
+  ASSERT_EQUAL(value, 2);
+  ASSERT_SUCCESS(doc.at_path("$['a']['e~f']").get(value));
+  ASSERT_EQUAL(value, 3);
+  ASSERT_TRUE(doc.at_path("$['a']").is_object());
+  // The quotes are not part of the key: a key holding quotes is reached by
+  // quoting it.
+  ASSERT_SUCCESS(doc.at_path(R"($["'a'"]["'b'"])").get(value));
+  ASSERT_EQUAL(value, 9);
+  ASSERT_EQUAL(doc.at_path("$['a']['x']").error(), NO_SUCH_FIELD);
+  // A quoted key needs its closing quote and the ] right after it.
+  ASSERT_EQUAL(doc.at_path("$['a']['b").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path("$['a'").error(), INVALID_JSON_POINTER);
+  ASSERT_EQUAL(doc.at_path("$['a'x]").error(), INVALID_JSON_POINTER);
+  // An unquoted bracket key is still the key as written.
+  ASSERT_SUCCESS(doc.at_path("$[a][b]").get(value));
+  ASSERT_EQUAL(value, 1);
+  TEST_SUCCEED();
+}
+
 // A '*' inside the final segment is part of the key, as in at_path and
 // On-Demand. It used to be reported as INVALID_JSON_POINTER because the
 // parser looped once more on the empty remainder.
@@ -771,6 +819,8 @@ bool at_path_error_propagation() {
   int64_t value;
   ASSERT_SUCCESS(doc.at_path("$.object.key").get_int64().get(value));
   ASSERT_EQUAL(value, 2);
+  ASSERT_SUCCESS(doc["object"].at_path("$.key").get_int64().get(value));
+  ASSERT_EQUAL(value, 2);
   ASSERT_SUCCESS(doc["array"].get_array().at_path("$[0]").get_int64().get(value));
   ASSERT_EQUAL(value, 1);
   ASSERT_SUCCESS(doc["object"].get_object().at_path("$.key").get_int64().get(value));
@@ -824,9 +874,15 @@ int main() {
       malformed_path_after_wildcard() &&
       wildcard_key_with_slash_or_tilde() &&
       quoted_key_after_last_wildcard() &&
+      quoted_key_in_at_path() &&
       long_path_after_wildcards() &&
       json_path_malformed_deterministic_fuzz() && demo() && modern_support() &&
       at_path_error_propagation() &&
+      run_success_test(R"({"answer":42})"_padded, "$", R"({"answer":42})") &&
+      run_success_test("[1,2]"_padded, "$", "[1,2]") &&
+      run_success_test("42"_padded, "$", "42") &&
+      run_success_test("true"_padded, "$", "true") &&
+      run_success_test("null"_padded, "$", "null") &&
       run_success_test(TEST_RFC_JSON, "$.foo", "[\"bar\",\"baz\"]") &&
       run_success_test(TEST_RFC_JSON, "$.foo[0]", "\"bar\"") &&
       run_success_test(TEST_RFC_JSON, "$.", "0") &&

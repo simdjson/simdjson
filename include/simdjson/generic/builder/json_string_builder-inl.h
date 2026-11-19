@@ -325,14 +325,14 @@ simdjson_inline void string_builder::append_raw(const char *c) noexcept {
 
 simdjson_inline void
 string_builder::append_raw(std::string_view input) noexcept {
-  if (capacity_check(input.size())) {
-    std::memcpy(buffer_data() + position, input.data(), input.size());
-    position += input.size();
-  }
+  append_raw(input.data(), input.size());
 }
 
 simdjson_inline void string_builder::append_raw(const char *str,
                                                 size_t len) noexcept {
+  if (len == 0) {
+    return;
+  }
   if (capacity_check(len)) {
     std::memcpy(buffer_data() + position, str, len);
     position += len;
@@ -431,8 +431,15 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
 #endif
 
 #if SIMDJSON_EXCEPTIONS
-simdjson_inline string_builder::operator std::string() const noexcept(false) {
+simdjson_inline string_builder::operator std::string() const & noexcept(false) {
   return std::string(operator std::string_view());
+}
+
+inline string_builder::operator std::string() && noexcept(false) {
+  std::string out;
+  error_code error = move_to(out);
+  if (error) { throw simdjson_error(error); }
+  return out;
 }
 
 simdjson_inline string_builder::operator std::string_view() const

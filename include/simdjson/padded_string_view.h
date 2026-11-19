@@ -202,6 +202,11 @@ inline padded_string_view pad_with_reserve(std::string& s) noexcept;
  * is longer than block_size; skip it and continue. With block_size larger than
  * the longest document, no slice is ever empty.
  *
+ * Cost: a slice searches its own block for its start, and then from the end of
+ * its block to the next delimiter. An empty slice returns after searching its
+ * block alone. Cutting the whole input therefore scans each byte about twice,
+ * whatever the document lengths.
+ *
  * @param data       The padded input.
  * @param delimiter  The byte that separates documents.
  * @param block_size The nominal slice size, before snapping.

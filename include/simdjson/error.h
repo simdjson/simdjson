@@ -329,6 +329,22 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
   }
 
   /**
+   * Provide a default value for a missing key.
+   *
+   * If the error is NO_SUCH_FIELD, returns a successful result holding default_value.
+   * Otherwise, returns this result unchanged: the value, or any other error
+   * (e.g., INCORRECT_TYPE, TAPE_ERROR) which is still reported.
+   *
+   *   double z = obj["z"].get_double().default_if_missing(0.0);
+   *   // or, without exceptions:
+   *   double z;
+   *   auto error = obj["z"].get_double().default_if_missing(0.0).get(z);
+   *
+   * @param default_value The value to use when the key is missing.
+   */
+  simdjson_warn_unused simdjson_inline simdjson_result<T> default_if_missing(T default_value) && noexcept;
+
+  /**
    * The error.
    */
   simdjson_inline error_code error() const noexcept;
