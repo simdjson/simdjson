@@ -3,8 +3,8 @@
 #define SIMDJSON_CONVERT_INL_H
 
 #include "simdjson/convert.h"
-#if SIMDJSON_SUPPORTS_CONCEPTS
 #include "simdjson/internal/direct_parse.h"
+#if SIMDJSON_SUPPORTS_CONCEPTS
 namespace simdjson {
 namespace convert {
 namespace internal {
@@ -66,6 +66,19 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
     if (m_direct_buf != nullptr) {
       T direct_value{};
       error_code direct_error = simdjson::internal::direct::parse_document(
+          m_direct_buf, m_direct_len, direct_value);
+      if (direct_error == SUCCESS) {
+        return direct_value;
+      }
+      if (direct_error != UNINITIALIZED) {
+        return direct_error;
+      }
+    }
+  } else if constexpr (std::is_same_v<T, std::vector<double>>) {
+    // The number parser reads ahead, so this needs the padding On Demand needs.
+    if (m_direct_buf != nullptr && m_direct_cap >= m_direct_len + SIMDJSON_PADDING) {
+      T direct_value{};
+      error_code direct_error = simdjson::internal::direct::parse_padded_document(
           m_direct_buf, m_direct_len, direct_value);
       if (direct_error == SUCCESS) {
         return direct_value;
