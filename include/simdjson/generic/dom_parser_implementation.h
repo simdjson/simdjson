@@ -70,8 +70,13 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   }
   size_t max_structures = rounded_capacity + 9;
   if(max_structures > SIZE_MAX / sizeof(uint32_t)) { return CAPACITY; }
-  structural_indexes.reset( new (std::nothrow) uint32_t[max_structures] );
-  if (!structural_indexes) { _capacity = 0; return MEMALLOC; }
+  // Allocate before releasing the current buffer so that, on failure, the
+  // implementation keeps its previous buffer and capacity. Otherwise a parser
+  // that still believes it has room skips reallocation and stage 1 rejects
+  // every document with CAPACITY.
+  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
+  if (!new_structural_indexes) { return MEMALLOC; }
+  structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
 
@@ -81,11 +86,14 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
 
 inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(size_t max_depth) noexcept {
   if(max_depth == 0 || max_depth > SIMDJSON_MAX_DEPTH || max_depth > SIZE_MAX / sizeof(open_container)) { return CAPACITY; }
-  // Stage 2 stacks
-  open_containers.reset(new (std::nothrow) open_container[max_depth]);
-  is_array.reset(new (std::nothrow) bool[max_depth]);
-  if (!is_array || !open_containers) { _max_depth = 0; return MEMALLOC; }
-
+  // Stage 2 stacks. Allocate both before touching the parser so that, on
+  // failure, it keeps its previous stacks and depth: a parser whose depth does
+  // not match its stacks would crash in stage 2.
+  std::unique_ptr<open_container[]> new_open_containers(new (std::nothrow) open_container[max_depth]);
+  std::unique_ptr<bool[]> new_is_array(new (std::nothrow) bool[max_depth]);
+  if (!new_is_array || !new_open_containers) { return MEMALLOC; }
+  open_containers = std::move(new_open_containers);
+  is_array = std::move(new_is_array);
   _max_depth = max_depth;
   return SUCCESS;
 }

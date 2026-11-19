@@ -8,7 +8,7 @@ endif()
 add_cpp_test(basictests                 LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_tests      LABELS dom acceptance per_implementation)
 add_cpp_test(document_stream_fuzz_tests LABELS dom acceptance per_implementation)
-add_cpp_test(document_tests             LABELS dom acceptance per_implementation)
+add_cpp_test(document_tests             NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(unpadded_tests             LABELS dom acceptance per_implementation)
 add_cpp_test(padding_contents_tests     LABELS dom acceptance per_implementation)
 add_cpp_test(errortests                 LABELS dom acceptance per_implementation)
@@ -17,14 +17,14 @@ add_cpp_test(integer_tests              LABELS dom acceptance per_implementation
 add_cpp_test(big_integer_tests          LABELS dom acceptance per_implementation)
 add_cpp_test(nan_inf_tests              LABELS dom acceptance per_implementation)
 add_cpp_test(locale_independence_tests  LABELS dom acceptance per_implementation)
-add_cpp_test(jsoncheck                  LABELS dom acceptance per_implementation)
+add_cpp_test(jsoncheck                  NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(json_path_tests            LABELS dom acceptance per_implementation)
 add_cpp_test(array_reverse_tests        LABELS dom acceptance per_implementation)
-add_cpp_test(minefieldcheck             LABELS dom acceptance per_implementation)
-add_cpp_test(numberparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(parse_many_test            LABELS dom acceptance per_implementation)
+add_cpp_test(minefieldcheck             NEEDS_DATA LABELS dom acceptance per_implementation)
+add_cpp_test(numberparsingcheck         NEEDS_DATA LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(parse_many_test            NEEDS_DATA LABELS dom acceptance per_implementation)
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
-add_cpp_test(stringparsingcheck         LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
+add_cpp_test(stringparsingcheck         NEEDS_DATA LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(trivially_copyable_test    LABELS dom acceptance per_implementation)
 
 
@@ -73,6 +73,19 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)
   add_dependencies(acceptance_tests json2json)
   add_dependencies(per_implementation_tests json2json)
+
+  #
+  # jsonpointer tool test: check that jsonpointer resolves a JSON Pointer in
+  # twitter.json, and that it fails cleanly on a file it cannot load
+  #
+  add_test(NAME jsonpointer COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON} /statuses/0/id)
+  set_tests_properties(jsonpointer PROPERTIES PASS_REGULAR_EXPRESSION "\"value\":505874924095815681")
+  set_property(TEST jsonpointer APPEND PROPERTY LABELS acceptance per_implementation)
+  add_test(NAME jsonpointer_missing_file COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON}.missing /statuses/0/id)
+  set_tests_properties(jsonpointer_missing_file PROPERTIES WILL_FAIL TRUE)
+  set_property(TEST jsonpointer_missing_file APPEND PROPERTY LABELS acceptance per_implementation)
+  add_dependencies(acceptance_tests jsonpointer)
+  add_dependencies(per_implementation_tests jsonpointer)
 
   #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON

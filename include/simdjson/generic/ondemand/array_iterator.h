@@ -30,7 +30,7 @@ public:
   using reference = value_type;
 
   /** Create a new, invalid array iterator. */
-  simdjson_inline array_iterator() noexcept = default;
+  simdjson_inline array_iterator() noexcept {}
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
   simdjson_inline ~array_iterator() noexcept;
@@ -88,6 +88,7 @@ private:
    simdjson_inline array_iterator(const value_iterator &_iter, array* _parent) noexcept;
 #endif
   value_iterator iter{};
+  token_position element_start{};
 
   simdjson_inline array_iterator(const value_iterator &iter) noexcept;
 
@@ -112,7 +113,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> : publ
 
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 
   //
   // Iterator interface

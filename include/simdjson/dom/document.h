@@ -20,7 +20,7 @@ public:
    *
    * The parser will allocate capacity as needed.
    */
-  document() noexcept = default;
+  simdjson_inline document() noexcept {}
   ~document() noexcept = default;
 
   /**

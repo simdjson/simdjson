@@ -23,7 +23,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline array() noexcept = default;
+  simdjson_inline array() noexcept {}
 
   /**
    * Begin array iteration.
@@ -270,7 +270,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> : public SIMDJS
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::array &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> begin() && noexcept;

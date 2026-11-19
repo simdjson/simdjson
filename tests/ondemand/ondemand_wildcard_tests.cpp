@@ -757,8 +757,37 @@ namespace wildcard_tests {
     TEST_SUCCEED();
   }
 
+  bool root_selector() {
+    TEST_START();
+    auto json = R"({"a":{"b":1},"c":[1,2]})"_padded;
+    ondemand::parser parser;
+    ondemand::document doc;
+    std::vector<std::string> found;
+    auto collect = [&](ondemand::value v) {
+      std::string_view s;
+      if (simdjson::to_json_string(v).get(s) == SUCCESS) { found.emplace_back(s); }
+    };
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ASSERT_SUCCESS(doc.for_each_at_path_with_wildcard("$", collect));
+    ASSERT_EQUAL(found.size(), 1);
+    ASSERT_EQUAL(found[0], R"({"a":{"b":1},"c":[1,2]})");
+    found.clear();
+    ondemand::value a;
+    ASSERT_SUCCESS(doc.at_path("$.a").get(a));
+    ASSERT_SUCCESS(a.for_each_at_path_with_wildcard("$", collect));
+    ASSERT_EQUAL(found.size(), 1);
+    ASSERT_EQUAL(found[0], R"({"b":1})");
+    found.clear();
+    auto scalar = R"(42)"_padded;
+    ASSERT_SUCCESS(parser.iterate(scalar).get(doc));
+    ASSERT_ERROR(doc.for_each_at_path_with_wildcard("$", collect), SCALAR_DOCUMENT_AS_VALUE);
+    ASSERT_EQUAL(found.size(), 0);
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return array_wildcard_basic() &&
+    return root_selector() &&
+           array_wildcard_basic() &&
            array_wildcard_numbers() &&
            object_wildcard_basic() &&
            combined_wildcards() &&

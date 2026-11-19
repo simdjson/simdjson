@@ -401,6 +401,7 @@ simdjson_inline simdjson_result<value> value::at_pointer(std::string_view json_p
 }
 
 simdjson_inline simdjson_result<value> value::at_path(std::string_view json_path) noexcept {
+  if (json_path == "$") { return value(iter); }
   json_type t;
   SIMDJSON_TRY(type().get(t));
   switch (t) {
@@ -420,6 +421,11 @@ template <typename Func>
 template <typename Func>
 #endif
 inline error_code value::for_each_at_path_with_wildcard(std::string_view json_path, Func&& callback) noexcept {
+  if (json_path == "$") {
+    value self(iter);
+    callback(self);
+    return SUCCESS;
+  }
   // The path is split once: every value reached by a wildcard sees the same
   // remaining path, so re-parsing it at each one would be quadratic.
   const std::vector<internal::json_path_segment> path = internal::split_json_path(json_path);

@@ -158,6 +158,24 @@
 #endif
 #endif // !defined(SIMDJSON_SUPPORTS_CHAR8_T)
 
+// std::string::resize_and_overwrite (C++23) is available.
+#if !defined(SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE)
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+#define SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE 1
+#else
+#define SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE 0
+#endif
+#endif // !defined(SIMDJSON_SUPPORTS_RESIZE_AND_OVERWRITE)
+
+// std::string can be used in constant expressions (C++20, e.g., libstdc++ 12 or better).
+#if !defined(SIMDJSON_SUPPORTS_CONSTEXPR_STRING)
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#define SIMDJSON_SUPPORTS_CONSTEXPR_STRING 1
+#else
+#define SIMDJSON_SUPPORTS_CONSTEXPR_STRING 0
+#endif
+#endif // !defined(SIMDJSON_SUPPORTS_CONSTEXPR_STRING)
+
 // The C++23 fixed-width floating-point types std::float32_t and std::float64_t
 // (<stdfloat>) are available. They are optional even in C++23: a compiler that
 // provides them predefines __STDCPP_FLOAT32_T__ and __STDCPP_FLOAT64_T__.
@@ -190,11 +208,11 @@
 
 
 #if !defined(SIMDJSON_CONSTEVAL)
-#if defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#if defined(__cpp_consteval) && __cpp_consteval >= 201811L && SIMDJSON_SUPPORTS_CONSTEXPR_STRING
 #define SIMDJSON_CONSTEVAL 1
 #else
 #define SIMDJSON_CONSTEVAL 0
-#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#endif // defined(__cpp_consteval) && __cpp_consteval >= 201811L && SIMDJSON_SUPPORTS_CONSTEXPR_STRING
 #endif // !defined(SIMDJSON_CONSTEVAL)
 
 // SIMDJSON_CONSTEXPR_STRING is 'constexpr' when the standard library supports
@@ -202,10 +220,10 @@
 // lets functions that build a std::string be constant expressions when possible
 // while still compiling against older standard libraries.
 #if !defined(SIMDJSON_CONSTEXPR_STRING)
-#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#if SIMDJSON_SUPPORTS_CONSTEXPR_STRING
 #define SIMDJSON_CONSTEXPR_STRING constexpr
 #else
 #define SIMDJSON_CONSTEXPR_STRING
-#endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#endif // SIMDJSON_SUPPORTS_CONSTEXPR_STRING
 #endif // !defined(SIMDJSON_CONSTEXPR_STRING)
 #endif // SIMDJSON_COMPILER_CHECK_H

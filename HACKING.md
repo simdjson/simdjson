@@ -110,6 +110,32 @@ Developer mode is forced to be on when the `CI` environment variable is set to
 a value that CMake recognizes as "on", which is set to `true` in all of the CI
 workflows used by simdjson.
 
+### Offline builds
+
+The developer build downloads its dependencies at configure time: the
+[CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) package manager itself, the
+[simdjson-data](https://github.com/simdjson/simdjson-data) test files, the
+[counters](https://github.com/lemire/counters) library (used by most
+benchmarks), plus optional ones such as Google Benchmark and the competing
+JSON libraries. To build and run the tests without network access (e.g., when
+packaging simdjson for a distribution), pass `-D SIMDJSON_ALLOW_DOWNLOADS=OFF`:
+nothing is downloaded, and
+
+- the simdjson-data test files are taken from `CPM_simdjson-data_SOURCE` if set,
+  else from `dependencies/.cache/simdjson-data` if present (an extracted copy at
+  the commit given in `dependencies/CMakeLists.txt`). Without them, the tests that
+  need them are skipped (`NEEDS_DATA` in `add_cpp_test`) and the others still run;
+- an installed counters is used if found (e.g., through `CMAKE_PREFIX_PATH`);
+  otherwise, the benchmarks that need it are skipped;
+- the Google Benchmark and competition benchmarks are disabled.
+
+```
+cmake -B build -D SIMDJSON_DEVELOPER_MODE=ON -D SIMDJSON_ALLOW_DOWNLOADS=OFF
+```
+
+The `Ubuntu 24.04 CI Offline` workflow (`.github/workflows/ubuntu24-offline.yml`)
+checks these setups, including the one of the FreeBSD port.
+
 Directory Structure and Source
 ------------------------------
 

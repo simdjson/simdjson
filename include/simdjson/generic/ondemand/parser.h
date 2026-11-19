@@ -446,6 +446,10 @@ private:
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
   /** Get the thread-local parser instance, it might be null */
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  static simdjson_inline bool can_end_incomplete_json(uint8_t c) noexcept;
+  simdjson_warn_unused simdjson_inline error_code end_incomplete_json(padded_string_view json) noexcept;
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
@@ -453,6 +457,10 @@ private:
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
   std::unique_ptr<uint8_t[]> string_buf{};
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  /** Copy of a scalar cut by the end of an incomplete document, see json_iterator::scalar_within_input(). */
+  uint8_t incomplete_scalar_buf[1074+8+1+SIMDJSON_PADDING]{};
+#endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> start_positions{};
@@ -473,7 +481,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::parser> : public SIMDJ
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::parser &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 };
 
 } // namespace simdjson

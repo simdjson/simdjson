@@ -18,7 +18,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline object_iterator() noexcept = default;
+  simdjson_inline object_iterator() noexcept {}
 
 #if SIMDJSON_DEVELOPMENT_CHECKS
    simdjson_inline ~object_iterator() noexcept;
@@ -59,6 +59,7 @@ private:
    * is first used, and never changes afterwards.
    */
   value_iterator iter{};
+  token_position value_start{};
 
   simdjson_inline object_iterator(const value_iterator &iter) noexcept;
   friend struct simdjson_result<object_iterator>;
@@ -76,7 +77,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object_iterator> : pub
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::object_iterator &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
 
   //
   // Iterator interface

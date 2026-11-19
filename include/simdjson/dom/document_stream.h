@@ -16,7 +16,7 @@ namespace dom {
 #ifdef SIMDJSON_THREADS_ENABLED
 /** @private Custom worker class **/
 struct stage1_worker {
-  stage1_worker() noexcept = default;
+  stage1_worker() noexcept {}
   stage1_worker(const stage1_worker&) = delete;
   stage1_worker(stage1_worker&&) = delete;
   stage1_worker operator=(const stage1_worker&) = delete;

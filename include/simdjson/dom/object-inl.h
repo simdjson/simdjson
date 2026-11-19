@@ -23,11 +23,11 @@ simdjson_inline simdjson_result<dom::object>::simdjson_result(dom::object value)
 simdjson_inline simdjson_result<dom::object>::simdjson_result(error_code error) noexcept
     : internal::simdjson_result_base<dom::object>(error) {}
 
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::operator[](const char *key) const noexcept {
   if (error()) { return error(); }
   return first[key];
 }
@@ -37,9 +37,7 @@ inline simdjson_result<dom::element> simdjson_result<dom::object>::at_pointer(st
 }
 inline simdjson_result<dom::element> simdjson_result<dom::object>::at_path(std::string_view json_path) const noexcept {
   if (error()) { return error(); }
-  auto json_pointer = json_path_to_pointer_conversion(json_path);
-  if (json_pointer == "-1") { return INVALID_JSON_POINTER; }
-  return at_pointer(json_pointer);
+  return first.at_path(json_path);
 }
 inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::at_path_with_wildcard(std::string_view json_path) const noexcept {
   if (error()) {
@@ -47,7 +45,7 @@ inline simdjson_result<std::vector<dom::element>> simdjson_result<dom::object>::
   }
   return first.at_path_with_wildcard(json_path);
 }
-inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<dom::element> simdjson_result<dom::object>::at_key(std::string_view key) const noexcept {
   if (error()) { return error(); }
   return first.at_key(key);
 }
@@ -90,17 +88,18 @@ inline object::iterator object::begin() const noexcept {
 }
 inline object::iterator object::end() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
-  return internal::tape_ref(tape.doc, tape.after_element() - 1);
+  SIMDJSON_DEVELOPMENT_ASSERT(tape.tape_ref_type() == internal::tape_type::START_OBJECT);
+  return internal::tape_ref(tape.doc, tape.matching_brace_index() - 1);
 }
 inline size_t object::size() const noexcept {
   SIMDJSON_DEVELOPMENT_ASSERT(tape.usable()); // https://github.com/simdjson/simdjson/issues/1914
   return tape.scope_count();
 }
 
-inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](std::string_view key) const noexcept {
   return at_key(key);
 }
-inline simdjson_result<element> object::operator[](const char *key) const noexcept {
+simdjson_inline simdjson_result<element> object::operator[](const char *key) const noexcept {
   return at_key(key);
 }
 inline simdjson_result<element> object::at_pointer(std::string_view json_pointer) const noexcept {
@@ -114,7 +113,8 @@ inline simdjson_result<element> object::at_pointer(std::string_view json_pointer
   size_t slash = json_pointer.find('/');
   std::string_view key = json_pointer.substr(0, slash);
   // Grab the child with the given key
-  simdjson_result<element> child;
+  element child;
+  error_code error;
 
   // If there is an escape character in the key, unescape it and then get the child.
   size_t escape = key.find('~');
@@ -134,16 +134,16 @@ inline simdjson_result<element> object::at_pointer(std::string_view json_pointer
       }
       escape = unescaped.find('~', escape+1);
     } while (escape != std::string::npos);
-    child = at_key(unescaped);
+    error = at_key(unescaped).get(child);
   } else {
-    child = at_key(key);
+    error = at_key(key).get(child);
   }
-  if(child.error()) {
-    return child; // we do not continue if there was an error
+  if(error) {
+    return error; // we do not continue if there was an error
   }
   // If there is a /, we have to recurse and look up more of the path
   if (slash != std::string_view::npos) {
-    child = child.at_pointer(json_pointer.substr(slash));
+    return child.at_pointer(json_pointer.substr(slash));
   }
   return child;
 }
@@ -178,7 +178,7 @@ inline simdjson_result<std::vector<element>> object::at_path_with_wildcard(std::
   return element(*this).at_path_with_wildcard(json_path);
 }
 
-inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
+simdjson_inline simdjson_result<element> object::at_key(std::string_view key) const noexcept {
   iterator end_field = end();
   for (iterator field = begin(); field != end_field; ++field) {
     if (field.key_equals(key)) {
@@ -277,7 +277,7 @@ inline element object::iterator::value() const noexcept {
  * on the long run.
  */
 
-inline bool object::iterator::key_equals(std::string_view o) const noexcept {
+simdjson_inline bool object::iterator::key_equals(std::string_view o) const noexcept {
   // We use the fact that the key length can be computed quickly
   // without access to the string buffer.
   const uint32_t len = key_length();
@@ -296,7 +296,16 @@ inline bool object::iterator::key_equals_case_insensitive(std::string_view o) co
       // See For case-insensitive string comparisons, avoid char-by-char functions
       // https://lemire.me/blog/2020/04/30/for-case-insensitive-string-comparisons-avoid-char-by-char-functions/
       // Note that it might be worth rolling our own strncasecmp function, with vectorization.
-      return (simdjson_strncasecmp(o.data(), key_c_str(), len) == 0);
+      //
+      // strncasecmp stops at a null character, and a JSON key may contain some:
+      // when it does, we resume the comparison right after the null character.
+      const char *key = key_c_str();
+      size_t i = 0;
+      while (simdjson_strncasecmp(o.data() + i, key + i, len - i) == 0) {
+        const void *null_char = std::memchr(key + i, '\0', len - i);
+        if (null_char == nullptr) { return true; }
+        i = size_t(static_cast<const char *>(null_char) - key) + 1;
+      }
   }
   return false;
 }

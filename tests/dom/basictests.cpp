@@ -8,6 +8,7 @@
 #include <cmath>
 #include <set>
 #include <sstream>
+#include <type_traits>
 #include <utility>
 #include <unistd.h>
 using namespace std::string_literals;
@@ -1028,6 +1029,39 @@ namespace dom_api_tests {
     return true;
   }
 
+  bool default_constructors() {
+    std::cout << "Running " << __func__ << std::endl;
+    dom::array::iterator array_it{};
+    dom::array::iterator array_it2;
+    ASSERT_TRUE(array_it == array_it2);
+
+    dom::array::reverse_iterator array_rit{};
+    dom::array::reverse_iterator array_rit2;
+    ASSERT_TRUE(array_rit == array_rit2);
+
+    dom::object::iterator object_it{};
+    dom::object::iterator object_it2;
+    ASSERT_TRUE(object_it == object_it2);
+
+    dom::document doc{};
+    dom::document doc2;
+    ASSERT_EQUAL(doc.capacity(), 0);
+    ASSERT_EQUAL(doc2.capacity(), 0);
+
+    static_assert(std::is_nothrow_default_constructible<dom::array::iterator>::value, "array::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::array::reverse_iterator>::value, "array::reverse_iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::object::iterator>::value, "object::iterator");
+    static_assert(std::is_nothrow_default_constructible<dom::document>::value, "document");
+
+    // User-provided default constructors must keep the default member
+    // initializers: an empty result is still UNINITIALIZED.
+    simdjson_result<ondemand::value> result{};
+    simdjson_result<ondemand::value> result2;
+    ASSERT_EQUAL(result.error(), UNINITIALIZED);
+    ASSERT_EQUAL(result2.error(), UNINITIALIZED);
+    return true;
+  }
+
   bool object_iterator_advance() {
     std::cout << "Running " << __func__ << std::endl;
     string json(R"({ "a": 1, "b": 2, "c": 3 })");
@@ -1231,6 +1265,33 @@ namespace dom_api_tests {
 
     simdjson_unused element val;
     ASSERT_ERROR( doc["d"].get(val), NO_SUCH_FIELD);
+    return true;
+  }
+
+  bool object_key_case_insensitive() {
+    std::cout << "Running " << __func__ << std::endl;
+    // Keys may contain null characters: they do not end the comparison.
+    string json(R"({ "Alpha": 1, "a\u0000b": 2, "a\u0000c": 3, "\u0000": 4, "x\u0000": 5, "\u0000\u0000y": 6 })");
+    dom::parser parser;
+    dom::object obj;
+    ASSERT_SUCCESS( parser.parse(json).get(obj) );
+    uint64_t value{};
+    ASSERT_SUCCESS( obj.at_key_case_insensitive("aLPHA").get(value) );
+    ASSERT_EQUAL( value, 1 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("a\0B", 3)).get(value) );
+    ASSERT_EQUAL( value, 2 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("A\0c", 3)).get(value) );
+    ASSERT_EQUAL( value, 3 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("\0", 1)).get(value) );
+    ASSERT_EQUAL( value, 4 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("X\0", 2)).get(value) );
+    ASSERT_EQUAL( value, 5 );
+    ASSERT_SUCCESS( obj.at_key_case_insensitive(std::string_view("\0\0Y", 3)).get(value) );
+    ASSERT_EQUAL( value, 6 );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("a\0d", 3)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("\0\0z", 3)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive(std::string_view("Alph\0", 5)), NO_SUCH_FIELD );
+    ASSERT_ERROR( obj.at_key_case_insensitive("a"), NO_SUCH_FIELD );
     return true;
   }
 
@@ -1477,6 +1538,7 @@ namespace dom_api_tests {
            array_iterator() &&
            object_iterator_empty() &&
            array_iterator_empty() &&
+           default_constructors() &&
            object_iterator_advance() &&
            array_iterator_advance() &&
            convert_object_to_element() &&
@@ -1487,6 +1549,7 @@ namespace dom_api_tests {
            null_value() &&
            document_object_index() &&
            object_index() &&
+           object_key_case_insensitive() &&
            twitter_count() &&
            twitter_default_profile() &&
            twitter_image_sizes() &&

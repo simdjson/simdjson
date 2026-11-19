@@ -40,7 +40,7 @@ public:
    *
    * Exists so you can declare a variable and later assign to it before use.
    */
-  simdjson_inline raw_json_string() noexcept = default;
+  simdjson_inline raw_json_string() noexcept {}
 
   /**
    * Create a new invalid raw_json_string pointed at the given location in the JSON.
@@ -157,6 +157,20 @@ private:
   }
 
   /**
+   * True when target is a compile-time constant that holds no quote character.
+   * Always false with compilers lacking __builtin_constant_p.
+   */
+  static simdjson_inline bool is_known_free_from_quote(std::string_view target) noexcept;
+
+  /**
+   * Compares the current instance, a key, to the std::string_view target: returns
+   * true if they are byte-by-byte equal (no escaping is done). Unlike
+   * unsafe_is_equal, target may hold unescaped quote characters: it then never
+   * matches. The key must be followed by the colon at `colon`.
+   */
+  simdjson_inline bool unsafe_is_equal_key(std::string_view target, const uint8_t *colon) const noexcept;
+
+  /**
    * This will set the inner pointer to zero, effectively making
    * this instance unusable.
    */
@@ -195,6 +209,7 @@ private:
   friend class object;
   friend class field;
   friend class parser;
+  friend class value_iterator;
   friend struct simdjson_result<raw_json_string>;
 };
 
@@ -221,7 +236,7 @@ struct simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string> : pub
 public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::raw_json_string &&value) noexcept; ///< @private
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
-  simdjson_inline simdjson_result() noexcept = default;
+  simdjson_inline simdjson_result() noexcept {}
   simdjson_inline ~simdjson_result() noexcept = default; ///< @private
 
   simdjson_inline simdjson_result<const char *> raw() const noexcept;

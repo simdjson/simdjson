@@ -71,7 +71,7 @@ namespace simd {
     simdjson_inline simd8(bool _value) : base8<bool>(splat(_value)) {}
 
     simdjson_inline int to_bitmask() const { return __lsx_vpickve2gr_w(__lsx_vmskltz_b(*this), 0); }
-    simdjson_inline bool any() const { return 0 == __lsx_vpickve2gr_hu(__lsx_vmsknz_b(*this), 0); }
+    simdjson_inline bool any() const { return !__lsx_bz_v(this->value); }
     simdjson_inline simd8<bool> operator~() const { return *this ^ true; }
   };
 

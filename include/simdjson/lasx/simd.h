@@ -76,10 +76,7 @@ namespace simd {
       __m256i mask = __lasx_xvmskltz_b(*this);
       return (__lasx_xvpickve2gr_w(mask, 4) << 16) | (__lasx_xvpickve2gr_w(mask, 0));
     }
-   simdjson_inline bool any() const {
-      __m256i v = __lasx_xvmsknz_b(*this);
-      return (0 == __lasx_xvpickve2gr_w(v, 0)) && (0 == __lasx_xvpickve2gr_w(v, 4));
-    }
+    simdjson_inline bool any() const { return !__lasx_xbz_v(this->value); }
     simdjson_inline simd8<bool> operator~() const { return *this ^ true; }
   };
 

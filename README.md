@@ -29,6 +29,7 @@ Table of Contents
 * [Godbolt](#godbolt)
 * [Performance results](#performance-results)
 * [Packages](#packages)
+* [Companion libraries](#companion-libraries)
 * [Bindings and Ports of simdjson](#bindings-and-ports-of-simdjson)
 * [About simdjson](#about-simdjson)
 * [Funding](#funding)
@@ -70,6 +71,20 @@ Real-world usage
 - [TiFlash](https://github.com/pingcap/tiflash)
 - [ata-validator](https://ata-validator.com)
 - [Apache Arrow](https://github.com/apache/arrow)
+- [Groonga](https://github.com/groonga/groonga)
+- [Elasticsearch](https://github.com/elastic/elasticsearch)
+- [Wazuh](https://github.com/wazuh/wazuh)
+- [YTsaurus](https://github.com/ytsaurus/ytsaurus)
+- [Alibaba LoongCollector](https://github.com/alibaba/loongcollector)
+- [ByteDance Bolt](https://github.com/bytedance/bolt)
+- [OpenMLDB](https://github.com/4paradigm/OpenMLDB)
+- [CLP](https://github.com/y-scope/clp)
+- [Estuary Flow](https://github.com/estuary/flow)
+- [Axmol Engine](https://github.com/axmolengine/axmol)
+- [OpenModelica](https://github.com/OpenModelica/OpenModelica)
+- [NVIDIA Vulkan Video Samples](https://github.com/nvpro-samples/vk_video_samples)
+- [Adapty iOS SDK](https://github.com/adaptyteam/AdaptySDK-iOS)
+- [SlimeVR OpenVR Driver](https://github.com/SlimeVR/SlimeVR-OpenVR-Driver)
 
 If you are planning to use simdjson in a product, please work from one of our releases.
 
@@ -172,6 +187,15 @@ Packages
 [![Packaging status](https://repology.org/badge/vertical-allrepos/simdjson.svg)](https://repology.org/project/simdjson/versions)
 
 
+Companion libraries
+-------------------
+
+The simdjson organization maintains libraries built on simdjson:
+
+- [fastsimdjson](https://github.com/simdjson/fastpysimdjson): our official Python bindings (`pip install fastsimdjson`). A drop-in replacement for the `json` module's `loads`, `load`, `dumps` and `dump`, over 3 times faster than the standard library. It also offers lazy parsing, multithreaded NDJSON with free-threaded Python, and conversion to Apache Arrow and MessagePack.
+- [simdjson_arrow](https://github.com/simdjson/simdjson_arrow): reads newline-delimited JSON into [Apache Arrow](https://arrow.apache.org/) record batches, and writes Arrow record batches as JSON, on one thread or many. Several times faster than Arrow C++'s own JSON reader.
+- [simdjson_msgpack](https://github.com/simdjson/simdjson_msgpack): converts JSON to [MessagePack](https://msgpack.org/) and back, one document or many, on many threads.
+
 Bindings and Ports of simdjson
 ------------------------------
 
@@ -181,7 +205,7 @@ We distinguish between "bindings" (which just wrap the C++ code) and a port to a
 - [libpy_simdjson](https://github.com/gerrymanoim/libpy_simdjson/): high-speed Python bindings for simdjson using [libpy](https://github.com/quantopian/libpy).
 - [pysimdjson](https://github.com/TkTech/pysimdjson): Python bindings for the simdjson project.
 - [cysimdjson](https://github.com/TeskaLabs/cysimdjson): high-speed Python bindings for the simdjson project.
-- [fastpysimdjson](https://github.com/simdjson/fastpysimdjson): fast JSON parsing in Python using simdjson.
+- [fastsimdjson](https://github.com/simdjson/fastpysimdjson): our official Python bindings (see [Companion libraries](#companion-libraries)).
 - [simdjson-rs](https://github.com/simd-lite): Rust port.
 - [simdjson-rust](https://github.com/SunDoge/simdjson-rust): Rust wrapper (bindings).
 - [SimdJsonSharp](https://github.com/EgorBo/SimdJsonSharp): C# version for .NET Core (bindings and full port).
