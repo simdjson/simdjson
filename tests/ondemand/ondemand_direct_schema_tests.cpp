@@ -141,9 +141,9 @@ bool test_direct_schema() {
   }
   {
     simdjson::padded_string j(std::string(
-        "{\"make\":\"Tōyota\",\"model\":\"Camry\",\"year\":2018,\"tire_pressure\":[1.0],\"active\":true}"));
+        "{\"make\":\"T\xc5\x8dyota\",\"model\":\"Camry\",\"year\":2018,\"tire_pressure\":[1.0],\"active\":true}"));
     SchemaCar c = simdjson::from(j);
-    ASSERT_EQUAL(c.make, std::string("Tōyota"));
+    ASSERT_EQUAL(c.make, std::string("T\xc5\x8dyota"));
     ASSERT_EQUAL(c.year, int64_t(2018));
   }
   {

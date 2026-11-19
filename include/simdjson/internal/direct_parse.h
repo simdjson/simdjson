@@ -860,7 +860,7 @@ simdjson_really_inline error_code parse_schema_array(const uint8_t *&p, const ui
       } else {
         // Nested arrays: one small allocation covers the common
         // fixed-size fields (a handful of numbers) without the
-        // 0→1→2→4 geometric dance. Larger arrays grow from here.
+        // 0->1->2->4 geometric dance. Larger arrays grow from here.
         out.reserve(8);
       }
       reserved = true;
