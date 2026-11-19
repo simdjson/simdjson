@@ -62,12 +62,12 @@ simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T 
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() noexcept {
+inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() & noexcept {
   return result<ondemand::array>();
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() noexcept {
+inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() & noexcept {
   return result<ondemand::object>();
 }
 

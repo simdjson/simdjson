@@ -1978,9 +1978,12 @@ simdjson::error_code err = simdjson::from(json_car).get(car);
 ```
 
 You can also use the `simdjson::from` syntax to iterate over an array.
+The array refers to the document held by the value that `simdjson::from` returns,
+so keep that value in a variable while you iterate:
 
 ```cpp
-for(auto val : simdjson::from(json).array()) {
+auto parsed = simdjson::from(json);
+for(auto val : parsed.array()) {
   Car c = val.get<Car>(); // ...
 }
 ```

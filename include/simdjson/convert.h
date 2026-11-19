@@ -50,8 +50,13 @@ public:
 	simdjson_warn_unused simdjson_inline error_code get(T &value) && noexcept(is_nothrow_gettable<T>);
 
 
-	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::array> array() noexcept;
-	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object> object() noexcept;
+	// The array and the object point into the document held by this auto_parser,
+	// so they cannot be taken from a temporary: simdjson::from(json).array() would
+	// dangle once the full-expression ends.
+	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::array> array() & noexcept;
+	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::object> object() & noexcept;
+	simdjson_result<ondemand::array> array() && = delete;
+	simdjson_result<ondemand::object> object() && = delete;
 	simdjson_warn_unused simdjson_inline simdjson_result<ondemand::number> number() noexcept;
 
 
