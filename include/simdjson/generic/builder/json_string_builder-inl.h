@@ -626,10 +626,10 @@ string_builder::append_key_value() noexcept {
 #if !SIMDJSON_STATIC_REFLECTION
 namespace simdjson {
 
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
 namespace builder_to_json_detail {
 template <class R>
 inline constexpr bool is_contiguous_int_array_v =
-#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
     std::ranges::contiguous_range<R> &&
     std::is_integral_v<std::ranges::range_value_t<R>> &&
     !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
@@ -637,19 +637,28 @@ inline constexpr bool is_contiguous_int_array_v =
     !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
     !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
     !require_custom_serialization<R>;
-#else
-    false;
-#endif
 template <class R>
 inline constexpr bool is_contiguous_float_array_v =
-#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
     std::ranges::contiguous_range<R> &&
     std::is_floating_point_v<std::ranges::range_value_t<R>> &&
     !require_custom_serialization<R>;
+
+// Not simdjson_inline: MSVC cannot force-inline a function with a try block (C4714).
+inline bool resize_for_direct_write(std::string &s, size_t n) noexcept {
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::resize_uninitialized(s, n);
+  } catch (...) { // std::bad_alloc
+    return false;
+  }
 #else
-    false;
+  // Without exceptions, a failed allocation terminates the program.
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::resize_uninitialized(s, n);
 #endif
+  return true;
+}
 } // namespace builder_to_json_detail
+#endif // SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
 
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity) {
@@ -668,22 +677,12 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
     const size_t bound = n * per + 2;
     // Allocate first, write second. A try/catch around the digit loop
     // (the old resize_and_overwrite callback) blocks inlining and adds
-    // exception edges on every element. The callback only claims `bound`
+    // exception edges on every element. The resize only claims `bound`
     // bytes; the real bytes are written below, then the size shrinks.
     // int64 needs 20 bytes (sign + 19 digits); 22 also covers the comma.
-#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
-    try {
-      s.resize_and_overwrite(bound, [](char *, size_t len) noexcept { return len; });
-    } catch (...) {
+    if (!builder_to_json_detail::resize_for_direct_write(s, bound)) {
       return MEMALLOC;
     }
-#else
-    try {
-      s.resize(bound);
-    } catch (...) {
-      return MEMALLOC;
-    }
-#endif
     char *p = &s[0];
     char *begin = p;
     *p++ = '[';
@@ -732,19 +731,9 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
       return MEMALLOC;
     }
     const size_t bound = n * per + 2;
-#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
-    try {
-      s.resize_and_overwrite(bound, [](char *, size_t len) noexcept { return len; });
-    } catch (...) {
+    if (!builder_to_json_detail::resize_for_direct_write(s, bound)) {
       return MEMALLOC;
     }
-#else
-    try {
-      s.resize(bound);
-    } catch (...) {
-      return MEMALLOC;
-    }
-#endif
     char *p = &s[0];
     char *begin = p;
     *p++ = '[';
