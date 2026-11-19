@@ -84,6 +84,7 @@ simdjson_inline error_code parse_int64_token(const uint8_t *&p, const uint8_t *e
 }
 
 simdjson_inline error_code parse_uint64_token(const uint8_t *&p, const uint8_t *end, uint64_t &out) noexcept {
+  if (p < end && *p == '-') { return UNINITIALIZED; }
   int64_t tmp;
   const uint8_t *save = p;
   error_code err = parse_int64_token(p, end, tmp);
@@ -687,9 +688,11 @@ simdjson_inline error_code read_plain_key(const uint8_t *&p, const uint8_t *end,
   return SUCCESS;
 }
 
+// skip_object and skip_array recurse through skip_value, so they cannot be
+// forced inline: GCC rejects an always_inline cycle.
 simdjson_inline error_code skip_value(const uint8_t *&p, const uint8_t *end, int depth) noexcept;
-simdjson_inline error_code skip_object(const uint8_t *&p, const uint8_t *end, int depth) noexcept;
-simdjson_inline error_code skip_array(const uint8_t *&p, const uint8_t *end, int depth) noexcept;
+inline error_code skip_object(const uint8_t *&p, const uint8_t *end, int depth) noexcept;
+inline error_code skip_array(const uint8_t *&p, const uint8_t *end, int depth) noexcept;
 
 simdjson_inline error_code expect_colon(const uint8_t *&p, const uint8_t *end) noexcept {
   if (!skip_ws(p, end) || p >= end || *p != ':') { return UNINITIALIZED; }
@@ -697,7 +700,7 @@ simdjson_inline error_code expect_colon(const uint8_t *&p, const uint8_t *end) n
   return SUCCESS;
 }
 
-simdjson_inline error_code skip_object(const uint8_t *&p, const uint8_t *end, int depth) noexcept {
+inline error_code skip_object(const uint8_t *&p, const uint8_t *end, int depth) noexcept {
   if (depth > schema_max_depth) { return UNINITIALIZED; }
   if (p >= end || *p != '{') { return UNINITIALIZED; }
   p++;
@@ -718,7 +721,7 @@ simdjson_inline error_code skip_object(const uint8_t *&p, const uint8_t *end, in
   }
 }
 
-simdjson_inline error_code skip_array(const uint8_t *&p, const uint8_t *end, int depth) noexcept {
+inline error_code skip_array(const uint8_t *&p, const uint8_t *end, int depth) noexcept {
   if (depth > schema_max_depth) { return UNINITIALIZED; }
   if (p >= end || *p != '[') { return UNINITIALIZED; }
   p++;
@@ -764,51 +767,59 @@ struct schema_has_fields : std::false_type {};
 template <typename T>
 struct schema_has_fields<T, std::void_t<decltype(simdjson::direct_schema<T>::fields)>> : std::true_type {};
 
-template <typename T, typename = void>
-struct schema_has_for_each : std::false_type {};
-template <typename T>
-struct schema_has_for_each<T, std::void_t<decltype(simdjson::direct_schema<T>::for_each_field)>> : std::true_type {};
-// for_each_field is a function template, so decltype(for_each_field) may fail.
-// Detect via a pointer-to-template is hard; try a call with a dummy lambda
-// in a separate trait below.
+enum class ordered_step { key, close, fail };
 
-template <typename Schema, typename = void>
-struct schema_for_each_callable : std::false_type {};
-template <typename Schema>
-struct schema_for_each_callable<Schema, std::void_t<decltype(
-  Schema::for_each_field([](std::string_view, auto) {})
-)>> : std::true_type {};
+// Consume the comma after a field value and the whitespace that follows it.
+// On close, p is at the '}' that ends the object.
+simdjson_really_inline ordered_step ordered_separator(const uint8_t *&p, const uint8_t *end) noexcept {
+  if (p < end && *p == ',') {
+    p++;
+  } else {
+    if (!skip_ws(p, end) || p >= end) { return ordered_step::fail; }
+    if (*p == '}') { return ordered_step::close; }
+    if (*p != ',') { return ordered_step::fail; }
+    p++;
+  }
+  if (p < end && is_ws(*p) && !skip_ws(p, end)) { return ordered_step::fail; }
+  return ordered_step::key;
+}
 
-// Parse fields[Idx..] in order. Returns SUCCESS if every remaining field
-// matched; UNINITIALIZED if the shape does not match the ordered pattern.
+// True if p starts with the quoted key name.
+simdjson_really_inline bool at_key(const uint8_t *p, const uint8_t *end, std::string_view name) noexcept {
+  const size_t n = name.size();
+  return size_t(end - p) >= n + 2 && p[0] == '"' &&
+         std::memcmp(p + 1, name.data(), n) == 0 && p[1 + n] == '"';
+}
+
+// Parse fields[Idx..] while the keys come in schema order. When a key does
+// not match, general is set and p is left at that key, so the general
+// scanner resumes there. The fields already parsed are kept: rewinding to
+// the first key would parse nested values again at every level, which is
+// exponential in the nesting depth.
 template <typename T, size_t Idx>
-simdjson_really_inline error_code parse_ordered_fields(const uint8_t *&p, const uint8_t *end, T &out, int depth) {
+simdjson_really_inline error_code parse_ordered_fields(const uint8_t *&p, const uint8_t *end, T &out, int depth, bool &general) {
   using fields_t = decltype(simdjson::direct_schema<T>::fields);
   constexpr size_t N = std::tuple_size_v<fields_t>;
   if constexpr (Idx >= N) {
     return SUCCESS;
   } else {
     if constexpr (Idx > 0) {
-      if (p < end && *p == ',') { p++; }
-      else {
-        if (!skip_ws(p, end) || p >= end || *p != ',') { return UNINITIALIZED; }
-        p++;
-        if (!skip_ws(p, end)) { return UNINITIALIZED; }
-      }
+      const ordered_step step = ordered_separator(p, end);
+      if (step == ordered_step::close) { return SUCCESS; }
+      if (step == ordered_step::fail) { return UNINITIALIZED; }
     }
     using field = std::tuple_element_t<Idx, fields_t>;
     constexpr auto name = field::name;
-    constexpr size_t n = name.size();
-    if (size_t(end - p) < n + 2 || p[0] != '"' ||
-        std::memcmp(p + 1, name.data(), n) != 0 || p[1 + n] != '"') {
-      return UNINITIALIZED;
+    if (!at_key(p, end, name)) {
+      general = true;
+      return SUCCESS;
     }
-    p += n + 2;
+    p += name.size() + 2;
     if (p < end && *p == ':') { p++; }
     else if (expect_colon(p, end) != SUCCESS) { return UNINITIALIZED; }
     error_code err = parse_schema_value(p, end, out.*(field::member), depth + 1);
     if (err != SUCCESS) { return err; }
-    return parse_ordered_fields<T, Idx + 1>(p, end, out, depth);
+    return parse_ordered_fields<T, Idx + 1>(p, end, out, depth, general);
   }
 }
 
@@ -884,48 +895,47 @@ simdjson_really_inline error_code parse_schema_object(const uint8_t *&p, const u
   p++;
   if (!skip_ws(p, end)) { return UNINITIALIZED; }
   if (p < end && *p == '}') { p++; return SUCCESS; }
-  // In-order fast path: keys in schema order, no unknown keys.
-  // Mismatch rewinds to the first key and uses the general scanner.
-  const uint8_t *first = p;
-  error_code ord = SUCCESS;
-  bool ordered_ok = true;
+  // In-order fast path: keys in schema order. The first key out of order
+  // (or unknown) hands over to the general scanner at that key.
+  bool general = false;
   if constexpr (schema_has_fields<T>::value) {
-    ord = parse_ordered_fields<T, 0>(p, end, out, depth);
-    if (ord != SUCCESS) { ordered_ok = false; }
+    error_code err = parse_ordered_fields<T, 0>(p, end, out, depth, general);
+    if (err != SUCCESS) { return err; }
   } else {
+    error_code err = SUCCESS;
+    bool stop = false;
     size_t idx = 0;
     simdjson::direct_schema<T>::for_each_field([&](std::string_view name, auto mem) {
-      if (!ordered_ok || ord != SUCCESS) { return; }
-      if (idx > 0) {
-        if (p < end && *p == ',') { p++; }
-        else {
-          if (!skip_ws(p, end) || p >= end || *p != ',') { ordered_ok = false; return; }
-          p++;
-          if (!skip_ws(p, end)) { ordered_ok = false; return; }
+      if (stop) { return; }
+      if (idx++ > 0) {
+        const ordered_step step = ordered_separator(p, end);
+        if (step != ordered_step::key) {
+          if (step == ordered_step::fail) { err = UNINITIALIZED; }
+          stop = true;
+          return;
         }
       }
-      idx++;
-      const size_t n = name.size();
-      if (size_t(end - p) < n + 2 || p[0] != '"' ||
-          std::memcmp(p + 1, name.data(), n) != 0 || p[1 + n] != '"') {
-        ordered_ok = false;
+      if (!at_key(p, end, name)) {
+        general = true;
+        stop = true;
         return;
       }
-      p += n + 2;
+      p += name.size() + 2;
       if (p < end && *p == ':') { p++; }
-      else if (expect_colon(p, end) != SUCCESS) { ordered_ok = false; return; }
-      ord = parse_schema_value(p, end, out.*mem, depth + 1);
+      else if (expect_colon(p, end) != SUCCESS) { err = UNINITIALIZED; stop = true; return; }
+      err = parse_schema_value(p, end, out.*mem, depth + 1);
+      if (err != SUCCESS) { stop = true; }
     });
+    if (err != SUCCESS) { return err; }
   }
-  if (ordered_ok && ord == SUCCESS && p < end && *p == '}') {
+  if (!general) {
+    if (p < end && *p == '}') { p++; return SUCCESS; }
+    if (!skip_ws(p, end) || p >= end) { return UNINITIALIZED; }
+    if (*p == '}') { p++; return SUCCESS; }
+    if (*p != ',') { return UNINITIALIZED; }
     p++;
-    return SUCCESS;
+    if (!skip_ws(p, end)) { return UNINITIALIZED; }
   }
-  if (ordered_ok && ord == SUCCESS) {
-    if (skip_ws(p, end) && p < end && *p == '}') { p++; return SUCCESS; }
-  }
-  out = T{};
-  p = first;
   return parse_schema_object_general(p, end, out, depth);
 }
 
@@ -993,8 +1003,10 @@ simdjson_really_inline error_code parse_double_array(const uint8_t *&p, const ui
   }
 }
 
+// Not forced inline: a type that holds a vector of itself recurses through
+// here, and GCC rejects an always_inline cycle.
 template <typename Vec>
-simdjson_really_inline error_code parse_schema_array(const uint8_t *&p, const uint8_t *end, Vec &out, int depth) {
+inline error_code parse_schema_array(const uint8_t *&p, const uint8_t *end, Vec &out, int depth) {
   if (depth > schema_max_depth) { return UNINITIALIZED; }
   if (!skip_ws(p, end) || p >= end || *p != '[') { return UNINITIALIZED; }
   p++;
@@ -1012,10 +1024,15 @@ simdjson_really_inline error_code parse_schema_array(const uint8_t *&p, const ui
       // document (depth 0): `end` is the end of the whole buffer, so a
       // nested array would reserve as if it ran to EOF (a 4-double
       // field would allocate tens of thousands of slots per object).
+      // The guess is capped at twice the document size in bytes: a small
+      // first element (such as {}) would otherwise reserve many times the
+      // memory the document can fill.
       if (depth == 0) {
         const size_t elem_bytes = size_t(p - tok) + 1;
         const size_t rest = size_t(end - tok);
-        out.reserve(elem_bytes ? rest / elem_bytes + 2 : 8);
+        const size_t guess = rest / elem_bytes;
+        const size_t cap = 2 * rest / sizeof(typename Vec::value_type);
+        out.reserve((guess < cap ? guess : cap) + 2);
       } else {
         // Nested arrays: one small allocation covers the common
         // fixed-size fields (a handful of numbers) without the

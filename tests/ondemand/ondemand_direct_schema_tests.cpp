@@ -1,6 +1,7 @@
 #include "simdjson.h"
 #include "test_ondemand.h"
 
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -57,6 +58,68 @@ simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, SchemaGara
   return simdjson::SUCCESS;
 }
 
+
+struct SchemaNode {
+  std::vector<SchemaNode> kids{};
+  int64_t v{};
+};
+simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, SchemaNode &n) {
+  simdjson::ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) { return error; }
+  for (auto field : obj) {
+    simdjson::ondemand::raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "kids") {
+      simdjson::ondemand::array arr;
+      error = field.value().get_array().get(arr);
+      if (error) { return error; }
+      n.kids.clear();
+      for (auto element : arr) {
+        simdjson::ondemand::value child_value;
+        error = element.get(child_value);
+        if (error) { return error; }
+        SchemaNode child;
+        error = tag_invoke(simdjson::deserialize_tag{}, child_value, child);
+        if (error) { return error; }
+        n.kids.push_back(std::move(child));
+      }
+    } else if (key == "v") { error = field.value().get(n.v); if (error) { return error; } }
+  }
+  return simdjson::SUCCESS;
+}
+bool operator==(const SchemaNode &a, const SchemaNode &b) { return a.v == b.v && a.kids == b.kids; }
+
+struct SchemaCounts {
+  uint8_t small{};
+  uint64_t big{};
+  int32_t delta{};
+};
+simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, SchemaCounts &c) {
+  simdjson::ondemand::object obj;
+  auto error = val.get_object().get(obj);
+  if (error) { return error; }
+  for (auto field : obj) {
+    simdjson::ondemand::raw_json_string key;
+    error = field.key().get(key);
+    if (error) { return error; }
+    if (key == "small") { error = field.value().get(c.small); if (error) { return error; } }
+    else if (key == "big") { error = field.value().get(c.big); if (error) { return error; } }
+    else if (key == "delta") { error = field.value().get(c.delta); if (error) { return error; } }
+  }
+  return simdjson::SUCCESS;
+}
+bool operator==(const SchemaCounts &a, const SchemaCounts &b) {
+  return a.small == b.small && a.big == b.big && a.delta == b.delta;
+}
+
+bool operator==(const SchemaCar &a, const SchemaCar &b) {
+  return a.make == b.make && a.model == b.model && a.year == b.year &&
+         a.tire_pressure == b.tire_pressure && a.active == b.active;
+}
+bool operator==(const SchemaGarage &a, const SchemaGarage &b) { return a.car == b.car && a.bays == b.bays; }
+
 } // namespace schema_tests
 
 namespace simdjson {
@@ -76,6 +139,21 @@ template<> struct direct_schema<schema_tests::SchemaGarage> {
     direct_field<direct_key{"car"}, &schema_tests::SchemaGarage::car>{},
     direct_field<direct_key{"bays"}, &schema_tests::SchemaGarage::bays>{},
   };
+};
+template<> struct direct_schema<schema_tests::SchemaNode> {
+  static constexpr bool enabled = true;
+  static constexpr auto fields = std::tuple{
+    direct_field<direct_key{"kids"}, &schema_tests::SchemaNode::kids>{},
+    direct_field<direct_key{"v"}, &schema_tests::SchemaNode::v>{},
+  };
+};
+template<> struct direct_schema<schema_tests::SchemaCounts> {
+  static constexpr bool enabled = true;
+  template <typename F> static void for_each_field(F &&f) {
+    f(std::string_view("small"), &schema_tests::SchemaCounts::small);
+    f(std::string_view("big"), &schema_tests::SchemaCounts::big);
+    f(std::string_view("delta"), &schema_tests::SchemaCounts::delta);
+  }
 };
 } // namespace simdjson
 
@@ -192,8 +270,135 @@ bool test_direct_schema_string_scan() {
   TEST_SUCCEED();
 }
 
+// from<T> must give the On Demand result, whichever path it takes.
+template <typename T>
+bool same_as_ondemand(const std::string &json) {
+  simdjson::padded_string padded(json);
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  T expected{};
+  auto expected_error = parser.iterate(padded).get(doc);
+  if (!expected_error) { expected_error = doc.get<T>().get(expected); }
+  T got{};
+  auto got_error = simdjson::from(padded).get(got);
+  if (got_error != expected_error) {
+    std::cerr << "error mismatch on " << json << ": " << got_error << " vs " << expected_error << std::endl;
+    return false;
+  }
+  if (!expected_error && !(got == expected)) {
+    std::cerr << "value mismatch on " << json << std::endl;
+    return false;
+  }
+  return true;
+}
+
+std::string nested_nodes(size_t depth, const std::string &sep, const std::string &extra) {
+  std::string json;
+  for (size_t i = 0; i < depth; i++) { json += "{\"kids\":" + sep + "["; }
+  json += "{\"kids\":[]" + sep + ",\"v\":0" + extra + "}";
+  for (size_t i = depth; i > 0; i--) { json += "]" + sep + ",\"v\":" + std::to_string(i) + extra + "}"; }
+  return json;
+}
+
+bool test_direct_schema_ordered_fallback() {
+  TEST_START();
+  // Pretty-printed objects and keys out of schema order after a field
+  // already parsed in order.
+  const std::string car_docs[] = {
+      "{\"make\": \"Toyota\", \"model\": \"Camry\", \"year\": 2018, \"tire_pressure\": [40.1, 39.9], \"active\": true}",
+      "{\n  \"make\" : \"Toyota\" ,\n  \"model\" : \"Camry\"\n}",
+      R"({"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[1.5],"active":true,"vin":"X1"})",
+      R"({"make":"Toyota","vin":{"a":[1,{"b":null}]},"model":"Camry","year":2018})",
+      R"({"make":"Toyota","model":"Camry","active":true,"year":2018})",
+      R"({"make":"Toyota","model":"Camry","make":"Honda"})",
+      R"({"make":"Toyota","model":"Camry",})",
+      R"({"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[],"active":true,})",
+      R"({"make":"Toyota","model":"Camry" "year":2018})",
+      R"({"make":"Toyota","model":"Camry","year":"2018"})",
+      R"({"make":"Toyota","model":"Camry","year":2018,"vin":"\u00e9"})",
+      "{\"make\":\"T\xc3\xa9\",\"model\":\"Camry\",\"vin\":1}",
+      R"({"make":"Toyota" , })",
+      R"({"make":"Toyota"})",
+      R"({})"};
+  for (const std::string &json : car_docs) {
+    ASSERT_TRUE(same_as_ondemand<SchemaCar>(json));
+  }
+  const std::string garage_docs[] = {
+      R"({"car":{"make":"Toyota","model":"Camry","year":2018},"bays":3})",
+      R"({"car":{"make":"Toyota","model":"Camry","year":2018},"note":"x","bays":3})",
+      R"({"bays":3,"car":{"model":"Camry","make":"Toyota"}})",
+      "{ \"car\" : { \"make\" : \"Toyota\" , \"year\" : 2018 } , \"bays\" : 3 }"};
+  for (const std::string &json : garage_docs) {
+    ASSERT_TRUE(same_as_ondemand<SchemaGarage>(json));
+  }
+  TEST_SUCCEED();
+}
+
+bool test_direct_schema_recursive() {
+  TEST_START();
+  // A key out of order at every level used to re-parse the nested values
+  // from the first key, which doubled the work at each level.
+  const std::string seps[] = {"", " "};
+  const std::string extras[] = {"", ",\"z\":0"};
+  for (const std::string &sep : seps) {
+    for (const std::string &extra : extras) {
+      for (size_t depth : {size_t(0), size_t(1), size_t(5), size_t(100)}) {
+        const std::string json = nested_nodes(depth, sep, extra);
+        ASSERT_TRUE(same_as_ondemand<SchemaNode>(json));
+        SchemaNode node;
+        ASSERT_SUCCESS(simdjson::from(simdjson::padded_string(json)).get(node));
+        const SchemaNode *n = &node;
+        for (size_t i = 1; i <= depth; i++) {
+          ASSERT_EQUAL(n->v, int64_t(i));
+          ASSERT_EQUAL(n->kids.size(), 1);
+          n = &n->kids[0];
+        }
+        ASSERT_EQUAL(n->v, int64_t(0));
+      }
+    }
+  }
+  TEST_SUCCEED();
+}
+
+bool test_direct_schema_for_each_field() {
+  TEST_START();
+  const std::string docs[] = {
+      R"({"small":7,"big":9223372036854775807,"delta":-5})",
+      R"({ "small" : 7 , "big" : 18446744073709551615 , "delta" : -5 })",
+      R"({"delta":-5,"small":7})",
+      R"({"small":7,"x":[1,2],"big":1,"delta":2})",
+      R"({"small":256})",
+      R"({"small":-0})",
+      R"({"big":-0})",
+      R"({"delta":-0})",
+      R"({"delta":2147483648})",
+      R"({"small":7,})"};
+  for (const std::string &json : docs) {
+    ASSERT_TRUE(same_as_ondemand<SchemaCounts>(json));
+  }
+  TEST_SUCCEED();
+}
+
+bool test_direct_schema_reserve() {
+  TEST_START();
+  // The capacity guess comes from the first element; a tiny first element
+  // must not reserve far more than the document can fill.
+  std::string json = "[{}";
+  for (size_t i = 0; i < 1000; i++) {
+    json += R"(,{"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[40.1,39.9,40.0,39.8],"active":true})";
+  }
+  json += "]";
+  std::vector<SchemaCar> cars;
+  ASSERT_SUCCESS(simdjson::from(simdjson::padded_string(json)).get(cars));
+  ASSERT_EQUAL(cars.size(), 1001);
+  ASSERT_TRUE(cars.capacity() <= 2 * json.size() / sizeof(SchemaCar) + 2);
+  TEST_SUCCEED();
+}
+
 bool run() {
-  return test_direct_schema() && test_direct_schema_string_scan();
+  return test_direct_schema() && test_direct_schema_string_scan() &&
+         test_direct_schema_ordered_fallback() && test_direct_schema_recursive() &&
+         test_direct_schema_for_each_field() && test_direct_schema_reserve();
 }
 
 } // namespace schema_tests

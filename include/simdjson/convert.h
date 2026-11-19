@@ -127,45 +127,6 @@ auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
 static constexpr convert::internal::to_adaptor<> from{};
 
 /**
- * Opt-in description of a type for the single-pass `simdjson::from` parser.
- *
- * Specialize this in namespace `simdjson` to let `from<T>` (and
- * `from<std::vector<T>>`) parse `T` without building a structural index,
- * when the document is plain ASCII JSON. Anything the direct parser
- * cannot accept (escapes in materialized strings, non-ASCII, an
- * unsupported shape) falls back to On Demand, so error codes stay the
- * same.
- *
- * ```cpp
- * struct Car { std::string make, model; int64_t year; std::vector<double> tire_pressure; };
- * namespace simdjson {
- * template<> struct direct_schema<Car> {
- *   static constexpr bool enabled = true;
- *   // Fast form (C++20): a tuple of direct_field. The in-order parser unrolls it.
- *   static constexpr auto fields = std::tuple{
- *     direct_field<direct_key{"make"}, &Car::make>{},
- *     direct_field<direct_key{"model"}, &Car::model>{},
- *     direct_field<direct_key{"year"}, &Car::year>{},
- *     direct_field<direct_key{"tire_pressure"}, &Car::tire_pressure>{},
- *   };
- *   // Alternate form, any key order only (also used as the fallback scanner):
- *   // template<typename F> static void for_each_field(F &&f) {
- *   //   f(std::string_view("make"), &Car::make);
- *   //   ...
- *   // }
- * };
- * }
- * ```
- *
- * Supported field types: bool, standard integers (not char), double,
- * std::string (no escapes on the fast path), std::vector of those, and
- * other types that themselves specialize direct_schema.
- *
- * Missing keys keep the member's current value (the object is
- * value-initialized by `from`). Duplicate keys overwrite. Unknown keys
- * are skipped. This customization is experimental.
- */
-/**
  * JSON object key for direct_field. Construct from a string literal.
  * Keys longer than 63 characters are not supported on this path.
  * Requires C++20 class-type non-type template parameters.
@@ -193,6 +154,52 @@ struct direct_field {
   static constexpr std::string_view name{key_storage.data, key_storage.len};
 };
 
+/**
+ * Opt-in description of a type for the single-pass `simdjson::from` parser.
+ *
+ * Specialize this in namespace `simdjson` to let `from<T>` (and
+ * `from<std::vector<T>>`) parse `T` without building a structural index,
+ * when the document is plain ASCII JSON. Anything the direct parser
+ * cannot accept (escapes in materialized strings, non-ASCII bytes,
+ * malformed JSON, a value of the wrong type) falls back to On Demand, which
+ * uses the deserializer of T (tag_invoke or static reflection). T must
+ * therefore also be deserializable by On Demand.
+ *
+ * ```cpp
+ * struct Car { std::string make, model; int64_t year; std::vector<double> tire_pressure; };
+ * namespace simdjson {
+ * template<> struct direct_schema<Car> {
+ *   static constexpr bool enabled = true;
+ *   static constexpr auto fields = std::tuple{
+ *     direct_field<direct_key{"make"}, &Car::make>{},
+ *     direct_field<direct_key{"model"}, &Car::model>{},
+ *     direct_field<direct_key{"year"}, &Car::year>{},
+ *     direct_field<direct_key{"tire_pressure"}, &Car::tire_pressure>{},
+ *   };
+ *   // Alternate form, instead of fields:
+ *   // template<typename F> static void for_each_field(F &&f) {
+ *   //   f(std::string_view("make"), &Car::make);
+ *   //   ...
+ *   // }
+ * };
+ * }
+ * ```
+ *
+ * Supported field types: bool, standard integers (not char), double,
+ * std::string (no escapes on the fast path), std::vector of those, and
+ * other types that themselves specialize direct_schema (a type may hold a
+ * std::vector of itself).
+ *
+ * Keys may come in any order; keys in schema order are fastest. Missing
+ * keys keep the value-initialized member, duplicate keys overwrite (the
+ * last one wins), and unknown keys are skipped. When the document falls
+ * back to On Demand, these cases follow the deserializer of T instead: with
+ * static reflection, for example, a missing key is NO_SUCH_FIELD and the
+ * first of duplicate keys wins. Write the deserializer of T with the same
+ * rules if the result must not depend on the path taken.
+ *
+ * This customization is experimental.
+ */
 template <typename T>
 struct direct_schema {
   static constexpr bool enabled = false;
