@@ -480,10 +480,87 @@ string_builder::append_long_integer_array(const int_type *data, size_t n) noexce
   buffer_data()[position - 1] = ']';
 }
 
+template <std::ranges::contiguous_range R>
+  requires (!std::is_convertible_v<R, std::string_view> &&
+            std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view> &&
+            !require_custom_serialization<R>)
+simdjson_inline void string_builder::append(const R &range) noexcept {
+  // Reserve the unexpanded size (brackets, commas, quotes, raw bytes).
+  // A 6x worst-case escape reservation forced a multi-megabyte allocation
+  // to emit a ~1x buffer and dominated string-array serialization.
+  // Escapes are rare; when one does not fit we grow (see below).
+  size_t bytes = 2; // brackets
+  for (const auto &item : range) {
+    const std::string_view sv = item;
+    if (sv.size() > ((std::numeric_limits<size_t>::max)() - 4) / 6 ||
+        sv.size() > (std::numeric_limits<size_t>::max)() - bytes - 3) {
+      set_valid(false);
+      return;
+    }
+    bytes += 3 + sv.size();
+  }
+  if (!capacity_check(bytes)) {
+    return;
+  }
+  char *p = buffer_data() + position;
+  *p++ = '[';
+  bool first = true;
+  for (const auto &item : range) {
+    const std::string_view sv = item;
+    // write_string_escaped may expand a byte to 6 output bytes.
+    const size_t overhead = size_t(!first) + 2;
+    // +1 keeps a byte for the closing bracket even if this element hits
+    // its worst-case escape expansion.
+    const size_t worst = overhead + 6 * sv.size() + 1;
+    const size_t off = size_t(p - buffer_data());
+    if (worst > capacity - off) {
+      if (sv.size() > 512) {
+        position = off;
+        if (!capacity_check(worst)) {
+          return;
+        }
+        p = buffer_data() + position;
+      } else {
+        // Side buffer: exact escaped form, then copy once we know the size.
+        // 512 * 6 + 3 keeps this on the stack.
+        char tmp[3 + 6 * 512];
+        char *tp = tmp;
+        if (!first) {
+          *tp++ = ',';
+        }
+        *tp++ = '"';
+        tp += write_string_escaped(sv, tp);
+        *tp++ = '"';
+        const size_t n = size_t(tp - tmp);
+        position = off;
+        if (!capacity_check(n + 1)) {
+          return;
+        }
+        p = buffer_data() + position;
+        std::memcpy(p, tmp, n);
+        p += n;
+        first = false;
+        continue;
+      }
+    }
+    if (!first) {
+      *p++ = ',';
+    }
+    first = false;
+    *p++ = '"';
+    p += write_string_escaped(sv, p);
+    *p++ = '"';
+  }
+  *p++ = ']';
+  position = size_t(p - buffer_data());
+}
+
 // Support for range-based appending (std::ranges::view, etc.)
 template <std::ranges::range R>
   requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
-           !require_custom_serialization<R> && !integer_array<R>)
+           !require_custom_serialization<R> && !integer_array<R> &&
+           !(std::ranges::contiguous_range<R> &&
+             std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view>))
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);

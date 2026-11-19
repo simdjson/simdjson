@@ -219,10 +219,19 @@ public:
   template <integer_array R>
   requires(!require_custom_serialization<R>)
   simdjson_inline void append(const R &range) noexcept;
+  // Contiguous arrays of strings: one capacity check, then quoted escaped
+  // elements. Same rationale as the integer-array writer.
+  template <std::ranges::contiguous_range R>
+  requires (!std::is_convertible_v<R, std::string_view> &&
+            std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view> &&
+            !require_custom_serialization<R>)
+  simdjson_inline void append(const R &range) noexcept;
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
   requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
-           !require_custom_serialization<R> && !integer_array<R>)
+           !require_custom_serialization<R> && !integer_array<R> &&
+           !(std::ranges::contiguous_range<R> &&
+             std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view>))
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
