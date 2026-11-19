@@ -54,6 +54,7 @@ simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parse
     _streaming{false}
 
 {
+  parser->_root_atom.kind = simdjson::internal::lone_atom_kind::none;
   logger::log_headers();
 #if SIMDJSON_CHECK_EOF
   assert_more_tokens();
@@ -71,6 +72,7 @@ simdjson_inline json_iterator::json_iterator(const uint8_t *buf, ondemand::parse
       _allow_incomplete_json{true}
 
 {
+  parser->_root_atom.kind = simdjson::internal::lone_atom_kind::none;
   logger::log_headers();
 #if SIMDJSON_CHECK_EOF
   assert_more_tokens();

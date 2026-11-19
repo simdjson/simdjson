@@ -457,13 +457,8 @@ private:
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
   std::unique_ptr<uint8_t[]> string_buf{};
-  // Value of a lone root atom recognized during iterate(), so get_int64 /
-  // get_uint64 / get_bool / is_null do not rescan the token. 0 = no cache.
-  // 1 = int64 (also valid as uint64 when _root_atom_i64 >= 0), 2 = bool,
-  // 3 = null, 4 = atom that is not one of those (float, big integer, ...).
-  uint8_t _root_atom_kind{0};
-  bool _root_atom_bool{false};
-  int64_t _root_atom_i64{0};
+  /** Lone root atom recognized by iterate(), cleared by every new json_iterator. */
+  simdjson::internal::lone_atom _root_atom{};
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /** Copy of a scalar cut by the end of an incomplete document, see json_iterator::scalar_within_input(). */
   uint8_t incomplete_scalar_buf[1074+8+1+SIMDJSON_PADDING]{};

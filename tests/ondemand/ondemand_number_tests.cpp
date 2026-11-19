@@ -971,6 +971,49 @@ namespace number_tests {
     ASSERT_EQUAL(i, INT64_MIN);
     ASSERT_SUCCESS(parser.iterate(min_int64).get(doc));
     ASSERT_ERROR(doc.get_uint64().get(u), INCORRECT_TYPE);
+    simdjson::padded_string max_uint64{std::string("18446744073709551615")};
+    ASSERT_SUCCESS(parser.iterate(max_uint64).get(doc));
+    ASSERT_SUCCESS(doc.get_uint64().get(u));
+    ASSERT_EQUAL(u, UINT64_MAX);
+    ASSERT_SUCCESS(parser.iterate(max_uint64).get(doc));
+    ASSERT_ERROR(doc.get_int64().get(i), INCORRECT_TYPE);
+    simdjson::padded_string over_uint64{std::string("18446744073709551616")};
+    ASSERT_SUCCESS(parser.iterate(over_uint64).get(doc));
+    ASSERT_ERROR(doc.get_uint64().get(u), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
+
+  bool root_atom_then_stream() {
+    TEST_START();
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    simdjson::padded_string atom{std::string("42")};
+    int64_t i;
+    ASSERT_SUCCESS(parser.iterate(atom).get(doc));
+    ASSERT_SUCCESS(doc.get_int64().get(i));
+    ASSERT_EQUAL(i, 42);
+    simdjson::padded_string many{std::string("7 8 9")};
+    simdjson::ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(many).get(stream));
+    int64_t expected = 7;
+    for (auto d : stream) {
+      ASSERT_SUCCESS(d.get_int64().get(i));
+      ASSERT_EQUAL(i, expected);
+      expected++;
+    }
+    ASSERT_EQUAL(expected, 10);
+    simdjson::padded_string yes{std::string("true")};
+    bool b;
+    ASSERT_SUCCESS(parser.iterate(yes).get(doc));
+    ASSERT_SUCCESS(doc.get_bool().get(b));
+    ASSERT_TRUE(b);
+    simdjson::padded_string atoms{std::string("false null")};
+    ASSERT_SUCCESS(parser.iterate_many(atoms).get(stream));
+    auto it = stream.begin();
+    ASSERT_SUCCESS((*it).get_bool().get(b));
+    ASSERT_FALSE(b);
+    ++it;
+    ASSERT_ERROR((*it).get_bool().get(b), INCORRECT_TYPE);
     TEST_SUCCEED();
   }
 
@@ -1144,6 +1187,7 @@ namespace number_tests {
            root_number_scratch_padding() &&
            root_number_trailing_whitespace() &&
            root_atom_integer_getters() &&
+           root_atom_then_stream() &&
            root_number_stream_delimiters() &&
            long_exponents();
   }

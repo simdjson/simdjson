@@ -158,7 +158,8 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
 }
 
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
-  auto error = stage1(_buf, _len, stage1_mode::regular);
+  error_code error = simdjson::internal::try_stage1_lone_atom(*this, _buf, _len);
+  if (error == UNINITIALIZED) { error = stage1(_buf, _len, stage1_mode::regular); }
   if (error) { return error; }
   return stage2(_doc);
 }

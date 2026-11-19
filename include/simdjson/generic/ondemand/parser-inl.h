@@ -75,66 +75,21 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
     SIMDJSON_TRY( allocate(json.length(), max_depth()) );
   }
 
-  // Run stage 1. A lone atom (number/true/false/null) does not need the
-  // vectorized indexer or a virtual call into it: the tape is one entry.
-  // That is the per-value overhead Jsonifier's fused scalar parse avoids.
-  if (json.length() <= 64) {
-    error_code atom = simdjson::internal::try_stage1_lone_atom(
-        *implementation, reinterpret_cast<const uint8_t *>(json.data()), json.length());
-    if (atom == SUCCESS) {
-      // The atom scan already delimited the token. Parse its value once here
-      // so the matching getter is a load. Overflow / float forms stay kind 4
-      // and take the ordinary getter.
-      const uint8_t *p = reinterpret_cast<const uint8_t *>(json.data()) + implementation->structural_indexes[0];
-      const uint8_t *end = reinterpret_cast<const uint8_t *>(json.data()) + json.length();
-      _root_atom_kind = 4;
-      if (*p == 't' || *p == 'f') {
-        _root_atom_kind = 2;
-        _root_atom_bool = (*p == 't');
-      } else if (*p == 'n') {
-        _root_atom_kind = 3;
-      } else {
-        // Bounded int64 parse: never reads past `end`.
-        bool negative = (*p == '-');
-        const uint8_t *d = p + uint8_t(negative);
-        if (d < end && *d >= '0' && *d <= '9') {
-          uint64_t i = 0;
-          const uint8_t *digits = d;
-          if (*d == '0') {
-            d++;
-          } else {
-            while (d < end && *d >= '0' && *d <= '9') {
-              // Reject overflow past 19 digits by saturating into kind 4.
-              if (d - digits >= 19) { i = UINT64_MAX; d++; continue; }
-              i = i * 10 + uint64_t(*d - '0');
-              d++;
-            }
-          }
-          const size_t digit_count = size_t(d - digits);
-          // try_stage1_lone_atom validated the token, so the integer digits
-          // are followed by '.', 'e', 'E', JSON whitespace, or the end; only
-          // the last two make an integer. "-0" is left to the ordinary getters
-          // because get_uint64 rejects it while get_int64 accepts it.
-          const bool int_form = (d == end || *d == ' ' || *d == '\t' || *d == '\n' || *d == '\r');
-          // Leading-zero numbers with more digits are not int64-valid.
-          if (int_form && digit_count >= 1 && digit_count <= 19 &&
-              !(*digits == '0' && digit_count > 1) && !(negative && i == 0) &&
-              i <= uint64_t(INT64_MAX) + uint64_t(negative)) {
-            _root_atom_kind = 1;
-            _root_atom_i64 = negative ? int64_t(~i + 1) : int64_t(i);
-          }
-        }
-      }
-      return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+  // Run stage 1.
+  const uint8_t *buf = reinterpret_cast<const uint8_t *>(json.data());
+  if (simdjson_unlikely(json.length() <= 64 && buf[0] != '{' && buf[0] != '[' && buf[0] != '"')) {
+    error_code err = simdjson::internal::try_stage1_lone_atom(*implementation, buf, json.length(), _root_atom);
+    if (err == SUCCESS) {
+      // The json_iterator constructor clears the cached kind.
+      const simdjson::internal::lone_atom_kind kind = _root_atom.kind;
+      simdjson_result<document> result = document::start({ buf, this });
+      _root_atom.kind = kind;
+      return result;
     }
-    if (atom != UNINITIALIZED) {
-      _root_atom_kind = 0;
-      return atom;
-    }
+    if (err != UNINITIALIZED) { return err; }
   }
-  _root_atom_kind = 0;
-  SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
-  return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
+  SIMDJSON_TRY( implementation->stage1(buf, json.length(), stage1_mode::regular) );
+  return document::start({ buf, this });
 }
 
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON

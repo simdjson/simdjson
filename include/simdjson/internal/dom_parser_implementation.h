@@ -270,74 +270,132 @@ protected:
   simdjson_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
 }; // class dom_parser_implementation
 
-// Stage-1 fast path for a single JSON atom (number / true / false / null)
-// surrounded only by ASCII whitespace. Writes the one-entry structural tape
-// and returns SUCCESS, returns EMPTY for an all-whitespace buffer, or
-// returns UNINITIALIZED if the buffer is not that shape (caller must run
-// the full indexer). Defined here so ondemand::parser::iterate can apply it
-// without a virtual call into stage1.
-simdjson_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
+/** Kind of a lone root atom. */
+enum class lone_atom_kind : uint8_t {
+  none,
+  /** An integer that fits in 64 bits; magnitude and negative hold it. */
+  integer,
+  /** true or false; negative holds false. */
+  boolean,
+  null_value,
+  /** Any other number. */
+  other_number
+};
+
+/** A lone root atom recognized by try_stage1_lone_atom. */
+struct lone_atom {
+  lone_atom_kind kind{lone_atom_kind::none};
+  bool negative{false};
+  uint64_t magnitude{0};
+};
+
+template <bool PARSE_VALUE>
+simdjson_inline error_code scan_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len, lone_atom &atom) noexcept {
   auto is_json_ws = [](uint8_t c) noexcept {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
   };
+  auto is_digit = [](uint8_t c) noexcept { return uint8_t(c - '0') < 10; };
   size_t i = 0;
   while (i < len && is_json_ws(buf[i])) { i++; }
   if (i == len) { return EMPTY; }
-  const size_t atom = i;
+  const size_t start = i;
   const uint8_t c = buf[i];
-  if (c >= 0x80 || c == '"' || c == '{' || c == '[' || c == '}' || c == ']' || c == ':' || c == ',') {
-    return UNINITIALIZED;
-  }
   if (c == 't') {
-    if (i + 4 > len || buf[i+1] != 'r' || buf[i+2] != 'u' || buf[i+3] != 'e') { return UNINITIALIZED; }
+    if (len - i < 4 || buf[i+1] != 'r' || buf[i+2] != 'u' || buf[i+3] != 'e') { return UNINITIALIZED; }
     i += 4;
+    atom.kind = lone_atom_kind::boolean;
+    atom.negative = false;
   } else if (c == 'f') {
-    if (i + 5 > len || buf[i+1] != 'a' || buf[i+2] != 'l' || buf[i+3] != 's' || buf[i+4] != 'e') { return UNINITIALIZED; }
+    if (len - i < 5 || buf[i+1] != 'a' || buf[i+2] != 'l' || buf[i+3] != 's' || buf[i+4] != 'e') { return UNINITIALIZED; }
     i += 5;
+    atom.kind = lone_atom_kind::boolean;
+    atom.negative = true;
   } else if (c == 'n') {
-    if (i + 4 > len || buf[i+1] != 'u' || buf[i+2] != 'l' || buf[i+3] != 'l') { return UNINITIALIZED; }
+    if (len - i < 4 || buf[i+1] != 'u' || buf[i+2] != 'l' || buf[i+3] != 'l') { return UNINITIALIZED; }
     i += 4;
-  } else if (c == '-' || (c >= '0' && c <= '9')) {
-    if (c == '-') {
+    atom.kind = lone_atom_kind::null_value;
+  } else if (c == '-' || is_digit(c)) {
+    const bool negative = (c == '-');
+    if (negative) {
       i++;
       if (i == len) { return UNINITIALIZED; }
     }
+    const size_t digits = i;
+    uint64_t magnitude = 0;
     if (buf[i] == '0') {
       i++;
-    } else if (buf[i] >= '1' && buf[i] <= '9') {
-      i++;
-      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+    } else if (is_digit(buf[i])) {
+      // Nineteen decimal digits always fit in 64 bits.
+      while (i < len && is_digit(buf[i])) {
+        if (PARSE_VALUE && i - digits < 19) { magnitude = magnitude * 10 + uint64_t(buf[i] - '0'); }
+        i++;
+      }
     } else {
       return UNINITIALIZED;
     }
+    const size_t digit_count = i - digits;
+    bool integer = digit_count <= 19;
+    if (PARSE_VALUE && digit_count == 20) {
+      const uint64_t last = uint64_t(buf[digits + 19] - '0');
+      if (magnitude < 1844674407370955161ULL || (magnitude == 1844674407370955161ULL && last <= 5)) {
+        magnitude = magnitude * 10 + last;
+        integer = true;
+      }
+    }
     if (i < len && buf[i] == '.') {
+      integer = false;
       i++;
-      if (i == len || buf[i] < '0' || buf[i] > '9') { return UNINITIALIZED; }
-      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+      if (i == len || !is_digit(buf[i])) { return UNINITIALIZED; }
+      while (i < len && is_digit(buf[i])) { i++; }
     }
     if (i < len && (buf[i] == 'e' || buf[i] == 'E')) {
+      integer = false;
       i++;
       if (i < len && (buf[i] == '+' || buf[i] == '-')) { i++; }
-      if (i == len || buf[i] < '0' || buf[i] > '9') { return UNINITIALIZED; }
-      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+      if (i == len || !is_digit(buf[i])) { return UNINITIALIZED; }
+      while (i < len && is_digit(buf[i])) { i++; }
     }
+    atom.kind = integer ? lone_atom_kind::integer : lone_atom_kind::other_number;
+    atom.negative = negative;
+    atom.magnitude = magnitude;
   } else {
     return UNINITIALIZED;
   }
-  if (i < len && !is_json_ws(buf[i])) { return UNINITIALIZED; }
   while (i < len) {
     if (!is_json_ws(buf[i])) { return UNINITIALIZED; }
     i++;
   }
   parser.buf = buf;
   parser.len = len;
-  parser.structural_indexes[0] = uint32_t(atom);
+  parser.structural_indexes[0] = uint32_t(start);
   parser.n_structural_indexes = 1;
   parser.structural_indexes[1] = uint32_t(len);
   parser.structural_indexes[2] = uint32_t(len);
   parser.structural_indexes[3] = 0;
   parser.next_structural_index = 0;
   return SUCCESS;
+}
+
+/**
+ * Stage-1 fast path for a document that is a single number, true, false or
+ * null surrounded only by ASCII white space. It writes the one-entry
+ * structural tape and returns SUCCESS, returns EMPTY for an all-white-space
+ * buffer, or returns UNINITIALIZED when the buffer is not that shape and the
+ * caller must run the full indexer. It never reads past buf + len.
+ */
+simdjson_never_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len, lone_atom &atom) noexcept {
+  return scan_lone_atom<true>(parser, buf, len, atom);
+}
+
+/**
+ * Like try_stage1_lone_atom, without the value of the atom. It returns
+ * UNINITIALIZED at once for an empty document, a document longer than 64
+ * bytes, or one that starts with {, [ or ".
+ */
+simdjson_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
+  if (len == 0 || len > 64 || buf[0] == '{' || buf[0] == '[' || buf[0] == '"') { return UNINITIALIZED; }
+  lone_atom atom;
+  return scan_lone_atom<false>(parser, buf, len, atom);
 }
 
 simdjson_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
