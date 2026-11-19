@@ -3,8 +3,8 @@
 #define SIMDJSON_CONVERT_INL_H
 
 #include "simdjson/convert.h"
-#include "simdjson/internal/direct_parse.h"
 #if SIMDJSON_SUPPORTS_CONCEPTS
+#include "simdjson/internal/direct_parse.h"
 namespace simdjson {
 namespace convert {
 namespace internal {
@@ -66,6 +66,20 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
     if (m_direct_buf != nullptr) {
       T direct_value{};
       error_code direct_error = simdjson::internal::direct::parse_document(
+          m_direct_buf, m_direct_len, direct_value);
+      if (direct_error == SUCCESS) {
+        return direct_value;
+      }
+      if (direct_error != UNINITIALIZED) {
+        return direct_error;
+      }
+    }
+  } else if constexpr (simdjson::internal::direct::schema_document_v<T>) {
+    // Opt-in direct_schema<T>: one pass into the struct (or a vector of
+    // them). UNINITIALIZED falls back to On Demand.
+    if (m_direct_buf != nullptr) {
+      T direct_value{};
+      error_code direct_error = simdjson::internal::direct::parse_schema_document(
           m_direct_buf, m_direct_len, direct_value);
       if (direct_error == SUCCESS) {
         return direct_value;

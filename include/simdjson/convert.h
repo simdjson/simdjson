@@ -4,6 +4,8 @@
 
 #include "simdjson/ondemand.h"
 #include <optional>
+#include <string_view>
+#include <tuple>
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
 
@@ -123,6 +125,78 @@ auto_parser(padded_string_view const str) -> auto_parser<ondemand::parser*>;
  * This functionality requires C++20 or better.
  */
 static constexpr convert::internal::to_adaptor<> from{};
+
+/**
+ * Opt-in description of a type for the single-pass `simdjson::from` parser.
+ *
+ * Specialize this in namespace `simdjson` to let `from<T>` (and
+ * `from<std::vector<T>>`) parse `T` without building a structural index,
+ * when the document is plain ASCII JSON. Anything the direct parser
+ * cannot accept (escapes in materialized strings, non-ASCII, an
+ * unsupported shape) falls back to On Demand, so error codes stay the
+ * same.
+ *
+ * ```cpp
+ * struct Car { std::string make, model; int64_t year; std::vector<double> tire_pressure; };
+ * namespace simdjson {
+ * template<> struct direct_schema<Car> {
+ *   static constexpr bool enabled = true;
+ *   // Fast form (C++20): a tuple of direct_field. The in-order parser unrolls it.
+ *   static constexpr auto fields = std::tuple{
+ *     direct_field<direct_key{"make"}, &Car::make>{},
+ *     direct_field<direct_key{"model"}, &Car::model>{},
+ *     direct_field<direct_key{"year"}, &Car::year>{},
+ *     direct_field<direct_key{"tire_pressure"}, &Car::tire_pressure>{},
+ *   };
+ *   // Alternate form, any key order only (also used as the fallback scanner):
+ *   // template<typename F> static void for_each_field(F &&f) {
+ *   //   f(std::string_view("make"), &Car::make);
+ *   //   ...
+ *   // }
+ * };
+ * }
+ * ```
+ *
+ * Supported field types: bool, standard integers (not char), double,
+ * std::string (no escapes on the fast path), std::vector of those, and
+ * other types that themselves specialize direct_schema.
+ *
+ * Missing keys keep the member's current value (the object is
+ * value-initialized by `from`). Duplicate keys overwrite. Unknown keys
+ * are skipped. This customization is experimental.
+ */
+/**
+ * JSON object key for direct_field. Construct from a string literal.
+ * Keys longer than 63 characters are not supported on this path.
+ * Requires C++20 class-type non-type template parameters.
+ */
+struct direct_key {
+  char data[64]{};
+  size_t len{};
+  template <size_t N>
+  constexpr direct_key(const char (&s)[N]) noexcept : len(N - 1) {
+    static_assert(N <= 64, "direct_key is limited to 63 characters");
+    for (size_t i = 0; i < N; ++i) { data[i] = s[i]; }
+  }
+  constexpr size_t size() const noexcept { return len; }
+};
+
+/**
+ * One field of a direct_schema<T>::fields tuple. Prefer this form over
+ * for_each_field: the in-order parser unrolls it.
+ * `direct_field<direct_key{"make"}, &Car::make>{}`
+ */
+template <direct_key Key, auto MemberPtr>
+struct direct_field {
+  static constexpr auto member = MemberPtr;
+  static constexpr direct_key key_storage = Key;
+  static constexpr std::string_view name{key_storage.data, key_storage.len};
+};
+
+template <typename T>
+struct direct_schema {
+  static constexpr bool enabled = false;
+};
 
 } // namespace simdjson
 

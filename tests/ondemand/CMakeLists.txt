@@ -48,6 +48,10 @@ add_cpp_test(ondemand_custom_types_document_tests    LABELS ondemand acceptance 
 add_cpp_test(ondemand_key_selector_reflection_tests  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_direct_schema_tests            LABELS ondemand acceptance per_implementation)
+if(NOT SIMDJSON_STATIC_REFLECTION_ENABLED AND NOT CMAKE_CXX_STANDARD GREATER_EQUAL 20)
+  set_target_properties(ondemand_direct_schema_tests PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+endif()
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wildcard_tests                 LABELS ondemand acceptance per_implementation)
 # Includes simdjson.h from two translation units with SIMDJSON_CONSTEXPR_STRING
