@@ -196,6 +196,12 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   if (simdjson_unlikely(len > parser.capacity())) { return CAPACITY; }
   // We guard the rest of the code so that we can assume that len > 0 throughout.
   if (len == 0) { return EMPTY; }
+  // Lone atoms only on a complete (non-streaming) buffer. Streaming windows
+  // have different truncation and partial-scalar rules.
+  if (partial == stage1_mode::regular && len <= 64) {
+    error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
+    if (atom != UNINITIALIZED) { return atom; }
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
