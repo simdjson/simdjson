@@ -83,6 +83,35 @@ simdjson_really_inline char *itoa_lt1e8(char *b, uint32_t n) noexcept {
   return b + 8;
 }
 
+// 10/11/12-digit kernels. `lo` is the low 8 digits. The 11-digit
+// form writes the 3-digit head as a 4-byte store (third digit's
+// neighbour is a zero) and the following 4-digit block overwrites
+// that zero — one store instead of three byte extracts. Little-endian
+// only for that overlap; big-endian uses itoa_wr3.
+simdjson_really_inline char *itoa_d10(char *b, uint32_t hi, uint32_t lo) noexcept {
+  // hi is 10..99
+  itoa_wr2(b, hi);
+  itoa_wr8(b + 2, lo);
+  return b + 10;
+}
+simdjson_really_inline char *itoa_d11(char *b, uint32_t hi, uint32_t lo) noexcept {
+  // hi is 100..999
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+  itoa_wr3(b, hi);
+#else
+  const uint32_t t = itoa_t4[hi] >> 8; // digits x,y,z and a 0
+  std::memcpy(b, &t, 4);
+#endif
+  itoa_wr8(b + 3, lo);
+  return b + 11;
+}
+simdjson_really_inline char *itoa_d12(char *b, uint32_t hi, uint32_t lo) noexcept {
+  // hi is 1000..9999
+  itoa_wr4(b, hi);
+  itoa_wr8(b + 4, lo);
+  return b + 12;
+}
+
 simdjson_really_inline char *write_uint_jeaiii(char *b, uint64_t n) noexcept {
   if (n < 100000000ull) {
     return itoa_lt1e8(b, uint32_t(n));
@@ -90,9 +119,54 @@ simdjson_really_inline char *write_uint_jeaiii(char *b, uint64_t n) noexcept {
   const uint64_t hi = itoa_div1e8(n);
   const uint32_t lo = uint32_t(n - hi * 100000000ull);
   if (hi < 100000000ull) {
-    b = itoa_lt1e8(b, uint32_t(hi));
-    itoa_wr8(b, lo);
-    return b + 8;
+    // 9..16 digits. 10/11/12 are straight-line; the head width is
+    // known from n, so we do not re-enter the 1..8-digit tree.
+    if (n < 1000000000000ull) {
+      if (n < 10000000000ull) {
+        if (n < 1000000000ull) {
+          // 9 digits, hi is 1..9
+          *b = char('0' + uint32_t(hi));
+          itoa_wr8(b + 1, lo);
+          return b + 9;
+        }
+        return itoa_d10(b, uint32_t(hi), lo);
+      }
+      if (n < 100000000000ull) {
+        return itoa_d11(b, uint32_t(hi), lo);
+      }
+      return itoa_d12(b, uint32_t(hi), lo);
+    }
+    // 13..16 digits. Head is hi (5..8 digits); low 8 digits are lo.
+    // Straight-line heads avoid a second trip through itoa_lt1e8.
+    const uint32_t h = uint32_t(hi);
+    const uint32_t a = uint32_t((uint64_t(h) * 3518437209ull) >> 45); // h / 10000
+    const uint32_t hlo = h - a * 10000u;
+    if (n < 100000000000000ull) {
+      if (n < 10000000000000ull) {
+        // 13: head is 5 digits (a is 1..9, hlo is 4 digits)
+        *b = char('0' + a);
+        itoa_wr4(b + 1, hlo);
+        itoa_wr8(b + 5, lo);
+        return b + 13;
+      }
+      // 14: head is 6 digits (a is 10..99)
+      itoa_wr2(b, a);
+      itoa_wr4(b + 2, hlo);
+      itoa_wr8(b + 6, lo);
+      return b + 14;
+    }
+    if (n < 1000000000000000ull) {
+      // 15: head is 7 digits (a is 100..999)
+      itoa_wr3(b, a);
+      itoa_wr4(b + 3, hlo);
+      itoa_wr8(b + 7, lo);
+      return b + 15;
+    }
+    // 16: head is 8 digits
+    itoa_wr4(b, a);
+    itoa_wr4(b + 4, hlo);
+    itoa_wr8(b + 8, lo);
+    return b + 16;
   }
   // 17..20 digits: hi itself has 9..12 digits.
   const uint64_t top = itoa_div1e8(hi);
