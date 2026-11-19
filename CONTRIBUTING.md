@@ -108,3 +108,5 @@ AI Usage Policy
 ---------------
 
 Please also review our [AI Usage Policy](AI_USAGE_POLICY.md).
+
+Coding agents should read [AGENTS.md](AGENTS.md) before editing the tree.
