@@ -403,10 +403,54 @@ bool test_direct_schema_reserve() {
   TEST_SUCCEED();
 }
 
+bool test_direct_schema_unicode() {
+  TEST_START();
+  // Escapes and non-ASCII strings are decoded by the direct parser.
+  {
+    simdjson::padded_string j(std::string(
+        "{\"make\":\"T\xc5\x8dyota\\n\\u00e9\\ud83d\\ude00\\/\\\"\",\"model\":\"\\u0000x\",\"year\":2018}"));
+    SchemaCar c;
+    ASSERT_SUCCESS(simdjson::from(j).get(c));
+    ASSERT_EQUAL(c.make, std::string("T\xc5\x8dyota\n\xc3\xa9\xf0\x9f\x98\x80/\""));
+    ASSERT_EQUAL(c.model, std::string("\0x", 2));
+    ASSERT_EQUAL(c.year, int64_t(2018));
+  }
+  const char *pieces[] = {
+      "a", "\\\"", "\\\\", "\\/", "\\b", "\\f", "\\n", "\\r", "\\t", "\\u0041", "\\u00E9", "\\u20ac",
+      "\\uffff", "\\ud83d\\ude00", "\\uD83D\\uDE00", "\\ud83d", "\\ude00", "\\ude00\\ud83d", "\\ud83d\\u0041",
+      "\\ud83d\\n", "\\u12", "\\u12g4", "\\x", "\\", "\xc3\xa9", "\xe2\x82\xac", "\xf0\x9f\x98\x80",
+      "\xef\xbf\xbf", "\xf4\x8f\xbf\xbf", "\xc0\x80", "\xc1\xbf", "\xe0\x80\x80", "\xed\xa0\x80",
+      "\xf0\x80\x80\x80", "\xf4\x90\x80\x80", "\xf5\x80\x80\x80", "\x80", "\xc3", "\xe2\x82", "\xff",
+      "\x01", "\x7f"};
+  std::string long_run;
+  for (int i = 0; i < 30; i++) { long_run += "\xe4\xb8\xad"; }
+  std::vector<std::string> all_pieces(std::begin(pieces), std::end(pieces));
+  all_pieces.push_back(long_run);
+  all_pieces.push_back(long_run + "\xe4\xb8");
+  all_pieces.push_back("\xc3" + long_run);
+  for (const std::string &first : all_pieces) {
+    for (const std::string &second : all_pieces) {
+      const std::string text = "x" + first + "y" + second + "z";
+      const std::string docs[] = {
+          "{\"make\":\"" + text + "\",\"model\":\"Camry\",\"year\":2018}",
+          "{\"make\":\"Toyota\",\"note\":\"" + text + "\",\"year\":2018}",
+          "{\"year\":2018,\"" + text + "\":1,\"make\":\"Toyota\"}"};
+      for (const std::string &json : docs) {
+        ASSERT_TRUE(same_as_ondemand<SchemaCar>(json));
+      }
+    }
+  }
+  // Escaped keys fall back; the result must not change.
+  ASSERT_TRUE(same_as_ondemand<SchemaCar>(R"({"m\u0061ke":"Toyota","year":2018})"));
+  ASSERT_TRUE(same_as_ondemand<SchemaCar>(R"({"make":"Toyota","\u0079ear":2018})"));
+  TEST_SUCCEED();
+}
+
 bool run() {
   return test_direct_schema() && test_direct_schema_string_scan() &&
          test_direct_schema_ordered_fallback() && test_direct_schema_recursive() &&
-         test_direct_schema_for_each_field() && test_direct_schema_reserve();
+         test_direct_schema_for_each_field() && test_direct_schema_reserve() &&
+         test_direct_schema_unicode();
 }
 
 } // namespace schema_tests

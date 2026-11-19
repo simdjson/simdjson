@@ -5,12 +5,15 @@
 // structural index. They read only buf[0, len) (no padding required) and
 // accept only ASCII (a high byte makes them return UNINITIALIZED so the
 // caller can fall back to the full indexer, which owns UTF-8 validation).
+// The direct_schema parser below is the exception: it validates the UTF-8
+// of each string and decodes escapes itself.
 //
 // Not part of the public API.
 
 #include "simdjson/base.h"
 #include "simdjson/builtin.h"
 #include "simdjson/error.h"
+#include "simdjson/implementation.h"
 #include "simdjson/internal/json_escape.h"
 #include "simdjson/internal/numberparsing_tables.h"
 
@@ -507,9 +510,9 @@ simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len,
 #if SIMDJSON_SUPPORTS_CONCEPTS
 // ---- schema-directed struct parse (simdjson::direct_schema<T>) ----
 //
-// Recursive descent over plain ASCII JSON. No padding, no structural
-// index. A byte >= 0x80 or any shape we will not fully accept yields
-// UNINITIALIZED so the caller falls back to On Demand.
+// Recursive descent. No padding, no structural index. Any shape we will
+// not fully accept yields UNINITIALIZED so the caller falls back to On
+// Demand.
 
 inline constexpr int schema_max_depth = 256;
 
@@ -645,45 +648,207 @@ simdjson_really_inline error_code parse_double_token(const uint8_t *&p, const ui
   return SUCCESS;
 }
 
-// String including escapes, contents not materialized. Grammar only.
-simdjson_inline error_code skip_json_string(const uint8_t *&p, const uint8_t *end) noexcept {
-  if (p >= end || *p != '"') { return UNINITIALIZED; }
-  p++;
+// Bytes >= 0x80 inside a string must be valid UTF-8. Outside strings they
+// are rejected, so validating each string accepts exactly the documents
+// that stage 1 accepts. A multibyte character never contains an ASCII
+// byte, so each maximal run of bytes >= 0x80 can be validated alone.
+simdjson_inline bool valid_utf8_run(const uint8_t *s, const uint8_t *e) noexcept {
+  if (e - s > 64) {
+    return simdjson::validate_utf8(reinterpret_cast<const char *>(s), size_t(e - s));
+  }
+  while (s < e) {
+    const uint8_t c = s[0];
+    if (c < 0xc2 || c > 0xf4) { return false; }
+    if (c < 0xe0) {
+      if (e - s < 2 || (s[1] & 0xc0) != 0x80) { return false; }
+      s += 2;
+    } else if (c < 0xf0) {
+      if (e - s < 3 || (s[1] & 0xc0) != 0x80 || (s[2] & 0xc0) != 0x80) { return false; }
+      if ((c == 0xe0 && s[1] < 0xa0) || (c == 0xed && s[1] >= 0xa0)) { return false; }
+      s += 3;
+    } else {
+      if (e - s < 4 || (s[1] & 0xc0) != 0x80 || (s[2] & 0xc0) != 0x80 || (s[3] & 0xc0) != 0x80) { return false; }
+      if ((c == 0xf0 && s[1] < 0x90) || (c == 0xf4 && s[1] >= 0x90)) { return false; }
+      s += 4;
+    }
+  }
+  return true;
+}
+
+// Continues scan_string_body from q, the first byte that is not plain.
+simdjson_never_inline size_t scan_string_body_slow(const uint8_t *s, const uint8_t *q, const uint8_t *end, bool &escaped) noexcept {
   for (;;) {
-    p = find_string_stop(p, end);
-    if (p >= end) { return UNINITIALIZED; }
-    uint8_t c = *p++;
-    if (c == '"') { return SUCCESS; }
-    // Control or non-ASCII byte.
-    if (c != '\\') { return UNINITIALIZED; }
-    if (p >= end) { return UNINITIALIZED; }
-    uint8_t e = *p++;
-    switch (e) {
-    case '"': case '\\': case '/': case 'b': case 'f': case 'n': case 'r': case 't':
-      break;
-    case 'u': {
-      if (size_t(end - p) < 4) { return UNINITIALIZED; }
-      for (int i = 0; i < 4; i++) {
-        uint8_t h = p[i];
-        bool hex = (h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F');
-        if (!hex) { return UNINITIALIZED; }
-      }
-      p += 4;
-      break;
+    if (q >= end) { return not_plain; }
+    const uint8_t c = *q;
+    if (c == '"') { return size_t(q - s); }
+    if (c == '\\') {
+      escaped = true;
+      if (end - q < 2) { return not_plain; }
+      q += 2;
+    } else if (c < 0x20) {
+      return not_plain;
+    } else {
+      const uint8_t *run = q;
+      while (q < end && *q >= 0x80) { q++; }
+      if (!valid_utf8_run(run, q)) { return not_plain; }
     }
-    default:
-      return UNINITIALIZED;
-    }
+    q = find_string_stop(q, end);
   }
 }
 
-// Plain key: no escapes, no controls. key points into the buffer.
+// Length of the string body at s up to its closing quote, or not_plain if
+// a control character comes first, the UTF-8 is invalid, or the input ends.
+// escaped is set when the body holds a backslash; the escapes themselves
+// are checked by the caller.
+simdjson_really_inline size_t scan_string_body(const uint8_t *s, const uint8_t *end, bool &escaped) noexcept {
+  const uint8_t *q = find_string_stop(s, end);
+  if (simdjson_likely(q < end && *q == '"')) { return size_t(q - s); }
+  return scan_string_body_slow(s, q, end, escaped);
+}
+
+simdjson_inline bool read_hex4(const uint8_t *src, uint32_t &out) noexcept {
+  uint32_t v = 0;
+  for (int i = 0; i < 4; i++) {
+    const uint8_t h = src[i];
+    uint32_t d;
+    if (h >= '0' && h <= '9') { d = uint32_t(h - '0'); }
+    else if (h >= 'a' && h <= 'f') { d = uint32_t(h - 'a' + 10); }
+    else if (h >= 'A' && h <= 'F') { d = uint32_t(h - 'A' + 10); }
+    else { return false; }
+    v = (v << 4) | d;
+  }
+  out = v;
+  return true;
+}
+
+// Decode one escape at src (which points at the backslash) into dst and
+// advance both. Returns false for an escape On Demand rejects: an unknown
+// escape, bad hex, or an unpaired surrogate.
+simdjson_inline bool decode_escape(const uint8_t *&src, const uint8_t *end, char *&dst) noexcept {
+  if (end - src < 2) { return false; }
+  char simple;
+  switch (src[1]) {
+  case '"': simple = '"'; break;
+  case '\\': simple = '\\'; break;
+  case '/': simple = '/'; break;
+  case 'b': simple = '\b'; break;
+  case 'f': simple = '\f'; break;
+  case 'n': simple = '\n'; break;
+  case 'r': simple = '\r'; break;
+  case 't': simple = '\t'; break;
+  case 'u': {
+    uint32_t cp;
+    if (end - src < 6 || !read_hex4(src + 2, cp)) { return false; }
+    src += 6;
+    if (cp >= 0xd800 && cp < 0xdc00) {
+      uint32_t low;
+      if (end - src < 6 || src[0] != '\\' || src[1] != 'u' || !read_hex4(src + 2, low) ||
+          low < 0xdc00 || low > 0xdfff) {
+        return false;
+      }
+      cp = (((cp - 0xd800) << 10) | (low - 0xdc00)) + 0x10000;
+      src += 6;
+    } else if (cp >= 0xdc00 && cp <= 0xdfff) {
+      return false;
+    }
+    if (cp < 0x80) {
+      *dst++ = char(cp);
+    } else if (cp < 0x800) {
+      *dst++ = char(0xc0 | (cp >> 6));
+      *dst++ = char(0x80 | (cp & 0x3f));
+    } else if (cp < 0x10000) {
+      *dst++ = char(0xe0 | (cp >> 12));
+      *dst++ = char(0x80 | ((cp >> 6) & 0x3f));
+      *dst++ = char(0x80 | (cp & 0x3f));
+    } else {
+      *dst++ = char(0xf0 | (cp >> 18));
+      *dst++ = char(0x80 | ((cp >> 12) & 0x3f));
+      *dst++ = char(0x80 | ((cp >> 6) & 0x3f));
+      *dst++ = char(0x80 | (cp & 0x3f));
+    }
+    return true;
+  }
+  default:
+    return false;
+  }
+  *dst++ = simple;
+  src += 2;
+  return true;
+}
+
+// The decoded string is never longer than its body: an escape of 2 bytes
+// gives 1, \uXXXX gives at most 3, and a surrogate pair of 12 gives 4.
+// Kept out of line: escapes are rare and the loop is large.
+simdjson_never_inline bool unescape_string(const uint8_t *s, size_t n, std::string &out) {
+  out.resize(n);
+  char *const begin = &out[0];
+  char *dst = begin;
+  const uint8_t *src = s;
+  const uint8_t *const end = s + n;
+  while (src < end) {
+    const void *bs = std::memchr(src, '\\', size_t(end - src));
+    const uint8_t *next = bs ? static_cast<const uint8_t *>(bs) : end;
+    std::memcpy(dst, src, size_t(next - src));
+    dst += next - src;
+    src = next;
+    if (src < end && !decode_escape(src, end, dst)) { return false; }
+  }
+  out.resize(size_t(dst - begin));
+  return true;
+}
+
+// String value into out: any valid UTF-8, escapes decoded.
+simdjson_inline error_code parse_schema_string(const uint8_t *&p, const uint8_t *end, std::string &out) {
+  if (p >= end || *p != '"') { return UNINITIALIZED; }
+  const uint8_t *start = p + 1;
+  bool escaped = false;
+  const size_t n = scan_string_body(start, end, escaped);
+  if (n == not_plain) { return UNINITIALIZED; }
+  if (escaped) {
+    if (!unescape_string(start, n, out)) { return UNINITIALIZED; }
+  } else {
+    assign_plain_string(out, start, n);
+  }
+  p = start + n + 1;
+  return SUCCESS;
+}
+
+simdjson_never_inline bool valid_escapes(const uint8_t *s, size_t n) noexcept {
+  const uint8_t *q = s;
+  const uint8_t *const end = s + n;
+  char scratch[4];
+  while (q < end) {
+    if (*q != '\\') {
+      q++;
+      continue;
+    }
+    char *d = scratch;
+    if (!decode_escape(q, end, d)) { return false; }
+  }
+  return true;
+}
+
+// String including escapes, contents not materialized. Grammar only.
+simdjson_inline error_code skip_json_string(const uint8_t *&p, const uint8_t *end) noexcept {
+  if (p >= end || *p != '"') { return UNINITIALIZED; }
+  const uint8_t *start = p + 1;
+  bool escaped = false;
+  const size_t n = scan_string_body(start, end, escaped);
+  if (n == not_plain) { return UNINITIALIZED; }
+  if (escaped && !valid_escapes(start, n)) { return UNINITIALIZED; }
+  p = start + n + 1;
+  return SUCCESS;
+}
+
+// Key without escapes (an escaped key falls back, as key matching compares
+// the raw bytes). key points into the buffer.
 simdjson_inline error_code read_plain_key(const uint8_t *&p, const uint8_t *end,
                                           const uint8_t *&key, size_t &key_len) noexcept {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
   key = p + 1;
-  key_len = scan_plain_string(key, end);
-  if (key_len == not_plain) { return UNINITIALIZED; }
+  bool escaped = false;
+  key_len = scan_string_body(key, end, escaped);
+  if (key_len == not_plain || escaped) { return UNINITIALIZED; }
   p = key + key_len + 1;
   return SUCCESS;
 }
@@ -1062,7 +1227,7 @@ simdjson_really_inline error_code parse_schema_value(const uint8_t *&p, const ui
   if constexpr (std::is_same_v<D, bool>) {
     return parse_bool_token(p, end, out);
   } else if constexpr (std::is_same_v<D, std::string>) {
-    return parse_plain_string_token(p, end, out);
+    return parse_schema_string(p, end, out);
   } else if constexpr (std::is_same_v<D, double>) {
     return parse_double_token(p, end, out);
   } else if constexpr (std::is_integral_v<D> && !std::is_same_v<D, bool> && !is_direct_char_v<D>) {

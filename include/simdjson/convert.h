@@ -158,12 +158,12 @@ struct direct_field {
  * Opt-in description of a type for the single-pass `simdjson::from` parser.
  *
  * Specialize this in namespace `simdjson` to let `from<T>` (and
- * `from<std::vector<T>>`) parse `T` without building a structural index,
- * when the document is plain ASCII JSON. Anything the direct parser
- * cannot accept (escapes in materialized strings, non-ASCII bytes,
- * malformed JSON, a value of the wrong type) falls back to On Demand, which
- * uses the deserializer of T (tag_invoke or static reflection). T must
- * therefore also be deserializable by On Demand.
+ * `from<std::vector<T>>`) parse `T` in a single pass, without building a
+ * structural index. Anything the direct parser cannot accept (malformed
+ * JSON, a value of the wrong type, an escaped key, an unpaired surrogate)
+ * falls back to On Demand, which uses the deserializer of T (tag_invoke or
+ * static reflection). T must therefore also be deserializable by On
+ * Demand.
  *
  * ```cpp
  * struct Car { std::string make, model; int64_t year; std::vector<double> tire_pressure; };
@@ -186,7 +186,7 @@ struct direct_field {
  * ```
  *
  * Supported field types: bool, standard integers (not char), double,
- * std::string (no escapes on the fast path), std::vector of those, and
+ * std::string, std::vector of those, and
  * other types that themselves specialize direct_schema (a type may hold a
  * std::vector of itself).
  *
