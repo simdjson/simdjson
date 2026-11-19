@@ -770,6 +770,70 @@ simdjson_really_inline error_code parse_schema_object(const uint8_t *&p, const u
   return parse_schema_object_general(p, end, out, depth);
 }
 
+// Flat array of doubles. Small arrays (the common struct-field case)
+// are parsed into a stack buffer and assigned once, so a 4-element
+// tire-pressure field is a single exact allocation instead of a
+// geometric grow plus a parse_schema_value call per element.
+simdjson_really_inline error_code parse_double_array(const uint8_t *&p, const uint8_t *end,
+                                                    std::vector<double> &out, int depth) {
+  if (depth > schema_max_depth) { return UNINITIALIZED; }
+  if (p < end && is_ws(*p)) {
+    if (!skip_ws(p, end)) { return UNINITIALIZED; }
+  }
+  if (p >= end || *p != '[') { return UNINITIALIZED; }
+  p++;
+  if (p < end && is_ws(*p)) {
+    if (!skip_ws(p, end)) { return UNINITIALIZED; }
+  }
+  if (p < end && *p == ']') { out.clear(); p++; return SUCCESS; }
+  constexpr size_t kStack = 16;
+  double stack[kStack];
+  size_t n = 0;
+  bool spilled = false;
+  for (;;) {
+    double v;
+    // Minified arrays have no space before the number. skip_ws only
+    // when the next byte is actually whitespace.
+    if (p < end && is_ws(*p)) {
+      if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
+    }
+    if (parse_double_token(p, end, v) != SUCCESS) { out.clear(); return UNINITIALIZED; }
+    if (!spilled) {
+      if (n < kStack) {
+        stack[n++] = v;
+      } else {
+        out.assign(stack, stack + kStack);
+        out.push_back(v);
+        n++;
+        spilled = true;
+      }
+    } else {
+      out.push_back(v);
+      n++;
+    }
+    if (p < end && *p == ',') {
+      p++;
+      continue;
+    }
+    if (p < end && is_ws(*p)) {
+      if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
+      if (*p == ',') {
+        p++;
+        if (p < end && is_ws(*p) && !skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
+        if (p < end && *p == ']') { out.clear(); return UNINITIALIZED; }
+        continue;
+      }
+    }
+    if (p < end && *p == ']') {
+      p++;
+      if (!spilled) { out.assign(stack, stack + n); }
+      return SUCCESS;
+    }
+    out.clear();
+    return UNINITIALIZED;
+  }
+}
+
 template <typename Vec>
 simdjson_really_inline error_code parse_schema_array(const uint8_t *&p, const uint8_t *end, Vec &out, int depth) {
   if (depth > schema_max_depth) { return UNINITIALIZED; }
@@ -846,6 +910,8 @@ simdjson_really_inline error_code parse_schema_value(const uint8_t *&p, const ui
       out = static_cast<D>(v);
       return SUCCESS;
     }
+  } else if constexpr (std::is_same_v<D, std::vector<double>>) {
+    return parse_double_array(p, end, out, depth);
   } else if constexpr (is_std_vector<D>::value) {
     return parse_schema_array(p, end, out, depth);
   } else if constexpr (has_direct_schema_v<D>) {
