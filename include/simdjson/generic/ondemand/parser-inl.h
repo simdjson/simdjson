@@ -111,11 +111,14 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
             }
           }
           const size_t digit_count = size_t(d - digits);
-          const bool int_form = (d == end || *d < '0' || (*d > '9' && *d != '.' && *d != 'e' && *d != 'E'));
-          // int_form: finisher is whitespace (or end). '.'/'e' means a float.
+          // try_stage1_lone_atom validated the token, so the integer digits
+          // are followed by '.', 'e', 'E', JSON whitespace, or the end; only
+          // the last two make an integer. "-0" is left to the ordinary getters
+          // because get_uint64 rejects it while get_int64 accepts it.
+          const bool int_form = (d == end || *d == ' ' || *d == '\t' || *d == '\n' || *d == '\r');
           // Leading-zero numbers with more digits are not int64-valid.
           if (int_form && digit_count >= 1 && digit_count <= 19 &&
-              !(*digits == '0' && digit_count > 1) &&
+              !(*digits == '0' && digit_count > 1) && !(negative && i == 0) &&
               i <= uint64_t(INT64_MAX) + uint64_t(negative)) {
             _root_atom_kind = 1;
             _root_atom_i64 = negative ? int64_t(~i + 1) : int64_t(i);

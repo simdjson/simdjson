@@ -953,7 +953,7 @@ simdjson_inline simdjson_result<bool> value_iterator::is_root_null(bool check_tr
     return true;
   }
   // A cached non-null atom that is asked is_null must return false (and not
-  // consume the value — the ordinary path below only advances on a real null).
+  // consume the value; the ordinary path below only advances on a real null).
   if (_json_iter->parser->_root_atom_kind != 0 && _json_iter->parser->_root_atom_kind != 3 &&
       depth() == 1 && is_at_start()) {
     return false;

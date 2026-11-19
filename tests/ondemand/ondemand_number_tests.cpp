@@ -938,6 +938,42 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  // Short documents holding one atom are parsed once during iterate(); the
+  // root integer getters must still agree with the ordinary path.
+  bool root_atom_integer_getters() {
+    TEST_START();
+    const char *not_integers[] = {"1.0", "1.5", "-1.5", "0.5", "-0.0", " 1.0 ", "1e2", "1E+2", "-1e-2"};
+    for (const char *text : not_integers) {
+      std::cout << "  " << text << std::endl;
+      simdjson::padded_string json{std::string(text)};
+      simdjson::ondemand::parser parser;
+      simdjson::ondemand::document doc;
+      int64_t i;
+      uint64_t u;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_int64().get(i), INCORRECT_TYPE);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_ERROR(doc.get_uint64().get(u), INCORRECT_TYPE);
+    }
+    simdjson::padded_string negative_zero{std::string("-0")};
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    int64_t i;
+    uint64_t u;
+    ASSERT_SUCCESS(parser.iterate(negative_zero).get(doc));
+    ASSERT_SUCCESS(doc.get_int64().get(i));
+    ASSERT_EQUAL(i, 0);
+    ASSERT_SUCCESS(parser.iterate(negative_zero).get(doc));
+    ASSERT_ERROR(doc.get_uint64().get(u), INCORRECT_TYPE);
+    simdjson::padded_string min_int64{std::string(" -9223372036854775808\n")};
+    ASSERT_SUCCESS(parser.iterate(min_int64).get(doc));
+    ASSERT_SUCCESS(doc.get_int64().get(i));
+    ASSERT_EQUAL(i, INT64_MIN);
+    ASSERT_SUCCESS(parser.iterate(min_int64).get(doc));
+    ASSERT_ERROR(doc.get_uint64().get(u), INCORRECT_TYPE);
+    TEST_SUCCEED();
+  }
+
   bool root_number_stream_delimiters() {
     TEST_START();
     // Stage 1 drops the comma or RS from the structural index, but
@@ -1107,6 +1143,7 @@ namespace number_tests {
            old_crashes() &&
            root_number_scratch_padding() &&
            root_number_trailing_whitespace() &&
+           root_atom_integer_getters() &&
            root_number_stream_delimiters() &&
            long_exponents();
   }
