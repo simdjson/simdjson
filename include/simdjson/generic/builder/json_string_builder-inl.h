@@ -385,9 +385,61 @@ simdjson_inline void string_builder::append(const T &value) {
 #endif
 
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+// Tight writer for a contiguous array of integers. Holds the cursor in a
+// local so each atom does not reload string_builder::position (which the
+// compiler otherwise treats as escaped by the non-inline grow path).
+template <std::ranges::contiguous_range R>
+  requires (std::is_integral_v<std::ranges::range_value_t<R>> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
+            !require_custom_serialization<R>)
+simdjson_inline void string_builder::append(const R &range) noexcept {
+  using Int = std::ranges::range_value_t<R>;
+  const size_t n = size_t(std::ranges::size(range));
+  // 1 sign + 20 digits worst case, plus a comma; 2 bytes for the brackets.
+  // An exact digit-count pre-pass was slower than over-reserving.
+  constexpr size_t per = 22;
+  if (simdjson_unlikely(n > (size_t(-1) - 2) / per)) {
+    set_valid(false);
+    return;
+  }
+  if (!capacity_check(n * per + 2)) {
+    return;
+  }
+  char *p = buffer_data() + position;
+  *p++ = '[';
+  const Int *data = std::ranges::data(range);
+  for (size_t i = 0; i < n; i++) {
+    if (i) {
+      *p++ = ',';
+    }
+    Int v = data[i];
+    if constexpr (std::is_unsigned_v<Int>) {
+      p = internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
+    } else {
+      using U = std::make_unsigned_t<Int>;
+      const bool negative = v < 0;
+      U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
+      // Branchless sign, matching append(number).
+      *p = '-';
+      p += negative;
+      p = internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
+    }
+  }
+  *p++ = ']';
+  position = size_t(p - buffer_data());
+}
+
 // Support for range-based appending (std::ranges::view, etc.)
 template <std::ranges::range R>
-  requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R>)
+requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R> &&
+          !(std::ranges::contiguous_range<R> && std::is_integral_v<std::ranges::range_value_t<R>> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>))
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);

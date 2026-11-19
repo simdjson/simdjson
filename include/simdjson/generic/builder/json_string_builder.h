@@ -196,9 +196,25 @@ public:
   simdjson_inline void append(const T &value);
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  // Contiguous integer arrays: one capacity check, then a pointer-chasing
+  // write of brackets, commas and digits. Much less per-element overhead
+  // than the generic range append (which capacity-checks every atom).
+  template <std::ranges::contiguous_range R>
+  requires (std::is_integral_v<std::ranges::range_value_t<R>> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
+            !require_custom_serialization<R>)
+  simdjson_inline void append(const R &range) noexcept;
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R>)
+requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R> &&
+          !(std::ranges::contiguous_range<R> && std::is_integral_v<std::ranges::range_value_t<R>> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+            !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>))
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
