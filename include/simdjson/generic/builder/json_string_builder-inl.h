@@ -640,6 +640,15 @@ inline constexpr bool is_contiguous_int_array_v =
 #else
     false;
 #endif
+template <class R>
+inline constexpr bool is_contiguous_float_array_v =
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+    std::ranges::contiguous_range<R> &&
+    std::is_floating_point_v<std::ranges::range_value_t<R>> &&
+    !require_custom_serialization<R>;
+#else
+    false;
+#endif
 } // namespace builder_to_json_detail
 
 template <class Z>
@@ -706,6 +715,45 @@ simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initi
           p += negative;
           p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
         }
+      }
+    }
+    *p++ = ']';
+    s.resize(size_t(p - begin));
+    (void)initial_capacity;
+    return SUCCESS;
+  } else if constexpr (builder_to_json_detail::is_contiguous_float_array_v<Z>) {
+    // Direct write, same allocation shape as the integer path.
+    // Each value needs to_chars_buffer_size bytes of scratch because
+    // to_chars over-writes with fixed-size copies; plus one comma.
+    using Float = std::ranges::range_value_t<Z>;
+    const size_t n = size_t(std::ranges::size(z));
+    constexpr size_t per = simdjson::internal::to_chars_buffer_size + 1;
+    if (simdjson_unlikely(n > (size_t(-1) - 2) / per)) {
+      return MEMALLOC;
+    }
+    const size_t bound = n * per + 2;
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+    try {
+      s.resize_and_overwrite(bound, [](char *, size_t len) noexcept { return len; });
+    } catch (...) {
+      return MEMALLOC;
+    }
+#else
+    try {
+      s.resize(bound);
+    } catch (...) {
+      return MEMALLOC;
+    }
+#endif
+    char *p = &s[0];
+    char *begin = p;
+    *p++ = '[';
+    const Float *data = std::ranges::data(z);
+    if (n) {
+      p = simdjson::internal::to_chars(p, nullptr, double(data[0]));
+      for (size_t i = 1; i < n; i++) {
+        *p++ = ',';
+        p = simdjson::internal::to_chars(p, nullptr, double(data[i]));
       }
     }
     *p++ = ']';
