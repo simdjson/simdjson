@@ -628,22 +628,86 @@ namespace simdjson {
 
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
 namespace builder_to_json_detail {
+// Concepts, not constexpr bools: a conjunction of concepts stops at the
+// first unsatisfied one, so range_value_t is never formed for a non-range.
 template <class R>
-inline constexpr bool is_contiguous_int_array_v =
-    std::ranges::contiguous_range<R> &&
+concept contiguous_number_array =
+    std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
+    !require_custom_serialization<R>;
+template <class R>
+concept contiguous_int_array =
+    contiguous_number_array<R> &&
     std::is_integral_v<std::ranges::range_value_t<R>> &&
+    sizeof(std::ranges::range_value_t<R>) <= sizeof(uint64_t) &&
     !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
     !std::is_same_v<std::ranges::range_value_t<R>, char> &&
     !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
-    !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
-    !require_custom_serialization<R>;
+    !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>;
 template <class R>
-inline constexpr bool is_contiguous_float_array_v =
-    std::ranges::contiguous_range<R> &&
-    std::is_floating_point_v<std::ranges::range_value_t<R>> &&
-    !require_custom_serialization<R>;
+concept contiguous_float_array =
+    contiguous_number_array<R> &&
+    std::is_floating_point_v<std::ranges::range_value_t<R>>;
+
+// Most bytes one element writes, the comma before it included. A double
+// takes at most 24 characters (-d.dddddddddddddddde-308).
+template <class T>
+constexpr size_t max_element_size() {
+  if constexpr (std::is_floating_point_v<T>) {
+    return 24 + 1;
+  } else {
+    return size_t(std::numeric_limits<T>::digits10) + 1 + std::is_signed_v<T> + 1;
+  }
+}
+// The number writers may write scratch bytes past the end of the number.
+constexpr size_t write_slack = simdjson::internal::to_chars_buffer_size;
+// Arrays whose bound fits are written on the stack, then copied once.
+constexpr size_t stack_buffer_size = 1024;
+
+template <class T>
+simdjson_inline char *write_element(char *p, T v) noexcept {
+  if constexpr (std::is_floating_point_v<T>) {
+    return simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::write_double(p, double(v));
+  } else if constexpr (std::is_unsigned_v<T>) {
+    return simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
+  } else {
+    using U = std::make_unsigned_t<T>;
+    const bool negative = v < 0;
+    U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
+    *p = '-';
+    p += negative;
+    return simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
+  }
+}
+
+template <class T>
+simdjson_inline char *write_array(char *p, const T *data, size_t n) noexcept {
+  *p++ = '[';
+  if (n) {
+    p = write_element(p, data[0]);
+    for (size_t i = 1; i < n; i++) {
+      *p++ = ',';
+      p = write_element(p, data[i]);
+    }
+  }
+  *p++ = ']';
+  return p;
+}
 
 // Not simdjson_inline: MSVC cannot force-inline a function with a try block (C4714).
+inline bool assign_bytes(std::string &s, const char *data, size_t n) noexcept {
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    s.assign(data, n);
+  } catch (...) { // std::bad_alloc
+    return false;
+  }
+#else
+  // Without exceptions, a failed allocation terminates the program.
+  s.assign(data, n);
+#endif
+  return true;
+}
+
 inline bool resize_for_direct_write(std::string &s, size_t n) noexcept {
 #if defined(__cpp_exceptions) || defined(_CPPUNWIND)
   try {
@@ -652,10 +716,49 @@ inline bool resize_for_direct_write(std::string &s, size_t n) noexcept {
     return false;
   }
 #else
-  // Without exceptions, a failed allocation terminates the program.
   simdjson::SIMDJSON_IMPLEMENTATION::builder::internal::resize_uninitialized(s, n);
 #endif
   return true;
+}
+
+// A result that fills at most half of the allocation is copied out, as in
+// string_builder::move_to. On failure s keeps the larger buffer.
+simdjson_never_inline void shrink_to_size(std::string &s) noexcept {
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+  try {
+    std::string(s).swap(s);
+  } catch (...) { // std::bad_alloc
+  }
+#else
+  std::string(s).swap(s);
+#endif
+}
+
+template <class T>
+simdjson_warn_unused error_code to_json_array(const T *data, size_t n, std::string &s) noexcept {
+  constexpr size_t per = max_element_size<T>();
+  if (simdjson_unlikely(n > (size_t(-1) - 2 - write_slack) / per)) {
+    return MEMALLOC;
+  }
+  const size_t bound = n * per + 2 + write_slack;
+  if (bound <= stack_buffer_size) {
+    char buffer[stack_buffer_size];
+    char *end = write_array(buffer, data, n);
+    return assign_bytes(s, buffer, size_t(end - buffer)) ? SUCCESS : MEMALLOC;
+  }
+  const size_t old_capacity = s.capacity();
+  if (!resize_for_direct_write(s, bound)) {
+    return MEMALLOC;
+  }
+  char *begin = &s[0];
+  const size_t used = size_t(write_array(begin, data, n) - begin);
+  s.resize(used);
+  // A string that could already hold the result is being reused: keep its
+  // buffer so the next call does not allocate again.
+  if (old_capacity < used && used <= s.capacity() / 2) {
+    shrink_to_size(s);
+  }
+  return SUCCESS;
 }
 } // namespace builder_to_json_detail
 #endif // SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
@@ -663,97 +766,17 @@ inline bool resize_for_direct_write(std::string &s, size_t n) noexcept {
 template <class Z>
 simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity) {
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-  if constexpr (builder_to_json_detail::is_contiguous_int_array_v<Z>) {
-    // Same bound as string_builder's integer-array append: 22 bytes per
-    // element plus brackets. Write directly into s so there is one
-    // allocation and no move_to copy. Mirrors the static-reflection
-    // to_json path (and Jsonifier's resize_and_overwrite serialize).
-    using Int = std::ranges::range_value_t<Z>;
-    const size_t n = size_t(std::ranges::size(z));
-    constexpr size_t per = 22;
-    if (simdjson_unlikely(n > (size_t(-1) - 2) / per)) {
-      return MEMALLOC;
-    }
-    const size_t bound = n * per + 2;
-    // Allocate first, write second. A try/catch around the digit loop
-    // (the old resize_and_overwrite callback) blocks inlining and adds
-    // exception edges on every element. The resize only claims `bound`
-    // bytes; the real bytes are written below, then the size shrinks.
-    // int64 needs 20 bytes (sign + 19 digits); 22 also covers the comma.
-    if (!builder_to_json_detail::resize_for_direct_write(s, bound)) {
-      return MEMALLOC;
-    }
-    char *p = &s[0];
-    char *begin = p;
-    *p++ = '[';
-    const Int *data = std::ranges::data(z);
-    // First element has no leading comma, matching the common minified
-    // array shape and keeping the per-element loop branch-free on comma.
-    if (n) {
-      Int v = data[0];
-      if constexpr (std::is_unsigned_v<Int>) {
-        p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
-      } else {
-        using U = std::make_unsigned_t<Int>;
-        const bool negative = v < 0;
-        U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
-        *p = '-';
-        p += negative;
-        p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
-      }
-      for (size_t i = 1; i < n; i++) {
-        *p++ = ',';
-        v = data[i];
-        if constexpr (std::is_unsigned_v<Int>) {
-          p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
-        } else {
-          using U = std::make_unsigned_t<Int>;
-          const bool negative = v < 0;
-          U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
-          *p = '-';
-          p += negative;
-          p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
-        }
-      }
-    }
-    *p++ = ']';
-    s.resize(size_t(p - begin));
+  if constexpr (builder_to_json_detail::contiguous_int_array<Z> ||
+                builder_to_json_detail::contiguous_float_array<Z>) {
     (void)initial_capacity;
-    return SUCCESS;
-  } else if constexpr (builder_to_json_detail::is_contiguous_float_array_v<Z>) {
-    // Direct write, same allocation shape as the integer path.
-    // Each value needs to_chars_buffer_size bytes of scratch because
-    // to_chars over-writes with fixed-size copies; plus one comma.
-    using Float = std::ranges::range_value_t<Z>;
-    const size_t n = size_t(std::ranges::size(z));
-    constexpr size_t per = simdjson::internal::to_chars_buffer_size + 1;
-    if (simdjson_unlikely(n > (size_t(-1) - 2) / per)) {
-      return MEMALLOC;
-    }
-    const size_t bound = n * per + 2;
-    if (!builder_to_json_detail::resize_for_direct_write(s, bound)) {
-      return MEMALLOC;
-    }
-    char *p = &s[0];
-    char *begin = p;
-    *p++ = '[';
-    const Float *data = std::ranges::data(z);
-    if (n) {
-      p = simdjson::internal::to_chars(p, nullptr, double(data[0]));
-      for (size_t i = 1; i < n; i++) {
-        *p++ = ',';
-        p = simdjson::internal::to_chars(p, nullptr, double(data[i]));
-      }
-    }
-    *p++ = ']';
-    s.resize(size_t(p - begin));
-    (void)initial_capacity;
-    return SUCCESS;
-  }
+    return builder_to_json_detail::to_json_array(std::ranges::data(z), size_t(std::ranges::size(z)), s);
+  } else
 #endif
-  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  b.append(z);
-  return b.move_to(s);
+  {
+    simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+    b.append(z);
+    return b.move_to(s);
+  }
 }
 
 template <class Z>

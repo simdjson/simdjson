@@ -372,7 +372,7 @@ private:
 
 #if !SIMDJSON_STATIC_REFLECTION
 // fallback implementation until we have static reflection
-// Defined in json_string_builder-inl.h so integer arrays can write straight
+// Defined in json_string_builder-inl.h so number arrays can write straight
 // into the destination string (one allocation, no builder copy).
 template <class Z>
 simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY);
