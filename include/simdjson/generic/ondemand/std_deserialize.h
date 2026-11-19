@@ -10,7 +10,9 @@
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <concepts>
+#include <cstring>
 #include <limits>
+#include <type_traits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <meta>
 #include <vector>
@@ -220,9 +222,24 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
         SIMDJSON_TRY(v.get<value_type>(scratch.elements.emplace_back()));
         release.parsed++;
       }
-      out.reserve(release.parsed);
       release.complete = true;
-      for (auto &e : scratch.elements) { out.emplace_back(std::move(e)); }
+      // Trivial elements (int64_t, double, ...): one memcpy into a tight
+      // buffer, and scratch keeps its capacity for the next call. The
+      // element-wise move loop was a second full pass over the array.
+      if constexpr (std::is_trivially_copyable_v<value_type>) {
+        out.resize(release.parsed);
+        if (release.parsed != 0) {
+          std::memcpy(out.data(), scratch.elements.data(), release.parsed * sizeof(value_type));
+        }
+      } else {
+        // Non-trivial elements (strings, structs): hand the scratch buffer
+        // to out. Moving element-by-element was a second full pass and, for
+        // a struct full of strings, a move-assignment per member. Re-reserve
+        // an empty scratch buffer of the same length so the next call does
+        // not geometrically regrow (regrowth would move elements again).
+        out.swap(scratch.elements);
+        scratch.elements.reserve(release.parsed);
+      }
       return SUCCESS;
     }
   }
