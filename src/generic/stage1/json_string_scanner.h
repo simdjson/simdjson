@@ -65,6 +65,17 @@ simdjson_really_inline json_string_block json_string_scanner::next(const simd::s
   const uint64_t quote = in.eq('"') & ~escaped;
 
   //
+  // No real (unescaped) quote in this block: the in-string mask is uniformly
+  // the incoming carry, and that carry does not change. prefix_xor is then a
+  // pure dependency on the critical path (it feeds structural_start) for no
+  // information. Long string bodies and numeric arrays take this path for
+  // most blocks; the branch predicts well on those homogeneous inputs.
+  //
+  if (!quote) {
+    return json_string_block(escaped, 0, prev_in_string);
+  }
+
+  //
   // prefix_xor flips on bits inside the string (and flips off the end quote).
   //
   // Then we xor with prev_in_string: if we were in a string already, its effect is flipped
