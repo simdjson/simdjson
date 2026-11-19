@@ -622,4 +622,96 @@ string_builder::append_key_value() noexcept {
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
 
+
+#if !SIMDJSON_STATIC_REFLECTION
+namespace simdjson {
+
+namespace builder_to_json_detail {
+template <class R>
+inline constexpr bool is_contiguous_int_array_v =
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+    std::ranges::contiguous_range<R> &&
+    std::is_integral_v<std::ranges::range_value_t<R>> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, unsigned char> &&
+    !require_custom_serialization<R>;
+#else
+    false;
+#endif
+} // namespace builder_to_json_detail
+
+template <class Z>
+simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity) {
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  if constexpr (builder_to_json_detail::is_contiguous_int_array_v<Z>) {
+    // Same bound as string_builder's integer-array append: 22 bytes per
+    // element plus brackets. Write directly into s so there is one
+    // allocation and no move_to copy. Mirrors the static-reflection
+    // to_json path (and Jsonifier's resize_and_overwrite serialize).
+    using Int = std::ranges::range_value_t<Z>;
+    const size_t n = size_t(std::ranges::size(z));
+    constexpr size_t per = 22;
+    if (simdjson_unlikely(n > (size_t(-1) - 2) / per)) {
+      return MEMALLOC;
+    }
+    const size_t bound = n * per + 2;
+    auto write = [&z, n](char *p) noexcept -> size_t {
+      char *begin = p;
+      *p++ = '[';
+      const Int *data = std::ranges::data(z);
+      for (size_t i = 0; i < n; i++) {
+        if (i) {
+          *p++ = ',';
+        }
+        Int v = data[i];
+        if constexpr (std::is_unsigned_v<Int>) {
+          p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(v));
+        } else {
+          using U = std::make_unsigned_t<Int>;
+          const bool negative = v < 0;
+          U pv = negative ? U(0) - static_cast<U>(v) : static_cast<U>(v);
+          *p = '-';
+          p += negative;
+          p = simdjson::internal::write_uint_jeaiii(p, static_cast<uint64_t>(pv));
+        }
+      }
+      *p++ = ']';
+      return size_t(p - begin);
+    };
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+    try {
+      s.resize_and_overwrite(bound, [&write](char *p, size_t) noexcept { return write(p); });
+    } catch (...) {
+      return MEMALLOC;
+    }
+#else
+    try {
+      s.resize(bound);
+    } catch (...) {
+      return MEMALLOC;
+    }
+    s.resize(write(&s[0]));
+#endif
+    (void)initial_capacity;
+    return SUCCESS;
+  }
+#endif
+  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
+  b.append(z);
+  return b.move_to(s);
+}
+
+template <class Z>
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity) {
+  std::string s;
+  auto e = to_json(z, s, initial_capacity);
+  if (e) { return e; }
+  return s;
+}
+
+} // namespace simdjson
+#endif // !SIMDJSON_STATIC_REFLECTION
+
 #endif // SIMDJSON_GENERIC_STRING_BUILDER_INL_H
