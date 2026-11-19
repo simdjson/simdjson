@@ -36,10 +36,12 @@ simdjson_really_inline void itoa_wr4(char *b, uint32_t v) noexcept {
   std::memcpy(b, &itoa_t4[v], 4);
 #endif
 }
+// v < 1000. itoa_t4[v] holds digits 0xyz (first digit in the low 8 bits).
 simdjson_really_inline void itoa_wr3(char *b, uint32_t v) noexcept {
-  const uint32_t hi = v / 100u;
-  *b = char('0' + hi);
-  itoa_wr2(b + 1, v - hi * 100u);
+  const uint32_t t = itoa_t4[v];
+  b[0] = char(uint8_t(t >> 8));
+  b[1] = char(uint8_t(t >> 16));
+  b[2] = char(uint8_t(t >> 24));
 }
 simdjson_really_inline void itoa_wr8(char *b, uint32_t v) noexcept {
   // v < 10^8. Always eight digits.
