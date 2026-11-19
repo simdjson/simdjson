@@ -2,7 +2,7 @@
 #define SIMDJSON_INTERNAL_DIRECT_PARSE_H
 
 // Single-pass parsers for JSON atoms and arrays of atoms. They do not build a
-// structural index. They read only buf[0, len) — no padding required — and
+// structural index. They read only buf[0, len) (no padding required) and
 // accept only ASCII (a high byte makes them return UNINITIALIZED so the
 // caller can fall back to the full indexer, which owns UTF-8 validation).
 //
@@ -209,8 +209,8 @@ simdjson_inline error_code parse_document<std::vector<int64_t>>(const uint8_t *b
     int64_t v;
     const uint8_t *tok = p;
     error_code err = parse_int64_token(p, end, v);
-    // Any token we cannot accept as int64 — including a truncated or
-    // malformed number — falls back so the error code stays the full
+    // Any token we cannot accept as int64, including a truncated or
+    // malformed number, falls back so the error code stays the full
     // parser's.
     if (err != SUCCESS) { out.clear(); return UNINITIALIZED; }
     if (!reserved) {
