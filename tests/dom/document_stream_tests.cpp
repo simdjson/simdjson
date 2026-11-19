@@ -218,6 +218,36 @@ namespace document_stream_tests {
     simdjson::get_active_implementation() = active;
     return true;
   }
+  bool white_space_before_document_cut_by_comma_delimited_batch() {
+    std::cout << "Running " << __func__ << std::endl;
+    const std::string cut[] = {"\"" + std::string(24, 'x') + "\"", "[1,2,3,4,5,6,7,8,9,10,11]"};
+    for (const std::string &doc : cut) {
+      const std::string json = "\"a\"," + std::string(40, ' ') + doc + ", \"b\"";
+      const simdjson::padded_string input(json);
+      const simdjson::implementation *active = simdjson::get_active_implementation();
+      for (const simdjson::implementation *impl : simdjson::get_available_implementations()) {
+        if (!impl->supported_by_runtime_system()) { continue; }
+        simdjson::get_active_implementation() = impl;
+        std::cout << "    " << impl->name() << std::endl;
+        simdjson::dom::parser parser;
+        simdjson::dom::document_stream stream;
+        ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::comma_delimited).get(stream));
+        size_t count = 0;
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+          ASSERT_TRUE(count < 3);
+          ASSERT_SUCCESS((*i).error());
+          if (count == 1) {
+            ASSERT_EQUAL(i.current_index(), 44);
+            ASSERT_EQUAL(simdjson::to_string(*i), doc);
+          }
+          count++;
+        }
+        ASSERT_EQUAL(count, 3);
+      }
+      simdjson::get_active_implementation() = active;
+    }
+    return true;
+  }
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
     const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
@@ -2604,6 +2634,7 @@ namespace document_stream_tests {
            stress_data_race_with_error() &&
            whitespace_only_middle_batch() &&
            white_space_before_string_cut_by_batch() &&
+           white_space_before_document_cut_by_comma_delimited_batch() &&
            test_leading_spaces() &&
            test_crazy_leading_spaces() &&
            simple_example() &&

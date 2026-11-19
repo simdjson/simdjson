@@ -1153,6 +1153,37 @@ namespace document_stream_tests {
         get_active_implementation() = active;
         TEST_SUCCEED();
     }
+    bool white_space_before_document_cut_by_comma_delimited_batch() {
+        TEST_START();
+        const std::string cut[] = {"\"" + std::string(24, 'x') + "\"", "[1,2,3,4,5,6,7,8,9,10,11]"};
+        for (const std::string &doc : cut) {
+            const std::string json = "\"a\"," + std::string(40, ' ') + doc + ", \"b\"";
+            const padded_string input(json);
+            const implementation *active = get_active_implementation();
+            for (const implementation *impl : get_available_implementations()) {
+                if (!impl->supported_by_runtime_system()) { continue; }
+                get_active_implementation() = impl;
+                std::cout << "    " << impl->name() << std::endl;
+                ondemand::parser parser;
+                ondemand::document_stream stream;
+                ASSERT_SUCCESS(parser.iterate_many(input, 32, stream_format::comma_delimited).get(stream));
+                size_t count{0};
+                for (auto i = stream.begin(); i != stream.end(); ++i) {
+                    ASSERT_TRUE(count < 3);
+                    std::string_view raw;
+                    ASSERT_SUCCESS((*i).raw_json().get(raw));
+                    if (count == 1) {
+                        ASSERT_EQUAL(i.current_index(), 44);
+                        ASSERT_EQUAL(raw, doc);
+                    }
+                    count++;
+                }
+                ASSERT_EQUAL(count, 3);
+            }
+            get_active_implementation() = active;
+        }
+        TEST_SUCCEED();
+    }
     bool test_leading_spaces() {
         TEST_START();
         auto input = R"(                               [1,1] [1,2] [1,3]  [1,4] [1,5] [1,6] [1,7] [1,8] [1,9] [1,10] [1,11] [1,12] [1,13] [1,14] [1,15] )"_padded;;
@@ -3361,6 +3392,7 @@ bool run() {
             large_window() &&
             whitespace_only_middle_batch() &&
             white_space_before_string_cut_by_batch() &&
+            white_space_before_document_cut_by_comma_delimited_batch() &&
             test_leading_spaces() &&
             test_crazy_leading_spaces() &&
             adversarial_single_document() &&

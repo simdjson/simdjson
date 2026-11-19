@@ -324,9 +324,6 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // will be the quote and we want to make sure to omit it.
     if(have_unclosed_string) {
       parser.n_structural_indexes--;
-      // The batch holds nothing but the start of a string that it cuts. If
-      // white space comes before the string, it may fit in a batch that
-      // starts at its quote: next_batch_start() reads structural_indexes[0].
       if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
         return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
       }
@@ -426,7 +423,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // Comma-delimited: filter root-level commas, use comma positions for batch boundaries
     if(have_unclosed_string) {
       parser.n_structural_indexes--;
-      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
+      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     uint32_t next_batch_start = uint32_t(len);
     auto new_structural_indexes = filter_comma_delimited(parser, len, false, next_batch_start);
