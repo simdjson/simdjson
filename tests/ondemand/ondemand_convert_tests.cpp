@@ -521,11 +521,18 @@ bool test_direct_from_atoms() {
     ASSERT_EQUAL(v[2], int64_t(3));
   }
   {
-    simdjson::padded_string j(std::string(R"({"a":1,"b":2,"a":3})"));
-    std::map<std::string, int64_t> m = simdjson::from(j);
-    ASSERT_EQUAL(m.size(), 2);
-    ASSERT_EQUAL(m["a"], int64_t(1)); // first key wins
-    ASSERT_EQUAL(m["b"], int64_t(2));
+    simdjson::padded_string j(std::string("-0"));
+    ASSERT_ERROR(simdjson::from(j).result<uint64_t>().error(), simdjson::INCORRECT_TYPE);
+    int64_t v = simdjson::from(j);
+    ASSERT_EQUAL(v, int64_t(0));
+  }
+  {
+    simdjson::padded_string j(std::string("[\"caf\\u00e9 \\ud83d\\ude00\",\"na\xc3\xafve\",\"a\\/b\"]"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], std::string("caf\xc3\xa9 \xf0\x9f\x98\x80"));
+    ASSERT_EQUAL(v[1], std::string("na\xc3\xafve"));
+    ASSERT_EQUAL(v[2], std::string("a/b"));
   }
   {
     simdjson::padded_string j(std::string("01"));
@@ -564,7 +571,10 @@ bool test_direct_from_string_scan() {
     ASSERT_EQUAL(v[0], body);
     ASSERT_EQUAL(v[1], body + "x");
   }
-  const char *specials[] = {"\\n", "\\\"", "\\u00e9", "\xc3\xa9", "\x01", "\x1f", "\xff"};
+  const char *specials[] = {"\\n", "\\\"", "\\u00e9", "\xc3\xa9", "\x01", "\x1f", "\xff",
+                            "\\/", "\\\\", "\\b\\f\\r\\t", "\\u0000", "\\uD83D\\uDE00", "\\ud83d",
+                            "\\udc00", "\\ud83d\\u0041", "\\ud83dx", "\\uzzzz", "\\u12", "\\x", "\\\x01",
+                            "\xf0\x9f\x98\x80", "\xe2\x82", "\xc0\xaf", "\xed\xa0\x80", "\\\xc3\xa9"};
   for (size_t n = 1; n <= 40; n++) {
     for (size_t k = 0; k < n; k++) {
       for (const char *special : specials) {
@@ -681,6 +691,34 @@ bool test_direct_from_double_array() {
   TEST_SUCCEED();
 }
 
+bool test_direct_from_reservation() {
+  TEST_START();
+  // Containers are sized from their first element. A short first element must
+  // not leave a large unused reservation in the returned container.
+  const std::string long_string(1 << 20, 'a');
+  {
+    simdjson::padded_string j("[\"\", \"" + long_string + "\"]");
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[1], long_string);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  const std::string spaces(1 << 20, ' ');
+  {
+    simdjson::padded_string j("[0," + spaces + "1]");
+    std::vector<int64_t> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  {
+    simdjson::padded_string j("[0," + spaces + "1.5]");
+    std::vector<double> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -716,6 +754,7 @@ bool run() {
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
       test_direct_from_atoms() && test_direct_from_string_scan() && test_direct_from_double_array() &&
+      test_direct_from_reservation() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()

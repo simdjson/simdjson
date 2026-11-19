@@ -48,6 +48,7 @@ add_cpp_test(ondemand_custom_types_document_tests    LABELS ondemand acceptance 
 add_cpp_test(ondemand_key_selector_reflection_tests  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_stl_types_tests                LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_convert_tests                  LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_convert_allocation_tests       LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_unknown_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_wildcard_tests                 LABELS ondemand acceptance per_implementation)
 # Includes simdjson.h from two translation units with SIMDJSON_CONSTEXPR_STRING
