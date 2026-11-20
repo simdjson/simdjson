@@ -235,10 +235,11 @@ namespace document_stream_tests {
         size_t count = 0;
         for (auto i = stream.begin(); i != stream.end(); ++i) {
           ASSERT_TRUE(count < 3);
-          ASSERT_SUCCESS((*i).error());
+          simdjson::dom::element value;
+          ASSERT_SUCCESS((*i).get(value));
           if (count == 1) {
             ASSERT_EQUAL(i.current_index(), 44);
-            ASSERT_EQUAL(simdjson::to_string(*i), doc);
+            ASSERT_EQUAL(simdjson::to_string(value), doc);
           }
           count++;
         }
