@@ -274,8 +274,8 @@ protected:
 // surrounded only by ASCII whitespace. Writes the one-entry structural tape
 // and returns SUCCESS, returns EMPTY for an all-whitespace buffer, or
 // returns UNINITIALIZED if the buffer is not that shape (caller must run
-// the full indexer). Defined here so ondemand::parser::iterate can apply it
-// without a virtual call into stage1.
+// the full indexer). json_structural_indexer::index calls it before the
+// SIMD loop.
 simdjson_never_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
   auto is_json_ws = [](uint8_t c) noexcept {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
