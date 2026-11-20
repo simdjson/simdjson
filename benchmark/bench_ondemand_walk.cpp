@@ -8,6 +8,11 @@
 // numbers/<size>      : an array of arrays of eight integers.
 // nested/<size>       : an array of objects that each hold an object and an
 //                       array.
+//
+// bench_walk     : the walk, written against the API.
+// bench_validate : ondemand::document::validate(), which checks the same things
+//                  without creating values.
+// bench_dom      : dom::parser::parse, which validates while building a tape.
 
 #include <benchmark/benchmark.h>
 #include <cstdint>
@@ -132,11 +137,46 @@ void bench_walk(benchmark::State &state, std::string (*make)(size_t)) {
   state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(text.size()));
 }
 
+void bench_validate(benchmark::State &state, std::string (*make)(size_t)) {
+  const std::string text = make(size_t(state.range(0)));
+  padded_string json(text);
+  ondemand::parser parser;
+  for (auto _ : state) {
+    ondemand::document doc;
+    error_code error = parser.iterate(json).get(doc);
+    if (!error) { error = doc.validate(); }
+    if (error) {
+      state.SkipWithError(error_message(error));
+      return;
+    }
+  }
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(text.size()));
+}
+
+void bench_dom(benchmark::State &state, std::string (*make)(size_t)) {
+  const std::string text = make(size_t(state.range(0)));
+  padded_string json(text);
+  dom::parser parser;
+  for (auto _ : state) {
+    error_code error = parser.parse(json).error();
+    if (error) {
+      state.SkipWithError(error_message(error));
+      return;
+    }
+  }
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(text.size()));
+}
+
 } // namespace
 
-BENCHMARK_CAPTURE(bench_walk, tiny_objects, tiny_objects)->Arg(32)->Arg(1000)->Arg(10000);
-BENCHMARK_CAPTURE(bench_walk, records, records)->Arg(1000)->Arg(10000);
-BENCHMARK_CAPTURE(bench_walk, numbers, numbers)->Arg(1000)->Arg(10000);
-BENCHMARK_CAPTURE(bench_walk, nested, nested)->Arg(1000)->Arg(10000);
+#define WALK_CASES(fn) \
+  BENCHMARK_CAPTURE(fn, tiny_objects, tiny_objects)->Arg(32)->Arg(1000)->Arg(10000); \
+  BENCHMARK_CAPTURE(fn, records, records)->Arg(1000)->Arg(10000); \
+  BENCHMARK_CAPTURE(fn, numbers, numbers)->Arg(1000)->Arg(10000); \
+  BENCHMARK_CAPTURE(fn, nested, nested)->Arg(1000)->Arg(10000)
+
+WALK_CASES(bench_walk);
+WALK_CASES(bench_validate);
+WALK_CASES(bench_dom);
 
 BENCHMARK_MAIN();

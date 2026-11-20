@@ -90,6 +90,13 @@ public:
   simdjson_inline error_code out_of_place_error() noexcept;
   /** Tells whether the string before pos, followed by a colon, is a key. */
   static bool string_is_key(const uint8_t *json, token_position pos, token_position root, token_position end) noexcept;
+  /**
+   * Validates the array or object at the current position and everything in it, without
+   * recursion. Outside of streaming mode, it also checks that nothing follows it. It does
+   * not move the iterator.
+   */
+  simdjson_warn_unused error_code validate_container() noexcept;
+  static simdjson_inline bool has_backslash(const uint8_t *src, size_t len) noexcept;
 
   /**
    * Tell whether the iterator is still at the start

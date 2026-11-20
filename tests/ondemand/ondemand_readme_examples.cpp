@@ -2110,9 +2110,43 @@ bool value_raw_json_object() {
 
 #endif
 
+bool validate_document_example() {
+  TEST_START();
+  ondemand::parser parser;
+  auto json = R"({"name":"simdjson","stars":[1,2,3]})"_padded;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc.validate(); }
+  ASSERT_SUCCESS(error);
+  std::string_view name;
+  ASSERT_SUCCESS(doc["name"].get_string().get(name));
+  ASSERT_EQUAL(name, "simdjson");
+  TEST_SUCCEED();
+}
+
+bool validate_stream_example() {
+  TEST_START();
+  ondemand::parser parser;
+  auto json = R"({"a":1} [2,3] "four")"_padded;
+  ondemand::document_stream stream;
+  ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+  size_t count = 0;
+  for (auto result : stream) {
+    ondemand::document_reference doc_ref;
+    ASSERT_SUCCESS(std::move(result).get(doc_ref));
+    ondemand::document &doc = doc_ref;
+    ASSERT_SUCCESS(doc.validate());
+    count++;
+  }
+  ASSERT_EQUAL(count, 3);
+  TEST_SUCCEED();
+}
+
 bool run() {
   return true
     && fatal_error()
+    && validate_document_example()
+    && validate_stream_example()
 #if SIMDJSON_EXCEPTIONS
 #if SIMDJSON_CPLUSPLUS17
     && big_int_array()

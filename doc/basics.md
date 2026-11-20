@@ -51,6 +51,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Current location in document](#current-location-in-document)
   * [Checking for trailing content](#checking-for-trailing-content)
 - [Rewinding](#rewinding)
+- [Validating a document](#validating-a-document)
 - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
@@ -3329,6 +3330,63 @@ internal string buffer. Thus you should consume values only once
 even if you can iterate through the array or object more than once.
 If you unescape a string within an array more than once, you have unsafe code.
 You must not call `reset()` on an object or an array as you are iterating through it.
+
+Validating a document
+---------------------
+
+The On-Demand front-end only validates what you access. If you need to know that the whole
+document is valid JSON before you use it, call the `validate()` method on the document instance.
+It checks the structure (brackets, commas, colons and keys), every string (escapes included), every
+number, `true`, `false` and `null`, and that nothing follows the root value. It returns
+`simdjson::SUCCESS` or the first error it finds, such as `TAPE_ERROR`, `STRING_ERROR`,
+`NUMBER_ERROR`, `TRAILING_CONTENT` or `DEPTH_ERROR`.
+
+The document is rewound before and after the validation (see [rewinding](#rewinding)), so you may
+iterate through it afterward as if it had just been created.
+
+```cpp
+  ondemand::parser parser;
+  auto json = R"({"name":"simdjson","stars":[1,2,3]})"_padded;
+  ondemand::document doc;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc.validate(); }
+  if (error) {
+    std::cerr << "invalid JSON: " << error << std::endl;
+    return;
+  }
+  std::string_view name;
+  if (doc["name"].get_string().get(name) == simdjson::SUCCESS) {
+    std::cout << name << std::endl;
+  }
+```
+
+Strings are checked as `get_string()` checks them and numbers as `get_double()` does. Thus an
+integer that does not fit in 64 bits is valid, as `get_double()` accepts it, whereas the DOM parser
+rejects it with `BIGINT_ERROR`. Otherwise, `validate()` accepts exactly the documents that the DOM
+parser accepts, with the same maximal depth.
+
+The `validate()` method is faster than iterating through every value with the On-Demand API,
+because it walks the JSON tokens in a single loop without creating values, arrays or objects. In
+our benchmark (`benchmark/bench_ondemand_walk`), it is about 1.3 to 1.7 times faster than a
+recursive function that visits every value, and also faster than parsing with the DOM front-end.
+
+You may also validate the documents of a stream (`iterate_many`): trailing content is then
+expected, as it holds the next documents, and is not reported.
+
+```cpp
+  ondemand::parser parser;
+  auto json = R"({"a":1} [2,3] "four")"_padded;
+  ondemand::document_stream stream;
+  if (parser.iterate_many(json).get(stream)) { return; }
+  for (auto result : stream) {
+    ondemand::document_reference doc_ref;
+    if (std::move(result).get(doc_ref)) { break; }
+    ondemand::document &doc = doc_ref;
+    if (doc.validate()) {
+      std::cerr << "invalid document in the stream" << std::endl;
+    }
+  }
+```
 
 
 Newline-Delimited JSON (ndjson) and JSON lines
