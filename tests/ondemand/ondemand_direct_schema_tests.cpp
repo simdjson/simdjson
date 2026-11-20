@@ -342,6 +342,30 @@ bool test_direct_schema_ordered_fallback() {
   TEST_SUCCEED();
 }
 
+// The last of duplicate keys wins, and a nested object replaces the earlier one
+// instead of merging into it.
+bool test_direct_schema_duplicate_objects() {
+  TEST_START();
+  SchemaGarage garage;
+  auto json = R"({"car":{"make":"Toyota","model":"Camry","year":2018,"tire_pressure":[40.1],"active":true},"car":{"make":"Honda"}})"_padded;
+  ASSERT_SUCCESS(simdjson::from(json).get(garage));
+  ASSERT_EQUAL(garage.car.make, "Honda");
+  ASSERT_EQUAL(garage.car.model, "");
+  ASSERT_EQUAL(garage.car.year, 0);
+  ASSERT_TRUE(garage.car.tire_pressure.empty());
+  ASSERT_FALSE(garage.car.active);
+  json = R"({"car":{"make":"Toyota"},"car":{}})"_padded;
+  ASSERT_SUCCESS(simdjson::from(json).get(garage));
+  ASSERT_EQUAL(garage.car.make, "");
+  json = R"({"bays":3,"car":{"make":"Toyota","year":2018},"car":{"model":"Civic"}})"_padded;
+  ASSERT_SUCCESS(simdjson::from(json).get(garage));
+  ASSERT_EQUAL(garage.bays, 3);
+  ASSERT_EQUAL(garage.car.make, "");
+  ASSERT_EQUAL(garage.car.model, "Civic");
+  ASSERT_EQUAL(garage.car.year, 0);
+  TEST_SUCCEED();
+}
+
 bool test_direct_schema_recursive() {
   TEST_START();
   // A key out of order at every level used to re-parse the nested values
@@ -405,7 +429,8 @@ bool test_direct_schema_reserve() {
 
 bool run() {
   return test_direct_schema() && test_direct_schema_string_scan() &&
-         test_direct_schema_ordered_fallback() && test_direct_schema_recursive() &&
+         test_direct_schema_ordered_fallback() && test_direct_schema_duplicate_objects() &&
+         test_direct_schema_recursive() &&
          test_direct_schema_for_each_field() && test_direct_schema_reserve();
 }
 

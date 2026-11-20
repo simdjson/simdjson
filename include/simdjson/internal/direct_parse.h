@@ -891,6 +891,14 @@ simdjson_really_inline error_code parse_ordered_fields(const uint8_t *&p, const 
   }
 }
 
+// A key seen again in the general path replaces the earlier value. Scalars,
+// strings and vectors are overwritten or cleared when parsed; a schema object
+// is parsed in place, so it is reset first.
+template <typename M>
+simdjson_inline void reset_schema_member(M &member) {
+  if constexpr (has_direct_schema_v<std::remove_cv_t<M>>) { member = M(); }
+}
+
 template <typename T, size_t Idx>
 simdjson_really_inline error_code match_field_by_index(const uint8_t *key, size_t key_len,
                                                       const uint8_t *&p, const uint8_t *end,
@@ -905,6 +913,7 @@ simdjson_really_inline error_code match_field_by_index(const uint8_t *key, size_
       constexpr auto name = field::name;
       if (name.size() == key_len && std::memcmp(name.data(), key, key_len) == 0) {
         matched = true;
+        reset_schema_member(out.*(field::member));
         return parse_schema_value(p, end, out.*(field::member), depth + 1);
       }
     }
@@ -913,8 +922,7 @@ simdjson_really_inline error_code match_field_by_index(const uint8_t *key, size_
 }
 
 // General (any key order) object body. Outlined so the in-order path
-// stays a small inline function, the same split Jsonifier uses
-// (impl vs implOutline). `p` is at the first key.
+// stays a small inline function. `p` is at the first key.
 template <typename T>
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((noinline))
@@ -936,6 +944,7 @@ error_code parse_schema_object_general(const uint8_t *&p, const uint8_t *end, T 
         if (name.size() != key_len) { return; }
         if (std::memcmp(name.data(), key, key_len) != 0) { return; }
         matched = true;
+        reset_schema_member(out.*mem);
         err = parse_schema_value(p, end, out.*mem, depth + 1);
       });
     }
