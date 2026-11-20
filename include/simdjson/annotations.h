@@ -326,16 +326,34 @@ consteval std::vector<std::string_view> json_key_names(std::meta::info entity) {
   return names;
 }
 
+#if !defined(__cpp_exceptions)
+// Without exceptions, consteval code cannot throw std::meta::exception. It
+// calls one of these functions instead: they are not constexpr, so the
+// constant evaluation fails and the compiler error names the function.
+inline void flatten_requires_a_member_that_is_not_a_reference() {}
+inline void flatten_requires_a_member_of_class_type() {}
+inline void transparent_requires_exactly_one_data_member() {}
+inline void flatten_requires_a_member_deserialized_member_by_member() {}
+#endif
+
 // The structure type of a member annotated with flatten.
 consteval std::meta::info flattened_type(std::meta::info mem) {
   if (std::meta::is_reference_type(std::meta::type_of(mem))) {
     // A reference member could refer back to the enclosing structure: the
     // flattening would never terminate.
+#if defined(__cpp_exceptions)
     throw std::meta::exception(u8"simdjson::flatten requires a member that is not a reference", mem);
+#else
+    flatten_requires_a_member_that_is_not_a_reference();
+#endif
   }
   std::meta::info type = std::meta::remove_cvref(std::meta::type_of(mem));
   if (!std::meta::is_class_type(type)) {
+#if defined(__cpp_exceptions)
     throw std::meta::exception(u8"simdjson::flatten requires a member of class type", mem);
+#else
+    flatten_requires_a_member_of_class_type();
+#endif
   }
   return type;
 }
@@ -348,7 +366,11 @@ consteval std::meta::info transparent_member(std::meta::info type) {
     if (!has_annotation(mem, ^^skip_tag)) { members.push_back(mem); }
   }
   if (members.size() != 1) {
+#if defined(__cpp_exceptions)
     throw std::meta::exception(u8"simdjson::transparent requires exactly one data member (not counting skipped members)", type);
+#else
+    transparent_requires_exactly_one_data_member();
+#endif
   }
   return members[0];
 }
