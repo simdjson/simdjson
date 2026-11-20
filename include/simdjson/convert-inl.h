@@ -48,7 +48,7 @@ inline std::remove_pointer_t<parser_type> &auto_parser<parser_type>::parser() no
 
 template <typename parser_type>
 template <typename T>
-inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow_gettable<T>) {
+inline simdjson_result<T> auto_parser<parser_type>::result() & noexcept(is_nothrow_gettable<T>) {
   if (m_error != SUCCESS) {
     return m_error;
   }
@@ -57,17 +57,23 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
 
 template <typename parser_type>
 template <typename T>
-simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) {
+inline simdjson_result<T> auto_parser<parser_type>::result() && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
+  return result<T>();
+}
+
+template <typename parser_type>
+template <typename T>
+simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
   return result<T>().get(value);
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() noexcept {
+inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() & noexcept {
   return result<ondemand::array>();
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() noexcept {
+inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() & noexcept {
   return result<ondemand::object>();
 }
 
@@ -79,7 +85,16 @@ inline simdjson_result<ondemand::number> auto_parser<parser_type>::number() noex
 #if SIMDJSON_EXCEPTIONS
 template <typename parser_type>
 template <typename T>
-inline auto_parser<parser_type>::operator T() noexcept(false) {
+inline auto_parser<parser_type>::operator T() & noexcept(false) {
+  if (m_error != SUCCESS) {
+    throw simdjson_error(m_error);
+  }
+  return m_doc.get<T>();
+}
+
+template <typename parser_type>
+template <typename T>
+inline auto_parser<parser_type>::operator T() && noexcept(false) requires(!views_document<T>) {
   if (m_error != SUCCESS) {
     throw simdjson_error(m_error);
   }
@@ -89,7 +104,13 @@ inline auto_parser<parser_type>::operator T() noexcept(false) {
 
 template <typename parser_type>
 template <typename T>
-inline std::optional<T> auto_parser<parser_type>::optional() noexcept(is_nothrow_gettable<T>) {
+inline std::optional<T> auto_parser<parser_type>::optional() && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
+  return optional<T>();
+}
+
+template <typename parser_type>
+template <typename T>
+inline std::optional<T> auto_parser<parser_type>::optional() & noexcept(is_nothrow_gettable<T>) {
   if (m_error != SUCCESS) {
     return std::nullopt;
   }
