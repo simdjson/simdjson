@@ -52,15 +52,17 @@ if (SIMDJSON_EXCEPTIONS)
   endif()
 endif()
 
-# array() and object() on the temporary returned by simdjson::from would point
-# into a destroyed document. simdjson::from needs C++20; we match "deleted" so
-# that the test cannot pass because of some unrelated error.
+# An array, object or value taken from the temporary returned by simdjson::from
+# would point into a destroyed document. simdjson::from needs C++20; we match
+# "deleted" so that the test cannot pass because of some unrelated error.
 if("cxx_std_20" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-  add_dual_compile_test(dangling_from_array)
-  target_compile_features(dangling_from_array_should_compile PRIVATE cxx_std_20)
-  target_compile_features(dangling_from_array_should_not_compile PRIVATE cxx_std_20)
-  set_property(TEST dangling_from_array_should_not_compile PROPERTY WILL_FAIL FALSE)
-  set_property(TEST dangling_from_array_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
+  foreach(name dangling_from_array dangling_from_get)
+    add_dual_compile_test(${name})
+    target_compile_features(${name}_should_compile PRIVATE cxx_std_20)
+    target_compile_features(${name}_should_not_compile PRIVATE cxx_std_20)
+    set_property(TEST ${name}_should_not_compile PROPERTY WILL_FAIL FALSE)
+    set_property(TEST ${name}_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
+  endforeach()
 endif()
 
 # string_builder::append() must reject 128-bit integers rather than truncate

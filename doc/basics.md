@@ -1988,6 +1988,10 @@ for(auto val : parsed.array()) {
 }
 ```
 
+The same holds for an `ondemand::array`, `ondemand::object` or `ondemand::value`
+obtained with `get()`, `result()`, `optional()` or a conversion: reading one from
+the temporary `simdjson::from(json)` does not compile.
+
 Standard STL types are supported:
 
 
