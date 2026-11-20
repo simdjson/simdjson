@@ -88,6 +88,16 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   add_dependencies(per_implementation_tests jsonpointer)
 
   #
+  # minify tool test: check that minify prints the minified document and
+  # nothing after it
+  #
+  add_test(NAME minify COMMAND $<TARGET_FILE:minify> ${PROJECT_BINARY_DIR}/jsonexamples/example_config.json)
+  set_tests_properties(minify PROPERTIES PASS_REGULAR_EXPRESSION "\"port\":5432}}\n?$")
+  set_property(TEST minify APPEND PROPERTY LABELS acceptance per_implementation)
+  add_dependencies(acceptance_tests minify)
+  add_dependencies(per_implementation_tests minify)
+
+  #
   # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
   #
   if (SIMDJSON_IMPLEMENTATION MATCHES "fallback")
