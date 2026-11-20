@@ -14,11 +14,9 @@
 #include "simdjson/error.h"
 #include "simdjson/implementation.h"
 #include "simdjson/internal/json_escape.h"
-#include "simdjson/internal/numberparsing_tables.h"
 
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -418,62 +416,17 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
   }
 }
 
-// A JSON number at p as a double, with the digit loops and rounding of the On
-// Demand number parser. Those read ahead (eight bytes at a time) and stop at
-// the first byte that cannot continue a number, so the caller must guarantee
-// such a byte before the buffer's padding runs out. Anything that is not a
-// finite JSON number returns UNINITIALIZED and leaves p alone.
+// A JSON number at p as a double, parsed by On Demand's number parser. It
+// reads ahead (eight bytes at a time) and stops at the first byte that cannot
+// continue a number, so the caller must guarantee such a byte before the
+// buffer's padding runs out. Anything that is not a finite JSON number returns
+// UNINITIALIZED and leaves p alone.
 simdjson_inline error_code parse_double_padded(const uint8_t *&p, double &out) noexcept {
-  namespace numberparsing = simdjson::builtin::numberparsing;
-  const uint8_t *const start = p;
-  const bool negative = (*start == '-');
-  const uint8_t *const digits = start + uint8_t(negative);
-  const uint8_t *q = digits;
-  uint64_t i = 0;
-  bool leading_zero;
-  numberparsing::parse_float_integer_digits(q, i, leading_zero);
-  if (q == digits || (leading_zero && q != digits + 1)) { return UNINITIALIZED; }
-  int64_t exponent = 0;
-  bool overflow;
-  if (*q == '.') {
-    q++;
-    const uint8_t *const first_fraction = q;
-    numberparsing::parse_fraction_digits(q, i);
-    if (q == first_fraction) { return UNINITIALIZED; }
-    exponent = -(q - first_fraction);
-    overflow = q - digits - 1 > 19;
-    if (simdjson_unlikely(overflow && leading_zero)) {
-      // 0.000ddd: the zeros after the point do not count.
-      const uint8_t *significant = digits + 2;
-      while (*significant == '0') { significant++; }
-      overflow = q - significant > 19;
-    }
-  } else {
-    overflow = q - digits > 19;
+  const uint8_t *end;
+  if (simdjson::builtin::numberparsing::parse_double_until<false>(p, end).get(out) != SUCCESS) {
+    return UNINITIALIZED;
   }
-  if (*q == 'e' || *q == 'E') {
-    q++;
-    const bool exp_negative = (*q == '-');
-    q += exp_negative || *q == '+';
-    const uint8_t *const first_exp = q;
-    uint64_t exp = 0;
-    while (numberparsing::parse_digit(*q, exp)) { q++; }
-    if (q == first_exp) { return UNINITIALIZED; }
-    overflow = overflow || q - first_exp > 19;
-    exponent += exp_negative ? 0 - exp : exp;
-  }
-  overflow = overflow || exponent < simdjson::internal::smallest_power ||
-             exponent > simdjson::internal::largest_power;
-  double d;
-  if (simdjson_unlikely(overflow || !numberparsing::compute_float_64(exponent, i, negative, d))) {
-    d = simdjson::internal::from_chars(reinterpret_cast<const char *>(start),
-                                       reinterpret_cast<const char *>(q));
-    if (!(d >= std::numeric_limits<double>::lowest() && d <= std::numeric_limits<double>::max())) {
-      return UNINITIALIZED;
-    }
-  }
-  out = d;
-  p = q;
+  p = end;
   return SUCCESS;
 }
 

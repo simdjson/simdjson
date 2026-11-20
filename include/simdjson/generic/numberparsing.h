@@ -854,6 +854,8 @@ simdjson_warn_unused simdjson_inline error_code parse_number(const uint8_t *cons
 simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * const) noexcept { return 0; }
+template <bool check_end>
+simdjson_unused simdjson_inline simdjson_result<double> parse_double_until(const uint8_t * const, const uint8_t *&) noexcept { return INCORRECT_TYPE; }
 simdjson_unused simdjson_inline simdjson_result<float> parse_float(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_string(const uint8_t * const) noexcept { return 0; }
 simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string(const uint8_t * const) noexcept { return 0; }
@@ -1232,7 +1234,13 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   return negative ? (~i+1) : i;
 }
 
-simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+// Parse the JSON number at src as a double and set end past it. With
+// check_end, the number must be followed by a structural character or white
+// space, and NaN/Infinity are accepted when SIMDJSON_ENABLE_NAN_INF is set.
+// Without check_end, the caller checks what follows, and NaN/Infinity are
+// rejected (end would not be known).
+template <bool check_end>
+simdjson_inline simdjson_result<double> parse_double_until(const uint8_t * src, const uint8_t *&end) noexcept {
   //
   // Check for minus sign
   //
@@ -1253,7 +1261,7 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     // If there are no loading digits, the number may be nan or infinity.
     // Attempt to compute those, and return on success.
     double d;
-    if (compute_nan_inf(p, negative, d)) { return d; }
+    if (check_end && compute_nan_inf(p, negative, d)) { return d; }
 #endif
 
     return INCORRECT_TYPE;
@@ -1304,7 +1312,8 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     exponent += exp_neg ? 0-exp : exp;
   }
 
-  if (jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  if (check_end && jsoncharutils::is_not_structural_or_whitespace(*p)) { return NUMBER_ERROR; }
+  end = p;
 
   overflow = overflow || exponent < simdjson::internal::smallest_power || exponent > simdjson::internal::largest_power;
 
@@ -1319,6 +1328,11 @@ simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8
     return NUMBER_ERROR;
   }
   return d;
+}
+
+simdjson_unused simdjson_inline simdjson_result<double> parse_double(const uint8_t * src) noexcept {
+  const uint8_t *end;
+  return parse_double_until<true>(src, end);
 }
 
 // Parse a JSON number into a binary32 (float) value.
