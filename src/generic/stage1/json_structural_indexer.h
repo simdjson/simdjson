@@ -198,7 +198,7 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   if (len == 0) { return EMPTY; }
   // Lone atoms only on a complete (non-streaming) buffer. Streaming windows
   // have different truncation and partial-scalar rules.
-  if (partial == stage1_mode::regular && len <= 64) {
+  if (partial == stage1_mode::regular && len <= 64 && buf[0] != '{' && buf[0] != '[' && buf[0] != '"') {
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }

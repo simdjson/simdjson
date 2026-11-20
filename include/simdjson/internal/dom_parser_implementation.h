@@ -276,7 +276,7 @@ protected:
 // returns UNINITIALIZED if the buffer is not that shape (caller must run
 // the full indexer). Defined here so ondemand::parser::iterate can apply it
 // without a virtual call into stage1.
-simdjson_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
+simdjson_never_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
   auto is_json_ws = [](uint8_t c) noexcept {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
   };
