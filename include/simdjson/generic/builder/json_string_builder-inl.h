@@ -9,7 +9,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_STRING_BUILDER_INL_H
 #include "simdjson/generic/builder/json_string_builder.h"
-#include "simdjson/internal/jeaiii.h"
+#include "simdjson/internal/write_uint.h"
 #include "simdjson/internal/json_escape.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
@@ -148,7 +148,7 @@ simdjson_inline void string_builder::clear() noexcept {
 
 namespace internal {
 
-using simdjson::internal::write_uint_jeaiii;
+using simdjson::internal::write_uint;
 
 // Writes v at p, which must have to_chars_buffer_size bytes available, and
 // returns the end of what was written.
@@ -206,7 +206,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
     constexpr size_t max_number_size = 20;
     if (capacity_check(max_number_size)) {
       using unsigned_type = typename std::make_unsigned<number_type>::type;
-      char* end = internal::write_uint_jeaiii(
+      char* end = internal::write_uint(
           buffer_data() + position,
           static_cast<uint64_t>(static_cast<unsigned_type>(v)));
       position = end - buffer_data();
@@ -225,7 +225,7 @@ simdjson_inline void string_builder::append(number_type v) noexcept {
       // Branchless: always write '-', advance only if negative.
       buffer_data()[position] = '-';
       position += negative;
-      char* end = internal::write_uint_jeaiii(
+      char* end = internal::write_uint(
           buffer_data() + position, static_cast<uint64_t>(pv));
       position = end - buffer_data();
     }

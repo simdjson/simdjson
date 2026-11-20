@@ -5,7 +5,7 @@
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/parser.h"
 #include "simdjson/dom/serialization.h"
-#include "simdjson/internal/jeaiii.h"
+#include "simdjson/internal/write_uint.h"
 #include "simdjson/internal/json_escape.h"
 #include "simdjson/internal/tape_type.h"
 
@@ -87,16 +87,15 @@ namespace internal {
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
-  // write_uint_jeaiii may store one byte before its output pointer.
   char number_buffer[24];
-  chars(number_buffer + 1, write_uint_jeaiii(number_buffer + 1, x));
+  chars(number_buffer, write_uint(number_buffer, x));
 }
 
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(int64_t x) {
   char number_buffer[24];
   // 0 - uint64_t(x) is the magnitude, also for INT64_MIN.
-  char *end = write_uint_jeaiii(number_buffer + 1, x < 0 ? 0 - uint64_t(x) : uint64_t(x));
+  char *end = write_uint(number_buffer + 1, x < 0 ? 0 - uint64_t(x) : uint64_t(x));
   number_buffer[0] = '-';
   chars(number_buffer + (x >= 0), end);
 }
