@@ -1027,6 +1027,32 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  bool root_number_rs_outside_stream() {
+    TEST_START();
+    // Outside of a json_sequence stream, RS (0x1E) is not a separator. Some
+    // kernels keep it in the number token: it must not be trimmed away.
+    const std::string inputs[] = {std::string("1\x1e"), std::string("-12\x1e "),
+                                  std::string("1.5\x1e"), std::string("7\x1e\x1e")};
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    int64_t i;
+    uint64_t u;
+    double d;
+    simdjson::ondemand::number num;
+    for (const std::string &input : inputs) {
+      simdjson::padded_string json(input);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_TRUE(doc.get_int64().get(i) != SUCCESS);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_TRUE(doc.get_uint64().get(u) != SUCCESS);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_TRUE(doc.get_double().get(d) != SUCCESS);
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      ASSERT_TRUE(doc.get_number().get(num) != SUCCESS);
+    }
+    TEST_SUCCEED();
+  }
+
   // Checks get_double(), get_float() and their _in_string variants, at the
   // root and inside an array.
   bool check_long_exponent(const std::string &number, double expected, error_code expected_error = SUCCESS) {
@@ -1108,6 +1134,7 @@ namespace number_tests {
            root_number_scratch_padding() &&
            root_number_trailing_whitespace() &&
            root_number_stream_delimiters() &&
+           root_number_rs_outside_stream() &&
            long_exponents();
   }
 
