@@ -177,6 +177,36 @@ simdjson_inline error_code parse_document<bool>(const uint8_t *buf, size_t len, 
 // (when stop_on_high is set) non-ASCII, or end.
 template <bool stop_on_high>
 simdjson_inline const uint8_t *find_string_stop(const uint8_t *p, const uint8_t *end) noexcept {
+#if SIMDJSON_EXPERIMENTAL_HAS_SSE2
+  // Sixteen bytes at a time with SSE2, which every x64 processor has.
+  const __m128i quote_v = _mm_set1_epi8('"');
+  const __m128i backslash_v = _mm_set1_epi8('\\');
+  const __m128i control_max = _mm_set1_epi8(0x1f);
+  while (end - p >= 16) {
+    const __m128i v = _mm_loadu_si128(reinterpret_cast<const __m128i *>(p));
+    const __m128i control = _mm_cmpeq_epi8(_mm_max_epu8(v, control_max), control_max);
+    const __m128i stops = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(v, quote_v), _mm_cmpeq_epi8(v, backslash_v)), control);
+    uint32_t bits = uint32_t(_mm_movemask_epi8(stops));
+    if (stop_on_high) { bits |= uint32_t(_mm_movemask_epi8(v)); }
+    if (bits != 0) { return p + trailing_zeroes(bits); }
+    p += 16;
+  }
+#elif SIMDJSON_EXPERIMENTAL_HAS_NEON
+  // Sixteen bytes at a time with NEON. The narrowing shift keeps four bits
+  // per byte, so the lowest set bit divided by four is the byte index.
+  const uint8x16_t quote_v = vdupq_n_u8('"');
+  const uint8x16_t backslash_v = vdupq_n_u8('\\');
+  const uint8x16_t space = vdupq_n_u8(0x20);
+  const uint8x16_t high = vdupq_n_u8(0x80);
+  while (end - p >= 16) {
+    const uint8x16_t v = vld1q_u8(p);
+    uint8x16_t stops = vorrq_u8(vorrq_u8(vceqq_u8(v, quote_v), vceqq_u8(v, backslash_v)), vcltq_u8(v, space));
+    if (stop_on_high) { stops = vorrq_u8(stops, vcgeq_u8(v, high)); }
+    const uint64_t bits = vget_lane_u64(vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(stops), 4)), 0);
+    if (bits != 0) { return p + (trailing_zeroes(bits) >> 2); }
+    p += 16;
+  }
+#endif
 #if !SIMDJSON_IS_BIG_ENDIAN
   // Eight bytes at a time. A byte's high bit is set in hits when it stops the
   // scan. A borrow can only set bits above a real hit, so the lowest set bit
@@ -231,27 +261,39 @@ simdjson_inline void assign_plain_string(std::string &out, const uint8_t *src, s
     return n;
   });
 #else
-  out.assign(reinterpret_cast<const char *>(src), n);
+  // Not assign(): extra call sites of std::string::assign make GCC stop
+  // inlining it in On-Demand string code compiled in the same file. The
+  // output is always a fresh string, so there is no buffer to reuse.
+  out = std::string(reinterpret_cast<const char *>(src), n);
 #endif
 }
 
 // String body at s (after the opening quote) that holds an escape or a
 // non-ASCII byte. Unescapes like stage 2 with allow_replacement off; any
 // escape it would reject, or a control character, returns UNINITIALIZED.
-simdjson_never_inline error_code parse_escaped_string_body(const uint8_t *&p, const uint8_t *s, const uint8_t *end, std::string &out) {
-  // Find the closing quote. A backslash always covers the next byte.
-  const uint8_t *close = s;
+simdjson_never_inline error_code parse_escaped_string_body(const uint8_t *&p, const uint8_t *s, const uint8_t *stop, const uint8_t *end, std::string &out) {
+  // Find the closing quote, resuming at stop, the first byte that the caller's
+  // ASCII scan rejected. A backslash always covers the next byte. The scan
+  // stops on non-ASCII bytes until it meets the first one, so that an ASCII
+  // string skips UTF-8 validation.
+  const uint8_t *close = stop;
   bool has_escape = false;
+  bool has_high = false;
   for (;;) {
-    close = find_string_stop<false>(close, end);
+    close = has_high ? find_string_stop<false>(close, end) : find_string_stop<true>(close, end);
     if (close == end || *close < 0x20) { return UNINITIALIZED; }
     if (*close == '"') { break; }
-    if (end - close < 2) { return UNINITIALIZED; }
-    has_escape = true;
-    close += 2;
+    if (*close == '\\') {
+      if (end - close < 2) { return UNINITIALIZED; }
+      has_escape = true;
+      close += 2;
+    } else {
+      has_high = true;
+      close++;
+    }
   }
   const size_t n = size_t(close - s);
-  if (!simdjson::validate_utf8(reinterpret_cast<const char *>(s), n)) { return UNINITIALIZED; }
+  if (has_high && !simdjson::validate_utf8(reinterpret_cast<const char *>(s), n)) { return UNINITIALIZED; }
   if (!has_escape) {
     assign_plain_string(out, s, n);
     p = close + 1;
@@ -263,8 +305,9 @@ simdjson_never_inline error_code parse_escaped_string_body(const uint8_t *&p, co
   uint8_t *dst = dst_start;
   const uint8_t *src = s;
   while (src < close) {
-    const void *found = std::memchr(src, '\\', size_t(close - src));
-    const uint8_t *backslash = found ? static_cast<const uint8_t *>(found) : close;
+    // Between src and close, the only stop is a backslash: quotes are escaped
+    // and control characters were rejected by the scan above.
+    const uint8_t *backslash = find_string_stop<false>(src, close);
     std::memcpy(dst, src, size_t(backslash - src));
     dst += backslash - src;
     src = backslash;
@@ -317,7 +360,22 @@ simdjson_inline error_code parse_string_token(const uint8_t *&p, const uint8_t *
     p = stop + 1;
     return SUCCESS;
   }
-  return parse_escaped_string_body(p, start, end, out);
+  return parse_escaped_string_body(p, start, stop, end, out);
+}
+
+// Appends the JSON string token at p to out. A plain ASCII string is
+// constructed in place.
+simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, std::vector<std::string> &out) {
+  if (p >= end || *p != '"') { return UNINITIALIZED; }
+  const uint8_t *start = p + 1;
+  const uint8_t *stop = find_string_stop<true>(start, end);
+  if (simdjson_likely(stop < end && *stop == '"')) {
+    out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
+    p = stop + 1;
+    return SUCCESS;
+  }
+  out.emplace_back();
+  return parse_escaped_string_body(p, start, stop, end, out.back());
 }
 
 // Containers are sized from the first element, which can underestimate the
@@ -430,8 +488,7 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
     if (*p != ',') { out.clear(); return UNINITIALIZED; }
     p++;
     if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-    out.emplace_back();
-    if (parse_string_token(p, end, out.back()) != SUCCESS) { out.clear(); return UNINITIALIZED; }
+    if (append_string_token(p, end, out) != SUCCESS) { out.clear(); return UNINITIALIZED; }
   }
 }
 
