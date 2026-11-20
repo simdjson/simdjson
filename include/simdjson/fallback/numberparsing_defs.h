@@ -4,6 +4,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/fallback/base.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/internal/numberparsing.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <cstring>
@@ -19,14 +20,11 @@ namespace simdjson {
 namespace fallback {
 namespace numberparsing {
 
-// credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint64_t val;
-  memcpy(&val, chars, sizeof(uint64_t));
-  val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
-  val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
-  return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+  std::memcpy(&val, chars, sizeof(uint64_t));
+  return internal::parse_eight_digits_swar(val);
 }
 
 /** @private */

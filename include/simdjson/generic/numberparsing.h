@@ -6,6 +6,7 @@
 #include "simdjson/generic/jsoncharutils.h"
 #include "simdjson/generic/atomparsing.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/internal/numberparsing.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <limits>
@@ -597,6 +598,15 @@ simdjson_inline uint32_t parse_four_digits_unrolled(const uint8_t *chars) {
   return (((val & 0x00FF00FF) * 0x00640001) >> 16) & 0xFFFF;
 }
 
+// The test of is_made_of_four_digits_fast on eight bytes, kept as a mask: sets
+// the high bit of every byte that is not '0'..'9'. Carries and borrows only move
+// upwards, so the bytes up to and including the first non-digit are always right,
+// which is all trailing_zeroes() looks at. Little-endian: guarded by
+// SIMDJSON_SWAR_NUMBER_PARSING.
+simdjson_inline uint64_t mark_non_digits(uint64_t val) {
+  return ((val + 0x4646464646464646) | (val - 0x3030303030303030)) & 0x8080808080808080;
+}
+
 template<typename I>
 SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
 simdjson_inline bool parse_digit(const uint8_t c, I &i) {
@@ -650,19 +660,37 @@ simdjson_inline void parse_float_integer_digits(const uint8_t *&p, uint64_t &i,
   while (parse_digit(*p, i)) { p++; }
 }
 
-SIMDJSON_NO_SANITIZE_UNDEFINED
-simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
+// Consumes a run of digits and returns its value.
+//
+// Prior related work: jsonifier finds the end of the digits with a SWAR mask
+// and a trailing-zero count too, and converts eight digits at a time
+// (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier).
+SIMDJSON_NO_SANITIZE_UNDEFINED // We deliberately allow overflow here and check later
+simdjson_inline uint64_t parse_integer_digits(const uint8_t *&p) {
+  uint64_t i = 0;
+
 #ifdef SIMDJSON_SWAR_NUMBER_PARSING
 #if SIMDJSON_SWAR_NUMBER_PARSING
-  // Identifiers, timestamps and counters often have eight digits or more.
-  // Prior related work: jsonifier parses integers as eight-digit SWAR words
-  // (str_to_i.hpp, https://github.com/nihilai-collective/Jsonifier). This
-  // takes one such word with parse_eight_digits_unrolled, the routine
-  // simdjson uses for long fractions.
-  if (is_made_of_eight_digits_fast(p)) {
-    i = i * 100000000 + parse_eight_digits_unrolled(p);
-    p += 8;
+  // Reads up to 7 bytes beyond the digits, which SIMDJSON_PADDING covers.
+  static_assert(7 <= SIMDJSON_PADDING, "SIMDJSON_PADDING must be bigger than 7");
+  uint64_t val;
+  std::memcpy(&val, p, 8);
+
+  // Up to 7 digits: the common case. Their count changes from one number to
+  // the next, so instead of looping, every count takes the same instructions.
+  const uint64_t non_digits = mark_non_digits(val);
+  if (non_digits != 0) {
+    const size_t digit_count = size_t(trailing_zeroes(non_digits)) / 8;
+    if (digit_count == 0) { return 0; }
+    p += digit_count;
+
+    // Move the digits to the top; the zero bytes shifted in are leading zeros.
+    return internal::parse_eight_digits_swar(val << (64 - 8 * digit_count));
   }
+
+  i = parse_eight_digits_unrolled(p);
+  p += 8;
+
   const uint8_t *const swar_end = p + 8;
   while (p < swar_end && is_made_of_four_digits_fast(p)) {
     i = i * 10000 + parse_four_digits_unrolled(p);
@@ -670,7 +698,9 @@ simdjson_inline void parse_integer_digits(const uint8_t *&p, uint64_t &i) {
   }
 #endif // SIMDJSON_SWAR_NUMBER_PARSING
 #endif // #ifdef SIMDJSON_SWAR_NUMBER_PARSING
+
   while (parse_digit(*p, i)) { p++; }
+  return i;
 }
 
 simdjson_warn_unused simdjson_inline error_code parse_decimal_after_separator(simdjson_unused const uint8_t *const src, const uint8_t *&p, uint64_t &i, int64_t &exponent) {
@@ -1051,10 +1081,8 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned(const u
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
-  uint64_t i = 0;
-  parse_integer_digits(p, i);
+  uint64_t i = parse_integer_digits(p);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1101,10 +1129,8 @@ simdjson_unused simdjson_inline simdjson_result<uint64_t> parse_unsigned_in_stri
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
-  uint64_t i = 0;
-  parse_integer_digits(p, i);
+  uint64_t i = parse_integer_digits(p);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1156,10 +1182,8 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer(const uin
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = p;
-  uint64_t i = 0;
-  parse_integer_digits(p, i);
+  uint64_t i = parse_integer_digits(p);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.
@@ -1201,10 +1225,8 @@ simdjson_unused simdjson_inline simdjson_result<int64_t> parse_integer_in_string
   //
   // Parse the integer part.
   //
-  // PERF NOTE: we don't use is_made_of_eight_digits_fast because large integers like 123456789 are rare
   const uint8_t *const start_digits = src;
-  uint64_t i = 0;
-  parse_integer_digits(src, i);
+  uint64_t i = parse_integer_digits(src);
 
   // If there were no digits, or if the integer starts with 0 and has more than one digit, it's an error.
   // Optimization note: size_t is expected to be unsigned.

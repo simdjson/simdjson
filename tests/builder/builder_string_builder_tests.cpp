@@ -165,6 +165,58 @@ bool append_float() {
   TEST_SUCCEED();
 }
 
+bool append_double_formatting() {
+  TEST_START();
+  struct expectation {
+    double value;
+    const char *text;
+  };
+  const expectation cases[] = {
+      {0.0, "0.0"},
+      {-0.0, "-0.0"},
+      {1.0, "1.0"},
+      {-1.5, "-1.5"},
+      {0.1, "0.1"},
+      {0.3, "0.3"},
+      {0.5, "0.5"},
+      {4.35, "4.35"},
+      {40.1, "40.1"},
+      {100.0, "100.0"},
+      {-123.456, "-123.456"},
+      {1.0 / 3.0, "0.3333333333333333"},
+      {123456789.0, "123456789.0"},
+      {1e14, "100000000000000.0"},
+      {123456789012345.6, "123456789012345.6"},
+      {999999999999999.9, "999999999999999.9"},
+      {1e15, "1e+15"},
+      {1.5e15, "1.5e+15"},
+      {9007199254740993.0, "9.007199254740992e+15"},
+      {1e16, "1e+16"},
+      {1e21, "1e+21"},
+      {1e23, "1e+23"},
+      {0.001, "0.001"},
+      {0.0001, "0.0001"},
+      {0.00012345, "0.00012345"},
+      {1e-5, "1e-05"},
+      {1.5e-7, "1.5e-07"},
+      {1e100, "1e+100"},
+      {1e-100, "1e-100"},
+      {1.2345678901234567e-300, "1.2345678901234568e-300"},
+      {2.2250738585072014e-308, "2.2250738585072014e-308"},
+      {2.225073858507201e-308, "2.225073858507201e-308"},
+      {5e-324, "5e-324"},
+      {1.7976931348623157e308, "1.7976931348623157e+308"},
+  };
+  for (const expectation &c : cases) {
+    simdjson::builder::string_builder sb;
+    sb.append(c.value);
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, c.text);
+  }
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_ENABLE_NAN_INF
 bool append_nan() {
   TEST_START();
@@ -295,6 +347,32 @@ bool nan_inf_roundtrip() {
     index++;
   }
   ASSERT_EQUAL(index, expected.size());
+  TEST_SUCCEED();
+}
+#else
+// Without SIMDJSON_ENABLE_NAN_INF, NaN and Infinity are written as null.
+bool nan_inf_as_null() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_array();
+  sb.append(1.5);
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(std::numeric_limits<float>::quiet_NaN());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<float>::infinity());
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[1.5,null,null,null,null,null]");
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  ASSERT_SUCCESS(parser.parse(p).get(doc));
   TEST_SUCCEED();
 }
 #endif // SIMDJSON_ENABLE_NAN_INF
@@ -1259,6 +1337,32 @@ bool double_double_test_to_string() {
   ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
   TEST_SUCCEED();
 }
+// A char in a container or an optional is a one-character string, as in
+// append_key_value(), not a raw character.
+bool char_values_test() {
+  TEST_START();
+  std::vector<char> c = {'a', '"', '\n'};
+  simdjson::builder::string_builder sb;
+  sb.append(c);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[\"a\",\"\\\"\",\"\\n\"]");
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(std::vector<std::optional<char>>{'\\', std::nullopt}).get(s));
+  ASSERT_EQUAL(s, "[\"\\\\\",null]");
+  ASSERT_SUCCESS(simdjson::to_json('"').get(s));
+  ASSERT_EQUAL(s, "\"\\\"\"");
+  // The output reads back as the same characters.
+  ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json(s);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  std::vector<char> back;
+  ASSERT_SUCCESS(doc.get(back));
+  ASSERT_TRUE(back == c);
+  TEST_SUCCEED();
+}
 #if SIMDJSON_EXCEPTIONS
 bool car_test_simple_complete_exceptions() {
   TEST_START();
@@ -1381,7 +1485,7 @@ bool run() {
          contiguous_string_arrays_reservation_overflow() &&
          double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
-         car_test_simple_complete() &&
+         car_test_simple_complete() && char_values_test() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_simple_complete_exceptions() &&
 #endif
@@ -1392,11 +1496,14 @@ bool run() {
          append_key_value_template_padding() &&
          serialize_optional() && issue2827_optional_serialization() &&
 #endif
-         append_char() && append_integer() && append_float() && append_null() &&
+         append_char() && append_integer() && append_float() &&
+         append_double_formatting() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF
          append_nan() && append_positive_infinity() &&
          append_negative_infinity() && append_float_nan_inf() &&
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
+#else
+         nan_inf_as_null() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
          escape_write_string_escaped_exhaustive() && move_to_string() &&

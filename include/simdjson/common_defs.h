@@ -12,10 +12,9 @@ namespace internal {
  * @private
  * Scratch capacity that every caller of to_chars must provide.
  *
- * The emitted decimal is at most ~24 characters, but dragonbox() and
- * format_buffer() intentionally write past the logical end with fixed-size
- * 16/17-byte memcpy/memset operations so the compiler can inline them (no
- * libc mem* dispatch with size-class branches). The extra bytes are required
+ * The emitted decimal is at most ~24 characters, but to_chars() intentionally
+ * writes past the logical end with fixed-size 8- and 16-byte stores, so that
+ * the layout needs no length-dependent branches. The extra bytes are required
  * for safety of those over-writes; do not shrink this below 40.
  * See src/to_chars.cpp and #2805.
  */

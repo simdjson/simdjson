@@ -4,6 +4,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #include "simdjson/rvv-vls/base.h"
 #include "simdjson/internal/numberparsing_tables.h"
+#include "simdjson/internal/numberparsing.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 #include <cstring>
@@ -19,7 +20,6 @@ namespace simdjson {
 namespace rvv_vls {
 namespace numberparsing {
 
-// credit: https://johnnylee-sde.github.io/Fast-numeric-string-to-int/
 /** @private */
 static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint64_t val;
@@ -28,9 +28,7 @@ static simdjson_inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 #else
   val = __riscv_vmv_x(__riscv_vreinterpret_u64m1(__riscv_vlmul_ext_u8m1(__riscv_vle8_v_u8mf2((uint8_t*)chars, 8))));
 #endif
-  val = (val & 0x0F0F0F0F0F0F0F0F) * 2561 >> 8;
-  val = (val & 0x00FF00FF00FF00FF) * 6553601 >> 16;
-  return uint32_t((val & 0x0000FFFF0000FFFF) * 42949672960001 >> 32);
+  return internal::parse_eight_digits_swar(val);
 }
 
 /** @private */

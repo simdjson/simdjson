@@ -11,6 +11,7 @@
 
 #include <concepts>
 #include <limits>
+#include <type_traits>
 #if SIMDJSON_STATIC_REFLECTION
 #include <meta>
 #include <vector>
@@ -220,9 +221,22 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
         SIMDJSON_TRY(v.get<value_type>(scratch.elements.emplace_back()));
         release.parsed++;
       }
-      out.reserve(release.parsed);
-      release.complete = true;
-      for (auto &e : scratch.elements) { out.emplace_back(std::move(e)); }
+      if constexpr (std::is_trivially_copyable_v<value_type>) {
+        out.assign(scratch.elements.begin(), scratch.elements.end());
+        release.complete = true;
+      } else if (sizeof(value_type) <= 32 && scratch.elements.capacity() / 2 < release.parsed) {
+        // Hand the buffer over only when it is at least half full, so that out
+        // does not keep the capacity of an earlier, larger array. Swapping
+        // large structs is slower than moving them (recipe_book benchmark).
+        size_t const capacity = scratch.elements.capacity();
+        out.swap(scratch.elements);
+        release.complete = true;
+        if (capacity * sizeof(value_type) <= (1 << 20)) { scratch.elements.reserve(capacity); }
+      } else {
+        out.reserve(release.parsed);
+        release.complete = true;
+        for (auto &e : scratch.elements) { out.emplace_back(std::move(e)); }
+      }
       return SUCCESS;
     }
   }
@@ -452,7 +466,11 @@ consteval void append_eligible_fields(std::meta::info type, std::vector<std::met
     if (simdjson::detail::has_annotation(mem, ^^simdjson::detail::flatten_tag)) {
       std::meta::info flattened = simdjson::detail::flattened_type(mem);
       if (!std::meta::extract<bool>(std::meta::substitute(^^flattenable_type, {flattened}))) {
+#if defined(__cpp_exceptions)
         throw std::meta::exception(u8"simdjson::flatten requires a member whose type is a structure deserialized member by member", mem);
+#else
+        simdjson::detail::flatten_requires_a_member_deserialized_member_by_member();
+#endif
       }
       append_eligible_fields(flattened, prefix, fields);
     } else {
