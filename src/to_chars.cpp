@@ -957,7 +957,7 @@ simdjson_really_inline void store16_from(char *p, const digits16 &d,
 #endif
   std::memcpy(p, &tail, 16);
 #else
-  char window[32];
+  char window[32] = {};
   store16(window, d);
   window[16] = digit17;
   std::memcpy(p, window + offset, 16);
