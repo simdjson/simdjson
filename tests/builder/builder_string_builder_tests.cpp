@@ -164,6 +164,58 @@ bool append_float() {
   TEST_SUCCEED();
 }
 
+bool append_double_formatting() {
+  TEST_START();
+  struct expectation {
+    double value;
+    const char *text;
+  };
+  const expectation cases[] = {
+      {0.0, "0.0"},
+      {-0.0, "-0.0"},
+      {1.0, "1.0"},
+      {-1.5, "-1.5"},
+      {0.1, "0.1"},
+      {0.3, "0.3"},
+      {0.5, "0.5"},
+      {4.35, "4.35"},
+      {40.1, "40.1"},
+      {100.0, "100.0"},
+      {-123.456, "-123.456"},
+      {1.0 / 3.0, "0.3333333333333333"},
+      {123456789.0, "123456789.0"},
+      {1e14, "100000000000000.0"},
+      {123456789012345.6, "123456789012345.6"},
+      {999999999999999.9, "999999999999999.9"},
+      {1e15, "1e+15"},
+      {1.5e15, "1.5e+15"},
+      {9007199254740993.0, "9.007199254740992e+15"},
+      {1e16, "1e+16"},
+      {1e21, "1e+21"},
+      {1e23, "1e+23"},
+      {0.001, "0.001"},
+      {0.0001, "0.0001"},
+      {0.00012345, "0.00012345"},
+      {1e-5, "1e-05"},
+      {1.5e-7, "1.5e-07"},
+      {1e100, "1e+100"},
+      {1e-100, "1e-100"},
+      {1.2345678901234567e-300, "1.2345678901234568e-300"},
+      {2.2250738585072014e-308, "2.2250738585072014e-308"},
+      {2.225073858507201e-308, "2.225073858507201e-308"},
+      {5e-324, "5e-324"},
+      {1.7976931348623157e308, "1.7976931348623157e+308"},
+  };
+  for (const expectation &c : cases) {
+    simdjson::builder::string_builder sb;
+    sb.append(c.value);
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, c.text);
+  }
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_ENABLE_NAN_INF
 bool append_nan() {
   TEST_START();
@@ -1204,7 +1256,8 @@ bool run() {
          append_key_value_template_padding() &&
          serialize_optional() && issue2827_optional_serialization() &&
 #endif
-         append_char() && append_integer() && append_float() && append_null() &&
+         append_char() && append_integer() && append_float() &&
+         append_double_formatting() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF
          append_nan() && append_positive_infinity() &&
          append_negative_infinity() && append_float_nan_inf() &&
