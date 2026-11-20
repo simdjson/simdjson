@@ -76,7 +76,7 @@ static std::string build_json(size_t N) {
     count++;
   }
 
-  std::cout << "Creating a source file spanning " << (answer.size() + 512) / (1024*1024) << " MB (" << count << " copies of original file)" << std::endl;
+  std::cerr << "Creating a source file spanning " << (answer.size() + 512) / (1024*1024) << " MB (" << count << " copies of original file)" << std::endl;
   return answer;
 }
 
