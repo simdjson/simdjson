@@ -1105,6 +1105,12 @@ bool to_json_contiguous_number_arrays() {
                               0.00012345678901234567, -0.0, 0.1};
   ASSERT_TRUE(to_json_array_matches_builder(doubles));
   ASSERT_TRUE(to_json_array_matches_builder(std::vector<int64_t>(5000, 7)));
+#if !SIMDJSON_STATIC_REFLECTION
+  // Wider floating types would be narrowed to double; append rejects them.
+  static_assert(sizeof(long double) <= sizeof(uint64_t) ||
+                !simdjson::builder_to_json_detail::contiguous_float_array<std::vector<long double>>);
+  static_assert(simdjson::builder_to_json_detail::contiguous_float_array<std::vector<double>>);
+#endif
 #if SIMDJSON_ENABLE_NAN_INF
   std::string json;
   ASSERT_SUCCESS(simdjson::to_json(std::vector<double>{

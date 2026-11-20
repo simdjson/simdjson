@@ -646,7 +646,8 @@ concept contiguous_int_array =
 template <class R>
 concept contiguous_float_array =
     contiguous_number_array<R> &&
-    std::is_floating_point_v<std::ranges::range_value_t<R>>;
+    std::is_floating_point_v<std::ranges::range_value_t<R>> &&
+    sizeof(std::ranges::range_value_t<R>) <= sizeof(uint64_t);
 
 // Most bytes one element writes, the comma before it included. A double
 // takes at most 24 characters (-d.dddddddddddddddde-308).
