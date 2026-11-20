@@ -1229,6 +1229,39 @@ bool integer_array_after_other_content() {
   TEST_SUCCEED();
 }
 
+// The integer writer may write past the last digit of a short value. A
+// builder that starts with one byte reserves exactly the bound, so the last
+// element ends near the end of the buffer.
+bool integer_array_short_last_element() {
+  TEST_START();
+  auto exact_to_json = [](const auto &range) {
+    simdjson::builder::string_builder sb(1);
+    sb.append(range);
+    std::string_view p;
+    return sb.view().get(p) ? std::string("error") : std::string(p);
+  };
+  for (size_t n = 1; n <= 40; n++) {
+    std::vector<uint16_t> u16(n, 65535);
+    std::vector<int16_t> i16(n, -32768);
+    std::vector<uint32_t> u32(n, (std::numeric_limits<uint32_t>::max)());
+    std::vector<int64_t> i64(n, (std::numeric_limits<int64_t>::min)());
+    std::vector<uint64_t> u64(n, (std::numeric_limits<uint64_t>::max)());
+    for (int last : {0, 7, 42, 999, 9999}) {
+      u16.back() = uint16_t(last);
+      i16.back() = int16_t(-last);
+      u32.back() = uint32_t(last);
+      i64.back() = -last;
+      u64.back() = uint64_t(last);
+      ASSERT_EQUAL(exact_to_json(u16), generic_to_json(u16));
+      ASSERT_EQUAL(exact_to_json(i16), generic_to_json(i16));
+      ASSERT_EQUAL(exact_to_json(u32), generic_to_json(u32));
+      ASSERT_EQUAL(exact_to_json(i64), generic_to_json(i64));
+      ASSERT_EQUAL(exact_to_json(u64), generic_to_json(u64));
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool integer_array_bounded_reservation() {
   TEST_START();
   // Two bytes per element are written, while the bound is 21 bytes per element.
@@ -1604,6 +1637,7 @@ bool run() {
          map_test() && ranges_test() && integer_array_test() &&
          integer_array_matches_generic_path() &&
          integer_array_after_other_content() &&
+         integer_array_short_last_element() &&
          integer_array_bounded_reservation() &&
          integer_array_reservation_overflow() && contiguous_integer_arrays() &&
          contiguous_string_arrays() && contiguous_string_arrays_growth() &&
