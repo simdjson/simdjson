@@ -262,6 +262,102 @@ static bool test_simd8_bits_elementwise() {
   }
   TEST_SUCCEED();
 }
+
+static bool test_simd8_saturating() {
+  TEST_START();
+  const simd8<uint8_t> zero = simd8<uint8_t>::zero();
+  const simd8<uint8_t> max_val(uint8_t(255));
+  const simd8<uint8_t> val100(uint8_t(100));
+  const simd8<uint8_t> val200(uint8_t(200));
+
+  ASSERT_FALSE((~eq(val200.saturating_add(val100), max_val)).any());
+  ASSERT_FALSE((~eq(val100.saturating_add(val200), max_val)).any());
+  ASSERT_FALSE((~eq(val100.saturating_add(val100), simd8<uint8_t>(uint8_t(200)))).any());
+  ASSERT_FALSE((~eq(val100.saturating_add(zero), val100)).any());
+  ASSERT_FALSE((~eq(max_val.saturating_add(val100), max_val)).any());
+
+  ASSERT_FALSE((~eq(val100.saturating_sub(val200), zero)).any());
+  ASSERT_FALSE((~eq(val200.saturating_sub(val100), val100)).any());
+  ASSERT_FALSE((~eq(val100.saturating_sub(zero), val100)).any());
+  ASSERT_FALSE((~eq(zero.saturating_sub(val100), zero)).any());
+
+  const simd8<uint8_t> index(byte_index);
+  const simd8<uint8_t> sat_add = index.saturating_add(simd8<uint8_t>(uint8_t(250)));
+  const simd8<uint8_t> sat_sub = index.saturating_sub(simd8<uint8_t>(uint8_t(10)));
+  for (size_t i = 0; i < width; i++) {
+    const uint8_t expected_add = (i + 250 > 255) ? 255 : uint8_t(i + 250);
+    const uint8_t expected_sub = (i < 10) ? 0 : uint8_t(i - 10);
+    const simd8<bool> is_i = eq(index, simd8<uint8_t>(uint8_t(i)));
+    ASSERT_TRUE((eq(sat_add, simd8<uint8_t>(expected_add)) & is_i).any());
+    ASSERT_TRUE((eq(sat_sub, simd8<uint8_t>(expected_sub)) & is_i).any());
+  }
+  TEST_SUCCEED();
+}
+
+static bool test_simd8_shift() {
+  TEST_START();
+  const simd8<uint8_t> val(uint8_t(0b10101010));
+  ASSERT_FALSE((~eq(val.shr<1>(), simd8<uint8_t>(uint8_t(0b01010101)))).any());
+  ASSERT_FALSE((~eq(val.shr<2>(), simd8<uint8_t>(uint8_t(0b00101010)))).any());
+  ASSERT_FALSE((~eq(val.shr<4>(), simd8<uint8_t>(uint8_t(0b00001010)))).any());
+  ASSERT_FALSE((~eq(val.shr<7>(), simd8<uint8_t>(uint8_t(0b00000001)))).any());
+
+  ASSERT_FALSE((~eq(val.shl<1>(), simd8<uint8_t>(uint8_t(0b01010100)))).any());
+  ASSERT_FALSE((~eq(val.shl<2>(), simd8<uint8_t>(uint8_t(0b10101000)))).any());
+  ASSERT_FALSE((~eq(val.shl<4>(), simd8<uint8_t>(uint8_t(0b10100000)))).any());
+  ASSERT_FALSE((~eq(val.shl<7>(), simd8<uint8_t>(uint8_t(0b00000000)))).any());
+
+  const simd8<uint8_t> index(byte_index);
+  const simd8<uint8_t> shifted_r = index.shr<1>();
+  const simd8<uint8_t> shifted_l = index.shl<1>();
+  for (size_t i = 0; i < width; i++) {
+    const simd8<bool> is_i = eq(index, simd8<uint8_t>(uint8_t(i)));
+    ASSERT_TRUE((eq(shifted_r, simd8<uint8_t>(uint8_t(i >> 1))) & is_i).any());
+    ASSERT_TRUE((eq(shifted_l, simd8<uint8_t>(uint8_t((i << 1) & 0xFF))) & is_i).any());
+  }
+  TEST_SUCCEED();
+}
+
+static bool test_simd8_prev() {
+  TEST_START();
+  uint8_t prev_chunk_bytes[64];
+  uint8_t curr_chunk_bytes[64];
+  for (size_t i = 0; i < 64; i++) {
+    prev_chunk_bytes[i] = uint8_t(i + 1);
+    curr_chunk_bytes[i] = uint8_t(i + 101);
+  }
+  const simd8<uint8_t> prev_chunk(prev_chunk_bytes);
+  const simd8<uint8_t> curr_chunk(curr_chunk_bytes);
+
+  const simd8<uint8_t> prev1 = curr_chunk.prev<1>(prev_chunk);
+  uint8_t expected1[64];
+  expected1[0] = prev_chunk_bytes[width - 1];
+  for (size_t i = 1; i < width; i++) {
+    expected1[i] = curr_chunk_bytes[i - 1];
+  }
+  ASSERT_FALSE((~eq(prev1, simd8<uint8_t>(expected1))).any());
+
+  const simd8<uint8_t> prev2 = curr_chunk.prev<2>(prev_chunk);
+  uint8_t expected2[64];
+  expected2[0] = prev_chunk_bytes[width - 2];
+  expected2[1] = prev_chunk_bytes[width - 1];
+  for (size_t i = 2; i < width; i++) {
+    expected2[i] = curr_chunk_bytes[i - 2];
+  }
+  ASSERT_FALSE((~eq(prev2, simd8<uint8_t>(expected2))).any());
+
+  const simd8<uint8_t> prev3 = curr_chunk.prev<3>(prev_chunk);
+  uint8_t expected3[64];
+  expected3[0] = prev_chunk_bytes[width - 3];
+  expected3[1] = prev_chunk_bytes[width - 2];
+  expected3[2] = prev_chunk_bytes[width - 1];
+  for (size_t i = 3; i < width; i++) {
+    expected3[i] = curr_chunk_bytes[i - 3];
+  }
+  ASSERT_FALSE((~eq(prev3, simd8<uint8_t>(expected3))).any());
+
+  TEST_SUCCEED();
+}
 #endif // TEST_SIMD8
 
 int main() {
@@ -270,7 +366,8 @@ int main() {
             << " SIMD layer" << std::endl;
   if (!test_simd8_bool_any() || !test_simd8_uint8_order() || !test_simd8_int8_order() ||
       !test_simd8_bit_andnot() || !test_simd8_is_ascii() || !test_simd8_bits_anywhere() ||
-      !test_simd8_bits_elementwise()) {
+      !test_simd8_bits_elementwise() || !test_simd8_saturating() || !test_simd8_shift() ||
+      !test_simd8_prev()) {
     return EXIT_FAILURE;
   }
 #else
