@@ -32,6 +32,7 @@ if (TARGET benchmark::benchmark)
   add_executable(bench_array_iteration bench_array_iteration.cpp)
   add_executable(bench_stream_formats bench_stream_formats.cpp)
   add_executable(bench_small_documents bench_small_documents.cpp)
+  add_executable(bench_ondemand_walk bench_ondemand_walk.cpp)
   add_executable(bench_number_serialization bench_number_serialization.cpp)
   # These need C++20 (concepts, ranges). Without it, they print a message.
   foreach(target bench_builder_arrays bench_from bench_vector_deserialize)
