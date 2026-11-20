@@ -800,7 +800,14 @@ simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const ui
   // keep RS in the scalar token, and dropping it would accept "1\x1e".
   while (max_len > 0) {
     const uint8_t last = json[max_len - 1];
+    // iterate_allow_incomplete_json() reuses _streaming, so a root scalar
+    // there is not a document_stream.
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+    const bool separator = _streaming && !_allow_incomplete_json &&
+                           (last == ',' || last == 0x1E);
+#else
     const bool separator = _streaming && (last == ',' || last == 0x1E);
+#endif
     if (last != ' ' && last != '\t' && last != '\n' && last != '\r' &&
         !separator) {
       break;
