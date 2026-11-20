@@ -452,7 +452,11 @@ consteval void append_eligible_fields(std::meta::info type, std::vector<std::met
     if (simdjson::detail::has_annotation(mem, ^^simdjson::detail::flatten_tag)) {
       std::meta::info flattened = simdjson::detail::flattened_type(mem);
       if (!std::meta::extract<bool>(std::meta::substitute(^^flattenable_type, {flattened}))) {
+#if defined(__cpp_exceptions)
         throw std::meta::exception(u8"simdjson::flatten requires a member whose type is a structure deserialized member by member", mem);
+#else
+        simdjson::detail::flatten_requires_a_member_deserialized_member_by_member();
+#endif
       }
       append_eligible_fields(flattened, prefix, fields);
     } else {
