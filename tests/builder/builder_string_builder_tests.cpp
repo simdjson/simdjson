@@ -1383,6 +1383,81 @@ bool car_test_simple_complete_exceptions() {
   TEST_SUCCEED();
 }
 #endif // SIMDJSON_EXCEPTIONS
+
+template <class R>
+bool to_json_array_matches_builder(const R &values) {
+  simdjson::builder::string_builder sb;
+  sb.append(values);
+  std::string_view expected;
+  ASSERT_SUCCESS(sb.view().get(expected));
+  std::string fresh;
+  ASSERT_SUCCESS(simdjson::to_json(values).get(fresh));
+  ASSERT_EQUAL(fresh, expected);
+  // A kept result must not hold the worst-case allocation.
+  ASSERT_TRUE(fresh.capacity() <= 2 * fresh.size() + 32);
+  std::string reused(4096, 'x');
+  ASSERT_SUCCESS(simdjson::to_json(values, reused));
+  ASSERT_EQUAL(reused, expected);
+  return true;
+}
+
+template <class T>
+bool to_json_array_of(size_t n) {
+  std::vector<T> values(n);
+  for (size_t i = 0; i < n; i++) {
+    switch (i % 4) {
+    case 0: values[i] = (std::numeric_limits<T>::max)(); break;
+    case 1: values[i] = std::numeric_limits<T>::lowest(); break;
+    case 2: values[i] = T(i % 10); break;
+    default: values[i] = T(T(i) / T(3)); break;
+    }
+  }
+  return to_json_array_matches_builder(values);
+}
+
+template <class T>
+bool to_json_array_sizes() {
+  // Sizes below and above the stack-buffer path.
+  for (size_t n : {0, 1, 2, 3, 7, 40, 100, 1000, 10000}) {
+    if (!to_json_array_of<T>(n)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool to_json_contiguous_number_arrays() {
+  TEST_START();
+  ASSERT_TRUE(to_json_array_sizes<int16_t>());
+  ASSERT_TRUE(to_json_array_sizes<uint16_t>());
+  ASSERT_TRUE(to_json_array_sizes<int32_t>());
+  ASSERT_TRUE(to_json_array_sizes<uint32_t>());
+  ASSERT_TRUE(to_json_array_sizes<int64_t>());
+  ASSERT_TRUE(to_json_array_sizes<uint64_t>());
+  ASSERT_TRUE(to_json_array_sizes<float>());
+  ASSERT_TRUE(to_json_array_sizes<double>());
+  std::array<int, 3> a{1, -2, 3};
+  ASSERT_TRUE(to_json_array_matches_builder(a));
+  std::vector<double> doubles{-2.2250738585072014e-308, 1.7976931348623157e308,
+                              0.00012345678901234567, -0.0, 0.1};
+  ASSERT_TRUE(to_json_array_matches_builder(doubles));
+  ASSERT_TRUE(to_json_array_matches_builder(std::vector<int64_t>(5000, 7)));
+#if !SIMDJSON_STATIC_REFLECTION
+  // Wider floating types would be narrowed to double; append rejects them.
+  static_assert(sizeof(long double) <= sizeof(uint64_t) ||
+                !simdjson::builder_to_json_detail::contiguous_float_array<std::vector<long double>>);
+  static_assert(simdjson::builder_to_json_detail::contiguous_float_array<std::vector<double>>);
+#endif
+#if SIMDJSON_ENABLE_NAN_INF
+  std::string json;
+  ASSERT_SUCCESS(simdjson::to_json(std::vector<double>{
+      std::numeric_limits<double>::quiet_NaN(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity()}).get(json));
+  ASSERT_EQUAL(json, "[NaN,Infinity,-Infinity]");
+#endif
+  TEST_SUCCEED();
+}
 #endif // SIMDJSONS_SUPPORT_RANGES
 
 #if SIMDJSON_EXCEPTIONS
@@ -1485,7 +1560,7 @@ bool run() {
          contiguous_string_arrays_reservation_overflow() &&
          double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
-         car_test_simple_complete() && char_values_test() &&
+         car_test_simple_complete() && char_values_test() && to_json_contiguous_number_arrays() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_simple_complete_exceptions() &&
 #endif
