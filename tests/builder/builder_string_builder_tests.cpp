@@ -1107,6 +1107,30 @@ bool integer_array_bounded_reservation() {
   TEST_SUCCEED();
 }
 
+// Reports a size larger than its storage. Only the first block is read: the
+// reservation for the rest overflows size_t and must fail the builder.
+struct oversized_uint16_range {
+  const uint16_t *first;
+  size_t reported;
+  const uint16_t *data() const { return first; }
+  const uint16_t *begin() const { return first; }
+  const uint16_t *end() const { return first; }
+  size_t size() const { return reported; }
+};
+
+bool integer_array_reservation_overflow() {
+  TEST_START();
+  constexpr size_t block = (size_t(1) << 20) / 6;
+  std::vector<uint16_t> zeros(block, 0);
+  // Three bytes per element on average after the first block of zeros.
+  oversized_uint16_range r{zeros.data(), block + (std::numeric_limits<size_t>::max)() / 3};
+  simdjson::builder::string_builder sb;
+  sb.append(r);
+  std::string_view v;
+  ASSERT_ERROR(sb.view().get(v), simdjson::OUT_OF_CAPACITY);
+  TEST_SUCCEED();
+}
+
 bool double_double_test() {
   TEST_START();
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
@@ -1251,7 +1275,8 @@ bool run() {
          map_test() && ranges_test() && integer_array_test() &&
          integer_array_matches_generic_path() &&
          integer_array_after_other_content() &&
-         integer_array_bounded_reservation() && double_double_test() &&
+         integer_array_bounded_reservation() &&
+         integer_array_reservation_overflow() && double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
          car_test_simple_complete() &&
 #if SIMDJSON_EXCEPTIONS

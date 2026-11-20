@@ -466,6 +466,7 @@ string_builder::append_long_integer_array(const int_type *data, size_t n) noexce
       }
     }
     if (!capacity_check(upcoming)) {
+      set_valid(false);
       return;
     }
     char *p = buffer_data() + position;
