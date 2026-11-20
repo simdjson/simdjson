@@ -262,7 +262,9 @@ simdjson_warn_unused simdjson_inline error_code scan() {
   if (partial == stage1_mode::streaming_partial) {
     if(unclosed_string) {
       parser.n_structural_indexes--;
-      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     // We truncate the input to the end of the last complete document (or zero).
     // See json_structural_indexer.h for ends_with_unfinished_document().
@@ -353,7 +355,9 @@ simdjson_warn_unused simdjson_inline error_code scan() {
     // Comma-delimited: filter root-level commas, use comma positions for batch boundaries
     if(unclosed_string) {
       parser.n_structural_indexes--;
-      if (simdjson_unlikely(parser.n_structural_indexes == 0)) { return CAPACITY; }
+      if (simdjson_unlikely(parser.n_structural_indexes == 0)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     uint32_t next_batch_start = uint32_t(len);
     auto new_structural_indexes = filter_comma_delimited(parser, len, false, next_batch_start);

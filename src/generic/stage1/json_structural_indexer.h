@@ -196,6 +196,12 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   if (simdjson_unlikely(len > parser.capacity())) { return CAPACITY; }
   // We guard the rest of the code so that we can assume that len > 0 throughout.
   if (len == 0) { return EMPTY; }
+  // Lone atoms only on a complete (non-streaming) buffer. Streaming windows
+  // have different truncation and partial-scalar rules.
+  if (partial == stage1_mode::regular && len <= 64 && buf[0] != '{' && buf[0] != '[' && buf[0] != '"') {
+    error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
+    if (atom != UNINITIALIZED) { return atom; }
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -324,8 +330,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // will be the quote and we want to make sure to omit it.
     if(have_unclosed_string) {
       parser.n_structural_indexes--;
-      // a valid JSON file cannot have zero structural indexes - we should have found something
-      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
+      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     // We truncate the input to the end of the last complete document (or zero).
     const bool partial_scalar = !have_unclosed_string && ends_with_partial_scalar(parser, len);
@@ -422,7 +429,9 @@ simdjson_inline error_code json_structural_indexer::finish(dom_parser_implementa
     // Comma-delimited: filter root-level commas, use comma positions for batch boundaries
     if(have_unclosed_string) {
       parser.n_structural_indexes--;
-      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) { return CAPACITY; }
+      if (simdjson_unlikely(parser.n_structural_indexes == 0u)) {
+        return parser.structural_indexes[0] == 0 ? CAPACITY : EMPTY;
+      }
     }
     uint32_t next_batch_start = uint32_t(len);
     auto new_structural_indexes = filter_comma_delimited(parser, len, false, next_batch_start);

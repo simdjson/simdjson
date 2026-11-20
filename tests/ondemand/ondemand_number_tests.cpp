@@ -1080,8 +1080,67 @@ namespace number_tests {
     TEST_SUCCEED();
   }
 
+  // parse_integer_digits reads 8 bytes at once and has a separate path for up to
+  // 7 digits, so try every digit count and what may follow 7 and 8 digits.
+  bool integer_digit_counts() {
+    TEST_START();
+    ondemand::parser parser;
+    ondemand::document doc;
+    uint64_t u;
+    int64_t s;
+
+    for (std::string pattern : {"1234567890123456789", "9999999999999999999"}) {
+      uint64_t expected = 0;
+      for (size_t count = 1; count <= pattern.size(); count++) {
+        expected = expected * 10 + uint64_t(pattern[count - 1] - '0');
+        const std::string digits = pattern.substr(0, count);
+
+        padded_string root(digits);
+        ASSERT_SUCCESS(parser.iterate(root).get(doc));
+        ASSERT_SUCCESS(doc.get_uint64().get(u));
+        ASSERT_EQUAL(u, expected);
+
+        // Followed by ',' and by ']'. 19 nines don't fit an int64_t.
+        padded_string array("[" + digits + ",-" + digits + "]");
+        ASSERT_SUCCESS(parser.iterate(array).get(doc));
+        ASSERT_SUCCESS(doc.at_pointer("/0").get_uint64().get(u));
+        ASSERT_EQUAL(u, expected);
+        if (count < 19) {
+          ASSERT_SUCCESS(doc.at_pointer("/0").get_int64().get(s));
+          ASSERT_EQUAL(s, int64_t(expected));
+          ASSERT_SUCCESS(doc.at_pointer("/1").get_int64().get(s));
+          ASSERT_EQUAL(s, -int64_t(expected));
+        }
+      }
+    }
+
+    const std::pair<std::string_view, error_code> errors[] = {
+      {"[-]", INCORRECT_TYPE},
+      {"[01]", NUMBER_ERROR},
+      {"[01234567]", NUMBER_ERROR},
+      {"[1234567.5]", INCORRECT_TYPE},
+      {"[12345678.5]", INCORRECT_TYPE},
+      {"[1234567e3]", INCORRECT_TYPE},
+      {"[12345678e3]", INCORRECT_TYPE},
+      {"[1234567a]", NUMBER_ERROR},
+      {"[12345678a]", NUMBER_ERROR},
+      {"[123456789012345a]", NUMBER_ERROR},
+      {"[1234567890123456a]", NUMBER_ERROR},
+      {"[12345678901234567a]", NUMBER_ERROR},
+      {"[1234567890123456.5]", INCORRECT_TYPE},
+      {"[123456789012345678901]", INCORRECT_TYPE},
+    };
+    for (const auto &[json, error] : errors) {
+      padded_string padded(json);
+      ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+      ASSERT_ERROR(doc.at_pointer("/0").get_uint64().get(u), error);
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
-    return get_int32_values() &&
+    return integer_digit_counts() &&
+           get_int32_values() &&
            get_uint32_values() &&
            get_uint16_values() &&
            get_int16_values() &&

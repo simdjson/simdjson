@@ -3,8 +3,8 @@
 #define SIMDJSON_CONVERT_INL_H
 
 #include "simdjson/convert.h"
-#include "simdjson/internal/direct_parse.h"
 #if SIMDJSON_SUPPORTS_CONCEPTS
+#include "simdjson/internal/direct_parse.h"
 namespace simdjson {
 namespace convert {
 namespace internal {
@@ -52,17 +52,15 @@ inline std::remove_pointer_t<parser_type> &auto_parser<parser_type>::parser() no
 
 template <typename parser_type>
 template <typename T>
-inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow_gettable<T>) {
+inline simdjson_result<T> auto_parser<parser_type>::result() & noexcept(is_nothrow_gettable<T>) {
   if (m_error != SUCCESS) {
     return m_error;
   }
-  // Direct single-pass parse for atoms and int64 arrays. UNINITIALIZED means
-  // "not that shape" (or non-ASCII); fall back to the full ondemand parser.
+  // Direct single-pass parse for atoms and flat arrays. UNINITIALIZED means
+  // "not that shape"; fall back to the full ondemand parser.
   if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> ||
-                std::is_same_v<T, bool> || std::is_same_v<T, std::vector<int64_t>> ||
-                std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<std::string>> ||
-                std::is_same_v<T, std::map<std::string, int64_t>> ||
-                std::is_same_v<T, std::unordered_map<std::string, int64_t>>) {
+                std::is_same_v<T, bool> ||
+                std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<std::string>>) {
     if (m_direct_buf != nullptr) {
       T direct_value{};
       error_code direct_error = simdjson::internal::direct::parse_document(
@@ -122,27 +120,23 @@ inline simdjson_result<T> auto_parser<parser_type>::result() noexcept(is_nothrow
 
 template <typename parser_type>
 template <typename T>
-simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) {
+inline simdjson_result<T> auto_parser<parser_type>::result() && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
+  return result<T>();
+}
+
+template <typename parser_type>
+template <typename T>
+simdjson_warn_unused simdjson_inline error_code auto_parser<parser_type>::get(T &value) && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
   return result<T>().get(value);
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() noexcept {
-  // Force the ondemand document; there is no direct-parse for a live array handle.
-  if (!m_doc_ready && m_error == SUCCESS && m_direct_buf != nullptr) {
-    padded_string_view view(reinterpret_cast<const char *>(m_direct_buf), m_direct_len, m_direct_cap);
-    if constexpr (std::is_pointer_v<parser_type>) {
-      m_error = m_parser->iterate(view).get(m_doc);
-    } else {
-      m_error = m_parser.iterate(view).get(m_doc);
-    }
-    m_doc_ready = true;
-  }
+inline simdjson_result<ondemand::array> auto_parser<parser_type>::array() & noexcept {
   return result<ondemand::array>();
 }
 
 template <typename parser_type>
-inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() noexcept {
+inline simdjson_result<ondemand::object> auto_parser<parser_type>::object() & noexcept {
   return result<ondemand::object>();
 }
 
@@ -154,8 +148,19 @@ inline simdjson_result<ondemand::number> auto_parser<parser_type>::number() noex
 #if SIMDJSON_EXCEPTIONS
 template <typename parser_type>
 template <typename T>
-inline auto_parser<parser_type>::operator T() noexcept(false) {
+inline auto_parser<parser_type>::operator T() & noexcept(false) {
   // Use result() so direct-parse and deferred iterate both run.
+  T out;
+  error_code err = result<T>().get(out);
+  if (err != SUCCESS) {
+    throw simdjson_error(err);
+  }
+  return out;
+}
+
+template <typename parser_type>
+template <typename T>
+inline auto_parser<parser_type>::operator T() && noexcept(false) requires(!views_document<T>) {
   T out;
   error_code err = result<T>().get(out);
   if (err != SUCCESS) {
@@ -167,7 +172,13 @@ inline auto_parser<parser_type>::operator T() noexcept(false) {
 
 template <typename parser_type>
 template <typename T>
-inline std::optional<T> auto_parser<parser_type>::optional() noexcept(is_nothrow_gettable<T>) {
+inline std::optional<T> auto_parser<parser_type>::optional() && noexcept(is_nothrow_gettable<T>) requires(!views_document<T>) {
+  return optional<T>();
+}
+
+template <typename parser_type>
+template <typename T>
+inline std::optional<T> auto_parser<parser_type>::optional() & noexcept(is_nothrow_gettable<T>) {
   if (m_error != SUCCESS) {
     return std::nullopt;
   }
