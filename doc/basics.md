@@ -552,7 +552,9 @@ support for users who avoid exceptions. See [the simdjson error handling documen
   The `get_string()` returns a valid UTF-8 string, after
   unescaping characters as needed: unmatched surrogate pairs are treated as an error unless you
   pass `true` (`get_string(true)`) as a parameter to get replacement characters where errors
-  occur. If you somehow need to access non-UTF-8 strings in a lossless manner
+  occur. The unescaped bytes are also null-terminated, so `get_c_str()` returns a `const char *`
+  into the same buffer. JSON strings may contain embedded null characters (`\u0000`); `strlen`
+  is then not a reliable length, and `get_string()` should be used instead. If you somehow need to access non-UTF-8 strings in a lossless manner
   (e.g., if you strings contain unpaired surrogates), you may use the `get_wobbly_string()` function to get a string in the [WTF-8 format](https://simonsapin.github.io/wtf-8).
   When calling `get_uint64()`, `get_int64()`, `get_uint32()`, `get_int32()`, `get_uint16()`, `get_int16()`, `get_uint8()` or
   `get_int8()`, if the number does not fit in the corresponding integer type, it is also considered an error (`NUMBER_OUT_OF_RANGE`).
