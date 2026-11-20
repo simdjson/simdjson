@@ -59,7 +59,7 @@ inline simdjson_result<T> auto_parser<parser_type>::result() & noexcept(is_nothr
   // Direct single-pass parse for atoms and flat arrays. UNINITIALIZED means
   // "not that shape"; fall back to the full ondemand parser.
   if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> ||
-                std::is_same_v<T, bool> || std::is_same_v<T, std::vector<int64_t>> ||
+                std::is_same_v<T, bool> ||
                 std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<std::string>>) {
     if (m_direct_buf != nullptr) {
       T direct_value{};

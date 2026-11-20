@@ -404,56 +404,6 @@ simdjson_inline error_code parse_document<std::string>(const uint8_t *buf, size_
   return finish_ws_only(p, end);
 }
 
-// Array of int64: [ ws? int (ws? , ws? int)* ws? ]
-// On UNINITIALIZED the output vector is cleared and the caller must fall back.
-template <>
-simdjson_inline error_code parse_document<std::vector<int64_t>>(const uint8_t *buf, size_t len, std::vector<int64_t> &out) {
-  const uint8_t *p = buf;
-  const uint8_t *end = buf + len;
-  if (!skip_ws(p, end)) { return UNINITIALIZED; }
-  if (p == end) { return EMPTY; }
-  if (*p != '[') { return UNINITIALIZED; }
-  p++;
-  if (!skip_ws(p, end)) { return UNINITIALIZED; }
-  out.clear();
-  if (p < end && *p == ']') {
-    p++;
-    return finish_ws_only(p, end);
-  }
-  bool reserved = false;
-  for (;;) {
-    int64_t v;
-    const uint8_t *tok = p;
-    error_code err = parse_int64_token(p, end, v);
-    // Any token we cannot accept as int64, including a truncated or
-    // malformed number, falls back so the error code stays the full
-    // parser's.
-    if (err != SUCCESS) { out.clear(); return UNINITIALIZED; }
-    if (!reserved) {
-      // +2 covers the comma/bracket around each subsequent element.
-      reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 2);
-      reserved = true;
-    }
-    out.push_back(v);
-    if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-    if (p >= end) { out.clear(); return UNINITIALIZED; }
-    if (*p == ',') {
-      p++;
-      if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-      continue;
-    }
-    if (*p == ']') {
-      p++;
-      error_code fin = finish_ws_only(p, end);
-      if (fin != SUCCESS) { out.clear(); return UNINITIALIZED; }
-      trim_reservation(out);
-      return SUCCESS;
-    }
-    out.clear();
-    return UNINITIALIZED;
-  }
-}
-
 // Array of strings. Same fallback rules as parse_string_token.
 template <>
 simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_t *buf, size_t len, std::vector<std::string> &out) {
