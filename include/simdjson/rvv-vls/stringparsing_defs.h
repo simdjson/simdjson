@@ -17,11 +17,8 @@ public:
   static constexpr uint64_t BYTES_PROCESSED = sizeof(simd8<uint8_t>);
   simdjson_inline backslash_and_quote copy_and_find(const uint8_t *src, uint8_t *dst);
 
-  simdjson_inline bool has_quote_first() { return ((bs_bits - 1) & quote_bits) != 0; }
-  simdjson_inline bool has_backslash() { return ((quote_bits - 1) & bs_bits) != 0; }
-  simdjson_inline int quote_index() { return trailing_zeroes(quote_bits); }
-  simdjson_inline int backslash_index() { return trailing_zeroes(bs_bits); }
-
+  // Position logic is shared: see the free accessor templates in
+  // src/generic/stage2/stringparsing.h.
   uint64_t bs_bits;
   uint64_t quote_bits;
 }; // struct backslash_and_quote
