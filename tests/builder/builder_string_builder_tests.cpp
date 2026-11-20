@@ -501,6 +501,55 @@ bool various_unsigned_integers() {
   TEST_SUCCEED();
 }
 
+// Every digit count, at the edges where it changes, appended one after the
+// other to the same builder.
+bool integer_digit_boundaries() {
+  TEST_START();
+  std::vector<uint64_t> values = {0, std::numeric_limits<uint64_t>::max(),
+                                  std::numeric_limits<uint64_t>::max() - 1};
+  uint64_t power = 1;
+  for (int digits = 1; digits <= 20; digits++) {
+    values.push_back(power - 1);
+    values.push_back(power);
+    values.push_back(power + 1);
+    if (digits < 20) {
+      power *= 10;
+    }
+  }
+  for (int bits = 0; bits < 64; bits++) {
+    values.push_back((uint64_t(1) << bits) - 1);
+    values.push_back(uint64_t(1) << bits);
+  }
+  simdjson::builder::string_builder unsigned_sb;
+  simdjson::builder::string_builder signed_sb;
+  std::string unsigned_expected;
+  std::string signed_expected;
+  for (uint64_t value : values) {
+    unsigned_sb.append(value);
+    unsigned_sb.append_comma();
+    unsigned_expected.append(std::to_string(value));
+    unsigned_expected.push_back(',');
+    if (value <= uint64_t(std::numeric_limits<int64_t>::max())) {
+      signed_sb.append(int64_t(value));
+      signed_sb.append_comma();
+      signed_sb.append(-int64_t(value));
+      signed_sb.append_comma();
+      signed_expected.append(std::to_string(int64_t(value)));
+      signed_expected.push_back(',');
+      signed_expected.append(std::to_string(-int64_t(value)));
+      signed_expected.push_back(',');
+    }
+  }
+  signed_sb.append(std::numeric_limits<int64_t>::min());
+  signed_expected.append(std::to_string(std::numeric_limits<int64_t>::min()));
+  std::string_view p;
+  ASSERT_SUCCESS(unsigned_sb.view().get(p));
+  ASSERT_EQUAL(p, unsigned_expected);
+  ASSERT_SUCCESS(signed_sb.view().get(p));
+  ASSERT_EQUAL(p, signed_expected);
+  TEST_SUCCEED();
+}
+
 bool move_to_string() {
   TEST_START();
   simdjson::builder::string_builder sb(4); // small, so that we grow
@@ -1131,7 +1180,8 @@ bool car_test_exception() {
 #endif
 bool run() {
   return allchar_test() && bad_utf8_test() && various_integers() &&
-         various_unsigned_integers() && car_test_long() && car_test() &&
+         various_unsigned_integers() && integer_digit_boundaries() &&
+         car_test_long() && car_test() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_exception() && string_convertion_except() &&
          rvalue_conversion_moves_large_result() &&
