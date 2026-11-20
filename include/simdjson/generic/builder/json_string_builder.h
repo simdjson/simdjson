@@ -60,6 +60,17 @@ concept integer_array =
     !std::is_same_v<std::ranges::range_value_t<R>, char> &&
     !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
     !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>;
+
+namespace internal {
+// Elements must be class types (std::string, std::string_view, ...): a
+// range of const char * would pay strlen twice.
+template <typename R>
+concept contiguous_string_range =
+    std::ranges::contiguous_range<R> && !concepts::optional_type<R> &&
+    !std::is_convertible_v<R, std::string_view> &&
+    std::is_class_v<std::ranges::range_value_t<R>> &&
+    std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view>;
+} // namespace internal
 #endif
 
 /**
@@ -222,16 +233,13 @@ public:
   // Contiguous arrays of strings: one capacity check, then quoted escaped
   // elements. Same rationale as the integer-array writer.
   template <std::ranges::contiguous_range R>
-  requires (!std::is_convertible_v<R, std::string_view> &&
-            std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view> &&
-            !require_custom_serialization<R>)
+  requires (internal::contiguous_string_range<R> && !require_custom_serialization<R>)
   simdjson_inline void append(const R &range) noexcept;
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
   requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
            !require_custom_serialization<R> && !integer_array<R> &&
-           !(std::ranges::contiguous_range<R> &&
-             std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view>))
+           !internal::contiguous_string_range<R>)
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**

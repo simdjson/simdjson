@@ -1137,6 +1137,74 @@ bool integer_array_reservation_overflow() {
   TEST_SUCCEED();
 }
 
+bool contiguous_integer_arrays() {
+  TEST_START();
+  simdjson::builder::string_builder sb(1);
+  std::vector<int64_t> v = {0, -1, (std::numeric_limits<int64_t>::min)(),
+                            (std::numeric_limits<int64_t>::max)()};
+  sb.append(v);
+  std::array<uint16_t, 2> a = {7, 65535};
+  sb.append(a);
+  std::vector<int> empty;
+  sb.append(empty);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[0,-1,-9223372036854775808,9223372036854775807][7,65535][]");
+  TEST_SUCCEED();
+}
+
+bool contiguous_string_arrays() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  std::vector<std::string> v = {"a\"b", "\n", "", std::string(1, '\x01'), "\\"};
+  sb.append(v);
+  std::vector<std::string_view> sv = {"x", "y"};
+  sb.append(sv);
+  std::array<std::string, 1> one = {"z"};
+  sb.append(one);
+  std::vector<std::string> empty;
+  sb.append(empty);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[\"a\\\"b\",\"\\n\",\"\",\"\\u0001\",\"\\\\\"][\"x\",\"y\"][\"z\"][]");
+  TEST_SUCCEED();
+}
+
+// Escapes beyond the reserved size, around the 512-byte side-buffer limit,
+// starting from every small initial capacity.
+bool contiguous_string_arrays_growth() {
+  TEST_START();
+  std::vector<std::string> v;
+  for (size_t len : {size_t(0), size_t(1), size_t(100), size_t(511), size_t(512),
+                     size_t(513), size_t(1000)}) {
+    v.push_back(std::string(len, 'a'));
+    v.push_back(std::string(len, '"'));
+    v.push_back(std::string(len, '\x1f'));
+  }
+  std::string prefix(37, ' ');
+  simdjson::builder::string_builder ref;
+  ref.append_raw(prefix);
+  ref.start_array();
+  for (size_t i = 0; i < v.size(); i++) {
+    if (i) {
+      ref.append_comma();
+    }
+    ref.escape_and_append_with_quotes(v[i]);
+  }
+  ref.end_array();
+  std::string_view expected;
+  ASSERT_SUCCESS(ref.view().get(expected));
+  for (size_t cap = 1; cap <= expected.size() + 1; cap += (cap < 4200 ? 1 : 997)) {
+    simdjson::builder::string_builder sb(cap);
+    sb.append_raw(prefix);
+    sb.append(v);
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, expected);
+  }
+  TEST_SUCCEED();
+}
+
 bool double_double_test() {
   TEST_START();
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
@@ -1282,7 +1350,9 @@ bool run() {
          integer_array_matches_generic_path() &&
          integer_array_after_other_content() &&
          integer_array_bounded_reservation() &&
-         integer_array_reservation_overflow() && double_double_test() &&
+         integer_array_reservation_overflow() && contiguous_integer_arrays() &&
+         contiguous_string_arrays() && contiguous_string_arrays_growth() &&
+         double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
          car_test_simple_complete() &&
 #if SIMDJSON_EXCEPTIONS
