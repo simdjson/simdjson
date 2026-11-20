@@ -580,6 +580,55 @@ bool various_unsigned_integers() {
   TEST_SUCCEED();
 }
 
+// Every digit count, at the edges where it changes, appended one after the
+// other to the same builder.
+bool integer_digit_boundaries() {
+  TEST_START();
+  std::vector<uint64_t> values = {0, std::numeric_limits<uint64_t>::max(),
+                                  std::numeric_limits<uint64_t>::max() - 1};
+  uint64_t power = 1;
+  for (int digits = 1; digits <= 20; digits++) {
+    values.push_back(power - 1);
+    values.push_back(power);
+    values.push_back(power + 1);
+    if (digits < 20) {
+      power *= 10;
+    }
+  }
+  for (int bits = 0; bits < 64; bits++) {
+    values.push_back((uint64_t(1) << bits) - 1);
+    values.push_back(uint64_t(1) << bits);
+  }
+  simdjson::builder::string_builder unsigned_sb;
+  simdjson::builder::string_builder signed_sb;
+  std::string unsigned_expected;
+  std::string signed_expected;
+  for (uint64_t value : values) {
+    unsigned_sb.append(value);
+    unsigned_sb.append_comma();
+    unsigned_expected.append(std::to_string(value));
+    unsigned_expected.push_back(',');
+    if (value <= uint64_t(std::numeric_limits<int64_t>::max())) {
+      signed_sb.append(int64_t(value));
+      signed_sb.append_comma();
+      signed_sb.append(-int64_t(value));
+      signed_sb.append_comma();
+      signed_expected.append(std::to_string(int64_t(value)));
+      signed_expected.push_back(',');
+      signed_expected.append(std::to_string(-int64_t(value)));
+      signed_expected.push_back(',');
+    }
+  }
+  signed_sb.append(std::numeric_limits<int64_t>::min());
+  signed_expected.append(std::to_string(std::numeric_limits<int64_t>::min()));
+  std::string_view p;
+  ASSERT_SUCCESS(unsigned_sb.view().get(p));
+  ASSERT_EQUAL(p, unsigned_expected);
+  ASSERT_SUCCESS(signed_sb.view().get(p));
+  ASSERT_EQUAL(p, signed_expected);
+  TEST_SUCCEED();
+}
+
 bool move_to_string() {
   TEST_START();
   simdjson::builder::string_builder sb(4); // small, so that we grow
@@ -1180,6 +1229,39 @@ bool integer_array_after_other_content() {
   TEST_SUCCEED();
 }
 
+// The integer writer may write past the last digit of a short value. A
+// builder that starts with one byte reserves exactly the bound, so the last
+// element ends near the end of the buffer.
+bool integer_array_short_last_element() {
+  TEST_START();
+  auto exact_to_json = [](const auto &range) {
+    simdjson::builder::string_builder sb(1);
+    sb.append(range);
+    std::string_view p;
+    return sb.view().get(p) ? std::string("error") : std::string(p);
+  };
+  for (size_t n = 1; n <= 40; n++) {
+    std::vector<uint16_t> u16(n, 65535);
+    std::vector<int16_t> i16(n, -32768);
+    std::vector<uint32_t> u32(n, (std::numeric_limits<uint32_t>::max)());
+    std::vector<int64_t> i64(n, (std::numeric_limits<int64_t>::min)());
+    std::vector<uint64_t> u64(n, (std::numeric_limits<uint64_t>::max)());
+    for (int last : {0, 7, 42, 999, 9999}) {
+      u16.back() = uint16_t(last);
+      i16.back() = int16_t(-last);
+      u32.back() = uint32_t(last);
+      i64.back() = -last;
+      u64.back() = uint64_t(last);
+      ASSERT_EQUAL(exact_to_json(u16), generic_to_json(u16));
+      ASSERT_EQUAL(exact_to_json(i16), generic_to_json(i16));
+      ASSERT_EQUAL(exact_to_json(u32), generic_to_json(u32));
+      ASSERT_EQUAL(exact_to_json(i64), generic_to_json(i64));
+      ASSERT_EQUAL(exact_to_json(u64), generic_to_json(u64));
+    }
+  }
+  TEST_SUCCEED();
+}
+
 bool integer_array_bounded_reservation() {
   TEST_START();
   // Two bytes per element are written, while the bound is 21 bytes per element.
@@ -1543,7 +1625,8 @@ bool car_test_exception() {
 #endif
 bool run() {
   return allchar_test() && bad_utf8_test() && various_integers() &&
-         various_unsigned_integers() && car_test_long() && car_test() &&
+         various_unsigned_integers() && integer_digit_boundaries() &&
+         car_test_long() && car_test() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_exception() && string_convertion_except() &&
          rvalue_conversion_moves_large_result() &&
@@ -1554,6 +1637,7 @@ bool run() {
          map_test() && ranges_test() && integer_array_test() &&
          integer_array_matches_generic_path() &&
          integer_array_after_other_content() &&
+         integer_array_short_last_element() &&
          integer_array_bounded_reservation() &&
          integer_array_reservation_overflow() && contiguous_integer_arrays() &&
          contiguous_string_arrays() && contiguous_string_arrays_growth() &&

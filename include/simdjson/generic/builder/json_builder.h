@@ -28,7 +28,7 @@ namespace builder {
 // included at the point this header is parsed; without these forwards,
 // name lookup falls back to the wrong outer namespace).
 namespace internal {
-using simdjson::internal::write_uint_jeaiii;
+using simdjson::internal::write_uint;
 simdjson_inline char *write_double(char *p, double v) noexcept;
 } // namespace internal
 
@@ -243,7 +243,7 @@ template <class W, class T>
 simdjson_really_inline void atom_fields(W &w, const T &t, bool &first) {
   // Per-field block: ensure key+value worst case, then write key + value
   // through the writer's local pos. For arithmetic fields, the integer
-  // write happens directly via write_uint_jeaiii on w.ptr+w.pos, so pos
+  // write happens directly via write_uint on w.ptr+w.pos, so pos
   // never round-trips through memory.
   template for (constexpr auto dm : std::define_static_array(std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::unchecked()))) {
     if constexpr (is_serialized_member(dm)) {
@@ -392,7 +392,7 @@ simdjson_really_inline constexpr void atom(W &w, const number_type t) {
                 "Integers wider than 64 bits are not supported");
   // Booleans / floats: defer to string_builder (rare path; keeps writer hot
   // path free of float-formatter machinery). For integers, write directly
-  // via jeaiii using local pos.
+  // via write_uint using local pos.
   if constexpr (std::is_same_v<number_type, bool>) {
     if (t) {
       if (!w.ensure(4)) return;
@@ -411,7 +411,7 @@ simdjson_really_inline constexpr void atom(W &w, const number_type t) {
     }
   } else if constexpr (std::is_unsigned_v<number_type>) {
     if (!w.ensure(20)) return;
-    char *end = internal::write_uint_jeaiii(
+    char *end = internal::write_uint(
         w.ptr + w.pos, static_cast<uint64_t>(t));
     w.pos = static_cast<size_t>(end - w.ptr);
   } else {
@@ -422,7 +422,7 @@ simdjson_really_inline constexpr void atom(W &w, const number_type t) {
     U pv = negative ? U(0) - static_cast<U>(t) : static_cast<U>(t);
     w.ptr[w.pos] = '-';
     w.pos += negative;
-    char *end = internal::write_uint_jeaiii(
+    char *end = internal::write_uint(
         w.ptr + w.pos, static_cast<uint64_t>(pv));
     w.pos = static_cast<size_t>(end - w.ptr);
   }

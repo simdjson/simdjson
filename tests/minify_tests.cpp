@@ -116,6 +116,26 @@ bool integer_test() {
       return false;
     }
   }
+  // All of them in one array: each number follows the bytes of another.
+  std::string all("[");
+  for (const std::string &number : numbers) {
+    if (all.size() > 1) {
+      all += ',';
+    }
+    all += number;
+  }
+  all += ']';
+  simdjson::dom::element doc;
+  auto error = parser.parse(all).get(doc);
+  if (error) {
+    std::cerr << "could not parse " << all << ": " << error << std::endl;
+    return false;
+  }
+  std::string minified = simdjson::minify(doc);
+  if (minified != all) {
+    std::cerr << "minify(" << all << ") gave " << minified << std::endl;
+    return false;
+  }
   return true;
 }
 
