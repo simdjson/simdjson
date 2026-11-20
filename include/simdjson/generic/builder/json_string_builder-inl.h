@@ -493,10 +493,117 @@ string_builder::append_long_integer_array(const int_type *data, size_t n) noexce
   buffer_data()[position - 1] = ']';
 }
 
+namespace internal {
+// Cold path of the string-array writer: the element may not fit its
+// worst-case escaped size in the remaining capacity. Writes the element and
+// returns the new write pointer, or nullptr if the buffer could not grow.
+simdjson_never_inline char *append_quoted_element_slow(string_builder &b,
+                                                       std::string_view sv,
+                                                       bool first) noexcept {
+  auto reserve = [&b](size_t n) {
+    const size_t pos = b.unsafe_position();
+    const size_t cap = b.unsafe_capacity();
+    if (n <= cap - pos) {
+      return true;
+    }
+    if (pos + n < pos) {
+      return false;
+    }
+    return b.unsafe_grow((std::max)(cap * 2, pos + n));
+  };
+  if (sv.size() > 512) {
+    if (!reserve(6 * sv.size() + 4)) {
+      return nullptr;
+    }
+    char *p = b.unsafe_data() + b.unsafe_position();
+    if (!first) {
+      *p++ = ',';
+    }
+    *p++ = '"';
+    p += write_string_escaped(sv, p);
+    *p++ = '"';
+    return p;
+  }
+  // Escape into a stack buffer first so that we grow by the exact size.
+  char tmp[3 + 6 * 512];
+  char *tp = tmp;
+  if (!first) {
+    *tp++ = ',';
+  }
+  *tp++ = '"';
+  tp += write_string_escaped(sv, tp);
+  *tp++ = '"';
+  const size_t n = size_t(tp - tmp);
+  // One more byte for the closing bracket.
+  if (!reserve(n + 1)) {
+    return nullptr;
+  }
+  char *p = b.unsafe_data() + b.unsafe_position();
+  std::memcpy(p, tmp, n);
+  return p + n;
+}
+} // namespace internal
+
+template <std::ranges::contiguous_range R>
+  requires (internal::contiguous_string_range<R> && !require_custom_serialization<R>)
+simdjson_inline void string_builder::append(const R &range) noexcept {
+  // Reserve the unescaped size (brackets, commas, quotes, bytes) plus 1/16
+  // for escapes. A 6x worst-case reservation made a fresh builder allocate
+  // several times the output; an exact one made the first escape double
+  // the buffer.
+  size_t bytes = 2;
+  for (const auto &item : range) {
+    const std::string_view sv = item;
+    if (sv.size() > ((std::numeric_limits<size_t>::max)() - 4) / 6 ||
+        sv.size() > (std::numeric_limits<size_t>::max)() - bytes - 3) {
+      set_valid(false);
+      return;
+    }
+    bytes += 3 + sv.size();
+  }
+  const size_t slack = bytes / 16;
+  if (bytes > (std::numeric_limits<size_t>::max)() - slack) {
+    set_valid(false);
+    return;
+  }
+  if (!capacity_check(bytes + slack)) {
+    set_valid(false);
+    return;
+  }
+  char *p = buffer_data() + position;
+  *p++ = '[';
+  bool first = true;
+  for (const auto &item : range) {
+    const std::string_view sv = item;
+    const size_t off = size_t(p - buffer_data());
+    // Comma, two quotes, up to 6 bytes per input byte, closing bracket.
+    if (simdjson_unlikely(6 * sv.size() + 4 > capacity - off)) {
+      position = off;
+      p = internal::append_quoted_element_slow(*this, sv, first);
+      if (p == nullptr) {
+        set_valid(false);
+        return;
+      }
+      first = false;
+      continue;
+    }
+    if (!first) {
+      *p++ = ',';
+    }
+    first = false;
+    *p++ = '"';
+    p += write_string_escaped(sv, p);
+    *p++ = '"';
+  }
+  *p++ = ']';
+  position = size_t(p - buffer_data());
+}
+
 // Support for range-based appending (std::ranges::view, etc.)
 template <std::ranges::range R>
   requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
-           !require_custom_serialization<R> && !integer_array<R>)
+           !require_custom_serialization<R> && !integer_array<R> &&
+           !internal::contiguous_string_range<R>)
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);
