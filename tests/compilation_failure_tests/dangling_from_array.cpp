@@ -18,7 +18,7 @@ int main() {
     auto parsed = simdjson::from(json);
     for (auto value : parsed.array()) {
 #endif
-        int64_t x;
+        int64_t x{};
         if (value.get(x)) { return EXIT_FAILURE; }
         sum += x;
     }

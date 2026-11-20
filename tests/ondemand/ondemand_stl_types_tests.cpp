@@ -57,6 +57,15 @@ namespace stl_types {
 // Smart pointers to built-in types go through the generic smart-pointer
 // tag_invoke: same range checks as get<T>(), null resets the pointer, and a
 // failed parse leaves the pointer untouched.
+// {"a":<json>}, built with append: GCC 16 reports a false maybe-uninitialized
+// on a padded_string built from a concatenation when exceptions are off.
+std::string field_a(std::string_view json) {
+  std::string text(R"({"a":)");
+  text.append(json);
+  text.append("}");
+  return text;
+}
+
 template <template <typename...> class Ptr, typename T>
 bool smart_pointer_case(std::string_view json, simdjson::error_code expected, T expected_value = T{}) {
   simdjson::ondemand::parser parser;
@@ -76,7 +85,7 @@ bool smart_pointer_case(std::string_view json, simdjson::error_code expected, T 
   }
   // As an object field (ondemand::value).
   {
-    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::padded_string padded(field_a(json));
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(padded).get(doc));
     Ptr<T> out;
@@ -154,7 +163,7 @@ bool optional_case(std::string_view json, simdjson::error_code expected, T expec
   }
   // As an object field (ondemand::value).
   {
-    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::padded_string padded(field_a(json));
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(padded).get(doc));
     std::optional<T> out;
@@ -177,7 +186,7 @@ bool optional_case(std::string_view json, simdjson::error_code expected, T expec
   }
   // An error leaves an existing value untouched.
   if (expected != simdjson::SUCCESS) {
-    simdjson::padded_string padded(std::string(R"({"a":)") + std::string(json) + "}");
+    simdjson::padded_string padded(field_a(json));
     simdjson::ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(padded).get(doc));
     std::optional<T> out(expected_value);
