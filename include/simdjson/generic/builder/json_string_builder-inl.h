@@ -554,6 +554,7 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
     return;
   }
   if (!capacity_check(bytes + slack)) {
+    set_valid(false);
     return;
   }
   char *p = buffer_data() + position;
@@ -567,6 +568,7 @@ simdjson_inline void string_builder::append(const R &range) noexcept {
       position = off;
       p = internal::append_quoted_element_slow(*this, sv, first);
       if (p == nullptr) {
+        set_valid(false);
         return;
       }
       first = false;

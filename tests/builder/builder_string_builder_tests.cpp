@@ -1170,6 +1170,32 @@ bool contiguous_string_arrays() {
   TEST_SUCCEED();
 }
 
+// Element sizes whose reservation plus the current position overflows
+// size_t. Only the sizes are read before the reservation fails.
+bool contiguous_string_arrays_reservation_overflow() {
+  TEST_START();
+  constexpr size_t max = (std::numeric_limits<size_t>::max)();
+  // Largest unescaped size whose 1/16 slack still fits in size_t. The
+  // reservation is then within 17 bytes of max, below the prefix length.
+  size_t bytes = max - max / 17 - 64;
+  while ((bytes + 1) <= max - (bytes + 1) / 16) {
+    bytes++;
+  }
+  const size_t count = 6;
+  const size_t payload = bytes - 2 - 3 * count;
+  static const char storage = 'a';
+  std::vector<std::string_view> v;
+  for (size_t i = 0; i < count; i++) {
+    v.emplace_back(&storage, payload / count + (i == 0 ? payload % count : 0));
+  }
+  simdjson::builder::string_builder sb;
+  sb.append_raw(std::string(32, ' '));
+  sb.append(v);
+  std::string_view p;
+  ASSERT_ERROR(sb.view().get(p), simdjson::OUT_OF_CAPACITY);
+  TEST_SUCCEED();
+}
+
 // Escapes beyond the reserved size, around the 512-byte side-buffer limit,
 // starting from every small initial capacity.
 bool contiguous_string_arrays_growth() {
@@ -1352,6 +1378,7 @@ bool run() {
          integer_array_bounded_reservation() &&
          integer_array_reservation_overflow() && contiguous_integer_arrays() &&
          contiguous_string_arrays() && contiguous_string_arrays_growth() &&
+         contiguous_string_arrays_reservation_overflow() &&
          double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
          car_test_simple_complete() &&
