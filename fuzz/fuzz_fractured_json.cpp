@@ -97,7 +97,14 @@ void format_and_check(const simdjson::dom::element &elem,
 #endif
   simdjson::dom::parser reparser;
   simdjson::dom::element reparsed;
-  if (reparser.parse(formatted).get(reparsed)) {
+  const simdjson::error_code reparse_error =
+      reparser.parse(formatted).get(reparsed);
+  // Fuzzing builds cap padded allocations at 1 MiB, and table layouts can
+  // legitimately grow the output well past that.
+  if (reparse_error == simdjson::MEMALLOC) {
+    return;
+  }
+  if (reparse_error) {
     std::fprintf(stderr,
                  "fractured_json produced output that fails to re-parse\n");
     abort(); // genuine formatter bug, classify as a real finding
