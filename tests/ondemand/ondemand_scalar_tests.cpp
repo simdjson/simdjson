@@ -383,8 +383,30 @@ namespace scalar_tests {
     TEST_SUCCEED();
   }
 
+  bool lone_atom_lengths() {
+    TEST_START();
+    ondemand::parser parser;
+    // Lengths on both sides of the 64-byte lone-atom limit.
+    for (size_t pad = 0; pad < 70; pad++) {
+      padded_string json(std::string(pad, ' ') + "-12.5e1" + std::string(pad % 3, '\n'));
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      double x;
+      ASSERT_SUCCESS(doc.get_double().get(x));
+      ASSERT_EQUAL(x, -125.0);
+      padded_string pair(std::string(pad, ' ') + "1 2");
+      ASSERT_SUCCESS(parser.iterate(pair).get(doc));
+      ASSERT_ERROR(doc.get_double().get(x), TRAILING_CONTENT);
+    }
+    padded_string blank(std::string(" \t\r\n"));
+    ondemand::document doc;
+    ASSERT_ERROR(parser.iterate(blank).get(doc), EMPTY);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
+           lone_atom_lengths() &&
            nully() &&
            nul() &&
            string_with_trailing() &&

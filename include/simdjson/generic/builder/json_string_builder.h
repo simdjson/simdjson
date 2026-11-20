@@ -43,6 +43,36 @@ namespace builder {
 
 using simdjson::internal::escape_best::write_string_escaped;
 
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+/**
+ * A contiguous, sized range of integers that string_builder serializes as a
+ * JSON array of numbers in one pass. Booleans and character types are excluded,
+ * and so are integers wider than 64 bits. In C++26, std::optional is a
+ * contiguous range: it is excluded so that the optional overload is chosen.
+ */
+template <typename R>
+concept integer_array =
+    std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
+    !concepts::optional_type<R> &&
+    std::is_integral_v<std::ranges::range_value_t<R>> &&
+    sizeof(std::ranges::range_value_t<R>) <= sizeof(uint64_t) &&
+    !std::is_same_v<std::ranges::range_value_t<R>, bool> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, signed char> &&
+    !std::is_same_v<std::ranges::range_value_t<R>, unsigned char>;
+
+namespace internal {
+// Elements must be class types (std::string, std::string_view, ...): a
+// range of const char * would pay strlen twice.
+template <typename R>
+concept contiguous_string_range =
+    std::ranges::contiguous_range<R> && !concepts::optional_type<R> &&
+    !std::is_convertible_v<R, std::string_view> &&
+    std::is_class_v<std::ranges::range_value_t<R>> &&
+    std::is_convertible_v<std::ranges::range_value_t<R>, std::string_view>;
+} // namespace internal
+#endif
+
 /**
  * A builder for JSON strings representing documents. This is a low-level
  * builder that is not meant to be used directly by end-users. Though it
@@ -196,9 +226,20 @@ public:
   simdjson_inline void append(const T &value);
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  // Contiguous arrays of integers, written without a capacity check per element.
+  template <integer_array R>
+  requires(!require_custom_serialization<R>)
+  simdjson_inline void append(const R &range) noexcept;
+  // Contiguous arrays of strings: one capacity check, then quoted escaped
+  // elements. Same rationale as the integer-array writer.
+  template <std::ranges::contiguous_range R>
+  requires (internal::contiguous_string_range<R> && !require_custom_serialization<R>)
+  simdjson_inline void append(const R &range) noexcept;
   // Support for range-based appending (std::ranges::view, etc.)
   template <std::ranges::range R>
-requires (!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R>)
+  requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
+           !require_custom_serialization<R> && !integer_array<R> &&
+           !internal::contiguous_string_range<R>)
   simdjson_inline void append(const R &range) noexcept;
 #endif
   /**
@@ -340,6 +381,14 @@ private:
   simdjson_inline void append_static_string() noexcept;
 #endif
 
+#if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+  /**
+   * Append an array of integers too long to reserve its worst case at once.
+   */
+  template <typename int_type>
+  void append_long_integer_array(const int_type *data, size_t n) noexcept;
+#endif
+
   /**
    * Grow the buffer to at least desired_capacity bytes.
    * If the allocation fails, is_valid is set to false. We expect
@@ -364,6 +413,18 @@ private:
   bool is_valid{true};
 };
 
+namespace internal {
+// Appends value as a JSON value. A char is a one-character string, as in
+// append_key_value(): string_builder::append(char) appends a raw character.
+template <typename T>
+simdjson_inline void append_value(string_builder &b, const T &value) {
+  b.append(value);
+}
+simdjson_inline void append_value(string_builder &b, char value) {
+  b.escape_and_append_with_quotes(value);
+}
+} // namespace internal
+
 
 
 }
@@ -372,21 +433,12 @@ private:
 
 #if !SIMDJSON_STATIC_REFLECTION
 // fallback implementation until we have static reflection
+// Defined in json_string_builder-inl.h so number arrays can write straight
+// into the destination string (one allocation, no builder copy).
 template <class Z>
-simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  b.append(z);
-  std::string s;
-  auto e = b.move_to(s);
-  if(e) { return e; }
-  return s;
-}
+simdjson_warn_unused simdjson_result<std::string> to_json(const Z &z, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY);
 template <class Z>
-simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY) {
-  simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder b(initial_capacity);
-  b.append(z);
-  return b.move_to(s);
-}
+simdjson_warn_unused error_code to_json(const Z &z, std::string &s, size_t initial_capacity = simdjson::SIMDJSON_IMPLEMENTATION::builder::string_builder::DEFAULT_INITIAL_CAPACITY);
 #endif
 
 #if SIMDJSON_SUPPORTS_CONCEPTS

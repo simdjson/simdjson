@@ -220,6 +220,13 @@ Other important files and directories:
   ./benchmark/bench_parse_call
   ```
   The last line becomes `./benchmark/Release/bench_parse_call.exe` under Windows. Under Windows, you can also build with the clang compiler by adding `-T ClangCL` to the call to `cmake ..`: `cmake -T ClangCL ..`.
+  Other Google Benchmark targets cover specific code paths. Select cases with `--benchmark_filter`:
+  - `bench_small_documents`: many tiny documents (single numbers or atoms, short strings, objects, arrays), DOM and On-Demand;
+  - `bench_stream_formats`: `parse_many`/`iterate_many` in every stream format, including white space between documents and small batches;
+  - `bench_number_serialization`: `string_builder::append` of integers and floating-point values, and `to_string` of number-heavy DOM documents;
+  - `bench_builder_arrays` (C++20): `string_builder::append` and `to_json` of integer, floating-point and string arrays;
+  - `bench_from` (C++20): `simdjson::from<T>()` on scalars, strings and flat arrays, next to On-Demand;
+  - `bench_vector_deserialize` (C++20): `get<std::vector<T>>()` for trivial types, strings and user-defined types.
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
 * **fuzz:** The source for fuzz testing. This lets us explore important edge and middle cases
   automatically, and is run in CI.

@@ -10,7 +10,7 @@ using namespace simdjson;
 
 // simdjson parses numbers with a locale-independent hand-rolled parser
 // (fast_float) and serializes them with a locale-independent formatter
-// (Dragonbox). These tests lock in that behavior under a comma-decimal
+// (a port of Zmij). These tests lock in that behavior under a comma-decimal
 // locale (see issue #1166): the decimal separator must stay '.' in both
 // directions regardless of the C locale.
 

@@ -192,6 +192,10 @@ public:
   std::unique_ptr<uint32_t[]> structural_indexes{};
   /** Next structural index to parse */
   uint32_t next_structural_index{0};
+  /** Buffer passed to stage 1 (also set by the lone-atom fast path). */
+  const uint8_t *buf{};
+  /** Length passed to stage 1. */
+  size_t len{0};
 
   /**
    * The largest document this parser can support without reallocating.
@@ -265,6 +269,76 @@ protected:
   simdjson_inline dom_parser_implementation(const dom_parser_implementation &) noexcept = delete;
   simdjson_inline dom_parser_implementation &operator=(const dom_parser_implementation &other) noexcept = delete;
 }; // class dom_parser_implementation
+
+// Stage-1 fast path for a single JSON atom (number / true / false / null)
+// surrounded only by ASCII whitespace. Writes the one-entry structural tape
+// and returns SUCCESS, returns EMPTY for an all-whitespace buffer, or
+// returns UNINITIALIZED if the buffer is not that shape (caller must run
+// the full indexer). json_structural_indexer::index calls it before the
+// SIMD loop.
+simdjson_never_inline error_code try_stage1_lone_atom(dom_parser_implementation &parser, const uint8_t *buf, size_t len) noexcept {
+  auto is_json_ws = [](uint8_t c) noexcept {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+  };
+  size_t i = 0;
+  while (i < len && is_json_ws(buf[i])) { i++; }
+  if (i == len) { return EMPTY; }
+  const size_t atom = i;
+  const uint8_t c = buf[i];
+  if (c >= 0x80 || c == '"' || c == '{' || c == '[' || c == '}' || c == ']' || c == ':' || c == ',') {
+    return UNINITIALIZED;
+  }
+  if (c == 't') {
+    if (i + 4 > len || buf[i+1] != 'r' || buf[i+2] != 'u' || buf[i+3] != 'e') { return UNINITIALIZED; }
+    i += 4;
+  } else if (c == 'f') {
+    if (i + 5 > len || buf[i+1] != 'a' || buf[i+2] != 'l' || buf[i+3] != 's' || buf[i+4] != 'e') { return UNINITIALIZED; }
+    i += 5;
+  } else if (c == 'n') {
+    if (i + 4 > len || buf[i+1] != 'u' || buf[i+2] != 'l' || buf[i+3] != 'l') { return UNINITIALIZED; }
+    i += 4;
+  } else if (c == '-' || (c >= '0' && c <= '9')) {
+    if (c == '-') {
+      i++;
+      if (i == len) { return UNINITIALIZED; }
+    }
+    if (buf[i] == '0') {
+      i++;
+    } else if (buf[i] >= '1' && buf[i] <= '9') {
+      i++;
+      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+    } else {
+      return UNINITIALIZED;
+    }
+    if (i < len && buf[i] == '.') {
+      i++;
+      if (i == len || buf[i] < '0' || buf[i] > '9') { return UNINITIALIZED; }
+      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+    }
+    if (i < len && (buf[i] == 'e' || buf[i] == 'E')) {
+      i++;
+      if (i < len && (buf[i] == '+' || buf[i] == '-')) { i++; }
+      if (i == len || buf[i] < '0' || buf[i] > '9') { return UNINITIALIZED; }
+      while (i < len && buf[i] >= '0' && buf[i] <= '9') { i++; }
+    }
+  } else {
+    return UNINITIALIZED;
+  }
+  if (i < len && !is_json_ws(buf[i])) { return UNINITIALIZED; }
+  while (i < len) {
+    if (!is_json_ws(buf[i])) { return UNINITIALIZED; }
+    i++;
+  }
+  parser.buf = buf;
+  parser.len = len;
+  parser.structural_indexes[0] = uint32_t(atom);
+  parser.n_structural_indexes = 1;
+  parser.structural_indexes[1] = uint32_t(len);
+  parser.structural_indexes[2] = uint32_t(len);
+  parser.structural_indexes[3] = 0;
+  parser.next_structural_index = 0;
+  return SUCCESS;
+}
 
 simdjson_inline dom_parser_implementation::dom_parser_implementation() noexcept = default;
 simdjson_inline dom_parser_implementation::dom_parser_implementation(dom_parser_implementation &&other) noexcept = default;

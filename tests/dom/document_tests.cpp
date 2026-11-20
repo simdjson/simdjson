@@ -185,8 +185,40 @@ namespace document_tests {
     if (error) { std::cerr << "Error: " << simdjson::error_message(error) << std::endl; return false; }
     return true;
   }
+  bool lone_atoms() {
+    std::cout << __func__ << std::endl;
+    struct atom_case { std::string json; simdjson::error_code expected; };
+    const std::vector<atom_case> cases{
+      {"   ", simdjson::EMPTY}, {" \t\r\n", simdjson::EMPTY},
+      {"1 2", simdjson::TAPE_ERROR}, {"1,", simdjson::TAPE_ERROR}, {"1]", simdjson::TAPE_ERROR},
+      {"truex", simdjson::T_ATOM_ERROR}, {"tru", simdjson::T_ATOM_ERROR}, {"true1", simdjson::T_ATOM_ERROR},
+      {"nul", simdjson::N_ATOM_ERROR},
+      {"-", simdjson::NUMBER_ERROR}, {"01", simdjson::NUMBER_ERROR}, {"1.", simdjson::NUMBER_ERROR},
+      {"1e", simdjson::NUMBER_ERROR}, {"1\v", simdjson::NUMBER_ERROR},
+      {"1\xff", simdjson::UTF8_ERROR}, {"\xff", simdjson::UTF8_ERROR},
+    };
+    simdjson::dom::parser parser;
+    for (const atom_case &c : cases) {
+      simdjson::padded_string json(c.json);
+      ASSERT_ERROR( parser.parse(json).error(), c.expected );
+    }
+    // Lengths on both sides of the 64-byte lone-atom limit.
+    for (size_t pad = 0; pad < 70; pad++) {
+      simdjson::padded_string json(std::string(pad, ' ') + "-12.5e1" + std::string(pad % 3, '\n'));
+      double value;
+      ASSERT_SUCCESS( parser.parse(json).get(value) );
+      ASSERT_EQUAL( value, -125.0 );
+      simdjson::padded_string atom(std::string(pad, '\t') + (pad % 2 ? "false" : "null"));
+      simdjson::dom::element element;
+      ASSERT_SUCCESS( parser.parse(atom).get(element) );
+      ASSERT_EQUAL( element.type(), pad % 2 ? simdjson::dom::element_type::BOOL : simdjson::dom::element_type::NULL_VALUE );
+    }
+    return true;
+  }
+
   bool run() {
     return issue938() &&
+           lone_atoms() &&
            padded_with_open_bracket() &&
            bad_example() &&
            count_array_example() &&

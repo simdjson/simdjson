@@ -65,7 +65,8 @@ void run_array_benchmarks() {
                      bench([&json, &dummy, &parser]() {
                        dummy = 0;
 
-                       for (auto value : simdjson::from(json).array()) {
+                       auto parsed = simdjson::from(json);
+                       for (auto value : parsed.array()) {
                          Car car = value.get<Car>();
                          dummy = dummy + car.year;
                        }
