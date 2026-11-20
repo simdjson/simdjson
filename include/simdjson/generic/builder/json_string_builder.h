@@ -47,11 +47,13 @@ using simdjson::internal::escape_best::write_string_escaped;
 /**
  * A contiguous, sized range of integers that string_builder serializes as a
  * JSON array of numbers in one pass. Booleans and character types are excluded,
- * and so are integers wider than 64 bits.
+ * and so are integers wider than 64 bits. In C++26, std::optional is a
+ * contiguous range: it is excluded so that the optional overload is chosen.
  */
 template <typename R>
 concept integer_array =
     std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
+    !concepts::optional_type<R> &&
     std::is_integral_v<std::ranges::range_value_t<R>> &&
     sizeof(std::ranges::range_value_t<R>) <= sizeof(uint64_t) &&
     !std::is_same_v<std::ranges::range_value_t<R>, bool> &&

@@ -877,6 +877,12 @@ bool serialize_optional() {
   result = sb.view().get(p);
   ASSERT_SUCCESS(result);
   ASSERT_EQUAL(p, "null");
+  sb.clear();
+  std::optional<int> optional_int = 3;
+  sb.append(optional_int);
+  result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "3");
   TEST_SUCCEED();
 }
 
