@@ -68,6 +68,12 @@ if(SIMDJSON_HAS_INT128)
     set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY WILL_FAIL FALSE)
     set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
   endforeach()
+  # The range overloads of append() exist only from C++20.
+  if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
+    add_dual_compile_test(string_builder_append_int128_range)
+    set_property(TEST string_builder_append_int128_range_should_not_compile PROPERTY WILL_FAIL FALSE)
+    set_property(TEST string_builder_append_int128_range_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
+  endif()
 endif()
 
 # key_selector enforces a 63-character key-length limit at compile time. This

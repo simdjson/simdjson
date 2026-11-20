@@ -398,9 +398,105 @@ simdjson_inline void string_builder::append(const T &value) {
 #endif
 
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
+namespace internal {
+// An element of an integer array takes at most its digits, a sign and a comma.
+// write_uint_jeaiii writes max(digits, 2) bytes.
+template <typename int_type>
+constexpr size_t max_integer_element_size =
+    size_t(std::numeric_limits<int_type>::digits10) + 2 +
+    (std::is_signed_v<int_type> ? 1 : 0);
+
+// Longer arrays reserve their worst case one block at a time, so that an
+// array of short numbers does not reserve many times what it writes.
+template <typename int_type>
+constexpr size_t integer_block_size =
+    (size_t(1) << 20) / max_integer_element_size<int_type>;
+
+template <typename int_type>
+simdjson_inline char *write_integer(char *p, int_type v) noexcept {
+  if constexpr (std::is_unsigned_v<int_type>) {
+    return write_uint_jeaiii(p, static_cast<uint64_t>(v));
+  } else {
+    using unsigned_type = std::make_unsigned_t<int_type>;
+    const bool negative = v < 0;
+    unsigned_type pv = negative ? unsigned_type(0) - static_cast<unsigned_type>(v)
+                                : static_cast<unsigned_type>(v);
+    *p = '-';
+    p += negative;
+    return write_uint_jeaiii(p, static_cast<uint64_t>(pv));
+  }
+}
+} // namespace internal
+
+template <integer_array R>
+  requires(!require_custom_serialization<R>)
+simdjson_inline void string_builder::append(const R &range) noexcept {
+  using int_type = std::ranges::range_value_t<R>;
+  const int_type *data = std::ranges::data(range);
+  const size_t n = size_t(std::ranges::size(range));
+  if (simdjson_unlikely(n > internal::integer_block_size<int_type>)) {
+    append_long_integer_array(data, n);
+    return;
+  }
+  if (!capacity_check(2 + n * internal::max_integer_element_size<int_type>)) {
+    return;
+  }
+  char *p = buffer_data() + position;
+  *p++ = '[';
+  for (size_t i = 0; i < n; i++) {
+    if (i) {
+      *p++ = ',';
+    }
+    p = internal::write_integer(p, data[i]);
+  }
+  *p++ = ']';
+  position = size_t(p - buffer_data());
+}
+
+template <typename int_type>
+simdjson_never_inline void
+string_builder::append_long_integer_array(const int_type *data, size_t n) noexcept {
+  constexpr size_t element_size = internal::max_integer_element_size<int_type>;
+  constexpr size_t block_size = internal::integer_block_size<int_type>;
+  if (!capacity_check(1)) {
+    return;
+  }
+  const size_t start = position;
+  buffer_data()[position++] = '[';
+  size_t i = 0;
+  while (i < n) {
+    const size_t count = (n - i < block_size) ? n - i : block_size;
+    size_t upcoming = count * element_size;
+    if (i == block_size) {
+      // Reserve for the remaining elements at the average size seen so far,
+      // so that the buffer is reallocated about once instead of doubling
+      // through many sizes.
+      size_t average = (position - start) / i + 1;
+      average = average < element_size ? average : element_size;
+      if (n - i <= (std::numeric_limits<size_t>::max)() / average) {
+        const size_t estimate = (n - i) * average;
+        upcoming = estimate > upcoming ? estimate : upcoming;
+      }
+    }
+    if (!capacity_check(upcoming)) {
+      set_valid(false);
+      return;
+    }
+    char *p = buffer_data() + position;
+    for (const size_t stop = i + count; i < stop; i++) {
+      p = internal::write_integer(p, data[i]);
+      *p++ = ',';
+    }
+    position = size_t(p - buffer_data());
+  }
+  // The closing bracket replaces the comma after the last element.
+  buffer_data()[position - 1] = ']';
+}
+
 // Support for range-based appending (std::ranges::view, etc.)
 template <std::ranges::range R>
-  requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> && !require_custom_serialization<R>)
+  requires(!std::is_convertible<R, std::string_view>::value && !concepts::optional_type<R> &&
+           !require_custom_serialization<R> && !integer_array<R>)
 simdjson_inline void string_builder::append(const R &range) noexcept {
   auto it = std::ranges::begin(range);
   auto end = std::ranges::end(range);
