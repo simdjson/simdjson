@@ -98,6 +98,29 @@ public:
    */
   simdjson_inline ondemand::value value() && noexcept;
 
+  /**
+   * Look up a field by name on this field's object value (order-sensitive).
+   *
+   * Equivalent to value().find_field(key). Use this when the field value is
+   * itself an object, so you can write field["x"] instead of field.value()["x"].
+   */
+  simdjson_inline simdjson_result<ondemand::value> find_field(std::string_view key) noexcept;
+  /** @overload simdjson_inline simdjson_result<ondemand::value> find_field(std::string_view key) noexcept; */
+  simdjson_inline simdjson_result<ondemand::value> find_field(const char *key) noexcept;
+  /**
+   * Look up a field by name on this field's object value, without regard to key order.
+   *
+   * Equivalent to value().find_field_unordered(key).
+   */
+  simdjson_inline simdjson_result<ondemand::value> find_field_unordered(std::string_view key) noexcept;
+  /** @overload simdjson_inline simdjson_result<ondemand::value> find_field_unordered(std::string_view key) noexcept; */
+  simdjson_inline simdjson_result<ondemand::value> find_field_unordered(const char *key) noexcept;
+  /** @overload simdjson_inline simdjson_result<ondemand::value> find_field_unordered(std::string_view key) noexcept; */
+  simdjson_inline simdjson_result<ondemand::value> operator[](std::string_view key) noexcept;
+  /** @overload simdjson_inline simdjson_result<ondemand::value> find_field_unordered(std::string_view key) noexcept; */
+  simdjson_inline simdjson_result<ondemand::value> operator[](const char *key) noexcept;
+  simdjson_result<ondemand::value> operator[](int) noexcept = delete;
+
 protected:
   simdjson_inline field(raw_json_string key, ondemand::value &&value) noexcept;
   static simdjson_inline simdjson_result<field> start(value_iterator &parent_iter) noexcept;
@@ -132,6 +155,13 @@ public:
   simdjson_inline simdjson_result<std::u8string_view> escaped_u8key() noexcept;
 #endif // SIMDJSON_SUPPORTS_CHAR8_T
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> value() noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(std::string_view key) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field(const char *key) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(std::string_view key) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> find_field_unordered(const char *key) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](std::string_view key) noexcept;
+  simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](const char *key) noexcept;
+  simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> operator[](int) noexcept = delete;
 };
 
 } // namespace simdjson
