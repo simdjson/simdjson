@@ -11,6 +11,7 @@
 
 #if SIMDJSON_SUPPORTS_RANGES
 #include <ranges>
+#include <span>
 #endif
 
 using namespace simdjson;
@@ -164,6 +165,58 @@ bool append_float() {
   TEST_SUCCEED();
 }
 
+bool append_double_formatting() {
+  TEST_START();
+  struct expectation {
+    double value;
+    const char *text;
+  };
+  const expectation cases[] = {
+      {0.0, "0.0"},
+      {-0.0, "-0.0"},
+      {1.0, "1.0"},
+      {-1.5, "-1.5"},
+      {0.1, "0.1"},
+      {0.3, "0.3"},
+      {0.5, "0.5"},
+      {4.35, "4.35"},
+      {40.1, "40.1"},
+      {100.0, "100.0"},
+      {-123.456, "-123.456"},
+      {1.0 / 3.0, "0.3333333333333333"},
+      {123456789.0, "123456789.0"},
+      {1e14, "100000000000000.0"},
+      {123456789012345.6, "123456789012345.6"},
+      {999999999999999.9, "999999999999999.9"},
+      {1e15, "1e+15"},
+      {1.5e15, "1.5e+15"},
+      {9007199254740993.0, "9.007199254740992e+15"},
+      {1e16, "1e+16"},
+      {1e21, "1e+21"},
+      {1e23, "1e+23"},
+      {0.001, "0.001"},
+      {0.0001, "0.0001"},
+      {0.00012345, "0.00012345"},
+      {1e-5, "1e-05"},
+      {1.5e-7, "1.5e-07"},
+      {1e100, "1e+100"},
+      {1e-100, "1e-100"},
+      {1.2345678901234567e-300, "1.2345678901234568e-300"},
+      {2.2250738585072014e-308, "2.2250738585072014e-308"},
+      {2.225073858507201e-308, "2.225073858507201e-308"},
+      {5e-324, "5e-324"},
+      {1.7976931348623157e308, "1.7976931348623157e+308"},
+  };
+  for (const expectation &c : cases) {
+    simdjson::builder::string_builder sb;
+    sb.append(c.value);
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, c.text);
+  }
+  TEST_SUCCEED();
+}
+
 #if SIMDJSON_ENABLE_NAN_INF
 bool append_nan() {
   TEST_START();
@@ -294,6 +347,32 @@ bool nan_inf_roundtrip() {
     index++;
   }
   ASSERT_EQUAL(index, expected.size());
+  TEST_SUCCEED();
+}
+#else
+// Without SIMDJSON_ENABLE_NAN_INF, NaN and Infinity are written as null.
+bool nan_inf_as_null() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  sb.start_array();
+  sb.append(1.5);
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::quiet_NaN());
+  sb.append_comma();
+  sb.append(std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<double>::infinity());
+  sb.append_comma();
+  sb.append(std::numeric_limits<float>::quiet_NaN());
+  sb.append_comma();
+  sb.append(-std::numeric_limits<float>::infinity());
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[1.5,null,null,null,null,null]");
+  simdjson::dom::parser parser;
+  simdjson::dom::element doc;
+  ASSERT_SUCCESS(parser.parse(p).get(doc));
   TEST_SUCCEED();
 }
 #endif // SIMDJSON_ENABLE_NAN_INF
@@ -876,6 +955,12 @@ bool serialize_optional() {
   result = sb.view().get(p);
   ASSERT_SUCCESS(result);
   ASSERT_EQUAL(p, "null");
+  sb.clear();
+  std::optional<int> optional_int = 3;
+  sb.append(optional_int);
+  result = sb.view().get(p);
+  ASSERT_SUCCESS(result);
+  ASSERT_EQUAL(p, "3");
   TEST_SUCCEED();
 }
 
@@ -998,6 +1083,232 @@ bool ranges_test() {
   ASSERT_EQUAL(s, "[2.0,4.0,6.0,8.0]");
   TEST_SUCCEED();
 }
+template <typename R>
+std::string append_to_json(const R &range) {
+  simdjson::builder::string_builder sb;
+  sb.append(range);
+  std::string_view p;
+  if (sb.view().get(p)) {
+    return "error";
+  }
+  return std::string(p);
+}
+
+// The same values through the generic range path, which takes a range that is
+// not contiguous.
+template <typename T>
+std::string generic_to_json(const std::vector<T> &v) {
+  return append_to_json(v | std::views::transform([](T x) { return x; }));
+}
+
+bool integer_array_test() {
+  TEST_START();
+  ASSERT_EQUAL(append_to_json(std::vector<int>{}), "[]");
+  ASSERT_EQUAL(append_to_json(std::vector<int>{7}), "[7]");
+  ASSERT_EQUAL(append_to_json(std::vector<int64_t>{0, -1, 9, 10, -99, 100}),
+               "[0,-1,9,10,-99,100]");
+  std::vector<int64_t> i64{(std::numeric_limits<int64_t>::min)(),
+                           (std::numeric_limits<int64_t>::max)()};
+  ASSERT_EQUAL(append_to_json(i64),
+               "[-9223372036854775808,9223372036854775807]");
+  ASSERT_EQUAL(append_to_json(std::vector<uint64_t>{
+                   0, (std::numeric_limits<uint64_t>::max)()}),
+               "[0,18446744073709551615]");
+  ASSERT_EQUAL(append_to_json(std::vector<int16_t>{-32768, 32767}),
+               "[-32768,32767]");
+  ASSERT_EQUAL(append_to_json(std::vector<uint16_t>{0, 65535}), "[0,65535]");
+  ASSERT_EQUAL(append_to_json(std::vector<int32_t>{
+                   (std::numeric_limits<int32_t>::min)(),
+                   (std::numeric_limits<int32_t>::max)()}),
+               "[-2147483648,2147483647]");
+  ASSERT_EQUAL(append_to_json(std::array<unsigned, 3>{1, 22, 333}),
+               "[1,22,333]");
+  ASSERT_EQUAL(append_to_json(std::span<const int64_t>(i64).subspan(1)),
+               "[9223372036854775807]");
+  // A contiguous range without a size takes the generic path.
+  std::vector<int> head{1, 2, 3, 9, 1};
+  ASSERT_EQUAL(append_to_json(head | std::views::take_while(
+                                         [](int x) { return x < 5; })),
+               "[1,2,3]");
+  TEST_SUCCEED();
+}
+
+bool integer_array_matches_generic_path() {
+  TEST_START();
+  uint64_t state = 12345;
+  auto next = [&state]() {
+    state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+    return state;
+  };
+  // The large sizes span several reserved blocks.
+  for (size_t n : {size_t(1), size_t(2), size_t(1000), size_t(120000),
+                   size_t(300000)}) {
+    std::vector<int64_t> i64(n);
+    for (auto &x : i64) {
+      uint64_t r = next();
+      x = int64_t(r) >> (r % 64);
+    }
+    ASSERT_EQUAL(append_to_json(i64), generic_to_json(i64));
+    std::vector<uint32_t> u32(n);
+    for (auto &x : u32) {
+      uint64_t r = next();
+      x = uint32_t(r >> (r % 64));
+    }
+    ASSERT_EQUAL(append_to_json(u32), generic_to_json(u32));
+    std::vector<int16_t> i16(n);
+    for (auto &x : i16) {
+      x = int16_t(next());
+    }
+    ASSERT_EQUAL(append_to_json(i16), generic_to_json(i16));
+  }
+  TEST_SUCCEED();
+}
+
+bool integer_array_after_other_content() {
+  TEST_START();
+  simdjson::builder::string_builder sb(1);
+  sb.start_array();
+  sb.append(std::vector<int>{1, -2});
+  sb.append_comma();
+  sb.append(std::vector<uint64_t>{});
+  sb.append_comma();
+  sb.append(std::vector<short>{3});
+  sb.end_array();
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[[1,-2],[],[3]]");
+  TEST_SUCCEED();
+}
+
+bool integer_array_bounded_reservation() {
+  TEST_START();
+  // Two bytes per element are written, while the bound is 21 bytes per element.
+  std::vector<int64_t> zeros(1000000, 0);
+  simdjson::builder::string_builder sb;
+  sb.append(zeros);
+  ASSERT_EQUAL(sb.size(), 2 * zeros.size() + 1);
+  ASSERT_TRUE(sb.unsafe_capacity() <= 2 * (sb.size() + (size_t(1) << 20)));
+  TEST_SUCCEED();
+}
+
+// Reports a size larger than its storage. Only the first block is read: the
+// reservation for the rest overflows size_t and must fail the builder.
+struct oversized_uint16_range {
+  const uint16_t *first;
+  size_t reported;
+  const uint16_t *data() const { return first; }
+  const uint16_t *begin() const { return first; }
+  const uint16_t *end() const { return first; }
+  size_t size() const { return reported; }
+};
+
+bool integer_array_reservation_overflow() {
+  TEST_START();
+  constexpr size_t block = (size_t(1) << 20) / 6;
+  std::vector<uint16_t> zeros(block, 0);
+  // Three bytes per element on average after the first block of zeros.
+  oversized_uint16_range r{zeros.data(), block + (std::numeric_limits<size_t>::max)() / 3};
+  simdjson::builder::string_builder sb;
+  sb.append(r);
+  std::string_view v;
+  ASSERT_ERROR(sb.view().get(v), simdjson::OUT_OF_CAPACITY);
+  TEST_SUCCEED();
+}
+
+bool contiguous_integer_arrays() {
+  TEST_START();
+  simdjson::builder::string_builder sb(1);
+  std::vector<int64_t> v = {0, -1, (std::numeric_limits<int64_t>::min)(),
+                            (std::numeric_limits<int64_t>::max)()};
+  sb.append(v);
+  std::array<uint16_t, 2> a = {7, 65535};
+  sb.append(a);
+  std::vector<int> empty;
+  sb.append(empty);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[0,-1,-9223372036854775808,9223372036854775807][7,65535][]");
+  TEST_SUCCEED();
+}
+
+bool contiguous_string_arrays() {
+  TEST_START();
+  simdjson::builder::string_builder sb;
+  std::vector<std::string> v = {"a\"b", "\n", "", std::string(1, '\x01'), "\\"};
+  sb.append(v);
+  std::vector<std::string_view> sv = {"x", "y"};
+  sb.append(sv);
+  std::array<std::string, 1> one = {"z"};
+  sb.append(one);
+  std::vector<std::string> empty;
+  sb.append(empty);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[\"a\\\"b\",\"\\n\",\"\",\"\\u0001\",\"\\\\\"][\"x\",\"y\"][\"z\"][]");
+  TEST_SUCCEED();
+}
+
+// Element sizes whose reservation plus the current position overflows
+// size_t. Only the sizes are read before the reservation fails.
+bool contiguous_string_arrays_reservation_overflow() {
+  TEST_START();
+  constexpr size_t max = (std::numeric_limits<size_t>::max)();
+  // Largest unescaped size whose 1/16 slack still fits in size_t. The
+  // reservation is then within 17 bytes of max, below the prefix length.
+  size_t bytes = max - max / 17 - 64;
+  while ((bytes + 1) <= max - (bytes + 1) / 16) {
+    bytes++;
+  }
+  const size_t count = 6;
+  const size_t payload = bytes - 2 - 3 * count;
+  static const char storage = 'a';
+  std::vector<std::string_view> v;
+  for (size_t i = 0; i < count; i++) {
+    v.emplace_back(&storage, payload / count + (i == 0 ? payload % count : 0));
+  }
+  simdjson::builder::string_builder sb;
+  sb.append_raw(std::string(32, ' '));
+  sb.append(v);
+  std::string_view p;
+  ASSERT_ERROR(sb.view().get(p), simdjson::OUT_OF_CAPACITY);
+  TEST_SUCCEED();
+}
+
+// Escapes beyond the reserved size, around the 512-byte side-buffer limit,
+// starting from every small initial capacity.
+bool contiguous_string_arrays_growth() {
+  TEST_START();
+  std::vector<std::string> v;
+  for (size_t len : {size_t(0), size_t(1), size_t(100), size_t(511), size_t(512),
+                     size_t(513), size_t(1000)}) {
+    v.push_back(std::string(len, 'a'));
+    v.push_back(std::string(len, '"'));
+    v.push_back(std::string(len, '\x1f'));
+  }
+  std::string prefix(37, ' ');
+  simdjson::builder::string_builder ref;
+  ref.append_raw(prefix);
+  ref.start_array();
+  for (size_t i = 0; i < v.size(); i++) {
+    if (i) {
+      ref.append_comma();
+    }
+    ref.escape_and_append_with_quotes(v[i]);
+  }
+  ref.end_array();
+  std::string_view expected;
+  ASSERT_SUCCESS(ref.view().get(expected));
+  for (size_t cap = 1; cap <= expected.size() + 1; cap += (cap < 4200 ? 1 : 997)) {
+    simdjson::builder::string_builder sb(cap);
+    sb.append_raw(prefix);
+    sb.append(v);
+    std::string_view p;
+    ASSERT_SUCCESS(sb.view().get(p));
+    ASSERT_EQUAL(p, expected);
+  }
+  TEST_SUCCEED();
+}
+
 bool double_double_test() {
   TEST_START();
   std::vector<std::vector<double>> c = {{1.0, 2.0}, {3.0, 4.0}};
@@ -1024,6 +1335,32 @@ bool double_double_test_to_string() {
   std::string s;
   simdjson::simdjson_error ec = simdjson::to_json(c, s);
   ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
+  TEST_SUCCEED();
+}
+// A char in a container or an optional is a one-character string, as in
+// append_key_value(), not a raw character.
+bool char_values_test() {
+  TEST_START();
+  std::vector<char> c = {'a', '"', '\n'};
+  simdjson::builder::string_builder sb;
+  sb.append(c);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[\"a\",\"\\\"\",\"\\n\"]");
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(std::vector<std::optional<char>>{'\\', std::nullopt}).get(s));
+  ASSERT_EQUAL(s, "[\"\\\\\",null]");
+  ASSERT_SUCCESS(simdjson::to_json('"').get(s));
+  ASSERT_EQUAL(s, "\"\\\"\"");
+  // The output reads back as the same characters.
+  ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json(s);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  std::vector<char> back;
+  ASSERT_SUCCESS(doc.get(back));
+  ASSERT_TRUE(back == c);
   TEST_SUCCEED();
 }
 #if SIMDJSON_EXCEPTIONS
@@ -1214,9 +1551,16 @@ bool run() {
          return_builder_as_string() &&
 #endif
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
-         map_test() && ranges_test() && double_double_test() &&
+         map_test() && ranges_test() && integer_array_test() &&
+         integer_array_matches_generic_path() &&
+         integer_array_after_other_content() &&
+         integer_array_bounded_reservation() &&
+         integer_array_reservation_overflow() && contiguous_integer_arrays() &&
+         contiguous_string_arrays() && contiguous_string_arrays_growth() &&
+         contiguous_string_arrays_reservation_overflow() &&
+         double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
-         car_test_simple_complete() && to_json_contiguous_number_arrays() &&
+         car_test_simple_complete() && char_values_test() && to_json_contiguous_number_arrays() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_simple_complete_exceptions() &&
 #endif
@@ -1227,11 +1571,14 @@ bool run() {
          append_key_value_template_padding() &&
          serialize_optional() && issue2827_optional_serialization() &&
 #endif
-         append_char() && append_integer() && append_float() && append_null() &&
+         append_char() && append_integer() && append_float() &&
+         append_double_formatting() && append_null() &&
 #if SIMDJSON_ENABLE_NAN_INF
          append_nan() && append_positive_infinity() &&
          append_negative_infinity() && append_float_nan_inf() &&
          nan_inf_in_array() && nan_inf_in_object() && nan_inf_roundtrip() &&
+#else
+         nan_inf_as_null() &&
 #endif
          clear() && escape_and_append() && escape_and_append_with_quotes() &&
          escape_write_string_escaped_exhaustive() && move_to_string() &&

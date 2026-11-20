@@ -185,6 +185,74 @@ namespace document_stream_tests {
     ASSERT_EQUAL(stream.truncated_bytes(), 0);
     return true;
   }
+  bool white_space_before_string_cut_by_batch() {
+    std::cout << "Running " << __func__ << std::endl;
+    // With batch_size 32, the second batch starts with white space and cuts a
+    // 26-byte string. The string fits in a batch that starts at its quote, as
+    // an array would: this is not a CAPACITY error. The fallback has its own
+    // stage 1, so we check every implementation that the system supports.
+    std::string json = "\"a\"";
+    json.append(40, ' ').append("\"").append(24, 'x').append("\" \"b\"");
+    const simdjson::padded_string input(json);
+    const size_t expected_index[] = {0, 43, 70};
+    const std::string expected_value[] = {"a", std::string(24, 'x'), "b"};
+    const simdjson::implementation *active = simdjson::get_active_implementation();
+    for (const simdjson::implementation *impl : simdjson::get_available_implementations()) {
+      if (!impl->supported_by_runtime_system()) { continue; }
+      simdjson::get_active_implementation() = impl;
+      std::cout << "    " << impl->name() << std::endl;
+      simdjson::dom::parser parser;
+      simdjson::dom::document_stream stream;
+      ASSERT_SUCCESS(parser.parse_many(input, 32).get(stream));
+      size_t count = 0;
+      for (auto i = stream.begin(); i != stream.end(); ++i) {
+        ASSERT_TRUE(count < 3);
+        std::string_view value;
+        ASSERT_SUCCESS((*i).get_string().get(value));
+        ASSERT_EQUAL(value, expected_value[count]);
+        ASSERT_EQUAL(i.current_index(), expected_index[count]);
+        count++;
+      }
+      ASSERT_EQUAL(count, 3);
+      ASSERT_EQUAL(stream.truncated_bytes(), 0);
+    }
+    simdjson::get_active_implementation() = active;
+    return true;
+  }
+  bool white_space_before_document_cut_by_comma_delimited_batch() {
+    std::cout << "Running " << __func__ << std::endl;
+    std::string quoted = "\"";
+    quoted.append(24, 'x').append("\"");
+    const std::string cut[] = {quoted, "[1,2,3,4,5,6,7,8,9,10,11]"};
+    for (const std::string &doc : cut) {
+      std::string json = "\"a\",";
+      json.append(40, ' ').append(doc).append(", \"b\"");
+      const simdjson::padded_string input(json);
+      const simdjson::implementation *active = simdjson::get_active_implementation();
+      for (const simdjson::implementation *impl : simdjson::get_available_implementations()) {
+        if (!impl->supported_by_runtime_system()) { continue; }
+        simdjson::get_active_implementation() = impl;
+        std::cout << "    " << impl->name() << std::endl;
+        simdjson::dom::parser parser;
+        simdjson::dom::document_stream stream;
+        ASSERT_SUCCESS(parser.parse_many(input, 32, simdjson::stream_format::comma_delimited).get(stream));
+        size_t count = 0;
+        for (auto i = stream.begin(); i != stream.end(); ++i) {
+          ASSERT_TRUE(count < 3);
+          simdjson::dom::element value;
+          ASSERT_SUCCESS((*i).get(value));
+          if (count == 1) {
+            ASSERT_EQUAL(i.current_index(), 44);
+            ASSERT_EQUAL(simdjson::to_string(value), doc);
+          }
+          count++;
+        }
+        ASSERT_EQUAL(count, 3);
+      }
+      simdjson::get_active_implementation() = active;
+    }
+    return true;
+  }
   bool test_leading_spaces() {
     std::cout << "Running " << __func__ << std::endl;
     const simdjson::padded_string input = R"(                               [1,23] [1,23] [1,23]  [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] [1,23] )"_padded;;
@@ -2570,6 +2638,8 @@ namespace document_stream_tests {
            stress_data_race() &&
            stress_data_race_with_error() &&
            whitespace_only_middle_batch() &&
+           white_space_before_string_cut_by_batch() &&
+           white_space_before_document_cut_by_comma_delimited_batch() &&
            test_leading_spaces() &&
            test_crazy_leading_spaces() &&
            simple_example() &&

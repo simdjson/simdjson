@@ -225,6 +225,109 @@ static void bench_dom(benchmark::State &state) {
   set_counters(state, dataset);
 }
 
+// Documents separated by runs of 1 to 40 white space characters (after a
+// comma for comma_delimited), read with batches of state.range(0) bytes. With
+// small batches, most batches end in the white space before a document or
+// inside it.
+struct spaced_dataset {
+  padded_string json;
+  size_t count{};
+};
+
+const spaced_dataset &get_spaced_dataset(bool comma) {
+  auto build = [](bool with_comma) {
+    constexpr size_t count = 1000000;
+    std::string out;
+    out.reserve(count * 80);
+    for (size_t i = 0; i < count; i++) {
+      if (i > 0 && with_comma) {
+        out += ',';
+      }
+      const size_t spaces = 1 + (i * 7) % 40;
+      for (size_t j = 0; j < spaces; j++) {
+        out += (j % 8 == 7) ? '\n' : ' ';
+      }
+      out += make_document(i, SMALL_PAYLOAD);
+    }
+    return spaced_dataset{padded_string(out), count};
+  };
+  static const spaced_dataset plain = build(false);
+  static const spaced_dataset with_comma = build(true);
+  return comma ? with_comma : plain;
+}
+
+template <bool comma>
+static void bench_spaced_ondemand(benchmark::State &state) {
+  const auto &dataset = get_spaced_dataset(comma);
+  const size_t batch_size = size_t(state.range(0));
+  ondemand::parser parser;
+  parser.threaded = false;
+  const stream_format format =
+      comma ? stream_format::comma_delimited : stream_format::whitespace_delimited;
+  for (const auto _ : state) {
+    ondemand::document_stream docs;
+    auto error = parser.iterate_many(dataset.json, batch_size, format).get(docs);
+    if (error) {
+      state.SkipWithError(error_message(error));
+      return;
+    }
+    uint64_t sum = 0;
+    size_t count = 0;
+    for (auto doc : docs) {
+      uint64_t id;
+      if ((error = doc["id"].get_uint64().get(id))) {
+        state.SkipWithError(error_message(error));
+        return;
+      }
+      sum += id;
+      count++;
+    }
+    if (count != dataset.count) {
+      state.SkipWithError("wrong number of documents");
+      return;
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(dataset.json.size()));
+  state.SetItemsProcessed(int64_t(state.iterations()) * int64_t(dataset.count));
+}
+
+template <bool comma>
+static void bench_spaced_dom(benchmark::State &state) {
+  const auto &dataset = get_spaced_dataset(comma);
+  const size_t batch_size = size_t(state.range(0));
+  dom::parser parser;
+  parser.threaded = false;
+  const stream_format format =
+      comma ? stream_format::comma_delimited : stream_format::whitespace_delimited;
+  for (const auto _ : state) {
+    dom::document_stream docs;
+    auto error = parser.parse_many(dataset.json, batch_size, format).get(docs);
+    if (error) {
+      state.SkipWithError(error_message(error));
+      return;
+    }
+    uint64_t sum = 0;
+    size_t count = 0;
+    for (auto doc : docs) {
+      uint64_t id;
+      if ((error = doc["id"].get(id))) {
+        state.SkipWithError(error_message(error));
+        return;
+      }
+      sum += id;
+      count++;
+    }
+    if (count != dataset.count) {
+      state.SkipWithError("wrong number of documents");
+      return;
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+  state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(dataset.json.size()));
+  state.SetItemsProcessed(int64_t(state.iterations()) * int64_t(dataset.count));
+}
+
 } // namespace
 
 BENCHMARK(bench_ondemand<stream_case::ndjson_small>)
@@ -292,5 +395,22 @@ BENCHMARK(bench_dom<stream_case::comma_delimited_small>)
 BENCHMARK(bench_dom<stream_case::comma_delimited_large>)
     ->UseRealTime()
     ->DisplayAggregatesOnly(true);
+
+BENCHMARK(bench_spaced_ondemand<false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(4096)->Arg(1 << 20);
+BENCHMARK(bench_spaced_ondemand<true>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(4096)->Arg(1 << 20);
+BENCHMARK(bench_spaced_dom<false>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(4096)->Arg(1 << 20);
+BENCHMARK(bench_spaced_dom<true>)
+    ->UseRealTime()
+    ->DisplayAggregatesOnly(true)
+    ->Arg(4096)->Arg(1 << 20);
 
 BENCHMARK_MAIN();

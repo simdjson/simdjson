@@ -68,6 +68,12 @@ if(SIMDJSON_HAS_INT128)
     set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY WILL_FAIL FALSE)
     set_property(TEST ${TEST_NAME}_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
   endforeach()
+  # The range overloads of append() exist only from C++20.
+  if(CMAKE_CXX_STANDARD VERSION_GREATER_EQUAL 20)
+    add_dual_compile_test(string_builder_append_int128_range)
+    set_property(TEST string_builder_append_int128_range_should_not_compile PROPERTY WILL_FAIL FALSE)
+    set_property(TEST string_builder_append_int128_range_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "deleted")
+  endif()
 endif()
 
 # key_selector enforces a 63-character key-length limit at compile time. This
@@ -95,4 +101,24 @@ if (SIMDJSON_STATIC_REFLECTION_ENABLED)
     set_property(TEST to_json_int128_should_not_compile PROPERTY WILL_FAIL FALSE)
     set_property(TEST to_json_int128_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION "Integers wider than 64 bits are not supported")
   endif()
+
+  # Misused annotations must fail to compile with a message that names the
+  # problem: the text of std::meta::exception with exceptions, the name of the
+  # function that stops the constant evaluation without them.
+  add_dual_compile_test(annotation_flatten_reference)
+  set_property(TEST annotation_flatten_reference_should_not_compile PROPERTY WILL_FAIL FALSE)
+  set_property(TEST annotation_flatten_reference_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION
+    "flatten requires a member that is not a reference|flatten_requires_a_member_that_is_not_a_reference")
+  add_dual_compile_test(annotation_flatten_non_class)
+  set_property(TEST annotation_flatten_non_class_should_not_compile PROPERTY WILL_FAIL FALSE)
+  set_property(TEST annotation_flatten_non_class_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION
+    "flatten requires a member of class type|flatten_requires_a_member_of_class_type")
+  add_dual_compile_test(annotation_transparent_two_members)
+  set_property(TEST annotation_transparent_two_members_should_not_compile PROPERTY WILL_FAIL FALSE)
+  set_property(TEST annotation_transparent_two_members_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION
+    "transparent requires exactly one data member|transparent_requires_exactly_one_data_member")
+  add_dual_compile_test(annotation_flatten_container)
+  set_property(TEST annotation_flatten_container_should_not_compile PROPERTY WILL_FAIL FALSE)
+  set_property(TEST annotation_flatten_container_should_not_compile PROPERTY PASS_REGULAR_EXPRESSION
+    "flatten requires a member whose type is a structure|flatten_requires_a_member_deserialized_member_by_member")
 endif()
