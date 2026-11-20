@@ -37,6 +37,47 @@ inline void document::rewind() noexcept {
   static_cast<void>(iter.rewind());
 }
 
+simdjson_warn_unused simdjson_inline error_code document::validate() noexcept {
+  SIMDJSON_TRY(iter.rewind());
+  const bool check_trailing = !iter.streaming();
+  const uint8_t first = *iter.peek();
+  error_code error;
+  switch (first) {
+    case '{': case '[':
+      error = iter.validate_container();
+      break;
+    case '"':
+      error = get_root_value_iterator().get_root_string(check_trailing, false).error();
+      break;
+    case 't': case 'f':
+      error = get_root_value_iterator().get_root_bool(check_trailing).error();
+      break;
+    case 'n': {
+      bool null_value;
+      error = get_root_value_iterator().is_root_null(check_trailing).get(null_value);
+      if (!error && !null_value) { error = N_ATOM_ERROR; }
+      break;
+    }
+    default:
+      error = get_root_value_iterator().get_root_double(check_trailing).error();
+      break;
+  }
+  // The root getters report a scalar of the wrong kind as INCORRECT_TYPE.
+  if (error == INCORRECT_TYPE) {
+    switch (first) {
+      case 't': error = T_ATOM_ERROR; break;
+      case 'f': error = F_ATOM_ERROR; break;
+      case 'n': error = N_ATOM_ERROR; break;
+      case '-': case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        error = NUMBER_ERROR; break;
+      default: error = TAPE_ERROR; break;
+    }
+  }
+  static_cast<void>(iter.rewind());
+  return error;
+}
+
 inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
@@ -590,6 +631,10 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::do
   if (error()) { return error(); }
   first.rewind();
   return SUCCESS;
+}
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::validate() noexcept {
+  if (error()) { return error(); }
+  return first.validate();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::begin() & noexcept {
   if (error()) { return error(); }

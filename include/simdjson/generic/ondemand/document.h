@@ -765,6 +765,18 @@ public:
    */
   inline void rewind() noexcept;
   /**
+   * Validates the whole document: its structure, every string (escapes included), every
+   * number, true, false and null, and that nothing follows the root value. Strings are
+   * checked as get_string() checks them and numbers as get_double() does. The document is
+   * rewound before and after, so that it can be iterated after a successful validation.
+   *
+   * It is faster than iterating through every value, because it walks the tokens directly,
+   * without creating values, arrays or objects.
+   *
+   * @returns SUCCESS if the document is valid, or the error found first.
+   */
+  simdjson_warn_unused simdjson_inline error_code validate() noexcept;
+  /**
    * Returns debugging information.
    */
   inline std::string to_debug_string() noexcept;
@@ -1153,6 +1165,7 @@ public:
   simdjson_inline simdjson_result(error_code error) noexcept; ///< @private
   simdjson_inline simdjson_result() noexcept {}
   simdjson_inline error_code rewind() noexcept;
+  simdjson_warn_unused simdjson_inline error_code validate() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
