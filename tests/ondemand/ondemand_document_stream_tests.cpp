@@ -882,6 +882,49 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
+    // The last record of a JSON text sequence may be cut by the end of the
+    // input. Stage 1 used to hand it to stage 2 as if it were complete, so a
+    // number at its end, as in a record ending with [1, was parsed on into the
+    // padding, whose content the caller need not initialize, and past the
+    // buffer when the padding holds digits. The record is left to
+    // truncated_bytes(), as in the other stream formats.
+    bool json_sequence_truncated_last_record() {
+        TEST_START();
+        const std::string json("\x1e[5]\n\x1e[1");
+        std::vector<char> buffer(json.size() + SIMDJSON_PADDING, '0');
+        std::memcpy(buffer.data(), json.data(), json.size());
+        padded_string_view input(buffer.data(), json.size(), buffer.size());
+        {
+            ondemand::parser parser;
+            ondemand::document_stream stream;
+            ASSERT_SUCCESS( parser.iterate_many(input, 1000, stream_format::json_sequence).get(stream) );
+            auto i = stream.begin();
+            ASSERT_TRUE( i != stream.end() );
+            ondemand::document_reference doc;
+            ASSERT_SUCCESS( (*i).get(doc) );
+            int64_t x;
+            ASSERT_SUCCESS( doc.at(0).get_int64().get(x) );
+            ASSERT_EQUAL( x, 5 );
+            ++i;
+            ASSERT_TRUE( i == stream.end() );
+            ASSERT_EQUAL( stream.truncated_bytes(), 2 );
+        }
+        {
+            dom::parser parser;
+            dom::document_stream stream;
+            ASSERT_SUCCESS( parser.parse_many(input, 1000, stream_format::json_sequence).get(stream) );
+            auto i = stream.begin();
+            ASSERT_TRUE( i != stream.end() );
+            int64_t x;
+            ASSERT_SUCCESS( (*i).at(0).get_int64().get(x) );
+            ASSERT_EQUAL( x, 5 );
+            ++i;
+            ASSERT_FALSE( i != stream.end() );
+            ASSERT_EQUAL( stream.truncated_bytes(), 2 );
+        }
+        TEST_SUCCEED();
+    }
+
     // Visit every value, as an application dumping a document would, carrying on
     // after errors, and tell whether an error was found.
     void walk_ignoring_errors(ondemand::value v, int depth, bool &error_found) {
@@ -3390,6 +3433,7 @@ bool run() {
             unfinished_document_at_batch_end() &&
             complete_document_before_next_batch_punctuation() &&
             json_sequence_unfinished_document_at_batch_end() &&
+            json_sequence_truncated_last_record() &&
             unbalanced_document_at_batch_end() &&
             stream_does_not_read_past_batch() &&
             small_window() &&
