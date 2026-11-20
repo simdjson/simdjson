@@ -81,11 +81,28 @@ simdjson_inline error_code parse_int64_token(const uint8_t *&p, const uint8_t *e
 
 simdjson_inline error_code parse_uint64_token(const uint8_t *&p, const uint8_t *end, uint64_t &out) noexcept {
   // On Demand rejects any sign, including -0.
-  if (p < end && *p == '-') { return UNINITIALIZED; }
-  int64_t tmp;
-  error_code err = parse_int64_token(p, end, tmp);
-  if (err != SUCCESS) { return err; }
-  out = uint64_t(tmp);
+  if (p >= end || *p < '0' || *p > '9') { return UNINITIALIZED; }
+  uint64_t i = 0;
+  const uint8_t *digits = p;
+  if (*p == '0') {
+    p++;
+  } else {
+    while (p < end && *p >= '0' && *p <= '9') {
+      if (size_t(p - digits) >= 20) {
+        while (p < end && *p >= '0' && *p <= '9') { p++; }
+        return UNINITIALIZED;
+      }
+      i = i * 10 + uint64_t(*p - '0');
+      p++;
+    }
+  }
+  const size_t digit_count = size_t(p - digits);
+  if (*digits == '0' && digit_count > 1) { return UNINITIALIZED; }
+  if (p < end && *p >= 0x80) { return UNINITIALIZED; }
+  if (p < end && (*p == '.' || *p == 'e' || *p == 'E')) { return UNINITIALIZED; }
+  // A 20-digit value is in range only if it starts with 1 and did not wrap.
+  if (digit_count == 20 && (*digits != '1' || i <= uint64_t(INT64_MAX))) { return UNINITIALIZED; }
+  out = i;
   return SUCCESS;
 }
 

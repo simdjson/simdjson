@@ -116,7 +116,10 @@ bool direct_parse_allocation_failure() {
   // The On Demand parser itself is allocated up front so that only the
   // container fails.
   simdjson::padded_string ints_json(ints), doubles_json(doubles), strings_json(strings);
-  simdjson::padded_string long_string_json("\"" + std::string(2 * LIMIT, 'a') + "\"");
+  std::string long_string = "\"";
+  long_string.append(2 * LIMIT, 'a');
+  long_string.append("\"");
+  simdjson::padded_string long_string_json(long_string);
   ASSERT_SUCCESS(simdjson::ondemand::parser::get_parser().allocate(strings_json.size()));
   ASSERT_TRUE(throws_bad_alloc<std::vector<int64_t>>(ints_json));
   ASSERT_TRUE(throws_bad_alloc<std::vector<double>>(doubles_json));
