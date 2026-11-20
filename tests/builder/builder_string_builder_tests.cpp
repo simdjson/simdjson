@@ -1026,6 +1026,32 @@ bool double_double_test_to_string() {
   ASSERT_EQUAL(s, "[[1.0,2.0],[3.0,4.0]]");
   TEST_SUCCEED();
 }
+// A char in a container or an optional is a one-character string, as in
+// append_key_value(), not a raw character.
+bool char_values_test() {
+  TEST_START();
+  std::vector<char> c = {'a', '"', '\n'};
+  simdjson::builder::string_builder sb;
+  sb.append(c);
+  std::string_view p;
+  ASSERT_SUCCESS(sb.view().get(p));
+  ASSERT_EQUAL(p, "[\"a\",\"\\\"\",\"\\n\"]");
+  std::string s;
+  ASSERT_SUCCESS(simdjson::to_json(std::vector<std::optional<char>>{'\\', std::nullopt}).get(s));
+  ASSERT_EQUAL(s, "[\"\\\\\",null]");
+  ASSERT_SUCCESS(simdjson::to_json('"').get(s));
+  ASSERT_EQUAL(s, "\"\\\"\"");
+  // The output reads back as the same characters.
+  ASSERT_SUCCESS(simdjson::to_json(c).get(s));
+  simdjson::ondemand::parser parser;
+  simdjson::padded_string json(s);
+  simdjson::ondemand::document doc;
+  ASSERT_SUCCESS(parser.iterate(json).get(doc));
+  std::vector<char> back;
+  ASSERT_SUCCESS(doc.get(back));
+  ASSERT_TRUE(back == c);
+  TEST_SUCCEED();
+}
 #if SIMDJSON_EXCEPTIONS
 bool car_test_simple_complete_exceptions() {
   TEST_START();
@@ -1141,7 +1167,7 @@ bool run() {
 #if SIMDJSON_SUPPORTS_RANGES && SIMDJSON_SUPPORTS_CONCEPTS
          map_test() && ranges_test() && double_double_test() &&
          double_double_test_to_string() && car_test_simple() &&
-         car_test_simple_complete() &&
+         car_test_simple_complete() && char_values_test() &&
 #if SIMDJSON_EXCEPTIONS
          car_test_simple_complete_exceptions() &&
 #endif
