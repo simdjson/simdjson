@@ -446,6 +446,57 @@ bool basic_general_madness_container() {
 #endif // SIMDJSON_EXCEPTIONS
 
 #if SIMDJSON_SUPPORTS_CONCEPTS
+bool vector_capacity_after_large_array() {
+  TEST_START();
+  std::string large = "[";
+  for (size_t i = 0; i < 30000; i++) {
+    if (i != 0) { large += ","; }
+    large += "\"x\"";
+  }
+  large += "]";
+  simdjson::padded_string large_json(large);
+  auto small_json = R"(["y"])"_padded;
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  std::vector<std::string> first;
+  ASSERT_SUCCESS(parser.iterate(large_json).get(doc));
+  ASSERT_SUCCESS(doc.get(first));
+  ASSERT_EQUAL(first.size(), size_t(30000));
+  std::vector<std::string> second;
+  ASSERT_SUCCESS(parser.iterate(small_json).get(doc));
+  ASSERT_SUCCESS(doc.get(second));
+  ASSERT_EQUAL(second.size(), size_t(1));
+  ASSERT_EQUAL(second[0], std::string("y"));
+  ASSERT_TRUE(second.capacity() <= 2);
+  TEST_SUCCEED();
+}
+
+bool vector_of_strings_varying_sizes() {
+  TEST_START();
+  simdjson::ondemand::parser parser;
+  for (size_t n : {size_t(3), size_t(1), size_t(8), size_t(0), size_t(5), size_t(64), size_t(2)}) {
+    std::string json = "[";
+    for (size_t i = 0; i < n; i++) {
+      if (i != 0) { json += ","; }
+      json += "\"s" + std::to_string(n) + "_" + std::to_string(i) + "\"";
+    }
+    json += "]";
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    std::vector<std::string> out;
+    ASSERT_SUCCESS(parser.iterate(padded).get(doc));
+    ASSERT_SUCCESS(doc.get(out));
+    ASSERT_EQUAL(out.size(), n);
+    for (size_t i = 0; i < n; i++) {
+      std::string expected = "s";
+      expected.append(std::to_string(n)).append("_").append(std::to_string(i));
+      ASSERT_EQUAL(out[i], expected);
+    }
+    ASSERT_TRUE(out.capacity() <= 2 * n);
+  }
+  TEST_SUCCEED();
+}
+
 bool map_deserialization() {
   TEST_START();
 
@@ -545,6 +596,8 @@ bool run() {
   return
 #if SIMDJSON_SUPPORTS_CONCEPTS
       smart_pointers_to_builtin_types() &&
+      vector_capacity_after_large_array() &&
+      vector_of_strings_varying_sizes() &&
       map_deserialization() &&
       optionals_to_builtin_types() &&
       optional_containers() &&
