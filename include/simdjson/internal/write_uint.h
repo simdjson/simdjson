@@ -27,11 +27,25 @@ simdjson_really_inline char *write_one_to_four_digits(char *b, uint32_t v) noexc
   return b + 4 - zeros;
 }
 
+// The one or two digits of every value in [0, 100), at data[2 * v]: "d\0"
+// below 10, "dd" otherwise. Copying two bytes from a fixed offset lets the
+// digit count change only the returned pointer. Reading from four_digits at
+// an offset that depends on v < 10 makes GCC branch, which mispredicts on a
+// mix of 9- and 10-digit values.
+template <class T = void> struct one_or_two_digits_table {
+  static const char data[201];
+};
+
+template <class T> const char one_or_two_digits_table<T>::data[201] =
+    "0\0" "1\0" "2\0" "3\0" "4\0" "5\0" "6\0" "7\0" "8\0" "9\0"
+    "10111213141516171819202122232425262728293031323334353637383940414243444546474849"
+    "50515253545556575859606162636465666768697071727374757677787980818283848586878889"
+    "90919293949596979899";
+
 // v < 100. Writes one or two digits.
 simdjson_really_inline char *write_one_or_two_digits(char *b, uint32_t v) noexcept {
-  const uint32_t zeros = 2 + uint32_t(v < 10);
-  std::memcpy(b, &four_digits<>::data[4 * v + zeros], 4);
-  return b + 4 - zeros;
+  std::memcpy(b, &one_or_two_digits_table<>::data[2 * v], 2);
+  return b + 1 + uint32_t(v >= 10);
 }
 
 // v < 10^8. Writes exactly eight digits.
