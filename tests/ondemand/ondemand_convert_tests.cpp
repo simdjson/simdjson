@@ -3,6 +3,7 @@
 #include "test_ondemand.h"
 
 #include <chrono>
+#include <cstring>
 #include <map>
 #include <ranges>
 #include <string>
@@ -473,6 +474,288 @@ bool test_to_adaptor_with_single_value() {
   TEST_SUCCEED();
 }
 
+bool test_direct_from_atoms() {
+  TEST_START();
+  // Single-pass from<> for atoms, int64 arrays, and plain strings. Invalid
+  // input must surface the same error as On Demand.
+  {
+    simdjson::padded_string j(std::string("-12345"));
+    int64_t v = simdjson::from(j);
+    ASSERT_EQUAL(v, int64_t(-12345));
+  }
+  {
+    simdjson::padded_string j(std::string("true"));
+    bool v = simdjson::from(j);
+    ASSERT_TRUE(v);
+  }
+  {
+    simdjson::padded_string j(std::string("\"plain\""));
+    std::string v = simdjson::from(j);
+    ASSERT_EQUAL(v, std::string("plain"));
+  }
+  {
+    simdjson::padded_string j(std::string("\"a\\\"b\""));
+    std::string v = simdjson::from(j);
+    ASSERT_EQUAL(v, std::string("a\"b"));
+  }
+  {
+    simdjson::padded_string j(std::string(R"(["a","bb",""])"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], std::string("a"));
+    ASSERT_EQUAL(v[1], std::string("bb"));
+    ASSERT_EQUAL(v[2], std::string(""));
+  }
+  {
+    simdjson::padded_string j(std::string(R"(["a","b\"c"])"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[1], std::string("b\"c"));
+  }
+  {
+    simdjson::padded_string j(std::string("[1,-2,3]"));
+    std::vector<int64_t> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], int64_t(1));
+    ASSERT_EQUAL(v[1], int64_t(-2));
+    ASSERT_EQUAL(v[2], int64_t(3));
+  }
+  {
+    simdjson::padded_string j(std::string("-0"));
+    ASSERT_ERROR(simdjson::from(j).result<uint64_t>().error(), simdjson::INCORRECT_TYPE);
+    int64_t v = simdjson::from(j);
+    ASSERT_EQUAL(v, int64_t(0));
+  }
+  {
+    simdjson::padded_string j(std::string("[\"caf\\u00e9 \\ud83d\\ude00\",\"na\xc3\xafve\",\"a\\/b\"]"));
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 3);
+    ASSERT_EQUAL(v[0], std::string("caf\xc3\xa9 \xf0\x9f\x98\x80"));
+    ASSERT_EQUAL(v[1], std::string("na\xc3\xafve"));
+    ASSERT_EQUAL(v[2], std::string("a/b"));
+  }
+  {
+    simdjson::padded_string j(std::string("01"));
+    ASSERT_ERROR(simdjson::from(j).result<int64_t>().error(), simdjson::NUMBER_ERROR);
+  }
+  {
+    // Unsigned values above INT64_MAX are parsed directly, not via On Demand.
+    const char *ok[] = {"9223372036854775807", "9223372036854775808",
+                        "10000000000000000000", "18446744073709551615", " 18446744073709551615 "};
+    const uint64_t ok_values[] = {9223372036854775807ULL, 9223372036854775808ULL,
+                                  10000000000000000000ULL, 18446744073709551615ULL, 18446744073709551615ULL};
+    for (size_t i = 0; i < sizeof(ok) / sizeof(ok[0]); i++) {
+      const std::string json(ok[i]);
+      uint64_t direct = 0;
+      ASSERT_SUCCESS(simdjson::internal::direct::parse_document<uint64_t>(
+          reinterpret_cast<const uint8_t *>(json.data()), json.size(), direct));
+      ASSERT_EQUAL(direct, ok_values[i]);
+      simdjson::padded_string j(json);
+      uint64_t v = simdjson::from(j);
+      ASSERT_EQUAL(v, ok_values[i]);
+    }
+    const char *out_of_range[] = {"18446744073709551616", "20000000000000000000",
+                                  "99999999999999999999", "100000000000000000000"};
+    for (const char *s : out_of_range) {
+      const std::string json(s);
+      uint64_t direct = 0;
+      ASSERT_ERROR(simdjson::internal::direct::parse_document<uint64_t>(
+          reinterpret_cast<const uint8_t *>(json.data()), json.size(), direct), simdjson::UNINITIALIZED);
+      simdjson::padded_string j(json);
+      simdjson::ondemand::parser parser;
+      simdjson::ondemand::document doc;
+      uint64_t expected = 0;
+      simdjson::error_code expected_error = parser.iterate(j).get(doc);
+      if (!expected_error) { expected_error = doc.get_uint64().get(expected); }
+      ASSERT_TRUE(expected_error != simdjson::SUCCESS);
+      ASSERT_ERROR(simdjson::from(j).result<uint64_t>().error(), expected_error);
+    }
+  }
+  TEST_SUCCEED();
+}
+
+bool test_direct_from_string_scan() {
+  TEST_START();
+  // The direct string scan reads eight bytes at a time. Every length, every
+  // position of a byte that needs the full parser, and bytes next to the
+  // scan's thresholds must give the On Demand result.
+  auto ondemand_string = [](const std::string &json, std::string &out) {
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string padded(json);
+    simdjson::ondemand::document doc;
+    auto error = parser.iterate(padded).get(doc);
+    if (error) { return error; }
+    return doc.get_string(out);
+  };
+  const char edge[] = {' ', '!', '#', '[', ']', '\x7f', 'a', 'Z'};
+  uint32_t seed = 12345;
+  for (size_t n = 0; n <= 80; n++) {
+    std::string body;
+    for (size_t i = 0; i < n; i++) {
+      seed = seed * 1103515245 + 12345;
+      body += edge[(seed >> 16) % sizeof(edge)];
+    }
+    simdjson::padded_string single("\"" + body + "\"");
+    std::string s = simdjson::from(single);
+    ASSERT_EQUAL(s, body);
+    simdjson::padded_string pair("[\"" + body + "\", \"" + body + "x\"]");
+    std::vector<std::string> v = simdjson::from(pair);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[0], body);
+    ASSERT_EQUAL(v[1], body + "x");
+  }
+  const char *specials[] = {"\\n", "\\\"", "\\u00e9", "\xc3\xa9", "\x01", "\x1f", "\xff",
+                            "\\/", "\\\\", "\\b\\f\\r\\t", "\\u0000", "\\uD83D\\uDE00", "\\ud83d",
+                            "\\udc00", "\\ud83d\\u0041", "\\ud83dx", "\\uzzzz", "\\u12", "\\x", "\\\x01",
+                            "\xf0\x9f\x98\x80", "\xe2\x82", "\xc0\xaf", "\xed\xa0\x80", "\\\xc3\xa9"};
+  for (size_t n = 1; n <= 40; n++) {
+    for (size_t k = 0; k < n; k++) {
+      for (const char *special : specials) {
+        std::string json = "\"";
+        json.append(k, 'a');
+        json.append(special);
+        json.append(n - k - 1, 'b');
+        json.append("\"");
+        std::string expected;
+        auto expected_error = ondemand_string(json, expected);
+        simdjson::padded_string padded(json);
+        std::string got;
+        auto got_error = simdjson::from(padded).get(got);
+        ASSERT_EQUAL(got_error, expected_error);
+        if (!expected_error) { ASSERT_EQUAL(got, expected); }
+        simdjson::padded_string array("[\"x\"," + json + "]");
+        std::vector<std::string> got_vec;
+        auto vec_error = simdjson::from(array).get(got_vec);
+        ASSERT_EQUAL(vec_error, expected_error);
+        if (!expected_error) {
+          ASSERT_EQUAL(got_vec.size(), 2);
+          ASSERT_EQUAL(got_vec[1], expected);
+        }
+      }
+    }
+  }
+  TEST_SUCCEED();
+}
+
+bool test_direct_from_double_array() {
+  TEST_START();
+  // from<vector<double>> parses the array directly. It must return the same
+  // values (bit for bit) and the same errors as On Demand.
+  auto check = [](const simdjson::padded_string_view view) {
+    simdjson::ondemand::parser parser;
+    simdjson::ondemand::document doc;
+    std::vector<double> expected;
+    auto expected_error = parser.iterate(view).get(doc);
+    if (!expected_error) { expected_error = doc.get<std::vector<double>>().get(expected); }
+    std::vector<double> got;
+    auto got_error = simdjson::from(view).get(got);
+    if (got_error != expected_error) {
+      std::cerr << "error mismatch on " << std::string(view.data(), view.size()) << ": " << got_error << " vs " << expected_error << std::endl;
+      return false;
+    }
+    if (!expected_error && (got.size() != expected.size() ||
+        (!got.empty() && std::memcmp(got.data(), expected.data(), got.size() * sizeof(double)) != 0))) {
+      std::cerr << "value mismatch on " << std::string(view.data(), view.size()) << std::endl;
+      return false;
+    }
+    return true;
+  };
+  std::vector<std::string> numbers = {
+      "0", "-0", "0.0", "-0.0", "1", "-1", "1.5", "1e2", "1E2", "1e+2", "1e-2", "1.25e-3",
+      "9007199254740993", "-9223372036854775809", "123456789012345678901234567890",
+      "0.000000000000000000000000000001234567890123456789", "1.7976931348623157e308",
+      "1.7976931348623159e308", "1e309", "-1e309", "4.9e-324", "2.2250738585072014e-308",
+      "1e-400", "1e00000000000000000000001", "0.1e-99999999999999999999",
+      "01", "1.", ".5", "-", "1e", "1e+", "+1", "0x10", "--1", "NaN", "Infinity", "1.5.5",
+      "true", "\"1\"", "[1]", "{}", "null"};
+  uint32_t seed = 2024;
+  auto next = [&seed](uint32_t n) { seed = seed * 1103515245 + 12345; return (seed >> 8) % n; };
+  for (int r = 0; r < 3000; r++) {
+    std::string s;
+    if (next(3) == 0) { s += '-'; }
+    size_t int_digits = next(5) == 0 ? 1 + next(25) : 1 + next(4);
+    if (next(6) == 0) {
+      s += '0';
+    } else {
+      s += char('1' + next(9));
+      for (size_t i = 1; i < int_digits; i++) { s += char('0' + next(10)); }
+    }
+    if (next(4) != 0) {
+      s += '.';
+      size_t zeros = next(4) == 0 ? next(12) : 0;
+      s += std::string(zeros, '0');
+      size_t frac = 1 + next(next(4) == 0 ? 30 : 18);
+      for (size_t i = 0; i < frac; i++) { s += char('0' + next(10)); }
+    }
+    if (next(3) == 0) {
+      s += next(2) ? 'e' : 'E';
+      if (next(2)) { s += next(2) ? '-' : '+'; }
+      size_t exp_digits = 1 + next(3);
+      for (size_t i = 0; i < exp_digits; i++) { s += char('0' + next(10)); }
+    }
+    numbers.push_back(s);
+  }
+  for (const std::string &n : numbers) {
+    const std::string docs[] = {"[" + n + "]", " [ 1.5 , " + n + " ,2 ] ", "[" + n + ",-0.5e1]"};
+    for (const std::string &json : docs) {
+      simdjson::padded_string padded(json);
+      ASSERT_TRUE(check(padded));
+    }
+  }
+  std::string all = "[";
+  for (size_t i = 0; i < numbers.size(); i++) {
+    if (numbers[i].find_first_not_of("0123456789.eE+-") != std::string::npos) { continue; }
+    std::string candidate = "[" + numbers[i] + "]";
+    simdjson::padded_string probe(candidate);
+    std::vector<double> ok;
+    if (simdjson::from(probe).get(ok)) { continue; }
+    if (all.size() > 1) { all += next(2) ? "," : " ,\n"; }
+    all += numbers[i];
+  }
+  all += "]";
+  simdjson::padded_string big(all);
+  ASSERT_TRUE(check(big));
+  for (const char *json : {"", "  \n", "[]", " [ ] ", "[", "]", "[1,]", "[,1]", "[1 2]", "[1]x", "[1] ]", "[[1]]"}) {
+    simdjson::padded_string padded{std::string(json)};
+    ASSERT_TRUE(check(padded));
+  }
+  // Too little padding: the direct parser is skipped, On Demand reports it.
+  std::string tight = "[1.5,2.5]";
+  ASSERT_TRUE(check(simdjson::padded_string_view(tight.data(), tight.size(), tight.size())));
+  // A cut document whose padding is all digits must not be read past.
+  std::string cut = "[1.5" + std::string(simdjson::SIMDJSON_PADDING, '9');
+  ASSERT_TRUE(check(simdjson::padded_string_view(cut.data(), 4, cut.size())));
+  TEST_SUCCEED();
+}
+
+bool test_direct_from_reservation() {
+  TEST_START();
+  // Containers are sized from their first element. A short first element must
+  // not leave a large unused reservation in the returned container.
+  const std::string long_string(1 << 20, 'a');
+  {
+    simdjson::padded_string j("[\"\", \"" + long_string + "\"]");
+    std::vector<std::string> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_EQUAL(v[1], long_string);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  const std::string spaces(1 << 20, ' ');
+  {
+    simdjson::padded_string j("[0," + spaces + "1]");
+    std::vector<int64_t> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  {
+    simdjson::padded_string j("[0," + spaces + "1.5]");
+    std::vector<double> v = simdjson::from(j);
+    ASSERT_EQUAL(v.size(), 2);
+    ASSERT_TRUE(v.capacity() < 64);
+  }
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -507,6 +790,8 @@ bool run() {
       broken() && simple() && simple_optional() && with_parser() && to_array() &&
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
+      test_direct_from_atoms() && test_direct_from_string_scan() && test_direct_from_double_array() &&
+      test_direct_from_reservation() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
