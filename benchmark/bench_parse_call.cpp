@@ -1,4 +1,5 @@
 #include <benchmark/benchmark.h>
+#include <cstring>
 #include <iostream>
 #include "simdjson.h"
 using namespace simdjson;
@@ -98,6 +99,61 @@ static void unicode_validate_twitter(State& state) {
 BENCHMARK(unicode_validate_twitter)->Repetitions(10)->ComputeStatistics("max", [](const std::vector<double>& v) -> double {
     return *(std::max_element(std::begin(v), std::end(v)));
   })->DisplayAggregatesOnly(true);
+
+static void benchmark_validate_utf8(State& state, const padded_string& docdata, bool expected) {
+  if (simdjson::validate_utf8(docdata.data(), docdata.size()) != expected) {
+    state.SkipWithError("unexpected UTF-8 validation result");
+    return;
+  }
+  for (simdjson_unused auto _ : state) {
+    benchmark::DoNotOptimize(simdjson::validate_utf8(docdata.data(), docdata.size()));
+  }
+  state.counters["Gigabytes"] = benchmark::Counter(
+      double(state.iterations()) * double(docdata.size()), benchmark::Counter::kIsRate,
+      benchmark::Counter::OneK::kIs1000);
+}
+
+static padded_string make_ascii_utf8_input(size_t size) {
+  padded_string input(size);
+  std::memset(input.data(), 'a', size);
+  return input;
+}
+
+static void unicode_validate_ascii(State& state) {
+  const padded_string docdata = make_ascii_utf8_input(size_t(state.range(0)));
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_ascii)->Arg(64 * 1024)->Arg(1024 * 1024)->UseRealTime()->Repetitions(10);
+
+static void unicode_validate_multilingual(State& state) {
+  padded_string docdata((1024 * 1024 / 3) * 3);
+  for (size_t i = 0; i < docdata.size(); i += 3) {
+    docdata.data()[i] = char(0xe2);
+    docdata.data()[i + 1] = char(0x82);
+    docdata.data()[i + 2] = char(0xac);
+  }
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_multilingual)->UseRealTime()->Repetitions(10);
+
+static void unicode_validate_sparse(State& state) {
+  padded_string docdata = make_ascii_utf8_input(1024 * 1024);
+  const size_t stride = size_t(state.range(0));
+  for (size_t i = 0; i + 1 < docdata.size(); i += stride) {
+    docdata.data()[i] = char(0xc3);
+    docdata.data()[i + 1] = char(0xa9);
+  }
+  benchmark_validate_utf8(state, docdata, true);
+}
+BENCHMARK(unicode_validate_sparse)->Arg(100)->Arg(150)->Arg(200)->Arg(300)->Arg(500)->UseRealTime()->Repetitions(10);
+
+static void unicode_validate_boundary_error(State& state) {
+  padded_string docdata = make_ascii_utf8_input(size_t(state.range(0)));
+  docdata.data()[63] = char(0xe2);
+  docdata.data()[64] = 'a';
+  benchmark_validate_utf8(state, docdata, false);
+}
+BENCHMARK(unicode_validate_boundary_error)->Arg(4 * 1024)->Arg(64 * 1024)->Arg(1024 * 1024)->UseRealTime()->Repetitions(10);
 
 static void parse_twitter(State& state) {
   dom::parser parser;
