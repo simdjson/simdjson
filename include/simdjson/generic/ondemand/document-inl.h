@@ -56,6 +56,9 @@ simdjson_warn_unused simdjson_inline error_code document::validate() noexcept {
       bool null_value;
       error = get_root_value_iterator().is_root_null(check_trailing).get(null_value);
       if (!error && !null_value) { error = N_ATOM_ERROR; }
+#if SIMDJSON_ENABLE_NAN_INF
+      if (error && !get_root_value_iterator().get_root_double(check_trailing).error()) { error = SUCCESS; }
+#endif
       break;
     }
     default:

@@ -164,27 +164,68 @@ namespace validate_tests {
   }
 
   // Alternating arrays and objects, depth levels deep.
-  std::string nested(size_t depth) {
-    std::string open, close;
+  std::string nested(size_t depth, const char *leaf = "1") {
+    std::string text, close;
     for (size_t i = 0; i < depth; i++) {
-      if (i % 2 == 0) { open += "["; close = "]" + close; }
-      else { open += R"({"a":)"; close = "}" + close; }
+      if (i % 2 == 0) { text.append("["); close.push_back(']'); }
+      else { text.append(R"({"a":)"); close.push_back('}'); }
     }
-    return open + "1" + close;
+    text.append(leaf);
+    text.append(close.rbegin(), close.rend());
+    return text;
   }
 
   bool nesting_limit_matches_dom() {
     TEST_START();
     ondemand::parser parser;
     dom::parser dom_parser;
-    for (size_t depth = DEFAULT_MAX_DEPTH - 4; depth <= DEFAULT_MAX_DEPTH + 4; depth++) {
-      const std::string text = nested(depth);
-      padded_string copy(text);
-      const error_code dom_error = dom_parser.parse(copy).error();
-      ASSERT_EQUAL(validate_text(parser, text), dom_error);
+    for (const char *leaf : {"1", "[]", "{}"}) {
+      for (size_t depth = DEFAULT_MAX_DEPTH - 4; depth <= DEFAULT_MAX_DEPTH + 4; depth++) {
+        const std::string text = nested(depth, leaf);
+        padded_string copy(text);
+        const error_code dom_error = dom_parser.parse(copy).error();
+        ASSERT_EQUAL(validate_text(parser, text), dom_error);
+      }
     }
     TEST_SUCCEED();
   }
+
+  // An empty container does not count toward the depth, as in DOM.
+  bool empty_containers_at_depth_one() {
+    TEST_START();
+    ondemand::parser parser;
+    ASSERT_SUCCESS(parser.allocate(1000, 1));
+    dom::parser dom_parser;
+    ASSERT_SUCCESS(dom_parser.allocate(1000, 1));
+    for (const char *text : {"[]", "{}", " [ ] ", "[1]", R"({"a":1})", "[[]]"}) {
+      std::cout << "  " << text << std::endl;
+      padded_string copy{std::string(text)};
+      ASSERT_EQUAL(validate_text(parser, text), dom_parser.parse(copy).error());
+    }
+    ASSERT_SUCCESS(validate_text(parser, "[]"));
+    ASSERT_SUCCESS(validate_text(parser, "{}"));
+    TEST_SUCCEED();
+  }
+
+#if SIMDJSON_ENABLE_NAN_INF
+  // With NaN and infinity enabled, validate() returns the error code DOM returns.
+  bool nan_inf_matches_dom() {
+    TEST_START();
+    const char *documents[] = {
+      "nan", "nAn", "NaN", "Infinity", "inf", "-nan", "-Infinity", "nul", "Nope", "ix",
+      "[nan]", "[nAn,NaN,Infinity,inf,-nan,-Infinity]", "[nul]", "[Nope]", "[ix]",
+      "[1,]", "[1,2,]", R"({"a":nan,"b":Infinity})", R"({"a":nul})",
+    };
+    ondemand::parser parser;
+    dom::parser dom_parser;
+    for (const char *text : documents) {
+      std::cout << "  " << text << std::endl;
+      padded_string copy{std::string(text)};
+      ASSERT_EQUAL(validate_text(parser, text), dom_parser.parse(copy).error());
+    }
+    TEST_SUCCEED();
+  }
+#endif
 
   bool deep_nesting_with_larger_max_depth() {
     TEST_START();
@@ -268,6 +309,10 @@ namespace validate_tests {
            result_forwarding() &&
            garbage_padding() &&
            nesting_limit_matches_dom() &&
+           empty_containers_at_depth_one() &&
+#if SIMDJSON_ENABLE_NAN_INF
+           nan_inf_matches_dom() &&
+#endif
            deep_nesting_with_larger_max_depth() &&
            stream_documents() &&
            agrees_with_dom() &&

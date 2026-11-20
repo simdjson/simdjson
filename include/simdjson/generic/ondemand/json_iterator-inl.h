@@ -387,7 +387,9 @@ value:
   }
 
 container_start:
-  if (++depth >= max_depth) { return DEPTH_ERROR; }
+  // As in DOM, an empty container does not count toward the maximal depth. Its bit may then
+  // be at max_depth, which the stack has room for.
+  if (++depth >= max_depth && (pos == end || json[*pos] != c + 2)) { return DEPTH_ERROR; }
   if (depth == sizeof(fixed_stack) * 8) {
     heap_stack.reset(new (std::nothrow) uint64_t[max_depth / 64 + 1]());
     if (!heap_stack) { return MEMALLOC; }
@@ -430,13 +432,12 @@ scalar:
   switch (c) {
     case 't': case 'f': case 'n': case '-': case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': case 'i': case 'I':
+#endif
       break;
     default:
-#if SIMDJSON_ENABLE_NAN_INF
-      break;
-#else
       return TAPE_ERROR;
-#endif
   }
   // The scalar is not the last token, so the parsers read inside the document.
   if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
@@ -444,15 +445,16 @@ scalar:
     case 't': if (!atomparsing::is_valid_true_atom(json + index)) { return T_ATOM_ERROR; } break;
     case 'f': if (!atomparsing::is_valid_false_atom(json + index)) { return F_ATOM_ERROR; } break;
     case 'n':
-      if (!atomparsing::is_valid_null_atom(json + index)) {
 #if SIMDJSON_ENABLE_NAN_INF
-        if (numberparsing::parse_double(json + index).error()) { return NUMBER_ERROR; }
-        break;
+      if (!atomparsing::is_valid_null_atom(json + index) && !atomparsing::is_valid_nan_atom(json + index)) { return N_ATOM_ERROR; }
 #else
-        return N_ATOM_ERROR;
+      if (!atomparsing::is_valid_null_atom(json + index)) { return N_ATOM_ERROR; }
 #endif
-      }
       break;
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': if (!atomparsing::is_valid_nan_atom(json + index)) { return TAPE_ERROR; } break;
+    case 'i': case 'I': if (!atomparsing::is_valid_inf_atom(json + index)) { return TAPE_ERROR; } break;
+#endif
     default:
       if (numberparsing::parse_double(json + index).error()) { return NUMBER_ERROR; }
       break;
