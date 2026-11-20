@@ -112,6 +112,60 @@ void bench_yyjson(CitmCatalog &data) {
 }
 #endif
 
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+#include "jsonifier_citm_catalog_data.h"
+void bench_jsonifier(CitmCatalog &data) {
+  jsonifier::jsonifier_core<> serializer;
+  std::string output;
+  if (!serializer.serializeJson(data, output)) {
+    printf("jsonifier serialization error\n");
+    return;
+  }
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(1, output_volume, "bench_jsonifier",
+               bench([&data, &measured_volume, &output_volume, &serializer]() {
+                 std::string output;
+                 if (!serializer.serializeJson(data, output)) {
+                   printf("jsonifier serialization error\n");
+                   return;
+                 }
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif
+
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+void bench_jsonifier_reuse_buffer(CitmCatalog &data) {
+  jsonifier::jsonifier_core<> serializer;
+  std::string output;
+  if (!serializer.serializeJson(data, output)) {
+    printf("jsonifier serialization error\n");
+    return;
+  }
+  size_t output_volume = output.size();
+  printf("# output volume: %zu bytes\n", output_volume);
+
+  volatile size_t measured_volume = 0;
+  pretty_print(1, output_volume, "bench_jsonifier_reuse_buffer",
+               bench([&data, &measured_volume, &output_volume, &serializer, &output]() {
+                 if (!serializer.serializeJson(data, output)) {
+                   printf("jsonifier serialization error\n");
+                   return;
+                 }
+                 measured_volume = output.size();
+                 if (measured_volume != output_volume) {
+                   printf("mismatch\n");
+                 }
+               }));
+}
+#endif
+
 // Fair allocation variant: allocates fresh buffer each iteration (matches other libraries)
 void bench_simdjson_static_reflection(CitmCatalog &data) {
   // First run to determine expected size
@@ -336,6 +390,16 @@ int main(int argc, char* argv[]) {
 #ifdef SIMDJSON_COMPETITION_GLAZE
   if (matches_filter("glaze", filter)) {
     bench_glaze(my_struct);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+  if (matches_filter("jsonifier", filter)) {
+    bench_jsonifier(my_struct);
+  }
+#endif
+#ifdef SIMDJSON_COMPETITION_JSONIFIER
+  if (matches_filter("jsonifier_reuse", filter)) {
+    bench_jsonifier_reuse_buffer(my_struct);
   }
 #endif
 #if SIMDJSON_BENCH_CPP_REFLECT
