@@ -58,6 +58,9 @@ simdjson_really_inline void write_eight_digits(char *b, uint32_t v) noexcept {
 
 // n < 10^8. Writes one to eight digits.
 simdjson_really_inline char *write_below_1e8(char *b, uint32_t n) noexcept {
+  if (n < 100) {
+    return write_one_or_two_digits(b, n);
+  }
   if (n < 10000) {
     return write_one_to_four_digits(b, n);
   }

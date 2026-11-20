@@ -88,7 +88,7 @@ namespace internal {
 template <class formatter>
 simdjson_inline void base_formatter<formatter>::number(uint64_t x) {
   char number_buffer[24];
-  chars(number_buffer, write_uint(number_buffer, x));
+  chars(number_buffer + 1, write_uint(number_buffer + 1, x));
 }
 
 template <class formatter>
