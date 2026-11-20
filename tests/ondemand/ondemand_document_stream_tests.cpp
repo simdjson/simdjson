@@ -1126,7 +1126,8 @@ namespace document_stream_tests {
     // stage 1, so we check every implementation that the system supports.
     bool white_space_before_string_cut_by_batch() {
         TEST_START();
-        const std::string json = "\"a\"" + std::string(40, ' ') + "\"" + std::string(24, 'x') + "\" \"b\"";
+        std::string json = "\"a\"";
+        json.append(40, ' ').append("\"").append(24, 'x').append("\" \"b\"");
         const padded_string input(json);
         const size_t expected_index[] = {0, 43, 70};
         const std::string expected_value[] = {"a", std::string(24, 'x'), "b"};
@@ -1155,9 +1156,12 @@ namespace document_stream_tests {
     }
     bool white_space_before_document_cut_by_comma_delimited_batch() {
         TEST_START();
-        const std::string cut[] = {"\"" + std::string(24, 'x') + "\"", "[1,2,3,4,5,6,7,8,9,10,11]"};
+        std::string quoted = "\"";
+        quoted.append(24, 'x').append("\"");
+        const std::string cut[] = {quoted, "[1,2,3,4,5,6,7,8,9,10,11]"};
         for (const std::string &doc : cut) {
-            const std::string json = "\"a\"," + std::string(40, ' ') + doc + ", \"b\"";
+            std::string json = "\"a\",";
+            json.append(40, ' ').append(doc).append(", \"b\"");
             const padded_string input(json);
             const implementation *active = get_active_implementation();
             for (const implementation *impl : get_available_implementations()) {

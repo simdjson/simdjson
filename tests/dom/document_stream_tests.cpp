@@ -191,7 +191,8 @@ namespace document_stream_tests {
     // 26-byte string. The string fits in a batch that starts at its quote, as
     // an array would: this is not a CAPACITY error. The fallback has its own
     // stage 1, so we check every implementation that the system supports.
-    const std::string json = "\"a\"" + std::string(40, ' ') + "\"" + std::string(24, 'x') + "\" \"b\"";
+    std::string json = "\"a\"";
+    json.append(40, ' ').append("\"").append(24, 'x').append("\" \"b\"");
     const simdjson::padded_string input(json);
     const size_t expected_index[] = {0, 43, 70};
     const std::string expected_value[] = {"a", std::string(24, 'x'), "b"};
@@ -220,9 +221,12 @@ namespace document_stream_tests {
   }
   bool white_space_before_document_cut_by_comma_delimited_batch() {
     std::cout << "Running " << __func__ << std::endl;
-    const std::string cut[] = {"\"" + std::string(24, 'x') + "\"", "[1,2,3,4,5,6,7,8,9,10,11]"};
+    std::string quoted = "\"";
+    quoted.append(24, 'x').append("\"");
+    const std::string cut[] = {quoted, "[1,2,3,4,5,6,7,8,9,10,11]"};
     for (const std::string &doc : cut) {
-      const std::string json = "\"a\"," + std::string(40, ' ') + doc + ", \"b\"";
+      std::string json = "\"a\",";
+      json.append(40, ' ').append(doc).append(", \"b\"");
       const simdjson::padded_string input(json);
       const simdjson::implementation *active = simdjson::get_active_implementation();
       for (const simdjson::implementation *impl : simdjson::get_available_implementations()) {
