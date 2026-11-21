@@ -489,6 +489,44 @@ namespace visit_tests {
     TEST_SUCCEED();
   }
 
+  // Two children under one array, each nested `inner` levels.
+  // The second child is objects when second_is_object is set.
+  std::string two_deep(size_t inner, bool second_is_object) {
+    const std::string arrays(inner, '[');
+    const std::string array_close(inner, ']');
+    std::string second_open = arrays;
+    std::string second_close = array_close;
+    if (second_is_object) {
+      second_open.clear();
+      for (size_t i = 0; i < inner; i++) { second_open.append("{\"a\":"); }
+      second_close.assign(inner, '}');
+    }
+    std::string text;
+    text.reserve(2 + 2 * inner + second_open.size() + second_close.size() + 4);
+    text.push_back('[');
+    text.append(arrays);
+    text.push_back('1');
+    text.append(array_close);
+    text.push_back(',');
+    text.append(second_open);
+    text.push_back('2');
+    text.append(second_close);
+    text.push_back(']');
+    return text;
+  }
+
+  // The walk keeps 64 levels on a fixed stack, then moves to the heap. A second
+  // container at that depth must not copy the fixed stack again.
+  bool deep_siblings_after_stack_spill() {
+    TEST_START();
+    ondemand::parser parser;
+    dom::parser dom_parser;
+    constexpr size_t inner = 63;
+    ASSERT_TRUE(same_as_dom(parser, dom_parser, two_deep(inner, false)));
+    ASSERT_TRUE(same_as_dom(parser, dom_parser, two_deep(inner, true)));
+    TEST_SUCCEED();
+  }
+
   bool deep_nesting_with_larger_max_depth() {
     TEST_START();
     ondemand::parser parser;
@@ -598,6 +636,7 @@ namespace visit_tests {
            result_forwarding() &&
            garbage_padding() &&
            nesting_limit_matches_dom() &&
+           deep_siblings_after_stack_spill() &&
            deep_nesting_with_larger_max_depth() &&
            stream_documents() &&
 #if SIMDJSON_ENABLE_NAN_INF

@@ -100,8 +100,8 @@ public:
   /**
    * Calls the visitor for the array or object at the current position and everything in it,
    * without recursion (see document::visit()). Outside of streaming mode, it also checks that
-   * nothing follows it. It does not move the iterator, but unescaped strings advance the
-   * string buffer.
+   * nothing follows it. It does not move the iterator. Escaped strings are copied
+   * into the string buffer.
    */
   template <typename V>
   simdjson_warn_unused error_code visit_container(V &visitor);

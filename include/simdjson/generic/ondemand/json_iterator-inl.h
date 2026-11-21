@@ -604,7 +604,9 @@ container_start:
     goto value_end;
   }
   if (++depth >= max_depth) { return DEPTH_ERROR; }
-  if (depth == FIXED_DEPTH) {
+  // Copy the fixed stack once. A later container at this depth must keep the
+  // counts already stored on the heap.
+  if (depth == FIXED_DEPTH && !heap_stack) {
     heap_stack.reset(new (std::nothrow) uint32_t[max_depth]);
     if (!heap_stack) { return MEMALLOC; }
     // The root is at depth 1: slot 0 is not used.
