@@ -238,6 +238,28 @@ namespace validate_tests {
     TEST_SUCCEED();
   }
 
+  // Two containers at depth 1023 that each reach depth 1024: the second one, an object,
+  // must still be checked as an object.
+  bool reaching_the_heap_depth_twice() {
+    TEST_START();
+    dom::parser dom_parser;
+    for (size_t max_depth : {size_t(DEFAULT_MAX_DEPTH), size_t(5000)}) {
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(1000000, max_depth));
+      ASSERT_SUCCESS(dom_parser.allocate(1000000, max_depth));
+      for (const char *middle : {R"([[]],{"k":[],"x":1})", R"([[]],{"k":[],1])",
+                                 R"({"k":[]},[[],1])", R"({"k":[]},[[],"x":1])"}) {
+        std::cout << "  " << middle << std::endl;
+        std::string text(1022, '[');
+        text.append(middle);
+        text.append(1022, ']');
+        padded_string copy(text);
+        ASSERT_EQUAL(validate_text(parser, text), dom_parser.parse(copy).error());
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool stream_documents() {
     TEST_START();
     auto json = R"({"a":[1,2]} [3,"x"] 4 "five" {"b":null})"_padded;
@@ -314,6 +336,7 @@ namespace validate_tests {
            nan_inf_matches_dom() &&
 #endif
            deep_nesting_with_larger_max_depth() &&
+           reaching_the_heap_depth_twice() &&
            stream_documents() &&
            agrees_with_dom() &&
            true;
