@@ -730,7 +730,7 @@ namespace visit_tests {
     TEST_SUCCEED();
   }
 
-  bool value_visit_root_and_partly_read() {
+  bool value_visit_root_and_read_value() {
     TEST_START();
     auto json = R"({"payload":{"x":1,"y":[2,"z"]},"after":3})"_padded;
     std::string expected;
@@ -749,17 +749,19 @@ namespace visit_tests {
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ondemand::value value;
     ASSERT_SUCCESS(doc["payload"].get(value));
-    ondemand::object object;
-    ASSERT_SUCCESS(value.get_object().get(object));
-    int64_t x;
-    ASSERT_SUCCESS(object["x"].get(x));
-    ASSERT_EQUAL(x, 1);
-    // A partly read value is visited from its start, twice if need be.
     for (size_t round = 0; round < 2; round++) {
       recording_visitor visitor;
       ASSERT_SUCCESS(value.visit(visitor));
       ASSERT_EQUAL(visitor.rec.out, payload);
     }
+    ondemand::object object;
+    ASSERT_SUCCESS(value.get_object().get(object));
+    int64_t x;
+    ASSERT_SUCCESS(object["x"].get(x));
+    ASSERT_EQUAL(x, 1);
+    recording_visitor late;
+    ASSERT_ERROR(value.visit(late), OUT_OF_ORDER_ITERATION);
+    ASSERT_EQUAL(late.rec.out, "");
     int64_t after;
     ASSERT_SUCCESS(doc["after"].get(after));
     ASSERT_EQUAL(after, 3);
@@ -795,6 +797,38 @@ namespace visit_tests {
     failing_visitor failing;
     ASSERT_ERROR(doc["p"].visit(failing), INCORRECT_TYPE);
     ASSERT_EQUAL(failing.keys, 3);
+    TEST_SUCCEED();
+  }
+
+  // Each visit of a value reuses the same part of the string buffer: escaped strings visited many
+  // times, then read, do not overflow it.
+  bool value_visit_string_buffer() {
+    TEST_START();
+    const std::string escaped = std::string(1000, 'a') + "\\n";
+    const std::string text = "{\"p\":[\"" + escaped + "\",\"" + escaped + "\"],\"q\":\"" + escaped + "\"}";
+    padded_string json(text);
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value value;
+    ASSERT_SUCCESS(doc["p"].get(value));
+    for (size_t round = 0; round < 4; round++) {
+      string_visitor visitor;
+      ASSERT_SUCCESS(value.visit(visitor));
+      ASSERT_EQUAL(visitor.strings.size(), 2);
+      ASSERT_EQUAL(visitor.strings[1], std::string(1000, 'a') + "\n");
+    }
+    size_t count = 0;
+    for (auto element : value.get_array()) {
+      std::string_view s;
+      ASSERT_SUCCESS(element.get(s));
+      ASSERT_EQUAL(s, std::string(1000, 'a') + "\n");
+      count++;
+    }
+    ASSERT_EQUAL(count, 2);
+    std::string_view q;
+    ASSERT_SUCCESS(doc["q"].get(q));
+    ASSERT_EQUAL(q, std::string(1000, 'a') + "\n");
     TEST_SUCCEED();
   }
 
@@ -874,8 +908,9 @@ namespace visit_tests {
            agrees_with_dom() &&
            value_visit_matches_dom() &&
            value_visit_array_elements() &&
-           value_visit_root_and_partly_read() &&
+           value_visit_root_and_read_value() &&
            value_visit_errors() &&
+           value_visit_string_buffer() &&
            value_visit_depth() &&
            true;
   }

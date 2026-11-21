@@ -329,15 +329,23 @@ simdjson_warn_unused simdjson_inline simdjson_result<number> value::get_number()
 
 template <typename V>
 simdjson_warn_unused simdjson_inline error_code value::visit(V &visitor) {
+  if (!iter.is_at_start()) { return OUT_OF_ORDER_ITERATION; }
   json_iterator &json_iter = iter.json_iter();
   const uint8_t *const json = iter.peek_start();
+  // The escaped strings of the value go where reading it would put them, so that the string
+  // buffer has room for them however many times the value is visited.
+  uint8_t *const string_buf_loc = json_iter._string_buf_loc;
+  error_code error;
   switch (*json) {
     case '{': case '[':
-      return json_iter.visit_container(visitor, iter.start_position(), size_t(iter.depth() - 1));
+      error = json_iter.visit_container(visitor, iter.start_position(), size_t(iter.depth() - 1));
+      break;
     // A scalar value is nested in a container: its parser reads inside the document.
-    case '"': return json_iter.visit_string(json, false, visitor);
-    default: return json_iter.visit_scalar(json, visitor);
+    case '"': error = json_iter.visit_string(json, false, visitor); break;
+    default: error = json_iter.visit_scalar(json, visitor); break;
   }
+  json_iter._string_buf_loc = string_buf_loc;
+  return error;
 }
 
 simdjson_inline std::string_view value::raw_json_token() noexcept {

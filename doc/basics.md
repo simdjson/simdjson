@@ -3464,10 +3464,11 @@ You may also visit a single value after navigating to it with `visit()` on the v
   if (!error) { error = doc["id"].get(id); }
 ```
 
-The visitor gets the value and everything in it, with the same methods and the same rules for
-strings as above. Only that value is checked, and the maximal depth counts from the root of the
-document. The walk starts at the beginning of the value, even if you have read part of it, and it
-does not move the iterator: to go on, read the next field or element as usual.
+The visitor gets the value and everything in it, with the same methods as above. A string with
+escapes is valid until you read the document further or visit again. Only that value is checked,
+and the maximal depth counts from the root of the document. The value must not have been read
+(otherwise `visit()` returns `OUT_OF_ORDER_ITERATION`). The walk does not move the iterator: to go
+on, read the value or the next field or element as usual.
 
 
 Newline-Delimited JSON (ndjson) and JSON lines

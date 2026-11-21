@@ -742,12 +742,13 @@ public:
    *
    *   auto error = doc["payload"].visit(visitor);
    *
-   * The walk starts at the beginning of the value, even if it has been partly read, and does
-   * not move the iterator: to go on, read the next field or element as usual. The maximal depth
-   * counts from the root of the document. A value at the root also fails if anything follows it.
+   * The value must not have been read. The walk does not move the iterator: to go on, read the
+   * value or the next field or element as usual. A string with escapes is valid until you read
+   * the document further or visit again. The maximal depth counts from the root of the document.
+   * A value at the root also fails if anything follows it.
    *
-   * @returns SUCCESS, the first error found in the value, or the first error the visitor
-   *          returns.
+   * @returns SUCCESS, OUT_OF_ORDER_ITERATION if the value has been read, the first error found
+   *          in the value, or the first error the visitor returns.
    */
   template <typename V>
   simdjson_warn_unused simdjson_inline error_code visit(V &visitor);

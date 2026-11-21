@@ -611,8 +611,10 @@ container_start:
   if (depth >= FIXED_DEPTH && !heap_stack) {
     heap_stack.reset(new (std::nothrow) uint32_t[max_depth]);
     if (!heap_stack) { return MEMALLOC; }
-    // The root is at depth 1: slot 0 is not used.
-    std::memcpy(heap_stack.get() + 1, fixed_stack + 1, sizeof(fixed_stack) - sizeof(fixed_stack[0]));
+    // Only the slots past the parent were written.
+    if (parent_depth + 1 < FIXED_DEPTH) {
+      std::memcpy(heap_stack.get() + parent_depth + 1, fixed_stack + parent_depth + 1, (FIXED_DEPTH - parent_depth - 1) * sizeof(fixed_stack[0]));
+    }
     stack = heap_stack.get();
   }
   stack[depth] = 1;
