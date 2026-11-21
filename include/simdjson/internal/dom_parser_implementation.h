@@ -3,6 +3,7 @@
 
 #include "simdjson/base.h"
 #include "simdjson/error.h"
+#include "simdjson/buffer_allocator.h"
 #include <memory>
 
 namespace simdjson {
@@ -189,7 +190,9 @@ public:
   /** Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
+  allocated_array<uint32_t> structural_indexes{};
+  /** Allocates structural_indexes when set_capacity grows them; nullptr uses new[]. */
+  const buffer_allocator *allocator{nullptr};
   /** Next structural index to parse */
   uint32_t next_structural_index{0};
   /** Buffer passed to stage 1 (also set by the lone-atom fast path). */

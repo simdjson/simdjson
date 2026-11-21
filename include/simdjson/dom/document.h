@@ -2,6 +2,7 @@
 #define SIMDJSON_DOM_DOCUMENT_H
 
 #include "simdjson/dom/base.h"
+#include "simdjson/buffer_allocator.h"
 
 #include <memory>
 
@@ -54,13 +55,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape{};
+  internal::allocated_array<uint64_t> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf{};
+  internal::allocated_array<uint8_t> string_buf{};
   /** @private Allocate memory to support
    * input JSON documents of up to len bytes.
    *
@@ -71,8 +72,10 @@ public:
    * can you use this function to increase
    * or lower the amount of allocated memory.
    * Passing zero clears the memory.
+   *
+   * The buffers come from allocator, or from new[] when it is nullptr.
    */
-  error_code allocate(size_t len) noexcept;
+  error_code allocate(size_t len, const buffer_allocator *allocator = nullptr) noexcept;
   /** @private Capacity in bytes, in terms
    * of how many bytes of input JSON we can
    * support.

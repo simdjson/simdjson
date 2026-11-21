@@ -26,7 +26,7 @@ inline size_t document::capacity() const noexcept {
 }
 
 simdjson_warn_unused
-inline error_code document::allocate(size_t capacity) noexcept {
+inline error_code document::allocate(size_t capacity, const buffer_allocator *allocator) noexcept {
   if (capacity == 0) {
     string_buf.reset();
     tape.reset();
@@ -52,9 +52,7 @@ inline error_code document::allocate(size_t capacity) noexcept {
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (capacity / 3) + SIMDJSON_PADDING, 64);
-  string_buf.reset( new (std::nothrow) uint8_t[string_capacity]);
-  tape.reset(new (std::nothrow) uint64_t[tape_capacity]);
-  if(!(string_buf && tape)) {
+  if(!string_buf.allocate(string_capacity, allocator) || !tape.allocate(tape_capacity, allocator)) {
     allocated_capacity = 0;
     string_buf.reset();
     tape.reset();
