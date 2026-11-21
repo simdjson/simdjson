@@ -259,7 +259,7 @@ inline size_t structure_analyzer::estimate_number_length(double d) const {
   // (e.g. 0.1 becomes "0.10000000000000001", 19 chars, vs the emitted "0.1"),
   // which misaligns double columns in table formatting the same way escaped
   // control characters did before #2929.
-  char buf[simdjson::internal::to_chars_buffer_size];
+  simdjson_indeterminate char buf[simdjson::internal::to_chars_buffer_size];
   char *end = simdjson::internal::to_chars(buf, buf + sizeof(buf), d);
   return static_cast<size_t>(end - buf);
 }

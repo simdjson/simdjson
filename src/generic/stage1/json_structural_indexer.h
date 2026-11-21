@@ -218,7 +218,7 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);

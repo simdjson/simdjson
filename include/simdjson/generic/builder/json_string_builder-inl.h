@@ -526,7 +526,7 @@ simdjson_never_inline char *append_quoted_element_slow(string_builder &b,
     return p;
   }
   // Escape into a stack buffer first so that we grow by the exact size.
-  char tmp[3 + 6 * 512];
+  simdjson_indeterminate char tmp[3 + 6 * 512];
   char *tp = tmp;
   if (!first) {
     *tp++ = ',';
@@ -960,7 +960,7 @@ simdjson_warn_unused error_code to_json_array(const T *data, size_t n, std::stri
   }
   const size_t bound = n * per + 2 + write_slack;
   if (bound <= stack_buffer_size) {
-    char buffer[stack_buffer_size];
+    simdjson_indeterminate char buffer[stack_buffer_size];
     char *end = write_array(buffer, data, n);
     return assign_bytes(s, buffer, size_t(end - buffer)) ? SUCCESS : MEMALLOC;
   }
