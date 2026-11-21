@@ -450,6 +450,41 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
   uint8_t quote = 0;
   uint8_t nonescape = 1;
 
+  // Bytes 0x80 where the byte of word equals c.
+  const auto bytes_equal = [](uint64_t word, uint8_t c) -> uint64_t {
+    const uint64_t x = word ^ (0x0101010101010101 * c);
+    return ~(((x & 0x7F7F7F7F7F7F7F7F) + 0x7F7F7F7F7F7F7F7F) | x | 0x7F7F7F7F7F7F7F7F);
+  };
+  // A word without quotes or backslashes leaves the string state unchanged:
+  // within a string it is copied, outside it loses its white space.
+  while (i + 8 <= len) {
+    uint64_t word;
+    std::memcpy(&word, buf + i, 8);
+    if (bytes_equal(word, '"') | bytes_equal(word, '\\')) {
+      for (size_t end = i + 8; i < end; i++) {
+        unsigned char c = buf[i];
+        uint8_t *meta = jump_table + 3 * c;
+        quote = quote ^ (meta[0] & nonescape);
+        dst[pos] = c;
+        pos += meta[2] | quote;
+        nonescape = uint8_t(~nonescape) | (meta[1]);
+      }
+      continue;
+    }
+    nonescape = 1;
+    if (quote || !(bytes_equal(word, ' ') | bytes_equal(word, '\n') | bytes_equal(word, '\r') | bytes_equal(word, '\t'))) {
+      std::memcpy(dst + pos, &word, 8);
+      pos += 8;
+      i += 8;
+    } else {
+      for (size_t end = i + 8; i < end; i++) {
+        unsigned char c = buf[i];
+        dst[pos] = c;
+        pos += jump_table[3 * c + 2];
+      }
+    }
+  }
+
   while (i < len) {
     unsigned char c = buf[i];
     uint8_t *meta = jump_table + 3 * c;

@@ -196,6 +196,14 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor

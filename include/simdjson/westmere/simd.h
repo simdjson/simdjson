@@ -5,6 +5,7 @@
 #include "simdjson/westmere/base.h"
 #include "simdjson/westmere/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
+#include "simdjson/internal/partial_load.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -199,6 +200,24 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      return load_partial_16(ptr, n, begin, fill);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor

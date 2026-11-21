@@ -96,12 +96,18 @@ int main(int argc, const char *argv[]) {
              std::chrono::steady_clock::now().time_since_epoch())
              .count();
       size_t times = 1;
+      // Read the clock once per batch: on small inputs, reading it after
+      // every call would cost as much as the call.
+      size_t batch = 1;
       while(afterns - beforens < 1000000000) {
-          error = simdjson::get_active_implementation()->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
+          for (size_t i = 0; i < batch; i++) {
+            error = simdjson::get_active_implementation()->minify((const uint8_t*)p.data(), p.length(), (uint8_t*)copy.data(), copy_len);
+          }
           afterns = std::chrono::duration_cast<::std::chrono::nanoseconds>(
              std::chrono::steady_clock::now().time_since_epoch())
              .count();
-          times += 1;
+          times += batch;
+          if (batch < 1024) { batch *= 2; }
       }
       if (error) { std::cerr << error << std::endl; return EXIT_FAILURE; }
       printf("%.3f GB/s\n", double(p.length() * times) / double(afterns - beforens));
