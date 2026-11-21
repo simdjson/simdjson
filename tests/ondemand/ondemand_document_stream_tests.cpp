@@ -882,12 +882,7 @@ namespace document_stream_tests {
         TEST_SUCCEED();
     }
 
-    // The last record of a JSON text sequence may be cut by the end of the
-    // input. Stage 1 used to hand it to stage 2 as if it were complete, so a
-    // number at its end, as in a record ending with [1, was parsed on into the
-    // padding, whose content the caller need not initialize, and past the
-    // buffer when the padding holds digits. The record is left to
-    // truncated_bytes(), as in the other stream formats.
+    // The padding is digits and must not be parsed as part of the cut record.
     bool json_sequence_truncated_last_record() {
         TEST_START();
         const std::string json("\x1e[5]\n\x1e[1");
