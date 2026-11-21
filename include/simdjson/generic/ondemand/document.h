@@ -809,6 +809,8 @@ public:
    * can be iterated afterwards. The visitor may throw: the exception goes through visit(), and
    * the document must then be rewound before it is used again.
    *
+   * To parse and visit a document in one call, faster on small documents, see parser::visit().
+   *
    * @returns SUCCESS, the first error found in the document, or the first error the visitor
    *          returned.
    */
