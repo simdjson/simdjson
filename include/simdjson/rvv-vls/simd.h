@@ -96,6 +96,14 @@ namespace simd {
     simdjson_inline simd8() : simd8(zero()) {}
     simdjson_inline simd8(const uint8_t values[VL8]) : simd8(load(values)) {}
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // The n < VL8 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[VL8];
+      std::memset(block, fill, VL8);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8(simd8<bool> mask) : value(__riscv_vmerge_vxm_u8m1(zero(), -1, (vbool_t)mask, VL8)) {}
 
     simdjson_inline operator const vuint8_t&() const { return this->value; }

@@ -41,6 +41,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -101,6 +109,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
