@@ -19,7 +19,7 @@ int main() {
 #endif
     int64_t sum = 0;
     for (auto field : object) {
-        int64_t x;
+        int64_t x{};
         if (field.value().get(x)) { return EXIT_FAILURE; }
         sum += x;
     }

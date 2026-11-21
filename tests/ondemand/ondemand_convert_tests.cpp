@@ -25,19 +25,19 @@ private:
 
 
 struct Meeting {
-    std::string title;
-    std::vector<std::string> attendees;
-    std::optional<std::string> location;
-    bool is_recurring;
+    std::string title{};
+    std::vector<std::string> attendees{};
+    std::optional<std::string> location{};
+    bool is_recurring{};
 };
 
 
 struct MeetingTime {
-    std::string title;
-    std::chrono::system_clock::time_point start_time;
-    std::vector<std::string> attendees;
-    std::optional<std::string> location;
-    bool is_recurring;
+    std::string title{};
+    std::chrono::system_clock::time_point start_time{};
+    std::vector<std::string> attendees{};
+    std::optional<std::string> location{};
+    bool is_recurring{};
 };
 
 
