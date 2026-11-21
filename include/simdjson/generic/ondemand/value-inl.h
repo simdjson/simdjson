@@ -327,6 +327,19 @@ simdjson_warn_unused simdjson_inline simdjson_result<number> value::get_number()
   return iter.get_number();
 }
 
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code value::visit(V &visitor) {
+  json_iterator &json_iter = iter.json_iter();
+  const uint8_t *const json = iter.peek_start();
+  switch (*json) {
+    case '{': case '[':
+      return json_iter.visit_container(visitor, iter.start_position(), size_t(iter.depth() - 1));
+    // A scalar value is nested in a container: its parser reads inside the document.
+    case '"': return json_iter.visit_string(json, false, visitor);
+    default: return json_iter.visit_scalar(json, visitor);
+  }
+}
+
 simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
@@ -737,6 +750,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::opera
   return first;
 }
 #endif
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::visit(V &visitor) {
+  if (error()) { return error(); }
+  return first.visit(visitor);
+}
 
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }

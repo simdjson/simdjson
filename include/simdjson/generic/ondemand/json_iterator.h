@@ -98,13 +98,14 @@ public:
   simdjson_warn_unused error_code validate_container() noexcept;
   static simdjson_inline bool has_backslash(const uint8_t *src, size_t len) noexcept;
   /**
-   * Calls the visitor for the array or object at the current position and everything in it,
-   * without recursion (see document::visit()). Outside of streaming mode, it also checks that
-   * nothing follows it. It does not move the iterator. Escaped strings are copied
-   * into the string buffer.
+   * Calls the visitor for the array or object at the start position and everything in it,
+   * without recursion (see document::visit()). The container is at depth parent_depth + 1. At
+   * the root (parent_depth == 0) and outside of streaming mode, it also checks that nothing
+   * follows it. It does not move the iterator. Escaped strings are copied into the string
+   * buffer.
    */
   template <typename V>
-  simdjson_warn_unused error_code visit_container(V &visitor);
+  simdjson_warn_unused error_code visit_container(V &visitor, token_position start, size_t parent_depth);
   template <typename V>
   simdjson_warn_unused simdjson_inline error_code visit_string(const uint8_t *quote, bool key, V &visitor);
   template <typename V>

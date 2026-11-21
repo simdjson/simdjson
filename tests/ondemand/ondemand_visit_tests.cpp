@@ -670,6 +670,182 @@ namespace visit_tests {
     TEST_SUCCEED();
   }
 
+  // The events of a DOM element, or an empty string on an error.
+  std::string dom_events(simdjson_result<dom::element> result) {
+    dom::element element;
+    recorder rec;
+    if (result.get(element) || !record_dom(element, rec)) { return ""; }
+    return rec.out;
+  }
+
+  bool value_visit_matches_dom() {
+    TEST_START();
+    const char *values[] = {
+      R"({"a":[1,2,{"b":"x"}],"c":true,"d":null,"f":-1.5e3})", "[]", "{}", "[[[[]]]]",
+      R"({"key \"esc\"":"\u00e9\ud83d\ude00"})", R"(["caf\u00e9","plain",""])",
+      R"("plain")", R"("te\nxt")", "42", "-0", "1.5e-3", "18446744073709551615",
+      "-9223372036854775808", "true", "false", "null", R"([0,-0,1.5,9223372036854775808])",
+    };
+    ondemand::parser parser;
+    dom::parser dom_parser;
+    for (const char *value_text : values) {
+      const std::string text = std::string(R"({"before":[1,{"x":2}],"payload":)") + value_text + R"(,"after":"end"})";
+      std::cout << "  " << text << std::endl;
+      padded_string json(text);
+      const std::string expected = dom_events(dom_parser.parse(json)["payload"]);
+      ASSERT_TRUE(!expected.empty());
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      recording_visitor visitor;
+      ASSERT_SUCCESS(doc["payload"].visit(visitor));
+      ASSERT_EQUAL(visitor.rec.out, expected);
+      std::string_view after;
+      ASSERT_SUCCESS(doc["after"].get(after));
+      ASSERT_EQUAL(after, "end");
+    }
+    TEST_SUCCEED();
+  }
+
+  bool value_visit_array_elements() {
+    TEST_START();
+    auto json = R"([{"a":1},[2,"t\"x"],"s",3,-2.5,true,null,{"b":{}},[]])"_padded;
+    dom::parser dom_parser;
+    dom::array dom_array;
+    ASSERT_SUCCESS(dom_parser.parse(json).get(dom_array));
+    ondemand::parser parser;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::array array;
+    ASSERT_SUCCESS(doc.get_array().get(array));
+    size_t i = 0;
+    for (auto element : array) {
+      ondemand::value value;
+      ASSERT_SUCCESS(element.get(value));
+      recording_visitor visitor;
+      ASSERT_SUCCESS(value.visit(visitor));
+      ASSERT_EQUAL(visitor.rec.out, dom_events(dom_array.at(i)));
+      i++;
+    }
+    ASSERT_EQUAL(i, dom_array.size());
+    TEST_SUCCEED();
+  }
+
+  bool value_visit_root_and_partly_read() {
+    TEST_START();
+    auto json = R"({"payload":{"x":1,"y":[2,"z"]},"after":3})"_padded;
+    std::string expected;
+    ondemand::parser parser;
+    ASSERT_SUCCESS(visit_text(parser, std::string(json.data(), json.size()), &expected));
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value root;
+    ASSERT_SUCCESS(doc.get_value().get(root));
+    recording_visitor root_visitor;
+    ASSERT_SUCCESS(root.visit(root_visitor));
+    ASSERT_EQUAL(root_visitor.rec.out, expected);
+
+    dom::parser dom_parser;
+    const std::string payload = dom_events(dom_parser.parse(json)["payload"]);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    ondemand::value value;
+    ASSERT_SUCCESS(doc["payload"].get(value));
+    ondemand::object object;
+    ASSERT_SUCCESS(value.get_object().get(object));
+    int64_t x;
+    ASSERT_SUCCESS(object["x"].get(x));
+    ASSERT_EQUAL(x, 1);
+    // A partly read value is visited from its start, twice if need be.
+    for (size_t round = 0; round < 2; round++) {
+      recording_visitor visitor;
+      ASSERT_SUCCESS(value.visit(visitor));
+      ASSERT_EQUAL(visitor.rec.out, payload);
+    }
+    int64_t after;
+    ASSERT_SUCCESS(doc["after"].get(after));
+    ASSERT_EQUAL(after, 3);
+    TEST_SUCCEED();
+  }
+
+  bool value_visit_errors() {
+    TEST_START();
+    struct invalid { const char *text; error_code error; };
+    const invalid documents[] = {
+      {R"({"p":[1,tru],"b":2})", T_ATOM_ERROR},
+      {R"({"p":{"x" 1},"b":2})", TAPE_ERROR},
+      {R"({"p":[1,2,],"b":2})", TAPE_ERROR},
+      {R"({"p":["\x"],"b":2})", STRING_ERROR},
+      {R"({"p":[01],"b":2})", NUMBER_ERROR},
+      {R"({"p":nul,"b":2})", N_ATOM_ERROR},
+    };
+    ondemand::parser parser;
+    for (const invalid &document : documents) {
+      std::cout << "  " << document.text << std::endl;
+      padded_string json{std::string(document.text)};
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      recording_visitor visitor;
+      ASSERT_ERROR(doc["p"].visit(visitor), document.error);
+    }
+    auto json = R"({"p":{"a":1,"b":2,"c":3,"d":4}})"_padded;
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    recording_visitor visitor;
+    ASSERT_ERROR(doc["missing"].visit(visitor), NO_SUCH_FIELD);
+    ASSERT_SUCCESS(parser.iterate(json).get(doc));
+    failing_visitor failing;
+    ASSERT_ERROR(doc["p"].visit(failing), INCORRECT_TYPE);
+    ASSERT_EQUAL(failing.keys, 3);
+    TEST_SUCCEED();
+  }
+
+  // The maximal depth counts from the root of the document, as in DOM, also when the value is
+  // deeper than the fixed stack of the walk.
+  bool value_visit_depth() {
+    TEST_START();
+    {
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(64, 4));
+      struct example { const char *text; error_code error; };
+      const example examples[] = {
+        {R"({"a":{"b":[1]}})", SUCCESS}, {R"({"a":{"b":[[1]]}})", DEPTH_ERROR}, {R"({"a":{"b":[[]]}})", SUCCESS},
+      };
+      dom::parser dom_parser;
+      ASSERT_SUCCESS(dom_parser.allocate(64, 4));
+      for (const example &e : examples) {
+        std::cout << "  " << e.text << std::endl;
+        padded_string json{std::string(e.text)};
+        ASSERT_ERROR(dom_parser.parse(json).error(), e.error);
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        recording_visitor visitor;
+        ASSERT_ERROR(doc["a"].visit(visitor), e.error);
+      }
+    }
+    const size_t depth = 100;
+    const std::string text = nested(depth);
+    padded_string json(text);
+    for (size_t components : {size_t(10), size_t(63), size_t(64), size_t(70), size_t(98)}) {
+      std::string pointer;
+      for (size_t i = 0; i < components; i++) { pointer.append(i % 2 == 0 ? "/0" : "/a"); }
+      for (size_t max_depth : {size_t(DEFAULT_MAX_DEPTH), size_t(depth)}) {
+        dom::parser dom_parser;
+        ASSERT_SUCCESS(dom_parser.allocate(json.size(), max_depth));
+        const error_code dom_error = dom_parser.parse(json).error();
+        ondemand::parser parser;
+        ASSERT_SUCCESS(parser.allocate(json.size(), max_depth));
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        recording_visitor visitor;
+        const error_code error = doc.at_pointer(pointer).visit(visitor);
+        ASSERT_EQUAL(error, dom_error);
+        if (!error) {
+          ASSERT_EQUAL(visitor.rec.out, dom_events(dom_parser.parse(json).at_pointer(pointer)));
+        }
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return valid_documents() &&
            example_files() &&
@@ -696,6 +872,11 @@ namespace visit_tests {
            nan_inf_matches_dom() &&
 #endif
            agrees_with_dom() &&
+           value_visit_matches_dom() &&
+           value_visit_array_elements() &&
+           value_visit_root_and_partly_read() &&
+           value_visit_errors() &&
+           value_visit_depth() &&
            true;
   }
 

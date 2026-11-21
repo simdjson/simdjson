@@ -3452,6 +3452,23 @@ The walk creates no values, arrays or objects. On documents of a few hundred byt
 building your own tree with `visit()` costs about as much as parsing the document with the DOM
 front-end, which builds its own tree.
 
+You may also visit a single value after navigating to it with `visit()` on the value:
+
+```cpp
+  auto json = R"({"payload":{"stars":[1,2,3]},"id":7})"_padded;
+  ondemand::document doc;
+  counting_visitor visitor;
+  uint64_t id;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc["payload"].visit(visitor); }
+  if (!error) { error = doc["id"].get(id); }
+```
+
+The visitor gets the value and everything in it, with the same methods and the same rules for
+strings as above. Only that value is checked, and the maximal depth counts from the root of the
+document. The walk starts at the beginning of the value, even if you have read part of it, and it
+does not move the iterator: to go on, read the next field or element as usual.
+
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------

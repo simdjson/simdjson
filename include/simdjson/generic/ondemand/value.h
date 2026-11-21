@@ -737,6 +737,22 @@ public:
   simdjson_inline std::string_view raw_json_token() noexcept;
 
   /**
+   * Calls the visitor for this value and everything in it, as document::visit() does for a
+   * whole document, for example after navigating to a field:
+   *
+   *   auto error = doc["payload"].visit(visitor);
+   *
+   * The walk starts at the beginning of the value, even if it has been partly read, and does
+   * not move the iterator: to go on, read the next field or element as usual. The maximal depth
+   * counts from the root of the document. A value at the root also fails if anything follows it.
+   *
+   * @returns SUCCESS, the first error found in the value, or the first error the visitor
+   *          returns.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(V &visitor);
+
+  /**
    * Get a string_view pointing at this value in the JSON document.
    * If this element is an array or an object, it consumes the array or the object
    * and returns a string_view instance corresponding to the
@@ -1053,6 +1069,8 @@ public:
   /** @copydoc simdjson_inline std::string_view value::raw_json_token() const noexcept */
   simdjson_inline simdjson_result<std::string_view> raw_json_token() noexcept;
   simdjson_inline simdjson_result<std::string_view> raw_json() noexcept;
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(V &visitor);
 
   /** @copydoc simdjson_inline simdjson_result<const char *> current_location() noexcept */
   simdjson_inline simdjson_result<const char *> current_location() noexcept;
