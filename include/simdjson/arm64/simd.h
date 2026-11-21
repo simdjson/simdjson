@@ -5,6 +5,7 @@
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/bitmanipulation.h"
 #include "simdjson/internal/simdprune_tables.h"
+#include "simdjson/internal/partial_load.h"
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -153,6 +154,26 @@ namespace {
     static simdjson_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
     static simdjson_inline uint8x16_t zero() { return vdupq_n_u8(0); }
     static simdjson_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline uint8x16_t load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const uint8x16_t window = vld1q_u8(ptr + n - 16);
+        const uint8x16_t shuffle = vld1q_u8(internal::shift_tail_mask + 16 - n);
+        // vqtbl1q_u8 zeroes the bytes whose index is out of range.
+        const uint8x16_t filler = vandq_u8(vcgeq_u8(shuffle, vdupq_n_u8(16)), vdupq_n_u8(fill));
+        return vorrq_u8(vqtbl1q_u8(window, shuffle), filler);
+      }
+#if SIMDJSON_IS_BIG_ENDIAN
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return vld1q_u8(block);
+#else
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return vcombine_u8(vcreate_u8(lo), vcreate_u8(hi));
+#endif
+    }
 
     simdjson_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
     // Zero constructor
