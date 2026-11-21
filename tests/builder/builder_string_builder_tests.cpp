@@ -584,8 +584,8 @@ bool various_unsigned_integers() {
 // other to the same builder.
 bool integer_digit_boundaries() {
   TEST_START();
-  std::vector<uint64_t> values = {0, std::numeric_limits<uint64_t>::max(),
-                                  std::numeric_limits<uint64_t>::max() - 1};
+  std::vector<uint64_t> values = {0, (std::numeric_limits<uint64_t>::max)(),
+                                  (std::numeric_limits<uint64_t>::max)() - 1};
   uint64_t power = 1;
   for (int digits = 1; digits <= 20; digits++) {
     values.push_back(power - 1);
@@ -608,7 +608,7 @@ bool integer_digit_boundaries() {
     unsigned_sb.append_comma();
     unsigned_expected.append(std::to_string(value));
     unsigned_expected.push_back(',');
-    if (value <= uint64_t(std::numeric_limits<int64_t>::max())) {
+    if (value <= uint64_t((std::numeric_limits<int64_t>::max)())) {
       signed_sb.append(int64_t(value));
       signed_sb.append_comma();
       signed_sb.append(-int64_t(value));
@@ -619,8 +619,8 @@ bool integer_digit_boundaries() {
       signed_expected.push_back(',');
     }
   }
-  signed_sb.append(std::numeric_limits<int64_t>::min());
-  signed_expected.append(std::to_string(std::numeric_limits<int64_t>::min()));
+  signed_sb.append((std::numeric_limits<int64_t>::min)());
+  signed_expected.append(std::to_string((std::numeric_limits<int64_t>::min)()));
   std::string_view p;
   ASSERT_SUCCESS(unsigned_sb.view().get(p));
   ASSERT_EQUAL(p, unsigned_expected);

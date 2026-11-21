@@ -102,7 +102,7 @@ namespace validate_tests {
     ondemand::array a;
     ASSERT_SUCCESS(doc["a"].get_array().get(a));
     for (auto element : a) {
-      int64_t v;
+      int64_t v = 0;
       ASSERT_SUCCESS(element.get(v));
       sum += v;
     }
@@ -117,7 +117,7 @@ namespace validate_tests {
     ondemand::document doc;
     ASSERT_SUCCESS(parser.iterate(json).get(doc));
     ASSERT_SUCCESS(doc.validate());
-    int64_t v;
+    int64_t v = 0;
     ASSERT_SUCCESS(doc.get(v));
     ASSERT_EQUAL(v, 1234);
     TEST_SUCCEED();

@@ -488,11 +488,11 @@ simdjson_inline error_code parse_double_padded(const uint8_t *&p, double &out) n
   }
   overflow = overflow || exponent < simdjson::internal::smallest_power ||
              exponent > simdjson::internal::largest_power;
-  double d;
+  double d = 0;
   if (simdjson_unlikely(overflow || !numberparsing::compute_float_64(exponent, i, negative, d))) {
     d = simdjson::internal::from_chars(reinterpret_cast<const char *>(start),
                                        reinterpret_cast<const char *>(q));
-    if (!(d >= std::numeric_limits<double>::lowest() && d <= std::numeric_limits<double>::max())) {
+    if (!(d >= std::numeric_limits<double>::lowest() && d <= (std::numeric_limits<double>::max)())) {
       return UNINITIALIZED;
     }
   }
