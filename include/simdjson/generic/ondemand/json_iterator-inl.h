@@ -796,10 +796,20 @@ simdjson_warn_unused simdjson_inline bool json_iterator::copy_to_buffer(const ui
   // peek_root_length() stops at the next structural index. Stage 1 omits the
   // comma or RS (0x1E) that separates stream documents, so that byte and the
   // whitespace around it remain in the span. RS is not a valid number finisher.
+  // Outside of a stream, the comma and RS are not separators: some kernels
+  // keep RS in the scalar token, and dropping it would accept "1\x1e".
   while (max_len > 0) {
     const uint8_t last = json[max_len - 1];
+    // iterate_allow_incomplete_json() reuses _streaming, so a root scalar
+    // there is not a document_stream.
+#ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+    const bool separator = _streaming && !_allow_incomplete_json &&
+                           (last == ',' || last == 0x1E);
+#else
+    const bool separator = _streaming && (last == ',' || last == 0x1E);
+#endif
     if (last != ' ' && last != '\t' && last != '\n' && last != '\r' &&
-        last != ',' && last != 0x1E) {
+        !separator) {
       break;
     }
     max_len--;
