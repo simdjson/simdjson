@@ -796,9 +796,117 @@ namespace misc_tests {
       true;
   }
 
+  // Sums the integers of an array of arrays and objects, and counts the values.
+  simdjson::error_code sum_nested(ondemand::parser &parser, const padded_string &json, int64_t &sum, size_t &count) {
+    sum = 0;
+    count = 0;
+    ondemand::document doc;
+    SIMDJSON_TRY(parser.iterate(json).get(doc));
+    ondemand::array outer;
+    SIMDJSON_TRY(doc.get_array().get(outer));
+    for (auto child : outer) {
+      ondemand::value value;
+      SIMDJSON_TRY(child.get(value));
+      ondemand::json_type type;
+      SIMDJSON_TRY(value.type().get(type));
+      if (type == ondemand::json_type::array) {
+        for (auto element : value.get_array()) {
+          int64_t i;
+          SIMDJSON_TRY(element.get_int64().get(i));
+          sum += i;
+          count++;
+        }
+      } else {
+        for (auto field : value.get_object()) {
+          int64_t i;
+          SIMDJSON_TRY(field.value().get_int64().get(i));
+          sum += i;
+          count++;
+        }
+      }
+    }
+    return SUCCESS;
+  }
+
+  bool allow_trailing_commas() {
+    TEST_START();
+    ondemand::parser parser;
+    int64_t sum;
+    size_t count;
+    const struct {
+      const char *text;
+      bool strict;
+    } cases[] = {
+      {"[[1,2],{\"a\":3}]", true},
+      {"[[1,2,],{\"a\":3}]", false},
+      {"[[1,2],{\"a\":3,}]", false},
+      {"[[1,2],{\"a\":3},]", false},
+      {"[ [ 1 , 2 , ] , { \"a\" : 3 , } , ]", false},
+    };
+    for (const auto &c : cases) {
+      std::cout << "  " << c.text << std::endl;
+      const padded_string json{std::string(c.text)};
+      parser.allow_trailing_commas = false;
+      if (c.strict) {
+        ASSERT_SUCCESS(sum_nested(parser, json, sum, count));
+      } else {
+        ASSERT_TRUE(sum_nested(parser, json, sum, count) != SUCCESS);
+      }
+      parser.allow_trailing_commas = true;
+      ASSERT_SUCCESS(sum_nested(parser, json, sum, count));
+      ASSERT_EQUAL(sum, 6);
+      ASSERT_EQUAL(count, 3);
+    }
+    parser.allow_trailing_commas = true;
+    for (const char *text : {"[[1,,]]", "[{\"a\":1,,}]", "[[,]]"}) {
+      std::cout << "  " << text << std::endl;
+      ASSERT_TRUE(sum_nested(parser, padded_string(std::string(text)), sum, count) != SUCCESS);
+    }
+    TEST_SUCCEED();
+  }
+
+  bool allow_inf_and_nan() {
+    TEST_START();
+    auto json = R"([NaN, nan, -Infinity, inf, Inf, null, 1])"_padded;
+    const std::string_view expected[] = {"NaN", "nan", "-Infinity", "inf", "Inf", "null", "1"};
+    ondemand::parser parser;
+    for (bool allow : {false, true}) {
+      parser.allow_inf_and_nan = allow;
+      const ondemand::json_type expected_types[] = {
+        allow ? ondemand::json_type::number : ondemand::json_type::unknown,
+        allow ? ondemand::json_type::number : ondemand::json_type::null,
+        ondemand::json_type::number,
+        allow ? ondemand::json_type::number : ondemand::json_type::unknown,
+        allow ? ondemand::json_type::number : ondemand::json_type::unknown,
+        ondemand::json_type::null,
+        ondemand::json_type::number,
+      };
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      size_t i = 0;
+      for (auto element : doc) {
+        ondemand::value value;
+        ASSERT_SUCCESS(element.get(value));
+        ondemand::json_type type;
+        ASSERT_SUCCESS(value.type().get(type));
+        ASSERT_EQUAL(type, expected_types[i]);
+        std::string_view token = value.raw_json_token();
+        while (!token.empty() && (token.back() == ' ' || token.back() == ',' || token.back() == ']')) {
+          token.remove_suffix(1);
+        }
+        ASSERT_EQUAL(token, expected[i]);
+        i++;
+      }
+      ASSERT_EQUAL(i, 7);
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            issue2355() &&
+           allow_trailing_commas() &&
+           allow_inf_and_nan() &&
            issue2354() &&
            issue2322() &&
            issue2312() &&

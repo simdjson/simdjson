@@ -365,6 +365,17 @@ public:
   bool threaded{false};
   #endif
   /**
+   * Accept a comma before the closing bracket of an array or object, such as
+   * [1,] or {"a":1,}.
+   */
+  bool allow_trailing_commas{false};
+  /**
+   * Report the NaN and Infinity literals, in any case and with an optional
+   * minus (nan, inf, -Infinity), as numbers instead of as an unknown type. They
+   * are not converted: read them with raw_json_token().
+   */
+  bool allow_inf_and_nan{false};
+  /**
    * Unescape this JSON string, replacing \\ with \, \n with newline, etc. to a user-provided buffer.
    * The result must be valid UTF-8.
    * The provided pointer is advanced to the end of the string by reference, and a string_view instance
