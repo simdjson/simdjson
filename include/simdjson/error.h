@@ -5,6 +5,7 @@
 
 #include <string>
 #include <ostream>
+#include <type_traits>
 
 namespace simdjson {
 
@@ -130,8 +131,27 @@ namespace internal {
  *
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
+#if SIMDJSON_EXCEPTIONS
+template<typename T, typename Derived, bool IsCopyConstructible = std::is_copy_constructible<T>::value>
+struct simdjson_result_conversion;
+
+template<typename T, typename Derived>
+struct simdjson_result_conversion<T, Derived, true> {
+  simdjson_inline operator const T&() const& noexcept(false);
+};
+
+template<typename T, typename Derived>
+struct simdjson_result_conversion<T, Derived, false> {
+  simdjson_inline operator T&&() && noexcept(false);
+};
+#endif // SIMDJSON_EXCEPTIONS
+
 template<typename T>
-struct simdjson_result_base : protected std::pair<T, error_code> {
+struct simdjson_result_base : protected std::pair<T, error_code>
+#if SIMDJSON_EXCEPTIONS
+  , public simdjson_result_conversion<T, simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -215,12 +235,6 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -375,12 +389,6 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
