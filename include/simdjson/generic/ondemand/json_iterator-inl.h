@@ -476,6 +476,183 @@ container_end:
   return SUCCESS;
 }
 
+namespace {
+// Passes the numbers that numberparsing::parse_number writes on to a visitor.
+template <typename V>
+struct visit_number_writer {
+  V &visitor;
+  const char *raw;
+  error_code error;
+  simdjson_inline void append_s64(int64_t value) { error = visitor.on_int64(value, raw); }
+  simdjson_inline void append_u64(uint64_t value) { error = visitor.on_uint64(value, raw); }
+  simdjson_inline void append_double(double value) { error = visitor.on_double(value, raw); }
+};
+} // unnamed namespace
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code json_iterator::visit_string(const uint8_t *quote, bool key, V &visitor) {
+  const uint8_t *const start = quote + 1;
+  // A string without escapes is passed as it is in the document.
+  uint8_t scratch[backslash_and_quote::BYTES_PROCESSED];
+  for (const uint8_t *src = start;; src += backslash_and_quote::BYTES_PROCESSED) {
+    auto bs_quote = backslash_and_quote{}.copy_and_find(src, scratch);
+    if (bs_quote.has_quote_first()) {
+      std::string_view text(reinterpret_cast<const char *>(start), size_t(src - start) + size_t(bs_quote.quote_index()));
+      return key ? visitor.on_key(text) : visitor.on_string(text);
+    }
+    if (bs_quote.has_backslash()) { break; }
+  }
+  uint8_t *const end = parser->implementation->parse_string(start, _string_buf_loc, false);
+  if (!end) { return STRING_ERROR; }
+  std::string_view text(reinterpret_cast<const char *>(_string_buf_loc), size_t(end - _string_buf_loc));
+  _string_buf_loc = end;
+  return key ? visitor.on_key(text) : visitor.on_string(text);
+}
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code json_iterator::visit_scalar(const uint8_t *src, V &visitor) {
+  switch (*src) {
+    case 't': return atomparsing::is_valid_true_atom(src) ? visitor.on_bool(true) : T_ATOM_ERROR;
+    case 'f': return atomparsing::is_valid_false_atom(src) ? visitor.on_bool(false) : F_ATOM_ERROR;
+    case 'n':
+      if (atomparsing::is_valid_null_atom(src)) { return visitor.on_null(); }
+#if SIMDJSON_ENABLE_NAN_INF
+      if (atomparsing::is_valid_nan_atom(src)) { return visitor.on_double(std::numeric_limits<double>::quiet_NaN(), reinterpret_cast<const char *>(src)); }
+#endif
+      return N_ATOM_ERROR;
+    case '-': case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': case 'i': case 'I':
+#endif
+    {
+      visit_number_writer<V> writer{visitor, reinterpret_cast<const char *>(src), SUCCESS};
+      SIMDJSON_TRY(numberparsing::parse_number(src, writer));
+      return writer.error;
+    }
+    default:
+      return TAPE_ERROR;
+  }
+}
+
+template <typename V>
+simdjson_warn_unused error_code json_iterator::visit_container(V &visitor) {
+  const uint8_t *const json = token.buf;
+  token_position pos = token.position();
+  const token_position end = end_position();
+  const size_t max_depth = parser->max_depth();
+  // For each open container, the number of its elements so far, with the top bit set for an
+  // array. Deeper than the fixed stack allows, the stack moves to the heap.
+  constexpr uint32_t ARRAY_BIT = uint32_t(1) << 31;
+  constexpr size_t FIXED_DEPTH = 64;
+  uint32_t fixed_stack[FIXED_DEPTH];
+  std::unique_ptr<uint32_t[]> heap_stack;
+  uint32_t *stack = fixed_stack;
+  size_t depth = 0;
+  uint32_t index;
+  uint8_t c;
+
+// Reads the next token into index and c; a document cut short has no more tokens.
+#define SIMDJSON_VISIT_NEXT() \
+  do { \
+    if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; } \
+    index = *pos++; \
+    c = json[index]; \
+  } while (0)
+
+  SIMDJSON_VISIT_NEXT();
+  goto container_start;
+
+value:
+  switch (c) {
+    case '{': case '[': goto container_start;
+    case '"':
+      // A string is not the last token, so that its closing quote is inside the document.
+      if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
+      SIMDJSON_TRY(visit_string(json + index, false, visitor));
+      goto value_end;
+    default:
+      // The scalar is not the last token, so the parsers read inside the document.
+      if (simdjson_unlikely(pos == end)) {
+        switch (c) {
+          case 't': case 'f': case 'n': case '-': case '0': case '1': case '2': case '3': case '4':
+          case '5': case '6': case '7': case '8': case '9':
+#if SIMDJSON_ENABLE_NAN_INF
+          case 'N': case 'i': case 'I':
+#endif
+            return INCOMPLETE_ARRAY_OR_OBJECT;
+          default:
+            return TAPE_ERROR;
+        }
+      }
+      SIMDJSON_TRY(visit_scalar(json + index, visitor));
+      goto value_end;
+  }
+
+container_start:
+  // As in DOM, an empty container does not count toward the maximal depth.
+  if (pos != end && json[*pos] == c + 2) {
+    pos++;
+    if (c == '[') {
+      SIMDJSON_TRY(visitor.on_array_start());
+      SIMDJSON_TRY(visitor.on_array_end(0));
+    } else {
+      SIMDJSON_TRY(visitor.on_object_start());
+      SIMDJSON_TRY(visitor.on_object_end(0));
+    }
+    if (depth == 0) { goto document_end; }
+    goto value_end;
+  }
+  if (++depth >= max_depth) { return DEPTH_ERROR; }
+  if (depth == FIXED_DEPTH) {
+    heap_stack.reset(new (std::nothrow) uint32_t[max_depth]);
+    if (!heap_stack) { return MEMALLOC; }
+    // The root is at depth 1: slot 0 is not used.
+    std::memcpy(heap_stack.get() + 1, fixed_stack + 1, sizeof(fixed_stack) - sizeof(fixed_stack[0]));
+    stack = heap_stack.get();
+  }
+  stack[depth] = 1;
+  if (c == '[') {
+    stack[depth] |= ARRAY_BIT;
+    SIMDJSON_TRY(visitor.on_array_start());
+    SIMDJSON_VISIT_NEXT();
+    goto value;
+  }
+  SIMDJSON_TRY(visitor.on_object_start());
+  SIMDJSON_VISIT_NEXT();
+
+key:
+  if (c != '"') { return TAPE_ERROR; }
+  if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
+  SIMDJSON_TRY(visit_string(json + index, true, visitor));
+  SIMDJSON_VISIT_NEXT();
+  if (c != ':') { return TAPE_ERROR; }
+  SIMDJSON_VISIT_NEXT();
+  goto value;
+
+value_end:
+  SIMDJSON_VISIT_NEXT();
+  if (c == ',') {
+    stack[depth]++;
+    SIMDJSON_VISIT_NEXT();
+    if (stack[depth] & ARRAY_BIT) { goto value; }
+    goto key;
+  }
+  if (stack[depth] & ARRAY_BIT) {
+    if (c != ']') { return TAPE_ERROR; }
+    SIMDJSON_TRY(visitor.on_array_end(stack[depth] & ~ARRAY_BIT));
+  } else {
+    if (c != '}') { return TAPE_ERROR; }
+    SIMDJSON_TRY(visitor.on_object_end(stack[depth]));
+  }
+  if (--depth > 0) { goto value_end; }
+
+document_end:
+#undef SIMDJSON_VISIT_NEXT
+  if (!streaming() && pos != end) { return TRAILING_CONTENT; }
+  return SUCCESS;
+}
+
 simdjson_inline bool json_iterator::at_root() const noexcept {
   return position() == root_position();
 }

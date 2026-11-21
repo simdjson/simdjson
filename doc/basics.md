@@ -52,6 +52,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Checking for trailing content](#checking-for-trailing-content)
 - [Rewinding](#rewinding)
 - [Validating a document](#validating-a-document)
+- [Visiting a document](#visiting-a-document)
 - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
@@ -3387,6 +3388,69 @@ expected, as it holds the next documents, and is not reported.
     }
   }
 ```
+
+
+Visiting a document
+-------------------
+
+If you build your own representation of whole documents (a tree, columns, rows of a database),
+you may let simdjson walk the document for you: call the `visit()` method on the document
+instance with a visitor of your own. The visitor receives every value, in document order:
+
+```cpp
+struct counting_visitor {
+  size_t strings{0};
+  size_t numbers{0};
+  simdjson::error_code on_object_start() { return simdjson::SUCCESS; }
+  simdjson::error_code on_object_end(uint32_t member_count) { return simdjson::SUCCESS; }
+  simdjson::error_code on_array_start() { return simdjson::SUCCESS; }
+  simdjson::error_code on_array_end(uint32_t element_count) { return simdjson::SUCCESS; }
+  simdjson::error_code on_key(std::string_view key) { return simdjson::SUCCESS; }
+  simdjson::error_code on_string(std::string_view value) { strings++; return simdjson::SUCCESS; }
+  simdjson::error_code on_int64(int64_t value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_uint64(uint64_t value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_double(double value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_bool(bool value) { return simdjson::SUCCESS; }
+  simdjson::error_code on_null() { return simdjson::SUCCESS; }
+};
+
+  ondemand::parser parser;
+  auto json = R"({"name":"simdjson","stars":[1,2,3]})"_padded;
+  ondemand::document doc;
+  counting_visitor visitor;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc.visit(visitor); }
+  if (error) {
+    std::cerr << "invalid JSON: " << error << std::endl;
+    return;
+  }
+  std::cout << visitor.strings << " strings and " << visitor.numbers << " numbers" << std::endl;
+```
+
+The visitor is a template parameter, so that its methods may be inlined. A method that returns
+anything but `simdjson::SUCCESS` stops the walk, and `visit()` returns that error code. A method
+may also throw: the exception goes through `visit()`, and you must then rewind the document
+before you use it again.
+
+- `on_key()` comes before the value of each member of an object. The end of an object or of an
+  array comes with the number of its members or elements.
+- A key or a string without escapes is a view into the document itself: it is valid as long as
+  the bytes of the document are.
+- A key or a string with escapes is unescaped into the parser: it is valid until you iterate
+  through the document or visit it again, or the parser parses another document.
+- Integers that fit in an `int64_t` go to `on_int64()`, larger positive integers to `on_uint64()`
+  and other numbers to `on_double()`. The `raw` pointer gives the number as it is in the document:
+  you may use it to tell `-0` from `0`. As with the DOM parser, an integer that does not fit in 64
+  bits is a `BIGINT_ERROR`.
+
+The whole document is checked: `visit()` succeeds exactly when the DOM parser does, with the same
+maximal depth. When the document is not valid, the visitor may have seen part of it before the
+error. The document is rewound before and after the walk: you may iterate through it afterward.
+You may also visit the documents of a stream (`iterate_many`).
+
+The walk creates no values, arrays or objects. On documents of a few hundred bytes or more,
+building your own tree with `visit()` costs about as much as parsing the document with the DOM
+front-end, which builds its own tree.
 
 
 Newline-Delimited JSON (ndjson) and JSON lines
