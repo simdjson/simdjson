@@ -107,7 +107,7 @@ int main(int argc, const char *argv[]) {
       printf("%.3f GB/s\n", double(p.length() * times) / double(afterns - beforens));
   } else {
       // This is the expected path:
-      printf("%s", copy.data());
+      fwrite(copy.data(), 1, copy_len, stdout);
   }
   return EXIT_SUCCESS;
 #ifdef __cpp_exceptions
