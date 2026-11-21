@@ -476,18 +476,15 @@ container_end:
   return SUCCESS;
 }
 
-namespace {
-// Passes the numbers that numberparsing::parse_number writes on to a visitor.
 template <typename V>
-struct visit_number_writer {
-  V &visitor;
-  const char *raw;
-  error_code error;
-  simdjson_inline void append_s64(int64_t value) { error = visitor.on_int64(value, raw); }
-  simdjson_inline void append_u64(uint64_t value) { error = visitor.on_uint64(value, raw); }
-  simdjson_inline void append_double(double value) { error = visitor.on_double(value, raw); }
-};
-} // unnamed namespace
+simdjson_warn_unused simdjson_inline error_code json_iterator::visit_number(const number &value, const char *raw, V &visitor) {
+  switch (value.get_number_type()) {
+    case number_type::signed_integer: return visitor.on_int64(value.get_int64(), raw);
+    case number_type::unsigned_integer: return visitor.on_uint64(value.get_uint64(), raw);
+    case number_type::floating_point_number: return visitor.on_double(value.get_double(), raw);
+    default: return BIGINT_ERROR;
+  }
+}
 
 template <typename V>
 simdjson_warn_unused simdjson_inline error_code json_iterator::visit_string(const uint8_t *quote, bool key, V &visitor) {
@@ -522,14 +519,19 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_scalar(cons
       return N_ATOM_ERROR;
     case '-': case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-#if SIMDJSON_ENABLE_NAN_INF
-    case 'N': case 'i': case 'I':
-#endif
     {
-      visit_number_writer<V> writer{visitor, reinterpret_cast<const char *>(src), SUCCESS};
-      SIMDJSON_TRY(numberparsing::parse_number(src, writer));
-      return writer.error;
+      number value;
+      SIMDJSON_TRY(numberparsing::parse_number(src, value));
+      return visit_number(value, reinterpret_cast<const char *>(src), visitor);
     }
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N':
+      if (atomparsing::is_valid_nan_atom(src)) { return visitor.on_double(std::numeric_limits<double>::quiet_NaN(), reinterpret_cast<const char *>(src)); }
+      return TAPE_ERROR;
+    case 'i': case 'I':
+      if (atomparsing::is_valid_inf_atom(src)) { return visitor.on_double(std::numeric_limits<double>::infinity(), reinterpret_cast<const char *>(src)); }
+      return TAPE_ERROR;
+#endif
     default:
       return TAPE_ERROR;
   }

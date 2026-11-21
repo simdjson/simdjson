@@ -214,6 +214,16 @@ namespace visit_tests {
       {"-", NUMBER_ERROR},
       {"[123456789012345678901234567890]", BIGINT_ERROR},
       {"-123456789012345678901234567890", BIGINT_ERROR},
+      {"+1", TAPE_ERROR},
+      {".5", TAPE_ERROR},
+      {"[+1]", TAPE_ERROR},
+      {"{\"a\":.5}", TAPE_ERROR},
+#if !SIMDJSON_ENABLE_NAN_INF
+      {"Infinity", TAPE_ERROR},
+      {"NaN", TAPE_ERROR},
+      {"inf", TAPE_ERROR},
+      {"[NaN]", TAPE_ERROR},
+#endif
       {R"(["\x"])", STRING_ERROR},
       {R"({"\q":1})", STRING_ERROR},
       {R"(["\ud800"])", STRING_ERROR},
@@ -564,7 +574,48 @@ namespace visit_tests {
     TEST_SUCCEED();
   }
 
+  // A number that fails to parse is not passed to the visitor.
+  bool invalid_number_is_not_visited() {
+    TEST_START();
+    const char *documents[] = {
+      "[12a]", "[1.5x]", "[-7x]", "[18446744073709551615x]", "[1.2345678901234567890123x]",
+      "{\"a\":12a}", "[1e400x]",
+    };
+    ondemand::parser parser;
+    for (const char *text : documents) {
+      std::cout << "  " << text << std::endl;
+      padded_string json{std::string(text)};
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      recording_visitor visitor;
+      ASSERT_ERROR(doc.visit(visitor), NUMBER_ERROR);
+      ASSERT_TRUE(visitor.rec.out == "[" || visitor.rec.out == "{k1:a");
+    }
+    TEST_SUCCEED();
+  }
+
 #if SIMDJSON_ENABLE_NAN_INF
+  // A malformed NaN or infinity gives the error code of DOM.
+  bool nan_inf_errors_match_dom() {
+    TEST_START();
+    struct invalid { const char *text; error_code error; };
+    const invalid documents[] = {
+      {"Nope", TAPE_ERROR}, {"ix", TAPE_ERROR}, {"infx", TAPE_ERROR}, {"Infinityx", TAPE_ERROR},
+      {"[Nope]", TAPE_ERROR}, {"[ix]", TAPE_ERROR}, {"[infx]", TAPE_ERROR}, {"[Infinityx]", TAPE_ERROR},
+      {"{\"a\":Nan1}", TAPE_ERROR}, {"nul", N_ATOM_ERROR}, {"[nul]", N_ATOM_ERROR}, {"[nanx]", N_ATOM_ERROR},
+      {"+1", TAPE_ERROR},
+    };
+    ondemand::parser parser;
+    dom::parser dom_parser;
+    for (const invalid &document : documents) {
+      std::cout << "  " << document.text << std::endl;
+      padded_string copy{std::string(document.text)};
+      ASSERT_ERROR(dom_parser.parse(copy).error(), document.error);
+      ASSERT_ERROR(visit_text(parser, document.text), document.error);
+    }
+    TEST_SUCCEED();
+  }
+
   bool nan_inf_matches_dom() {
     TEST_START();
     const char *documents[] = {
@@ -639,7 +690,9 @@ namespace visit_tests {
            deep_siblings_after_stack_spill() &&
            deep_nesting_with_larger_max_depth() &&
            stream_documents() &&
+           invalid_number_is_not_visited() &&
 #if SIMDJSON_ENABLE_NAN_INF
+           nan_inf_errors_match_dom() &&
            nan_inf_matches_dom() &&
 #endif
            agrees_with_dom() &&

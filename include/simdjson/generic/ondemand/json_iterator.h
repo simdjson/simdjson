@@ -109,6 +109,9 @@ public:
   simdjson_warn_unused simdjson_inline error_code visit_string(const uint8_t *quote, bool key, V &visitor);
   template <typename V>
   simdjson_warn_unused simdjson_inline error_code visit_scalar(const uint8_t *src, V &visitor);
+  /** Calls the visitor for a number that numberparsing::parse_number accepted. */
+  template <typename V>
+  static simdjson_warn_unused simdjson_inline error_code visit_number(const number &value, const char *raw, V &visitor);
 
   /**
    * Tell whether the iterator is still at the start

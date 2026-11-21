@@ -122,19 +122,23 @@ simdjson_warn_unused simdjson_inline error_code document::visit_root(V &visitor)
       if (!error) { error = N_ATOM_ERROR; }
       break;
     }
-    default: {
+    case '-': case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9': {
       number value;
       error = get_root_value_iterator().get_root_number(check_trailing).get(value);
-      if (!error) {
-        switch (value.get_number_type()) {
-          case number_type::signed_integer: return visitor.on_int64(value.get_int64(), raw);
-          case number_type::unsigned_integer: return visitor.on_uint64(value.get_uint64(), raw);
-          case number_type::floating_point_number: return visitor.on_double(value.get_double(), raw);
-          default: return BIGINT_ERROR;
-        }
-      }
+      if (!error) { return json_iterator::visit_number(value, raw, visitor); }
       break;
     }
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': case 'i': case 'I': {
+      double value;
+      error = get_root_value_iterator().get_root_double(check_trailing).get(value);
+      if (!error) { return visitor.on_double(value, raw); }
+      return error == TRAILING_CONTENT ? error : TAPE_ERROR;
+    }
+#endif
+    default:
+      return TAPE_ERROR;
   }
   // The root getters report a scalar of the wrong kind as INCORRECT_TYPE.
   if (error == INCORRECT_TYPE) {
