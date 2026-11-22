@@ -139,10 +139,46 @@ namespace visit_tests {
     return events.compare(0, expected.size(), expected) == 0;
   }
 
+  // The text that DOM parses as the visit does: with SIMDJSON_ALLOW_TRAILING_COMMAS, the
+  // commas before a closing bracket or brace are removed.
+  std::string dom_text(const std::string &text) {
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+    std::string out;
+    bool in_string = false;
+    char previous = '[';
+    for (size_t i = 0; i < text.size(); i++) {
+      const char c = text[i];
+      if (in_string) {
+        out += c;
+        if (c == '\\' && i + 1 < text.size()) {
+          out += text[++i];
+        } else if (c == '"') {
+          in_string = false;
+        }
+        continue;
+      }
+      if (c == ',' && previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+        size_t j = i + 1;
+        while (j < text.size() && (text[j] == ' ' || text[j] == '\t' || text[j] == '\n' || text[j] == '\r')) { j++; }
+        if (j < text.size() && (text[j] == ']' || text[j] == '}')) {
+          previous = c;
+          continue;
+        }
+      }
+      if (c == '"') { in_string = true; }
+      if (c != ' ' && c != '\t' && c != '\n' && c != '\r') { previous = c; }
+      out += c;
+    }
+    return out;
+#else
+    return text;
+#endif
+  }
+
   // Visits text and parses it with DOM: both fail, or both succeed with the same values.
   // parser::visit() gives the same error code and values as document::visit().
   bool same_as_dom(ondemand::parser &parser, dom::parser &dom_parser, const std::string &text) {
-    padded_string copy(text);
+    padded_string copy(dom_text(text));
     dom::element element;
     const error_code dom_error = dom_parser.parse(copy).get(element);
     std::string events;
@@ -272,6 +308,7 @@ namespace visit_tests {
     ondemand::parser parser;
     for (const invalid &document : documents) {
       std::cout << "  " << document.text << std::endl;
+      if (dom_text(document.text) != document.text) { continue; }
       ASSERT_ERROR(visit_text(parser, document.text), document.error);
       ASSERT_ERROR(parser_visit_text(parser, document.text), document.error);
     }
@@ -757,8 +794,8 @@ namespace visit_tests {
           default: text.resize(at); break;
         }
       }
-      std::vector<char> buffer(text.size() + SIMDJSON_PADDING);
-      std::memcpy(buffer.data(), text.data(), text.size());
+      std::vector<char> buffer(text.begin(), text.end());
+      buffer.resize(text.size() + SIMDJSON_PADDING);
       for (size_t j = text.size(); j < buffer.size(); j++) { buffer[j] = alphabet[gen() % (sizeof(alphabet) - 1)]; }
       for (ondemand::parser *p : {&parser, &shallow}) {
         std::string expected, events;
@@ -802,7 +839,7 @@ namespace visit_tests {
     // In one pass, the UTF-8 check comes at the end: the visitor fails first.
     failing_visitor visitor;
     const error_code error = parser.visit(padded_string(std::string("{\"a\":1,\"b\":2,\"c\":3,\"d\":\"\xff\"}")), visitor);
-#if SIMDJSON_ENABLE_NAN_INF
+#if SIMDJSON_ENABLE_NAN_INF || SIMDJSON_ALLOW_TRAILING_COMMAS
     ASSERT_ERROR(error, UTF8_ERROR);
 #else
     ASSERT_ERROR(error, INCORRECT_TYPE);
@@ -818,7 +855,7 @@ namespace visit_tests {
     ASSERT_ERROR(visit_text(parser, R"(["\"])", &events), UNCLOSED_STRING);
     ASSERT_EQUAL(events, "");
     ASSERT_ERROR(parser_visit_text(parser, R"(["\"])", &events), UNCLOSED_STRING);
-#if SIMDJSON_ENABLE_NAN_INF
+#if SIMDJSON_ENABLE_NAN_INF || SIMDJSON_ALLOW_TRAILING_COMMAS
     ASSERT_EQUAL(events, "");
 #else
     ASSERT_EQUAL(events, "[");
@@ -938,6 +975,7 @@ namespace visit_tests {
     ondemand::parser parser;
     for (const invalid &document : documents) {
       std::cout << "  " << document.text << std::endl;
+      if (dom_text(document.text) != document.text) { continue; }
       padded_string json{std::string(document.text)};
       ondemand::document doc;
       ASSERT_SUCCESS(parser.iterate(json).get(doc));

@@ -191,8 +191,8 @@ public:
    * a single pass, without the structural index that iterate() builds. Some checks, such as the
    * UTF-8 validation, then come at the end of the walk: on an invalid document, the visitor may
    * have seen part or all of it before visit() returns the error code of document::visit(), and
-   * an error returned by the visitor may come first. With SIMDJSON_ENABLE_NAN_INF, there is no one-pass
-   * walk.
+   * an error returned by the visitor may come first. With SIMDJSON_ENABLE_NAN_INF or
+   * SIMDJSON_ALLOW_TRAILING_COMMAS, there is no one-pass walk.
    *
    * See document::visit() for the methods of the visitor and the lifetime of the strings.
    *

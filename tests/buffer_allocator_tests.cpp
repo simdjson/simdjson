@@ -111,9 +111,9 @@ bool ondemand_counting() {
     size_t live = a.live_bytes();
     ASSERT_TRUE( live > 0 );
     // A reused parser does not allocate for smaller documents.
-    padded_string small = array_of_ints(10);
+    padded_string small_doc = array_of_ints(10);
     for (int i = 0; i < 10; i++) {
-      if (!sum_ondemand(parser, small, sum)) { return false; }
+      if (!sum_ondemand(parser, small_doc, sum)) { return false; }
       ASSERT_EQUAL( sum, 10 );
     }
     ASSERT_EQUAL( a.allocations, 2 );
@@ -143,8 +143,8 @@ bool ondemand_failure_leaves_parser_usable() {
       ASSERT_EQUAL( parser.capacity(), 1024 );
       ASSERT_EQUAL( parser.max_depth(), 64 );
       int64_t sum;
-      padded_string small = array_of_ints(10);
-      if (!sum_ondemand(parser, small, sum)) { return false; }
+      padded_string small_doc = array_of_ints(10);
+      if (!sum_ondemand(parser, small_doc, sum)) { return false; }
       ASSERT_EQUAL( sum, 10 );
       a.fail_at = 0;
       ASSERT_SUCCESS( parser.allocate(65536, 64) );
@@ -185,8 +185,8 @@ bool ondemand_set_after_first_allocation() {
     ASSERT_SUCCESS( parser.allocate(1024, 64) );
     parser.set_allocator(&a.hook);
     int64_t sum;
-    padded_string small = array_of_ints(10);
-    if (!sum_ondemand(parser, small, sum)) { return false; }
+    padded_string small_doc = array_of_ints(10);
+    if (!sum_ondemand(parser, small_doc, sum)) { return false; }
     // The buffers allocated with new[] are kept.
     ASSERT_EQUAL( a.allocations, 0 );
     padded_string big = array_of_ints(10000);
@@ -264,9 +264,9 @@ bool dom_counting() {
     ASSERT_EQUAL( sum, 1000 );
     // The tape, the string buffer and the structural indexes.
     ASSERT_EQUAL( a.allocations, 3 );
-    padded_string small = array_of_ints(10);
+    padded_string small_doc = array_of_ints(10);
     for (int i = 0; i < 10; i++) {
-      if (!sum_dom(parser, small, sum)) { return false; }
+      if (!sum_dom(parser, small_doc, sum)) { return false; }
     }
     ASSERT_EQUAL( a.allocations, 3 );
     // A document passed by the user gets its buffers from the parser allocator.
@@ -288,14 +288,14 @@ bool dom_failure_leaves_parser_usable() {
       dom::parser parser;
       parser.set_allocator(&a.hook);
       int64_t sum;
-      padded_string small = array_of_ints(10);
-      if (!sum_dom(parser, small, sum)) { return false; }
+      padded_string small_doc = array_of_ints(10);
+      if (!sum_dom(parser, small_doc, sum)) { return false; }
       a.fail_at = a.attempts + fail_at;
       padded_string big = array_of_ints(100000);
       dom::element root;
       ASSERT_ERROR( parser.parse(big).get(root), MEMALLOC );
       a.fail_at = 0;
-      if (!sum_dom(parser, small, sum)) { return false; }
+      if (!sum_dom(parser, small_doc, sum)) { return false; }
       ASSERT_EQUAL( sum, 10 );
       if (!sum_dom(parser, big, sum)) { return false; }
       ASSERT_EQUAL( sum, 100000 );

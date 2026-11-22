@@ -39,7 +39,12 @@ add_cpp_test(ondemand_string_receiver_tests          LABELS ondemand acceptance 
 add_cpp_test(ondemand_twitter_tests                  LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_u8string_tests                 LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_validate_tests                 LABELS ondemand acceptance per_implementation)
-add_cpp_test(ondemand_visit_tests                    LABELS ondemand acceptance per_implementation)
+add_cpp_test(ondemand_visit_tests                    NEEDS_DATA LABELS ondemand acceptance per_implementation)
+if(MSVC AND TARGET ondemand_visit_tests)
+  # The tests compare deep documents with a recursive walk of the DOM tree,
+  # which overflows the default 1 MB stack in Debug builds.
+  target_link_options(ondemand_visit_tests PRIVATE /STACK:8388608)
+endif()
 add_cpp_test(ondemand_wrong_type_error_tests         LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_iterate_many_csv               LABELS ondemand acceptance per_implementation)
 add_cpp_test(ondemand_custom_types_tests             LABELS ondemand acceptance per_implementation)

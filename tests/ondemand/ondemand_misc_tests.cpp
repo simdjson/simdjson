@@ -932,7 +932,11 @@ namespace misc_tests {
     };
     for (const auto &c : cases) {
       std::cout << "  " << c.text << std::endl;
-      for (const std::string &text : {std::string(c.text), "[" + std::string(c.text) + "]", "[" + std::string(c.text) + " ]"}) {
+      std::string in_array("[");
+      in_array.append(c.text).append("]");
+      std::string in_array_with_space("[");
+      in_array_with_space.append(c.text).append(" ]");
+      for (const std::string &text : {std::string(c.text), in_array, in_array_with_space}) {
         const padded_string json{text};
         ondemand::document doc;
         ASSERT_SUCCESS(parser.iterate(json).get(doc));

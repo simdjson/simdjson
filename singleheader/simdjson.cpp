@@ -1,4 +1,4 @@
-/* auto-generated on 2026-11-20 10:00:11 -0500. version 5.2.0 Do not edit! */
+/* auto-generated on 2026-11-22 09:57:10 -0500. version 5.2.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -669,6 +669,10 @@ float from_chars_float(const char *first) noexcept;
 
 #ifndef SIMDJSON_ENABLE_NAN_INF
 #define SIMDJSON_ENABLE_NAN_INF 0
+#endif
+
+#ifndef SIMDJSON_ALLOW_TRAILING_COMMAS
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 0
 #endif
 
 } // namespace simdjson
@@ -2718,6 +2722,25 @@ namespace std {
 #else
 #define simdjson_lifetime_bound
 #endif
+
+// C++26 (P2795R5) and -ftrivial-auto-var-init zero-fill local variables that
+// have no initializer. simdjson_indeterminate opts a local out of that. Use it
+// only on buffers that the code writes before it reads them.
+#if defined(SIMDJSON_CPLUSPLUS26) && defined(__has_cpp_attribute)
+#if __has_cpp_attribute(indeterminate)
+#define simdjson_indeterminate [[indeterminate]]
+#endif
+#endif
+
+#if !defined(simdjson_indeterminate) && defined(__has_attribute)
+#if __has_attribute(uninitialized)
+#define simdjson_indeterminate __attribute__((uninitialized))
+#endif
+#endif
+
+#ifndef simdjson_indeterminate
+#define simdjson_indeterminate
+#endif
 #endif // SIMDJSON_COMMON_DEFS_H
 /* end file simdjson/common_defs.h */
 /* skipped duplicate #include "simdjson/compiler_check.h" */
@@ -2730,6 +2753,7 @@ namespace std {
 
 #include <string>
 #include <ostream>
+#include <type_traits>
 
 namespace simdjson {
 
@@ -2855,8 +2879,27 @@ namespace internal {
  *
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
+#if SIMDJSON_EXCEPTIONS
+template<typename T, typename Derived, bool IsCopyConstructible = std::is_copy_constructible<T>::value>
+struct simdjson_result_conversion;
+
+template<typename T, typename Derived>
+struct simdjson_result_conversion<T, Derived, true> {
+  simdjson_inline operator const T&() const& noexcept(false);
+};
+
+template<typename T, typename Derived>
+struct simdjson_result_conversion<T, Derived, false> {
+  simdjson_inline operator T&&() && noexcept(false);
+};
+#endif // SIMDJSON_EXCEPTIONS
+
 template<typename T>
-struct simdjson_result_base : protected std::pair<T, error_code> {
+struct simdjson_result_base : protected std::pair<T, error_code>
+#if SIMDJSON_EXCEPTIONS
+  , public simdjson_result_conversion<T, simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -2940,12 +2983,6 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -3100,12 +3137,6 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
@@ -10088,9 +10119,17 @@ simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<simdjson_result_base<T>>(*this).take_value();
+template<typename T, typename Derived>
+simdjson_inline simdjson_result_conversion<T, Derived, true>::operator const T&() const& noexcept(false) {
+  auto self = static_cast<const Derived*>(this);
+  if (self->error()) { throw simdjson_error(self->error()); }
+  return self->value_unsafe();
+}
+
+template<typename T, typename Derived>
+simdjson_inline simdjson_result_conversion<T, Derived, false>::operator T&&() && noexcept(false) {
+  auto self = static_cast<Derived*>(this);
+  return std::forward<Derived>(*self).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -10165,10 +10204,6 @@ simdjson_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
-template<typename T>
-simdjson_inline simdjson_result<T>::operator T&&() && noexcept(false) {
-  return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -12227,6 +12262,115 @@ private:
 
 /* skipped duplicate #include "simdjson/base.h" */
 /* skipped duplicate #include "simdjson/error.h" */
+/* including simdjson/buffer_allocator.h: #include "simdjson/buffer_allocator.h" */
+/* begin file simdjson/buffer_allocator.h */
+#ifndef SIMDJSON_BUFFER_ALLOCATOR_H
+#define SIMDJSON_BUFFER_ALLOCATOR_H
+
+/* skipped duplicate #include "simdjson/base.h" */
+
+#include <cstddef>
+#include <new>
+
+namespace simdjson {
+
+/**
+ * Allocates the buffers that a parser keeps between documents and that grow
+ * with the largest document it parses: the structural indexes, the On-Demand
+ * string buffer, and the DOM tape and string buffer.
+ *
+ * Both functions must be noexcept. allocate returns memory aligned at least
+ * as malloc would align it, or nullptr on failure, in which case the parser
+ * returns MEMALLOC and keeps its previous buffers. deallocate receives the
+ * pointer, the size that was requested and the context.
+ *
+ * A parser allocates only when it grows, so a reused parser rarely calls the
+ * allocator. The allocator, and its context, must outlive every parser and
+ * document that holds memory from it.
+ */
+struct buffer_allocator {
+  void *(*allocate)(void *context, size_t size) noexcept;
+  void (*deallocate)(void *context, void *pointer, size_t size) noexcept;
+  void *context;
+};
+
+namespace internal {
+
+/**
+ * @private An owning array of trivial elements, from a buffer_allocator or,
+ * without one, from new[]. It frees itself through what allocated it.
+ */
+template <typename T> class allocated_array {
+public:
+  allocated_array() noexcept = default;
+  allocated_array(const allocated_array &) = delete;
+  allocated_array &operator=(const allocated_array &) = delete;
+  allocated_array(allocated_array &&other) noexcept
+      : data_{other.data_}, size_{other.size_}, allocator_{other.allocator_} {
+    other.data_ = nullptr;
+    other.size_ = 0;
+    other.allocator_ = nullptr;
+  }
+  allocated_array &operator=(allocated_array &&other) noexcept {
+    if (this != &other) {
+      reset();
+      data_ = other.data_;
+      size_ = other.size_;
+      allocator_ = other.allocator_;
+      other.data_ = nullptr;
+      other.size_ = 0;
+      other.allocator_ = nullptr;
+    }
+    return *this;
+  }
+  ~allocated_array() noexcept { reset(); }
+
+  /** Replace the content by count uninitialized elements; false on failure. */
+  bool allocate(size_t count, const buffer_allocator *allocator) noexcept {
+    reset();
+    if (allocator) {
+      if (count > size_t(-1) / sizeof(T)) {
+        return false;
+      }
+      data_ = static_cast<T *>(allocator->allocate(allocator->context, count * sizeof(T)));
+    } else {
+      data_ = new (std::nothrow) T[count];
+    }
+    if (!data_) {
+      return false;
+    }
+    size_ = count;
+    allocator_ = allocator;
+    return true;
+  }
+  void reset() noexcept {
+    if (!data_) {
+      return;
+    }
+    if (allocator_) {
+      allocator_->deallocate(allocator_->context, data_, size_ * sizeof(T));
+    } else {
+      delete[] data_;
+    }
+    data_ = nullptr;
+    size_ = 0;
+    allocator_ = nullptr;
+  }
+  simdjson_inline T *get() const noexcept { return data_; }
+  simdjson_inline T &operator[](size_t index) const noexcept { return data_[index]; }
+  simdjson_inline explicit operator bool() const noexcept { return data_ != nullptr; }
+
+private:
+  T *data_{nullptr};
+  size_t size_{0};
+  const buffer_allocator *allocator_{nullptr};
+};
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_BUFFER_ALLOCATOR_H
+/* end file simdjson/buffer_allocator.h */
 #include <memory>
 
 namespace simdjson {
@@ -12413,7 +12557,9 @@ public:
   /** Number of structural indices passed from stage 1 to stage 2 */
   uint32_t n_structural_indexes{0};
   /** Structural indices passed from stage 1 to stage 2 */
-  std::unique_ptr<uint32_t[]> structural_indexes{};
+  allocated_array<uint32_t> structural_indexes{};
+  /** Allocates structural_indexes when set_capacity grows them; nullptr uses new[]. */
+  const buffer_allocator *allocator{nullptr};
   /** Next structural index to parse */
   uint32_t next_structural_index{0};
   /** Buffer passed to stage 1 (also set by the lone-atom fast path). */
@@ -12959,6 +13105,56 @@ extern SIMDJSON_DLLIMPORTEXPORT const uint64_t thintable_epi8[256];
 
 #endif // SIMDJSON_INTERNAL_SIMDPRUNE_TABLES_H
 /* end file simdjson/internal/simdprune_tables.h */
+/* including simdjson/internal/partial_load.h: #include "simdjson/internal/partial_load.h" */
+/* begin file simdjson/internal/partial_load.h */
+#ifndef SIMDJSON_INTERNAL_PARTIAL_LOAD_H
+#define SIMDJSON_INTERNAL_PARTIAL_LOAD_H
+
+/* skipped duplicate #include "simdjson/base.h" */
+
+#include <cstdint>
+#include <cstring>
+
+namespace simdjson {
+namespace internal {
+
+// shift_tail_mask + 16 - n holds the byte indexes that move the last n bytes
+// of a 16-byte vector to its front, followed by indexes with the high bit set.
+alignas(16) static const uint8_t shift_tail_mask[32] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80
+};
+
+// Loads the n < 16 bytes at ptr, and only those, into two little-endian
+// words. The other bytes are set to fill.
+simdjson_inline void load_small_words(const uint8_t *ptr, size_t n, uint8_t fill, uint64_t &lo, uint64_t &hi) {
+  const uint64_t fills = 0x0101010101010101 * fill;
+  lo = fills;
+  hi = fills;
+  if (n >= 8) {
+    std::memcpy(&lo, ptr, 8);
+    if (n > 8) {
+      // The 8 bytes ending at ptr + n overlap lo: keep their last n - 8.
+      uint64_t tail;
+      std::memcpy(&tail, ptr + n - 8, 8);
+      hi = (tail >> (8 * (16 - n))) | (fills << (8 * (n - 8)));
+    }
+  } else if (n >= 4) {
+    uint32_t first, last;
+    std::memcpy(&first, ptr, 4);
+    std::memcpy(&last, ptr + n - 4, 4);
+    lo = first | (uint64_t(last) << (8 * (n - 4))) | (fills << (8 * n));
+  } else if (n > 0) {
+    lo = ptr[0] | (uint64_t(ptr[n / 2]) << (8 * (n / 2))) | (uint64_t(ptr[n - 1]) << (8 * (n - 1)))
+       | (fills << (8 * n));
+  }
+}
+
+} // namespace internal
+} // namespace simdjson
+
+#endif // SIMDJSON_INTERNAL_PARTIAL_LOAD_H
+/* end file simdjson/internal/partial_load.h */
 #endif // SIMDJSON_GENERIC_DEPENDENCIES_H
 /* end file simdjson/generic/dependencies.h */
 /* including generic/dependencies.h: #include <generic/dependencies.h> */
@@ -13048,6 +13244,7 @@ class tape_ref;
 
 #endif // SIMDJSON_DOM_BASE_H
 /* end file simdjson/dom/base.h */
+/* skipped duplicate #include "simdjson/buffer_allocator.h" */
 
 #include <memory>
 
@@ -13100,13 +13297,13 @@ public:
   bool dump_raw_tape(std::ostream &os) const noexcept;
 
   /** @private Structural values. */
-  std::unique_ptr<uint64_t[]> tape{};
+  internal::allocated_array<uint64_t> tape{};
 
   /** @private String values.
    *
    * Should be at least byte_capacity.
    */
-  std::unique_ptr<uint8_t[]> string_buf{};
+  internal::allocated_array<uint8_t> string_buf{};
   /** @private Allocate memory to support
    * input JSON documents of up to len bytes.
    *
@@ -13117,8 +13314,10 @@ public:
    * can you use this function to increase
    * or lower the amount of allocated memory.
    * Passing zero clears the memory.
+   *
+   * The buffers come from allocator, or from new[] when it is nullptr.
    */
-  error_code allocate(size_t len) noexcept;
+  error_code allocate(size_t len, const buffer_allocator *allocator = nullptr) noexcept;
   /** @private Capacity in bytes, in terms
    * of how many bytes of input JSON we can
    * support.
@@ -14482,6 +14681,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -14630,6 +14830,26 @@ namespace {
     static simdjson_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
     static simdjson_inline uint8x16_t zero() { return vdupq_n_u8(0); }
     static simdjson_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline uint8x16_t load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const uint8x16_t window = vld1q_u8(ptr + n - 16);
+        const uint8x16_t shuffle = vld1q_u8(internal::shift_tail_mask + 16 - n);
+        // vqtbl1q_u8 zeroes the bytes whose index is out of range.
+        const uint8x16_t filler = vandq_u8(vcgeq_u8(shuffle, vdupq_n_u8(16)), vdupq_n_u8(fill));
+        return vorrq_u8(vqtbl1q_u8(window, shuffle), filler);
+      }
+#if SIMDJSON_IS_BIG_ENDIAN
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return vld1q_u8(block);
+#else
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return vcombine_u8(vcreate_u8(lo), vcreate_u8(hi));
+#endif
+    }
 
     simdjson_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
     // Zero constructor
@@ -15468,8 +15688,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -15504,6 +15724,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -15533,7 +15754,11 @@ namespace arm64 {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -15613,12 +15838,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -17455,10 +17674,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -17826,6 +18041,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/arm64/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -17974,6 +18190,26 @@ namespace {
     static simdjson_inline uint8x16_t splat(uint8_t _value) { return vmovq_n_u8(_value); }
     static simdjson_inline uint8x16_t zero() { return vdupq_n_u8(0); }
     static simdjson_inline uint8x16_t load(const uint8_t* values) { return vld1q_u8(values); }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline uint8x16_t load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const uint8x16_t window = vld1q_u8(ptr + n - 16);
+        const uint8x16_t shuffle = vld1q_u8(internal::shift_tail_mask + 16 - n);
+        // vqtbl1q_u8 zeroes the bytes whose index is out of range.
+        const uint8x16_t filler = vandq_u8(vcgeq_u8(shuffle, vdupq_n_u8(16)), vdupq_n_u8(fill));
+        return vorrq_u8(vqtbl1q_u8(window, shuffle), filler);
+      }
+#if SIMDJSON_IS_BIG_ENDIAN
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return vld1q_u8(block);
+#else
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return vcombine_u8(vcreate_u8(lo), vcreate_u8(hi));
+#endif
+    }
 
     simdjson_inline simd8(const uint8x16_t _value) : base_u8<uint8_t>(_value) {}
     // Zero constructor
@@ -18568,6 +18804,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -18628,6 +18872,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -19550,11 +19813,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -19748,7 +20009,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -19764,8 +20030,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -19788,12 +20062,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -19843,8 +20117,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -19909,10 +20183,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -19921,30 +20198,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -19965,6 +20253,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -19977,16 +20266,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -20005,6 +20294,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -20069,6 +20360,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -20085,11 +20379,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -21816,20 +22153,21 @@ namespace simdjson { namespace arm64 { namespace { namespace stage1 {
 simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
   if (bits == 0) { return; }
 
+  uint32_t *dst = this->tail;
   const int cnt = static_cast<int>(count_ones(bits));
 #if SIMDJSON_PREFER_REVERSE_BITS
   bits = reverse_bits(bits);
 #endif
-  write_indexes<0, 4>(idx, bits);
+  write_indexes<0, 4>(dst, idx, bits);
   if (simdjson_unlikely(4 < cnt)) {
-    write_indexes_stepped<4, 24, 2>(idx, bits, cnt);
+    write_indexes_stepped<4, 24, 2>(dst, idx, bits, cnt);
   }
   if (simdjson_unlikely(24 < cnt)) {
     for (int i = 24; i < cnt; ++i) {
-      write_index(idx, bits, i);
+      write_index(dst, idx, bits, i);
     }
   }
-  this->tail += cnt;
+  this->tail = dst + cnt;
 }
 
 }}}} // namespace simdjson::arm64::(anonymous)::stage1
@@ -22270,6 +22608,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -22492,6 +22831,26 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 32 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      const __m128i lo = n >= 16 ? _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr)) : load_partial_16(ptr, n, begin, fill);
+      const __m128i hi = n > 16 ? load_partial_16(ptr + 16, n - 16, begin, fill) : _mm_set1_epi8(char(fill));
+      return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m256i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -23102,8 +23461,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -23138,6 +23497,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -23167,7 +23527,11 @@ namespace haswell {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -23247,12 +23611,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -25089,10 +25447,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -25455,6 +25809,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/intrinsics.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/haswell/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -25677,6 +26032,26 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 32 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      const __m128i lo = n >= 16 ? _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr)) : load_partial_16(ptr, n, begin, fill);
+      const __m128i hi = n > 16 ? load_partial_16(ptr + 16, n - 16, begin, fill) : _mm_set1_epi8(char(fill));
+      return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m256i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -26043,6 +26418,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -26103,6 +26486,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -27025,11 +27427,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -27223,7 +27623,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -27239,8 +27644,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -27263,12 +27676,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -27318,8 +27731,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -27384,10 +27797,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -27396,30 +27812,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -27440,6 +27867,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -27452,16 +27880,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -27480,6 +27908,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -27544,6 +27974,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -27560,11 +27993,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -29886,6 +30362,12 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 64 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      // Masked-off bytes are not read, so they cannot fault.
+      return _mm512_mask_loadu_epi8(_mm512_set1_epi8(char(fill)), (uint64_t(1) << n) - 1, ptr);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m512i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -30553,8 +31035,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -30589,6 +31071,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -30618,7 +31101,11 @@ namespace icelake {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -30698,12 +31185,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -32540,10 +33021,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -33066,6 +33543,12 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 64 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      // Masked-off bytes are not read, so they cannot fault.
+      return _mm512_mask_loadu_epi8(_mm512_set1_epi8(char(fill)), (uint64_t(1) << n) - 1, ptr);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m512i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -33489,6 +33972,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -33549,6 +34040,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -34471,11 +34981,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -34669,7 +35177,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -34685,8 +35198,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -34709,12 +35230,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -34764,8 +35285,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -34830,10 +35351,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -34842,30 +35366,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -34886,6 +35421,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -34898,16 +35434,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -34926,6 +35462,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -34990,6 +35528,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -35006,11 +35547,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -37487,6 +38071,14 @@ template <> struct simd8<int8_t> : base8_numeric<int8_t> {
 
 // Unsigned bytes
 template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
   simdjson_inline simd8() : base8_numeric<uint8_t>() {}
   simdjson_inline simd8(const __m128i _value)
       : base8_numeric<uint8_t>(_value) {}
@@ -38161,8 +38753,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -38197,6 +38789,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -38226,7 +38819,11 @@ namespace ppc64 {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -38306,12 +38903,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -40148,10 +40739,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -40784,6 +41371,14 @@ template <> struct simd8<int8_t> : base8_numeric<int8_t> {
 
 // Unsigned bytes
 template <> struct simd8<uint8_t> : base8_numeric<uint8_t> {
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
   simdjson_inline simd8() : base8_numeric<uint8_t>() {}
   simdjson_inline simd8(const __m128i _value)
       : base8_numeric<uint8_t>(_value) {}
@@ -41214,6 +41809,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -41274,6 +41877,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -42196,11 +42818,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -42394,7 +43014,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -42410,8 +43035,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -42434,12 +43067,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -42489,8 +43122,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -42555,10 +43188,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -42567,30 +43203,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -42611,6 +43258,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -42623,16 +43271,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -42651,6 +43299,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -42715,6 +43365,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -42731,11 +43384,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -44913,6 +45609,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -45107,6 +45804,24 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      return load_partial_16(ptr, n, begin, fill);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -45332,6 +46047,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -45526,6 +46242,24 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      return load_partial_16(ptr, n, begin, fill);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -46123,8 +46857,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -46159,6 +46893,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -46188,7 +46923,11 @@ namespace westmere {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -46268,12 +47007,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -48110,10 +48843,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -48515,6 +49244,7 @@ simdjson_inline internal::value128 full_multiplication(uint64_t value1, uint64_t
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -48709,6 +49439,24 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      return load_partial_16(ptr, n, begin, fill);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -48934,6 +49682,7 @@ simdjson_inline long long int count_ones(uint64_t input_num) {
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/base.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/westmere/bitmanipulation.h" */
 /* amalgamation skipped (editor-only): #include "simdjson/internal/simdprune_tables.h" */
+/* amalgamation skipped (editor-only): #include "simdjson/internal/partial_load.h" */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -49128,6 +49877,24 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline __m128i load_partial_16(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      if (size_t(ptr - begin) + n >= 16) {
+        const __m128i window = _mm_loadu_si128(reinterpret_cast<const __m128i *>(ptr + n - 16));
+        const __m128i shuffle = _mm_loadu_si128(reinterpret_cast<const __m128i *>(internal::shift_tail_mask + 16 - n));
+        // _mm_shuffle_epi8 zeroes the bytes whose index has the high bit set.
+        const __m128i filler = _mm_and_si128(_mm_cmplt_epi8(shuffle, _mm_setzero_si128()), _mm_set1_epi8(char(fill)));
+        return _mm_or_si128(_mm_shuffle_epi8(window, shuffle), filler);
+      }
+      uint64_t lo, hi;
+      internal::load_small_words(ptr, n, fill, lo, hi);
+      return _mm_set_epi64x(int64_t(hi), int64_t(lo));
+    }
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [begin, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      return load_partial_16(ptr, n, begin, fill);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -49481,6 +50248,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -49541,6 +50316,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -50463,11 +51257,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -50661,7 +51453,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -50677,8 +51474,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -50701,12 +51506,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -50756,8 +51561,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -50822,10 +51627,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -50834,30 +51642,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -50878,6 +51697,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -50890,16 +51710,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -50918,6 +51738,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -50982,6 +51804,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -50998,11 +51823,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -53324,6 +54192,14 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 32 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[32];
+      std::memset(block, fill, 32);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m256i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -53943,8 +54819,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -53979,6 +54855,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -54008,7 +54885,11 @@ namespace lasx {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -54088,12 +54969,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -55930,10 +56805,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -56448,6 +57319,14 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 32 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[32];
+      std::memset(block, fill, 32);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m256i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -56823,6 +57702,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -56883,6 +57770,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -57805,11 +58711,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -58003,7 +58907,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -58019,8 +58928,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -58043,12 +58960,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -58098,8 +59015,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -58164,10 +59081,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -58176,30 +59096,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -58220,6 +59151,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -58232,16 +59164,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -58260,6 +59192,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -58324,6 +59258,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -58340,11 +59277,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -60591,6 +61571,14 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -61222,8 +62210,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -61258,6 +62246,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -61287,7 +62276,11 @@ namespace lsx {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -61367,12 +62360,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -63209,10 +64196,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -63674,6 +64657,14 @@ namespace simd {
   // Unsigned bytes
   template<>
   struct simd8<uint8_t>: base8_numeric<uint8_t> {
+    // The n < 16 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[16];
+      std::memset(block, fill, 16);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8() : base8_numeric<uint8_t>() {}
     simdjson_inline simd8(const __m128i _value) : base8_numeric<uint8_t>(_value) {}
     // Splat constructor
@@ -64061,6 +65052,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -64121,6 +65120,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -65043,11 +66061,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -65241,7 +66257,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -65257,8 +66278,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -65281,12 +66310,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -65336,8 +66365,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -65402,10 +66431,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -65414,30 +66446,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -65458,6 +66501,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -65470,16 +66514,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -65498,6 +66542,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -65562,6 +66608,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -65578,11 +66627,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -67697,6 +68789,14 @@ namespace simd {
     simdjson_inline simd8() : simd8(zero()) {}
     simdjson_inline simd8(const uint8_t values[VL8]) : simd8(load(values)) {}
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // The n < VL8 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[VL8];
+      std::memset(block, fill, VL8);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8(simd8<bool> mask) : value(__riscv_vmerge_vxm_u8m1(zero(), -1, (vbool_t)mask, VL8)) {}
 
     simdjson_inline operator const vuint8_t&() const { return this->value; }
@@ -68498,8 +69598,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -68534,6 +69634,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -68563,7 +69664,11 @@ namespace rvv_vls {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -68643,12 +69748,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -70485,10 +71584,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -70822,6 +71917,14 @@ namespace simd {
     simdjson_inline simd8() : simd8(zero()) {}
     simdjson_inline simd8(const uint8_t values[VL8]) : simd8(load(values)) {}
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // The n < VL8 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[VL8];
+      std::memset(block, fill, VL8);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8(simd8<bool> mask) : value(__riscv_vmerge_vxm_u8m1(zero(), -1, (vbool_t)mask, VL8)) {}
 
     simdjson_inline operator const vuint8_t&() const { return this->value; }
@@ -71310,6 +72413,14 @@ namespace simd {
     simdjson_inline simd8() : simd8(zero()) {}
     simdjson_inline simd8(const uint8_t values[VL8]) : simd8(load(values)) {}
     simdjson_inline simd8(uint8_t _value) : simd8(splat(_value)) {}
+    // The n < VL8 bytes at ptr followed by fill bytes. Reads no byte outside [ptr, ptr + n).
+    static simdjson_inline simd8<uint8_t> load_partial(const uint8_t *ptr, size_t n, const uint8_t *begin, uint8_t fill) {
+      (void)begin;
+      uint8_t block[VL8];
+      std::memset(block, fill, VL8);
+      std::memcpy(block, ptr, n);
+      return load(block);
+    }
     simdjson_inline simd8(simd8<bool> mask) : value(__riscv_vmerge_vxm_u8m1(zero(), -1, (vbool_t)mask, VL8)) {}
 
     simdjson_inline operator const vuint8_t&() const { return this->value; }
@@ -71763,6 +72874,14 @@ public:
    * with full-width stores that the loads can forward from.
    */
   simdjson_inline size_t get_remainder_padded(uint8_t *dst) const;
+  /**
+   * Like get_remainder, but reads only the input bytes: no padding is needed.
+   *
+   * The block is put together in vector registers and written with
+   * full-width stores, so that the loads that read it back are forwarded from
+   * the stores (see get_remainder_padded).
+   */
+  simdjson_inline size_t get_remainder_unpadded(uint8_t *dst) const;
   simdjson_inline void advance();
 private:
   const uint8_t *buf;
@@ -71823,6 +72942,25 @@ simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_padded(uint8_t
       v = spaces ^ ((in ^ spaces) & keep);
     }
     v.store(dst + off);
+  }
+  return remaining;
+}
+
+template<size_t STEP_SIZE>
+simdjson_inline size_t buf_block_reader<STEP_SIZE>::get_remainder_unpadded(uint8_t *dst) const {
+  const size_t remaining = len - idx;
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  for (size_t off = 0; off < STEP_SIZE; off += width) {
+    if (off + width <= remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load(buf + idx + off);
+      v.store(dst + off);
+    } else if (off < remaining) {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::load_partial(buf + idx + off, remaining - off, buf, 0x20);
+      v.store(dst + off);
+    } else {
+      const simd::simd8<uint8_t> v = simd::simd8<uint8_t>::splat(0x20);
+      v.store(dst + off);
+    }
   }
   return remaining;
 }
@@ -72745,11 +73883,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -72943,7 +74079,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -72959,8 +74100,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -72983,12 +74132,12 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
   }
 
   // Index the last (remainder) block, padded with spaces
-  uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
-    uint8_t out_block[STEP_SIZE];
+    simdjson_indeterminate uint8_t out_block[STEP_SIZE];
     uint8_t * const guarded_dst{minifier.dst};
     minifier.dst = out_block;
     minifier.step<STEP_SIZE>(block, reader);
@@ -73038,8 +74187,8 @@ bool generic_validate_utf8(const uint8_t * input, size_t length) {
       c.check_next_input(in);
       reader.advance();
     }
-    uint8_t block[64]{};
-    reader.get_remainder(block);
+    uint8_t block[64];
+    reader.get_remainder_unpadded(block);
     simd::simd8x64<uint8_t> in(block);
     c.check_next_input(in);
     reader.advance();
@@ -73104,10 +74253,13 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
     int lz = leading_zeroes(rev_bits);
-    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    dst[i] = static_cast<uint32_t>(idx) + lz;
     rev_bits = zero_leading_bit(rev_bits, lz);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
+    write_index(this->tail, idx, rev_bits, i);
   }
 #else
   /**
@@ -73116,30 +74268,41 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    this->tail[i] = idx + trailing_zeroes(bits);
+  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
+    dst[i] = idx + trailing_zeroes(bits);
     bits = clear_lowest_bit(bits);
+  }
+  simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
+    write_index(this->tail, idx, bits, i);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    write_index(idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
+    write_index(dst, idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
     }
     return START+N;
   }
+  template <int START, int N>
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    return write_indexes<START, N>(this->tail, idx, bits);
+  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(dst, idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
+  }
+  template <int START, int END, int STEP>
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -73160,6 +74323,7 @@ public:
     if (bits == 0)
         return;
 
+    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -73172,16 +74336,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(idx, bits, i);
+          write_index(dst, idx, bits, i);
         }
       }
     }
 
-    this->tail += cnt;
+    this->tail = dst + cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -73200,6 +74364,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -73264,6 +74430,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -73280,11 +74449,54 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   }
   // Take care of the last block (will always be there unless file is empty which is
   // not supposed to happen.)
-  uint8_t block[STEP_SIZE];
+  simdjson_indeterminate uint8_t block[STEP_SIZE];
   const size_t remaining = parser._unpadded ? reader.get_remainder(block) : reader.get_remainder_padded(block);
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
@@ -75773,8 +76985,8 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_capacity(s
   // implementation keeps its previous buffer and capacity. Otherwise a parser
   // that still believes it has room skips reallocation and stage 1 rejects
   // every document with CAPACITY.
-  std::unique_ptr<uint32_t[]> new_structural_indexes(new (std::nothrow) uint32_t[max_structures]);
-  if (!new_structural_indexes) { return MEMALLOC; }
+  internal::allocated_array<uint32_t> new_structural_indexes;
+  if (!new_structural_indexes.allocate(max_structures, allocator)) { return MEMALLOC; }
   structural_indexes = std::move(new_structural_indexes);
   structural_indexes[0] = 0;
   n_structural_indexes = 0;
@@ -75809,6 +77021,7 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
+/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -75838,7 +77051,11 @@ namespace fallback {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -75918,12 +77135,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -77760,10 +78971,6 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
-  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -78331,11 +79538,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.
@@ -80354,6 +81559,41 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
   size_t i = 0, pos = 0;
   uint8_t quote = 0;
   uint8_t nonescape = 1;
+
+  // Bytes 0x80 where the byte of word equals c.
+  const auto bytes_equal = [](uint64_t word, uint8_t c) -> uint64_t {
+    const uint64_t x = word ^ (0x0101010101010101 * c);
+    return ~(((x & 0x7F7F7F7F7F7F7F7F) + 0x7F7F7F7F7F7F7F7F) | x | 0x7F7F7F7F7F7F7F7F);
+  };
+  // A word without quotes or backslashes leaves the string state unchanged:
+  // within a string it is copied, outside it loses its white space.
+  while (i + 8 <= len) {
+    uint64_t word;
+    std::memcpy(&word, buf + i, 8);
+    if (bytes_equal(word, '"') | bytes_equal(word, '\\')) {
+      for (size_t end = i + 8; i < end; i++) {
+        unsigned char c = buf[i];
+        uint8_t *meta = jump_table + 3 * c;
+        quote = quote ^ (meta[0] & nonescape);
+        dst[pos] = c;
+        pos += meta[2] | quote;
+        nonescape = uint8_t(~nonescape) | (meta[1]);
+      }
+      continue;
+    }
+    nonescape = 1;
+    if (quote || !(bytes_equal(word, ' ') | bytes_equal(word, '\n') | bytes_equal(word, '\r') | bytes_equal(word, '\t'))) {
+      std::memcpy(dst + pos, &word, 8);
+      pos += 8;
+      i += 8;
+    } else {
+      for (size_t end = i + 8; i < end; i++) {
+        unsigned char c = buf[i];
+        dst[pos] = c;
+        pos += jump_table[3 * c + 2];
+      }
+    }
+  }
 
   while (i < len) {
     unsigned char c = buf[i];

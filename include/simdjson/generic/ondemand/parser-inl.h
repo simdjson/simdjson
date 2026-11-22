@@ -240,7 +240,7 @@ struct ignoring_visitor {
 
 template <typename V>
 simdjson_warn_unused simdjson_inline error_code parser::visit(padded_string_view json, V &visitor) & {
-#if !SIMDJSON_ENABLE_NAN_INF
+#if !SIMDJSON_ENABLE_NAN_INF && !SIMDJSON_ALLOW_TRAILING_COMMAS
   if (json.length() <= MAX_ONE_PASS_VISIT && json.has_sufficient_padding()) {
     if (capacity() < json.length() || !string_buf) {
       SIMDJSON_TRY( allocate(json.length(), max_depth()) );

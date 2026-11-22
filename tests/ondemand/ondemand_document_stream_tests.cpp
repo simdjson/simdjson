@@ -886,8 +886,8 @@ namespace document_stream_tests {
     bool json_sequence_truncated_last_record() {
         TEST_START();
         const std::string json("\x1e[5]\n\x1e[1");
-        std::vector<char> buffer(json.size() + SIMDJSON_PADDING, '0');
-        std::memcpy(buffer.data(), json.data(), json.size());
+        std::vector<char> buffer(json.begin(), json.end());
+        buffer.resize(json.size() + SIMDJSON_PADDING, '0');
         padded_string_view input(buffer.data(), json.size(), buffer.size());
         {
             ondemand::parser parser;
