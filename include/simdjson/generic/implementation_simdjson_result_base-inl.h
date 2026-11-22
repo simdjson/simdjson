@@ -82,8 +82,14 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
+
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS

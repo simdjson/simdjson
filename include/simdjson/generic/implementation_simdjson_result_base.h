@@ -112,12 +112,24 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast to the value (will throw on error).
+   * Cast an rvalue result to the value, moving it (will throw on error).
+   * Disabled when T is trivially copyable: the conversion below is used instead.
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator T&&() && noexcept(false);
+  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
+
+  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
+  /**
+   * Cast a result to a copy of the value (will throw on error). This allows,
+   * for example, passing an lvalue simdjson_result<dom::element> to a function
+   * that takes a dom::element. Disabled when T is not copy constructible.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS

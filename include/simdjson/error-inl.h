@@ -117,8 +117,14 @@ simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
 }
 
 template<typename T>
-simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
+simdjson_inline simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
   return std::forward<simdjson_result_base<T>>(*this).take_value();
+}
+
+template<typename T>
+simdjson_inline simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -194,8 +200,13 @@ simdjson_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
 }
 
 template<typename T>
-simdjson_inline simdjson_result<T>::operator T&&() && noexcept(false) {
+simdjson_inline simdjson_result<T>::operator rvalue_conversion_type() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
+}
+
+template<typename T>
+simdjson_inline simdjson_result<T>::operator lvalue_conversion_type() const& noexcept(false) {
+  return internal::simdjson_result_base<T>::operator lvalue_conversion_type();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
