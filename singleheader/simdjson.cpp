@@ -1,4 +1,4 @@
-/* auto-generated on 2026-11-22 09:57:10 -0500. version 5.2.0 Do not edit! */
+/* auto-generated on 2026-11-22 13:30:39 -0500. version 5.2.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2753,7 +2753,6 @@ namespace std {
 
 #include <string>
 #include <ostream>
-#include <type_traits>
 
 namespace simdjson {
 
@@ -2879,27 +2878,8 @@ namespace internal {
  *
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
-#if SIMDJSON_EXCEPTIONS
-template<typename T, typename Derived, bool IsCopyConstructible = std::is_copy_constructible<T>::value>
-struct simdjson_result_conversion;
-
-template<typename T, typename Derived>
-struct simdjson_result_conversion<T, Derived, true> {
-  simdjson_inline operator const T&() const& noexcept(false);
-};
-
-template<typename T, typename Derived>
-struct simdjson_result_conversion<T, Derived, false> {
-  simdjson_inline operator T&&() && noexcept(false);
-};
-#endif // SIMDJSON_EXCEPTIONS
-
 template<typename T>
-struct simdjson_result_base : protected std::pair<T, error_code>
-#if SIMDJSON_EXCEPTIONS
-  , public simdjson_result_conversion<T, simdjson_result_base<T>>
-#endif
-{
+struct simdjson_result_base : protected std::pair<T, error_code> {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -2983,6 +2963,12 @@ struct simdjson_result_base : protected std::pair<T, error_code>
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -3137,6 +3123,12 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
@@ -10119,17 +10111,9 @@ simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   return std::forward<T>(this->first);
 }
 
-template<typename T, typename Derived>
-simdjson_inline simdjson_result_conversion<T, Derived, true>::operator const T&() const& noexcept(false) {
-  auto self = static_cast<const Derived*>(this);
-  if (self->error()) { throw simdjson_error(self->error()); }
-  return self->value_unsafe();
-}
-
-template<typename T, typename Derived>
-simdjson_inline simdjson_result_conversion<T, Derived, false>::operator T&&() && noexcept(false) {
-  auto self = static_cast<Derived*>(this);
-  return std::forward<Derived>(*self).take_value();
+template<typename T>
+simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -10204,6 +10188,10 @@ simdjson_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
+template<typename T>
+simdjson_inline simdjson_result<T>::operator T&&() && noexcept(false) {
+  return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -15724,7 +15712,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -15754,11 +15741,7 @@ namespace arm64 {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -15838,6 +15821,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -17674,6 +17663,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -23497,7 +23490,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -23527,11 +23519,7 @@ namespace haswell {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -23611,6 +23599,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -25447,6 +25441,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -31071,7 +31069,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -31101,11 +31098,7 @@ namespace icelake {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -31185,6 +31178,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -33021,6 +33020,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -38789,7 +38792,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -38819,11 +38821,7 @@ namespace ppc64 {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -38903,6 +38901,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -40739,6 +40743,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -46893,7 +46901,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -46923,11 +46930,7 @@ namespace westmere {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -47007,6 +47010,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -48843,6 +48852,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -54855,7 +54868,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -54885,11 +54897,7 @@ namespace lasx {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -54969,6 +54977,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -56805,6 +56819,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -62246,7 +62264,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -62276,11 +62293,7 @@ namespace lsx {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -62360,6 +62373,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -64196,6 +64215,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -69634,7 +69657,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -69664,11 +69686,7 @@ namespace rvv_vls {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -69748,6 +69766,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -71584,6 +71608,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -77021,7 +77049,6 @@ inline simdjson_warn_unused error_code dom_parser_implementation::set_max_depth(
 /* amalgamation skipped (editor-only): #ifndef SIMDJSON_CONDITIONAL_INCLUDE */
 /* amalgamation skipped (editor-only): #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H */
 /* amalgamation skipped (editor-only): #include "simdjson/generic/base.h" */
-/* amalgamation skipped (editor-only): #include <type_traits> */
 /* amalgamation skipped (editor-only): #endif // SIMDJSON_CONDITIONAL_INCLUDE */
 
 namespace simdjson {
@@ -77051,11 +77078,7 @@ namespace fallback {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base
-#if SIMDJSON_EXCEPTIONS
-  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
-#endif
-{
+struct implementation_simdjson_result_base {
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -77135,6 +77158,12 @@ struct implementation_simdjson_result_base
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  /**
+   * Cast to the value (will throw on error).
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -78971,6 +79000,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 

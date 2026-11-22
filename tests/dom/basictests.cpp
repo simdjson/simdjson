@@ -1220,27 +1220,10 @@ namespace dom_api_tests {
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
 #if SIMDJSON_EXCEPTIONS
-    // Next lines are for https://github.com/simdjson/simdjson/issues/1341
-    auto node = object["a"]; // node is an lvalue simdjson_result<dom::element>
+    // Next three lines are for https://github.com/simdjson/simdjson/issues/1341
+    dom::element node = object["a"]; // might throw
     auto mylambda = [](dom::element e) { return int64_t(e); };
     ASSERT_EQUAL( mylambda(node), 1 );
-    dom::element elem = node;
-    ASSERT_EQUAL( int64_t(elem), 1 );
-
-    const auto const_node = object["a"];
-    ASSERT_EQUAL( mylambda(const_node), 1 );
-    dom::element const_elem = const_node;
-    ASSERT_EQUAL( int64_t(const_elem), 1 );
-
-    auto err_node = object["d"];
-    bool caught = false;
-    try {
-      mylambda(err_node);
-    } catch (simdjson_error &e) {
-      ASSERT_EQUAL(e.error(), NO_SUCH_FIELD);
-      caught = true;
-    }
-    ASSERT_TRUE(caught);
 #endif
     ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
     ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );

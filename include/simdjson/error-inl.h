@@ -116,17 +116,9 @@ simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
   return std::forward<T>(this->first);
 }
 
-template<typename T, typename Derived>
-simdjson_inline simdjson_result_conversion<T, Derived, true>::operator const T&() const& noexcept(false) {
-  auto self = static_cast<const Derived*>(this);
-  if (self->error()) { throw simdjson_error(self->error()); }
-  return self->value_unsafe();
-}
-
-template<typename T, typename Derived>
-simdjson_inline simdjson_result_conversion<T, Derived, false>::operator T&&() && noexcept(false) {
-  auto self = static_cast<Derived*>(this);
-  return std::forward<Derived>(*self).take_value();
+template<typename T>
+simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<simdjson_result_base<T>>(*this).take_value();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -201,6 +193,10 @@ simdjson_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
 }
 
+template<typename T>
+simdjson_inline simdjson_result<T>::operator T&&() && noexcept(false) {
+  return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 

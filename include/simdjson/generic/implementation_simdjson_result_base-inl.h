@@ -81,6 +81,10 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
   return std::forward<T>(this->first);
 }
 
+template<typename T>
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
+  return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
