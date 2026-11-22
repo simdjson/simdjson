@@ -653,6 +653,20 @@ public:
    */
   simdjson_inline void set_max_capacity(size_t max_capacity) noexcept;
 
+  /**
+   * Route the allocation of the buffers that grow with the largest document
+   * (the structural indexes, and the tape and string buffer of the documents
+   * this parser allocates) through a buffer_allocator. nullptr, the default,
+   * uses new[]. The allocator must outlive the parser and those documents.
+   *
+   * Buffers that already exist keep the allocator that allocated them until
+   * they grow, so set the allocator before the first document or the first
+   * call to allocate(). A failed allocation makes the parser return MEMALLOC.
+   */
+  simdjson_inline void set_allocator(const buffer_allocator *allocator) noexcept;
+  /** The buffer_allocator set by set_allocator(), or nullptr. */
+  simdjson_pure simdjson_inline const buffer_allocator *get_allocator() const noexcept;
+
 #ifdef SIMDJSON_THREADS_ENABLED
   /**
    * The parser instance can use threads when they are available to speed up some
@@ -722,6 +736,8 @@ private:
 
   /** Whether to store big integers as strings instead of returning BIGINT_ERROR */
   bool _number_as_string{false};
+
+  const buffer_allocator *_allocator{nullptr};
 
   /**
    * The loaded buffer (reused each time load() is called)

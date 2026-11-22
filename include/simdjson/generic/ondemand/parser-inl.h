@@ -33,22 +33,22 @@ simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capa
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (new_capacity / 3) + SIMDJSON_PADDING, 64);
-  std::unique_ptr<uint8_t[]> new_string_buf(new (std::nothrow) uint8_t[string_capacity]);
-  if (!new_string_buf) { return MEMALLOC; }
+  simdjson::internal::allocated_array<uint8_t> new_string_buf;
+  if (!new_string_buf.allocate(string_capacity, _allocator)) { return MEMALLOC; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> new_start_positions(new (std::nothrow) token_position[new_max_depth]);
   if (!new_start_positions) { return MEMALLOC; }
 #endif
-  if (implementation) {
-    error_code err = implementation->allocate(new_capacity, new_max_depth);
-    if (err) { return err; }
-  } else {
-    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation);
+  if (!implementation) {
+    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(0, new_max_depth, implementation);
     if (err) {
       implementation.reset();
       return err;
     }
   }
+  implementation->allocator = _allocator;
+  error_code err = implementation->allocate(new_capacity, new_max_depth);
+  if (err) { return err; }
   string_buf = std::move(new_string_buf);
 #if SIMDJSON_DEVELOPMENT_CHECKS
   start_positions = std::move(new_start_positions);
@@ -77,8 +77,41 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  drop_trailing_commas(reinterpret_cast<const uint8_t *>(json.data()));
+#endif
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
+
+// Removes from the structural indexes each comma that follows a value and
+// precedes a closing bracket, so that the iterator never sees it. The entries
+// past the last index (stage 1 keeps up to three there) move with the others.
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+simdjson_inline void parser::drop_trailing_commas(const uint8_t *buf) noexcept {
+  uint32_t *indexes = implementation->structural_indexes.get();
+  const uint32_t n = implementation->n_structural_indexes;
+  uint32_t kept = 0;
+  uint8_t previous = '[';
+  for (uint32_t i = 0; i < n; i++) {
+    const uint8_t c = buf[indexes[i]];
+    if (c == ',' && i + 1 < n && previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+      const uint8_t next = buf[indexes[i + 1]];
+      if (next == ']' || next == '}') {
+        previous = c;
+        continue;
+      }
+    }
+    indexes[kept++] = indexes[i];
+    previous = c;
+  }
+  if (kept != n) {
+    indexes[kept] = indexes[n];
+    indexes[kept + 1] = indexes[n + 1];
+    indexes[kept + 2] = indexes[n + 2];
+    implementation->n_structural_indexes = kept;
+  }
+}
+#endif // SIMDJSON_ALLOW_TRAILING_COMMAS
 
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & noexcept {
@@ -183,6 +216,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
 
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  drop_trailing_commas(reinterpret_cast<const uint8_t *>(json.data()));
+#endif
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 
@@ -499,6 +535,13 @@ simdjson_pure simdjson_inline size_t parser::max_capacity() const noexcept {
 }
 simdjson_pure simdjson_inline size_t parser::max_depth() const noexcept {
   return _max_depth;
+}
+
+simdjson_inline void parser::set_allocator(const buffer_allocator *allocator) noexcept {
+  _allocator = allocator;
+}
+simdjson_pure simdjson_inline const buffer_allocator *parser::get_allocator() const noexcept {
+  return _allocator;
 }
 
 simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {

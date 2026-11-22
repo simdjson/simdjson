@@ -373,6 +373,22 @@ public:
    * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
    */
   inline dom::array::iterator end() const noexcept(false);
+
+  /**
+   * Iterate over each element in this array in reverse order.
+   *
+   * @return The beginning of the reverse iteration.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
+   */
+  inline dom::array::reverse_iterator rbegin() const noexcept(false);
+
+  /**
+   * Iterate over each element in this array in reverse order.
+   *
+   * @return The end of the reverse iteration.
+   * @exception simdjson_error(INCORRECT_TYPE) if the JSON element is not an array
+   */
+  inline dom::array::reverse_iterator rend() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
@@ -603,6 +619,8 @@ public:
 
   simdjson_inline dom::array::iterator begin() const noexcept(false);
   simdjson_inline dom::array::iterator end() const noexcept(false);
+  simdjson_inline dom::array::reverse_iterator rbegin() const noexcept(false);
+  simdjson_inline dom::array::reverse_iterator rend() const noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 };
 
