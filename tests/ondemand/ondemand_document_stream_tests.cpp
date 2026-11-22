@@ -1031,7 +1031,9 @@ namespace document_stream_tests {
             {comma_prefix + R"([2[[")", ']', stream_format::comma_delimited},
             {R"([2[[")", ',', stream_format::comma_delimited},
             {comma_prefix + R"([2[[")", ',', stream_format::comma_delimited},
+#if !SIMDJSON_ALLOW_TRAILING_COMMAS
             {R"([1,] "a)", ',', stream_format::whitespace_delimited},
+#endif
             {R"([1,"x":2] "a)", ',', stream_format::whitespace_delimited}, // read with at(2)
         };
         for (const auto &c : cases) {

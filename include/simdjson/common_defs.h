@@ -61,6 +61,10 @@ float from_chars_float(const char *first) noexcept;
 #define SIMDJSON_ENABLE_NAN_INF 0
 #endif
 
+#ifndef SIMDJSON_ALLOW_TRAILING_COMMAS
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 0
+#endif
+
 } // namespace simdjson
 
 #if defined(__GNUC__)

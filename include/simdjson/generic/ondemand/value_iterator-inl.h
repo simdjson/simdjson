@@ -140,13 +140,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
-      if (_json_iter->parser->allow_trailing_commas &&
-          *_json_iter->peek() == '}') {
-        _json_iter->return_current_and_advance();
-        logger::log_end_value(*_json_iter, "object");
-        SIMDJSON_TRY(end_container());
-        return false;
-      }
       return true;
     default:
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
@@ -550,13 +543,6 @@ simdjson_warn_unused simdjson_inline simdjson_result<bool> value_iterator::has_n
       SIMDJSON_TRY( end_container() );
       return false;
     case ',':
-      if (_json_iter->parser->allow_trailing_commas &&
-          *_json_iter->peek() == ']') {
-        _json_iter->return_current_and_advance();
-        logger::log_end_value(*_json_iter, "array");
-        SIMDJSON_TRY(end_container());
-        return false;
-      }
       _json_iter->descend_to(depth()+1);
       return true;
     default:
@@ -1239,8 +1225,7 @@ simdjson_inline bool value_iterator::is_valid() const noexcept {
 }
 
 simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept {
-  const uint8_t *json = peek_start();
-  switch (*json) {
+  switch (*peek_start()) {
     case '{':
       return json_type::object;
     case '[':
@@ -1248,9 +1233,9 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '"':
       return json_type::string;
     case 'n':
-      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_nan_atom(json, peek_start_length())) {
-        return json_type::number;
-      }
+#if SIMDJSON_ENABLE_NAN_INF
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
+#endif
       return json_type::null;
     case 't': case 'f':
       return json_type::boolean;
@@ -1258,16 +1243,14 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
+#if SIMDJSON_ENABLE_NAN_INF
     case 'N':
-      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_nan_atom(json, peek_start_length())) {
-        return json_type::number;
-      }
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
       return json_type::unknown;
     case 'I': case 'i':
-      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_inf_atom(json, peek_start_length())) {
-        return json_type::number;
-      }
+      if (atomparsing::is_valid_inf_atom(peek_start(), peek_start_length())) { return json_type::number; }
       return json_type::unknown;
+#endif
     default:
       return json_type::unknown;
   }
