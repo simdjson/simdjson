@@ -215,8 +215,9 @@ bool element_wrappers() {
   const auto json = "[1,2,3]"_padded;
 
   {
+    auto result = parser.parse(json);
     int64_t expected = 3;
-    for (auto it = parser.parse(json).rbegin(); it != parser.parse(json).rend(); ++it) {
+    for (auto it = result.rbegin(); it != result.rend(); ++it) {
       int64_t value;
       ASSERT_SUCCESS((*it).get_int64().get(value));
       ASSERT_EQUAL(value, expected--);
@@ -237,9 +238,10 @@ bool element_wrappers() {
 
   {
     const auto obj_json = R"({"items":[10,20,30]})"_padded;
+    auto result = parser.parse(obj_json);
     int64_t expected = 30;
-    for (auto it = parser.parse(obj_json)["items"].rbegin();
-         it != parser.parse(obj_json)["items"].rend(); ++it) {
+    for (auto it = result["items"].rbegin();
+         it != result["items"].rend(); ++it) {
       int64_t value;
       ASSERT_SUCCESS((*it).get_int64().get(value));
       ASSERT_EQUAL(value, expected);
