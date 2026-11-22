@@ -3,6 +3,7 @@
 #ifndef SIMDJSON_CONDITIONAL_INCLUDE
 #define SIMDJSON_GENERIC_IMPLEMENTATION_SIMDJSON_RESULT_BASE_H
 #include "simdjson/generic/base.h"
+#include <type_traits>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -32,7 +33,11 @@ namespace SIMDJSON_IMPLEMENTATION {
  * Then any method returning simdjson_result<T> will be chainable with your methods.
  */
 template<typename T>
-struct implementation_simdjson_result_base {
+struct implementation_simdjson_result_base
+#if SIMDJSON_EXCEPTIONS
+  : public internal::simdjson_result_conversion<T, implementation_simdjson_result_base<T>>
+#endif
+{
 
   /**
    * Create a new empty result with error = UNINITIALIZED.
@@ -112,12 +117,6 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  /**
-   * Cast to the value (will throw on error).
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
