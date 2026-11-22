@@ -10,6 +10,7 @@
 // Not part of the public API.
 
 #include "simdjson/base.h"
+#include "simdjson/concepts.h"
 #include "simdjson/builtin.h"
 #include "simdjson/error.h"
 #include "simdjson/implementation.h"
@@ -18,10 +19,9 @@
 
 #include <cstdint>
 #include <cstring>
+#include <concepts>
 #include <limits>
 #include <string>
-#include <type_traits>
-#include <vector>
 
 namespace simdjson {
 namespace internal {
@@ -363,19 +363,41 @@ simdjson_inline error_code parse_string_token(const uint8_t *&p, const uint8_t *
   return parse_escaped_string_body(p, start, stop, end, out);
 }
 
+// Any container the ondemand array parsers below can fill, such as
+// std::vector, std::deque, std::list or a small_vector.
+template <typename V, typename E>
+concept appendable_container_of =
+    concepts::appendable_containers<V> &&
+    std::same_as<typename V::value_type, E> &&
+    concepts::clearable_containers<V>;
+
 // Appends the JSON string token at p to out. A plain ASCII string is
 // constructed in place.
-simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, std::vector<std::string> &out) {
+template <typename V>
+simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, V &out) {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
+
   const uint8_t *start = p + 1;
   const uint8_t *stop = find_string_stop<true>(start, end);
   if (simdjson_likely(stop < end && *stop == '"')) {
-    out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
+    // concepts::appendable_container_of only checks single argument functions.
+    // therefore this uses a separate check and falls back to instantiating a
+    // std::string in place if necessary.
+    if constexpr (requires(V &v, const char *s, size_t n) { v.emplace_back(s, n); }) {
+      out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
+    } else {
+      concepts::emplace_one(out, std::string(reinterpret_cast<const char *>(start), size_t(stop - start)));
+    }
     p = stop + 1;
     return SUCCESS;
   }
-  out.emplace_back();
-  return parse_escaped_string_body(p, start, stop, end, out.back());
+
+  std::string unescaped;
+  const error_code err = parse_escaped_string_body(p, start, stop, end, unescaped);
+  if (simdjson_likely(err == SUCCESS)) {
+    concepts::emplace_one(out, std::move(unescaped));
+  }
+  return err;
 }
 
 // Containers are sized from the first element, which can underestimate the
@@ -385,12 +407,25 @@ template <typename V>
 simdjson_inline void reserve_from_first(V &out, size_t rest, size_t stride) {
   const size_t estimate = rest / stride + 2;
   const size_t limit = 4 * rest / sizeof(typename V::value_type) + 2;
-  out.reserve(estimate < limit ? estimate : limit);
+  if constexpr (concepts::reservable_containers<V>) {
+    size_t count = estimate < limit ? estimate : limit;
+    // std::inplace_vector::reserve throws when asked for more than its capacity.
+    if constexpr (requires { out.max_size(); }) {
+      if (count > out.max_size()) {
+        count = out.max_size();
+      }
+    }
+    out.reserve(count);
+  }
 }
 
 template <typename V>
 simdjson_inline void trim_reservation(V &out) {
-  if (out.capacity() / 2 > out.size() + 16) { out.shrink_to_fit(); }
+  if constexpr (concepts::shrinkable_containers<V>) {
+    if (out.capacity() / 2 > out.size() + 16) {
+      out.shrink_to_fit();
+    }
+  }
 }
 
 template <>
@@ -405,8 +440,9 @@ simdjson_inline error_code parse_document<std::string>(const uint8_t *buf, size_
 }
 
 // Array of strings. Same fallback rules as parse_string_token.
-template <>
-simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_t *buf, size_t len, std::vector<std::string> &out) {
+template <typename V>
+  requires appendable_container_of<V, std::string>
+simdjson_inline error_code parse_document(const uint8_t *buf, size_t len, V &out) {
   const uint8_t *p = buf;
   const uint8_t *end = buf + len;
   if (!skip_ws(p, end)) { return UNINITIALIZED; }
@@ -425,7 +461,7 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
     std::string first;
     if (parse_string_token(p, end, first) != SUCCESS) { return UNINITIALIZED; }
     reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1); // string plus comma
-    out.push_back(std::move(first));
+    concepts::emplace_one(out, std::move(first));
   }
   for (;;) {
     if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
@@ -504,7 +540,9 @@ simdjson_inline error_code parse_double_padded(const uint8_t *&p, double &out) n
 // Array of doubles. Needs SIMDJSON_PADDING readable bytes after len: numbers
 // are read with parse_double_padded, and requiring the last non-space byte to
 // be the closing bracket bounds every number scan.
-simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len, std::vector<double> &out) {
+template <typename V>
+  requires appendable_container_of<V, double>
+simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len, V &out) {
   const uint8_t *p = buf;
   const uint8_t *end = buf + len;
   if (!skip_ws(p, end)) { return UNINITIALIZED; }
@@ -531,7 +569,7 @@ simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len,
       reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1);
       reserved = true;
     }
-    out.push_back(v);
+    concepts::emplace_one(out, std::move(v));
     if (*p != ',') {
       if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
       if (*p == ']') {

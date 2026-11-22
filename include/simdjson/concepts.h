@@ -89,6 +89,26 @@ concept appendable_containers =
     details::supports_add<T> || details::supports_append<T> ||
     details::supports_insert<T>) && !string_view_keyed_map<T>;
 
+/// Check if T can be cleared.
+template <typename T>
+concept clearable_containers = requires(T &container) {
+  container.clear();
+};
+
+/// Check if T can allocate ahead, as std::vector and std::string can
+/// (std::deque and std::list cannot).
+template <typename T>
+concept reservable_containers = requires(T &container, size_t n) {
+  container.reserve(n);
+};
+
+/// Check if T can give back unused capacity (std::vector, std::string, ...).
+template <typename T>
+concept shrinkable_containers = requires(T &container) {
+  container.capacity();
+  container.shrink_to_fit();
+};
+
 /// Insert into the container however possible
 template <appendable_containers T, typename... Args>
 constexpr decltype(auto) emplace_one(T &vec, Args &&...args) {

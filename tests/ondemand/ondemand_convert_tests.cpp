@@ -2,12 +2,31 @@
 #include "simdjson/convert.h"
 #include "test_ondemand.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <deque>
+#include <list>
 #include <map>
+#include <set>
 #include <ranges>
 #include <string>
 #include <vector>
+
+#if defined(__has_include)
+#if __has_include(<inplace_vector>)
+#include <inplace_vector>
+#endif
+#endif
+
+#if SIMDJSON_SUPPORTS_CONCEPTS
+// The containers that from() fills directly, without On Demand, when the elements are strings or doubles.
+static_assert(simdjson::internal::direct::appendable_container_of<std::vector<std::string>, std::string>);
+static_assert(simdjson::internal::direct::appendable_container_of<std::deque<std::string>, std::string>);
+static_assert(simdjson::internal::direct::appendable_container_of<std::list<double>, double>);
+static_assert(!simdjson::internal::direct::appendable_container_of<std::string, std::string>);
+static_assert(!simdjson::internal::direct::appendable_container_of<std::vector<float>, double>);
+#endif
 
 #if SIMDJSON_STATIC_REFLECTION
 
@@ -574,6 +593,22 @@ bool test_direct_from_atoms() {
   TEST_SUCCEED();
 }
 
+// from() into the container C: the array ["x", <string>] must give the error that On Demand gave for the
+// string alone, and contain that string.
+template <typename C>
+bool array_of_strings_matches(const simdjson::padded_string &array, simdjson::error_code expected_error,
+                              const std::string &expected_second) {
+  C got;
+  ASSERT_EQUAL(simdjson::from(array).get(got), expected_error);
+  if (!expected_error) {
+    // A std::set keeps one of two equal strings and has its own order.
+    const bool merged = expected_second == "x" && std::is_same_v<C, std::set<std::string>>;
+    ASSERT_EQUAL(got.size(), merged ? 1 : 2);
+    ASSERT_TRUE(std::ranges::find(got, expected_second) != got.end());
+  }
+  return true;
+}
+
 bool test_direct_from_string_scan() {
   TEST_START();
   // The direct string scan reads eight bytes at a time. Every length, every
@@ -624,41 +659,50 @@ bool test_direct_from_string_scan() {
         ASSERT_EQUAL(got_error, expected_error);
         if (!expected_error) { ASSERT_EQUAL(got, expected); }
         simdjson::padded_string array("[\"x\"," + json + "]");
-        std::vector<std::string> got_vec;
-        auto vec_error = simdjson::from(array).get(got_vec);
-        ASSERT_EQUAL(vec_error, expected_error);
-        if (!expected_error) {
-          ASSERT_EQUAL(got_vec.size(), 2);
-          ASSERT_EQUAL(got_vec[1], expected);
-        }
+        ASSERT_TRUE(array_of_strings_matches<std::vector<std::string>>(array, expected_error, expected));
+        ASSERT_TRUE(array_of_strings_matches<std::deque<std::string>>(array, expected_error, expected));
+        ASSERT_TRUE(array_of_strings_matches<std::list<std::string>>(array, expected_error, expected));
+        ASSERT_TRUE(array_of_strings_matches<std::set<std::string>>(array, expected_error, expected));
       }
     }
   }
   TEST_SUCCEED();
 }
 
+// from() into the container C must return the same values (bit for bit) and the same error as On Demand.
+template <typename C>
+bool direct_double_array_matches(const simdjson::padded_string_view view) {
+  simdjson::ondemand::parser parser;
+  simdjson::ondemand::document doc;
+  C expected;
+  auto expected_error = parser.iterate(view).get(doc);
+  if (!expected_error) {
+    expected_error = doc.get<C>().get(expected);
+  }
+
+  C got;
+  auto got_error = simdjson::from(view).get(got);
+  if (got_error != expected_error) {
+    std::cerr << "error mismatch on " << std::string(view.data(), view.size()) << ": " << got_error << " vs " << expected_error << std::endl;
+    return false;
+  }
+
+  const auto same_bits = [](double a, double b) { return std::memcmp(&a, &b, sizeof(double)) == 0; };
+  if (!expected_error && !std::ranges::equal(got, expected, same_bits)) {
+    std::cerr << "value mismatch on " << std::string(view.data(), view.size()) << std::endl;
+    return false;
+  }
+  return true;
+}
+
 bool test_direct_from_double_array() {
   TEST_START();
-  // from<vector<double>> parses the array directly. It must return the same
-  // values (bit for bit) and the same errors as On Demand.
+  // from<vector<double>> parses the array directly, and so does every other container On Demand can append
+  // to. It must return the same values (bit for bit) and the same errors as On Demand.
   auto check = [](const simdjson::padded_string_view view) {
-    simdjson::ondemand::parser parser;
-    simdjson::ondemand::document doc;
-    std::vector<double> expected;
-    auto expected_error = parser.iterate(view).get(doc);
-    if (!expected_error) { expected_error = doc.get<std::vector<double>>().get(expected); }
-    std::vector<double> got;
-    auto got_error = simdjson::from(view).get(got);
-    if (got_error != expected_error) {
-      std::cerr << "error mismatch on " << std::string(view.data(), view.size()) << ": " << got_error << " vs " << expected_error << std::endl;
-      return false;
-    }
-    if (!expected_error && (got.size() != expected.size() ||
-        (!got.empty() && std::memcmp(got.data(), expected.data(), got.size() * sizeof(double)) != 0))) {
-      std::cerr << "value mismatch on " << std::string(view.data(), view.size()) << std::endl;
-      return false;
-    }
-    return true;
+    return direct_double_array_matches<std::vector<double>>(view) &&
+           direct_double_array_matches<std::deque<double>>(view) &&
+           direct_double_array_matches<std::list<double>>(view);
   };
   std::vector<std::string> numbers = {
       "0", "-0", "0.0", "-0.0", "1", "-1", "1.5", "1e2", "1E2", "1e+2", "1e-2", "1.25e-3",
@@ -740,6 +784,15 @@ bool test_direct_from_reservation() {
     ASSERT_EQUAL(v[1], long_string);
     ASSERT_TRUE(v.capacity() < 64);
   }
+#ifdef __cpp_lib_inplace_vector
+  {
+    // reserve() of a std::inplace_vector throws beyond its capacity: the reservation is capped by max_size().
+    simdjson::padded_string j(std::string("[1.5, 2.5]"));
+    std::inplace_vector<double, 2> v;
+    ASSERT_SUCCESS(simdjson::from(j).get(v));
+    ASSERT_EQUAL(v.size(), 2);
+  }
+#endif
   const std::string spaces(1 << 20, ' ');
   {
     simdjson::padded_string j("[0," + spaces + "1]");
