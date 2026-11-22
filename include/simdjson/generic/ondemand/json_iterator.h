@@ -97,6 +97,21 @@ public:
    */
   simdjson_warn_unused error_code validate_container() noexcept;
   static simdjson_inline bool has_backslash(const uint8_t *src, size_t len) noexcept;
+  /**
+   * Calls the visitor for the array or object at the current position and everything in it,
+   * without recursion (see document::visit()). Outside of streaming mode, it also checks that
+   * nothing follows it. It does not move the iterator. Escaped strings are copied
+   * into the string buffer.
+   */
+  template <typename V>
+  simdjson_warn_unused error_code visit_container(V &visitor);
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit_string(const uint8_t *quote, bool key, V &visitor);
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit_scalar(const uint8_t *src, V &visitor);
+  /** Calls the visitor for a number that numberparsing::parse_number accepted. */
+  template <typename V>
+  static simdjson_warn_unused simdjson_inline error_code visit_number(const number &value, const char *raw, V &visitor);
 
   /**
    * Tell whether the iterator is still at the start
