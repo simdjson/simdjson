@@ -138,6 +138,8 @@ public:
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
 
 private:
+  template<size_t BLOCKS>
+  static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;
@@ -202,6 +204,9 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
     error_code atom = simdjson::internal::try_stage1_lone_atom(parser, buf, len);
     if (atom != UNINITIALIZED) { return atom; }
   }
+  if (partial == stage1_mode::regular && !parser._unpadded && len <= 128) {
+    return len <= 64 ? index_small<1>(buf, len, parser) : index_small<2>(buf, len, parser);
+  }
   if (is_streaming(partial)) {
     len = trim_partial_utf8(buf, len);
     // If you end up with an empty window after trimming
@@ -223,6 +228,49 @@ error_code json_structural_indexer::index(const uint8_t *buf, size_t len, dom_pa
   if (simdjson_unlikely(remaining == 0)) { return UNEXPECTED_ERROR; }
   indexer.step<STEP_SIZE>(block, reader);
   return indexer.finish(parser, reader.block_index(), len, partial);
+}
+
+// The error of a document that has an unclosed string, in regular mode.
+simdjson_never_inline error_code unclosed_string_error(const uint8_t *buf, size_t len, bool unescaped_chars, bool utf8_suspect) noexcept {
+  if (unescaped_chars) { return UNESCAPED_CHARS; }
+  if (utf8_suspect && !generic_validate_utf8<utf8_checker>(buf, trim_partial_utf8(buf, len))) { return UTF8_ERROR; }
+  return UNCLOSED_STRING;
+}
+
+// A document of at most 64 * BLOCKS bytes followed by SIMDJSON_PADDING bytes.
+// Same result as the block loop and finish() in regular mode.
+template<size_t BLOCKS>
+simdjson_inline error_code json_structural_indexer::index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept {
+  json_structural_indexer indexer(parser.structural_indexes.get());
+  alignas(64) uint8_t block[64 * BLOCKS];
+  buf_block_reader<64 * BLOCKS> reader(buf, len);
+  reader.get_remainder_padded(block);
+  simd::simd8x64<uint8_t> in_1(block);
+  json_block block_1 = indexer.scanner.next(in_1);
+  SIMDJSON_IF_CONSTEXPR (BLOCKS == 1) {
+    indexer.next(in_1, block_1, 0);
+  } else {
+    simd::simd8x64<uint8_t> in_2(block + 64);
+    json_block block_2 = indexer.scanner.next(in_2);
+    indexer.next(in_1, block_1, 0);
+    indexer.next(in_2, block_2, 64);
+  }
+  indexer.indexer.write(uint32_t(64 * BLOCKS - 64), indexer.prev_structurals);
+  const error_code error = indexer.scanner.finish();
+  const uint32_t n = uint32_t(indexer.indexer.tail - parser.structural_indexes.get());
+  parser.n_structural_indexes = n;
+  parser.structural_indexes[n] = uint32_t(len);
+  parser.structural_indexes[n + 1] = uint32_t(len);
+  parser.structural_indexes[n + 2] = 0;
+  parser.next_structural_index = 0;
+  if (simdjson_unlikely(error != SUCCESS)) {
+    return unclosed_string_error(buf, len, indexer.unescaped_chars_error != 0, indexer.checker.errors() != SUCCESS);
+  }
+  if (indexer.unescaped_chars_error) { return UNESCAPED_CHARS; }
+  // The bytes past len are spaces: no index exceeds len, unlike in finish().
+  if (simdjson_unlikely(n == 0)) { return EMPTY; }
+  indexer.checker.check_eof();
+  return indexer.checker.errors();
 }
 
 template<>
