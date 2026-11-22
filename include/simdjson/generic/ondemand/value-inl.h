@@ -327,6 +327,27 @@ simdjson_warn_unused simdjson_inline simdjson_result<number> value::get_number()
   return iter.get_number();
 }
 
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code value::visit(V &visitor) {
+  if (!iter.is_at_start()) { return OUT_OF_ORDER_ITERATION; }
+  json_iterator &json_iter = iter.json_iter();
+  const uint8_t *const json = iter.peek_start();
+  // The escaped strings of the value go where reading it would put them, so that the string
+  // buffer has room for them however many times the value is visited.
+  uint8_t *const string_buf_loc = json_iter._string_buf_loc;
+  error_code error;
+  switch (*json) {
+    case '{': case '[':
+      error = json_iter.visit_container(visitor, iter.start_position(), size_t(iter.depth() - 1));
+      break;
+    // A scalar value is nested in a container: its parser reads inside the document.
+    case '"': error = json_iter.visit_string(json, false, visitor); break;
+    default: error = json_iter.visit_scalar(json, visitor); break;
+  }
+  json_iter._string_buf_loc = string_buf_loc;
+  return error;
+}
+
 simdjson_inline std::string_view value::raw_json_token() noexcept {
   return std::string_view(reinterpret_cast<const char*>(iter.peek_start()), iter.peek_start_length());
 }
@@ -737,6 +758,12 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::opera
   return first;
 }
 #endif
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::visit(V &visitor) {
+  if (error()) { return error(); }
+  return first.visit(visitor);
+}
 
 simdjson_inline simdjson_result<std::string_view> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value>::raw_json_token() noexcept {
   if (error()) { return error(); }

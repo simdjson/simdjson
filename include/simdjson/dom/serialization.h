@@ -288,7 +288,7 @@ template <class T> std::string to_string(T x) {
   // in C++, to_string is standard:
   // http://www.cplusplus.com/reference/string/to_string/ Currently minify and
   // to_string are identical but in the future, they may differ.
-  simdjson::internal::string_builder<> sb;
+  simdjson_indeterminate simdjson::internal::string_builder<> sb;
   sb.append(x);
   std::string_view answer = sb.str();
   return std::string(answer.data(), answer.size());
@@ -341,7 +341,7 @@ template <class T> std::string minify(simdjson_result<T> x) {
  *
  */
 template <class T> std::string prettify(T x, int indent_step = 4) {
-  simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb(indent_step);
+  simdjson_indeterminate simdjson::internal::string_builder<simdjson::internal::pretty_formatter> sb(indent_step);
   sb.append(x);
   std::string_view answer = sb.str();
   return std::string(answer.data(), answer.size());

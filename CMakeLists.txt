@@ -358,6 +358,12 @@ if(SIMDJSON_ENABLE_NAN_INF)
   simdjson_add_props(target_compile_definitions PUBLIC SIMDJSON_ENABLE_NAN_INF=1)
 endif()
 
+option(SIMDJSON_ALLOW_TRAILING_COMMAS "Allow a comma before the closing bracket of an array or object (On-Demand)" OFF)
+if(SIMDJSON_ALLOW_TRAILING_COMMAS)
+  message(STATUS "simdjson trailing commas are allowed.")
+  simdjson_add_props(target_compile_definitions PUBLIC SIMDJSON_ALLOW_TRAILING_COMMAS=1)
+endif()
+
 # GCC and Clang have horrendous Debug builds when using SIMD.
 # A common fix is to use '-Og' instead.
 # bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54412

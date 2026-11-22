@@ -204,6 +204,14 @@ simdjson_inline dom::array::iterator simdjson_result<dom::element>::end() const 
   if (error()) { throw simdjson_error(error()); }
   return first.end();
 }
+simdjson_inline dom::array::reverse_iterator simdjson_result<dom::element>::rbegin() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.rbegin();
+}
+simdjson_inline dom::array::reverse_iterator simdjson_result<dom::element>::rend() const noexcept(false) {
+  if (error()) { throw simdjson_error(error()); }
+  return first.rend();
+}
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -477,6 +485,12 @@ inline array::iterator element::begin() const noexcept(false) {
 }
 inline array::iterator element::end() const noexcept(false) {
   return get<array>().end();
+}
+inline array::reverse_iterator element::rbegin() const noexcept(false) {
+  return get<array>().rbegin();
+}
+inline array::reverse_iterator element::rend() const noexcept(false) {
+  return get<array>().rend();
 }
 
 #endif // SIMDJSON_EXCEPTIONS

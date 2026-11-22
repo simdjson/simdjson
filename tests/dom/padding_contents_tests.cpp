@@ -55,6 +55,17 @@ std::string dom_text(dom::parser &parser, const char *buf, size_t len, error_cod
   return out.str();
 }
 
+// parse_unpadded() never reads past len: stage 1 takes the block loop, also
+// for the small documents that otherwise take a shorter path.
+std::string dom_unpadded_text(dom::parser &parser, const std::string &json, error_code &error) {
+  dom::element elt;
+  error = parser.parse_unpadded(json.data(), json.size()).get(elt);
+  if (error) { return ""; }
+  std::ostringstream out;
+  out << elt;
+  return out.str();
+}
+
 std::string ondemand_text(ondemand::parser &parser, const char *buf, size_t len, size_t capacity, error_code &error) {
   ondemand::document doc;
   error = parser.iterate(padded_string_view(buf, len, capacity)).get(doc);
@@ -75,6 +86,14 @@ bool check(const std::string &json) {
   const std::string dom_expected = dom_text(dom_parser, clean.data(), clean.size(), dom_expected_error);
   const std::string ondemand_expected = ondemand_text(ondemand_parser, clean.data(), clean.size(),
                                                       clean.size() + SIMDJSON_PADDING, ondemand_expected_error);
+  error_code unpadded_error;
+  const std::string unpadded_result = dom_unpadded_text(dom_parser, json, unpadded_error);
+  if (unpadded_error != dom_expected_error || unpadded_result != dom_expected) {
+    std::cerr << "DOM: parse_unpadded() differs for <" << printable(json) << ">: "
+              << unpadded_error << " <" << unpadded_result << ">, expected "
+              << dom_expected_error << " <" << dom_expected << ">" << std::endl;
+    return false;
+  }
   for (const std::string &fill : fills) {
     std::vector<char> buf(json.begin(), json.end());
     buf.resize(json.size() + SIMDJSON_PADDING);
@@ -133,6 +152,7 @@ bool invalid_documents() {
     if (len >= 2 && !check(make_json("[", len - 2, ' ', ","))) { return false; }    // unclosed array
     if (len >= 3 && !check(make_json("\"", len - 3, 'a', "\xe2\x82"))) { return false; } // truncated UTF-8
     if (len >= 2 && !check(make_json("\"", len - 2, 'a', "\xc3"))) { return false; }
+    if (len >= 2 && !check(make_json("\"\xff", len - 2, 'a'))) { return false; }    // unclosed, bad UTF-8
     if (!check(std::string(len, '{'))) { return false; }
   }
   TEST_SUCCEED();

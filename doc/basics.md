@@ -52,10 +52,12 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
   * [Checking for trailing content](#checking-for-trailing-content)
 - [Rewinding](#rewinding)
 - [Validating a document](#validating-a-document)
+- [Visiting a document](#visiting-a-document)
 - [Newline-Delimited JSON (ndjson) and JSON lines](#newline-delimited-json-ndjson-and-json-lines)
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
 - [Infinity and NaN support](#infinity-and-nan-support)
+- [Trailing commas](#trailing-commas)
 - [Raw strings from keys](#raw-strings-from-keys)
 - [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
@@ -3389,6 +3391,104 @@ expected, as it holds the next documents, and is not reported.
 ```
 
 
+Visiting a document
+-------------------
+
+If you build your own representation of whole documents (a tree, columns, rows of a database),
+you may let simdjson walk the document for you: call the `visit()` method on the document
+instance with a visitor of your own. The visitor receives every value, in document order:
+
+```cpp
+struct counting_visitor {
+  size_t strings{0};
+  size_t numbers{0};
+  simdjson::error_code on_object_start() { return simdjson::SUCCESS; }
+  simdjson::error_code on_object_end(uint32_t member_count) { return simdjson::SUCCESS; }
+  simdjson::error_code on_array_start() { return simdjson::SUCCESS; }
+  simdjson::error_code on_array_end(uint32_t element_count) { return simdjson::SUCCESS; }
+  simdjson::error_code on_key(std::string_view key) { return simdjson::SUCCESS; }
+  simdjson::error_code on_string(std::string_view value) { strings++; return simdjson::SUCCESS; }
+  simdjson::error_code on_int64(int64_t value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_uint64(uint64_t value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_double(double value, const char *raw) { numbers++; return simdjson::SUCCESS; }
+  simdjson::error_code on_bool(bool value) { return simdjson::SUCCESS; }
+  simdjson::error_code on_null() { return simdjson::SUCCESS; }
+};
+
+  ondemand::parser parser;
+  auto json = R"({"name":"simdjson","stars":[1,2,3]})"_padded;
+  ondemand::document doc;
+  counting_visitor visitor;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc.visit(visitor); }
+  if (error) {
+    std::cerr << "invalid JSON: " << error << std::endl;
+    return;
+  }
+  std::cout << visitor.strings << " strings and " << visitor.numbers << " numbers" << std::endl;
+```
+
+The visitor is a template parameter, so that its methods may be inlined. A method that returns
+anything but `simdjson::SUCCESS` stops the walk, and `visit()` returns that error code. A method
+may also throw: the exception goes through `visit()`, and you must then rewind the document
+before you use it again.
+
+- `on_key()` comes before the value of each member of an object. The end of an object or of an
+  array comes with the number of its members or elements.
+- A key or a string without escapes is a view into the document itself: it is valid as long as
+  the bytes of the document are.
+- A key or a string with escapes is unescaped into the parser: it is valid until you iterate
+  through the document or visit it again, or the parser parses another document.
+- Integers that fit in an `int64_t` go to `on_int64()`, larger positive integers to `on_uint64()`
+  and other numbers to `on_double()`. The `raw` pointer gives the number as it is in the document:
+  you may use it to tell `-0` from `0`. As with the DOM parser, an integer that does not fit in 64
+  bits is a `BIGINT_ERROR`.
+
+The whole document is checked: `visit()` succeeds exactly when the DOM parser does, with the same
+maximal depth. When the document is not valid, the visitor may have seen part of it before the
+error. The document is rewound before and after the walk: you may iterate through it afterward.
+You may also visit the documents of a stream (`iterate_many`).
+
+The walk creates no values, arrays or objects. On documents of a few hundred bytes or more,
+building your own tree with `visit()` costs about as much as parsing the document with the DOM
+front-end, which builds its own tree.
+
+If you do not need the document afterward, you may call `visit()` on the parser instead, with
+the JSON text. It does what `iterate()` followed by `visit()` does, with the same values and, when the visitor
+returns `SUCCESS`, the same error code:
+
+```cpp
+  ondemand::parser parser;
+  counting_visitor visitor;
+  auto error = parser.visit(R"({"name":"simdjson","stars":3})"_padded, visitor);
+```
+
+It is faster on small documents, as many rows of a database are. A document of at most
+`ondemand::parser::MAX_ONE_PASS_VISIT` (32) bytes whose root is an object or an array is read in
+a single pass, without the index of structural characters that `iterate()` builds. Some checks,
+such as the UTF-8 validation, then come at the end of the walk. On an invalid document, the
+visitor may have seen part or all of it before `visit()` returns the error, and an error returned by the
+visitor may come before an error in the document. The input must be padded, as with `iterate()`.
+
+You may also visit a single value after navigating to it with `visit()` on the value:
+
+```cpp
+  auto json = R"({"payload":{"stars":[1,2,3]},"id":7})"_padded;
+  ondemand::document doc;
+  counting_visitor visitor;
+  uint64_t id;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc["payload"].visit(visitor); }
+  if (!error) { error = doc["id"].get(id); }
+```
+
+The visitor gets the value and everything in it, with the same methods as above. A string with
+escapes is valid until you read the document further or visit again. Only that value is checked,
+and the maximal depth counts from the root of the document. The value must not have been read
+(otherwise `visit()` returns `OUT_OF_ORDER_ITERATION`). The walk does not move the iterator: to go
+on, read the value or the next field or element as usual.
+
+
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
 
@@ -3769,6 +3869,34 @@ Parsed floating-point number: inf
 Parsed floating-point number: -inf
 Parsed floating-point number: nan
 ```
+
+With `SIMDJSON_ENABLE_NAN_INF`, the On-Demand `type()` method reports these literals as `json_type::number`.
+A token that only starts like one, such as `nancy` or `Infinit`, keeps its usual type (`null` or `unknown`).
+
+Trailing commas
+------------------------------
+
+The JSON specification does not allow a comma before the closing bracket of an array or an object, as in `[1,2,]` or `{"a":1,}`.
+Some producers write them anyway. The On-Demand API accepts them if you set `SIMDJSON_ALLOW_TRAILING_COMMAS` to 1 before
+including `"simdjson.h"`, or build simdjson with `cmake -B build -D SIMDJSON_ALLOW_TRAILING_COMMAS=ON`.
+It applies to `iterate()` and `iterate_many()`; the DOM API remains strict.
+
+```cpp
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 1
+#include "simdjson.h"
+using namespace simdjson;
+
+ondemand::parser parser;
+auto json = R"({"values":[1,2,3,],})"_padded;
+ondemand::document doc = parser.iterate(json);
+for (int64_t x : doc["values"]) {
+  std::cout << x << std::endl; // 1, 2, 3
+}
+```
+
+Only a comma that follows a value is accepted: `[,]`, `{,}` and `[1,,]` remain errors.
+The comma is removed when the document is indexed, so the cost is a pass over the structural
+indexes per document, and nothing when the macro is not set.
 
 
 Raw strings from keys

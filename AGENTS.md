@@ -95,6 +95,7 @@ same directory.
 - Code that throws sits behind `#if SIMDJSON_EXCEPTIONS`. The error-code API is the one that always exists.
 - Do not include `<asm/hwcap.h>`. Read CPU feature bits from `<sys/auxv.h>` and keep local fallbacks for the constants.
 - On GCC 12, `"literal" + std::string(...)` can fail a Release build with a false `-Werror=restrict`. Build the string with `append` or `reserve`.
+- `<windows.h>` defines `max` and `min` as function-like macros. Write `(std::numeric_limits<T>::max)()`, `(std::max)(a, b)`, and `(std::min)(a, b)`, in headers, sources, tests, and benchmarks. A bare `std::numeric_limits<T>::max()` breaks the Windows CI and any user who includes `<windows.h>` without `NOMINMAX`.
 - Comments do not use contractions. Comment a non-obvious algorithm. Do not narrate the next line.
 - Functions and variables are snake_case. Compile-time constants are `UPPER_SNAKE`.
 

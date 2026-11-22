@@ -777,6 +777,46 @@ public:
    */
   simdjson_warn_unused simdjson_inline error_code validate() noexcept;
   /**
+   * Walks the whole document once and calls the visitor for each value, in document order.
+   * Use it to build your own representation of the document (a tree, columns, ...) faster
+   * than by iterating, as the walk creates no values, arrays or objects.
+   *
+   * The visitor provides these methods. Each returns an error_code: anything but SUCCESS stops
+   * the walk, and visit() returns it.
+   *
+   *   error_code on_object_start();
+   *   error_code on_object_end(uint32_t member_count);
+   *   error_code on_array_start();
+   *   error_code on_array_end(uint32_t element_count);
+   *   error_code on_key(std::string_view key);              // before each member value
+   *   error_code on_string(std::string_view value);
+   *   error_code on_int64(int64_t value, const char *raw);   // integers that fit an int64_t
+   *   error_code on_uint64(uint64_t value, const char *raw); // larger positive integers
+   *   error_code on_double(double value, const char *raw);
+   *   error_code on_bool(bool value);
+   *   error_code on_null();
+   *
+   * raw points at the number in the document, so that the visitor can tell -0 from 0, for
+   * example. As with the DOM parser, an integer that does not fit in 64 bits is a BIGINT_ERROR.
+   *
+   * A key or a string without escapes is a view into the document: it is valid as long as the
+   * document's bytes are. A key or a string with escapes is unescaped into the parser: it is
+   * valid until the document is iterated or visited again, or the parser parses another
+   * document.
+   *
+   * visit() succeeds exactly when the DOM parser does. An error may come after the visitor has
+   * seen part of the document. The document is rewound before and after the walk, so that it
+   * can be iterated afterwards. The visitor may throw: the exception goes through visit(), and
+   * the document must then be rewound before it is used again.
+   *
+   * To parse and visit a document in one call, faster on small documents, see parser::visit().
+   *
+   * @returns SUCCESS, the first error found in the document, or the first error the visitor
+   *          returned.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(V &visitor);
+  /**
    * Returns debugging information.
    */
   inline std::string to_debug_string() noexcept;
@@ -946,6 +986,9 @@ protected:
 
   simdjson_inline value_iterator resume_value_iterator() noexcept;
   simdjson_inline value_iterator get_root_value_iterator() noexcept;
+  /** The walk of visit(), between its two rewinds. */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit_root(V &visitor);
   simdjson_inline simdjson_result<object> start_or_resume_object() noexcept;
   static simdjson_inline document start(ondemand::json_iterator &&iter) noexcept;
 
@@ -1166,6 +1209,8 @@ public:
   simdjson_inline simdjson_result() noexcept {}
   simdjson_inline error_code rewind() noexcept;
   simdjson_warn_unused simdjson_inline error_code validate() noexcept;
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(V &visitor);
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;

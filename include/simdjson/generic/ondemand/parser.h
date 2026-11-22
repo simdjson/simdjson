@@ -179,6 +179,33 @@ public:
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
 
+  /**
+   * Parses the document and walks it once with the visitor: the same as iterate() followed by
+   * document::visit(), with the same values and, when the visitor returns SUCCESS, the same
+   * error code, but faster on small documents.
+   *
+   *   counting_visitor visitor;
+   *   auto error = parser.visit(R"({"stars":[1,2,3]})"_padded, visitor);
+   *
+   * A document of at most MAX_ONE_PASS_VISIT bytes whose root is an object or an array is read in
+   * a single pass, without the structural index that iterate() builds. Some checks, such as the
+   * UTF-8 validation, then come at the end of the walk: on an invalid document, the visitor may
+   * have seen part or all of it before visit() returns the error code of document::visit(), and
+   * an error returned by the visitor may come first. With SIMDJSON_ENABLE_NAN_INF, there is no one-pass
+   * walk.
+   *
+   * See document::visit() for the methods of the visitor and the lifetime of the strings.
+   *
+   * @param json The JSON to parse, with at least SIMDJSON_PADDING bytes after it.
+   * @param visitor The visitor.
+   * @returns SUCCESS, the first error found in the document, or the first error the visitor
+   *          returned.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(padded_string_view json, V &visitor) &;
+  /** Documents of at most this many bytes may be visited in one pass, see visit(). */
+  static constexpr size_t MAX_ONE_PASS_VISIT = 32;
+
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -338,6 +365,20 @@ public:
   simdjson_pure simdjson_inline size_t max_depth() const noexcept;
 
   /**
+   * Route the allocation of the buffers that grow with the largest document
+   * (the string buffer and the structural indexes) through a buffer_allocator.
+   * nullptr, the default, uses new[]. The allocator must outlive the parser.
+   *
+   * Buffers that the parser already holds keep the allocator that allocated
+   * them until the parser grows them, so set the allocator before the first
+   * document or the first call to allocate(). A failed allocation makes the
+   * parser return MEMALLOC and leaves its buffers as they were.
+   */
+  simdjson_inline void set_allocator(const buffer_allocator *allocator) noexcept;
+  /** The buffer_allocator set by set_allocator(), or nullptr. */
+  simdjson_pure simdjson_inline const buffer_allocator *get_allocator() const noexcept;
+
+  /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    *
@@ -446,17 +487,27 @@ private:
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
   /** Get the thread-local parser instance, it might be null */
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  simdjson_inline void drop_trailing_commas(const uint8_t *buf) noexcept;
+#endif
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   static simdjson_inline bool can_end_incomplete_json(uint8_t c) noexcept;
   simdjson_warn_unused simdjson_inline error_code end_incomplete_json(padded_string_view json) noexcept;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  /**
+   * The one-pass walk of visit(). Returns UNINITIALIZED when it does not handle the document,
+   * and TAPE_ERROR when the document is invalid. visitor_failed tells an error of the visitor.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit_one_pass(const uint8_t *buf, size_t len, V &visitor, bool &visitor_failed);
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
-  std::unique_ptr<uint8_t[]> string_buf{};
+  simdjson::internal::allocated_array<uint8_t> string_buf{};
+  const buffer_allocator *_allocator{nullptr};
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /** Copy of a scalar cut by the end of an incomplete document, see json_iterator::scalar_within_input(). */
   uint8_t incomplete_scalar_buf[1074+8+1+SIMDJSON_PADDING]{};

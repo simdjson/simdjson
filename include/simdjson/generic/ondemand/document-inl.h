@@ -81,6 +81,80 @@ simdjson_warn_unused simdjson_inline error_code document::validate() noexcept {
   return error;
 }
 
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code document::visit(V &visitor) {
+  SIMDJSON_TRY(iter.rewind());
+  const error_code error = visit_root(visitor);
+  // The strings of the walk stay in the buffer, but an iteration may start from its beginning.
+  static_cast<void>(iter.rewind());
+  return error;
+}
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code document::visit_root(V &visitor) {
+  const bool check_trailing = !iter.streaming();
+  const uint8_t *const first = iter.peek();
+  const char *const raw = reinterpret_cast<const char *>(first);
+  error_code error;
+  switch (*first) {
+    case '{': case '[':
+      return iter.visit_container(visitor, iter.position(), 0);
+    case '"': {
+      raw_json_string text;
+      error = get_root_value_iterator().get_root_raw_json_string(check_trailing).get(text);
+      if (!error) { return iter.visit_string(first, false, visitor); }
+      break;
+    }
+    case 't': case 'f': {
+      bool value;
+      error = get_root_value_iterator().get_root_bool(check_trailing).get(value);
+      if (!error) { return visitor.on_bool(value); }
+      break;
+    }
+    case 'n': {
+      bool null_value;
+      error = get_root_value_iterator().is_root_null(check_trailing).get(null_value);
+      if (!error && null_value) { return visitor.on_null(); }
+#if SIMDJSON_ENABLE_NAN_INF
+      double value;
+      if (!get_root_value_iterator().get_root_double(check_trailing).get(value)) { return visitor.on_double(value, raw); }
+#endif
+      if (!error) { error = N_ATOM_ERROR; }
+      break;
+    }
+    case '-': case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9': {
+      number value;
+      error = get_root_value_iterator().get_root_number(check_trailing).get(value);
+      if (!error) { return json_iterator::visit_number(value, raw, visitor); }
+      break;
+    }
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': case 'i': case 'I': {
+      double value;
+      error = get_root_value_iterator().get_root_double(check_trailing).get(value);
+      if (!error) { return visitor.on_double(value, raw); }
+      return error == TRAILING_CONTENT ? error : TAPE_ERROR;
+    }
+#endif
+    default:
+      return TAPE_ERROR;
+  }
+  // The root getters report a scalar of the wrong kind as INCORRECT_TYPE.
+  if (error == INCORRECT_TYPE) {
+    switch (*first) {
+      case 't': error = T_ATOM_ERROR; break;
+      case 'f': error = F_ATOM_ERROR; break;
+      case 'n': error = N_ATOM_ERROR; break;
+      case '-': case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        error = NUMBER_ERROR; break;
+      default: error = TAPE_ERROR; break;
+    }
+  }
+  return error;
+}
+
 inline std::string document::to_debug_string() noexcept {
   return iter.to_string();
 }
@@ -635,6 +709,12 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::do
   first.rewind();
   return SUCCESS;
 }
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::visit(V &visitor) {
+  if (error()) { return error(); }
+  return first.visit(visitor);
+}
+
 simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document>::validate() noexcept {
   if (error()) { return error(); }
   return first.validate();

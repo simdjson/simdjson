@@ -276,21 +276,27 @@ simdjson_inline size_t parser::max_capacity() const noexcept {
 simdjson_pure simdjson_inline size_t parser::max_depth() const noexcept {
   return implementation ? implementation->max_depth() : DEFAULT_MAX_DEPTH;
 }
+simdjson_inline void parser::set_allocator(const buffer_allocator *allocator) noexcept {
+  _allocator = allocator;
+}
+simdjson_pure simdjson_inline const buffer_allocator *parser::get_allocator() const noexcept {
+  return _allocator;
+}
 
 simdjson_warn_unused
 inline error_code parser::allocate(size_t capacity, size_t max_depth) noexcept {
   //
   // Reallocate implementation if needed
   //
-  error_code err;
-  if (implementation) {
-    err = implementation->allocate(capacity, max_depth);
-  } else {
-    err = simdjson::get_active_implementation()->create_dom_parser_implementation(capacity, max_depth, implementation);
-    if (err) { implementation.reset(); }
+  if (!implementation) {
+    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(0, max_depth, implementation);
+    if (err) {
+      implementation.reset();
+      return err;
+    }
   }
-  if (err) { return err; }
-  return SUCCESS;
+  implementation->allocator = _allocator;
+  return implementation->allocate(capacity, max_depth);
 }
 
 #ifndef SIMDJSON_DISABLE_DEPRECATED_API
@@ -319,7 +325,7 @@ inline error_code parser::ensure_capacity(document& target_document, size_t desi
     if (desired_capacity > max_capacity()) {
       return error = CAPACITY;
     }
-    error_code err1 = target_document.capacity() < desired_capacity ? target_document.allocate(desired_capacity) : SUCCESS;
+    error_code err1 = target_document.capacity() < desired_capacity ? target_document.allocate(desired_capacity, _allocator) : SUCCESS;
     error_code err2 = capacity() < desired_capacity ? allocate(desired_capacity, max_depth()) : SUCCESS;
     if(err1 != SUCCESS) { return error = err1; }
     if(err2 != SUCCESS) { return error = err2; }
