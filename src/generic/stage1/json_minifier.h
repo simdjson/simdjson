@@ -36,7 +36,12 @@ private:
 
 simdjson_inline void json_minifier::next(const simd::simd8x64<uint8_t>& in, const json_block& block) {
   uint64_t mask = block.whitespace();
-  dst += in.compress(mask, dst);
+  if (simdjson_unlikely(mask == 0)) {
+    in.store(dst);
+    dst += 64;
+  } else {
+    dst += in.compress(mask, dst);
+  }
 }
 
 simdjson_warn_unused simdjson_inline error_code json_minifier::finish(uint8_t *dst_start, size_t &dst_len) {
@@ -52,8 +57,16 @@ simdjson_inline void json_minifier::step<128>(const uint8_t *block_buf, buf_bloc
   simd::simd8x64<uint8_t> in_2(block_buf+64);
   json_block block_1 = scanner.next(in_1);
   json_block block_2 = scanner.next(in_2);
-  this->next(in_1, block_1);
-  this->next(in_2, block_2);
+  const uint64_t mask_1 = block_1.whitespace();
+  const uint64_t mask_2 = block_2.whitespace();
+  if (simdjson_unlikely((mask_1 | mask_2) == 0)) {
+    in_1.store(dst);
+    in_2.store(dst + 64);
+    dst += 128;
+  } else {
+    dst += in_1.compress(mask_1, dst);
+    dst += in_2.compress(mask_2, dst);
+  }
   reader.advance();
 }
 
@@ -77,7 +90,7 @@ error_code json_minifier::minify(const uint8_t *buf, size_t len, uint8_t *dst, s
 
   // Index the last (remainder) block, padded with spaces
   simdjson_indeterminate uint8_t block[STEP_SIZE];
-  size_t remaining_bytes = reader.get_remainder(block);
+  size_t remaining_bytes = reader.get_remainder_unpadded(block);
   if (remaining_bytes > 0) {
     // We do not want to write directly to the output stream. Rather, we write
     // to a local buffer (for safety).
