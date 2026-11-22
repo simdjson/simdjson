@@ -33,22 +33,22 @@ simdjson_warn_unused simdjson_inline error_code parser::allocate(size_t new_capa
     return CAPACITY; // overflow, only happen on legacy 32-bit systems with very large capacity
   }
   size_t string_capacity = SIMDJSON_ROUNDUP_N(5 * (new_capacity / 3) + SIMDJSON_PADDING, 64);
-  std::unique_ptr<uint8_t[]> new_string_buf(new (std::nothrow) uint8_t[string_capacity]);
-  if (!new_string_buf) { return MEMALLOC; }
+  simdjson::internal::allocated_array<uint8_t> new_string_buf;
+  if (!new_string_buf.allocate(string_capacity, _allocator)) { return MEMALLOC; }
 #if SIMDJSON_DEVELOPMENT_CHECKS
   std::unique_ptr<token_position[]> new_start_positions(new (std::nothrow) token_position[new_max_depth]);
   if (!new_start_positions) { return MEMALLOC; }
 #endif
-  if (implementation) {
-    error_code err = implementation->allocate(new_capacity, new_max_depth);
-    if (err) { return err; }
-  } else {
-    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(new_capacity, new_max_depth, implementation);
+  if (!implementation) {
+    error_code err = simdjson::get_active_implementation()->create_dom_parser_implementation(0, new_max_depth, implementation);
     if (err) {
       implementation.reset();
       return err;
     }
   }
+  implementation->allocator = _allocator;
+  error_code err = implementation->allocate(new_capacity, new_max_depth);
+  if (err) { return err; }
   string_buf = std::move(new_string_buf);
 #if SIMDJSON_DEVELOPMENT_CHECKS
   start_positions = std::move(new_start_positions);
@@ -337,6 +337,13 @@ simdjson_pure simdjson_inline size_t parser::max_capacity() const noexcept {
 }
 simdjson_pure simdjson_inline size_t parser::max_depth() const noexcept {
   return _max_depth;
+}
+
+simdjson_inline void parser::set_allocator(const buffer_allocator *allocator) noexcept {
+  _allocator = allocator;
+}
+simdjson_pure simdjson_inline const buffer_allocator *parser::get_allocator() const noexcept {
+  return _allocator;
 }
 
 simdjson_inline void parser::set_max_capacity(size_t max_capacity) noexcept {

@@ -338,6 +338,20 @@ public:
   simdjson_pure simdjson_inline size_t max_depth() const noexcept;
 
   /**
+   * Route the allocation of the buffers that grow with the largest document
+   * (the string buffer and the structural indexes) through a buffer_allocator.
+   * nullptr, the default, uses new[]. The allocator must outlive the parser.
+   *
+   * Buffers that the parser already holds keep the allocator that allocated
+   * them until the parser grows them, so set the allocator before the first
+   * document or the first call to allocate(). A failed allocation makes the
+   * parser return MEMALLOC and leaves its buffers as they were.
+   */
+  simdjson_inline void set_allocator(const buffer_allocator *allocator) noexcept;
+  /** The buffer_allocator set by set_allocator(), or nullptr. */
+  simdjson_pure simdjson_inline const buffer_allocator *get_allocator() const noexcept;
+
+  /**
    * Ensure this parser has enough memory to process JSON documents up to `capacity` bytes in length
    * and `max_depth` depth.
    *
@@ -459,7 +473,8 @@ private:
   size_t _max_capacity;
   size_t _max_depth{DEFAULT_MAX_DEPTH};
   size_t _document_len{0};
-  std::unique_ptr<uint8_t[]> string_buf{};
+  simdjson::internal::allocated_array<uint8_t> string_buf{};
+  const buffer_allocator *_allocator{nullptr};
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   /** Copy of a scalar cut by the end of an incomplete document, see json_iterator::scalar_within_input(). */
   uint8_t incomplete_scalar_buf[1074+8+1+SIMDJSON_PADDING]{};

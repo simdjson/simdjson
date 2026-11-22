@@ -41,6 +41,7 @@
 #include "simdjson/simdjson_version.h"
 
 #include "simdjson/base.h"
+#include "simdjson/buffer_allocator.h"
 
 #include "simdjson/error.h"
 #include "simdjson/error-inl.h"
