@@ -411,6 +411,17 @@ Furthermore, if you have installed LLVM clang on Windows, for example as a compo
 - `cmake -T ClangCL ..`
 - `cmake --build . --config Release`
 
+### The `max` and `min` macros
+
+The `<windows.h>` header defines `max` and `min` as function-like macros unless `NOMINMAX` is defined. Users include it before simdjson, and some of our tests and tools include it too. Yes, it was a bad move on Microsoft's part, but we need to live with it. A call such as `std::numeric_limits<uint64_t>::max()` or `std::max(a, b)` is then expanded by the preprocessor and fails to compile (MSVC: `C4003`, `C2589`; clang-cl: `too few arguments provided to function-like macro invocation`). Put the name in parentheses so that it is not a macro invocation:
+
+```cpp
+uint64_t m = (std::numeric_limits<uint64_t>::max)();
+size_t n = (std::min)(a, b);
+```
+
+This applies to the public headers, the sources, the tests, and the benchmarks. Non-Windows builds do not catch the mistake. To check locally, compile with `-include` a file that defines `#define max(a,b) (((a)>(b))?(a):(b))` and the same for `min`.
+
 ## Various References
 
 - [How to implement atoi using SIMD?](https://stackoverflow.com/questions/35127060/how-to-implement-atoi-using-simd)

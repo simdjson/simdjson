@@ -118,12 +118,29 @@ namespace visit_tests {
     ondemand::document doc;
     SIMDJSON_TRY(parser.iterate(json).get(doc));
     recording_visitor visitor;
-    SIMDJSON_TRY(doc.visit(visitor));
+    const error_code error = doc.visit(visitor);
     if (events) { *events = visitor.rec.out; }
-    return SUCCESS;
+    return error;
+  }
+
+  error_code parser_visit_text(ondemand::parser &parser, const std::string &text, std::string *events = nullptr) {
+    padded_string json(text);
+    recording_visitor visitor;
+    const error_code error = parser.visit(json, visitor);
+    if (events) { *events = visitor.rec.out; }
+    return error;
+  }
+
+  // Both walks give the same error code. On success they give the same events. On an error, the
+  // one-pass walk of parser::visit() may go further than document::visit(), never elsewhere.
+  bool same_visit(error_code error, const std::string &events, error_code expected_error, const std::string &expected) {
+    if (error != expected_error) { return false; }
+    if (!error) { return events == expected; }
+    return events.compare(0, expected.size(), expected) == 0;
   }
 
   // Visits text and parses it with DOM: both fail, or both succeed with the same values.
+  // parser::visit() gives the same error code and values as document::visit().
   bool same_as_dom(ondemand::parser &parser, dom::parser &dom_parser, const std::string &text) {
     padded_string copy(text);
     dom::element element;
@@ -132,6 +149,12 @@ namespace visit_tests {
     const error_code error = visit_text(parser, text, &events);
     if (bool(error) != bool(dom_error)) {
       std::cerr << "  [" << text.substr(0, 200) << "] visit: " << error << " dom: " << dom_error << std::endl;
+      return false;
+    }
+    std::string parser_events;
+    const error_code parser_error = parser_visit_text(parser, text, &parser_events);
+    if (!same_visit(parser_error, parser_events, error, events)) {
+      std::cerr << "  [" << text.substr(0, 200) << "] document::visit: " << error << " parser::visit: " << parser_error << std::endl;
       return false;
     }
     if (!error) {
@@ -156,6 +179,11 @@ namespace visit_tests {
       R"([0,-0,1.5,-2.5E-3,1e308,-9223372036854775808,9223372036854775807,9223372036854775808,18446744073709551615])",
       R"("a root string")", R"("a root string with an \"escape\"")", "42", "-1.25", "-0", "18446744073709551615",
       "-9223372036854775808", "true", "false", "null", "  7  ", "1e400", "1e-400",
+      // around the short-integer path: 18 and 19 digits, zeros, signs, floats after digits
+      "[123456789012345678,-123456789012345678,1234567890123456789,-1234567890123456789]",
+      "[999999999999999999,1000000000000000000,-999999999999999999,-1000000000000000000]",
+      "[0,-0,0.5,-0.5,0.0,-0.0,0e0,-0e-0,10,1e5,1E-5,-1.5e+3,12345678901234567890.5]",
+      "[1 , 2\n,\t3\r]", R"({"a":1,"b":-2,"c":3.25,"d":-4e1})", "[18446744073709551615,9223372036854775807]",
     };
     ondemand::parser parser;
     dom::parser dom_parser;
@@ -213,6 +241,14 @@ namespace visit_tests {
       {R"({"a":1e})", NUMBER_ERROR},
       {"-", NUMBER_ERROR},
       {"[123456789012345678901234567890]", BIGINT_ERROR},
+      {"[1.5x]", NUMBER_ERROR},
+      {"[12a]", NUMBER_ERROR},
+      {"[-a]", NUMBER_ERROR},
+      {"[01.5]", NUMBER_ERROR},
+      {"[-01]", NUMBER_ERROR},
+      {"[1.e5]", NUMBER_ERROR},
+      {"[1e+]", NUMBER_ERROR},
+      {"[00]", NUMBER_ERROR},
       {"-123456789012345678901234567890", BIGINT_ERROR},
       {"+1", TAPE_ERROR},
       {".5", TAPE_ERROR},
@@ -237,6 +273,7 @@ namespace visit_tests {
     for (const invalid &document : documents) {
       std::cout << "  " << document.text << std::endl;
       ASSERT_ERROR(visit_text(parser, document.text), document.error);
+      ASSERT_ERROR(parser_visit_text(parser, document.text), document.error);
     }
     TEST_SUCCEED();
   }
@@ -590,6 +627,9 @@ namespace visit_tests {
       recording_visitor visitor;
       ASSERT_ERROR(doc.visit(visitor), NUMBER_ERROR);
       ASSERT_TRUE(visitor.rec.out == "[" || visitor.rec.out == "{k1:a");
+      recording_visitor one_pass;
+      ASSERT_ERROR(parser.visit(json, one_pass), NUMBER_ERROR);
+      ASSERT_EQUAL(one_pass.rec.out, visitor.rec.out);
     }
     TEST_SUCCEED();
   }
@@ -612,6 +652,7 @@ namespace visit_tests {
       padded_string copy{std::string(document.text)};
       ASSERT_ERROR(dom_parser.parse(copy).error(), document.error);
       ASSERT_ERROR(visit_text(parser, document.text), document.error);
+      ASSERT_ERROR(parser_visit_text(parser, document.text), document.error);
     }
     TEST_SUCCEED();
   }
@@ -667,6 +708,121 @@ namespace visit_tests {
       if (!dom_parser.parse(copy).error()) { valid++; }
     }
     std::cout << "  " << valid << " valid documents out of 20000" << std::endl;
+    TEST_SUCCEED();
+  }
+
+  // Visits the first len bytes of buffer with iterate() and document::visit().
+  error_code document_visit_buffer(ondemand::parser &parser, const std::vector<char> &buffer, size_t len, std::string &events) {
+    ondemand::document doc;
+    SIMDJSON_TRY(parser.iterate(buffer.data(), len, buffer.size()).get(doc));
+    recording_visitor visitor;
+    const error_code error = doc.visit(visitor);
+    events = visitor.rec.out;
+    return error;
+  }
+
+  error_code parser_visit_buffer(ondemand::parser &parser, const std::vector<char> &buffer, size_t len, std::string &events) {
+    recording_visitor visitor;
+    const error_code error = parser.visit(padded_string_view(buffer.data(), len, buffer.size()), visitor);
+    events = visitor.rec.out;
+    return error;
+  }
+
+  // Random edits of small documents, followed by random bytes: parser::visit() gives the error
+  // code and the values of document::visit(), also with a small maximal depth.
+  bool parser_visit_matches_document_visit() {
+    TEST_START();
+    const char *seeds[] = {
+      R"({"a":[1,2],"b":"x"})", R"([true,false,null])", R"({"k":"\n\u00e9\"","n":-0.5})",
+      R"([[],{},[[1]],{"a":{}}])", "[\"caf\\u00e9\",\"\xc3\xa9\",1e5]", R"({"big":18446744073709551615})",
+      R"([12345678901234567890])", " [ 1 ,\t2 ]\n", R"({"a":"b"})", "[]", "{}", R"("str")", "12",
+      R"([-0,0.1,1E2,-9223372036854775808])", R"({"a":{"b":{"c":[1]}}})",
+      R"({"longer":"than the one-pass limit","x":[1,2,3]})",
+    };
+    const char alphabet[] = "{}[],:\"\\ 0123456789-+.eEtrufalsn\x01\xc3\xa9\xff";
+    std::mt19937 gen(4321);
+    ondemand::parser parser;
+    ondemand::parser shallow;
+    ASSERT_SUCCESS(shallow.allocate(64, 3));
+    for (size_t i = 0; i < 200000; i++) {
+      std::string text = seeds[gen() % (sizeof(seeds) / sizeof(seeds[0]))];
+      const size_t edits = gen() % 4;
+      for (size_t e = 0; e < edits && !text.empty(); e++) {
+        const size_t at = gen() % text.size();
+        const char c = alphabet[gen() % (sizeof(alphabet) - 1)];
+        switch (gen() % 4) {
+          case 0: text[at] = c; break;
+          case 1: text.erase(at, 1); break;
+          case 2: text.insert(at, 1, c); break;
+          default: text.resize(at); break;
+        }
+      }
+      std::vector<char> buffer(text.size() + SIMDJSON_PADDING);
+      std::memcpy(buffer.data(), text.data(), text.size());
+      for (size_t j = text.size(); j < buffer.size(); j++) { buffer[j] = alphabet[gen() % (sizeof(alphabet) - 1)]; }
+      for (ondemand::parser *p : {&parser, &shallow}) {
+        std::string expected, events;
+        const error_code expected_error = document_visit_buffer(*p, buffer, text.size(), expected);
+        const error_code error = parser_visit_buffer(*p, buffer, text.size(), events);
+        if (!same_visit(error, events, expected_error, expected)) {
+          std::cerr << "  [" << text << "] document::visit: " << expected_error << " parser::visit: " << error << std::endl;
+          return false;
+        }
+      }
+    }
+    TEST_SUCCEED();
+  }
+
+  bool parser_visit_strings_are_views() {
+    TEST_START();
+    auto json = R"({"plain":"value","esc\naped":1})"_padded;
+    ondemand::parser parser;
+    string_visitor visitor;
+    ASSERT_SUCCESS(parser.visit(json, visitor));
+    ASSERT_EQUAL(visitor.strings.size(), 3);
+    const std::string_view expected[] = {"plain", "value", "esc\naped"};
+    const bool in_document[] = {true, true, false};
+    for (size_t i = 0; i < 3; i++) {
+      ASSERT_EQUAL(visitor.strings[i], expected[i]);
+      const bool inside = visitor.strings[i].data() >= json.data() && visitor.strings[i].data() < json.data() + json.size();
+      ASSERT_EQUAL(inside, in_document[i]);
+    }
+    TEST_SUCCEED();
+  }
+
+  bool parser_visit_visitor_error() {
+    TEST_START();
+    ondemand::parser parser;
+    for (const char *text : {R"({"a":1,"b":2,"c":3,"d":4})", R"({"a":1,"b":2,"c":3,"d":"longer than the one-pass limit"})"}) {
+      std::cout << "  " << text << std::endl;
+      failing_visitor visitor;
+      ASSERT_ERROR(parser.visit(padded_string(std::string(text)), visitor), INCORRECT_TYPE);
+      ASSERT_EQUAL(visitor.keys, 3);
+    }
+    // In one pass, the UTF-8 check comes at the end: the visitor fails first.
+    failing_visitor visitor;
+    const error_code error = parser.visit(padded_string(std::string("{\"a\":1,\"b\":2,\"c\":3,\"d\":\"\xff\"}")), visitor);
+#if SIMDJSON_ENABLE_NAN_INF
+    ASSERT_ERROR(error, UTF8_ERROR);
+#else
+    ASSERT_ERROR(error, INCORRECT_TYPE);
+#endif
+    TEST_SUCCEED();
+  }
+
+  // On an invalid document, the one-pass walk may call the visitor before it finds the error.
+  bool parser_visit_prefix_on_error() {
+    TEST_START();
+    ondemand::parser parser;
+    std::string events;
+    ASSERT_ERROR(visit_text(parser, R"(["\"])", &events), UNCLOSED_STRING);
+    ASSERT_EQUAL(events, "");
+    ASSERT_ERROR(parser_visit_text(parser, R"(["\"])", &events), UNCLOSED_STRING);
+#if SIMDJSON_ENABLE_NAN_INF
+    ASSERT_EQUAL(events, "");
+#else
+    ASSERT_EQUAL(events, "[");
+#endif
     TEST_SUCCEED();
   }
 
@@ -906,6 +1062,10 @@ namespace visit_tests {
            nan_inf_matches_dom() &&
 #endif
            agrees_with_dom() &&
+           parser_visit_matches_document_visit() &&
+           parser_visit_strings_are_views() &&
+           parser_visit_visitor_error() &&
+           parser_visit_prefix_on_error() &&
            value_visit_matches_dom() &&
            value_visit_array_elements() &&
            value_visit_root_and_read_value() &&

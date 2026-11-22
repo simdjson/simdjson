@@ -238,6 +238,7 @@ inline void document_stream::start() noexcept {
     // load_from_stage1_thread() swaps *parser with stage1_thread_parser, which
     // then parses every other batch: give it the same settings.
     stage1_thread_parser.set_max_capacity(parser->max_capacity());
+    stage1_thread_parser.set_allocator(parser->get_allocator());
     error = stage1_thread_parser.allocate(batch_size, parser->max_depth());
     if (error) { return; }
     worker->start_thread();
@@ -491,6 +492,9 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         break;
     }
     error_code err = p.implementation->stage1(&buf[_batch_start], remaining, mode);
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+    if (!err) { p.drop_trailing_commas(&buf[_batch_start]); }
+#endif
     return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   } else {
     // Partial batch
@@ -506,6 +510,9 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         break;
     }
     error_code err = p.implementation->stage1(&buf[_batch_start], batch_size, mode);
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+    if (!err) { p.drop_trailing_commas(&buf[_batch_start]); }
+#endif
     return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   }
 }

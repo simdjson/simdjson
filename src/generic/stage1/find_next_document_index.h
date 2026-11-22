@@ -261,11 +261,9 @@ simdjson_inline uint32_t find_next_document_index_json_sequence(
   // Phase 2: Determine batch boundaries based on RS positions
 
   if (is_final) {
-    // Final batch: all documents are complete (last one ends at EOF).
-    // In json_sequence mode, RS markers define document boundaries, so all
-    // remaining structurals form complete documents. Return them all directly.
-    // (Calling find_next_document_index() would fail for scalar documents.)
-    return parser.n_structural_indexes;
+    // A cut number must not be parsed into padding the caller does not
+    // initialize. Leave that record to truncated_bytes(), as streaming_final does.
+    return find_next_document_index(parser);
   }
 
   // Partial batch: need to find complete documents only.

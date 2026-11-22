@@ -40,8 +40,10 @@ namespace validate_tests {
     TEST_START();
     struct invalid { const char *text; error_code error; };
     const invalid documents[] = {
+#if !SIMDJSON_ALLOW_TRAILING_COMMAS
       {R"({"a":1,})", TAPE_ERROR},
       {R"([1,2,])", TAPE_ERROR},
+#endif
       {R"({"a" 1})", TAPE_ERROR},
       {R"({"a":1 "b":2})", TAPE_ERROR},
       {R"([1 2])", TAPE_ERROR},
@@ -214,7 +216,10 @@ namespace validate_tests {
     const char *documents[] = {
       "nan", "nAn", "NaN", "Infinity", "inf", "-nan", "-Infinity", "nul", "Nope", "ix",
       "[nan]", "[nAn,NaN,Infinity,inf,-nan,-Infinity]", "[nul]", "[Nope]", "[ix]",
-      "[1,]", "[1,2,]", R"({"a":nan,"b":Infinity})", R"({"a":nul})",
+#if !SIMDJSON_ALLOW_TRAILING_COMMAS
+      "[1,]", "[1,2,]",
+#endif
+      R"({"a":nan,"b":Infinity})", R"({"a":nul})",
     };
     ondemand::parser parser;
     dom::parser dom_parser;
@@ -238,6 +243,28 @@ namespace validate_tests {
     TEST_SUCCEED();
   }
 
+  // Two containers at depth 1023 that each reach depth 1024: the second one, an object,
+  // must still be checked as an object.
+  bool reaching_the_heap_depth_twice() {
+    TEST_START();
+    dom::parser dom_parser;
+    for (size_t max_depth : {size_t(DEFAULT_MAX_DEPTH), size_t(5000)}) {
+      ondemand::parser parser;
+      ASSERT_SUCCESS(parser.allocate(1000000, max_depth));
+      ASSERT_SUCCESS(dom_parser.allocate(1000000, max_depth));
+      for (const char *middle : {R"([[]],{"k":[],"x":1})", R"([[]],{"k":[],1])",
+                                 R"({"k":[]},[[],1])", R"({"k":[]},[[],"x":1])"}) {
+        std::cout << "  " << middle << std::endl;
+        std::string text(1022, '[');
+        text.append(middle);
+        text.append(1022, ']');
+        padded_string copy(text);
+        ASSERT_EQUAL(validate_text(parser, text), dom_parser.parse(copy).error());
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   bool stream_documents() {
     TEST_START();
     auto json = R"({"a":[1,2]} [3,"x"] 4 "five" {"b":null})"_padded;
@@ -258,6 +285,39 @@ namespace validate_tests {
 
   // Random edits of valid documents: validate() and DOM parsing must agree on validity.
   // The seeds avoid integers beyond 64 bits, which DOM rejects and validate() accepts.
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  // Removes each comma, outside strings, that follows a value and precedes a closing bracket.
+  std::string without_trailing_commas(const std::string &text) {
+    std::string out;
+    bool in_string = false;
+    char previous = '[';
+    for (size_t i = 0; i < text.size(); i++) {
+      const char c = text[i];
+      if (in_string) {
+        out += c;
+        if (c == '\\' && i + 1 < text.size()) {
+          out += text[++i];
+        } else if (c == '"') {
+          in_string = false;
+        }
+        continue;
+      }
+      if (c == ',' && previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+        size_t j = i + 1;
+        while (j < text.size() && (text[j] == ' ' || text[j] == '\t' || text[j] == '\n' || text[j] == '\r')) { j++; }
+        if (j < text.size() && (text[j] == ']' || text[j] == '}')) {
+          previous = c;
+          continue;
+        }
+      }
+      if (c == '"') { in_string = true; }
+      if (c != ' ' && c != '\t' && c != '\n' && c != '\r') { previous = c; }
+      out += c;
+    }
+    return out;
+  }
+#endif
+
   bool agrees_with_dom() {
     TEST_START();
     const char *seeds[] = {
@@ -286,7 +346,12 @@ namespace validate_tests {
         }
       }
       padded_string copy(text);
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+      padded_string dom_copy(without_trailing_commas(text));
+      const error_code dom_error = dom_parser.parse(dom_copy).error();
+#else
       const error_code dom_error = dom_parser.parse(copy).error();
+#endif
       error_code error;
       ondemand::document doc;
       error = parser.iterate(copy).get(doc);
@@ -314,6 +379,7 @@ namespace validate_tests {
            nan_inf_matches_dom() &&
 #endif
            deep_nesting_with_larger_max_depth() &&
+           reaching_the_heap_depth_twice() &&
            stream_documents() &&
            agrees_with_dom() &&
            true;

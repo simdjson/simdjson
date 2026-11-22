@@ -61,6 +61,10 @@ float from_chars_float(const char *first) noexcept;
 #define SIMDJSON_ENABLE_NAN_INF 0
 #endif
 
+#ifndef SIMDJSON_ALLOW_TRAILING_COMMAS
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 0
+#endif
+
 } // namespace simdjson
 
 #if defined(__GNUC__)
@@ -397,5 +401,24 @@ namespace std {
 #define simdjson_lifetime_bound [[lifetimebound]]
 #else
 #define simdjson_lifetime_bound
+#endif
+
+// C++26 (P2795R5) and -ftrivial-auto-var-init zero-fill local variables that
+// have no initializer. simdjson_indeterminate opts a local out of that. Use it
+// only on buffers that the code writes before it reads them.
+#if defined(SIMDJSON_CPLUSPLUS26) && defined(__has_cpp_attribute)
+#if __has_cpp_attribute(indeterminate)
+#define simdjson_indeterminate [[indeterminate]]
+#endif
+#endif
+
+#if !defined(simdjson_indeterminate) && defined(__has_attribute)
+#if __has_attribute(uninitialized)
+#define simdjson_indeterminate __attribute__((uninitialized))
+#endif
+#endif
+
+#ifndef simdjson_indeterminate
+#define simdjson_indeterminate
 #endif
 #endif // SIMDJSON_COMMON_DEFS_H

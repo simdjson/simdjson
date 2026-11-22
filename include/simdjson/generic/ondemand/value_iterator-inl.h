@@ -688,7 +688,7 @@ simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::number_type> value_iter
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -712,7 +712,7 @@ simdjson_inline simdjson_result<number> value_iterator::get_root_number(bool che
   // number: -0.<fraction>e-308.
   // NOTE: the current approach doesn't work for very big integer numbers containing more than 1074 digits.
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING];
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -794,7 +794,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<uint64_t> value_iterator::g
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
+  simdjson_indeterminate uint8_t tmpbuf[20+1+1]; // -<19 digits> is the longest possible integer
   tmpbuf[20+1] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+1)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 20 characters");
@@ -811,7 +811,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::ge
 simdjson_warn_unused simdjson_inline simdjson_result<int64_t> value_iterator::get_root_int64_in_string(bool check_trailing) noexcept {
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("int64");
-  uint8_t tmpbuf[20+2+1]; // "-<19 digits>" is the longest possible integer
+  simdjson_indeterminate uint8_t tmpbuf[20+2+1]; // "-<19 digits>" is the longest possible integer
   tmpbuf[20+2] = '\0'; // make sure that buffer is always null terminated.
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 20+2)) {
     logger::log_error(*_json_iter, start_position(), depth(), "Root number more than 22 characters");
@@ -832,7 +832,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -854,7 +854,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<double> value_iterator::get
   // 1074 is the maximum number of significant fractional digits. Add 8 more digits for the biggest
   // number: -0.<fraction>e-308.
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -876,7 +876,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_
   // digits that matter is smaller for binary32, but the JSON document may still
   // spell out a long number that we must parse (and round) faithfully.
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -895,7 +895,7 @@ simdjson_warn_unused simdjson_inline simdjson_result<float> value_iterator::get_
   auto max_len = peek_root_length();
   auto json = peek_root_scalar("float");
   // +SIMDJSON_PADDING: the digit scan reads up to 7 bytes past the terminator.
-  uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
+  simdjson_indeterminate uint8_t tmpbuf[1074+8+1+1+SIMDJSON_PADDING]; // +1 for null termination.
   // Null terminate, and zero the padding as allocate_padded_buffer does.
   std::memset(tmpbuf+1074+8+1, 0, 1+SIMDJSON_PADDING);
   if (!_json_iter->copy_to_buffer(json, max_len, tmpbuf, 1074+8+1)) {
@@ -1233,6 +1233,9 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '"':
       return json_type::string;
     case 'n':
+#if SIMDJSON_ENABLE_NAN_INF
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
+#endif
       return json_type::null;
     case 't': case 'f':
       return json_type::boolean;
@@ -1240,6 +1243,14 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N':
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
+      return json_type::unknown;
+    case 'I': case 'i':
+      if (atomparsing::is_valid_inf_atom(peek_start(), peek_start_length())) { return json_type::number; }
+      return json_type::unknown;
+#endif
     default:
       return json_type::unknown;
   }

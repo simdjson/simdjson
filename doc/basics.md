@@ -57,6 +57,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
 - [Infinity and NaN support](#infinity-and-nan-support)
+- [Trailing commas](#trailing-commas)
 - [Raw strings from keys](#raw-strings-from-keys)
 - [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
@@ -3452,6 +3453,23 @@ The walk creates no values, arrays or objects. On documents of a few hundred byt
 building your own tree with `visit()` costs about as much as parsing the document with the DOM
 front-end, which builds its own tree.
 
+If you do not need the document afterward, you may call `visit()` on the parser instead, with
+the JSON text. It does what `iterate()` followed by `visit()` does, with the same values and, when the visitor
+returns `SUCCESS`, the same error code:
+
+```cpp
+  ondemand::parser parser;
+  counting_visitor visitor;
+  auto error = parser.visit(R"({"name":"simdjson","stars":3})"_padded, visitor);
+```
+
+It is faster on small documents, as many rows of a database are. A document of at most
+`ondemand::parser::MAX_ONE_PASS_VISIT` (32) bytes whose root is an object or an array is read in
+a single pass, without the index of structural characters that `iterate()` builds. Some checks,
+such as the UTF-8 validation, then come at the end of the walk. On an invalid document, the
+visitor may have seen part or all of it before `visit()` returns the error, and an error returned by the
+visitor may come before an error in the document. The input must be padded, as with `iterate()`.
+
 You may also visit a single value after navigating to it with `visit()` on the value:
 
 ```cpp
@@ -3851,6 +3869,34 @@ Parsed floating-point number: inf
 Parsed floating-point number: -inf
 Parsed floating-point number: nan
 ```
+
+With `SIMDJSON_ENABLE_NAN_INF`, the On-Demand `type()` method reports these literals as `json_type::number`.
+A token that only starts like one, such as `nancy` or `Infinit`, keeps its usual type (`null` or `unknown`).
+
+Trailing commas
+------------------------------
+
+The JSON specification does not allow a comma before the closing bracket of an array or an object, as in `[1,2,]` or `{"a":1,}`.
+Some producers write them anyway. The On-Demand API accepts them if you set `SIMDJSON_ALLOW_TRAILING_COMMAS` to 1 before
+including `"simdjson.h"`, or build simdjson with `cmake -B build -D SIMDJSON_ALLOW_TRAILING_COMMAS=ON`.
+It applies to `iterate()` and `iterate_many()`; the DOM API remains strict.
+
+```cpp
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 1
+#include "simdjson.h"
+using namespace simdjson;
+
+ondemand::parser parser;
+auto json = R"({"values":[1,2,3,],})"_padded;
+ondemand::document doc = parser.iterate(json);
+for (int64_t x : doc["values"]) {
+  std::cout << x << std::endl; // 1, 2, 3
+}
+```
+
+Only a comma that follows a value is accepted: `[,]`, `{,}` and `[1,,]` remain errors.
+The comma is removed when the document is indexed, so the cost is a pass over the structural
+indexes per document, and nothing when the macro is not set.
 
 
 Raw strings from keys

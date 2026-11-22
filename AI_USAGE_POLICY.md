@@ -39,6 +39,8 @@ its use and explain your process. If a submission appears to rely heavily on AI
 without disclosure, we may doubt that the **human-in-the-loop** requirement has
 been met. Please show awareness of your use of AI.
 
+But we do not require AI disclosure. Use common sense. You are not an AI.
+
 ## Copyright
 
 Artificial intelligence systems raise many questions around copyright that have
