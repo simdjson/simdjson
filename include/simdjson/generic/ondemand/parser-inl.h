@@ -77,8 +77,41 @@ simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate(p
 
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  drop_trailing_commas(reinterpret_cast<const uint8_t *>(json.data()));
+#endif
   return document::start({ reinterpret_cast<const uint8_t *>(json.data()), this });
 }
+
+// Removes from the structural indexes each comma that follows a value and
+// precedes a closing bracket, so that the iterator never sees it. The entries
+// past the last index (stage 1 keeps up to three there) move with the others.
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+simdjson_inline void parser::drop_trailing_commas(const uint8_t *buf) noexcept {
+  uint32_t *indexes = implementation->structural_indexes.get();
+  const uint32_t n = implementation->n_structural_indexes;
+  uint32_t kept = 0;
+  uint8_t previous = '[';
+  for (uint32_t i = 0; i < n; i++) {
+    const uint8_t c = buf[indexes[i]];
+    if (c == ',' && i + 1 < n && previous != '[' && previous != '{' && previous != ',' && previous != ':') {
+      const uint8_t next = buf[indexes[i + 1]];
+      if (next == ']' || next == '}') {
+        previous = c;
+        continue;
+      }
+    }
+    indexes[kept++] = indexes[i];
+    previous = c;
+  }
+  if (kept != n) {
+    indexes[kept] = indexes[n];
+    indexes[kept + 1] = indexes[n + 1];
+    indexes[kept + 2] = indexes[n + 2];
+    implementation->n_structural_indexes = kept;
+  }
+}
+#endif // SIMDJSON_ALLOW_TRAILING_COMMAS
 
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
 simdjson_warn_unused simdjson_inline simdjson_result<document> parser::iterate_allow_incomplete_json(padded_string_view json) & noexcept {
@@ -183,6 +216,9 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
 
   // Run stage 1.
   SIMDJSON_TRY( implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.length(), stage1_mode::regular) );
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  drop_trailing_commas(reinterpret_cast<const uint8_t *>(json.data()));
+#endif
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 

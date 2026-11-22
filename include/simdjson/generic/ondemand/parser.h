@@ -446,6 +446,9 @@ private:
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_parser_instance();
   /** Get the thread-local parser instance, it might be null */
   static simdjson_inline simdjson_warn_unused std::unique_ptr<ondemand::parser>& get_threadlocal_parser_if_exists();
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  simdjson_inline void drop_trailing_commas(const uint8_t *buf) noexcept;
+#endif
 #ifdef SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
   static simdjson_inline bool can_end_incomplete_json(uint8_t c) noexcept;
   simdjson_warn_unused simdjson_inline error_code end_incomplete_json(padded_string_view json) noexcept;

@@ -491,6 +491,9 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         break;
     }
     error_code err = p.implementation->stage1(&buf[_batch_start], remaining, mode);
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+    if (!err) { p.drop_trailing_commas(&buf[_batch_start]); }
+#endif
     return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   } else {
     // Partial batch
@@ -506,6 +509,9 @@ inline error_code document_stream::run_stage1(ondemand::parser &p, size_t _batch
         break;
     }
     error_code err = p.implementation->stage1(&buf[_batch_start], batch_size, mode);
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+    if (!err) { p.drop_trailing_commas(&buf[_batch_start]); }
+#endif
     return err ? err : end_batch_before_invalid_tail(*p.implementation, &buf[_batch_start]);
   }
 }

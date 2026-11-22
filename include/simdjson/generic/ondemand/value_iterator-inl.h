@@ -1233,6 +1233,9 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '"':
       return json_type::string;
     case 'n':
+#if SIMDJSON_ENABLE_NAN_INF
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
+#endif
       return json_type::null;
     case 't': case 'f':
       return json_type::boolean;
@@ -1240,6 +1243,14 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N':
+      if (atomparsing::is_valid_nan_atom(peek_start(), peek_start_length())) { return json_type::number; }
+      return json_type::unknown;
+    case 'I': case 'i':
+      if (atomparsing::is_valid_inf_atom(peek_start(), peek_start_length())) { return json_type::number; }
+      return json_type::unknown;
+#endif
     default:
       return json_type::unknown;
   }

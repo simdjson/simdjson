@@ -796,9 +796,176 @@ namespace misc_tests {
       true;
   }
 
+  // Walks a value and counts its scalars.
+  simdjson::error_code count_scalars(ondemand::value value, size_t &count) {
+    ondemand::json_type type;
+    SIMDJSON_TRY(value.type().get(type));
+    if (type == ondemand::json_type::array) {
+      ondemand::array array;
+      SIMDJSON_TRY(value.get_array().get(array));
+      for (auto element : array) {
+        ondemand::value child;
+        SIMDJSON_TRY(element.get(child));
+        SIMDJSON_TRY(count_scalars(child, count));
+      }
+    } else if (type == ondemand::json_type::object) {
+      ondemand::object object;
+      SIMDJSON_TRY(value.get_object().get(object));
+      for (auto field : object) {
+        ondemand::value child;
+        SIMDJSON_TRY(field.value().get(child));
+        SIMDJSON_TRY(count_scalars(child, count));
+      }
+    } else {
+      count++;
+    }
+    return SUCCESS;
+  }
+
+  simdjson::error_code count_document(ondemand::parser &parser, const std::string &text, size_t &count) {
+    const padded_string json{text};
+    count = 0;
+    ondemand::document doc;
+    SIMDJSON_TRY(parser.iterate(json).get(doc));
+    ondemand::value value;
+    SIMDJSON_TRY(doc.get_value().get(value));
+    SIMDJSON_TRY(count_scalars(value, count));
+    return doc.at_end() ? SUCCESS : TRAILING_CONTENT;
+  }
+
+  bool trailing_commas() {
+    TEST_START();
+    ondemand::parser parser;
+    size_t count;
+    const struct {
+      const char *text;
+      size_t scalars;
+    } cases[] = {
+      {"[[1,2,],{\"a\":3}]", 3},
+      {"[[1,2],{\"a\":3,}]", 3},
+      {"[[1,2],{\"a\":3},]", 3},
+      {"[ [ 1 , 2 , ] , { \"a\" : 3 , } , ]", 3},
+      {"[\",]\",]", 1},
+      {"{\"a\":[1,{\"b\":[],},],}", 1},
+      {"[[],]", 0},
+    };
+    for (const auto &c : cases) {
+      std::cout << "  " << c.text << std::endl;
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+      ASSERT_SUCCESS(count_document(parser, c.text, count));
+      ASSERT_EQUAL(count, c.scalars);
+#else
+      ASSERT_TRUE(count_document(parser, c.text, count) != SUCCESS);
+#endif
+    }
+    ASSERT_SUCCESS(count_document(parser, "[[1,2],{\"a\":3}]", count));
+    ASSERT_EQUAL(count, 3);
+    for (const char *text : {"[,]", "{,}", "{\"a\":,}", "[1,,]", "[[1,,]]", "[{\"a\":1,,}]", "[1],"}) {
+      std::cout << "  " << text << std::endl;
+      ASSERT_TRUE(count_document(parser, text, count) != SUCCESS);
+    }
+    TEST_SUCCEED();
+  }
+
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+  bool trailing_commas_iterate_many() {
+    TEST_START();
+    std::string text;
+    for (size_t i = 0; i < 1000; i++) {
+      text += "[1,2,{\"a\":3,},] ";
+    }
+    const padded_string json{text};
+    ondemand::parser parser;
+    for (bool threaded : {false, true}) {
+#ifdef SIMDJSON_THREADS_ENABLED
+      parser.threaded = threaded;
+#else
+      (void)threaded;
+#endif
+      ondemand::document_stream stream;
+      ASSERT_SUCCESS(parser.iterate_many(json, 64).get(stream));
+      size_t documents = 0;
+      for (auto doc : stream) {
+        ondemand::value value;
+        ASSERT_SUCCESS(doc.get_value().get(value));
+        size_t count = 0;
+        ASSERT_SUCCESS(count_scalars(value, count));
+        ASSERT_EQUAL(count, 3);
+        documents++;
+      }
+      ASSERT_EQUAL(documents, 1000);
+    }
+    TEST_SUCCEED();
+  }
+#endif
+
+  bool nan_inf_type() {
+    TEST_START();
+    ondemand::parser parser;
+#if SIMDJSON_ENABLE_NAN_INF
+    const ondemand::json_type nan_inf = ondemand::json_type::number;
+    const ondemand::json_type lower_nan = ondemand::json_type::number;
+#else
+    const ondemand::json_type nan_inf = ondemand::json_type::unknown;
+    const ondemand::json_type lower_nan = ondemand::json_type::null;
+#endif
+    const struct {
+      const char *text;
+      ondemand::json_type type;
+    } cases[] = {
+      {"NaN", nan_inf},
+      {"nan", lower_nan},
+      {"NAN", nan_inf},
+      {"inf", nan_inf},
+      {"Infinity", nan_inf},
+      {"INFINITY", nan_inf},
+      {"-Infinity", ondemand::json_type::number},
+      {"null", ondemand::json_type::null},
+      {"na", ondemand::json_type::null},
+      {"nancy", ondemand::json_type::null},
+      {"N", ondemand::json_type::unknown},
+      {"Nope", ondemand::json_type::unknown},
+      {"I", ondemand::json_type::unknown},
+      {"infox", ondemand::json_type::unknown},
+      {"infinit", ondemand::json_type::unknown},
+      {"infinityx", ondemand::json_type::unknown},
+    };
+    for (const auto &c : cases) {
+      std::cout << "  " << c.text << std::endl;
+      for (const std::string &text : {std::string(c.text), "[" + std::string(c.text) + "]", "[" + std::string(c.text) + " ]"}) {
+        const padded_string json{text};
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ondemand::json_type type;
+        if (text[0] == '[') {
+          ondemand::value value;
+          ASSERT_SUCCESS(doc.at(0).get(value));
+          ASSERT_SUCCESS(value.type().get(type));
+        } else {
+          ASSERT_SUCCESS(doc.type().get(type));
+        }
+        ASSERT_EQUAL(type, c.type);
+      }
+    }
+    // The padding of a reused buffer may hold anything: it is not part of the atom.
+    std::string buffer(1 + SIMDJSON_PADDING, 'a');
+    buffer[0] = 'n';
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(buffer.data(), 1, buffer.size()).get(doc));
+    ondemand::json_type type;
+    ASSERT_SUCCESS(doc.type().get(type));
+    ASSERT_EQUAL(type, ondemand::json_type::null);
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            issue2355() &&
+           trailing_commas() &&
+           nan_inf_type() &&
+#if SIMDJSON_ALLOW_TRAILING_COMMAS
+           trailing_commas_iterate_many() &&
+#endif
            issue2354() &&
            issue2322() &&
            issue2312() &&

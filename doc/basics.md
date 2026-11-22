@@ -56,6 +56,7 @@ separate document](https://github.com/simdjson/simdjson/blob/master/doc/builder.
 - [Parsing numbers inside strings](#parsing-numbers-inside-strings)
 - [Dynamic Number Types](#dynamic-number-types)
 - [Infinity and NaN support](#infinity-and-nan-support)
+- [Trailing commas](#trailing-commas)
 - [Raw strings from keys](#raw-strings-from-keys)
 - [General direct access to the raw JSON string](#general-direct-access-to-the-raw-json-string)
   * [Raw JSON string for objects and arrays](#raw-json-string-for-objects-and-arrays)
@@ -3769,6 +3770,34 @@ Parsed floating-point number: inf
 Parsed floating-point number: -inf
 Parsed floating-point number: nan
 ```
+
+With `SIMDJSON_ENABLE_NAN_INF`, the On-Demand `type()` method reports these literals as `json_type::number`.
+A token that only starts like one, such as `nancy` or `Infinit`, keeps its usual type (`null` or `unknown`).
+
+Trailing commas
+------------------------------
+
+The JSON specification does not allow a comma before the closing bracket of an array or an object, as in `[1,2,]` or `{"a":1,}`.
+Some producers write them anyway. The On-Demand API accepts them if you set `SIMDJSON_ALLOW_TRAILING_COMMAS` to 1 before
+including `"simdjson.h"`, or build simdjson with `cmake -B build -D SIMDJSON_ALLOW_TRAILING_COMMAS=ON`.
+It applies to `iterate()` and `iterate_many()`; the DOM API remains strict.
+
+```cpp
+#define SIMDJSON_ALLOW_TRAILING_COMMAS 1
+#include "simdjson.h"
+using namespace simdjson;
+
+ondemand::parser parser;
+auto json = R"({"values":[1,2,3,],})"_padded;
+ondemand::document doc = parser.iterate(json);
+for (int64_t x : doc["values"]) {
+  std::cout << x << std::endl; // 1, 2, 3
+}
+```
+
+Only a comma that follows a value is accepted: `[,]`, `{,}` and `[1,,]` remain errors.
+The comma is removed when the document is indexed, so the cost is a pass over the structural
+indexes per document, and nothing when the macro is not set.
 
 
 Raw strings from keys
