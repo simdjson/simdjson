@@ -30,20 +30,21 @@ namespace simdjson { namespace arm64 { namespace { namespace stage1 {
 simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
   if (bits == 0) { return; }
 
+  uint32_t *dst = this->tail;
   const int cnt = static_cast<int>(count_ones(bits));
 #if SIMDJSON_PREFER_REVERSE_BITS
   bits = reverse_bits(bits);
 #endif
-  write_indexes<0, 4>(idx, bits);
+  write_indexes<0, 4>(dst, idx, bits);
   if (simdjson_unlikely(4 < cnt)) {
-    write_indexes_stepped<4, 24, 2>(idx, bits, cnt);
+    write_indexes_stepped<4, 24, 2>(dst, idx, bits, cnt);
   }
   if (simdjson_unlikely(24 < cnt)) {
     for (int i = 24; i < cnt; ++i) {
-      write_index(idx, bits, i);
+      write_index(dst, idx, bits, i);
     }
   }
-  this->tail += cnt;
+  this->tail = dst + cnt;
 }
 
 }}}} // namespace simdjson::arm64::(anonymous)::stage1
