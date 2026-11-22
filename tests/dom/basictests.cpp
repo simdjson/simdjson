@@ -1266,6 +1266,25 @@ namespace dom_api_tests {
     std::string moved_string = simdjson_result<std::string>(std::string(100, 'x'));
     ASSERT_EQUAL( moved_string.size(), 100 );
     (void)moved; (void)moved_direct; (void)copied;
+
+    // A reference bound to a converted temporary refers to a new object that
+    // lives as long as the reference.
+    std::string &&bound = simdjson_result<std::string>(std::string(100, 'y'));
+    ASSERT_EQUAL( bound, std::string(100, 'y') );
+
+    // An enum result has a single conversion function, so it can be switched on.
+    int type_case = 0;
+    switch (object["a"].type()) {
+      case dom::element_type::INT64: type_case = 1; break;
+      default: type_case = 2; break;
+    }
+    ASSERT_EQUAL( type_case, 1 );
+    auto type_result = object["a"].type();
+    switch (type_result) {
+      case dom::element_type::INT64: type_case = 3; break;
+      default: type_case = 4; break;
+    }
+    ASSERT_EQUAL( type_case, 3 );
 #endif
     ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
     ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );

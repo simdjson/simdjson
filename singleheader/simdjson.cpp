@@ -1,4 +1,4 @@
-/* auto-generated on 2026-11-22 13:48:29 -0500. version 5.2.0 Do not edit! */
+/* auto-generated on 2026-11-22 13:48:22 -0500. version 5.2.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -2753,7 +2753,6 @@ namespace std {
 
 #include <string>
 #include <ostream>
-#include <type_traits>
 
 namespace simdjson {
 
@@ -2854,45 +2853,6 @@ private:
 };
 
 namespace internal {
-
-#if SIMDJSON_EXCEPTIONS
-/**
- * simdjson_result<T> converts to T (throwing on error) through two overloads
- * of the same conversion operator, chosen by the value category of the result:
- *
- * - operator T() &&, which moves the value out of an rvalue result, and
- * - operator T() const&, which copies the value out of an lvalue result.
- *
- * Both return T, not a reference: if the lvalue overload returned const T&
- * and the rvalue one T&&, calls such as std::vector<T>::push_back(result)
- * would be ambiguous between the const T& and T&& overloads.
- *
- * An overload that is not wanted is disabled by making it convert to a
- * placeholder type that nothing converts to:
- *
- * - the lvalue overload is disabled when T is not copy constructible;
- * - the rvalue overload is disabled when T is trivially copyable (enums,
- *   numbers, std::string_view, dom::element...), since moving such a T is the
- *   same as copying it. Having a single conversion to an enumeration type
- *   keeps switch (result) valid: clang rejects a switch condition with
- *   several conversion functions to integral or enumeration types.
- */
-struct simdjson_result_no_lvalue_conversion {
-  simdjson_result_no_lvalue_conversion() = delete;
-};
-struct simdjson_result_no_rvalue_conversion {
-  simdjson_result_no_rvalue_conversion() = delete;
-};
-
-template<typename T>
-using simdjson_result_lvalue_conversion_t = typename std::conditional<
-    std::is_copy_constructible<T>::value, T, simdjson_result_no_lvalue_conversion>::type;
-
-template<typename T>
-using simdjson_result_rvalue_conversion_t = typename std::conditional<
-    std::is_copy_constructible<T>::value && std::is_trivially_copyable<T>::value,
-    simdjson_result_no_rvalue_conversion, T>::type;
-#endif // SIMDJSON_EXCEPTIONS
 
 /**
  * The result of a simdjson operation that could fail.
@@ -3003,24 +2963,12 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -3175,24 +3123,12 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = typename internal::simdjson_result_base<T>::rvalue_conversion_type;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = typename internal::simdjson_result_base<T>::lvalue_conversion_type;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**
@@ -10176,14 +10112,8 @@ simdjson_inline T&& simdjson_result_base<T>::take_value() && noexcept(false) {
 }
 
 template<typename T>
-simdjson_inline simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -10259,13 +10189,8 @@ simdjson_inline T&& simdjson_result<T>::take_value() && noexcept(false) {
 }
 
 template<typename T>
-simdjson_inline simdjson_result<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline simdjson_result<T>::operator T&&() && noexcept(false) {
   return std::forward<internal::simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline simdjson_result<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  return internal::simdjson_result_base<T>::operator lvalue_conversion_type();
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -15896,24 +15821,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -17751,14 +17664,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -23676,24 +23583,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -25531,14 +25426,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -31258,24 +31147,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -33113,14 +32990,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -38984,24 +38855,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -40839,14 +40698,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -47096,24 +46949,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -48951,14 +48792,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -55066,24 +54901,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -56921,14 +56744,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -62465,24 +62282,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -64320,14 +64125,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -69861,24 +69660,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -71716,14 +71503,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -77256,24 +77037,12 @@ struct implementation_simdjson_result_base {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
-  using rvalue_conversion_type = internal::simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast an rvalue result to the value, moving it (will throw on error).
-   * Disabled when T is trivially copyable: the conversion below is used instead.
+   * Cast to the value (will throw on error).
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
-
-  using lvalue_conversion_type = internal::simdjson_result_lvalue_conversion_t<T>;
-  /**
-   * Cast a result to a copy of the value (will throw on error). This allows,
-   * for example, passing an lvalue simdjson_result<dom::element> to a function
-   * that takes a dom::element. Disabled when T is not copy constructible.
-   *
-   * @throw simdjson_error if there was an error.
-   */
-  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
+  simdjson_inline operator T&&() && noexcept(false);
 
 
 #endif // SIMDJSON_EXCEPTIONS
@@ -79111,14 +78880,8 @@ simdjson_inline T&& implementation_simdjson_result_base<T>::take_value() && noex
 }
 
 template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator rvalue_conversion_type() && noexcept(false) {
+simdjson_inline implementation_simdjson_result_base<T>::operator T&&() && noexcept(false) {
   return std::forward<implementation_simdjson_result_base<T>>(*this).take_value();
-}
-
-template<typename T>
-simdjson_inline implementation_simdjson_result_base<T>::operator lvalue_conversion_type() const& noexcept(false) {
-  if (error()) { throw simdjson_error(error()); }
-  return this->first;
 }
 
 #endif // SIMDJSON_EXCEPTIONS
