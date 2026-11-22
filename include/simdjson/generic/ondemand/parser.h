@@ -179,6 +179,33 @@ public:
    */
   simdjson_warn_unused simdjson_result<json_iterator> iterate_raw(padded_string_view json) & noexcept;
 
+  /**
+   * Parses the document and walks it once with the visitor: the same as iterate() followed by
+   * document::visit(), with the same values and, when the visitor returns SUCCESS, the same
+   * error code, but faster on small documents.
+   *
+   *   counting_visitor visitor;
+   *   auto error = parser.visit(R"({"stars":[1,2,3]})"_padded, visitor);
+   *
+   * A document of at most MAX_ONE_PASS_VISIT bytes whose root is an object or an array is read in
+   * a single pass, without the structural index that iterate() builds. Some checks, such as the
+   * UTF-8 validation, then come at the end of the walk: on an invalid document, the visitor may
+   * have seen part or all of it before visit() returns the error code of document::visit(), and
+   * an error returned by the visitor may come first. With SIMDJSON_ENABLE_NAN_INF, there is no one-pass
+   * walk.
+   *
+   * See document::visit() for the methods of the visitor and the lifetime of the strings.
+   *
+   * @param json The JSON to parse, with at least SIMDJSON_PADDING bytes after it.
+   * @param visitor The visitor.
+   * @returns SUCCESS, the first error found in the document, or the first error the visitor
+   *          returned.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit(padded_string_view json, V &visitor) &;
+  /** Documents of at most this many bytes may be visited in one pass, see visit(). */
+  static constexpr size_t MAX_ONE_PASS_VISIT = 32;
+
 
   /**
    * Parse a buffer containing many JSON documents.
@@ -467,6 +494,12 @@ private:
   static simdjson_inline bool can_end_incomplete_json(uint8_t c) noexcept;
   simdjson_warn_unused simdjson_inline error_code end_incomplete_json(padded_string_view json) noexcept;
 #endif // SIMDJSON_EXPERIMENTAL_ALLOW_INCOMPLETE_JSON
+  /**
+   * The one-pass walk of visit(). Returns UNINITIALIZED when it does not handle the document,
+   * and TAPE_ERROR when the document is invalid. visitor_failed tells an error of the visitor.
+   */
+  template <typename V>
+  simdjson_warn_unused simdjson_inline error_code visit_one_pass(const uint8_t *buf, size_t len, V &visitor, bool &visitor_failed);
   /** @private [for benchmarking access] The implementation to use */
   std::unique_ptr<simdjson::internal::dom_parser_implementation> implementation{};
   size_t _capacity{0};

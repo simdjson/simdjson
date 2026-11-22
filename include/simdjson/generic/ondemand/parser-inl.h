@@ -222,6 +222,204 @@ simdjson_warn_unused simdjson_inline simdjson_result<json_iterator> parser::iter
   return json_iterator(reinterpret_cast<const uint8_t *>(json.data()), this);
 }
 
+namespace {
+struct ignoring_visitor {
+  simdjson_inline error_code on_object_start() { return SUCCESS; }
+  simdjson_inline error_code on_object_end(uint32_t) { return SUCCESS; }
+  simdjson_inline error_code on_array_start() { return SUCCESS; }
+  simdjson_inline error_code on_array_end(uint32_t) { return SUCCESS; }
+  simdjson_inline error_code on_key(std::string_view) { return SUCCESS; }
+  simdjson_inline error_code on_string(std::string_view) { return SUCCESS; }
+  simdjson_inline error_code on_int64(int64_t, const char *) { return SUCCESS; }
+  simdjson_inline error_code on_uint64(uint64_t, const char *) { return SUCCESS; }
+  simdjson_inline error_code on_double(double, const char *) { return SUCCESS; }
+  simdjson_inline error_code on_bool(bool) { return SUCCESS; }
+  simdjson_inline error_code on_null() { return SUCCESS; }
+};
+} // unnamed namespace
+
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code parser::visit(padded_string_view json, V &visitor) & {
+#if !SIMDJSON_ENABLE_NAN_INF
+  if (json.length() <= MAX_ONE_PASS_VISIT && json.has_sufficient_padding()) {
+    if (capacity() < json.length() || !string_buf) {
+      SIMDJSON_TRY( allocate(json.length(), max_depth()) );
+    }
+    bool visitor_failed = false;
+    const error_code error = visit_one_pass(reinterpret_cast<const uint8_t *>(json.data()), json.length(), visitor, visitor_failed);
+    if (error != UNINITIALIZED) {
+      if (error != TAPE_ERROR || visitor_failed) { return error; }
+      // The visitor has already seen part of the document: the regular walk only finds the
+      // error code, and never calls the visitor a second time.
+      document doc;
+      SIMDJSON_TRY( iterate(json).get(doc) );
+      ignoring_visitor ignoring;
+      const error_code regular_error = doc.visit(ignoring);
+      return regular_error ? regular_error : TAPE_ERROR;
+    }
+  }
+#endif
+  document doc;
+  SIMDJSON_TRY( iterate(json).get(doc) );
+  return doc.visit(visitor);
+}
+
+// A single pass over the bytes, for small documents. The root must be an array or an object, and
+// the last byte that is not whitespace must be ] or }: before it, runs of whitespace, digits or
+// atoms stop without a bound check. Only a closing bracket or a string may reach the end.
+template <typename V>
+simdjson_warn_unused simdjson_inline error_code parser::visit_one_pass(const uint8_t *const buf, const size_t len, V &visitor, bool &visitor_failed) {
+  const auto is_whitespace = [](uint8_t c) { return c == ' ' || c == '\n' || c == '\r' || c == '\t'; };
+  if (len == 0 || len > MAX_ONE_PASS_VISIT) { return UNINITIALIZED; }
+  const uint8_t *p = buf;
+  const uint8_t *last = buf + len - 1;
+  while (p < last && is_whitespace(*p)) { p++; }
+  while (last > p && is_whitespace(*last)) { last--; }
+  if ((*p != '{' && *p != '[') || (*last != '}' && *last != ']')) { return UNINITIALIZED; }
+  const uint8_t *const end = last + 1;
+  uint8_t *dst = string_buf.get();
+  bool non_ascii = false;
+  // For each open container, the number of its elements so far, with the top bit set for an
+  // array. Each container opens at a distinct byte before the last one, so that the depth stays
+  // below MAX_ONE_PASS_VISIT.
+  constexpr uint32_t ARRAY_BIT = uint32_t(1) << 31;
+  uint32_t stack[MAX_ONE_PASS_VISIT];
+  size_t depth = 0;
+  uint8_t c = *p;
+
+#define SIMDJSON_ONE_PASS_CALL(EXPR) \
+  do { \
+    const error_code one_pass_error = (EXPR); \
+    if (simdjson_unlikely(one_pass_error != SUCCESS)) { visitor_failed = true; return one_pass_error; } \
+  } while (0)
+#define SIMDJSON_ONE_PASS_WHITESPACE() while (is_whitespace(*p)) { p++; }
+// The string at p, which is left past the closing quote.
+#define SIMDJSON_ONE_PASS_STRING(METHOD) \
+  do { \
+    const uint8_t *const start = ++p; \
+    bool escaped = false; \
+    for (;; p++) { \
+      if (simdjson_unlikely(p >= end)) { return TAPE_ERROR; } \
+      if (*p == '"') { break; } \
+      if (*p == '\\') { \
+        escaped = true; \
+        p++; \
+      } else if (simdjson_unlikely(*p < 0x20)) { \
+        return TAPE_ERROR; \
+      } else if (*p >= 0x80) { \
+        non_ascii = true; \
+      } \
+    } \
+    std::string_view text(reinterpret_cast<const char *>(start), size_t(p - start)); \
+    p++; \
+    if (escaped) { \
+      uint8_t *const unescaped_end = implementation->parse_string(start, dst, false); \
+      if (unescaped_end == nullptr) { return TAPE_ERROR; } \
+      text = std::string_view(reinterpret_cast<const char *>(dst), size_t(unescaped_end - dst)); \
+      dst = unescaped_end; \
+    } \
+    SIMDJSON_ONE_PASS_CALL(visitor.METHOD(text)); \
+  } while (0)
+
+  goto container_start;
+
+value:
+  switch (*p) {
+    case '{': case '[':
+      c = *p;
+      goto container_start;
+    case '"':
+      SIMDJSON_ONE_PASS_STRING(on_string);
+      goto value_end;
+    case 't':
+      if (!atomparsing::is_valid_true_atom(p)) { return TAPE_ERROR; }
+      SIMDJSON_ONE_PASS_CALL(visitor.on_bool(true));
+      p += 4;
+      goto value_end;
+    case 'f':
+      if (!atomparsing::is_valid_false_atom(p)) { return TAPE_ERROR; }
+      SIMDJSON_ONE_PASS_CALL(visitor.on_bool(false));
+      p += 5;
+      goto value_end;
+    case 'n':
+      if (!atomparsing::is_valid_null_atom(p)) { return TAPE_ERROR; }
+      SIMDJSON_ONE_PASS_CALL(visitor.on_null());
+      p += 4;
+      goto value_end;
+    default: {
+      number value;
+      if (numberparsing::parse_number(p, value) != SUCCESS) { return TAPE_ERROR; }
+      SIMDJSON_ONE_PASS_CALL(json_iterator::visit_number(value, reinterpret_cast<const char *>(p), visitor));
+      while (jsoncharutils::is_not_structural_or_whitespace(*p)) { p++; }
+      goto value_end;
+    }
+  }
+
+container_start:
+  p++;
+  SIMDJSON_ONE_PASS_WHITESPACE();
+  // As in DOM, an empty container does not count toward the maximal depth.
+  if (*p == c + 2) {
+    p++;
+    if (c == '[') {
+      SIMDJSON_ONE_PASS_CALL(visitor.on_array_start());
+      SIMDJSON_ONE_PASS_CALL(visitor.on_array_end(0));
+    } else {
+      SIMDJSON_ONE_PASS_CALL(visitor.on_object_start());
+      SIMDJSON_ONE_PASS_CALL(visitor.on_object_end(0));
+    }
+    if (depth == 0) { goto document_end; }
+    if (p == end) { return TAPE_ERROR; }
+    goto value_end;
+  }
+  if (++depth >= max_depth()) { return TAPE_ERROR; }
+  stack[depth] = 1;
+  if (c == '[') {
+    stack[depth] |= ARRAY_BIT;
+    SIMDJSON_ONE_PASS_CALL(visitor.on_array_start());
+    goto value;
+  }
+  SIMDJSON_ONE_PASS_CALL(visitor.on_object_start());
+
+key:
+  if (*p != '"') { return TAPE_ERROR; }
+  SIMDJSON_ONE_PASS_STRING(on_key);
+  SIMDJSON_ONE_PASS_WHITESPACE();
+  if (*p != ':') { return TAPE_ERROR; }
+  p++;
+  SIMDJSON_ONE_PASS_WHITESPACE();
+  goto value;
+
+value_end:
+  SIMDJSON_ONE_PASS_WHITESPACE();
+  c = *p++;
+  if (c == ',') {
+    stack[depth]++;
+    SIMDJSON_ONE_PASS_WHITESPACE();
+    if (stack[depth] & ARRAY_BIT) { goto value; }
+    goto key;
+  }
+  if (stack[depth] & ARRAY_BIT) {
+    if (c != ']') { return TAPE_ERROR; }
+    SIMDJSON_ONE_PASS_CALL(visitor.on_array_end(stack[depth] & ~ARRAY_BIT));
+  } else {
+    if (c != '}') { return TAPE_ERROR; }
+    SIMDJSON_ONE_PASS_CALL(visitor.on_object_end(stack[depth]));
+  }
+  if (--depth > 0) {
+    if (p == end) { return TAPE_ERROR; }
+    goto value_end;
+  }
+
+document_end:
+#undef SIMDJSON_ONE_PASS_CALL
+#undef SIMDJSON_ONE_PASS_WHITESPACE
+#undef SIMDJSON_ONE_PASS_STRING
+  if (p != end) { return TAPE_ERROR; }
+  if (non_ascii && !simdjson::validate_utf8(reinterpret_cast<const char *>(buf), len)) { return TAPE_ERROR; }
+  return SUCCESS;
+}
+
 inline simdjson_result<document_stream> parser::iterate_many(const uint8_t *buf, size_t len, size_t batch_size) noexcept {
   if(batch_size < MINIMAL_BATCH_SIZE) { batch_size = MINIMAL_BATCH_SIZE; }
   if((len >= 3) && (std::memcmp(buf, "\xEF\xBB\xBF", 3) == 0)) {

@@ -3453,6 +3453,23 @@ The walk creates no values, arrays or objects. On documents of a few hundred byt
 building your own tree with `visit()` costs about as much as parsing the document with the DOM
 front-end, which builds its own tree.
 
+If you do not need the document afterward, you may call `visit()` on the parser instead, with
+the JSON text. It does what `iterate()` followed by `visit()` does, with the same values and, when the visitor
+returns `SUCCESS`, the same error code:
+
+```cpp
+  ondemand::parser parser;
+  counting_visitor visitor;
+  auto error = parser.visit(R"({"name":"simdjson","stars":3})"_padded, visitor);
+```
+
+It is faster on small documents, as many rows of a database are. A document of at most
+`ondemand::parser::MAX_ONE_PASS_VISIT` (32) bytes whose root is an object or an array is read in
+a single pass, without the index of structural characters that `iterate()` builds. Some checks,
+such as the UTF-8 validation, then come at the end of the walk. On an invalid document, the
+visitor may have seen part or all of it before `visit()` returns the error, and an error returned by the
+visitor may come before an error in the document. The input must be padded, as with `iterate()`.
+
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
