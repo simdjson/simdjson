@@ -390,7 +390,9 @@ container_start:
   // As in DOM, an empty container does not count toward the maximal depth. Its bit may then
   // be at max_depth, which the stack has room for.
   if (++depth >= max_depth && (pos == end || json[*pos] != c + 2)) { return DEPTH_ERROR; }
-  if (depth == sizeof(fixed_stack) * 8) {
+  // The bits move once: the next time this depth is reached, the heap holds the current
+  // bits and the fixed stack holds stale ones.
+  if (depth == sizeof(fixed_stack) * 8 && !heap_stack) {
     heap_stack.reset(new (std::nothrow) uint64_t[max_depth / 64 + 1]());
     if (!heap_stack) { return MEMALLOC; }
     std::memcpy(heap_stack.get(), fixed_stack, sizeof(fixed_stack));
