@@ -98,7 +98,7 @@ simdjson_warn_unused simdjson_inline error_code document::visit_root(V &visitor)
   error_code error;
   switch (*first) {
     case '{': case '[':
-      return iter.visit_container(visitor);
+      return iter.visit_container(visitor, iter.position(), 0);
     case '"': {
       raw_json_string text;
       error = get_root_value_iterator().get_root_raw_json_string(check_trailing).get(text);

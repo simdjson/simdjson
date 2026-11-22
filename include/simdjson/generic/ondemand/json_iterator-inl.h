@@ -540,9 +540,9 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::visit_scalar(cons
 }
 
 template <typename V>
-simdjson_warn_unused error_code json_iterator::visit_container(V &visitor) {
+simdjson_warn_unused error_code json_iterator::visit_container(V &visitor, token_position start, size_t parent_depth) {
   const uint8_t *const json = token.buf;
-  token_position pos = token.position();
+  token_position pos = start;
   const token_position end = end_position();
   const size_t max_depth = parser->max_depth();
   // For each open container, the number of its elements so far, with the top bit set for an
@@ -552,7 +552,7 @@ simdjson_warn_unused error_code json_iterator::visit_container(V &visitor) {
   uint32_t fixed_stack[FIXED_DEPTH];
   std::unique_ptr<uint32_t[]> heap_stack;
   uint32_t *stack = fixed_stack;
-  size_t depth = 0;
+  size_t depth = parent_depth;
   uint32_t index;
   uint8_t c;
 
@@ -604,17 +604,19 @@ container_start:
       SIMDJSON_TRY(visitor.on_object_start());
       SIMDJSON_TRY(visitor.on_object_end(0));
     }
-    if (depth == 0) { goto document_end; }
+    if (depth == parent_depth) { goto document_end; }
     goto value_end;
   }
   if (++depth >= max_depth) { return DEPTH_ERROR; }
   // Copy the fixed stack once. A later container at this depth must keep the
   // counts already stored on the heap.
-  if (depth == FIXED_DEPTH && !heap_stack) {
+  if (depth >= FIXED_DEPTH && !heap_stack) {
     heap_stack.reset(new (std::nothrow) uint32_t[max_depth]);
     if (!heap_stack) { return MEMALLOC; }
-    // The root is at depth 1: slot 0 is not used.
-    std::memcpy(heap_stack.get() + 1, fixed_stack + 1, sizeof(fixed_stack) - sizeof(fixed_stack[0]));
+    // Only the slots past the parent were written.
+    if (parent_depth + 1 < FIXED_DEPTH) {
+      std::memcpy(heap_stack.get() + parent_depth + 1, fixed_stack + parent_depth + 1, (FIXED_DEPTH - parent_depth - 1) * sizeof(fixed_stack[0]));
+    }
     stack = heap_stack.get();
   }
   stack[depth] = 1;
@@ -651,11 +653,11 @@ value_end:
     if (c != '}') { return TAPE_ERROR; }
     SIMDJSON_TRY(visitor.on_object_end(stack[depth]));
   }
-  if (--depth > 0) { goto value_end; }
+  if (--depth > parent_depth) { goto value_end; }
 
 document_end:
 #undef SIMDJSON_VISIT_NEXT
-  if (!streaming() && pos != end) { return TRAILING_CONTENT; }
+  if (parent_depth == 0 && !streaming() && pos != end) { return TRAILING_CONTENT; }
   return SUCCESS;
 }
 

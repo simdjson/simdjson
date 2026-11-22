@@ -3470,6 +3470,24 @@ such as the UTF-8 validation, then come at the end of the walk. On an invalid do
 visitor may have seen part or all of it before `visit()` returns the error, and an error returned by the
 visitor may come before an error in the document. The input must be padded, as with `iterate()`.
 
+You may also visit a single value after navigating to it with `visit()` on the value:
+
+```cpp
+  auto json = R"({"payload":{"stars":[1,2,3]},"id":7})"_padded;
+  ondemand::document doc;
+  counting_visitor visitor;
+  uint64_t id;
+  auto error = parser.iterate(json).get(doc);
+  if (!error) { error = doc["payload"].visit(visitor); }
+  if (!error) { error = doc["id"].get(id); }
+```
+
+The visitor gets the value and everything in it, with the same methods as above. A string with
+escapes is valid until you read the document further or visit again. Only that value is checked,
+and the maximal depth counts from the root of the document. The value must not have been read
+(otherwise `visit()` returns `OUT_OF_ORDER_ITERATION`). The walk does not move the iterator: to go
+on, read the value or the next field or element as usual.
+
 
 Newline-Delimited JSON (ndjson) and JSON lines
 ----------------------------------------------
