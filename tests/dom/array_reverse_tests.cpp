@@ -208,10 +208,101 @@ bool result_wrappers() {
   TEST_SUCCEED();
 }
 
+bool element_wrappers() {
+  TEST_START();
+#if SIMDJSON_EXCEPTIONS
+  dom::parser parser;
+  const auto json = "[1,2,3]"_padded;
+
+  {
+    auto result = parser.parse(json);
+    int64_t expected = 3;
+    for (auto it = result.rbegin(); it != result.rend(); ++it) {
+      int64_t value;
+      ASSERT_SUCCESS((*it).get_int64().get(value));
+      ASSERT_EQUAL(value, expected--);
+    }
+    ASSERT_EQUAL(expected, 0);
+  }
+
+  {
+    dom::element elem = parser.parse(json).value();
+    int64_t expected = 3;
+    for (auto it = elem.rbegin(); it != elem.rend(); ++it) {
+      int64_t value;
+      ASSERT_SUCCESS((*it).get_int64().get(value));
+      ASSERT_EQUAL(value, expected--);
+    }
+    ASSERT_EQUAL(expected, 0);
+  }
+
+  {
+    const auto obj_json = R"({"items":[10,20,30]})"_padded;
+    auto result = parser.parse(obj_json);
+    int64_t expected = 30;
+    for (auto it = result["items"].rbegin();
+         it != result["items"].rend(); ++it) {
+      int64_t value;
+      ASSERT_SUCCESS((*it).get_int64().get(value));
+      ASSERT_EQUAL(value, expected);
+      expected -= 10;
+    }
+    ASSERT_EQUAL(expected, 0);
+  }
+
+  {
+    const simdjson_result<dom::element> failed(NO_SUCH_FIELD);
+    bool begin_threw = false, end_threw = false;
+    try { (void)failed.rbegin(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), NO_SUCH_FIELD);
+      begin_threw = true;
+    }
+    try { (void)failed.rend(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), NO_SUCH_FIELD);
+      end_threw = true;
+    }
+    ASSERT_TRUE(begin_threw && end_threw);
+  }
+
+  {
+    const auto int_json = "42"_padded;
+    dom::element elem = parser.parse(int_json).value();
+    bool begin_threw = false, end_threw = false;
+    try { (void)elem.rbegin(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), INCORRECT_TYPE);
+      begin_threw = true;
+    }
+    try { (void)elem.rend(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), INCORRECT_TYPE);
+      end_threw = true;
+    }
+    ASSERT_TRUE(begin_threw && end_threw);
+
+    begin_threw = false; end_threw = false;
+    try { (void)parser.parse(int_json).rbegin(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), INCORRECT_TYPE);
+      begin_threw = true;
+    }
+    try { (void)parser.parse(int_json).rend(); }
+    catch (const simdjson_error &error) {
+      ASSERT_EQUAL(error.error(), INCORRECT_TYPE);
+      end_threw = true;
+    }
+    ASSERT_TRUE(begin_threw && end_threw);
+  }
+#endif
+  TEST_SUCCEED();
+}
+
 bool run() {
   const dom::array::reverse_iterator empty1, empty2;
   ASSERT_TRUE(empty1 == empty2);
-  return mixed_values() && ambiguous_numbers() && randomized_values() && result_wrappers();
+  return mixed_values() && ambiguous_numbers() && randomized_values() && result_wrappers() && element_wrappers();
 }
 
 } // namespace array_reverse_tests

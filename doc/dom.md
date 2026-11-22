@@ -325,9 +325,15 @@ case. Increments are amortized O(1) over a complete traversal, including arrays
 with nested values. The existing forward iterator remains unchanged; this API
 does not make the array bidirectional or enable `std::views::reverse(array)`.
 
-With exceptions enabled, `simdjson_result<dom::array>` also exposes `rbegin()`
-and `rend()` and throws its stored error if the result is unsuccessful. With
-exceptions disabled, obtain a `dom::array` with `.get(array)` as above.
+With exceptions enabled, `simdjson_result<dom::array>`, `dom::element`, and
+`simdjson_result<dom::element>` also expose `rbegin()` and `rend()`:
+* Calling `rbegin()` or `rend()` on a `simdjson_result` throws its stored error
+  if the result is unsuccessful.
+* Calling `rbegin()` or `rend()` on a `dom::element` (or successful
+  `simdjson_result<dom::element>`) throws `simdjson_error(INCORRECT_TYPE)` if
+  the element is not an array.
+
+With exceptions disabled, obtain a `dom::array` with `.get(array)` as above.
 
 C++17 Support
 -------------
