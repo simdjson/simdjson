@@ -10,7 +10,6 @@
 // Not part of the public API.
 
 #include "simdjson/base.h"
-#include "simdjson/concepts.h"
 #include "simdjson/builtin.h"
 #include "simdjson/error.h"
 #include "simdjson/implementation.h"
@@ -20,8 +19,15 @@
 #include <cstdint>
 #include <cstring>
 #include <concepts>
+#include <deque>
 #include <limits>
+#include <list>
 #include <string>
+#include <type_traits>
+#include <vector>
+#ifdef __cpp_lib_inplace_vector
+#include <inplace_vector>
+#endif
 
 namespace simdjson {
 namespace internal {
@@ -363,68 +369,58 @@ simdjson_inline error_code parse_string_token(const uint8_t *&p, const uint8_t *
   return parse_escaped_string_body(p, start, stop, end, out);
 }
 
-// Any container the ondemand array parsers below can fill, such as
-// std::vector, std::deque, std::list or a small_vector.
+// The standard sequence containers that the array parsers below fill. Other
+// types, including types derived from these, may have their own deserializer
+// and go through On Demand.
+template <typename V> struct is_direct_sequence : std::false_type {};
+template <typename E, typename A> struct is_direct_sequence<std::vector<E, A>> : std::true_type {};
+template <typename E, typename A> struct is_direct_sequence<std::deque<E, A>> : std::true_type {};
+template <typename E, typename A> struct is_direct_sequence<std::list<E, A>> : std::true_type {};
+#ifdef __cpp_lib_inplace_vector
+template <typename E, size_t N> struct is_direct_sequence<std::inplace_vector<E, N>> : std::true_type {};
+#endif
+
 template <typename V, typename E>
 concept appendable_container_of =
-    concepts::appendable_containers<V> &&
-    std::same_as<typename V::value_type, E> &&
-    concepts::clearable_containers<V>;
+    is_direct_sequence<V>::value && std::same_as<typename V::value_type, E>;
+
+template <typename V> struct is_std_vector : std::false_type {};
+template <typename E, typename A> struct is_std_vector<std::vector<E, A>> : std::true_type {};
 
 // Appends the JSON string token at p to out. A plain ASCII string is
 // constructed in place.
 template <typename V>
 simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, V &out) {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
-
   const uint8_t *start = p + 1;
   const uint8_t *stop = find_string_stop<true>(start, end);
   if (simdjson_likely(stop < end && *stop == '"')) {
-    // concepts::appendable_container_of only checks single argument functions.
-    // therefore this uses a separate check and falls back to instantiating a
-    // std::string in place if necessary.
-    if constexpr (requires(V &v, const char *s, size_t n) { v.emplace_back(s, n); }) {
-      out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
-    } else {
-      concepts::emplace_one(out, std::string(reinterpret_cast<const char *>(start), size_t(stop - start)));
-    }
+    out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
     p = stop + 1;
     return SUCCESS;
   }
-
-  std::string unescaped;
-  const error_code err = parse_escaped_string_body(p, start, stop, end, unescaped);
-  if (simdjson_likely(err == SUCCESS)) {
-    concepts::emplace_one(out, std::move(unescaped));
-  }
-  return err;
+  out.emplace_back();
+  return parse_escaped_string_body(p, start, stop, end, out.back());
 }
 
 // Containers are sized from the first element, which can underestimate the
 // width of the others by a lot (["", "<long string>"]). The reservation is
 // capped at four times the input size and trimmed when it is mostly unused.
+// Only std::vector reserves: std::inplace_vector::reserve throws beyond its
+// capacity, and std::deque and std::list have no reserve.
 template <typename V>
 simdjson_inline void reserve_from_first(V &out, size_t rest, size_t stride) {
-  const size_t estimate = rest / stride + 2;
-  const size_t limit = 4 * rest / sizeof(typename V::value_type) + 2;
-  if constexpr (concepts::reservable_containers<V>) {
-    size_t count = estimate < limit ? estimate : limit;
-    // std::inplace_vector::reserve throws when asked for more than its capacity.
-    if constexpr (requires { out.max_size(); }) {
-      if (count > out.max_size()) {
-        count = out.max_size();
-      }
-    }
-    out.reserve(count);
+  if constexpr (is_std_vector<V>::value) {
+    const size_t estimate = rest / stride + 2;
+    const size_t limit = 4 * rest / sizeof(typename V::value_type) + 2;
+    out.reserve(estimate < limit ? estimate : limit);
   }
 }
 
 template <typename V>
 simdjson_inline void trim_reservation(V &out) {
-  if constexpr (concepts::shrinkable_containers<V>) {
-    if (out.capacity() / 2 > out.size() + 16) {
-      out.shrink_to_fit();
-    }
+  if constexpr (is_std_vector<V>::value) {
+    if (out.capacity() / 2 > out.size() + 16) { out.shrink_to_fit(); }
   }
 }
 
@@ -461,7 +457,7 @@ simdjson_inline error_code parse_document(const uint8_t *buf, size_t len, V &out
     std::string first;
     if (parse_string_token(p, end, first) != SUCCESS) { return UNINITIALIZED; }
     reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1); // string plus comma
-    concepts::emplace_one(out, std::move(first));
+    out.push_back(std::move(first));
   }
   for (;;) {
     if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
@@ -569,7 +565,7 @@ simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len,
       reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1);
       reserved = true;
     }
-    concepts::emplace_one(out, std::move(v));
+    out.push_back(v);
     if (*p != ',') {
       if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
       if (*p == ']') {

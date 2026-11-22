@@ -809,6 +809,56 @@ bool test_direct_from_reservation() {
   TEST_SUCCEED();
 }
 
+// Types derived from std containers, with their own deserializers.
+struct upper_strings : std::vector<std::string> {
+  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, upper_strings &out) {
+    simdjson::ondemand::array array;
+    SIMDJSON_TRY(val.get_array().get(array));
+    for (auto element : array) {
+      std::string_view s;
+      SIMDJSON_TRY(element.get_string().get(s));
+      std::string upper(s);
+      for (char &c : upper) { if (c >= 'a' && c <= 'z') { c = char(c - 'a' + 'A'); } }
+      out.push_back(std::move(upper));
+    }
+    return simdjson::SUCCESS;
+  }
+};
+
+struct scaled_doubles : std::deque<double> {
+  friend simdjson::error_code tag_invoke(simdjson::deserialize_tag, auto &val, scaled_doubles &out) {
+    simdjson::ondemand::array array;
+    SIMDJSON_TRY(val.get_array().get(array));
+    for (auto element : array) {
+      double d;
+      SIMDJSON_TRY(element.get_double().get(d));
+      out.push_back(d * 100);
+    }
+    return simdjson::SUCCESS;
+  }
+};
+
+bool test_direct_from_custom_container() {
+  TEST_START();
+  // from() must use the deserializer of a user type, as doc.get<T>() does,
+  // even when the type is derived from a container that from() fills directly.
+  static_assert(!simdjson::internal::direct::appendable_container_of<upper_strings, std::string>);
+  static_assert(!simdjson::internal::direct::appendable_container_of<scaled_doubles, double>);
+  simdjson::padded_string strings(std::string(R"(["abc","def"])"));
+  upper_strings u;
+  ASSERT_SUCCESS(simdjson::from(strings).get(u));
+  ASSERT_EQUAL(u.size(), 2);
+  ASSERT_EQUAL(u[0], "ABC");
+  ASSERT_EQUAL(u[1], "DEF");
+  simdjson::padded_string numbers(std::string("[1.5,2]"));
+  scaled_doubles s;
+  ASSERT_SUCCESS(simdjson::from(numbers).get(s));
+  ASSERT_EQUAL(s.size(), 2);
+  ASSERT_EQUAL(s[0], 150.0);
+  ASSERT_EQUAL(s[1], 200.0);
+  TEST_SUCCEED();
+}
+
 bool test_to_vs_from_equivalence() {
   TEST_START();
   // Test 3: Verify that simdjson::to<> and simdjson::from behave equivalently
@@ -844,7 +894,7 @@ bool run() {
       to_bad_array() &&
       test_to_adaptor_with_single_value() && test_to_vs_from_equivalence() &&
       test_direct_from_atoms() && test_direct_from_string_scan() && test_direct_from_double_array() &&
-      test_direct_from_reservation() &&
+      test_direct_from_reservation() && test_direct_from_custom_container() &&
       example_with_parser() &&
 #if SIMDJSON_SUPPORTS_RANGES_FROM
       test_basic_adaptor_with_parser() && test_no_errors() && test_basic_adaptor()
