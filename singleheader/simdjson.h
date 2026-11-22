@@ -1,4 +1,4 @@
-/* auto-generated on 2026-11-22 13:30:39 -0500. version 5.2.0 Do not edit! */
+/* auto-generated on 2026-11-22 13:48:22 -0500. version 5.2.0 Do not edit! */
 /* including simdjson.h:  */
 /* begin file simdjson.h */
 #ifndef SIMDJSON_H

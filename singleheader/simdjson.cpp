@@ -1,4 +1,4 @@
-/* auto-generated on 2026-11-22 13:30:39 -0500. version 5.2.0 Do not edit! */
+/* auto-generated on 2026-11-22 13:48:22 -0500. version 5.2.0 Do not edit! */
 /* including simdjson.cpp:  */
 /* begin file simdjson.cpp */
 #define SIMDJSON_SRC_SIMDJSON_CPP
@@ -20176,13 +20176,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -20191,41 +20188,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -20246,7 +20232,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -20259,16 +20244,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -22146,21 +22131,20 @@ namespace simdjson { namespace arm64 { namespace { namespace stage1 {
 simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
   if (bits == 0) { return; }
 
-  uint32_t *dst = this->tail;
   const int cnt = static_cast<int>(count_ones(bits));
 #if SIMDJSON_PREFER_REVERSE_BITS
   bits = reverse_bits(bits);
 #endif
-  write_indexes<0, 4>(dst, idx, bits);
+  write_indexes<0, 4>(idx, bits);
   if (simdjson_unlikely(4 < cnt)) {
-    write_indexes_stepped<4, 24, 2>(dst, idx, bits, cnt);
+    write_indexes_stepped<4, 24, 2>(idx, bits, cnt);
   }
   if (simdjson_unlikely(24 < cnt)) {
     for (int i = 24; i < cnt; ++i) {
-      write_index(dst, idx, bits, i);
+      write_index(idx, bits, i);
     }
   }
-  this->tail = dst + cnt;
+  this->tail += cnt;
 }
 
 }}}} // namespace simdjson::arm64::(anonymous)::stage1
@@ -27795,13 +27779,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -27810,41 +27791,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -27865,7 +27835,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -27878,16 +27847,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -35354,13 +35323,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -35369,41 +35335,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -35424,7 +35379,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -35437,16 +35391,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -43196,13 +43150,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -43211,41 +43162,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -43266,7 +43206,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -43279,16 +43218,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -51640,13 +51579,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -51655,41 +51591,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -51710,7 +51635,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -51723,16 +51647,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -59099,13 +59023,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -59114,41 +59035,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -59169,7 +59079,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -59182,16 +59091,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -66454,13 +66363,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -66469,41 +66375,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -66524,7 +66419,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -66537,16 +66431,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -74281,13 +74175,10 @@ public:
     * it tends to minimize the total number of instructions which is
     * beneficial.
     */
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& rev_bits, int i) {
-    int lz = leading_zeroes(rev_bits);
-    dst[i] = static_cast<uint32_t>(idx) + lz;
-    rev_bits = zero_leading_bit(rev_bits, lz);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& rev_bits, int i) {
-    write_index(this->tail, idx, rev_bits, i);
+    int lz = leading_zeroes(rev_bits);
+    this->tail[i] = static_cast<uint32_t>(idx) + lz;
+    rev_bits = zero_leading_bit(rev_bits, lz);
   }
 #else
   /**
@@ -74296,41 +74187,30 @@ public:
     * algorithm can be competitive.
     */
 
-  simdjson_inline void write_index(uint32_t *dst, uint32_t idx, uint64_t& bits, int i) {
-    dst[i] = idx + trailing_zeroes(bits);
-    bits = clear_lowest_bit(bits);
-  }
   simdjson_inline void write_index(uint32_t idx, uint64_t& bits, int i) {
-    write_index(this->tail, idx, bits, i);
+    this->tail[i] = idx + trailing_zeroes(bits);
+    bits = clear_lowest_bit(bits);
   }
 #endif // SIMDJSON_PREFER_REVERSE_BITS
 
   template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t *dst, uint32_t idx, uint64_t& bits) {
-    write_index(dst, idx, bits, START);
+  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
+    write_index(idx, bits, START);
     SIMDJSON_IF_CONSTEXPR (N > 1) {
-      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(dst, idx, bits);
+      write_indexes<(N-1>0?START+1:START), (N-1>=0?N-1:1)>(idx, bits);
     }
     return START+N;
   }
-  template <int START, int N>
-  simdjson_inline int write_indexes(uint32_t idx, uint64_t& bits) {
-    return write_indexes<START, N>(this->tail, idx, bits);
-  }
 
   template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t *dst, uint32_t idx, uint64_t& bits, int cnt) {
-    write_indexes<START, STEP>(dst, idx, bits);
+  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
+    write_indexes<START, STEP>(idx, bits);
     SIMDJSON_IF_CONSTEXPR ((START+STEP)  < END) {
       if (simdjson_unlikely((START+STEP) < cnt)) {
-        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(dst, idx, bits, cnt);
+        write_indexes_stepped<(START+STEP<END?START+STEP:END), END, STEP>(idx, bits, cnt);
       }
     }
     return ((END-START) % STEP) == 0 ? END : (END-START) - ((END-START) % STEP) + STEP;
-  }
-  template <int START, int END, int STEP>
-  simdjson_inline int write_indexes_stepped(uint32_t idx, uint64_t& bits, int cnt) {
-    return write_indexes_stepped<START, END, STEP>(this->tail, idx, bits, cnt);
   }
 
   // flatten out values in 'bits' assuming that they are are to have values of idx
@@ -74351,7 +74231,6 @@ public:
     if (bits == 0)
         return;
 
-    uint32_t *dst = this->tail;
     int cnt = static_cast<int>(count_ones(bits));
 
 #if SIMDJSON_PREFER_REVERSE_BITS
@@ -74364,16 +74243,16 @@ public:
 #endif
     static constexpr const int STEP_UNTIL = 24;
 
-    write_indexes_stepped<0, STEP_UNTIL, STEP>(dst, idx, bits, cnt);
+    write_indexes_stepped<0, STEP_UNTIL, STEP>(idx, bits, cnt);
     SIMDJSON_IF_CONSTEXPR (STEP_UNTIL < 64) {
       if (simdjson_unlikely(STEP_UNTIL < cnt)) {
         for (int i=STEP_UNTIL; i<cnt; i++) {
-          write_index(dst, idx, bits, i);
+          write_index(idx, bits, i);
         }
       }
     }
 
-    this->tail = dst + cnt;
+    this->tail += cnt;
   }
 #endif // SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
