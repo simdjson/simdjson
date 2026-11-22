@@ -902,11 +902,104 @@ namespace misc_tests {
     TEST_SUCCEED();
   }
 
+  bool allow_inf_and_nan_other_atoms() {
+    TEST_START();
+    ondemand::parser parser;
+    parser.allow_inf_and_nan = true;
+    const struct {
+      const char *text;
+      ondemand::json_type type;
+    } cases[] = {
+      {"NAN", ondemand::json_type::number},
+      {"Infinity", ondemand::json_type::number},
+      {"INFINITY", ondemand::json_type::number},
+      {"na", ondemand::json_type::null},
+      {"nancy", ondemand::json_type::null},
+      {"nanx", ondemand::json_type::null},
+      {"N", ondemand::json_type::unknown},
+      {"Nope", ondemand::json_type::unknown},
+      {"I", ondemand::json_type::unknown},
+      {"in", ondemand::json_type::unknown},
+      {"infox", ondemand::json_type::unknown},
+      {"infinit", ondemand::json_type::unknown},
+      {"infinityx", ondemand::json_type::unknown},
+    };
+    for (const auto &c : cases) {
+      std::cout << "  " << c.text << std::endl;
+      for (const std::string &text : {std::string(c.text), "[" + std::string(c.text) + "]", "[" + std::string(c.text) + " ]"}) {
+        const padded_string json{text};
+        ondemand::document doc;
+        ASSERT_SUCCESS(parser.iterate(json).get(doc));
+        ondemand::json_type type;
+        if (text[0] == '[') {
+          ondemand::value value;
+          ASSERT_SUCCESS(doc.at(0).get(value));
+          ASSERT_SUCCESS(value.type().get(type));
+        } else {
+          ASSERT_SUCCESS(doc.type().get(type));
+        }
+        ASSERT_EQUAL(type, c.type);
+      }
+    }
+    // The padding of a reused buffer may hold anything: it is not part of the atom.
+    std::string buffer(1 + SIMDJSON_PADDING, 'a');
+    buffer[0] = 'n';
+    ondemand::document doc;
+    ASSERT_SUCCESS(parser.iterate(buffer.data(), 1, buffer.size()).get(doc));
+    ondemand::json_type type;
+    ASSERT_SUCCESS(doc.type().get(type));
+    ASSERT_EQUAL(type, ondemand::json_type::null);
+    TEST_SUCCEED();
+  }
+
+  bool lenient_options_iterate_many() {
+    TEST_START();
+    std::string text;
+    for (size_t i = 0; i < 1000; i++) {
+      text += "[1,2,NaN,] ";
+    }
+    const padded_string json{text};
+    ondemand::parser parser;
+    parser.allow_trailing_commas = true;
+    parser.allow_inf_and_nan = true;
+    for (bool threaded : {false, true}) {
+#ifdef SIMDJSON_THREADS_ENABLED
+      parser.threaded = threaded;
+#else
+      (void)threaded;
+#endif
+      ondemand::document_stream stream;
+      ASSERT_SUCCESS(parser.iterate_many(json, 64).get(stream));
+      size_t documents = 0;
+      for (auto doc : stream) {
+        ondemand::array array;
+        ASSERT_SUCCESS(doc.get_array().get(array));
+        size_t count = 0;
+        for (auto element : array) {
+          ondemand::value value;
+          ASSERT_SUCCESS(element.get(value));
+          ondemand::json_type type;
+          ASSERT_SUCCESS(value.type().get(type));
+          ASSERT_EQUAL(type, ondemand::json_type::number);
+          count++;
+        }
+        ASSERT_EQUAL(count, 3);
+        documents++;
+      }
+      ASSERT_EQUAL(documents, 1000);
+      ASSERT_TRUE(parser.allow_trailing_commas);
+      ASSERT_TRUE(parser.allow_inf_and_nan);
+    }
+    TEST_SUCCEED();
+  }
+
   bool run() {
     return
            issue2355() &&
            allow_trailing_commas() &&
            allow_inf_and_nan() &&
+           allow_inf_and_nan_other_atoms() &&
+           lenient_options_iterate_many() &&
            issue2354() &&
            issue2322() &&
            issue2312() &&

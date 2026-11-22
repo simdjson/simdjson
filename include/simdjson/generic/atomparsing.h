@@ -94,7 +94,6 @@ simdjson_inline bool is_valid_null_atom(const uint8_t *src, size_t len) {
   else { return false; }
 }
 
-#if SIMDJSON_ENABLE_NAN_INF
 // "nan" is 3 bytes; we check characters and then verify the next
 // character is structural or whitespace. We accept both "nan" and "NaN".
 simdjson_warn_unused
@@ -157,7 +156,6 @@ simdjson_inline bool is_valid_inf_atom(const uint8_t *src, size_t len) {
   if (len == 3) { return str3ncmp_case_insensitive(src, "inf") == 0; }
   return false;
 }
-#endif // SIMDJSON_ENABLE_NAN_INF
 
 } // namespace atomparsing
 } // unnamed namespace

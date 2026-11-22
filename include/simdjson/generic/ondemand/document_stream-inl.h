@@ -238,6 +238,8 @@ inline void document_stream::start() noexcept {
     // load_from_stage1_thread() swaps *parser with stage1_thread_parser, which
     // then parses every other batch: give it the same settings.
     stage1_thread_parser.set_max_capacity(parser->max_capacity());
+    stage1_thread_parser.allow_trailing_commas = parser->allow_trailing_commas;
+    stage1_thread_parser.allow_inf_and_nan = parser->allow_inf_and_nan;
     error = stage1_thread_parser.allocate(batch_size, parser->max_depth());
     if (error) { return; }
     worker->start_thread();

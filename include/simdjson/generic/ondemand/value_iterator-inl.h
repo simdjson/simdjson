@@ -1248,7 +1248,7 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '"':
       return json_type::string;
     case 'n':
-      if (_json_iter->parser->allow_inf_and_nan && (json[1] | 0x20) == 'a') {
+      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_nan_atom(json, peek_start_length())) {
         return json_type::number;
       }
       return json_type::null;
@@ -1258,8 +1258,13 @@ simdjson_inline simdjson_result<json_type> value_iterator::type() const noexcept
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
       return json_type::number;
-    case 'N': case 'I': case 'i':
-      if (_json_iter->parser->allow_inf_and_nan) {
+    case 'N':
+      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_nan_atom(json, peek_start_length())) {
+        return json_type::number;
+      }
+      return json_type::unknown;
+    case 'I': case 'i':
+      if (_json_iter->parser->allow_inf_and_nan && atomparsing::is_valid_inf_atom(json, peek_start_length())) {
         return json_type::number;
       }
       return json_type::unknown;
