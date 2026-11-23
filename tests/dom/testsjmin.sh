@@ -52,6 +52,8 @@ expect_status 2 $SJMIN --no-such-option
 expect_status 2 $SJMIN $JSONCHECKER/pass01.json $JSONCHECKER/pass02.json
 expect_status 0 $SJMIN --help
 expect_status 0 $SJMIN --version
+expect_status 0 $SJMIN -V
+expect_status 2 $SJMIN -v
 
 echo "test successful"
 exit 0
