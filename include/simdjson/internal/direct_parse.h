@@ -410,12 +410,12 @@ simdjson_inline bool is_full(const V &out) noexcept {
 }
 
 // Inserts as On Demand does: at the back of a sequence, with emplace into a set.
-template <typename V, typename T>
-simdjson_inline void append_one(V &out, T &&value) {
+template <typename V, typename... Args>
+simdjson_inline void append_one(V &out, Args &&...args) {
   if constexpr (is_direct_set<V>::value) {
-    out.emplace(std::forward<T>(value));
+    out.emplace(std::forward<Args>(args)...);
   } else {
-    out.push_back(std::forward<T>(value));
+    out.emplace_back(std::forward<Args>(args)...);
   }
 }
 
@@ -430,18 +430,14 @@ simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t 
   const uint8_t *start = p + 1;
   const uint8_t *stop = find_string_stop<true>(start, end);
   if (simdjson_likely(stop < end && *stop == '"')) {
-    if constexpr (is_direct_set<V>::value) {
-      out.emplace(reinterpret_cast<const char *>(start), size_t(stop - start));
-    } else {
-      out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
-    }
+    append_one(out, reinterpret_cast<const char *>(start), size_t(stop - start));
     p = stop + 1;
     return SUCCESS;
   }
   if constexpr (is_direct_set<V>::value) {
     std::string value;
     error_code err = parse_escaped_string_body(p, start, stop, end, value);
-    if (err == SUCCESS) { out.emplace(std::move(value)); }
+    if (simdjson_likely(err == SUCCESS)) { append_one(out, std::move(value)); }
     return err;
   } else {
     out.emplace_back();
