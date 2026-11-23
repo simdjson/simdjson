@@ -505,6 +505,11 @@ elseif(SIMDJSON_DEVELOPER_MODE AND NOT is_top_project)
   message(AUTHOR_WARNING "Developer mode in simdjson is intended for the developers of simdjson")
 endif()
 
+option(SIMDJSON_BUILD_TOOLS "Build and install the sjmin command-line tool" OFF)
+if(SIMDJSON_BUILD_TOOLS AND NOT SIMDJSON_DEVELOPER_MODE)
+  add_subdirectory(tools)
+endif()
+
 if(NOT SIMDJSON_DEVELOPER_MODE)
   return()
 endif()
@@ -536,8 +541,8 @@ add_custom_target(all_tests)
 
 add_subdirectory(windows)
 include(cmake/CPM.cmake)
-add_subdirectory(dependencies) ## This needs to be before tools because of cxxopts
-add_subdirectory(tools)  ## This needs to be before tests because of cxxopts
+add_subdirectory(dependencies)
+add_subdirectory(tools) ## This needs to be before tests because of sjmin
 
 # Data: jsonexamples is left with only the bare essential.
 # most of the data has been moved to https://github.com/simdjson/simdjson-data

@@ -238,11 +238,9 @@ Other important files and directories:
 * **jsonexamples:** A wide spread of useful, real-world JSON files with different characteristics
   and sizes.
 * **test:** The tests are here. basictests.cpp and errortests.cpp are the primary ones.
-* **tools:** Source for executables that can be distributed with simdjson. Some examples:
-  * `json2json mydoc.json` parses the document, constructs a model and then dumps back the result to standard output.
-  * `json2json -d mydoc.json` parses the document, constructs a model and then dumps model (as a tape) to standard output. The tape format is described in the accompanying file `tape.md`.
-  * `minify mydoc.json` minifies the JSON document, outputting the result to standard output. Minifying means to remove the unneeded white space characters.
-  * `jsonpointer mydoc.json <jsonpath> <jsonpath> ... <jsonpath>` parses the document, constructs a model and then processes a series of [JSON Pointer paths](https://tools.ietf.org/html/rfc6901). The result is itself a JSON document.
+* **tools:** Source for the `sjmin` command-line tool, which minifies a JSON document
+  (`sjmin mydoc.json`). Its manual page is `man/sjmin.1`. It is built in developer mode,
+  or with `-D SIMDJSON_BUILD_TOOLS=ON`, which also installs it with its manual page.
 
 
 > **Don't modify the files in singleheader/ directly; these are automatically generated.**

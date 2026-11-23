@@ -1,0 +1,66 @@
+.TH SJMIN 1 "November 2026" "simdjson" "User Commands"
+.SH NAME
+sjmin \- remove insignificant white space from a JSON document
+.SH SYNOPSIS
+.B sjmin
+[\fB\-o\fR \fIout_file\fR] [\fIfile\fR]
+.br
+.B sjmin
+\fB\-h\fR | \fB\-v\fR
+.SH DESCRIPTION
+.B sjmin
+minifies a JSON document with the SIMD routines of the simdjson library:
+it removes the spaces, tabs, line feeds and carriage returns that appear
+outside of strings, and copies everything else unchanged.
+Strings, numbers and the order of keys are left as they are.
+.PP
+.B sjmin
+reads \fIfile\fR, or standard input when \fIfile\fR is absent or is
+\fB\-\fR, and writes the result to standard output. No line feed is
+added after the document.
+.PP
+The input is not parsed and not validated: invalid JSON produces
+invalid output, and the UTF-8 encoding is not checked. The only
+error detected in the content is a string that is not terminated
+before the end of the input.
+.SH OPTIONS
+.TP
+.B \-o, \-\-output \fIout_file\fR
+write the result to \fIout_file\fR instead of standard output;
+\fIout_file\fR may be the input file, which is read completely first
+.TP
+.B \-h, \-\-help
+display a short help and exit
+.TP
+.B \-v, \-\-version
+output version information and exit
+.TP
+.B \-\-
+treat the remaining argument as a file name, even if it starts with \fB\-\fR
+.SH EXIT STATUS
+.TP
+.B 0
+success
+.TP
+.B 1
+the input could not be read, contains an unterminated string, or the
+output could not be written
+.TP
+.B 2
+invalid command line
+.SH EXAMPLES
+.TP
+Minify a file to standard output:
+.B sjmin data.json
+.TP
+Minify standard input into a file:
+.B curl \-s https://example.com/data.json | sjmin \-o data.min.json
+.TP
+Minify a file in place:
+.B sjmin \-o data.json data.json
+.SH SEE ALSO
+.BR jq (1)
+.PP
+https://github.com/simdjson/simdjson
+.SH AUTHOR
+Written by the simdjson development team.
