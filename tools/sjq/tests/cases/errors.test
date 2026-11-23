@@ -35,3 +35,34 @@ null
 .
 {"a": [1 2]}
 
+%%FLAGS -c
+%%EXIT 5
+(1, error("x"), 2) // 3
+null
+1
+
+%%FLAGS -c
+%%EXIT 5
+error("x") // 1
+null
+
+%%FLAGS -c
+%%EXIT 5
+reverse
+"ab"
+
+%%FLAGS -c
+%%EXIT 3
+"\u41"
+null
+
+%%FLAGS -c
+%%EXIT 3
+"\ud800"
+null
+
+%%FLAGS -c
+%%EXIT 3
+.a?//1
+null
+

@@ -77,7 +77,11 @@ value arith(op o, const value &a, const value &b) {
       std::string_view s = get_str(a), sep = get_str(b);
       if (s.empty()) { return value::array({}); }
       if (sep.empty()) {
-        for (char c : s) { parts.push_back(value::string(std::string(1, c))); }
+        for (size_t i = 0; i < s.size();) {
+          size_t len = utf8_offset(s.substr(i), 1);
+          parts.push_back(value::string(std::string(s.substr(i, len))));
+          i += len;
+        }
       } else {
         size_t pos = 0;
         while (true) {
@@ -131,10 +135,7 @@ static value length_of(const value &v) {
   case K::True: case K::False: throw jq_error("boolean (" + to_json(v) + ") has no length");
   case K::Num: return value::number(std::fabs(get_num(v)));
   case K::Str: {
-    // Count code points.
-    size_t n = 0;
-    for (unsigned char c : get_str(v)) { n += (c & 0xC0) != 0x80; }
-    return value::number(double(n));
+    return value::number(double(utf8_count(get_str(v))));
   }
   default: return value::number(double(container_size(v)));
   }
@@ -242,7 +243,12 @@ void call_node::eval(const value &in, const env_ptr &e, emit_ref out) const {
     if (name == "first") { value r; if (array_get(in, 0, r)) { out(r); } else { out(value::null()); } return; }
     if (name == "last") { value r; if (array_get(in, -1, r)) { out(r); } else { out(value::null()); } return; }
     if (name == "reverse") {
-      if (in.k == K::Str) { std::string s(get_str(in)); std::reverse(s.begin(), s.end()); out(value::string(s)); return; }
+      if (in.k == K::Str) {
+        // jq 1.8 defines reverse by indexing, which fails on strings.
+        size_t cps = utf8_count(get_str(in));
+        if (cps == 0) { out(value::array({})); return; }
+        throw jq_error("Cannot index string with number (" + std::to_string(cps - 1) + ")");
+      }
       if (in.k == K::Null) { out(value::array({})); return; }
       auto v = to_vec(in); std::reverse(v.begin(), v.end()); out(value::array(std::move(v))); return;
     }
@@ -543,11 +549,31 @@ void call_node::eval(const value &in, const env_ptr &e, emit_ref out) const {
         if (in.k == K::Str) {
           std::string_view s = get_str(in), q = get_str(p);
           if (!q.empty()) {
-            for (size_t pos = s.find(q); pos != std::string_view::npos; pos = s.find(q, pos + 1)) { r.push_back(value::number(double(pos))); }
+            // Offsets are in code points.
+            size_t cp = 0, counted = 0;
+            for (size_t pos = s.find(q); pos != std::string_view::npos; pos = s.find(q, pos + 1)) {
+              cp += utf8_count(s.substr(counted, pos - counted));
+              counted = pos;
+              r.push_back(value::number(double(cp)));
+            }
           }
         } else if (in.k == K::Arr) {
-          double i = 0;
-          for_each_elem(in, [&](const value &x) { if (compare(x, p) == 0) { r.push_back(value::number(i)); } i++; });
+          std::vector<value> v = to_vec(in);
+          if (p.k == K::Arr) {
+            // A subarray: where its elements occur in sequence.
+            std::vector<value> q = to_vec(p);
+            if (!q.empty()) {
+              for (size_t i = 0; i + q.size() <= v.size(); i++) {
+                size_t j = 0;
+                while (j < q.size() && compare(v[i + j], q[j]) == 0) { j++; }
+                if (j == q.size()) { r.push_back(value::number(double(i))); }
+              }
+            }
+          } else {
+            for (size_t i = 0; i < v.size(); i++) {
+              if (compare(v[i], p) == 0) { r.push_back(value::number(double(i))); }
+            }
+          }
         }
         if (name == "indices") { out(value::array(std::move(r))); }
         else if (r.empty()) { out(value::null()); }

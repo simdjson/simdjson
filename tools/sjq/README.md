@@ -167,3 +167,5 @@ substring only).
 - With `--seq`, jq 1.8 ignores input that does not start with RS; sjq reads it
   as ordinary input.
 - Integers beyond 2^53 are exact when printed unchanged, compared as doubles.
+- Objects with duplicate keys are read as simdjson reads them: `.a` finds the
+  first `"a"`, and `.` prints every pair. jq keeps only the last value.

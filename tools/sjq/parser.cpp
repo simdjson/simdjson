@@ -24,6 +24,24 @@ struct lexer {
   static bool ident_start(char c) { return isalpha((unsigned char)c) || c == '_'; }
   static bool ident_char(char c) { return isalnum((unsigned char)c) || c == '_'; }
 
+  static int hex_digit(char c) {
+    if (c >= '0' && c <= '9') { return c - '0'; }
+    if (c >= 'a' && c <= 'f') { return c - 'a' + 10; }
+    if (c >= 'A' && c <= 'F') { return c - 'A' + 10; }
+    return -1;
+  }
+  // The four hex digits of a \u escape at src[at].
+  unsigned hex4(size_t at) {
+    if (at + 4 > src.size()) { fail("invalid \\uXXXX escape"); }
+    unsigned cp = 0;
+    for (size_t k = at; k < at + 4; k++) {
+      int d = hex_digit(src[k]);
+      if (d < 0) { fail("invalid \\uXXXX escape"); }
+      cp = cp * 16 + unsigned(d);
+    }
+    return cp;
+  }
+
   std::string read_string() {
     // i points after the opening quote.
     std::string r;
@@ -42,10 +60,13 @@ struct lexer {
         case '\\': r.push_back('\\'); break;
         case '"': r.push_back('"'); break;
         case 'u': {
-          unsigned cp = unsigned(std::stoul(src.substr(i, 4), nullptr, 16));
+          unsigned cp = hex4(i);
           i += 4;
-          if (cp >= 0xD800 && cp < 0xDC00 && i + 6 <= src.size() && src[i] == '\\' && src[i + 1] == 'u') {
-            unsigned lo = unsigned(std::stoul(src.substr(i + 2, 4), nullptr, 16));
+          if (cp >= 0xDC00 && cp < 0xE000) { fail("invalid \\uXXXX\\uXXXX surrogate pair escape"); }
+          if (cp >= 0xD800 && cp < 0xDC00) {
+            if (i + 2 > src.size() || src[i] != '\\' || src[i + 1] != 'u') { fail("invalid \\uXXXX\\uXXXX surrogate pair escape"); }
+            unsigned lo = hex4(i + 2);
+            if (lo < 0xDC00 || lo >= 0xE000) { fail("invalid \\uXXXX\\uXXXX surrogate pair escape"); }
             i += 6;
             cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
           }
@@ -128,7 +149,9 @@ struct lexer {
         toks.push_back({kw ? T::Keyword : T::Ident, w});
         continue;
       }
-      static const char *two[] = {"==", "!=", "<=", ">=", "//", "?/"};
+      // jq lexes ?// (destructuring alternatives) as one token.
+      if (src.compare(i, 3, "?//") == 0) { fail("?// is not supported"); }
+      static const char *two[] = {"==", "!=", "<=", ">=", "//"};
       bool matched = false;
       for (auto p : two) {
         if (src.compare(i, 2, p) == 0) { toks.push_back({T::Punct, p}); i += 2; matched = true; break; }

@@ -13,9 +13,7 @@ jq.test:58
 jq.test:63
 jq.test:114
 jq.test:118
-jq.test:127
 jq.test:133
-jq.test:139
 jq.test:148
 jq.test:152
 jq.test:156
@@ -70,7 +68,6 @@ jq.test:516
 jq.test:520
 jq.test:548
 jq.test:554
-jq.test:560
 jq.test:566
 jq.test:577
 jq.test:581
@@ -178,9 +175,13 @@ jq.test:1536
 jq.test:1544
 jq.test:1548
 jq.test:1581
+jq.test:1585
 jq.test:1589
 jq.test:1593
+jq.test:1597
 jq.test:1601
+jq.test:1605
+jq.test:1609
 jq.test:1613
 jq.test:1617
 jq.test:1621
@@ -356,10 +357,13 @@ man.test:518
 man.test:522
 man.test:534
 man.test:538
+man.test:542
 man.test:546
 man.test:550
+man.test:554
 man.test:558
 man.test:562
+man.test:566
 man.test:570
 man.test:574
 man.test:578

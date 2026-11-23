@@ -161,8 +161,10 @@ def json_values(text):
 
 def jq_test_passes(sjq, kind, program, inp, outs):
     if kind == "fail":
+        # %%FAIL programs must be rejected at compile time (exit status 3),
+        # not crash or time out.
         code, _, _ = run([sjq, "-n", program], timeout=10)
-        return code not in (0, None)
+        return code == 3
     code, out, _ = run([sjq, "-c", program], (inp + "\n").encode("utf-8"), timeout=10)
     if code != 0:
         return False
@@ -224,6 +226,18 @@ def targeted(sjq, data, tmp):
     check("-j", run([sjq, "-j", ".[]"], b'["x", 1, "y"]')[1] == b"x1y")
     check("empty input", run([sjq, "."], b"") == (0, b"", b""))
     check("blank input", run([sjq, "."], b"  \n ") == (0, b"", b""))
+
+    # A stack too small for the On-Demand writer: the DOM path runs the
+    # document again, and either succeeds or reports the error, never aborts.
+    if os.name == "posix":
+        import resource
+        deep = b"[" * 1000 + b"]" * 1000
+        def small_stack():
+            resource.setrlimit(resource.RLIMIT_STACK, (256 << 10, resource.getrlimit(resource.RLIMIT_STACK)[1]))
+        p = subprocess.run([sjq, "-c", ".[0]"], input=deep, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           preexec_fn=small_stack, timeout=TIMEOUT)
+        ok = (p.returncode == 0 and p.stdout == deep[1:-1] + b"\n") or (p.returncode == 5 and b"nested too deeply" in p.stderr)
+        check("stack guard on the On-Demand path", ok, f"exit {p.returncode} {p.stderr[:200]!r}")
 
     # Input sizes around page boundaries: the mapped padding must hold.
     for page in (4096, 16384, 65536):

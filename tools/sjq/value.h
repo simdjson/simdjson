@@ -218,6 +218,25 @@ inline std::string_view get_str(const value &v) {
   return s;
 }
 
+// Strings are valid UTF-8: a code point starts at every byte that is not a
+// continuation byte.
+inline size_t utf8_count(std::string_view s) {
+  size_t n = 0;
+  for (unsigned char c : s) { n += (c & 0xC0) != 0x80; }
+  return n;
+}
+// The byte offset of code point cp, or s.size() past the end.
+inline size_t utf8_offset(std::string_view s, size_t cp) {
+  size_t i = 0;
+  for (; i < s.size(); i++) {
+    if ((static_cast<unsigned char>(s[i]) & 0xC0) != 0x80) {
+      if (cp == 0) { return i; }
+      cp--;
+    }
+  }
+  return i;
+}
+
 // Uniform iteration over arrays and objects. Other values raise jq's error.
 // The value as jq 1.8 shows it in error messages: its compact JSON, cut to
 // 25 bytes followed by "..." when longer than 28.

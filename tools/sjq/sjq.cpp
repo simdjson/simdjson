@@ -492,7 +492,14 @@ int main(int argc, char **argv) {
       if (!eof) {
         if (buf.size() < filled + block + SIMDJSON_PADDING) { buf.resize(std::max(buf.size() * 2, filled + block + SIMDJSON_PADDING)); }
         long long r = read_stdin(buf.data() + filled, block);
-        if (r <= 0) { eof = true; } else { filled += size_t(r); }
+        if (r < 0) {
+          w.flush();
+          fprintf(stderr, "sjq: error: cannot read %s\n", name);
+          status = 2;
+          fatal = true;
+          break;
+        }
+        if (r == 0) { eof = true; } else { filled += size_t(r); }
       }
       size_t cut = filled;
       if (!eof) {

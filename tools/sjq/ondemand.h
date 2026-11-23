@@ -705,6 +705,10 @@ inline bool od_run_doc(od_expr &plan, Doc &doc, writer &w, bool raw, bool join, 
   } catch (od_fallback &) {
     w.buf.resize(mark);
     return false;
+  } catch (jq_error &) {
+    // The DOM evaluator runs the document again and reports the error.
+    w.buf.resize(mark);
+    return false;
   }
 }
 

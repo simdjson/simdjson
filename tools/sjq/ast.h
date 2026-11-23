@@ -124,7 +124,8 @@ struct slice_node : node {
           if (opt) { return; }
           throw jq_error(std::string("Cannot index ") + kind_name(t.k) + " with object");
         }
-        int64_t n = t.k == K::Arr ? int64_t(container_size(t)) : int64_t(get_str(t).size());
+        // jq counts strings in code points.
+        int64_t n = t.k == K::Arr ? int64_t(container_size(t)) : int64_t(utf8_count(get_str(t)));
         auto clamp = [&](const value *x, int64_t dflt) {
           if (!x || x->k == K::Null) { return dflt; }
           int64_t i = to_int64(std::floor(get_num(*x)));
@@ -134,7 +135,10 @@ struct slice_node : node {
         int64_t a = clamp(f, 0), b = clamp(l, n);
         if (b < a) { b = a; }
         if (t.k == K::Str) {
-          out(value::string(std::string(get_str(t).substr(size_t(a), size_t(b - a)))));
+          std::string_view str = get_str(t);
+          size_t ba = utf8_offset(str, size_t(a));
+          size_t bb = ba + utf8_offset(str.substr(ba), size_t(b - a));
+          out(value::string(std::string(str.substr(ba, bb - ba))));
         } else {
           auto v = to_vec(t);
           out(value::array(std::vector<value>(v.begin() + a, v.begin() + b)));
@@ -344,11 +348,9 @@ struct binop_node : node {
       return;
     }
     if (o == op::alt) {
+      // As in jq 1.8, an error on the left propagates.
       bool any = false;
-      try {
-        a->eval(in, e, [&](const value &x) { if (truthy(x)) { any = true; out(x); } });
-      } catch (jq_error &) {
-      }
+      a->eval(in, e, [&](const value &x) { if (truthy(x)) { any = true; out(x); } });
       if (!any) { b->eval(in, e, out); }
       return;
     }

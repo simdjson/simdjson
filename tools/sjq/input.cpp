@@ -216,7 +216,9 @@ bool prepare_console(bool binary_output) {
 // handler, for faults inside the mapping only, maps zero pages over the rest
 // of it and returns, so the read is retried and sees zeros; the drivers check
 // g_input_changed and stop at the next document. Faults elsewhere crash as
-// before.
+// before: the previous action (default, or a sanitizer's handler) is put back
+// and the faulting instruction runs again.
+static struct sigaction g_old_bus, g_old_segv;
 static void on_mapped_fault(int sig, siginfo_t *si, void *) {
   char *addr = static_cast<char *>(si->si_addr);
   const char *base = g_map_base.load();
@@ -229,8 +231,8 @@ static void on_mapped_fault(int sig, siginfo_t *si, void *) {
       return;
     }
   }
-  signal(sig, SIG_DFL);
-  raise(sig);
+  sigaction(sig, sig == SIGBUS ? &g_old_bus : &g_old_segv, nullptr);
+  if (si->si_code <= 0) { raise(sig); }  // sent by a process, not a fault
 }
 
 void install_fault_handler() {
@@ -239,8 +241,9 @@ void install_fault_handler() {
   sa.sa_sigaction = on_mapped_fault;
   sa.sa_flags = SA_SIGINFO;
   sigemptyset(&sa.sa_mask);
-  sigaction(SIGBUS, &sa, nullptr);
-  sigaction(SIGSEGV, &sa, nullptr);
+  // Some systems raise SIGSEGV rather than SIGBUS for a vanished page.
+  sigaction(SIGBUS, &sa, &g_old_bus);
+  sigaction(SIGSEGV, &sa, &g_old_segv);
 }
 
 // Three quarters of the stack limit, which the main thread gets.
