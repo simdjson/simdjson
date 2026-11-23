@@ -49,7 +49,6 @@ expect_status 1 $SJMIN $TMPDIR1/unterminated.json
 expect_status 1 $SJMIN $TMPDIR1/does_not_exist.json
 expect_status 1 $SJMIN -o $TMPDIR1/no/such/dir.json $JSONCHECKER/pass01.json
 expect_status 2 $SJMIN --no-such-option
-expect_status 2 $SJMIN -a no_such_kernel $JSONCHECKER/pass01.json
 expect_status 2 $SJMIN $JSONCHECKER/pass01.json $JSONCHECKER/pass02.json
 expect_status 0 $SJMIN --help
 expect_status 0 $SJMIN --version

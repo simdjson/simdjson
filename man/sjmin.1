@@ -3,17 +3,16 @@
 sjmin \- remove insignificant white space from a JSON document
 .SH SYNOPSIS
 .B sjmin
-[\fB\-t\fR] [\fB\-a\fR \fIkernel\fR] [\fB\-o\fR \fIout_file\fR] [\fIfile\fR]
+[\fB\-o\fR \fIout_file\fR] [\fIfile\fR]
 .br
 .B sjmin
-\fB\-l\fR | \fB\-h\fR | \fB\-v\fR
+\fB\-h\fR | \fB\-v\fR
 .SH DESCRIPTION
 .B sjmin
 minifies a JSON document with the SIMD routines of the simdjson library:
 it removes the spaces, tabs, line feeds and carriage returns that appear
 outside of strings, and copies everything else unchanged.
 Strings, numbers and the order of keys are left as they are.
-On large files, it runs at several gigabytes per second.
 .PP
 .B sjmin
 reads \fIfile\fR, or standard input when \fIfile\fR is absent or is
@@ -27,18 +26,8 @@ before the end of the input.
 .SH OPTIONS
 .TP
 .B \-o, \-\-output \fIout_file\fR
-write the result to \fIout_file\fR instead of standard output
-.TP
-.B \-a, \-\-arch \fIkernel\fR
-use the named kernel instead of the best one for this processor,
-for example \fBwestmere\fR on an x64 processor; see \fB\-\-list\-arch\fR
-.TP
-.B \-l, \-\-list\-arch
-list the kernels supported by this processor and exit
-.TP
-.B \-t, \-\-timing
-minify the input repeatedly for about one second and print the
-throughput in gigabytes per second instead of the result
+write the result to \fIout_file\fR instead of standard output;
+\fIout_file\fR may be the input file, which is read completely first
 .TP
 .B \-h, \-\-help
 display a short help and exit
@@ -48,12 +37,6 @@ output version information and exit
 .TP
 .B \-\-
 treat the remaining argument as a file name, even if it starts with \fB\-\fR
-.SH ENVIRONMENT
-.TP
-.B SIMDJSON_FORCE_IMPLEMENTATION
-name of the kernel to use instead of the best one; \fB\-a\fR takes
-precedence. If the named kernel is unknown, \fBsjmin\fR fails. The
-variable is ignored when the library has a single kernel, as on 64-bit ARM.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -73,8 +56,8 @@ Minify a file to standard output:
 Minify standard input into a file:
 .B curl \-s https://example.com/data.json | sjmin \-o data.min.json
 .TP
-Measure the speed of the SSE4.2 kernel on an x64 processor:
-.B sjmin \-t \-a westmere data.json
+Minify a file in place:
+.B sjmin \-o data.json data.json
 .SH SEE ALSO
 .BR jq (1)
 .PP
