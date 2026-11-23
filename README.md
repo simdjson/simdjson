@@ -190,11 +190,12 @@ Packages
 Companion libraries
 -------------------
 
-The simdjson organization maintains libraries built on simdjson:
+The simdjson organization maintains libraries and tools built on simdjson:
 
 - [fastsimdjson](https://github.com/simdjson/fastpysimdjson): our official Python bindings (`pip install fastsimdjson`). A drop-in replacement for the `json` module's `loads`, `load`, `dumps` and `dump`, over 3 times faster than the standard library. It also offers lazy parsing, multithreaded NDJSON with free-threaded Python, and conversion to Apache Arrow and MessagePack.
 - [simdjson_arrow](https://github.com/simdjson/simdjson_arrow): reads newline-delimited JSON into [Apache Arrow](https://arrow.apache.org/) record batches, and writes Arrow record batches as JSON, on one thread or many. Several times faster than Arrow C++'s own JSON reader.
 - [simdjson_msgpack](https://github.com/simdjson/simdjson_msgpack): converts JSON to [MessagePack](https://msgpack.org/) and back, one document or many, on many threads.
+- [sjq](https://github.com/simdjson/sjq): a jq-compatible command-line JSON processor, ten to a hundred times faster than jq on large inputs. Prebuilt binaries for Linux, macOS and Windows.
 
 Bindings and Ports of simdjson
 ------------------------------
