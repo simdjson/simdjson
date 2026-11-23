@@ -94,37 +94,22 @@ jobs:
         with:
           update: true
           msystem: MINGW64
-          install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc mingw-w64-x86_64-python
+          install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-gdb
       - name: Build and test
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF
           cmake --build build --target sjq
           ctest --test-dir build -R sjq --output-on-failure
-      # TEMPORARY: diagnose compile errors that hang or crash on MinGW.
+      # TEMPORARY: diagnose compile errors that crash at random on MinGW.
       - name: Diagnose compile errors
         if: always()
         run: |
-          cd build
-          objdump -p tools/sjq/sjq.exe | grep -i "SizeOfStack"
-          obj="tools/sjq/CMakeFiles/sjq.dir/sjq.cpp.obj tools/sjq/CMakeFiles/sjq.dir/sjq.rc.obj tools/sjq/libsjq-core.a libsimdjson.a"
-          g++ -O3 -Wl,--stack,8388608 -static-libstdc++ -static-libgcc -static $obj -o sjq-nogc.exe -lonecore
-          g++ -O3 -Wl,--stack,8388608 -Wl,--gc-sections $obj -o sjq-dyn.exe -lonecore
-          cat > diag.py <<'EOF'
-          import subprocess, sys, time
-          deep = "(" * 2000 + "." + ")" * 2000
-          cases = [".[", "{1+2:3}", ". as [] | null", ". as {} | null", '"u\\vw"', "module []; 0", deep]
-          for exe in sys.argv[1:]:
-              for f in cases:
-                  for k in range(3):
-                      t = time.time()
-                      try:
-                          p = subprocess.run([exe, "-n", f], input=b"", capture_output=True, timeout=15)
-                          rc, err = p.returncode, p.stderr[:90]
-                      except subprocess.TimeoutExpired:
-                          rc, err = "timeout", b""
-                      print(f"{exe} {f[:20]!r} rc={rc} {time.time() - t:.2f}s {err!r}", flush=True)
-          EOF
-          python diag.py tools/sjq/sjq.exe ./sjq-nogc.exe ./sjq-dyn.exe
+          cmake -B build-dbg -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF > /dev/null
+          cmake --build build-dbg --target sjq > /dev/null
+          for i in 1 2 3 4 5 6 7 8; do
+            echo "=== run $i"
+            gdb -q -batch -ex "set pagination off" -ex run -ex "bt 40" -ex "info registers rip rsp" -ex "x/6i \$pc" --args build-dbg/tools/sjq/sjq.exe -n '. as {} | null' 2>&1 | grep -v "^\[New Thread\|^\[Thread" | tail -60
+          done
 
   fuzz:
     if: >-
