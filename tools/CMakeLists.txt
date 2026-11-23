@@ -10,10 +10,3 @@ if(SIMDJSON_INSTALL AND SIMDJSON_BUILD_TOOLS)
   install(TARGETS sjmin RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
   install(FILES "${PROJECT_SOURCE_DIR}/man/sjmin.1" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 endif()
-
-# sjq, the jq-compatible processor (tools/sjq). It comes with
-# SIMDJSON_BUILD_TOOLS; in developer mode it is off unless asked for.
-option(SIMDJSON_SJQ "Build the sjq command-line JSON processor" ${SIMDJSON_BUILD_TOOLS})
-if(SIMDJSON_SJQ)
-  add_subdirectory(sjq)
-endif()
