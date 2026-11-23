@@ -182,10 +182,11 @@ def jqsuite(sjq, update):
     if os.path.exists(expected_path) and not update:
         with open(expected_path) as f:
             expected = {l.strip() for l in f if l.strip() and not l.startswith("#")}
-    passed, total = [], 0
+    passed, total, tests = [], 0, {}
     for name in ("jq.test", "man.test"):
         for tid, kind, program, inp, outs in parse_jq_tests(os.path.join(HERE, "jq", name)):
             total += 1
+            tests[tid] = (kind, program, inp)
             if jq_test_passes(sjq, kind, program, inp, outs):
                 passed.append(tid)
     passed_set = set(passed)
@@ -200,7 +201,18 @@ def jqsuite(sjq, update):
     lost = sorted(expected - passed_set)
     gained = sorted(passed_set - expected)
     if lost:
-        fail("jqsuite", "  no longer passing: " + " ".join(lost))
+        details = []
+        for tid in lost:
+            if tid not in tests:
+                details.append(f"  {tid}: no such test")
+                continue
+            kind, program, inp = tests[tid]
+            argv = [sjq, "-n", program] if kind == "fail" else [sjq, "-c", program]
+            start = time.time()
+            code, out, err = run(argv, b"" if kind == "fail" else (inp + "\n").encode("utf-8"), timeout=10)
+            details.append(f"  {tid}: {program[:60]!r} exit {code} in {time.time() - start:.1f} s, "
+                           f"stdout {out[:80]!r}, stderr {err[:120]!r}")
+        fail("jqsuite", "  no longer passing: " + " ".join(lost) + "\n" + "\n".join(details))
     if gained:
         print("jqsuite: newly passing (update expected_pass.txt): " + " ".join(gained), flush=True)
 
@@ -217,7 +229,8 @@ def check(name, cond, detail=""):
 def targeted(sjq, data, tmp):
     # Exit status.
     check("exit: no filter", run([sjq])[0] == 2)
-    check("exit: syntax error", run([sjq, ".["], b"1")[0] == 3)
+    code, _, err = run([sjq, ".["], b"1")
+    check("exit: syntax error", code == 3, f"exit {code} {err[:200]!r}")
     check("exit: --indent 8", run([sjq, "--indent", "8", "."], b"1")[0] == 2)
     check("exit: missing file", run([sjq, ".", os.path.join(tmp, "nope.json")])[0] == 2)
     check("exit: runtime error of the last input", run([sjq, ".a"], b"[]")[0] == 5)

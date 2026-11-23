@@ -1,0 +1,3 @@
+# Expected outputs are compared byte for byte: keep LF line endings on Windows.
+*.test -text
+*.ndjson -text
