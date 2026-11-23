@@ -97,6 +97,13 @@ public:
    */
   simdjson_warn_unused error_code validate_container() noexcept;
   static simdjson_inline bool has_backslash(const uint8_t *src, size_t len) noexcept;
+  template <typename BQ>
+  static simdjson_inline bool has_backslash(const uint8_t *src, size_t len, std::true_type) noexcept;
+  template <typename BQ>
+  static simdjson_inline bool has_backslash(const uint8_t *src, size_t len, std::false_type) noexcept;
+  static simdjson_inline size_t count_digits(const uint8_t *p) noexcept;
+  static simdjson_inline error_code validate_number(const uint8_t *src) noexcept;
+  static simdjson_inline error_code validate_scalar(const uint8_t *src, bool last) noexcept;
   /**
    * Calls the visitor for the array or object at the start position and everything in it,
    * without recursion (see document::visit()). The container is at depth parent_depth + 1. At

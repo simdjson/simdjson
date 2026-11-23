@@ -283,6 +283,64 @@ namespace validate_tests {
     TEST_SUCCEED();
   }
 
+  bool stream_document_references() {
+    TEST_START();
+    auto json = R"({"a":[1,2]} [3,"\x"] 4 [1e999] {"b":null})"_padded;
+    const error_code expected[] = {SUCCESS, STRING_ERROR, SUCCESS, NUMBER_ERROR, SUCCESS};
+    ondemand::parser parser;
+    ondemand::document_stream stream;
+    ASSERT_SUCCESS(parser.iterate_many(json).get(stream));
+    size_t count = 0;
+    for (auto result : stream) {
+      ASSERT_TRUE(count < 5);
+      ASSERT_EQUAL(result.validate(), expected[count]);
+      ondemand::document_reference doc_ref;
+      ASSERT_SUCCESS(std::move(result).get(doc_ref));
+      ASSERT_EQUAL(doc_ref.validate(), expected[count]);
+      count++;
+    }
+    ASSERT_EQUAL(count, 5);
+    TEST_SUCCEED();
+  }
+
+  // Numbers are checked as get_double() checks them, including near the bounds past which
+  // validate() computes the value to rule out an infinite one.
+  bool numbers_match_get_double() {
+    TEST_START();
+    std::vector<std::string> numbers = {
+      "0", "-0", "7", "-7", "0.5", "-0.5", "1e5", "1E+5", "1e-5", "01", "-01", "1.", ".5", "1e",
+      "1e+", "1.5e", "--1", "+1", "1x", "1.5x", "1e5x", "1e99", "1e100", "-1e99", "9e307",
+      "1.7976931348623157e308", "1.7976931348623159e308", "1e308", "1e309", "-1e309", "1e-400",
+      "4.9e-324", "0e999999", "1e0000000000000000000005", "12345678901234567890123",
+      "0." + std::string(400, '0') + "1",
+    };
+    for (size_t digits : {199, 200, 201, 299, 300, 301, 308, 309, 310}) {
+      for (char digit : {'1', '9'}) {
+        const std::string integer(digits, digit);
+        for (const char *tail : {"", ".5", "e9", "e99", "e-99", ".5e99", "e100"}) {
+          numbers.push_back(integer + tail);
+          numbers.push_back("-" + integer + tail);
+        }
+      }
+    }
+    ondemand::parser parser;
+    for (const std::string &number : numbers) {
+      const std::string text = "[" + number + "]";
+      padded_string json(text);
+      ondemand::document doc;
+      ASSERT_SUCCESS(parser.iterate(json).get(doc));
+      double value;
+      error_code expected = doc.at(0).get_double().get(value) ? NUMBER_ERROR : SUCCESS;
+      // A value that cannot start a number is not a scalar at all.
+      if (expected && number[0] != '-' && (number[0] < '0' || number[0] > '9')) { expected = TAPE_ERROR; }
+      if (validate_text(parser, text) != expected) {
+        std::cerr << "  validate() disagrees with get_double() on " << number.substr(0, 40) << " (" << number.size() << " characters)" << std::endl;
+        return false;
+      }
+    }
+    TEST_SUCCEED();
+  }
+
   // Random edits of valid documents: validate() and DOM parsing must agree on validity.
   // The seeds avoid integers beyond 64 bits, which DOM rejects and validate() accepts.
 #if SIMDJSON_ALLOW_TRAILING_COMMAS
@@ -381,6 +439,8 @@ namespace validate_tests {
            deep_nesting_with_larger_max_depth() &&
            reaching_the_heap_depth_twice() &&
            stream_documents() &&
+           stream_document_references() &&
+           numbers_match_get_double() &&
            agrees_with_dom() &&
            true;
   }

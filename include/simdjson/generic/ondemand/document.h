@@ -1025,6 +1025,8 @@ public:
   simdjson_inline document_reference(const document_reference &other) noexcept = default;
   simdjson_inline document_reference& operator=(const document_reference &other) noexcept = default;
   simdjson_inline void rewind() noexcept;
+  /** @copydoc document::validate() */
+  simdjson_warn_unused simdjson_inline error_code validate() noexcept;
   simdjson_inline simdjson_result<array> get_array() & noexcept;
   simdjson_inline simdjson_result<object> get_object() & noexcept;
   simdjson_inline simdjson_result<uint64_t> get_uint64() noexcept;
@@ -1341,6 +1343,7 @@ public:
   simdjson_inline simdjson_result(SIMDJSON_IMPLEMENTATION::ondemand::document_reference value, error_code error) noexcept;
   simdjson_inline simdjson_result() noexcept {}
   simdjson_inline error_code rewind() noexcept;
+  simdjson_warn_unused simdjson_inline error_code validate() noexcept;
 
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array> get_array() & noexcept;
   simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::object> get_object() & noexcept;
