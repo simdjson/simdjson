@@ -36,18 +36,24 @@ find_program(BASH bash)
 # required to make things work robustly. Simply put: bash is not quite portable.
 
 # Script tests
-if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts are not robust enough to run under Windows even if bash is available
+if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET sjmin)) # The scripts are not robust enough to run under Windows even if bash is available
   #
-  # json2json test
+  # sjmin test
   #
-  add_test(
-    NAME testjson2json
-    COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testjson2json.sh ${PROJECT_BINARY_DIR}
-    WORKING_DIRECTORY $<TARGET_FILE_DIR:minify>
-  )
-  set_property(TEST testjson2json APPEND PROPERTY DEPENDS minify json2json)
-  set_property(TEST testjson2json APPEND PROPERTY LABELS per_implementation)
-  add_dependencies(per_implementation_tests minify)
+  if(SIMDJSON_HAS_TEST_DATA)
+    get_target_property(examples_definitions jsonexamples-data INTERFACE_COMPILE_DEFINITIONS)
+    string(REGEX MATCH "SIMDJSON_BENCHMARK_DATA_DIR=\"([^\"]*)\"" _ "${examples_definitions}")
+    set(examples_dir "${CMAKE_MATCH_1}")
+    get_target_property(checker_definitions jsonchecker-data INTERFACE_COMPILE_DEFINITIONS)
+    string(REGEX MATCH "SIMDJSON_TEST_DATA_DIR=\"([^\"]*)\"" _ "${checker_definitions}")
+    set(checker_dir "${CMAKE_MATCH_1}")
+    add_test(
+      NAME testsjmin
+      COMMAND ${BASH} ${CMAKE_CURRENT_SOURCE_DIR}/testsjmin.sh $<TARGET_FILE:sjmin> ${examples_dir} ${checker_dir}
+    )
+    set_property(TEST testsjmin APPEND PROPERTY LABELS per_implementation)
+    add_dependencies(per_implementation_tests sjmin)
+  endif()
 
   #
   # Competition parse test
@@ -65,40 +71,17 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
   endif()
 
   #
-  # json2json tool test: check that json2json can parse twitter.json
-  #
-
-
-  add_test(NAME json2json COMMAND $<TARGET_FILE:json2json> ${EXAMPLE_JSON})
-  set_property(TEST json2json APPEND PROPERTY LABELS acceptance per_implementation)
-  add_dependencies(acceptance_tests json2json)
-  add_dependencies(per_implementation_tests json2json)
-
-  #
-  # jsonpointer tool test: check that jsonpointer resolves a JSON Pointer in
-  # twitter.json, and that it fails cleanly on a file it cannot load
-  #
-  add_test(NAME jsonpointer COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON} /statuses/0/id)
-  set_tests_properties(jsonpointer PROPERTIES PASS_REGULAR_EXPRESSION "\"value\":505874924095815681")
-  set_property(TEST jsonpointer APPEND PROPERTY LABELS acceptance per_implementation)
-  add_test(NAME jsonpointer_missing_file COMMAND $<TARGET_FILE:jsonpointer> ${EXAMPLE_JSON}.missing /statuses/0/id)
-  set_tests_properties(jsonpointer_missing_file PROPERTIES WILL_FAIL TRUE)
-  set_property(TEST jsonpointer_missing_file APPEND PROPERTY LABELS acceptance per_implementation)
-  add_dependencies(acceptance_tests jsonpointer)
-  add_dependencies(per_implementation_tests jsonpointer)
-
-  #
-  # minify tool test: check that minify prints the minified document and
+  # sjmin tool test: check that sjmin prints the minified document and
   # nothing after it
   #
-  add_test(NAME minify COMMAND $<TARGET_FILE:minify> ${PROJECT_BINARY_DIR}/jsonexamples/example_config.json)
-  set_tests_properties(minify PROPERTIES PASS_REGULAR_EXPRESSION "\"port\":5432}}\n?$")
-  set_property(TEST minify APPEND PROPERTY LABELS acceptance per_implementation)
-  add_dependencies(acceptance_tests minify)
-  add_dependencies(per_implementation_tests minify)
+  add_test(NAME sjmin COMMAND $<TARGET_FILE:sjmin> ${PROJECT_BINARY_DIR}/jsonexamples/example_config.json)
+  set_tests_properties(sjmin PROPERTIES PASS_REGULAR_EXPRESSION "\"port\":5432}}\n?$")
+  set_property(TEST sjmin APPEND PROPERTY LABELS acceptance per_implementation)
+  add_dependencies(acceptance_tests sjmin)
+  add_dependencies(per_implementation_tests sjmin)
 
   #
-  # SIMDJSON_FORCE_IMPLEMENTATION tests: run json2json with SIMDJSON
+  # SIMDJSON_FORCE_IMPLEMENTATION tests: run sjmin with SIMDJSON
   #
   if (SIMDJSON_IMPLEMENTATION MATCHES "fallback")
     add_test(
@@ -115,7 +98,7 @@ if (BASH AND (NOT WIN32) AND SIMDJSON_BASH AND (TARGET json2json)) # The scripts
       COMMAND
         ${CMAKE_COMMAND} -E env
         SIMDJSON_FORCE_IMPLEMENTATION=doesnotexist
-        $<TARGET_FILE:json2json> ${EXAMPLE_JSON}
+        $<TARGET_FILE:sjmin> -o sjmin_force.json ${EXAMPLE_JSON}
     )
     set_tests_properties(simdjson_force_implementation_error PROPERTIES WILL_FAIL TRUE)
   endif()

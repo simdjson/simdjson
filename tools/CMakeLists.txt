@@ -1,13 +1,12 @@
-if(TARGET cxxopts) # we only build the tools if cxxopts is available
-  message(STATUS "We have cxxopts as a dependency and we are building the tools (e.g., json2json).")
-  foreach(tool IN ITEMS json2json jsonstats jsonpointer minify)
-    add_executable("${tool}" "${tool}.cpp")
-    simdjson_apply_props("${tool}")
-    target_link_libraries(
-        "${tool}" PRIVATE
-        simdjson simdjson-internal-flags simdjson-windows-headers cxxopts
-    )
-  endforeach()
-else()
-  message(STATUS "We are missing cxxopts as a dependency so the tools (e.g., json2json) are omitted.")
+add_executable(sjmin sjmin.cpp)
+simdjson_apply_props(sjmin)
+target_link_libraries(sjmin PRIVATE simdjson simdjson-internal-flags)
+if(MSVC)
+  target_compile_definitions(sjmin PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
+if(SIMDJSON_INSTALL AND SIMDJSON_BUILD_TOOLS)
+  include(GNUInstallDirs)
+  install(TARGETS sjmin RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  install(FILES "${PROJECT_SOURCE_DIR}/man/sjmin.1" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 endif()

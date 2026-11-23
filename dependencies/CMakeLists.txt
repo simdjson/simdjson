@@ -172,17 +172,3 @@ endfunction()
 if(SIMDJSON_COMPETITION)
   competition_scope_()
 endif()
-
-cmake_dependent_option(SIMDJSON_CXXOPTS "Download cxxopts (necessary for tools)" ON
-        SIMDJSON_ALLOW_DOWNLOADS OFF)
-
-if(SIMDJSON_CXXOPTS)
-  CPMAddPackage(
-        NAME cxxopts
-        URL https://github.com/jarro2783/cxxopts/archive/59656709c0c58fcd0ed18b38e02938dbe05284c5.zip
-        OPTIONS
-        "CXXOPTS_BUILD_EXAMPLES OFF"
-        "CXXOPTS_BUILD_TESTS OFF"
-        "CXXOPTS_ENABLE_INSTALL OFF"
-  )
-endif()
