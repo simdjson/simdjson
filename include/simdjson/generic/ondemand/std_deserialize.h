@@ -139,6 +139,15 @@ concept deserialize_in_place =
     !std::is_trivially_copyable_v<typename T::value_type> &&
     (sizeof(typename T::value_type) > 32 || concepts::constructible_from_string_view<typename T::value_type>);
 
+// A container with try_emplace_back, such as std::inplace_vector, has a fixed
+// capacity and throws when it is exceeded.
+template <typename T>
+concept fixed_capacity = requires(T &c, typename T::value_type &&v) {
+  c.try_emplace_back(std::move(v));
+  { c.size() } -> std::convertible_to<size_t>;
+  { c.max_size() } -> std::convertible_to<size_t>;
+};
+
 // Removes the last element of the container on destruction while armed.
 template <typename T>
 struct pop_back_guard {
@@ -242,6 +251,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
   }
   if constexpr (details::deserialize_in_place<T>) {
     for (auto v : arr) {
+      if constexpr (details::fixed_capacity<T>) {
+        if (out.size() >= out.max_size()) { return CAPACITY; }
+      }
       auto &slot = concepts::emplace_one(out);
       // An error or an exception (a user tag_invoke may throw) must not leave
       // a partially deserialized element behind.
@@ -253,6 +265,9 @@ error_code tag_invoke(deserialize_tag, ValT &val, T &out) noexcept(false) {
     for (auto v : arr) {
       // Deserialize into a temporary first: an error or an exception (a user
       // tag_invoke may throw) must not leave a default-constructed element behind.
+      if constexpr (details::fixed_capacity<T>) {
+        if (out.size() >= out.max_size()) { return CAPACITY; }
+      }
       value_type temp;
       if (auto const err = v.get<value_type>(temp); err) {
         return err;
