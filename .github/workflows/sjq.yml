@@ -104,12 +104,24 @@ jobs:
       - name: Diagnose compile errors
         if: always()
         run: |
-          cmake -B build-dbg -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF > /dev/null
-          cmake --build build-dbg --target sjq > /dev/null
-          for i in 1 2 3 4 5 6 7 8; do
-            echo "=== run $i"
-            gdb -q -batch -ex "set pagination off" -ex run -ex "bt 40" -ex "info registers rip rsp" -ex "x/6i \$pc" --args build-dbg/tools/sjq/sjq.exe -n '. as {} | null' 2>&1 | grep -v "^\[New Thread\|^\[Thread" | tail -60
-          done
+          set +e
+          cat > diag.py <<'EOF'
+          import subprocess, sys, time
+          deep = "(" * 2000 + "." + ")" * 2000
+          cases = [".[", "{1+2:3}", ". as {} | null", '"u\\vw"', deep]
+          bad = 0
+          for f in cases:
+              codes = []
+              for k in range(10):
+                  try:
+                      codes.append(subprocess.run([sys.argv[1], "-n", f], input=b"", capture_output=True, timeout=15).returncode)
+                  except subprocess.TimeoutExpired:
+                      codes.append("timeout")
+              bad += sum(c != 3 for c in codes)
+              print(f"{f[:20]!r}: {codes}", flush=True)
+          print(f"{bad} of {10 * len(cases)} runs did not exit 3")
+          EOF
+          python diag.py build/tools/sjq/sjq.exe
 
   fuzz:
     if: >-

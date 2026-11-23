@@ -67,6 +67,16 @@ static void setup_colors(std::string *colors) {
   for (int i = 0; i < C_COUNT; i++) { colors[i] = "\x1b[" + specs[i] + "m"; }
 }
 
+// Compiles the filter, or reports the syntax error and returns null.
+simdjson_never_inline node_ptr compile_or_report(const std::string &filter) {
+  try {
+    return compile(filter);
+  } catch (std::exception &ex) {
+    fprintf(stderr, "sjq: error: %s\n", ex.what());
+    return nullptr;
+  }
+}
+
 int main(int argc, char **argv) {
   stack_guard_init(main_stack_budget());
   writer w{};
@@ -138,13 +148,8 @@ int main(int argc, char **argv) {
   // Output reaches a terminal (or the user asked for it) as each input is done.
   const bool flush_each = unbuffered || terminal;
 
-  node_ptr prog{};
-  try {
-    prog = compile(filter);
-  } catch (std::exception &ex) {
-    fprintf(stderr, "sjq: error: %s\n", ex.what());
-    return 3;
-  }
+  node_ptr prog = compile_or_report(filter);
+  if (!prog) { return 3; }
 
   od_ptr plan{};
   if (use_od && !w.sort_keys) { plan = od_compile(prog.get()); }
