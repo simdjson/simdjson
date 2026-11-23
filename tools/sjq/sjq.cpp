@@ -67,7 +67,10 @@ static void setup_colors(std::string *colors) {
   for (int i = 0; i < C_COUNT; i++) { colors[i] = "\x1b[" + specs[i] + "m"; }
 }
 
-// Compiles the filter, or reports the syntax error and returns null.
+// Compiles the filter, or reports the syntax error and returns null. With
+// MinGW GCC 16 on Windows, catching the parser's exception in main itself
+// crashed about half the runs (access violation); a separate function does
+// not.
 simdjson_never_inline node_ptr compile_or_report(const std::string &filter) {
   try {
     return compile(filter);

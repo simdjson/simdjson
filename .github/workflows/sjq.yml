@@ -94,34 +94,12 @@ jobs:
         with:
           update: true
           msystem: MINGW64
-          install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-gdb
+          install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc mingw-w64-x86_64-python
       - name: Build and test
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF
           cmake --build build --target sjq
           ctest --test-dir build -R sjq --output-on-failure
-      # TEMPORARY: diagnose compile errors that crash at random on MinGW.
-      - name: Diagnose compile errors
-        if: always()
-        run: |
-          set +e
-          cat > diag.py <<'EOF'
-          import subprocess, sys, time
-          deep = "(" * 2000 + "." + ")" * 2000
-          cases = [".[", "{1+2:3}", ". as {} | null", '"u\\vw"', deep]
-          bad = 0
-          for f in cases:
-              codes = []
-              for k in range(10):
-                  try:
-                      codes.append(subprocess.run([sys.argv[1], "-n", f], input=b"", capture_output=True, timeout=15).returncode)
-                  except subprocess.TimeoutExpired:
-                      codes.append("timeout")
-              bad += sum(c != 3 for c in codes)
-              print(f"{f[:20]!r}: {codes}", flush=True)
-          print(f"{bad} of {10 * len(cases)} runs did not exit 3")
-          EOF
-          python diag.py build/tools/sjq/sjq.exe
 
   fuzz:
     if: >-
