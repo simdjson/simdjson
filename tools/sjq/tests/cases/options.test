@@ -1,0 +1,119 @@
+# Recorded from jq 1.8.2 by make_golden.py; do not edit by hand.
+.
+{"a":[1,{"b":2}],"c":{},"d":[]}
+{
+  "a": [
+    1,
+    {
+      "b": 2
+    }
+  ],
+  "c": {},
+  "d": []
+}
+
+%%FLAGS -c
+.
+{"a":[1,{"b":2}],"c":{},"d":[]}
+{"a":[1,{"b":2}],"c":{},"d":[]}
+
+%%FLAGS --tab
+.
+{"a":[1,{"b":2}]}
+{
+	"a": [
+		1,
+		{
+			"b": 2
+		}
+	]
+}
+
+%%FLAGS --indent 0
+.
+{"a":[1,{"b":2}]}
+{
+"a": [
+1,
+{
+"b": 2
+}
+]
+}
+
+%%FLAGS --indent 3
+.
+{"a":[1,{"b":2}]}
+{
+   "a": [
+      1,
+      {
+         "b": 2
+      }
+   ]
+}
+
+%%FLAGS --indent 7
+.
+{"a":[1]}
+{
+       "a": [
+              1
+       ]
+}
+
+%%FLAGS --indent -1
+.
+{"a":[1]}
+{
+	"a": [
+		1
+	]
+}
+
+%%FLAGS -r
+.[]
+["x", 1, "y\nz", null]
+x
+1
+y
+z
+null
+
+%%FLAGS -S -c
+.
+{"b":1,"a":{"d":2,"c":3}}
+{"a":{"c":3,"d":2},"b":1}
+
+%%FLAGS -n
+1, 2
+null
+1
+2
+
+%%FLAGS -nc
+[1, {"a": null}]
+null
+[1,{"a":null}]
+
+%%FLAGS -rc
+.a
+{"a": "s"} {"a": [1]}
+s
+[1]
+
+%%FLAGS --seq -c
+.a
+{"a":1}
+1
+
+%%FLAGS -c
+.
+1 "two" [3] {"four":4} null true
+1
+"two"
+[3]
+{"four":4}
+null
+true
+

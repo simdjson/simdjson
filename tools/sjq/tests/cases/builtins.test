@@ -1,0 +1,219 @@
+# Recorded from jq 1.8.2 by make_golden.py; do not edit by hand.
+%%FLAGS -c
+keys, keys_unsorted, length
+{"b":1,"a":2}
+["a","b"]
+["b","a"]
+2
+
+%%FLAGS -c
+map(. * 2), add, min, max, sort, unique, reverse
+[3,1,2,3]
+[6,2,4,6]
+9
+1
+3
+[1,2,3,3]
+[1,2,3]
+[3,2,1,3]
+
+%%FLAGS -c
+sort_by(.n), group_by(.g), unique_by(.g), min_by(.n), max_by(.n)
+[{"n":2,"g":"x"},{"n":1,"g":"y"},{"n":3,"g":"x"}]
+[{"n":1,"g":"y"},{"n":2,"g":"x"},{"n":3,"g":"x"}]
+[[{"n":2,"g":"x"},{"n":3,"g":"x"}],[{"n":1,"g":"y"}]]
+[{"n":2,"g":"x"},{"n":1,"g":"y"}]
+{"n":1,"g":"y"}
+{"n":3,"g":"x"}
+
+%%FLAGS -c
+to_entries, with_entries({key, value: (.value + 1)}), (to_entries | from_entries)
+{"a":1,"b":2}
+[{"key":"a","value":1},{"key":"b","value":2}]
+{"a":2,"b":3}
+{"a":1,"b":2}
+
+%%FLAGS -c
+[.[] | type]
+[null, true, 1, "s", [], {}]
+["null","boolean","number","string","array","object"]
+
+%%FLAGS -c
+has("a"), has("z"), (.a | has(1))
+{"a":[1,2]}
+true
+false
+true
+
+%%FLAGS -c
+%%EXIT 5
+contains({a:[1]}), inside({a:[1,2],b:3}), contains("bar")
+{"a":[1,2]}
+true
+true
+
+%%FLAGS -c
+.[] | startswith("ab"), endswith("yz"), ltrimstr("a"), rtrimstr("z")
+["abxyz"]
+true
+true
+"bxyz"
+"abxy"
+
+%%FLAGS -c
+split(","), (split(",") | join("-")), ascii_downcase, ascii_upcase
+"A,b,C"
+["A","b","C"]
+"A-b-C"
+"a,b,c"
+"A,B,C"
+
+%%FLAGS -c
+[limit(3; range(10))], first(range(5;10)), [range(2;8)]
+null
+[0,1,2]
+5
+[2,3,4,5,6,7]
+
+%%FLAGS -c
+reduce .[] as $x (0; . + $x), [foreach .[] as $x (0; . + $x)]
+[1,2,3]
+6
+[1,3,6]
+
+%%FLAGS -c
+. as $o | $o.a + 1
+{"a":1}
+2
+
+%%FLAGS -c
+if . > 1 then "big" elif . == 1 then "one" else "small" end
+0 1 2
+"small"
+"one"
+"big"
+
+%%FLAGS -c
+try error("x") catch ., (.a // "default"), [.[]?]
+{"b":1}
+"x"
+"default"
+[1]
+
+%%FLAGS -c
+[paths], [..]
+{"a":[1,{"b":2}]}
+[["a"],["a",0],["a",1],["a",1,"b"]]
+[{"a":[1,{"b":2}]},[1,{"b":2}],1,{"b":2},2]
+
+%%FLAGS -c
+flatten, any, all, (map(select(. != null)) | length)
+[[1,[2]],null,3]
+[1,2,null,3]
+true
+false
+2
+
+%%FLAGS -c
+%%EXIT 5
+tostring, tojson, (tostring | tonumber)
+[1,2]
+"[1,2]"
+"[1,2]"
+
+%%FLAGS -c
+.[2:4], .[:2], .[-2:]
+[0,1,2,3,4,5]
+[2,3]
+[0,1]
+[4,5]
+
+%%FLAGS -c
+.[2:4]
+"abcdef"
+"cd"
+
+%%FLAGS -c
+indices(1), index(1), rindex(1), (.[0:2] | tojson)
+[0,1,2,1]
+[1,3]
+1
+3
+"[0,1]"
+
+%%FLAGS -c
+label $out | .[] | if . > 2 then ., break $out else . end
+[1,2,3,4]
+1
+2
+3
+
+%%FLAGS -c
+floor, ceil, round, sqrt, fabs
+6.25
+6
+7
+6
+2.5
+6.25
+
+%%FLAGS -c
+. + {c:3}, . * {a:{y:2}}, ([1,2,3] - [2])
+{"a":{"x":1}}
+{"a":{"x":1},"c":3}
+{"a":{"x":1,"y":2}}
+[1,3]
+
+%%FLAGS -c
+"x" * 3, ("a,b" / ","), (10 % 3)
+null
+"xxx"
+["a","b"]
+1
+
+%%FLAGS -c
+[.[] | numbers], [.[] | strings], [.[] | scalars], [.[] | iterables]
+[1,"s",null,[],{}]
+[1]
+["s"]
+[1,"s",null]
+[[],{}]
+
+%%FLAGS -c
+.[1:3], .[-2:], indices("€"), index("x"), rindex("€"), split("")
+"aé€x€"
+"é€"
+"x€"
+[2,4]
+3
+4
+["a","é","€","x","€"]
+
+%%FLAGS -c
+indices([1,2]), index([1,2]), rindex([1,2]), indices(1), indices([])
+[0,1,2,1,2,3]
+[1,3]
+1
+3
+[1,3]
+[]
+
+%%FLAGS -c
+"" | reverse
+null
+[]
+
+%%FLAGS -c
+.a?/2, (.b // .a), (.[] // 0)
+{"a":4,"b":null}
+2
+4
+4
+
+%%FLAGS -c
+5.5 % 2, 5 % -2, -5 % 2
+null
+1
+1
+-1
+

@@ -1,0 +1,138 @@
+name: sjq
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'tools/**'
+      - 'fuzz/fuzz_sjq.cpp'
+      - 'include/**'
+      - 'src/**'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/sjq.yml'
+  pull_request:
+    paths:
+      - 'tools/**'
+      - 'fuzz/fuzz_sjq.cpp'
+      - 'include/**'
+      - 'src/**'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/sjq.yml'
+  workflow_dispatch:
+
+# A new push to a pull request cancels its previous run. Other runs (pushes to
+# master, schedules) get a group of their own and are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: ubuntu-gcc, os: ubuntu-24.04, cc: gcc, cxx: g++, type: Release, flags: ""}
+          - {name: ubuntu-clang, os: ubuntu-24.04, cc: clang, cxx: clang++, type: Release, flags: ""}
+          - {name: ubuntu-asan, os: ubuntu-24.04, cc: gcc, cxx: g++, type: Debug, flags: "-DSIMDJSON_SANITIZE=ON"}
+          - {name: ubuntu-ubsan, os: ubuntu-24.04, cc: gcc, cxx: g++, type: Debug, flags: "-DSIMDJSON_SANITIZE_UNDEFINED=ON"}
+          - {name: macos, os: macos-15, cc: clang, cxx: clang++, type: Release, flags: ""}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: Configure
+        run: >
+          CC=${{ matrix.cc }} CXX=${{ matrix.cxx }}
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DSIMDJSON_DEVELOPER_MODE=ON
+          -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF ${{ matrix.flags }}
+      - name: Build
+        run: cmake --build build --target sjq -j 4
+      - name: Test
+        run: ctest --test-dir build -R sjq --output-on-failure
+
+  windows-vs:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    name: windows-vs18
+    runs-on: windows-2025-vs2026
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure
+        run: cmake -G "Visual Studio 18 2026" -A x64 -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF -B build
+      - name: Build
+        run: cmake --build build --config Release --target sjq
+      - name: Test
+        run: ctest --test-dir build -C Release -R sjq --output-on-failure
+
+  windows-mingw:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    name: windows-mingw64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      CMAKE_GENERATOR: Ninja
+    steps:
+      - uses: actions/checkout@v6
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: MINGW64
+          install: mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja mingw-w64-x86_64-gcc mingw-w64-x86_64-python
+      - name: Build and test
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF
+          cmake --build build --target sjq
+          ctest --test-dir build -R sjq --output-on-failure
+
+  fuzz:
+    if: >-
+      ! contains(toJSON(github.event.commits.*.message), '[skip ci]') &&
+      ! contains(toJSON(github.event.commits.*.message), '[skip github]')
+    name: fuzz-sjq
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
+        with:
+          path: dependencies/.cache
+          key: ${{ hashFiles('dependencies/CMakeLists.txt') }}
+      - name: Build the fuzzer
+        run: >
+          CC=clang CXX=clang++
+          CFLAGS="-fsanitize=fuzzer-no-link,address,undefined"
+          CXXFLAGS="-fsanitize=fuzzer-no-link,address,undefined -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION"
+          LDFLAGS="-fsanitize=address,undefined"
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_SJQ=ON
+          -DSIMDJSON_ENABLE_FUZZING=ON -DSIMDJSON_FUZZ_LINKMAIN=OFF -DSIMDJSON_FUZZ_LDFLAGS=-fsanitize=fuzzer
+          -DSIMDJSON_GOOGLE_BENCHMARKS=OFF -DSIMDJSON_COMPETITION=OFF &&
+          cmake --build build --target fuzz_sjq
+      - name: Fuzz for three minutes
+        run: |
+          python3 tools/sjq/tests/fuzz_seeds.py corpus
+          UBSAN_OPTIONS=halt_on_error=1 build/fuzz/fuzz_sjq corpus -dict=tools/sjq/tests/fuzz.dict -max_total_time=180 -timeout=10 -rss_limit_mb=2048 -artifact_prefix=./
+      - name: Keep the crashing inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-sjq-artifacts
+          path: |
+            crash-*
+            timeout-*
+            oom-*

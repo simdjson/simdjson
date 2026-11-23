@@ -70,6 +70,10 @@ if(SIMDJSON_ENABLE_FUZZING)
   implement_fuzzer(fuzz_parser)
   implement_fuzzer(fuzz_print_json)
   implement_fuzzer(fuzz_utf8)            # utf8 verification, compares across implementations
+  if(TARGET sjq-core)
+    implement_fuzzer(fuzz_sjq)           # sjq filters on JSON (tools/sjq, with -D SIMDJSON_SJQ=ON)
+    target_link_libraries(fuzz_sjq PRIVATE sjq-core)
+  endif()
 
   # to be able to get a list of all fuzzers from within a script
   add_custom_target(print_all_fuzzernames
