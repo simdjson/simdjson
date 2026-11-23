@@ -1220,10 +1220,71 @@ namespace dom_api_tests {
     dom::object object;
     ASSERT_SUCCESS( parser.parse(json).get(object) );
 #if SIMDJSON_EXCEPTIONS
-    // Next three lines are for https://github.com/simdjson/simdjson/issues/1341
-    dom::element node = object["a"]; // might throw
+    // Next lines are for https://github.com/simdjson/simdjson/issues/1341
+    auto node = object["a"]; // node is an lvalue simdjson_result<dom::element>
     auto mylambda = [](dom::element e) { return int64_t(e); };
     ASSERT_EQUAL( mylambda(node), 1 );
+    dom::element elem = node;
+    ASSERT_EQUAL( int64_t(elem), 1 );
+
+    const auto const_node = object["a"];
+    ASSERT_EQUAL( mylambda(const_node), 1 );
+    dom::element const_elem = const_node;
+    ASSERT_EQUAL( int64_t(const_elem), 1 );
+
+    auto err_node = object["d"];
+    bool caught = false;
+    try {
+      mylambda(err_node);
+    } catch (simdjson_error &e) {
+      ASSERT_EQUAL(e.error(), NO_SUCH_FIELD);
+      caught = true;
+    }
+    ASSERT_TRUE(caught);
+
+    // An rvalue result must still be moved, not copied, when converted.
+    struct copy_counter {
+      int *copies;
+      explicit copy_counter(int *c = nullptr) : copies(c) {}
+      copy_counter(const copy_counter &o) : copies(o.copies) { if (copies) { (*copies)++; } }
+      copy_counter(copy_counter &&o) noexcept : copies(o.copies) {}
+      copy_counter &operator=(const copy_counter &) = default;
+      copy_counter &operator=(copy_counter &&) = default;
+    };
+    int copies = 0;
+    copy_counter moved = simdjson_result<copy_counter>(copy_counter(&copies));
+    copy_counter moved_direct{simdjson_result<copy_counter>(copy_counter(&copies))};
+    std::vector<copy_counter> counters;
+    counters.reserve(4);
+    counters.push_back(simdjson_result<copy_counter>(copy_counter(&copies)));
+    ASSERT_EQUAL( copies, 0 );
+    simdjson_result<copy_counter> lvalue_counter{copy_counter(&copies)};
+    copy_counter copied = lvalue_counter;
+    ASSERT_EQUAL( copies, 1 );
+    counters.push_back(lvalue_counter);
+    ASSERT_EQUAL( copies, 2 );
+    std::string moved_string = simdjson_result<std::string>(std::string(100, 'x'));
+    ASSERT_EQUAL( moved_string.size(), 100 );
+    (void)moved; (void)moved_direct; (void)copied;
+
+    // A reference bound to a converted temporary refers to a new object that
+    // lives as long as the reference.
+    std::string &&bound = simdjson_result<std::string>(std::string(100, 'y'));
+    ASSERT_EQUAL( bound, std::string(100, 'y') );
+
+    // An enum result has a single conversion function, so it can be switched on.
+    int type_case = 0;
+    switch (object["a"].type()) {
+      case dom::element_type::INT64: type_case = 1; break;
+      default: type_case = 2; break;
+    }
+    ASSERT_EQUAL( type_case, 1 );
+    auto type_result = object["a"].type();
+    switch (type_result) {
+      case dom::element_type::INT64: type_case = 3; break;
+      default: type_case = 4; break;
+    }
+    ASSERT_EQUAL( type_case, 3 );
 #endif
     ASSERT_EQUAL( object["a"].get_uint64().value_unsafe(), 1 );
     ASSERT_EQUAL( object["b"].get_uint64().value_unsafe(), 2 );
