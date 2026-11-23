@@ -19,4 +19,6 @@
 #include "simdjson/jsonpathutil.h"
 #include "simdjson/annotations.h"
 
+#include <type_traits>
+
 #endif // SIMDJSON_GENERIC_ONDEMAND_DEPENDENCIES_H
