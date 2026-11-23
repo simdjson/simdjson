@@ -60,7 +60,8 @@ inline simdjson_result<T> auto_parser<parser_type>::result() & noexcept(is_nothr
   // "not that shape"; fall back to the full ondemand parser.
   if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> ||
                 std::is_same_v<T, bool> ||
-                std::is_same_v<T, std::string> || std::is_same_v<T, std::vector<std::string>>) {
+                std::is_same_v<T, std::string> ||
+                simdjson::internal::direct::appendable_container_of<T, std::string>) {
     if (m_direct_buf != nullptr) {
       T direct_value{};
       error_code direct_error = simdjson::internal::direct::parse_document(
@@ -72,7 +73,7 @@ inline simdjson_result<T> auto_parser<parser_type>::result() & noexcept(is_nothr
         return direct_error;
       }
     }
-  } else if constexpr (std::is_same_v<T, std::vector<double>>) {
+  } else if constexpr (simdjson::internal::direct::appendable_container_of<T, double>) {
     // The number parser reads ahead, so this needs the padding On Demand needs.
     if (m_direct_buf != nullptr && m_direct_cap >= m_direct_len + SIMDJSON_PADDING) {
       T direct_value{};

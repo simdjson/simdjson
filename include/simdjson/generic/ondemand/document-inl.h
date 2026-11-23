@@ -1061,6 +1061,7 @@ namespace ondemand {
 simdjson_inline document_reference::document_reference() noexcept : doc{nullptr} {}
 simdjson_inline document_reference::document_reference(document &d) noexcept : doc(&d) {}
 simdjson_inline void document_reference::rewind() noexcept { doc->rewind(); }
+simdjson_warn_unused simdjson_inline error_code document_reference::validate() noexcept { return doc->validate(); }
 simdjson_inline simdjson_result<array> document_reference::get_array() & noexcept { return doc->get_array(); }
 simdjson_inline simdjson_result<object> document_reference::get_object() & noexcept { return doc->get_object(); }
 /**
@@ -1224,6 +1225,10 @@ simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::do
   if (error()) { return error(); }
   first.rewind();
   return SUCCESS;
+}
+simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::validate() noexcept {
+  if (error()) { return error(); }
+  return first.validate();
 }
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::array_iterator> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::document_reference>::begin() & noexcept {
   if (error()) { return error(); }

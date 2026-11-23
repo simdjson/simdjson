@@ -332,28 +332,133 @@ simdjson_warn_unused simdjson_inline error_code json_iterator::skip_partial(dept
 
 SIMDJSON_POP_DISABLE_WARNINGS
 
-// Tells whether a backslash occurs in the len bytes at src, eight bytes at a time. It may
-// read up to seven bytes past them: the document is followed by its padding.
-simdjson_inline bool json_iterator::has_backslash(const uint8_t *src, size_t len) noexcept {
+// Tells whether a backslash occurs in the len bytes at src. The kernels with vector
+// registers look at a whole register at a time and may read up to a register past the
+// string, inside the padding.
+template <typename BQ>
+simdjson_inline bool json_iterator::has_backslash(const uint8_t *src, size_t len, std::true_type) noexcept {
+  constexpr size_t STEP = BQ::BYTES_PROCESSED;
+  uint8_t scratch[STEP];
+  for (; len > STEP; src += STEP, len -= STEP) {
+    if (BQ{}.copy_and_find(src, scratch).bs_bits) { return true; }
+  }
+  const uint64_t bs_bits = uint64_t(BQ{}.copy_and_find(src, scratch).bs_bits);
+  return (len < 64 ? bs_bits & ((uint64_t(1) << len) - 1) : bs_bits) != 0;
+}
+
+// Without vector registers, the bytes are read sixteen at a time, up to fifteen bytes past
+// the string. Most strings are short, so they take no loop iteration, whatever their length.
+template <typename BQ>
+simdjson_inline bool json_iterator::has_backslash(const uint8_t *src, size_t len, std::false_type) noexcept {
   constexpr uint64_t ONES = 0x0101010101010101;
   constexpr uint64_t HIGHS = 0x8080808080808080;
   constexpr uint64_t BACKSLASHES = 0x5C5C5C5C5C5C5C5C;
-  // The mask is copied from this table, so that its first len bytes are set whatever the
-  // endianness.
-  static constexpr uint8_t KEEP[16] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-  uint64_t word;
-  for (; len >= 8; src += 8, len -= 8) {
-    std::memcpy(&word, src, sizeof(word));
-    word ^= BACKSLASHES;
-    if ((word - ONES) & ~word & HIGHS) { return true; }
+  // The masks are copied from this table, so that their first len bytes are set whatever
+  // the endianness.
+  static constexpr uint8_t KEEP[32] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                                       0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  uint64_t lo, hi;
+  for (; len > 16; src += 16, len -= 16) {
+    std::memcpy(&lo, src, sizeof(lo));
+    std::memcpy(&hi, src + 8, sizeof(hi));
+    lo ^= BACKSLASHES;
+    hi ^= BACKSLASHES;
+    if ((((lo - ONES) & ~lo) | ((hi - ONES) & ~hi)) & HIGHS) { return true; }
   }
-  uint64_t keep;
-  std::memcpy(&keep, KEEP + 8 - len, sizeof(keep));
-  std::memcpy(&word, src, sizeof(word));
-  word = (word ^ BACKSLASHES) | ~keep;
-  return ((word - ONES) & ~word & HIGHS) != 0;
+  uint64_t keep_lo, keep_hi;
+  std::memcpy(&keep_lo, KEEP + 16 - len, sizeof(keep_lo));
+  std::memcpy(&keep_hi, KEEP + 24 - len, sizeof(keep_hi));
+  std::memcpy(&lo, src, sizeof(lo));
+  std::memcpy(&hi, src + 8, sizeof(hi));
+  lo = (lo ^ BACKSLASHES) | ~keep_lo;
+  hi = (hi ^ BACKSLASHES) | ~keep_hi;
+  return ((((lo - ONES) & ~lo) | ((hi - ONES) & ~hi)) & HIGHS) != 0;
 }
 
+simdjson_inline bool json_iterator::has_backslash(const uint8_t *src, size_t len) noexcept {
+  constexpr size_t STEP = backslash_and_quote::BYTES_PROCESSED;
+  return has_backslash<backslash_and_quote>(src, len, std::integral_constant<bool, STEP >= 16 && STEP <= 64>());
+}
+
+// Counts the decimal digits at p. It may read up to seven bytes past them.
+simdjson_inline size_t json_iterator::count_digits(const uint8_t *p) noexcept {
+  size_t n = 0;
+#if SIMDJSON_SWAR_NUMBER_PARSING
+  for (;; n += 8) {
+    uint64_t val;
+    std::memcpy(&val, p + n, sizeof(val));
+    const uint64_t non_digits = numberparsing::mark_non_digits(val);
+    if (non_digits) { return n + size_t(trailing_zeroes(non_digits)) / 8; }
+  }
+#else
+  while (numberparsing::is_digit(p[n])) { n++; }
+  return n;
+#endif
+}
+
+// Checks a number as get_double() does, without computing its value when the value is
+// certainly finite: at most 300 integer digits without an exponent, or at most 200 with an
+// exponent of at most two digits, stay below 1e300. Anything else goes to the full parser.
+simdjson_inline error_code json_iterator::validate_number(const uint8_t *src) noexcept {
+  const uint8_t *p = src + (*src == '-');
+  const size_t integer_digits = count_digits(p);
+  if (integer_digits == 0 || integer_digits > 300 || (*p == '0' && integer_digits > 1)) { goto full; }
+  p += integer_digits;
+  if (*p == '.') {
+    p++;
+    const size_t fraction_digits = count_digits(p);
+    if (fraction_digits == 0) { return NUMBER_ERROR; }
+    p += fraction_digits;
+  }
+  if ((*p | 0x20) == 'e') {
+    p++;
+    p += (*p == '-' || *p == '+');
+    const size_t exponent_digits = count_digits(p);
+    if (exponent_digits == 0) { return NUMBER_ERROR; }
+    if (exponent_digits > 2 || integer_digits > 200) { goto full; }
+    p += exponent_digits;
+  }
+  return jsoncharutils::is_not_structural_or_whitespace(*p) ? NUMBER_ERROR : SUCCESS;
+full:
+  return numberparsing::parse_double(src).error() ? NUMBER_ERROR : SUCCESS;
+}
+
+// Checks a value that is neither a container nor a string. When it is the last token, the
+// document was cut short.
+simdjson_inline error_code json_iterator::validate_scalar(const uint8_t *src, bool last) noexcept {
+  switch (*src) {
+    case 't': case 'f': case 'n': case '-': case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': case 'i': case 'I':
+#endif
+      break;
+    default:
+      return TAPE_ERROR;
+  }
+  // The scalar is not the last token, so the parsers read inside the document.
+  if (last) { return INCOMPLETE_ARRAY_OR_OBJECT; }
+  switch (*src) {
+    case 't': return atomparsing::is_valid_true_atom(src) ? SUCCESS : T_ATOM_ERROR;
+    case 'f': return atomparsing::is_valid_false_atom(src) ? SUCCESS : F_ATOM_ERROR;
+    case 'n':
+#if SIMDJSON_ENABLE_NAN_INF
+      return atomparsing::is_valid_null_atom(src) || atomparsing::is_valid_nan_atom(src) ? SUCCESS : N_ATOM_ERROR;
+#else
+      return atomparsing::is_valid_null_atom(src) ? SUCCESS : N_ATOM_ERROR;
+#endif
+#if SIMDJSON_ENABLE_NAN_INF
+    case 'N': return atomparsing::is_valid_nan_atom(src) ? SUCCESS : TAPE_ERROR;
+    case 'i': case 'I': return atomparsing::is_valid_inf_atom(src) ? SUCCESS : TAPE_ERROR;
+#endif
+    default:
+      return validate_number(src);
+  }
+}
+
+// The walk follows the DOM tape builder: values inside objects and inside arrays are
+// dispatched from separate places, and the kind of the enclosing container is read only
+// when a container closes.
 simdjson_warn_unused simdjson_never_inline error_code json_iterator::validate_container() noexcept {
   const uint8_t *const json = token.buf;
   token_position pos = token.position();
@@ -376,20 +481,47 @@ simdjson_warn_unused simdjson_never_inline error_code json_iterator::validate_co
     c = json[index]; \
   } while (0)
 
-  SIMDJSON_VALIDATE_NEXT();
-  goto container_start;
+// A string is valid once stage 1 has accepted the document, unless it holds an escape. The
+// next token bounds it.
+#define SIMDJSON_VALIDATE_STRING() \
+  do { \
+    if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; } \
+    if (has_backslash(json + index + 1, *pos - index - 1)) { \
+      uint8_t *dst = _string_buf_loc; \
+      if (!parser->implementation->parse_string(json + index + 1, dst, false)) { return STRING_ERROR; } \
+    } \
+  } while (0)
 
-value:
-  switch (c) {
-    case '{': case '[': goto container_start;
-    case '"': goto scalar_string;
-    default: goto scalar;
+// As in DOM, an empty container does not count toward the maximal depth.
+#define SIMDJSON_VALIDATE_VALUE() \
+  do { \
+    SIMDJSON_VALIDATE_NEXT(); \
+    switch (c) { \
+      case '{': \
+        if (pos != end && json[*pos] == '}') { pos++; break; } \
+        goto object_begin; \
+      case '[': \
+        if (pos != end && json[*pos] == ']') { pos++; break; } \
+        goto array_begin; \
+      case '"': \
+        SIMDJSON_VALIDATE_STRING(); \
+        break; \
+      default: \
+        SIMDJSON_TRY(validate_scalar(json + index, pos == end)); \
+        break; \
+    } \
+  } while (0)
+
+  index = *pos++;
+  c = json[index];
+  if (pos != end && json[*pos] == c + 2) {
+    pos++;
+    goto document_end;
   }
+  if (c == '[') { goto array_begin; }
 
-container_start:
-  // As in DOM, an empty container does not count toward the maximal depth. Its bit may then
-  // be at max_depth, which the stack has room for.
-  if (++depth >= max_depth && (pos == end || json[*pos] != c + 2)) { return DEPTH_ERROR; }
+object_begin:
+  if (++depth >= max_depth) { return DEPTH_ERROR; }
   // The bits move once: the next time this depth is reached, the heap holds the current
   // bits and the fixed stack holds stale ones.
   if (depth == sizeof(fixed_stack) * 8 && !heap_stack) {
@@ -398,81 +530,53 @@ container_start:
     std::memcpy(heap_stack.get(), fixed_stack, sizeof(fixed_stack));
     is_array = heap_stack.get();
   }
-  if (c == '[') {
-    is_array[depth / 64] |= uint64_t(1) << (depth % 64);
-    SIMDJSON_VALIDATE_NEXT();
-    if (c == ']') { goto container_end; }
-    goto value;
-  }
   is_array[depth / 64] &= ~(uint64_t(1) << (depth % 64));
   SIMDJSON_VALIDATE_NEXT();
-  if (c == '}') { goto container_end; }
-  goto key;
-
-key:
   if (c != '"') { return TAPE_ERROR; }
-  // A string is valid once stage 1 has accepted the document, unless it holds an escape.
-  if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
-  if (has_backslash(json + index + 1, *pos - index - 1)) {
-    uint8_t *dst = _string_buf_loc;
-    if (!parser->implementation->parse_string(json + index + 1, dst, false)) { return STRING_ERROR; }
-  }
+  SIMDJSON_VALIDATE_STRING();
+
+object_field:
   SIMDJSON_VALIDATE_NEXT();
   if (c != ':') { return TAPE_ERROR; }
-  SIMDJSON_VALIDATE_NEXT();
-  goto value;
+  SIMDJSON_VALIDATE_VALUE();
 
-scalar_string:
-  if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
-  if (has_backslash(json + index + 1, *pos - index - 1)) {
-    uint8_t *dst = _string_buf_loc;
-    if (!parser->implementation->parse_string(json + index + 1, dst, false)) { return STRING_ERROR; }
-  }
-  goto value_end;
-
-scalar:
-  switch (c) {
-    case 't': case 'f': case 'n': case '-': case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-#if SIMDJSON_ENABLE_NAN_INF
-    case 'N': case 'i': case 'I':
-#endif
-      break;
-    default:
-      return TAPE_ERROR;
-  }
-  // The scalar is not the last token, so the parsers read inside the document.
-  if (pos == end) { return INCOMPLETE_ARRAY_OR_OBJECT; }
-  switch (c) {
-    case 't': if (!atomparsing::is_valid_true_atom(json + index)) { return T_ATOM_ERROR; } break;
-    case 'f': if (!atomparsing::is_valid_false_atom(json + index)) { return F_ATOM_ERROR; } break;
-    case 'n':
-#if SIMDJSON_ENABLE_NAN_INF
-      if (!atomparsing::is_valid_null_atom(json + index) && !atomparsing::is_valid_nan_atom(json + index)) { return N_ATOM_ERROR; }
-#else
-      if (!atomparsing::is_valid_null_atom(json + index)) { return N_ATOM_ERROR; }
-#endif
-      break;
-#if SIMDJSON_ENABLE_NAN_INF
-    case 'N': if (!atomparsing::is_valid_nan_atom(json + index)) { return TAPE_ERROR; } break;
-    case 'i': case 'I': if (!atomparsing::is_valid_inf_atom(json + index)) { return TAPE_ERROR; } break;
-#endif
-    default:
-      if (numberparsing::parse_double(json + index).error()) { return NUMBER_ERROR; }
-      break;
-  }
-
-value_end:
+object_continue:
   SIMDJSON_VALIDATE_NEXT();
   if (c == ',') {
     SIMDJSON_VALIDATE_NEXT();
-    if (is_array[depth / 64] & (uint64_t(1) << (depth % 64))) { goto value; }
-    goto key;
+    if (c != '"') { return TAPE_ERROR; }
+    SIMDJSON_VALIDATE_STRING();
+    goto object_field;
   }
-  if (c != (is_array[depth / 64] & (uint64_t(1) << (depth % 64)) ? ']' : '}')) { return TAPE_ERROR; }
+  if (c != '}') { return TAPE_ERROR; }
 
-container_end:
-  if (--depth > 0) { goto value_end; }
+scope_end:
+  if (--depth == 0) { goto document_end; }
+  if (is_array[depth / 64] & (uint64_t(1) << (depth % 64))) { goto array_continue; }
+  goto object_continue;
+
+array_begin:
+  if (++depth >= max_depth) { return DEPTH_ERROR; }
+  if (depth == sizeof(fixed_stack) * 8 && !heap_stack) {
+    heap_stack.reset(new (std::nothrow) uint64_t[max_depth / 64 + 1]());
+    if (!heap_stack) { return MEMALLOC; }
+    std::memcpy(heap_stack.get(), fixed_stack, sizeof(fixed_stack));
+    is_array = heap_stack.get();
+  }
+  is_array[depth / 64] |= uint64_t(1) << (depth % 64);
+
+array_value:
+  SIMDJSON_VALIDATE_VALUE();
+
+array_continue:
+  SIMDJSON_VALIDATE_NEXT();
+  if (c == ',') { goto array_value; }
+  if (c != ']') { return TAPE_ERROR; }
+  goto scope_end;
+
+document_end:
+#undef SIMDJSON_VALIDATE_VALUE
+#undef SIMDJSON_VALIDATE_STRING
 #undef SIMDJSON_VALIDATE_NEXT
   if (!streaming() && pos != end) { return TRAILING_CONTENT; }
   return SUCCESS;

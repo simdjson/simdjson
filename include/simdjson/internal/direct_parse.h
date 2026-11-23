@@ -18,10 +18,18 @@
 
 #include <cstdint>
 #include <cstring>
+#include <concepts>
+#include <deque>
 #include <limits>
+#include <list>
+#include <set>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 #include <vector>
+#ifdef __cpp_lib_inplace_vector
+#include <inplace_vector>
+#endif
 
 namespace simdjson {
 namespace internal {
@@ -363,34 +371,99 @@ simdjson_inline error_code parse_string_token(const uint8_t *&p, const uint8_t *
   return parse_escaped_string_body(p, start, stop, end, out);
 }
 
+// The standard containers that the array parsers below fill. Other types,
+// including types derived from these, may have their own deserializer and go
+// through On Demand.
+template <typename V> struct is_direct_sequence : std::false_type {};
+template <typename E, typename A> struct is_direct_sequence<std::vector<E, A>> : std::true_type {};
+template <typename E, typename A> struct is_direct_sequence<std::deque<E, A>> : std::true_type {};
+template <typename E, typename A> struct is_direct_sequence<std::list<E, A>> : std::true_type {};
+#ifdef __cpp_lib_inplace_vector
+template <typename E, size_t N> struct is_direct_sequence<std::inplace_vector<E, N>> : std::true_type {};
+#endif
+
+template <typename V> struct is_inplace_vector : std::false_type {};
+#ifdef __cpp_lib_inplace_vector
+template <typename E, size_t N> struct is_inplace_vector<std::inplace_vector<E, N>> : std::true_type {};
+#endif
+
+template <typename V> struct is_direct_set : std::false_type {};
+template <typename E, typename C, typename A> struct is_direct_set<std::set<E, C, A>> : std::true_type {};
+template <typename E, typename C, typename A> struct is_direct_set<std::multiset<E, C, A>> : std::true_type {};
+template <typename E, typename H, typename K, typename A> struct is_direct_set<std::unordered_set<E, H, K, A>> : std::true_type {};
+template <typename E, typename H, typename K, typename A> struct is_direct_set<std::unordered_multiset<E, H, K, A>> : std::true_type {};
+
+template <typename V, typename E>
+concept appendable_container_of =
+    (is_direct_sequence<V>::value || is_direct_set<V>::value) && std::same_as<typename V::value_type, E>;
+
+// A std::inplace_vector that is full makes the parsers below fall back to On
+// Demand, which reports CAPACITY.
+template <typename V>
+simdjson_inline bool is_full(const V &out) noexcept {
+  if constexpr (is_inplace_vector<V>::value) {
+    return out.size() >= out.max_size();
+  } else {
+    (void)out;
+    return false;
+  }
+}
+
+// Inserts as On Demand does: at the back of a sequence, with emplace into a set.
+template <typename V, typename... Args>
+simdjson_inline void append_one(V &out, Args &&...args) {
+  if constexpr (is_direct_set<V>::value) {
+    out.emplace(std::forward<Args>(args)...);
+  } else {
+    out.emplace_back(std::forward<Args>(args)...);
+  }
+}
+
+template <typename V> struct is_std_vector : std::false_type {};
+template <typename E, typename A> struct is_std_vector<std::vector<E, A>> : std::true_type {};
+
 // Appends the JSON string token at p to out. A plain ASCII string is
 // constructed in place.
-simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, std::vector<std::string> &out) {
+template <typename V>
+simdjson_inline error_code append_string_token(const uint8_t *&p, const uint8_t *end, V &out) {
   if (p >= end || *p != '"') { return UNINITIALIZED; }
   const uint8_t *start = p + 1;
   const uint8_t *stop = find_string_stop<true>(start, end);
   if (simdjson_likely(stop < end && *stop == '"')) {
-    out.emplace_back(reinterpret_cast<const char *>(start), size_t(stop - start));
+    append_one(out, reinterpret_cast<const char *>(start), size_t(stop - start));
     p = stop + 1;
     return SUCCESS;
   }
-  out.emplace_back();
-  return parse_escaped_string_body(p, start, stop, end, out.back());
+  if constexpr (is_direct_set<V>::value) {
+    std::string value;
+    error_code err = parse_escaped_string_body(p, start, stop, end, value);
+    if (simdjson_likely(err == SUCCESS)) { append_one(out, std::move(value)); }
+    return err;
+  } else {
+    out.emplace_back();
+    return parse_escaped_string_body(p, start, stop, end, out.back());
+  }
 }
 
 // Containers are sized from the first element, which can underestimate the
 // width of the others by a lot (["", "<long string>"]). The reservation is
 // capped at four times the input size and trimmed when it is mostly unused.
+// Only std::vector reserves: std::inplace_vector::reserve throws beyond its
+// capacity, and std::deque and std::list have no reserve.
 template <typename V>
 simdjson_inline void reserve_from_first(V &out, size_t rest, size_t stride) {
-  const size_t estimate = rest / stride + 2;
-  const size_t limit = 4 * rest / sizeof(typename V::value_type) + 2;
-  out.reserve(estimate < limit ? estimate : limit);
+  if constexpr (is_std_vector<V>::value) {
+    const size_t estimate = rest / stride + 2;
+    const size_t limit = 4 * rest / sizeof(typename V::value_type) + 2;
+    out.reserve(estimate < limit ? estimate : limit);
+  }
 }
 
 template <typename V>
 simdjson_inline void trim_reservation(V &out) {
-  if (out.capacity() / 2 > out.size() + 16) { out.shrink_to_fit(); }
+  if constexpr (is_std_vector<V>::value) {
+    if (out.capacity() / 2 > out.size() + 16) { out.shrink_to_fit(); }
+  }
 }
 
 template <>
@@ -405,8 +478,9 @@ simdjson_inline error_code parse_document<std::string>(const uint8_t *buf, size_
 }
 
 // Array of strings. Same fallback rules as parse_string_token.
-template <>
-simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_t *buf, size_t len, std::vector<std::string> &out) {
+template <typename V>
+  requires appendable_container_of<V, std::string>
+simdjson_inline error_code parse_document(const uint8_t *buf, size_t len, V &out) {
   const uint8_t *p = buf;
   const uint8_t *end = buf + len;
   if (!skip_ws(p, end)) { return UNINITIALIZED; }
@@ -425,7 +499,8 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
     std::string first;
     if (parse_string_token(p, end, first) != SUCCESS) { return UNINITIALIZED; }
     reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1); // string plus comma
-    out.push_back(std::move(first));
+    if (is_full(out)) { return UNINITIALIZED; }
+    append_one(out, std::move(first));
   }
   for (;;) {
     if (!skip_ws(p, end) || p >= end) { out.clear(); return UNINITIALIZED; }
@@ -438,7 +513,7 @@ simdjson_inline error_code parse_document<std::vector<std::string>>(const uint8_
     if (*p != ',') { out.clear(); return UNINITIALIZED; }
     p++;
     if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
-    if (append_string_token(p, end, out) != SUCCESS) { out.clear(); return UNINITIALIZED; }
+    if (is_full(out) || append_string_token(p, end, out) != SUCCESS) { out.clear(); return UNINITIALIZED; }
   }
 }
 
@@ -504,7 +579,9 @@ simdjson_inline error_code parse_double_padded(const uint8_t *&p, double &out) n
 // Array of doubles. Needs SIMDJSON_PADDING readable bytes after len: numbers
 // are read with parse_double_padded, and requiring the last non-space byte to
 // be the closing bracket bounds every number scan.
-simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len, std::vector<double> &out) {
+template <typename V>
+  requires appendable_container_of<V, double>
+simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len, V &out) {
   const uint8_t *p = buf;
   const uint8_t *end = buf + len;
   if (!skip_ws(p, end)) { return UNINITIALIZED; }
@@ -531,7 +608,8 @@ simdjson_inline error_code parse_padded_document(const uint8_t *buf, size_t len,
       reserve_from_first(out, size_t(end - tok), size_t(p - tok) + 1);
       reserved = true;
     }
-    out.push_back(v);
+    if (is_full(out)) { out.clear(); return UNINITIALIZED; }
+    append_one(out, v);
     if (*p != ',') {
       if (!skip_ws(p, end)) { out.clear(); return UNINITIALIZED; }
       if (*p == ']') {

@@ -5,6 +5,7 @@
 
 #include <string>
 #include <ostream>
+#include <type_traits>
 
 namespace simdjson {
 
@@ -105,6 +106,45 @@ private:
 };
 
 namespace internal {
+
+#if SIMDJSON_EXCEPTIONS
+/**
+ * simdjson_result<T> converts to T (throwing on error) through two overloads
+ * of the same conversion operator, chosen by the value category of the result:
+ *
+ * - operator T() &&, which moves the value out of an rvalue result, and
+ * - operator T() const&, which copies the value out of an lvalue result.
+ *
+ * Both return T, not a reference: if the lvalue overload returned const T&
+ * and the rvalue one T&&, calls such as std::vector<T>::push_back(result)
+ * would be ambiguous between the const T& and T&& overloads.
+ *
+ * An overload that is not wanted is disabled by making it convert to a
+ * placeholder type that nothing converts to:
+ *
+ * - the lvalue overload is disabled when T is not copy constructible;
+ * - the rvalue overload is disabled when T is trivially copyable (enums,
+ *   numbers, std::string_view, dom::element...), since moving such a T is the
+ *   same as copying it. Having a single conversion to an enumeration type
+ *   keeps switch (result) valid: clang rejects a switch condition with
+ *   several conversion functions to integral or enumeration types.
+ */
+struct simdjson_result_no_lvalue_conversion {
+  simdjson_result_no_lvalue_conversion() = delete;
+};
+struct simdjson_result_no_rvalue_conversion {
+  simdjson_result_no_rvalue_conversion() = delete;
+};
+
+template<typename T>
+using simdjson_result_lvalue_conversion_t = typename std::conditional<
+    std::is_copy_constructible<T>::value, T, simdjson_result_no_lvalue_conversion>::type;
+
+template<typename T>
+using simdjson_result_rvalue_conversion_t = typename std::conditional<
+    std::is_copy_constructible<T>::value && std::is_trivially_copyable<T>::value,
+    simdjson_result_no_rvalue_conversion, T>::type;
+#endif // SIMDJSON_EXCEPTIONS
 
 /**
  * The result of a simdjson operation that could fail.
@@ -215,12 +255,24 @@ struct simdjson_result_base : protected std::pair<T, error_code> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  using rvalue_conversion_type = simdjson_result_rvalue_conversion_t<T>;
   /**
-   * Cast to the value (will throw on error).
+   * Cast an rvalue result to the value, moving it (will throw on error).
+   * Disabled when T is trivially copyable: the conversion below is used instead.
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator T&&() && noexcept(false);
+  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
+
+  using lvalue_conversion_type = simdjson_result_lvalue_conversion_t<T>;
+  /**
+   * Cast a result to a copy of the value (will throw on error). This allows,
+   * for example, passing an lvalue simdjson_result<dom::element> to a function
+   * that takes a dom::element. Disabled when T is not copy constructible.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
 
 #endif // SIMDJSON_EXCEPTIONS
 
@@ -375,12 +427,24 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
    */
   simdjson_inline T&& take_value() && noexcept(false);
 
+  using rvalue_conversion_type = typename internal::simdjson_result_base<T>::rvalue_conversion_type;
   /**
-   * Cast to the value (will throw on error).
+   * Cast an rvalue result to the value, moving it (will throw on error).
+   * Disabled when T is trivially copyable: the conversion below is used instead.
    *
    * @throw simdjson_error if there was an error.
    */
-  simdjson_inline operator T&&() && noexcept(false);
+  simdjson_inline operator rvalue_conversion_type() && noexcept(false);
+
+  using lvalue_conversion_type = typename internal::simdjson_result_base<T>::lvalue_conversion_type;
+  /**
+   * Cast a result to a copy of the value (will throw on error). This allows,
+   * for example, passing an lvalue simdjson_result<dom::element> to a function
+   * that takes a dom::element. Disabled when T is not copy constructible.
+   *
+   * @throw simdjson_error if there was an error.
+   */
+  simdjson_inline operator lvalue_conversion_type() const& noexcept(false);
 #endif // SIMDJSON_EXCEPTIONS
 
   /**

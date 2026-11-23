@@ -183,6 +183,7 @@ namespace error_tests {
     std::string text = "{}";
     simdjson::ondemand::parser parser;
     simdjson::ondemand::document doc(parser.iterate(text));
+    (void)doc;
     TEST_SUCCEED();
   }
   bool raw_json_string_except() {
