@@ -357,6 +357,20 @@ namespace simd {
 #endif
     }
 
+    // The caller already proved this block contains no quote. Signed < 0x20
+    // rejects both control bytes and non-ASCII bytes in one comparison.
+    simdjson_inline bool is_plain_ascii_without_backslash() const {
+#if __riscv_v_fixed_vlen == 128
+      vboolx64_t bad_range = __riscv_vmslt(__riscv_vreinterpret_i8m4(value), 0x20, 64);
+#elif __riscv_v_fixed_vlen == 256
+      vboolx64_t bad_range = __riscv_vmslt(__riscv_vreinterpret_i8m2(value), 0x20, 64);
+#else
+      vboolx64_t bad_range = __riscv_vmslt(__riscv_vreinterpret_i8m1(value), 0x20, 64);
+#endif
+      vboolx64_t backslash = __riscv_vmseq(value, uint8_t('\\'), 64);
+      return __riscv_vfirst(__riscv_vmor(bad_range, backslash, 64), 64) < 0;
+    }
+
     // compress inactive elements, to match AVX-512 behavior
     simdjson_inline uint64_t compress(uint64_t mask, uint8_t * output) const {
       mask = ~mask;
