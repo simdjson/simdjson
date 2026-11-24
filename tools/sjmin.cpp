@@ -23,7 +23,7 @@ void print_usage(std::FILE *out) {
     "\n"
     "  -o, --output FILE  write to FILE instead of standard output\n"
     "  -h, --help         display this help and exit\n"
-    "  -v, --version      output version information and exit\n"
+    "  -V, --version      output version information and exit\n"
     "\n"
     "The input is not validated. Exit status is 0 on success, 1 on error,\n"
     "2 on a usage error.\n",
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     } else if (std::strcmp(arg, "-h") == 0 || std::strcmp(arg, "--help") == 0) {
       print_usage(stdout);
       return EXIT_SUCCESS;
-    } else if (std::strcmp(arg, "-v") == 0 || std::strcmp(arg, "--version") == 0) {
+    } else if (std::strcmp(arg, "-V") == 0 || std::strcmp(arg, "--version") == 0) {
       std::printf("%s (simdjson) %s\n", program_name, SIMDJSON_VERSION);
       return EXIT_SUCCESS;
     } else if (std::strcmp(arg, "-o") == 0 || std::strcmp(arg, "--output") == 0) {
