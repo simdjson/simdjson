@@ -95,8 +95,9 @@ Try 'sjmin --help' for more information.
 | 1 | The input could not be read, the input contains a string that is not closed, or the output could not be opened or written. |
 | 2 | Invalid command line: unknown option, missing file name after `-o`, or more than one input file. |
 
-Error messages go to standard error and start with `sjmin:` and the name of
-the file concerned (`-` for standard input):
+Error messages go to standard error and start with `sjmin:`. When reading
+or minifying an input fails, the message also names the input (`-` for
+standard input):
 
 ```console
 $ printf '{"a": "unterminated' | sjmin
@@ -210,5 +211,8 @@ if (error) {
 
 The output buffer must hold at least as many bytes as the input. To minify
 a document that you have parsed, and so validated, use `simdjson::minify(element)`
-with the DOM API or `simdjson::to_json_string` with On-Demand. See
-[basics.md](basics.md) for both.
+with the DOM API. With On-Demand, `simdjson::to_json_string` is not a
+minifier: it returns the raw JSON text of a value with only the leading and
+trailing whitespace removed, and it does not validate it. See the "Output to
+strings" and "Minifying JSON strings without parsing" sections of
+[basics.md](basics.md).
