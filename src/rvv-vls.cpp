@@ -94,7 +94,11 @@ simdjson_warn_unused error_code implementation::minify(const uint8_t *buf, size_
 simdjson_warn_unused error_code dom_parser_implementation::stage1(const uint8_t *_buf, size_t _len, stage1_mode streaming) noexcept {
   this->buf = _buf;
   this->len = _len;
+#if __riscv_v_fixed_vlen == 128
+  return rvv_vls::stage1::json_structural_indexer::index<128>(buf, len, *this, streaming);
+#else
   return rvv_vls::stage1::json_structural_indexer::index<64>(buf, len, *this, streaming);
+#endif
 }
 
 simdjson_warn_unused bool implementation::validate_utf8(const char *buf, size_t len) const noexcept {
