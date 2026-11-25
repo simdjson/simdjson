@@ -108,7 +108,6 @@ public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
 #if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in, uint64_t raw_quote);
   simdjson_inline bool can_skip_plain_string() const { return string_scanner.can_skip_plain_string(); }
   // Called only after an entire block is proven ordinary ASCII string content.
   // Its final byte still determines the generic scanner's exact scalar carry.
@@ -142,15 +141,7 @@ simdjson_inline uint64_t follows(const uint64_t match, uint64_t &overflow) {
 }
 
 simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in) {
-#if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  return next(in, in.eq('"'));
-}
-
-simdjson_inline json_block json_scanner::next(const simd::simd8x64<uint8_t>& in, uint64_t raw_quote) {
-  json_string_block strings = string_scanner.next(in, raw_quote);
-#else
   json_string_block strings = string_scanner.next(in);
-#endif
   // identifies the white-space and the structural characters
   json_character_block characters = json_character_block::classify(in);
   // The term "scalar" refers to anything except structural characters and white space

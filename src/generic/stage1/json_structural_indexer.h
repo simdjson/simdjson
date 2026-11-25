@@ -289,8 +289,8 @@ template<>
 simdjson_inline void json_structural_indexer::step<64>(const uint8_t *block, buf_block_reader<64> &reader) noexcept {
   simd::simd8x64<uint8_t> in_1(block);
 #if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  const uint64_t raw_quote = in_1.eq('"');
-  if (raw_quote == 0 && scanner.can_skip_plain_string() && in_1.is_plain_ascii_without_backslash()) {
+  // A block following structural content is unlikely to be a long-string interior.
+  if (prev_structurals == 0 && scanner.can_skip_plain_string() && in_1.is_plain_ascii_string()) {
     scanner.skip_plain_string(block[63]);
 #if SIMDJSON_UTF8VALIDATION
     // Exactly the existing ASCII path: accumulate unfinished previous UTF-8,
@@ -302,10 +302,8 @@ simdjson_inline void json_structural_indexer::step<64>(const uint8_t *block, buf
     reader.advance();
     return;
   }
-  json_block block_1 = scanner.next(in_1, raw_quote);
-#else
-  json_block block_1 = scanner.next(in_1);
 #endif
+  json_block block_1 = scanner.next(in_1);
   this->next(in_1, block_1, reader.block_index());
   reader.advance();
 }

@@ -42,7 +42,6 @@ class json_string_scanner {
 public:
   simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
 #if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in, uint64_t raw_quote);
   simdjson_really_inline bool can_skip_plain_string() const {
     return prev_in_string != 0 && escape_scanner.next_is_escaped == 0;
   }
@@ -66,19 +65,9 @@ private:
 // Backslash sequences outside of quotes will be detected in stage 2.
 //
 simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in) {
-#if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  return next(in, in.eq('"'));
-}
-
-simdjson_really_inline json_string_block json_string_scanner::next(const simd::simd8x64<uint8_t>& in, uint64_t raw_quote) {
-#endif
   const uint64_t backslash = in.eq('\\');
   const uint64_t escaped = escape_scanner.next(backslash).escaped;
-#if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
-  const uint64_t quote = raw_quote & ~escaped;
-#else
   const uint64_t quote = in.eq('"') & ~escaped;
-#endif
 
   //
   // prefix_xor flips on bits inside the string (and flips off the end quote).
