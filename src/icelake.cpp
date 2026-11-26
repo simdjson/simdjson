@@ -10,13 +10,86 @@
 
 // defining SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER allows us to provide our own bit_indexer::write
 #define SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+#define SIMDJSON_GENERIC_STAGE1_CUSTOM_UTF8_CHECKER
 
 #include <simdjson/icelake/begin.h>
 #include <generic/amalgamated.h>
+
+/*
+ * Adapted from ffutf by Peter Fors (MIT licensed):
+ * https://github.com/vtlmks/ffutf
+ */
+namespace simdjson {
+namespace icelake {
+namespace {
+namespace utf8_validation {
+
+alignas(64) static constexpr uint8_t second_bounds[64] = {
+    0xc0, 0xc0, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xa0,
+    0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+    0x80, 0x20, 0x80, 0x80, 0x90, 0x80, 0x80, 0x80, 0x10, 0xc0, 0xc0,
+    0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0};
+
+alignas(64) static constexpr uint8_t incomplete_bounds[64] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x70, 0x60, 0x40};
+
+struct utf8_checker {
+  __m512i error{_mm512_setzero_si512()};
+  __m512i prev_input_block{_mm512_setzero_si512()};
+  __m512i prev_incomplete{_mm512_setzero_si512()};
+
+  simdjson_inline void check_next_input(const simd::simd8x64<uint8_t>& input) {
+    const __m512i bytes = input.chunks[0];
+    if (simdjson_likely(_mm512_movepi8_mask(bytes) == 0)) {
+      this->error = _mm512_or_si512(this->error, this->prev_incomplete);
+      return;
+    }
+    const simd::simd8<uint8_t> in(bytes);
+    const __m512i prev1 = in.prev<1>(this->prev_input_block);
+    const __m512i prev2 = in.prev<2>(this->prev_input_block);
+    const __m512i prev3 = in.prev<3>(this->prev_input_block);
+    const __m512i lead = _mm512_subs_epu8(prev1, _mm512_set1_epi8(0x40));
+    const __m512i expected = _mm512_ternarylogic_epi32(
+        lead, _mm512_subs_epu8(prev2, _mm512_set1_epi8(0x60)),
+        _mm512_subs_epu8(prev3, _mm512_set1_epi8(0x70)), 0xfe);
+    const __m512i mismatch = _mm512_ternarylogic_epi32(
+        bytes, _mm512_add_epi8(bytes, _mm512_set1_epi8(0x40)), expected, 0x6a);
+    const __m512i delta = _mm512_sub_epi8(
+        bytes, _mm512_permutexvar_epi8(
+                   prev1, _mm512_load_si512(reinterpret_cast<const __m512i *>(second_bounds))));
+    this->error = _mm512_or_si512(
+        this->error, _mm512_ternarylogic_epi32(delta, lead, mismatch, 0xea));
+    this->prev_incomplete = _mm512_subs_epu8(
+        bytes, _mm512_load_si512(reinterpret_cast<const __m512i *>(incomplete_bounds)));
+    this->prev_input_block = bytes;
+  }
+
+  simdjson_inline void check_eof() {
+    this->error = _mm512_or_si512(this->error, this->prev_incomplete);
+  }
+
+  simdjson_warn_unused simdjson_inline error_code errors() {
+    return _mm512_movepi8_mask(this->error) != 0 ? error_code::UTF8_ERROR : error_code::SUCCESS;
+  }
+};
+
+} // namespace utf8_validation
+} // unnamed namespace
+} // namespace icelake
+} // namespace simdjson
+
 #include <generic/stage1/amalgamated.h>
 #include <generic/stage2/amalgamated.h>
 
 #undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+#undef SIMDJSON_GENERIC_STAGE1_CUSTOM_UTF8_CHECKER
 
 //
 // Stage 1

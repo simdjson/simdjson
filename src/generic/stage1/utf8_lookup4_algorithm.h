@@ -142,6 +142,7 @@ using namespace simd;
     return input.gt_bits(max_value);
   }
 
+#ifndef SIMDJSON_GENERIC_STAGE1_CUSTOM_UTF8_CHECKER
   struct utf8_checker {
     // If this is nonzero, there has been a UTF-8 error.
     simd8<uint8_t> error;
@@ -200,6 +201,7 @@ using namespace simd;
     }
 
   }; // struct utf8_checker
+#endif // SIMDJSON_GENERIC_STAGE1_CUSTOM_UTF8_CHECKER
 } // namespace utf8_validation
 
 } // unnamed namespace
