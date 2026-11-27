@@ -15,6 +15,7 @@
 #include <generic/amalgamated.h>
 #include <generic/stage1/amalgamated.h>
 #include <generic/stage2/amalgamated.h>
+#include <generic/jsonifier/amalgamated.h>
 
 #undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
@@ -177,6 +178,22 @@ simdjson_warn_unused uint8_t *dom_parser_implementation::parse_wobbly_string(con
 
 simdjson_warn_unused error_code dom_parser_implementation::parse(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
   auto error = stage1(_buf, _len, stage1_mode::regular);
+  if (error) { return error; }
+  return stage2(_doc);
+}
+
+simdjson_warn_unused error_code dom_parser_implementation::stage1_jsonifier(const uint8_t *_buf, size_t _len) noexcept {
+  this->buf = _buf;
+  this->len = _len;
+#if SIMDJSON_CPLUSPLUS20
+  return jsonifier::index(_buf, _len, *this);
+#else
+  return stage1(_buf, _len, stage1_mode::regular);
+#endif
+}
+
+simdjson_warn_unused error_code dom_parser_implementation::parse_jsonifier(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+  auto error = stage1_jsonifier(_buf, _len);
   if (error) { return error; }
   return stage2(_doc);
 }

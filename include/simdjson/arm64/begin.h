@@ -1,4 +1,5 @@
 #define SIMDJSON_IMPLEMENTATION arm64
+#define SIMDJSON_JSONIFIER_ISA 3
 #include "simdjson/arm64/base.h"
 #include "simdjson/arm64/intrinsics.h"
 #include "simdjson/arm64/bitmanipulation.h"

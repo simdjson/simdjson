@@ -26,6 +26,7 @@ add_cpp_test(parse_many_test            NEEDS_DATA LABELS dom acceptance per_imp
 add_cpp_test(pointercheck               LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(stringparsingcheck         NEEDS_DATA LABELS dom acceptance per_implementation) # https://tools.ietf.org/html/rfc6901
 add_cpp_test(trivially_copyable_test    LABELS dom acceptance per_implementation)
+add_cpp_test(stage1_jsonifier_tests     NEEDS_DATA LABELS dom acceptance per_implementation)
 
 
 

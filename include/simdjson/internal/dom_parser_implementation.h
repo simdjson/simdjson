@@ -37,6 +37,19 @@ inline bool is_streaming(stage1_mode mode) {
   // return (mode == stage1_mode::streaming_partial || mode == stage1_mode::streaming_final);
 }
 
+/**
+ * Selects the stage 1 used by dom::parser::parse<stage1_kind>().
+ * 1) simdjson is the regular, validating stage 1.
+ * 2) jsonifier is the Jsonifier structural indexer. It is available on the
+ * haswell, icelake and arm64 kernels in a C++20 build of the library, and
+ * falls back to the simdjson stage 1 everywhere else. It does not validate
+ * UTF-8 or reject unescaped control characters inside strings.
+ */
+enum class stage1_kind {
+  simdjson,
+  jsonifier
+};
+
 namespace internal {
 
 
@@ -79,6 +92,27 @@ public:
    * @return The error code, or SUCCESS if there was no error.
    */
   simdjson_warn_unused virtual error_code stage1(const uint8_t *buf, size_t len, stage1_mode streaming) noexcept = 0;
+
+  /**
+   * @private For internal implementation use
+   *
+   * Stage 1 through the Jsonifier structural indexer, on a complete document.
+   * Implementations without it run the regular stage 1.
+   */
+  simdjson_warn_unused virtual error_code stage1_jsonifier(const uint8_t *_buf, size_t _len) noexcept {
+    return stage1(_buf, _len, stage1_mode::regular);
+  }
+
+  /**
+   * @private For internal implementation use
+   *
+   * Like parse(), with stage1_jsonifier() as stage 1.
+   */
+  simdjson_warn_unused virtual error_code parse_jsonifier(const uint8_t *_buf, size_t _len, dom::document &_doc) noexcept {
+    error_code error = stage1_jsonifier(_buf, _len);
+    if (error) { return error; }
+    return stage2(_doc);
+  }
 
   /**
    * @private For internal implementation use

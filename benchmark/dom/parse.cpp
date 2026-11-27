@@ -61,6 +61,7 @@ void print_usage(ostream& out) {
   out << "-t           - Tabbed data output" << endl;
   out << "-v           - Verbose output." << endl;
   out << "-s stage1    - Stop after find_structural_bits." << endl;
+  out << "-s stage1_jsonifier - Like -s stage1, with the Jsonifier stage 1 (stage1_jsonifier)." << endl;
   out << "-s all       - Run all stages." << endl;
   out << "-C           - Leave the buffers cold (includes page allocation and related OS tasks during parsing, speed tied to OS performance)" << endl;
   out << "-H           - Make the buffers hot (reduce page allocation and related OS tasks during parsing) [default]" << endl;
@@ -84,6 +85,8 @@ void exit_usage(string message) {
 struct option_struct {
   vector<char*> files{};
   bool stage1_only = false;
+  // When true, stage 1 runs through stage1_jsonifier instead of stage1.
+  bool jsonifier_stage1 = false;
 
   int32_t iterations = 200;
   int32_t iteration_step = -1;
@@ -145,10 +148,15 @@ struct option_struct {
       case 's':
         if (!strcmp(optarg, "stage1")) {
           stage1_only = true;
+          jsonifier_stage1 = false;
+        } else if (!strcmp(optarg, "stage1_jsonifier")) {
+          stage1_only = true;
+          jsonifier_stage1 = true;
         } else if (!strcmp(optarg, "all")) {
           stage1_only = false;
+          jsonifier_stage1 = false;
         } else {
-          exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1 or all");
+          exit_usage(string("Unsupported option value -s ") + optarg + ": expected -s stage1, stage1_jsonifier or all");
         }
         break;
       default:
@@ -196,7 +204,7 @@ int main(int argc, char *argv[]) {
   // Set up benchmarkers by reading all files
   vector<benchmarker*> benchmarkers;
   for (size_t i=0; i<options.files.size(); i++) {
-    benchmarkers.push_back(new benchmarker(options.files[i], collector, options.unpadded));
+    benchmarkers.push_back(new benchmarker(options.files[i], collector, options.unpadded, options.jsonifier_stage1));
   }
 
   // Run the benchmarks

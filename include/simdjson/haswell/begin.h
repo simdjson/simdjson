@@ -1,4 +1,5 @@
 #define SIMDJSON_IMPLEMENTATION haswell
+#define SIMDJSON_JSONIFIER_ISA 1
 
 #include "simdjson/haswell/base.h"
 #include "simdjson/haswell/intrinsics.h"

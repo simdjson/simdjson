@@ -1,4 +1,5 @@
 #define SIMDJSON_IMPLEMENTATION icelake
+#define SIMDJSON_JSONIFIER_ISA 2
 #include "simdjson/icelake/base.h"
 #include "simdjson/icelake/intrinsics.h"
 

@@ -1,0 +1,240 @@
+name: Stage 1 comparison (AVX-512 and NEON)
+
+# Checks that the Jsonifier stage 1 (stage1_jsonifier) matches the regular
+# stage 1 (tests/dom/stage1_jsonifier_tests), then times both with simdjson's
+# own benchmark/dom/parse (-s stage1 against -s stage1_jsonifier) on AVX-512
+# (icelake kernel) and NEON (arm64 kernel) runners. Each leg runs as its own
+# workflow_dispatch run so it can reject a runner whose CPU is not the target
+# and dispatch itself again.
+
+on:
+  push:
+    branches:
+      - batched-drain
+    paths:
+      - 'include/**'
+      - 'src/**'
+      - 'benchmark/benchmarker.h'
+      - 'benchmark/dom/parse.cpp'
+      - 'tests/dom/stage1_jsonifier_tests.cpp'
+      - '.github/workflows/stage1-kinds.yml'
+  workflow_dispatch:
+    inputs:
+      leg:
+        description: 'Leg to run (empty runs every leg)'
+        required: false
+        default: ''
+      attempt:
+        description: 'Attempt number of this leg'
+        required: false
+        default: '1'
+      sha:
+        description: 'Commit to benchmark'
+        required: false
+        default: ''
+      rounds:
+        description: 'parse runs per file and stage 1 (alternating)'
+        required: false
+        default: '10'
+
+jobs:
+  Plan:
+    runs-on: ubuntu-latest
+    outputs:
+      legs: ${{ steps.plan.outputs.legs }}
+      configs: ${{ steps.plan.outputs.configs }}
+    steps:
+      - name: Select legs
+        id: plan
+        env:
+          LEG: ${{ inputs.leg }}
+        run: |
+          ALL='[
+            {"leg":"avx512-gcc","os":"ubuntu-latest","compiler":"gcc","kernels":"icelake","expected_cpu":"AMD EPYC 9V45 96-Core Processor","rejected_cpu":""},
+            {"leg":"avx512-clang","os":"ubuntu-latest","compiler":"clang","kernels":"icelake","expected_cpu":"AMD EPYC 9V45 96-Core Processor","rejected_cpu":""},
+            {"leg":"avx512-msvc","os":"windows-latest","compiler":"msvc","kernels":"icelake","expected_cpu":"AMD EPYC 9V45 96-Core Processor","rejected_cpu":""},
+            {"leg":"neon-gcc","os":"macos-latest","compiler":"gcc","kernels":"arm64","expected_cpu":"Apple","rejected_cpu":"M1"},
+            {"leg":"neon-clang","os":"macos-latest","compiler":"clang","kernels":"arm64","expected_cpu":"Apple","rejected_cpu":"M1"}
+          ]'
+          echo "legs=$(echo "$ALL" | jq -c '[.[].leg]')" >> "$GITHUB_OUTPUT"
+          echo "configs=$(echo "$ALL" | jq -c --arg leg "$LEG" '[.[] | select(.leg == $leg)]')" >> "$GITHUB_OUTPUT"
+
+  Dispatch-Legs:
+    runs-on: ubuntu-latest
+    needs: Plan
+    if: inputs.leg == '' || inputs.leg == null
+    permissions:
+      actions: write
+    strategy:
+      matrix:
+        leg: ${{ fromJSON(needs.Plan.outputs.legs) }}
+    steps:
+      - name: Dispatch ${{ matrix.leg }} as its own run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEG: ${{ matrix.leg }}
+          ROUNDS: ${{ inputs.rounds || '10' }}
+        run: |
+          gh workflow run stage1-kinds.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
+            -f leg="$LEG" -f attempt=1 -f sha="$GITHUB_SHA" -f rounds="$ROUNDS"
+
+  Benchmark:
+    needs: Plan
+    if: inputs.leg != '' && inputs.leg != null
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.Plan.outputs.configs) }}
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.leg }} (attempt ${{ inputs.attempt }})
+    outputs:
+      wrong_cpu: ${{ steps.cpu.outputs.wrong_cpu }}
+    steps:
+      - name: Reject non-target CPU runners
+        id: cpu
+        shell: bash
+        env:
+          EXPECTED: ${{ matrix.config.expected_cpu }}
+          REJECTED: ${{ matrix.config.rejected_cpu }}
+          ATTEMPT: ${{ inputs.attempt }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            CPU=$(powershell -NoProfile -Command "(Get-CimInstance Win32_Processor | Select-Object -First 1).Name")
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            CPU=$(sysctl -n machdep.cpu.brand_string)
+          else
+            CPU=$(lscpu | grep -m1 'Model name' | cut -d: -f2-)
+          fi
+          CPU=$(echo "$CPU" | tr -d '\r' | sed 's/^ *//;s/ *$//')
+          echo "CPU: $CPU"
+          echo "RUNNER_CPU=$CPU" >> "$GITHUB_ENV"
+          if [[ "$CPU" != *"$EXPECTED"* ]] || { [ -n "$REJECTED" ] && [[ "$CPU" == *"$REJECTED"* ]]; }; then
+            echo "wrong_cpu=true" >> "$GITHUB_OUTPUT"
+            echo "Landed on $CPU (want $EXPECTED${REJECTED:+, not $REJECTED}) on attempt $ATTEMPT, aborting so this leg reruns on a different runner." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Select GCC and Clang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "GCC_CXX=g++" >> "$GITHUB_ENV"
+          echo "GCC_CC=gcc" >> "$GITHUB_ENV"
+          echo "CLANG_CXX=clang++" >> "$GITHUB_ENV"
+          echo "CLANG_CC=clang" >> "$GITHUB_ENV"
+
+      - name: Setup Clang (macOS)
+        if: runner.os == 'macOS' && matrix.config.compiler == 'clang'
+        run: |
+          brew install llvm
+          echo "CLANG_CXX=$(brew --prefix llvm)/bin/clang++" >> "$GITHUB_ENV"
+          echo "CLANG_CC=$(brew --prefix llvm)/bin/clang" >> "$GITHUB_ENV"
+
+      - name: Setup GCC (macOS)
+        if: runner.os == 'macOS' && matrix.config.compiler == 'gcc'
+        run: |
+          brew install gcc
+          GCC_VERSION=$(brew list --versions gcc | awk '{print $2}' | cut -d. -f1)
+          echo "GCC_CXX=g++-$GCC_VERSION" >> "$GITHUB_ENV"
+          echo "GCC_CC=gcc-$GCC_VERSION" >> "$GITHUB_ENV"
+
+      - name: Configure (GCC)
+        if: matrix.config.compiler == 'gcc'
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_CXX_STANDARD=20 -DCMAKE_CXX_COMPILER="$GCC_CXX" -DCMAKE_C_COMPILER="$GCC_CC"
+
+      - name: Configure (Clang)
+        if: matrix.config.compiler == 'clang'
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_CXX_STANDARD=20 -DCMAKE_CXX_COMPILER="$CLANG_CXX" -DCMAKE_C_COMPILER="$CLANG_CC"
+
+      - name: Configure (MSVC)
+        if: matrix.config.compiler == 'msvc'
+        run: cmake -S . -B build -DSIMDJSON_DEVELOPER_MODE=ON -DSIMDJSON_CXX_STANDARD=20
+
+      - name: Build
+        run: cmake --build build --config Release --target parse stage1_jsonifier_tests -j 4
+
+      - name: Check that both stage 1 agree
+        run: ctest --test-dir build -C Release -R stage1_jsonifier_tests --output-on-failure
+
+      - name: Time both stage 1 with benchmark/dom/parse
+        shell: bash
+        env:
+          ROUNDS: ${{ inputs.rounds || '10' }}
+          KERNEL: ${{ matrix.config.kernels }}
+          LEG: ${{ matrix.config.leg }}
+        run: |
+          cat > compare_stage1.py <<'PYEOF'
+          import glob, math, os, statistics, subprocess, sys
+
+          rounds, kernel, leg, cpu = int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
+          parse = next(p for p in glob.glob("build/benchmark/dom/**/parse*", recursive=True) if os.path.basename(p) in ("parse", "parse.exe"))
+          corpus = next(os.path.dirname(p) for p in glob.glob("build/**/jsonexamples/canada.json", recursive=True))
+          files = sorted(glob.glob(os.path.join(corpus, "*.json")))
+
+          def run(mode, path):
+              out = subprocess.run([parse, "-t", "-s", mode, "-a", kernel, path], capture_output=True, text=True, check=True).stdout
+              fields = [l for l in out.splitlines() if l.startswith('"')][-1].split("\t")
+              cycles = float(fields[2]) if fields[2].strip() else None
+              return float(fields[-2]), cycles
+
+          def welch(a, b):
+              se = math.sqrt(statistics.variance(a) / len(a) + statistics.variance(b) / len(b))
+              difference = statistics.mean(a) - statistics.mean(b)
+              if se == 0:
+                  return 0.0 if difference == 0 else math.copysign(math.inf, difference)
+              return difference / se
+
+          print(f"## {leg}\n\nRunner CPU: `{cpu}`, kernel `{kernel}`, {rounds} alternating `parse` runs per file and mode (best of each run).\n")
+          print("| File | stage1 (GB/s) | stage1_jsonifier (GB/s) | Change | stage1 cycles/B | stage1_jsonifier cycles/B | Welch t | Verdict |")
+          print("| :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |")
+          tally, logs = {"Win": 0, "Tie": 0, "Loss": 0}, []
+          for path in files:
+              regular, jsonifier, regular_cycles, jsonifier_cycles = [], [], [], []
+              for r in range(rounds):
+                  order = ("stage1", "stage1_jsonifier") if r % 2 == 0 else ("stage1_jsonifier", "stage1")
+                  for mode in order:
+                      rate, cycles = run(mode, path)
+                      (regular if mode == "stage1" else jsonifier).append(rate)
+                      (regular_cycles if mode == "stage1" else jsonifier_cycles).append(cycles)
+              a, b = statistics.median(regular), statistics.median(jsonifier)
+              t = welch(jsonifier, regular)
+              verdict = "Win" if t > 2 else ("Loss" if t < -2 else "Tie")
+              tally[verdict] += 1
+              logs.append(math.log(b / a))
+              cyc = lambda c: f"{statistics.median(c):.3f}" if all(x is not None for x in c) else "n/a"
+              print(f"| {os.path.basename(path)} | {a:.2f} | {b:.2f} | {100 * (b / a - 1):+.1f}% | {cyc(regular_cycles)} | {cyc(jsonifier_cycles)} | {t:+.1f} | {verdict} |")
+          print(f"\n**stage1_jsonifier vs stage1 on `{kernel}`:** {tally['Win']} wins, {tally['Tie']} ties, {tally['Loss']} losses, "
+                f"geomean of medians {100 * (math.exp(sum(logs) / len(logs)) - 1):+.1f}% over {len(files)} files.")
+          PYEOF
+          PY=$(command -v python3 || command -v python)
+          "$PY" compare_stage1.py "$ROUNDS" "$KERNEL" "$LEG" "$RUNNER_CPU" > report.md
+          cat report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: stage1-kinds-${{ matrix.config.leg }}-attempt-${{ inputs.attempt }}
+          path: report.md
+          if-no-files-found: ignore
+
+  Relaunch-Leg:
+    runs-on: ubuntu-latest
+    needs: Benchmark
+    if: always() && inputs.leg != '' && inputs.leg != null && needs.Benchmark.outputs.wrong_cpu == 'true' && fromJSON(inputs.attempt) < 100
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch ${{ inputs.leg }} again on a fresh runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEG: ${{ inputs.leg }}
+          ATTEMPT: ${{ inputs.attempt }}
+          SHA: ${{ inputs.sha }}
+          ROUNDS: ${{ inputs.rounds }}
+        run: |
+          gh workflow run stage1-kinds.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
+            -f leg="$LEG" -f attempt=$(( ATTEMPT + 1 )) -f sha="$SHA" -f rounds="$ROUNDS"

@@ -34,6 +34,10 @@ public:
 
   simdjson_warn_unused error_code parse(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage1(const uint8_t *buf, size_t len, stage1_mode partial) noexcept final;
+#ifdef SIMDJSON_JSONIFIER_ISA
+  simdjson_warn_unused error_code stage1_jsonifier(const uint8_t *buf, size_t len) noexcept final;
+  simdjson_warn_unused error_code parse_jsonifier(const uint8_t *buf, size_t len, dom::document &doc) noexcept final;
+#endif
   simdjson_warn_unused error_code stage2(dom::document &doc) noexcept final;
   simdjson_warn_unused error_code stage2_next(dom::document &doc) noexcept final;
   stage2_next_function_t stage2_next_function(bool bounded) const noexcept final;

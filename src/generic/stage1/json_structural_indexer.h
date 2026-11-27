@@ -137,10 +137,10 @@ public:
    */
   template<size_t STEP_SIZE>
   static error_code index(const uint8_t *buf, size_t len, dom_parser_implementation &parser, stage1_mode partial) noexcept;
-
-private:
   template<size_t BLOCKS>
   static error_code index_small(const uint8_t *buf, size_t len, dom_parser_implementation &parser) noexcept;
+
+private:
   simdjson_inline json_structural_indexer(uint32_t *structural_indexes);
   template<size_t STEP_SIZE>
   simdjson_inline void step(const uint8_t *block, buf_block_reader<STEP_SIZE> &reader) noexcept;

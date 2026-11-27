@@ -264,6 +264,9 @@ struct benchmarker {
   // string parser. Stage 1 is identical either way. This benchmarks the cost of
   // the unpadded path relative to the standard padded parse.
   bool unpadded;
+  // When true, the timed stage 1 is stage1_jsonifier (the Jsonifier stage 1)
+  // instead of the regular stage1.
+  bool jsonifier_stage1;
 
   // Statistics about the JSON file independent of its speed (amount of utf-8, structurals, etc.).
   // Loaded on first parse.
@@ -279,8 +282,8 @@ struct benchmarker {
   // Speed and event summary for the repeatly-parsing mode
   event_aggregate loop{};
 
-  benchmarker(const char *_filename, event_collector& _collector, bool _unpadded = false)
-    : filename(_filename), collector(_collector), unpadded(_unpadded), stats(NULL) {
+  benchmarker(const char *_filename, event_collector& _collector, bool _unpadded = false, bool _jsonifier_stage1 = false)
+    : filename(_filename), collector(_collector), unpadded(_unpadded), jsonifier_stage1(_jsonifier_stage1), stats(NULL) {
     verbose() << "[verbose] loading " << filename << endl;
     auto error = padded_string::load(filename).get(json);
     if (error) {
@@ -341,7 +344,9 @@ struct benchmarker {
 
     // Stage 1 (find structurals)
     collector.start();
-    error = parser.implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.size(), stage1_mode::regular);
+    error = jsonifier_stage1
+      ? parser.implementation->stage1_jsonifier(reinterpret_cast<const uint8_t *>(json.data()), json.size())
+      : parser.implementation->stage1(reinterpret_cast<const uint8_t *>(json.data()), json.size(), stage1_mode::regular);
     event_count stage1_count = collector.end();
     stage1 << stage1_count;
     if (error) {

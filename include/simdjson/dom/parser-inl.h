@@ -112,6 +112,25 @@ inline simdjson_result<document_stream> parser::load_many(std::string_view path,
 }
 
 inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+  return parse_into_document<stage1_kind::simdjson>(provided_doc, buf, len, realloc_if_needed);
+}
+
+template<stage1_kind kind> struct stage1_dispatch;
+
+template<> struct stage1_dispatch<stage1_kind::simdjson> {
+  simdjson_inline static error_code parse(simdjson::internal::dom_parser_implementation &impl, const uint8_t *buf, size_t len, document &doc) noexcept {
+    return impl.parse(buf, len, doc);
+  }
+};
+
+template<> struct stage1_dispatch<stage1_kind::jsonifier> {
+  simdjson_inline static error_code parse(simdjson::internal::dom_parser_implementation &impl, const uint8_t *buf, size_t len, document &doc) noexcept {
+    return impl.parse_jsonifier(buf, len, doc);
+  }
+};
+
+template<stage1_kind kind>
+inline simdjson_result<element> parser::parse_into_document(document& provided_doc, const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
   // Important: we need to ensure that document has enough capacity.
   // Important: It is possible that provided_doc is actually the internal 'doc' within the parser!!!
   error_code _error = ensure_capacity(provided_doc, len);
@@ -134,7 +153,7 @@ inline simdjson_result<element> parser::parse_into_document(document& provided_d
     len -= 3;
   }
   implementation->_number_as_string = _number_as_string;
-  _error = implementation->parse(buf, len, provided_doc);
+  _error = stage1_dispatch<kind>::parse(*implementation, buf, len, provided_doc);
 
   if (_error) { return _error; }
 
@@ -194,6 +213,30 @@ simdjson_inline simdjson_result<element> parser::parse(const padded_string_view 
   padded_string_view json(v);
   json.use_trailing_whitespace_as_padding();
   return parse(json.data(), json.length(), false);
+}
+
+template<stage1_kind kind>
+inline simdjson_result<element> parser::parse(const uint8_t *buf, size_t len, bool realloc_if_needed) & noexcept {
+  return parse_into_document<kind>(doc, buf, len, realloc_if_needed);
+}
+template<stage1_kind kind>
+simdjson_inline simdjson_result<element> parser::parse(const char *buf, size_t len, bool realloc_if_needed) & noexcept {
+  return parse<kind>(reinterpret_cast<const uint8_t *>(buf), len, realloc_if_needed);
+}
+template<stage1_kind kind>
+simdjson_inline simdjson_result<element> parser::parse(const std::string &s) & noexcept {
+  return parse<kind>(s.data(), s.length(), s.capacity() - s.length() < SIMDJSON_PADDING);
+}
+template<stage1_kind kind>
+simdjson_inline simdjson_result<element> parser::parse(const padded_string &s) & noexcept {
+  return parse<kind>(s.data(), s.length(), false);
+}
+template<stage1_kind kind>
+simdjson_inline simdjson_result<element> parser::parse(const padded_string_view &v) & noexcept {
+  if (!v.has_sufficient_padding()) { return INSUFFICIENT_PADDING; }
+  padded_string_view json(v);
+  json.use_trailing_whitespace_as_padding();
+  return parse<kind>(json.data(), json.length(), false);
 }
 
 inline simdjson_result<element> parser::parse_unpadded(const uint8_t *buf, size_t len) & noexcept {

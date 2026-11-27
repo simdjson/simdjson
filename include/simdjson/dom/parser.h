@@ -3,6 +3,7 @@
 
 #include "simdjson/dom/base.h"
 #include "simdjson/dom/document.h"
+#include "simdjson/internal/dom_parser_implementation.h"
 
 namespace simdjson {
 
@@ -245,6 +246,28 @@ public:
   /** @overload parse(const uint8_t *buf, size_t len, bool realloc_if_needed) */
   simdjson_inline simdjson_result<element> parse(const padded_string_view &v) & noexcept;
   simdjson_inline simdjson_result<element> parse(const padded_string_view &v) && =delete;
+
+  /**
+   * Parse a JSON document with the stage 1 that kind selects, so the two stage 1
+   * implementations can be compared in one binary:
+   *
+   *   element doc = parser.parse<simdjson::stage1_kind::jsonifier>(json);
+   *
+   * parse<stage1_kind::simdjson>(...) behaves exactly like parse(...). See
+   * stage1_kind for where the Jsonifier stage 1 is available and what it does
+   * not validate.
+   */
+  template<stage1_kind kind> inline simdjson_result<element> parse(const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  /** @overload parse<stage1_kind>(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  template<stage1_kind kind> simdjson_inline simdjson_result<element> parse(const char *buf, size_t len, bool realloc_if_needed = true) & noexcept;
+  /** @overload parse<stage1_kind>(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  template<stage1_kind kind> simdjson_inline simdjson_result<element> parse(const std::string &s) & noexcept;
+  /** @overload parse<stage1_kind>(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  template<stage1_kind kind> simdjson_inline simdjson_result<element> parse(const padded_string &s) & noexcept;
+  /** @overload parse<stage1_kind>(const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  template<stage1_kind kind> simdjson_inline simdjson_result<element> parse(const padded_string_view &v) & noexcept;
+  /** @overload parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed) */
+  template<stage1_kind kind> inline simdjson_result<element> parse_into_document(document& doc, const uint8_t *buf, size_t len, bool realloc_if_needed = true) & noexcept;
 
   /** @private We do not want to allow implicit conversion from C string to std::string. */
   simdjson_inline simdjson_result<element> parse(const char *buf) noexcept = delete;
