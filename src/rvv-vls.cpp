@@ -8,11 +8,18 @@
 #include <simdjson/rvv-vls.h>
 #include <simdjson/rvv-vls/implementation.h>
 
+// Use the whole-mask writer only for fixed 128-bit RVV vectors.
+#if __riscv_v_fixed_vlen == 128
+#define SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
+#endif
+
 #include <simdjson/rvv-vls/begin.h>
 #include <simdjson/rvv-vls/simd.h>
 #include <generic/amalgamated.h>
 #include <generic/stage1/amalgamated.h>
 #include <generic/stage2/amalgamated.h>
+
+#undef SIMDJSON_GENERIC_JSON_STRUCTURAL_INDEXER_CUSTOM_BIT_INDEXER
 
 //
 // Stage 1
@@ -76,6 +83,48 @@ simdjson_inline simd8<uint8_t> must_be_2_3_continuation(const simd8<uint8_t> pre
 } // unnamed namespace
 } // namespace rvv_vls
 } // namespace simdjson
+
+#if __riscv_v_fixed_vlen == 128
+namespace simdjson { namespace rvv_vls { namespace { namespace stage1 {
+// Compress all 64 structural positions before widening and adding the base.
+simdjson_inline std::uint32_t
+write_indices_whole64(std::uint32_t *tail, std::uint32_t base,
+                      std::uint64_t mask) {
+  if (mask == 0) return 0;
+  const auto count = static_cast<std::uint32_t>(__builtin_popcountll(mask));
+
+  // The scalar move defines the low 64 bits of this vector register.
+  // e8,m4 at VLEN128 consumes exactly those 64 predicate bits as b2.
+  const vuint64m1_t scalar_mask = __riscv_vmv_s_x_u64m1(mask, 1);
+  const vbool2_t selected = __riscv_vreinterpret_b2(scalar_mask);
+  const vuint8m4_t positions = __riscv_vid_v_u8m4(64);
+  const vuint8m4_t packed = __riscv_vcompress_vm_u8m4(positions, selected, 64);
+
+  // e32,m8 holds at most 32 u32 indexes. Widen only defined compressed
+  // output lanes; a short mask must never read the unspecified packed tail.
+  const std::size_t first_count = count < 32 ? count : 32;
+  const vuint8m2_t lower = __riscv_vget_v_u8m4_u8m2(packed, 0);
+  const vuint32m8_t first = __riscv_vzext_vf4_u32m8(lower, first_count);
+  const vuint32m8_t first_indexes = __riscv_vadd_vx_u32m8(first, base, first_count);
+  __riscv_vse32_v_u32m8(tail, first_indexes, first_count);
+
+  if (count > 32) {
+    const std::size_t second_count = count - 32;
+    const vuint8m2_t upper = __riscv_vget_v_u8m4_u8m2(packed, 1);
+    const vuint32m8_t second = __riscv_vzext_vf4_u32m8(upper, second_count);
+    // Compressed offsets already refer to the original 0..63 positions.
+    // Do not add another 32 when writing this second output segment.
+    const vuint32m8_t second_indexes = __riscv_vadd_vx_u32m8(second, base, second_count);
+    __riscv_vse32_v_u32m8(tail + 32, second_indexes, second_count);
+  }
+  return count;
+}
+
+simdjson_inline void bit_indexer::write(uint32_t idx, uint64_t bits) {
+  this->tail += write_indices_whole64(this->tail, idx, bits);
+}
+}}}} // namespace simdjson::rvv_vls::(anonymous)::stage1
+#endif
 
 //
 // Stage 2
