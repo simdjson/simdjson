@@ -4,6 +4,7 @@
 #define SIMDJSON_SRC_GENERIC_STAGE1_UTF8_LOOKUP4_ALGORITHM_H
 #include <generic/stage1/base.h>
 #include <generic/dom_parser_implementation.h>
+#include <type_traits>
 #endif // SIMDJSON_CONDITIONAL_INCLUDE
 
 namespace simdjson {
@@ -170,26 +171,28 @@ using namespace simd;
       this->error |= this->prev_incomplete;
     }
 
+    // Compile-time dispatch also avoids instantiating unused chunks in C++11.
+    template<typename T>
+    simdjson_inline void check_utf8_chunks(const T& input, std::integral_constant<int, 0>) {
+      this->check_utf8_bytes(input.template get<0>(), this->prev_input_block);
+    }
+
+    template<typename T, int CHUNK>
+    simdjson_inline void check_utf8_chunks(const T& input, std::integral_constant<int, CHUNK>) {
+      this->check_utf8_chunks(input, std::integral_constant<int, CHUNK - 1>());
+      this->check_utf8_bytes(input.template get<CHUNK>(), input.template get<CHUNK - 1>());
+    }
+
     simdjson_inline void check_next_input(const simd8x64<uint8_t>& input) {
       if(simdjson_likely(is_ascii(input))) {
         this->error |= this->prev_incomplete;
       } else {
-        // you might think that a for-loop would work, but under Visual Studio, it is not good enough.
+        // Keep the chunk checks unrolled for compilers that do not optimize a loop.
         static_assert((simd8x64<uint8_t>::NUM_CHUNKS == 1)
                 ||(simd8x64<uint8_t>::NUM_CHUNKS == 2)
                 || (simd8x64<uint8_t>::NUM_CHUNKS == 4),
                 "We support one, two or four chunks per 64-byte block.");
-        SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 1) {
-          this->check_utf8_bytes(input.get<0>(), this->prev_input_block);
-        } else SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 2) {
-          this->check_utf8_bytes(input.get<0>(), this->prev_input_block);
-          this->check_utf8_bytes(input.get<1>(), input.get<0>());
-        } else SIMDJSON_IF_CONSTEXPR (simd8x64<uint8_t>::NUM_CHUNKS == 4) {
-          this->check_utf8_bytes(input.get<0>(), this->prev_input_block);
-          this->check_utf8_bytes(input.get<1>(), input.get<0>());
-          this->check_utf8_bytes(input.get<2>(), input.get<1>());
-          this->check_utf8_bytes(input.get<3>(), input.get<2>());
-        }
+        this->check_utf8_chunks(input, std::integral_constant<int, simd8x64<uint8_t>::NUM_CHUNKS - 1>());
         this->prev_incomplete = is_incomplete(input.get<simd8x64<uint8_t>::NUM_CHUNKS-1>());
         this->prev_input_block = input.get<simd8x64<uint8_t>::NUM_CHUNKS-1>();
       }

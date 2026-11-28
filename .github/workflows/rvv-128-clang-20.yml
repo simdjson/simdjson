@@ -43,3 +43,8 @@ jobs:
         QEMU_LD_PREFIX="/usr/riscv64-linux-gnu" \
         QEMU_CPU="rv64,v=on,zba=on,zbb=on,zbc=on,vlen=128,rvv_ta_all_1s=on,rvv_ma_all_1s=on" \
         ctest --timeout 1800 --output-on-failure --test-dir build-vls -j $(nproc)
+    - name: Build VLS at VLEN=256 in C++11
+      run: |
+        CC=clang-20 CXX=clang++-20 CFLAGS="--target=riscv64-linux-gnu -march=rv64gcv_zvl256b -mrvv-vector-bits=zvl" CXXFLAGS="${CFLAGS}" \
+        cmake --toolchain=cmake/toolchains-ci/riscv64-linux-gnu.cmake -DSIMDJSON_DEVELOPER_MODE=OFF -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -B build-vls-cxx11
+        cmake --build build-vls-cxx11/ --target simdjson -j$(nproc) --config Release
