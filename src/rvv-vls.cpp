@@ -11,7 +11,9 @@
 #include <simdjson/rvv-vls/begin.h>
 #include <simdjson/rvv-vls/simd.h>
 #include <generic/amalgamated.h>
+#define SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH 1
 #include <generic/stage1/amalgamated.h>
+#undef SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH
 #include <generic/stage2/amalgamated.h>
 
 //

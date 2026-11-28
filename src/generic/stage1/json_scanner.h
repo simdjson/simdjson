@@ -107,6 +107,15 @@ class json_scanner {
 public:
   json_scanner() = default;
   simdjson_inline json_block next(const simd::simd8x64<uint8_t>& in);
+#if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
+  simdjson_inline bool can_skip_plain_string() const { return string_scanner.can_skip_plain_string(); }
+  // Called only after an entire block is proven ordinary ASCII string content.
+  // Its final byte still determines the generic scanner's exact scalar carry.
+  simdjson_inline void skip_plain_string(uint8_t last) {
+    const uint8_t folded = uint8_t(last | 0x20);
+    prev_scalar = uint64_t(last != ' ' && folded != '{' && folded != '}' && last != ':' && last != ',');
+  }
+#endif
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_warn_unused simdjson_inline error_code finish();
 

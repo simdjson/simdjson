@@ -41,6 +41,11 @@ struct json_string_block {
 class json_string_scanner {
 public:
   simdjson_really_inline json_string_block next(const simd::simd8x64<uint8_t>& in);
+#if defined(SIMDJSON_GENERIC_STAGE1_PLAIN_STRING_FAST_PATH)
+  simdjson_really_inline bool can_skip_plain_string() const {
+    return prev_in_string != 0 && escape_scanner.next_is_escaped == 0;
+  }
+#endif
   // Returns either UNCLOSED_STRING or SUCCESS
   simdjson_really_inline error_code finish();
 
