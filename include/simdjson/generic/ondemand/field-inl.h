@@ -88,6 +88,25 @@ simdjson_inline value field::value() && noexcept {
   return std::forward<field>(*this).second;
 }
 
+simdjson_inline simdjson_result<value> field::find_field(std::string_view key) noexcept {
+  return second.find_field(key);
+}
+simdjson_inline simdjson_result<value> field::find_field(const char *key) noexcept {
+  return second.find_field(key);
+}
+simdjson_inline simdjson_result<value> field::find_field_unordered(std::string_view key) noexcept {
+  return second.find_field_unordered(key);
+}
+simdjson_inline simdjson_result<value> field::find_field_unordered(const char *key) noexcept {
+  return second.find_field_unordered(key);
+}
+simdjson_inline simdjson_result<value> field::operator[](std::string_view key) noexcept {
+  return second[key];
+}
+simdjson_inline simdjson_result<value> field::operator[](const char *key) noexcept {
+  return second[key];
+}
+
 } // namespace ondemand
 } // namespace SIMDJSON_IMPLEMENTATION
 } // namespace simdjson
@@ -152,6 +171,31 @@ simdjson_warn_unused simdjson_inline error_code simdjson_result<SIMDJSON_IMPLEME
 simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::value() noexcept {
   if (error()) { return error(); }
   return std::move(first.value());
+}
+
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::find_field(std::string_view key) noexcept {
+  if (error()) { return error(); }
+  return first.find_field(key);
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::find_field(const char *key) noexcept {
+  if (error()) { return error(); }
+  return first.find_field(key);
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::find_field_unordered(std::string_view key) noexcept {
+  if (error()) { return error(); }
+  return first.find_field_unordered(key);
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::find_field_unordered(const char *key) noexcept {
+  if (error()) { return error(); }
+  return first.find_field_unordered(key);
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::operator[](std::string_view key) noexcept {
+  if (error()) { return error(); }
+  return first[key];
+}
+simdjson_inline simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::value> simdjson_result<SIMDJSON_IMPLEMENTATION::ondemand::field>::operator[](const char *key) noexcept {
+  if (error()) { return error(); }
+  return first[key];
 }
 
 } // namespace simdjson
