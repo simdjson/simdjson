@@ -1,8 +1,11 @@
 #include "simdjson.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <random>
+#include <vector>
 
 class RandomUTF8 final {
 public:
@@ -184,6 +187,163 @@ void brute_force_tests() {
   printf("tests ok.\n");
 }
 
+void expect_utf8_result(const simdjson::implementation *target, const simdjson::implementation *fallback,
+                        const std::vector<uint8_t> &input, bool expected, const char *description) {
+  const bool fallback_result = fallback->validate_utf8(reinterpret_cast<const char *>(input.data()), input.size());
+  const bool target_result = target->validate_utf8(reinterpret_cast<const char *>(input.data()), input.size());
+  if (fallback_result != expected || target_result != expected) {
+    std::cerr << "UTF-8 " << description << " test failed at length " << input.size()
+              << ": fallback=" << fallback_result << ", icelake=" << target_result
+              << ", expected=" << expected << std::endl;
+    abort();
+  }
+}
+
+void batched_boundary_tests() {
+  const simdjson::implementation *fallback = simdjson::get_available_implementations()["fallback"];
+  const simdjson::implementation *icelake = simdjson::get_available_implementations()["icelake"];
+  if (!fallback || !icelake || !icelake->supported_by_runtime_system()) {
+    return;
+  }
+
+  printf("running batched UTF-8 boundary tests... ");
+  fflush(NULL);
+  constexpr size_t batch_min_length = 64 * 1024;
+  constexpr size_t length = batch_min_length + 37;
+  constexpr uint8_t two_byte_utf8[] = { 0xc2, 0x80 };
+  constexpr uint8_t three_byte_utf8[] = { 0xe0, 0xa0, 0x80 };
+  constexpr uint8_t four_byte_utf8[] = { 0xf0, 0x90, 0x80, 0x80 };
+  const uint8_t *const sequences[] = { two_byte_utf8, three_byte_utf8, four_byte_utf8 };
+  const size_t sequence_lengths[] = { sizeof(two_byte_utf8), sizeof(three_byte_utf8), sizeof(four_byte_utf8) };
+
+  // Exercise every block join, including the eight-block batch joins, with
+  // each multibyte width starting at every possible cross-boundary position.
+  for (size_t join = 64; join + sizeof(four_byte_utf8) < length; join += 64) {
+    for (size_t sequence = 0; sequence < sizeof(sequences) / sizeof(sequences[0]); ++sequence) {
+      for (size_t bytes_before_join = 1; bytes_before_join < sequence_lengths[sequence]; ++bytes_before_join) {
+        const size_t position = join - bytes_before_join;
+        std::vector<uint8_t> input(length, 'a');
+        std::memcpy(input.data() + position, sequences[sequence], sequence_lengths[sequence]);
+        expect_utf8_result(icelake, fallback, input, true, "valid boundary");
+
+        input[position + sequence_lengths[sequence] - 1] = 'a';
+        expect_utf8_result(icelake, fallback, input, false, "truncated boundary");
+      }
+    }
+  }
+
+  // Cover every byte offset in an independently validated block and check the
+  // range restrictions on the first continuation byte as well as a bad lead.
+  for (size_t offset = 0; offset < 64; ++offset) {
+    const size_t position = 512 + offset;
+    std::vector<uint8_t> input(length, 'a');
+    std::memcpy(input.data() + position, four_byte_utf8, sizeof(four_byte_utf8));
+    expect_utf8_result(icelake, fallback, input, true, "valid offset");
+
+    input[position + 1] = 0x80;
+    expect_utf8_result(icelake, fallback, input, false, "overlong offset");
+
+    input[position] = 0xf5;
+    expect_utf8_result(icelake, fallback, input, false, "out-of-range offset");
+  }
+
+  // The padded final reader block must preserve valid endings and reject every
+  // truncated length, for each possible remainder length at the batch cutoff.
+  for (size_t remainder = 0; remainder < 64; ++remainder) {
+    std::vector<uint8_t> input(batch_min_length + remainder, 'a');
+    std::memcpy(input.data() + input.size() - sizeof(four_byte_utf8), four_byte_utf8, sizeof(four_byte_utf8));
+    expect_utf8_result(icelake, fallback, input, true, "valid EOF");
+    for (size_t partial_length = 1; partial_length < sizeof(four_byte_utf8); ++partial_length) {
+      std::fill(input.begin(), input.end(), uint8_t('a'));
+      std::memcpy(input.data() + input.size() - partial_length, four_byte_utf8, partial_length);
+      expect_utf8_result(icelake, fallback, input, false, "truncated EOF");
+    }
+  }
+
+  // Dense batches must pass their predecessor bytes and accumulated errors to
+  // the stateful path when a later batch mixes ASCII and multibyte characters.
+  {
+    std::vector<uint8_t> input(length, 'a');
+    for (size_t position = 0; position < 1026; position += sizeof(three_byte_utf8)) {
+      std::memcpy(input.data() + position, three_byte_utf8, sizeof(three_byte_utf8));
+    }
+    for (size_t position = 1128; position + sizeof(two_byte_utf8) <= input.size(); position += 100) {
+      std::memcpy(input.data() + position, two_byte_utf8, sizeof(two_byte_utf8));
+    }
+    expect_utf8_result(icelake, fallback, input, true, "dense to mixed boundary");
+    input[100] = 'a';
+    expect_utf8_result(icelake, fallback, input, false, "error before mixed boundary");
+    input[100] = three_byte_utf8[1];
+    input[1024] = 'a';
+    expect_utf8_result(icelake, fallback, input, false, "incomplete mixed boundary");
+  }
+
+  // Dense and ASCII batches must not lose errors at their handoff.
+  {
+    std::vector<uint8_t> input(length, 'a');
+    for (size_t position = 0; position < 510; position += 3) {
+      input[position] = 0xe2;
+      input[position + 1] = 0x82;
+      input[position + 2] = 0xac;
+    }
+    input[510] = 0xe2;
+    input[511] = 0x82;
+    expect_utf8_result(icelake, fallback, input, false, "incomplete dense batch before ASCII");
+
+    input[510] = 0xc3;
+    input[511] = 0xa9;
+    input[480] = 0xff;
+    expect_utf8_result(icelake, fallback, input, false, "invalid eighth dense block");
+
+    std::fill(input.begin(), input.end(), uint8_t('a'));
+    input[511] = 0xc3;
+    input[2048] = 0xa9;
+    expect_utf8_result(icelake, fallback, input, false, "ASCII batch between lead and continuation");
+  }
+
+  // An isolated non-ASCII block must carry pending continuations across the
+  // ASCII blocks around it, and every other mixed block must still be checked.
+  for (size_t lead_block = 0; lead_block < 8; ++lead_block) {
+    for (size_t next_block = 0; next_block < 8; ++next_block) {
+      std::vector<uint8_t> input(length, 'a');
+      input[lead_block * 64 + 63] = 0xc3;
+      input[512 + next_block * 64] = 0xa9;
+      expect_utf8_result(icelake, fallback, input, lead_block == 7 && next_block == 0, "isolated block handoff");
+    }
+  }
+  for (size_t valid_block = 0; valid_block < 8; ++valid_block) {
+    for (size_t bad_block = 0; bad_block < 8; ++bad_block) {
+      if (valid_block == bad_block) { continue; }
+      std::vector<uint8_t> input(length, 'a');
+      input[valid_block * 64 + 10] = 0xc3;
+      input[valid_block * 64 + 11] = 0xa9;
+      input[bad_block * 64 + 5] = 0xff;
+      expect_utf8_result(icelake, fallback, input, false, "second mixed block in batch");
+    }
+  }
+
+  // A seven-byte stride places a dense four-byte sequence at every vector lane
+  // over the set of inputs. Mutate several sequences independently to keep the
+  // fallback differential check sensitive to errors throughout a long input.
+  for (size_t offset = 0; offset < 64; ++offset) {
+    std::vector<uint8_t> input(length + offset, 'a');
+    size_t sequence_count = 0;
+    for (size_t position = offset; position + sizeof(four_byte_utf8) <= input.size(); position += 7) {
+      std::memcpy(input.data() + position, four_byte_utf8, sizeof(four_byte_utf8));
+      ++sequence_count;
+    }
+    expect_utf8_result(icelake, fallback, input, true, "dense valid input");
+    for (size_t mutation = 0; mutation < 8; ++mutation) {
+      std::vector<uint8_t> invalid = input;
+      const size_t sequence = (mutation * 97) % sequence_count;
+      const size_t position = offset + sequence * 7;
+      invalid[position + sizeof(four_byte_utf8) - 1] = 'a';
+      expect_utf8_result(icelake, fallback, invalid, false, "dense invalid input");
+    }
+  }
+  printf("tests ok.\n");
+}
+
 void test() {
   printf("running hard-coded UTF-8 tests... ");
   fflush(NULL);
@@ -268,6 +428,7 @@ void puzzler() {
 int main() {
   puzzler();
   brute_force_tests();
+  batched_boundary_tests();
   test();
   return EXIT_SUCCESS;
 }
